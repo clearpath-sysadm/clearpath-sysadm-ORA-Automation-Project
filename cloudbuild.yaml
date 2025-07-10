@@ -1,10 +1,10 @@
 # cloudbuild.yaml
 options:
-  logging: CLOUD_LOGGING_ONLY # This tells Cloud Build to send logs to Cloud Logging only
+  logging: CLOUD_LOGGING_ONLY
 
 steps:
 # DEBUGGING STEP: List contents of the project for verification
-- name: 'gcr.io/cloud-builders/bash'
+- name: 'gcr.io/cloud-builders/bash:1.0' # CHANGED THIS LINE
   args: ['ls', '-R', '.'] # This command will list all files and folders recursively from the root
   dir: . # Run this command from the root of your fetched repository
 
@@ -21,7 +21,7 @@ steps:
       
       gcloud functions deploy shipstation-reporter-function \
         --runtime python311 \
-        --entry-point main \  # Changed to just 'main' now that the file is main.py
+        --entry-point main \
         --source=./src \
         --trigger-http \
         --allow-unauthenticated \
@@ -29,6 +29,4 @@ steps:
         --memory=256MB \
         --timeout=300s \
         --set-env-vars GCP_PROJECT_ID=ora-automation-project
-  dir: . # This ensures commands run from the project root
-
-# You will add similar blocks for your other functions here when you're ready to deploy them.
+  dir: .
