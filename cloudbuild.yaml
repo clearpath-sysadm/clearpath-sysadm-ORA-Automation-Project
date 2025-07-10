@@ -4,12 +4,13 @@ options:
 
 steps:
 # DEBUGGING STEP: List contents of the project for verification
-- name: 'gcr.io/cloud-builders/bash:latest' # CHANGED THIS LINE BACK TO LATEST
-  args: ['ls', '-R', '.'] # This command will list all files and folders recursively from the root
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # CHANGED THIS LINE
+  entrypoint: 'bash' # Explicitly use bash from this image
+  args: ['-c', 'ls -R .'] # This command will list all files and folders recursively from the root
   dir: . # Run this command from the root of your fetched repository
 
 # Step to deploy shipstation-reporter-function
-- name: 'gcr.io/cloud-builders/gcloud'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # CHANGED THIS LINE
   entrypoint: 'bash'
   args:
     - '-c'
