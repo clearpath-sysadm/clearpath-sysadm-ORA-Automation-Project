@@ -1,6 +1,6 @@
 # cloudbuild.yaml
 options:
-  logging: CLOUD_LOGGING_ONLY # This tells Cloud Build to send logs to Cloud Logging only
+  logging: CLOUD_LOGGING_ONLY
 
 steps:
 # Step to deploy shipstation-reporter-function
@@ -11,10 +11,13 @@ steps:
     - |
       # Copy requirements.txt to src/ for deployment context
       cp requirements.txt src/
+      # Rename the script to main.py for Cloud Functions standard entry point
+      # This moves src/shipstation_reporter.py to src/main.py *during the build*
+      mv src/shipstation_reporter.py src/main.py
       
       gcloud functions deploy shipstation-reporter-function \
         --runtime python311 \
-        --entry-point shipstation_reporter.main \
+        --entry-point main \  # Changed to just 'main' now that the file is main.py
         --source=./src \
         --trigger-http \
         --allow-unauthenticated \
