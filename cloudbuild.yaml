@@ -1,4 +1,7 @@
 # cloudbuild.yaml
+options:
+  logging: CLOUD_LOGGING_ONLY # This tells Cloud Build to send logs to Cloud Logging only
+
 steps:
 # Step to deploy shipstation-reporter-function
 - name: 'gcr.io/cloud-builders/gcloud'
