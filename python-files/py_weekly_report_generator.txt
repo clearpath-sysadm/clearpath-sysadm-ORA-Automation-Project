@@ -1,0 +1,207 @@
+import pandas as pd
+import logging
+import os # For path manipulation in test block
+import sys # For sys.path manipulation in test block
+import json # For loading dummy config in test block
+import datetime # For dummy data in test block
+
+# --- IMPORTANT: PATH CONFIGURATION FOR MODULE IMPORTS ---
+# This block ensures that the project root (ORA_Automation) is added to sys.path
+# so that modules within 'src' and 'utils' can be imported using their full paths.
+# This file is at ORA_Automation/src/services/reporting_logic/weekly_report_generator.py
+# So, to get to ORA_Automation, we need to go up three levels.
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+# --- END PATH CONFIGURATION ---
+
+# Import necessary modules from our services layer
+from src.services.google_sheets.sheets_api import write_google_sheet_data
+from src.services.reporting_logic.inventory_calculations import calculate_current_inventory
+from src.services.reporting_logic.average_calculations import calculate_12_month_rolling_average
+from utils.logging_config import setup_logging # Import setup_logging from utils
+
+
+# Setup logging for this module.
+_log_dir = os.path.join(project_root, 'logs') 
+_log_file = os.path.join(_log_dir, 'app.log')
+if not logging.getLogger().handlers:
+    setup_logging(log_file_path=_log_file, log_level=logging.DEBUG, enable_console_logging=True)
+logger = logging.getLogger(__name__)
+
+
+def generate_weekly_inventory_report(
+    google_sheet_id: str, 
+    weekly_report_tab_name: str, 
+    service_account_file_path: str, 
+    daily_inventory_df: pd.DataFrame, 
+    weekly_shipped_history_df: pd.DataFrame, 
+    key_skus_for_report: list, 
+    product_names_map: dict
+) -> pd.DataFrame:
+    """
+    Orchestrates the generation and writing of the Weekly Inventory Report.
+    Combines current inventory and 12-month rolling average, then writes the result to Google Sheets.
+
+    Args:
+        google_sheet_id (str): ID of the Google Sheet.
+        weekly_report_tab_name (str): Name of the weekly report tab in Google Sheet.
+        service_account_file_path (str): Path to Google service account JSON key.
+        daily_inventory_df (pd.DataFrame): DataFrame of daily inventory levels (BOD/EOD).
+        weekly_shipped_history_df (pd.DataFrame): DataFrame of historical weekly shipped quantities.
+        key_skus_for_report (list): List of SKU IDs for key products to include in the report.
+        product_names_map (dict): Dictionary mapping SKU IDs to their product names.
+
+    Returns:
+        pd.DataFrame: The final DataFrame representing the Weekly Inventory Report.
+                      Returns an empty DataFrame if required inputs are missing or processing fails.
+    """
+    logger.info("Generating Weekly Inventory Report...")
+
+    if daily_inventory_df.empty or weekly_shipped_history_df.empty or not key_skus_for_report:
+        logger.warning("Missing required input data (daily_inventory_df, weekly_shipped_history_df, or key_skus_for_report) for Weekly Inventory Report generation. Returning empty DataFrame.")
+        return pd.DataFrame(columns=['SKU', 'Product', 'Quantity', 'Weekly Avg'])
+
+    # Calculate Current Inventory using the imported function.
+    current_inventory_df = calculate_current_inventory(daily_inventory_df, key_skus_for_report)
+    logger.info(f"Calculated Current Inventory for Weekly Report. Shape: {current_inventory_df.shape}")
+    logger.debug(f"Head:\n{current_inventory_df.head()}")
+
+    # Calculate 12-Month Rolling Average using the imported function.
+    rolling_average_df = calculate_12_month_rolling_average(weekly_shipped_history_df, key_skus_for_report)
+    logger.info(f"Calculated 12-Month Rolling Average for Weekly Report. Shape: {rolling_average_df.shape}")
+    logger.debug(f"Head:\n{rolling_average_df.head()}")
+
+    # Merge current inventory and rolling average DataFrames based on SKU.
+    weekly_report_df = pd.merge(
+        current_inventory_df,
+        rolling_average_df,
+        on='SKU',
+        how='outer' # Use outer merge to include all SKUs from both dataframes
+    )
+    
+    # Add Product Name column using the provided product_names_map.
+    weekly_report_df['Product'] = weekly_report_df['SKU'].map(product_names_map).fillna('N/A')
+
+    # Clean and rename columns for the final report format.
+    weekly_report_df['Quantity'] = weekly_report_df['Current Quantity'].fillna(0).astype(int) 
+    weekly_report_df['Weekly Avg'] = weekly_report_df['12-Month Rolling Average'].apply( 
+        # Handle "Insufficient Data" string from rolling average calculation
+        lambda x: int(round(float(x))) if isinstance(x, (int, float)) else x
+    ).fillna('N/A') # Fill any remaining NaNs after conversion with 'N/A'
+
+    # Select and reorder final columns.
+    final_columns = ['SKU', 'Product', 'Quantity', 'Weekly Avg'] 
+    weekly_report_df = weekly_report_df[final_columns]
+    
+    logger.info(f"Final Weekly Inventory Report prepared. Shape: {weekly_report_df.shape}")
+    logger.debug(f"Head:\n{weekly_report_df.head()}")
+
+    logger.info("Attempting to write Weekly Inventory Report to Google Sheets...")
+    write_google_sheet_data( # Using imported function
+        google_sheet_id, 
+        weekly_report_tab_name + "!A1", # Always write from A1 to clear the whole sheet
+        service_account_file_path,
+        weekly_report_df 
+    )
+    logger.info("Weekly Inventory Report writing process complete.")
+
+    return weekly_report_df
+
+
+# This block is for independent testing of the module.
+if __name__ == "__main__":
+    logger.info("Starting independent test of Weekly Report Generator module...")
+
+    # --- Dummy Configuration and Data for Testing ---
+    # Replace with your actual Google Sheet ID and service account path for real testing.
+    DUMMY_GOOGLE_SHEET_ID = '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo' 
+    DUMMY_WEEKLY_REPORT_TAB = 'Weekly Report' # Ensure this tab exists in your Google Sheet
+    DUMMY_SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\ORA_Automation\config\ora-automation-project-2345f75740f8.json" 
+
+    # Dummy key_skus_for_report and product_names_map (mimicking report_data_loader.py output)
+    DUMMY_KEY_SKUS_FOR_REPORT = ['17612', '17904', '17914', '18675'] 
+    DUMMY_PRODUCT_NAMES_MAP = {
+        '17612': 'PT Kit',
+        '17904': 'Travel Kit',
+        '17914': 'PPR Kit',
+        '18675': 'Ortho Protect'
+    }
+
+    # Dummy daily_inventory_df (mimicking inventory_calculations.py output)
+    DUMMY_DAILY_INVENTORY_DF = pd.DataFrame({
+        'Date': pd.to_datetime(['2025-05-01', '2025-05-02', '2025-05-03', '2025-05-01', '2025-05-02', '2025-05-03', '2025-05-01', '2025-05-02', '2025-05-03', '2025-05-01', '2025-05-02', '2025-05-03']),
+        'SKU': ['17612']*3 + ['17904']*3 + ['17914']*3 + ['18675']*3,
+        'ShippedQty': [10, 5, 2, 0, 0, 0, 20, 10, 5, 0, 0, 0],
+        'ReceivedQty': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        'RepackedQty': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        'BOD_Qty': [615, 605, 600, 214, 214, 214, 416, 396, 386, 776, 776, 776],
+        'EOD_Qty': [605, 600, 598, 214, 214, 214, 396, 386, 381, 776, 776, 776]
+    })
+
+    # Dummy weekly_shipped_history_df (mimicking report_data_loader.py output)
+    # Ensure some SKUs have < 52 weeks history for "Insufficient Data" testing
+    dummy_weekly_shipped_history_df = pd.concat([
+        pd.DataFrame({ # Ensure this is a proper DataFrame creation
+            'WeekEndDate': pd.to_datetime([f'2024-05-12', f'2024-05-19', f'2024-05-26', f'2024-06-02', f'2024-06-09', f'2024-06-16', f'2024-06-23', f'2024-06-30', f'2024-07-07', f'2024-07-14', 
+                                         f'2024-07-21', f'2024-07-28', f'2024-08-04', f'2024-08-11', f'2024-08-18', f'2024-08-25', f'2024-09-01', f'2024-09-08', f'2024-09-15', f'2024-09-22', 
+                                         f'2024-09-29', f'2024-10-06', f'2024-10-13', f'2024-10-20', f'2024-10-27', f'2024-11-03', f'2024-11-10', f'2024-11-17', f'2024-11-24', f'2024-12-01', 
+                                         f'2024-12-08', f'2024-12-15', f'2024-12-22', f'2024-12-29', f'2025-01-05', f'2025-01-12', f'2025-01-19', f'2025-01-26', f'2025-02-02', f'2025-02-09', 
+                                         f'2025-02-16', f'2025-02-23', f'2025-03-02', f'2025-03-09', f'2025-03-16', f'2025-03-23', f'2025-03-30', f'2025-04-06', f'2025-04-13', f'2025-04-20', 
+                                         f'2025-04-27', f'2025-05-04']), # 52 weeks for 17612
+            'SKU': DUMMY_KEY_SKUS_FOR_REPORT[0:1] * 52,
+            'ShippedQuantity': [414, 488, 411, 352, 489, 532, 390, 443, 361, 299, 
+                                330, 380, 420, 450, 400, 370, 320, 300, 280, 250, 
+                                230, 200, 180, 150, 120, 100, 90, 80, 70, 60,   
+                                50, 40, 30, 20, 10, 5, 1, 0, 0, 0,             
+                                10, 15, 20, 25, 30, 35, 40, 45, 50, 55,       
+                                60, 65] 
+        }), # Added closing parenthesis for the first DataFrame
+        pd.DataFrame({
+            'WeekEndDate': pd.to_datetime(['2025-01-01', '2025-01-08', '2025-01-15', '2025-01-22', '2025-01-29']),
+            'SKU': ['17904'] * 5,
+            'ShippedQuantity': [10, 12, 8, 15, 7]
+        }),
+        pd.DataFrame({
+            'WeekEndDate': pd.to_datetime([f'2024-05-12', f'2024-05-19', f'2024-05-26', f'2024-06-02', f'2024-06-09', f'2024-06-16', f'2024-06-23', f'2024-06-30', f'2024-07-07', f'2024-07-14', 
+                                     f'2024-07-21', f'2024-07-28', f'2024-08-04', f'2024-08-11', f'2024-08-18', f'2024-08-25', f'2024-09-01', f'2024-09-08', f'2024-09-15', f'2024-09-22', 
+                                     f'2024-09-29', f'2024-10-06', f'2024-10-13', f'2024-10-20', f'2024-10-27', f'2024-11-03', f'2024-11-10', f'2024-11-17', f'2024-11-24', f'2024-12-01', 
+                                     f'2024-12-08', f'2024-12-15', f'2024-12-22', f'2024-12-29', f'2025-01-05', f'2025-01-12', f'2025-01-19', f'2025-01-26', f'2025-02-02', f'2025-02-09', 
+                                     f'2025-02-16', f'2025-02-23', f'2025-03-02', f'2025-03-09', f'2025-03-16', f'2025-03-23', f'2025-03-30', f'2025-04-06', f'2025-04-13', f'2025-04-20', 
+                                     f'2025-04-27', f'2025-05-04']), # 52 weeks
+            'SKU': ['17914'] * 52,
+            'ShippedQuantity': [75 + i % 5 for i in range(52)] # Varying values for avg
+        }),
+        pd.DataFrame({
+            'WeekEndDate': pd.to_datetime([f'2024-06-01', f'2024-06-08', f'2024-06-15', f'2024-06-22', f'2024-06-29', 
+                                         f'2024-07-06', f'2024-07-13', f'2024-07-20', f'2024-07-27', f'2024-08-03', 
+                                         f'2024-08-10', f'2024-08-17', f'2024-08-24', f'2024-08-31', f'2024-09-07', 
+                                         f'2024-09-14', f'2024-09-21', f'2024-09-28', f'2024-10-05', f'2024-10-12', 
+                                         f'2024-10-19', f'2024-10-26', f'2024-11-02', f'2024-11-09', f'2024-11-16', 
+                                         f'2024-11-23', f'2024-11-30', f'2024-12-07', f'2024-12-14', f'2024-12-21', 
+                                         f'2024-12-28', f'2025-01-05', f'2025-01-12', f'2025-01-19', f'2025-01-26', 
+                                         f'2025-02-02', f'2025-02-09', f'2025-02-16', f'2025-02-23', f'2025-03-02', 
+                                         f'2025-03-09', f'2025-03-16', f'2025-03-22', f'2025-03-29', f'2025-04-05', 
+                                         f'2025-04-12', f'2025-04-19', f'2025-04-26', f'2025-05-03', f'2025-05-10']), # 50 weeks
+            'SKU': ['18675'] * 50,
+            'ShippedQuantity': [20 + i % 3 for i in range(50)]
+        })
+    ]).reset_index(drop=True)
+
+
+    # Test generate_weekly_inventory_report
+    logger.info("Testing generate_weekly_inventory_report...")
+    weekly_report_result_df = generate_weekly_inventory_report(
+        google_sheet_id=DUMMY_GOOGLE_SHEET_ID,
+        weekly_report_tab_name=DUMMY_WEEKLY_REPORT_TAB,
+        service_account_file_path=DUMMY_SERVICE_ACCOUNT_KEY_PATH,
+        daily_inventory_df=DUMMY_DAILY_INVENTORY_DF,
+        weekly_shipped_history_df=dummy_weekly_shipped_history_df,
+        key_skus_for_report=DUMMY_KEY_SKUS_FOR_REPORT,
+        product_names_map=DUMMY_PRODUCT_NAMES_MAP
+    )
+    
+    logger.info(f"Returned Weekly Report DataFrame shape: {weekly_report_result_df.shape}")
+    logger.debug(f"Weekly Report DataFrame head:\n{weekly_report_result_df.head()}")
+
+    logger.info("Independent test of Weekly Report Generator module finished.")

@@ -1,0 +1,262 @@
+import pandas as pd
+import datetime
+import logging
+
+# Setup logging for this module. This assumes setup_logging from utils.logging_config
+# has already been called in the main application entry point.
+logger = logging.getLogger(__name__)
+
+def format_sku_with_lot(sku_id: str, sku_lot_map: dict) -> str:
+    """
+    Formats a SKU by appending its active lot number if found in the SKU-Lot map.
+    This helper function ensures SKUs are consistently represented in reports.
+
+    Args:
+        sku_id (str): The base SKU ID.
+        sku_lot_map (dict): A dictionary mapping SKU IDs to their active lot numbers.
+
+    Returns:
+        str: The formatted SKU (e.g., "12345 - LOTABC") or the original SKU if no lot is found.
+    """
+    if sku_id in sku_lot_map:
+        lot_number = sku_lot_map[sku_id]
+        formatted_sku = f"{sku_id} - {lot_number}"
+        logger.debug(f"Formatted SKU {sku_id} with lot: {formatted_sku}")
+        return formatted_sku
+    logger.debug(f"SKU {sku_id} not found in lot map, returning original SKU.")
+    return sku_id
+
+
+def process_shipstation_shipments_to_daily_df(raw_shipments_data: list[dict], bundle_config: dict) -> pd.DataFrame:
+    """
+    Processes raw ShipStation shipment data (typically from Golden_Test_Data_Raw sheet or ShipStation API)
+    into a flattened Pandas DataFrame. It applies bundling logic, expanding bundle SKUs into their
+    component SKUs and quantities. This function focuses on 'ShippedItem' transactions for item quantities.
+
+    Args:
+        raw_shipments_data (list[dict]): A list of dictionaries, where each dictionary represents a row
+                                         of raw shipment or transaction data.
+        bundle_config (dict): A dictionary defining product bundles. Keys are bundle SKUs,
+                              values specify component_id(s) and multiplier(s).
+
+    Returns:
+        pd.DataFrame: A DataFrame with processed shipment items, including columns like
+                      'Date', 'OrderNumber', 'BaseSKU', 'QuantityShipped', 'OriginalSKU', 'ItemName'.
+                      Returns an empty DataFrame if processing fails or no relevant data is found.
+    """
+    processed_items = []
+    
+    for i, row_dict in enumerate(raw_shipments_data):
+        # Log the original order number for context in debugging.
+        current_order_number = row_dict.get('Order_Number')
+        logger.debug(f"Processing row {i+2} (from raw data). Original Order_Number: '{current_order_number}'")
+
+        # Only process rows that are 'ShippedItem' transactions.
+        if row_dict.get('Transaction_Type') != 'ShippedItem':
+            logger.debug(f"Skipping row {i+2}: Not a 'ShippedItem' transaction.")
+            continue
+
+        # Extract and parse ship date safely.
+        ship_date_str = row_dict.get('Date')
+        try:
+            ship_date = pd.to_datetime(ship_date_str).date() if ship_date_str else None
+        except Exception as e:
+            logger.warning(f"Failed to parse ship date '{ship_date_str}' in row {i+2}. Setting to None. Error: {e}")
+            ship_date = None
+
+        # Extract and clean order number.
+        order_number = row_dict.get('Order_Number')
+        order_number = str(order_number).strip() if order_number is not None else ''
+        if order_number.upper() == 'NULL' or order_number == '':
+            order_number = None
+        
+        logger.debug(f"Row {i+2} (ShippedItem). Processed Order_Number: '{order_number}'")
+
+        # Extract and clean original product SKU and quantity.
+        original_product_id = str(row_dict.get('SKU_With_Lot')) if row_dict.get('SKU_With_Lot') is not None else None
+        original_quantity_raw = row_dict.get('Quantity_Shipped')
+
+        try:
+            original_quantity = int(original_quantity_raw) if original_quantity_raw is not None else 0
+        except ValueError:
+            logger.warning(
+                f"Non-numeric quantity '{original_quantity_raw}' for SKU '{original_product_id}' "
+                f"in Order {order_number} (row {i+2}). Defaulting quantity to 0."
+            )
+            original_quantity = 0
+
+        item_name = 'N/A' # Placeholder; actual product names will be mapped later.
+
+        # Skip if essential data is missing or quantity is zero.
+        if original_product_id is None or original_product_id == '' or original_quantity == 0:
+            logger.debug(
+                f"Skipping shipment item in Order {order_number}: Missing SKU ('{original_product_id}') "
+                f"or zero quantity ({original_quantity}) in row {i+2}."
+            )
+            continue
+
+        # Determine the base SKU (without lot info if present).
+        base_sku = original_product_id.split(' - ')[0] if ' - ' in original_product_id else original_product_id
+
+        # Apply bundling logic.
+        if base_sku in bundle_config:
+            bundle_def = bundle_config[base_sku]
+            if isinstance(bundle_def, dict): # Single component bundle
+                component_sku = bundle_def.get('component_id')
+                multiplier = bundle_def.get('multiplier', 1)
+                expanded_quantity = original_quantity * multiplier
+                processed_items.append({
+                    'Date': ship_date,
+                    'OrderNumber': order_number,
+                    'BaseSKU': component_sku, # Use component SKU here
+                    'QuantityShipped': expanded_quantity,
+                    'OriginalSKU': original_product_id, # Keep original bundle SKU for traceability
+                    'ItemName': item_name
+                })
+                logger.debug(
+                    f"Expanded single-component bundle {original_product_id} "
+                    f"to {expanded_quantity}x {component_sku} for Order {order_number}."
+                )
+            elif isinstance(bundle_def, list): # Multi-component bundle
+                for component_info in bundle_def:
+                    component_sku = component_info.get('component_id')
+                    multiplier = component_info.get('multiplier', 1)
+                    expanded_quantity = original_quantity * multiplier
+                    processed_items.append({
+                        'Date': ship_date,
+                        'OrderNumber': order_number,
+                        'BaseSKU': component_sku, # Use component SKU here
+                        'QuantityShipped': expanded_quantity,
+                        'OriginalSKU': original_product_id, # Keep original bundle SKU for traceability
+                        'ItemName': item_name
+                    })
+                    logger.debug(
+                        f"Expanded multi-component bundle {original_product_id} "
+                        f"to {expanded_quantity}x {component_sku} for Order {order_number}."
+                    )
+        else:
+            # If not a bundle, add the item as-is.
+            processed_items.append({
+                'Date': ship_date,
+                'OrderNumber': order_number,
+                'BaseSKU': base_sku,
+                'QuantityShipped': original_quantity,
+                'OriginalSKU': original_product_id,
+                'ItemName': item_name
+            })
+    
+    # Create DataFrame from processed items.
+    shipments_df = pd.DataFrame(processed_items)
+    
+    # Ensure 'Date' column is in datetime format and sort the DataFrame by date.
+    if 'Date' in shipments_df.columns:
+        shipments_df['Date'] = pd.to_datetime(shipments_df['Date'])
+        shipments_df = shipments_df.sort_values(by='Date').reset_index(drop=True)
+    
+    logger.info(f"Finished processing raw shipments. Resulting DataFrame shape: {shipments_df.shape}")
+    logger.debug(f"Processed shipments DataFrame head:\n{shipments_df.head()}")
+    return shipments_df
+
+def process_daily_aggregations(processed_shipments_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Aggregates processed shipment data to calculate daily shipped quantities per SKU
+    and daily unique order counts.
+
+    Args:
+        processed_shipments_df (pd.DataFrame): DataFrame of processed shipment items
+                                               from process_shipstation_shipments_to_daily_df.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame]: 
+            - daily_shipped_sku_qty (pd.DataFrame): Daily total shipped quantity per SKU.
+            - daily_order_counts (pd.DataFrame): Daily count of unique orders.
+                                                Note: This function assumes unique orders are marked in a way
+                                                that can be counted per day. If the input df only contains
+                                                'ShippedItem' transactions, a separate 'ShippedOrder' source
+                                                might be needed for true unique order counts. For now, it
+                                                will count unique OrderNumbers from the input if present.
+                                                If OrderNumber is not present, daily_order_counts will be empty.
+    """
+    logger.info("Aggregating daily shipped quantities per SKU...")
+    if 'Date' not in processed_shipments_df.columns or 'BaseSKU' not in processed_shipments_df.columns or 'QuantityShipped' not in processed_shipments_df.columns:
+        logger.error("Missing required columns ('Date', 'BaseSKU', 'QuantityShipped') for daily SKU quantity aggregation.")
+        return pd.DataFrame(), pd.DataFrame()
+
+    daily_shipped_sku_qty = processed_shipments_df.groupby(['Date', 'BaseSKU'])['QuantityShipped'].sum().reset_index()
+    daily_shipped_sku_qty.rename(columns={'QuantityShipped': 'TotalQtyShipped', 'BaseSKU': 'SKU'}, inplace=True)
+    daily_shipped_sku_qty['Date'] = pd.to_datetime(daily_shipped_sku_qty['Date']).dt.normalize()
+    logger.info(f"Daily shipped SKU quantities DataFrame shape: {daily_shipped_sku_qty.shape}")
+    logger.debug(f"Daily shipped SKU quantities head:\n{daily_shipped_sku_qty.head()}")
+
+    logger.info("Calculating daily unique order counts...")
+    daily_order_counts = pd.DataFrame(columns=['Date', 'CountOfOrders']) # Initialize empty
+    if 'OrderNumber' in processed_shipments_df.columns and not processed_shipments_df['OrderNumber'].empty:
+        # Filter out None/NaN OrderNumbers before counting unique ones
+        valid_orders_df = processed_shipments_df[processed_shipments_df['OrderNumber'].notna()]
+        if not valid_orders_df.empty:
+            daily_order_counts = valid_orders_df.groupby('Date')['OrderNumber'].nunique().reset_index()
+            daily_order_counts.rename(columns={'OrderNumber': 'CountOfOrders'}, inplace=True)
+            daily_order_counts['Date'] = pd.to_datetime(daily_order_counts['Date']).dt.normalize()
+            logger.info(f"Daily unique order counts DataFrame shape: {daily_order_counts.shape}")
+            logger.debug(f"Daily unique order counts head:\n{daily_order_counts.head()}")
+        else:
+            logger.warning("No valid OrderNumbers found for unique order count calculation.")
+    else:
+        logger.warning("No 'OrderNumber' column or no data in 'OrderNumber' column for unique order count calculation. Returning empty daily_order_counts DataFrame.")
+    
+    return daily_shipped_sku_qty, daily_order_counts
+
+# This block is for independent testing of the module.
+if __name__ == "__main__":
+    # Simulate logging setup for independent module testing
+    logging.basicConfig(level=logging.DEBUG, 
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+
+    logger.info("Starting independent test of Shipment Processor module...")
+
+    # --- Dummy Configuration for testing (e.g., BUNDLE_CONFIG) ---
+    DUMMY_BUNDLE_CONFIG = {
+        "18225": {"component_id": "17612", "multiplier": 40},
+        "18605": [
+            {"component_id": "17612", "multiplier": 4},
+            {"component_id": "17914", "multiplier": 1},
+            {"component_id": "17904", "multiplier": 1},
+        ],
+    }
+
+    # --- Dummy Raw Shipment Data (mimicking Golden_Test_Data_Raw 'ShippedItem' transactions) ---
+    # This data represents already-parsed rows, similar to what get_google_sheet_data might return
+    # if it fetched the 'ShippedItem' rows and converted them to dicts.
+    dummy_raw_shipments_data = [
+        # Non-bundle
+        {'Date': '2025-06-01', 'Order_Number': 'ORD100', 'Transaction_Type': 'ShippedItem', 'SKU_With_Lot': '17612', 'Quantity_Shipped': '10'},
+        # Single-component bundle
+        {'Date': '2025-06-01', 'Order_Number': 'ORD101', 'Transaction_Type': 'ShippedItem', 'SKU_With_Lot': '18225', 'Quantity_Shipped': '1'}, # Expands to 40x 17612
+        # Multi-component bundle
+        {'Date': '2025-06-02', 'Order_Number': 'ORD102', 'Transaction_Type': 'ShippedItem', 'SKU_With_Lot': '18605', 'Quantity_Shipped': '2'}, # Expands to 2x (4x 17612, 1x 17914, 1x 17904)
+        # Another non-bundle on same day as multi-component bundle
+        {'Date': '2025-06-02', 'Order_Number': 'ORD102', 'Transaction_Type': 'ShippedItem', 'SKU_With_Lot': '17975', 'Quantity_Shipped': '5'},
+        # Another order on different day
+        {'Date': '2025-06-03', 'Order_Number': 'ORD103', 'Transaction_Type': 'ShippedItem', 'SKU_With_Lot': '17612', 'Quantity_Shipped': '15'},
+        # A non-shipped item to ensure filtering
+        {'Date': '2025-06-01', 'Order_Number': 'REC200', 'Transaction_Type': 'ReceivedInv', 'SKU_With_Lot': '17612', 'Quantity_Shipped': '50'},
+        # Item with non-numeric quantity
+        {'Date': '2025-06-04', 'Order_Number': 'ORD104', 'Transaction_Type': 'ShippedItem', 'SKU_With_Lot': '17612', 'Quantity_Shipped': 'abc'},
+        # Item with missing SKU/Quantity
+        {'Date': '2025-06-05', 'Order_Number': 'ORD105', 'Transaction_Type': 'ShippedItem', 'SKU_With_Lot': None, 'Quantity_Shipped': '10'},
+    ]
+
+    # Test process_shipstation_shipments_to_daily_df
+    logger.info("Testing process_shipstation_shipments_to_daily_df...")
+    processed_df = process_shipstation_shipments_to_daily_df(dummy_raw_shipments_data, DUMMY_BUNDLE_CONFIG)
+    logger.info(f"Processed Shipments DataFrame:\n{processed_df}")
+
+    # Test process_daily_aggregations
+    logger.info("Testing process_daily_aggregations...")
+    daily_shipped_qty_df, daily_order_counts_df = process_daily_aggregations(processed_df)
+    logger.info(f"Daily Shipped Quantity DataFrame:\n{daily_shipped_qty_df}")
+    logger.info(f"Daily Order Counts DataFrame:\n{daily_order_counts_df}")
+
+    logger.info("Independent test of Shipment Processor module finished.")
+

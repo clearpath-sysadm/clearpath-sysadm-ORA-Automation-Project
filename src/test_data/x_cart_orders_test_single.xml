@@ -1,0 +1,39 @@
+
+<DentistSelectOrders>
+  <order>
+    <orderid>999998</orderid>
+    <date>1750440373</date>
+    <date2>2025-06-20 12:26:13</date2>
+    <dentistcode>L1455</dentistcode>
+    <shipping>Standard Flat Rate Ground</shipping>
+    <company>TEST</company>
+    <email>nneely@axiomcontractfilling.com</email>
+    <s_firstname>TEST </s_firstname>
+    <s_lastname>TEST</s_lastname>
+    <s_company>TEST</s_company>
+    <s_address>TEST</s_address>
+    <s_city>Miami</s_city>
+    <s_state>FL</s_state>
+    <s_zipcode>33133</s_zipcode>
+    <s_country>US</s_country>
+    <s_phone>(763)-585-9328</s_phone>
+    <b_firstname>TEST </b_firstname>
+    <b_lastname>TEST</b_lastname>
+    <b_company>TEST</b_company>
+    <b_address>TEST</b_address>
+    <b_city>Miami</b_city>
+    <b_state>FL</b_state>
+    <b_zipcode>33133</b_zipcode>
+    <b_country>US</b_country>
+    <b_phone>(763)-585-9328</b_phone>
+    <shipping_cost>19.95</shipping_cost>
+    <customerid>53245</customerid>
+    <order_detail>
+      <orderid>999998</orderid>
+      <amount>2</amount>
+      <product>Case(s) of OraCare&amp;trade; Oral Health Rinse</product>
+      <productid>17612</productid>
+    </order_detail>
+  </order>
+</DentistSelectOrders>
+

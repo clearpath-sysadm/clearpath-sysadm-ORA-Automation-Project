@@ -1,0 +1,220 @@
+import pandas as pd
+import time
+import logging
+import datetime # <--- ADDED THIS IMPORT
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
+# Setup logging for this module. This assumes setup_logging from utils.logging_config
+# has already been called in the main application entry point.
+logger = logging.getLogger(__name__)
+
+# Define SCOPES here for independent operation of this module if needed for testing,
+# but ideally, these would come from a central config/settings.py in a full application.
+_SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
+def get_google_sheet_data(spreadsheet_id: str, range_name: str, service_account_file_path: str) -> list[list]:
+    """
+    Retrieves data from a Google Sheet using a service account file.
+    Includes retry logic for HttpError 503 (Service Unavailable).
+
+    Args:
+        spreadsheet_id (str): The ID of the Google Sheet spreadsheet.
+        range_name (str): The A1 notation or name of the range to retrieve (e.g., 'Sheet1!A:D').
+        service_account_file_path (str): The file path to the Google service account JSON key.
+
+    Returns:
+        list[list]: A list of lists, where each inner list represents a row of data from the sheet.
+                    Returns an empty list if no data is found or an error occurs.
+    """
+    max_retries = 15
+    initial_delay = 1  # seconds
+
+    for attempt in range(max_retries):
+        try:
+            # Authenticate using the service account credentials.
+            creds = service_account.Credentials.from_service_account_file(service_account_file_path, scopes=_SCOPES)
+            service = build('sheets', 'v4', credentials=creds)
+            
+            # Make the API call to get the sheet values.
+            result = service.spreadsheets().values().get(
+                spreadsheetId=spreadsheet_id, range=range_name).execute()
+            values = result.get('values', [])
+
+            if not values:
+                logger.warning(f"No data found in Google Sheet: '{range_name}'")
+                return []
+            else:
+                logger.info(f"Successfully retrieved data from Google Sheet: '{range_name}'")
+                return values
+        except HttpError as e:
+            # Handle HttpError 503 (Service Unavailable) with retry.
+            if e.resp.status == 503:
+                logger.warning(
+                    f"HttpError 503 (Service Unavailable) accessing Google Sheet '{spreadsheet_id}' "
+                    f"range '{range_name}'. Retrying in {initial_delay}s... (Attempt {attempt + 1}/{max_retries})"
+                )
+                time.sleep(initial_delay)
+                initial_delay *= 2  # Exponential backoff
+            else:
+                # Log other HttpErrors without retrying.
+                logger.error(
+                    f"Error accessing Google Sheet '{spreadsheet_id}' range '{range_name}': {e}",
+                    exc_info=True # Log full traceback
+                )
+                return []
+        except FileNotFoundError:
+            # Log error if service account file is not found.
+            logger.error(
+                f"Error: Service account file not found at '{service_account_file_path}'. Please check the path.",
+                exc_info=True
+            )
+            return []
+        except Exception as e:
+            # Catch any other unexpected errors.
+            logger.error(
+                f"An unexpected error occurred accessing Google Sheet '{spreadsheet_id}' "
+                f"range '{range_name}': {e}",
+                exc_info=True
+            )
+            return []
+    
+    # If all retries fail.
+    logger.error(
+        f"Failed to retrieve data from Google Sheet '{spreadsheet_id}' range '{range_name}' "
+        f"after {max_retries} retries due to HttpError 503."
+    )
+    return []
+
+def write_google_sheet_data(spreadsheet_id: str, range_name: str, service_account_file_path: str, df_to_write: pd.DataFrame) -> bool:
+    """
+    Writes a Pandas DataFrame to a Google Sheet, clearing existing data in the specified range first.
+    Includes retry logic for HttpError 503.
+
+    Args:
+        spreadsheet_id (str): The ID of the Google Sheet spreadsheet.
+        range_name (str): The A1 notation or name of the range to write to (e.g., 'Sheet1!A1').
+        service_account_file_path (str): The file path to the Google service account JSON key.
+        df_to_write (pd.DataFrame): The Pandas DataFrame to write to the sheet.
+
+    Returns:
+        bool: True if the write operation was successful, False otherwise.
+    """
+    max_retries = 5
+    initial_delay = 1 # seconds
+
+    # Prepare data for writing: headers first, then rows.
+    # Convert all DataFrame values to string to avoid issues with mixed types in Google Sheets.
+    values_to_write = [df_to_write.columns.tolist()] + df_to_write.astype(str).values.tolist()
+
+    for attempt in range(max_retries):
+        try:
+            # Authenticate using the service account credentials.
+            creds = service_account.Credentials.from_service_account_file(service_account_file_path, scopes=_SCOPES)
+            service = build('sheets', 'v4', credentials=creds)
+
+            # Clear existing data in the specified range.
+            clear_request_body = {} 
+            service.spreadsheets().values().clear(
+                spreadsheetId=spreadsheet_id,
+                range=range_name,
+                body=clear_request_body
+            ).execute()
+            logger.info(f"Cleared existing data in Google Sheet range: '{range_name}'.")
+
+            # Write new data to the sheet.
+            body = {
+                'values': values_to_write
+            }
+            result = service.spreadsheets().values().update(
+                spreadsheetId=spreadsheet_id,
+                range=range_name,
+                valueInputOption='RAW', # Treat input as raw values (not formulas)
+                body=body
+            ).execute()
+            logger.info(f"{result.get('updatedCells')} cells updated in Google Sheet range: '{range_name}'.")
+            return True # Successfully written
+        except HttpError as e:
+            # Handle HttpError 503 (Service Unavailable) with retry.
+            if e.resp.status == 503:
+                logger.warning(
+                    f"HttpError 503 (Service Unavailable) writing to Google Sheet '{spreadsheet_id}' "
+                    f"range '{range_name}'. Retrying in {initial_delay}s... (Attempt {attempt + 1}/{max_retries})"
+                )
+                time.sleep(initial_delay)
+                initial_delay *= 2
+            else:
+                # Log other HttpErrors without retrying.
+                logger.error(
+                    f"Error writing to Google Sheet '{spreadsheet_id}' range '{range_name}': {e}", 
+                    exc_info=True
+                )
+                return False
+        except FileNotFoundError:
+            # Log error if service account file is not found.
+            logger.error(
+                f"Error: Service account file not found at '{service_account_file_path}'. Please check the path.", 
+                exc_info=True
+            )
+            return False
+        except Exception as e:
+            # Catch any other unexpected errors.
+            logger.error(
+                f"An unexpected error occurred writing to Google Sheet '{spreadsheet_id}' "
+                f"range '{range_name}': {e}", 
+                exc_info=True
+            )
+            return False
+    
+    # If all retries fail.
+    logger.error(
+        f"Failed to write data to Google Sheet '{spreadsheet_id}' range '{range_name}' "
+        f"after {max_retries} retries due to HttpError 503."
+    )
+    return False
+
+# This block is for independent testing of the module.
+if __name__ == "__main__":
+    # Simulate logging setup for independent module testing
+    logging.basicConfig(level=logging.INFO, 
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    
+    logger.info("Starting independent test of Google Sheets API Client module...")
+
+    # --- DUMMY CONFIGURATION FOR TESTING ---
+    # Replace with your actual Google Sheet ID and service account path for real testing.
+    # Ensure the service account has 'Editor' or 'Writer' permissions on the Google Sheet.
+    DUMMY_GOOGLE_SHEET_ID = '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo' # Replace with a test Google Sheet ID
+    # This path should ideally be read from a secret manager in production.
+    # For testing, ensure it points to a valid service account JSON key.
+    DUMMY_SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\ORA_Automation\config\ora-automation-project-2345f75740f8.json" 
+    
+    # Test get_google_sheet_data
+    TEST_READ_RANGE = 'ORA_Configuration!A:F' # Example range to read from
+    logger.info(f"Attempting to read from Google Sheet ID '{DUMMY_GOOGLE_SHEET_ID}', range '{TEST_READ_RANGE}'...")
+    read_data = get_google_sheet_data(DUMMY_GOOGLE_SHEET_ID, TEST_READ_RANGE, DUMMY_SERVICE_ACCOUNT_KEY_PATH)
+    if read_data:
+        logger.info(f"Successfully read {len(read_data)} rows. First 3 rows: {read_data[:3]}")
+    else:
+        logger.warning("No data read or an error occurred during reading.")
+
+    # Test write_google_sheet_data
+    TEST_WRITE_RANGE = 'TestOutput!A1' # Example range to write to (ensure this sheet exists)
+    # Create a dummy DataFrame to write
+    dummy_df_to_write = pd.DataFrame({
+        'Column1': ['A', 'B', 'C'],
+        'Column2': [10, 20, 30],
+        'DateCol': [datetime.date.today(), datetime.date.today() + datetime.timedelta(days=1), datetime.date.today() + datetime.timedelta(days=2)]
+    })
+    logger.info(f"Attempting to write to Google Sheet ID '{DUMMY_GOOGLE_SHEET_ID}', range '{TEST_WRITE_RANGE}'...")
+    # NOTE: This will clear the specified range and write data. Use a dedicated test sheet!
+    # Ensure the 'TestOutput' tab exists in your Google Sheet.
+    # If the sheet/tab does not exist, you will get an API error.
+    write_success = write_google_sheet_data(DUMMY_GOOGLE_SHEET_ID, TEST_WRITE_RANGE, DUMMY_SERVICE_ACCOUNT_KEY_PATH, dummy_df_to_write)
+    if write_success:
+        logger.info("Data successfully written to Google Sheet.")
+    else:
+        logger.warning("Failed to write data to Google Sheet.")
+
+    logger.info("Independent test of Google Sheets API Client module finished.")
