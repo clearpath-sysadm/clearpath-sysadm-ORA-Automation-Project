@@ -1,0 +1,24 @@
+# cloudbuild.yaml
+steps:
+# Step to deploy shipstation-reporter-function
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      # Copy requirements.txt to src/ for deployment context
+      cp requirements.txt src/
+      
+      gcloud functions deploy shipstation-reporter-function \
+        --runtime python311 \
+        --entry-point shipstation_reporter.main \
+        --source=./src \
+        --trigger-http \
+        --allow-unauthenticated \
+        --region=us-central1 \
+        --memory=256MB \
+        --timeout=300s \
+        --set-env-vars GCP_PROJECT_ID=ora-automation-project
+  dir: . # This ensures commands run from the project root
+
+# You will add similar blocks for your other functions here when you're ready to deploy them.

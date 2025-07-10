@@ -1,0 +1,10 @@
+pandas
+requests
+sqlalchemy
+gspread
+google-oauth2
+google-cloud-secret-manager
+google-auth
+google-api-python-client
+python-dateutil
+functions-framework
