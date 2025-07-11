@@ -31,12 +31,12 @@ from src.services.reporting_logic import (
 )
 from src.services.data_processing import shipment_processor # Import the shipment_processor
 
-logger = logging.getLogger(__name__)
+#########logger = logging.getLogger(__name__)
 
 # Renamed original main() to run_reporter_logic()
 def run_reporter_logic():
     """Contains the core logic of the ShipStation Reporter."""
-    logger.info("Starting ShipStation Reporter Script (core logic)...")
+    #########logger.info("Starting ShipStation Reporter Script (core logic)...")
 
     # Load all configuration data
     (
@@ -52,7 +52,7 @@ def run_reporter_logic():
     ) = report_data_loader.load_all_configuration_data(settings.GOOGLE_SHEET_ID)
 
     if initial_inventory is None or eom_previous_month_data is None: # Check both initial inventories
-        logger.critical("Failed to load initial configuration data. Exiting script.")
+        #########logger.critical("Failed to load initial configuration data. Exiting script.")
         return
 
     # Load raw data for processing
@@ -68,7 +68,7 @@ def run_reporter_logic():
 
 
     # --- Monthly Charge Report Generation ---
-    logger.info("Generating Monthly Charge Report...")
+    #########logger.info("Generating Monthly Charge Report...")
     monthly_report_df, monthly_totals_df = monthly_report_generator.generate_monthly_charge_report(
         rates,
         pallet_counts,
@@ -87,20 +87,20 @@ def run_reporter_logic():
             final_monthly_df = pd.concat([monthly_report_df, monthly_totals_df.rename(index={0: 'TOTAL'})])
         else:
             final_monthly_df = monthly_report_df # If totals are empty, just use the main report
-            logger.warning("Monthly totals DataFrame was empty or None. Only main monthly report data will be written.")
+            #########logger.warning("Monthly totals DataFrame was empty or None. Only main monthly report data will be written.")
 
         write_dataframe_to_sheet(final_monthly_df, settings.GOOGLE_SHEET_ID, settings.MONTHLY_CHARGE_REPORT_OUTPUT_TAB_NAME)
-        logger.info("Monthly Charge Report written successfully.")
+        #########logger.info("Monthly Charge Report written successfully.")
     else:
-        logger.error("Monthly Charge Report generation failed.")
+        #########logger.error("Monthly Charge Report generation failed.")
 
 
     # --- Weekly Inventory Report Generation ---
-    logger.info("Generating Weekly Inventory Report...")
+    #########logger.info("Generating Weekly Inventory Report...")
     
     # Pass the weekly_report_start_date and weekly_report_end_date to calculate_current_inventory
     # Note: This still uses 'initial_inventory' (EOD_Prior_Week) for the weekly report's starting point
-    current_inventory_df = inventory_calculations.calculate_current_inventory(
+        current_inventory_df = inventory_calculations.calculate_current_inventory(
         initial_inventory, # This is EOD_Prior_Week from ORA_Configuration for weekly report
         inventory_transactions_df,
         shipped_items_df,
@@ -113,7 +113,7 @@ def run_reporter_logic():
     if weekly_shipped_history_df is not None:
         rolling_average_df = average_calculations.calculate_12_month_rolling_average(weekly_shipped_history_df)
     else:
-        logger.warning("weekly_shipped_history_df was None. Skipping 12-Month Rolling Average calculation.")
+        #########logger.warning("weekly_shipped_history_df was None. Skipping 12-Month Rolling Average calculation.")
         rolling_average_df = None # Set to None to prevent subsequent crashes
 
     
@@ -130,11 +130,11 @@ def run_reporter_logic():
         weekly_report_df = weekly_report_df.rename(columns={'Quantity': 'Current Inventory'})
         
         write_dataframe_to_sheet(weekly_report_df[['SKU', 'Product', 'Current Inventory', '12-Month Rolling Average']], settings.GOOGLE_SHEET_ID, settings.WEEKLY_REPORT_OUTPUT_TAB_NAME)
-        logger.info("Weekly Inventory Report written successfully.")
+        #########logger.info("Weekly Inventory Report written successfully.")
     else:
-        logger.error("Weekly Inventory Report generation failed. Missing current inventory data or product names map.")
+        #########logger.error("Weekly Inventory Report generation failed. Missing current inventory data or product names map.")
 
-    logger.info("Script core logic finished successfully.") # Added this line for clarity
+    #########logger.info("Script core logic finished successfully.") # Added this line for clarity
 
 
 # This is the new entry point for the Cloud Function (HTTP trigger)
@@ -168,7 +168,7 @@ def shipstation_reporter_http_trigger(request):
     # setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
     # Also remove any lines that set up local file logging, like log_file_path = ...
 
-    logger.info("Cloud Function received HTTP trigger. Testing basic response for health check.")
+    #########logger.info("Cloud Function received HTTP trigger. Testing basic response for health check.")
     return 'Hello World! Container is up and running.', 200
 
 
