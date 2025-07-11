@@ -3,26 +3,16 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-# DEBUGGING STEP: List contents of the project for verification
+# This step lists the contents of the project for debugging purposes.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args: ['-c', 'ls -R .']
   dir: .
 
-# Step to deploy shipstation-reporter-function
+# This step deploys the Cloud Function.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args:
     - '-c'
-    - |
-      gcloud functions deploy shipstation-reporter-function \
-        --runtime python311 \
-        --entry-point src.shipstation_reporter.shipstation_reporter_http_trigger \ 
-        --source=. \
-        --trigger-http \
-        --allow-unauthenticated \
-        --region=us-central1 \
-        --memory=256MB \
-        --timeout=600s \
-        --set-env-vars GCP_PROJECT_ID=ora-automation-project
+    - "gcloud functions deploy shipstation-reporter-function --runtime python311 --entry-point src.shipstation_reporter.shipstation_reporter_http_trigger --source=. --trigger-http --allow-unauthenticated --region=us-central1 --memory=256MB --timeout=600s --set-env-vars GCP_PROJECT_ID=ora-automation-project"
   dir: .
