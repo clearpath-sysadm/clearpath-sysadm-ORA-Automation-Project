@@ -100,7 +100,7 @@ def run_reporter_logic():
     
     # Pass the weekly_report_start_date and weekly_report_end_date to calculate_current_inventory
     # Note: This still uses 'initial_inventory' (EOD_Prior_Week) for the weekly report's starting point
-        current_inventory_df = inventory_calculations.calculate_current_inventory(
+    current_inventory_df = inventory_calculations.calculate_current_inventory(
         initial_inventory, # This is EOD_Prior_Week from ORA_Configuration for weekly report
         inventory_transactions_df,
         shipped_items_df,
