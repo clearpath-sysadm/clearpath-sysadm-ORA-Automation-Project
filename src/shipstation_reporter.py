@@ -1,17 +1,17 @@
 # TESTING DEPLOYMENT 2025-07-10 (2ND ATTEMPT)#
 
 
-# import pandas as pd
+import pandas as pd
 # from datetime import datetime, date # Import date as well for explicit date objects
 # import os
 # import sys
 import logging
 
-# --- Dynamic Path Adjustment for Module Imports ---
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# # --- Dynamic Path Adjustment for Module Imports ---
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_dir, '..'))
+# if project_root not in sys.path:
+#     sys.path.insert(0, project_root)
 
 # # --- Logging Configuration ---
 # from utils.logging_config import setup_logging
