@@ -4,7 +4,7 @@ sqlalchemy
 gspread
 google-oauth2
 google-cloud-secret-manager
-google-auth
+google-oauth2
 google-api-python-client
 python-dateutil
 functions-framework
