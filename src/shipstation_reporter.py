@@ -1,7 +1,7 @@
 # TESTING DEPLOYMENT 2025-07-10 (2ND ATTEMPT)#
 
 
-import pandas as pd
+# import pandas as pd
 # from datetime import datetime, date # Import date as well for explicit date objects
 # import os
 # import sys
@@ -20,15 +20,15 @@ import logging
 # os.makedirs(log_dir, exist_ok=True)
 # setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
 
-from config import settings
-from src.services.google_sheets.api_client import get_google_sheet_data, write_dataframe_to_sheet
-from src.services.reporting_logic import (
-    inventory_calculations,
-    average_calculations,
-    monthly_report_generator,
-    report_data_loader
-)
-from src.services.data_processing import shipment_processor # Import the shipment_processor
+# from config import settings
+# from src.services.google_sheets.api_client import get_google_sheet_data, write_dataframe_to_sheet
+# from src.services.reporting_logic import (
+#     inventory_calculations,
+#     average_calculations,
+#     monthly_report_generator,
+#     report_data_loader
+# )
+# from src.services.data_processing import shipment_processor # Import the shipment_processor
 
 logger = logging.getLogger(__name__)
 
