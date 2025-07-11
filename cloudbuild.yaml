@@ -4,19 +4,18 @@ options:
 
 steps:
 # DEBUGGING STEP: List contents of the project for verification
-# This comment is outside the args block, so it's fine.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args: ['-c', 'ls -R .']
   dir: .
 
 # Step to deploy shipstation-reporter-function
-# This comment is outside the args block, so it's fine.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
+      export PYTHONPATH=./ # ADD THIS LINE
       cp requirements.txt src/
       mv src/shipstation_reporter.py src/main.py
       
