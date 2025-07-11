@@ -4,23 +4,25 @@ options:
 
 steps:
 # DEBUGGING STEP: List contents of the project for verification
+# This comment is outside the args block, so it's fine.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args: ['-c', 'ls -R .']
   dir: .
 
 # Step to deploy shipstation-reporter-function
+# This comment is outside the args block, so it's fine.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
       cp requirements.txt src/
-      mv src/shipstation_reporter.py src/main.py # This is still needed for main.py
-
+      mv src/shipstation_reporter.py src/main.py
+      
       gcloud functions deploy shipstation-reporter-function \
         --runtime python311 \
-        --entry-point shipstation_reporter_http_trigger \ # CHANGED THIS LINE
+        --entry-point main \
         --source=./src \
         --trigger-http \
         --allow-unauthenticated \
