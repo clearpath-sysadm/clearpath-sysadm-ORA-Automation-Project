@@ -13728,3 +13728,899 @@ Date
 2025-07-09 19:25:06,145 - src.services.google_sheets.api_client - INFO - Successfully wrote 5 rows to worksheet 'Weekly Report'.
 2025-07-09 19:25:06,146 - __main__ - INFO - Weekly Inventory Report written successfully.
 2025-07-09 19:25:06,147 - __main__ - INFO - Script finished successfully.
+2025-07-10 19:53:44,102 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-07-10 19:53:44,103 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\app-log-2025-07-09.txt
+2025-07-10 19:55:09,339 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-07-10 19:55:09,339 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\app-log-2025-07-09.txt
+2025-07-10 19:55:10,156 - __main__ - INFO - Starting ShipStation Reporter Script (main orchestrator)...
+2025-07-10 19:55:10,156 - src.services.reporting_logic.report_data_loader - INFO - Loading all configuration data...
+2025-07-10 19:55:10,156 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 19:55:10,157 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 19:55:10,157 - src.services.gcp.secret_manager - DEBUG - No valid credentials_path provided. Attempting to use Application Default Credentials.
+2025-07-10 19:55:10,157 - src.services.gcp.secret_manager - CRITICAL - GCP Default Credentials not found. Ensure you are authenticated (e.g., 'gcloud auth application-default login') or provide a valid service account file via 'credentials_path'.
+2025-07-10 19:55:10,158 - src.services.google_sheets.api_client - ERROR - Failed to retrieve Google Sheets service account key from Secret Manager.
+2025-07-10 19:55:10,158 - src.services.reporting_logic.report_data_loader - WARNING - No data or malformed data found in 'ORA_Configuration' worksheet. Returning None.
+2025-07-10 19:57:31,782 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-07-10 19:57:31,783 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\app-log-2025-07-09.txt
+2025-07-10 19:57:32,146 - __main__ - INFO - Starting ShipStation Reporter Script (main orchestrator)...
+2025-07-10 19:57:32,146 - src.services.reporting_logic.report_data_loader - INFO - Loading all configuration data...
+2025-07-10 19:57:32,146 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 19:57:32,147 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 19:57:32,147 - src.services.gcp.secret_manager - DEBUG - No valid credentials_path provided. Attempting to use Application Default Credentials.
+2025-07-10 19:57:32,147 - src.services.gcp.secret_manager - CRITICAL - GCP Default Credentials not found. Ensure you are authenticated (e.g., 'gcloud auth application-default login') or provide a valid service account file via 'credentials_path'.
+2025-07-10 19:57:32,148 - src.services.google_sheets.api_client - ERROR - Failed to retrieve Google Sheets service account key from Secret Manager.
+2025-07-10 19:57:32,166 - src.services.reporting_logic.report_data_loader - WARNING - No data or malformed data found in 'ORA_Configuration' worksheet. Returning None.
+2025-07-10 20:07:36,432 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-07-10 20:07:36,432 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\app-log-2025-07-09.txt
+2025-07-10 20:07:36,763 - __main__ - INFO - Starting ShipStation Reporter Script (main orchestrator)...
+2025-07-10 20:07:36,764 - src.services.reporting_logic.report_data_loader - INFO - Loading all configuration data...
+2025-07-10 20:07:36,764 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:07:36,765 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:07:36,765 - src.services.gcp.secret_manager - DEBUG - No valid credentials_path provided. Attempting to use Application Default Credentials.
+2025-07-10 20:07:36,765 - src.services.gcp.secret_manager - CRITICAL - GCP Default Credentials not found. Ensure you are authenticated (e.g., 'gcloud auth application-default login') or provide a valid service account file via 'credentials_path'.
+2025-07-10 20:07:36,766 - src.services.google_sheets.api_client - ERROR - Failed to retrieve Google Sheets service account key from Secret Manager.
+2025-07-10 20:07:36,766 - src.services.reporting_logic.report_data_loader - WARNING - No data or malformed data found in 'ORA_Configuration' worksheet. Returning None.
+2025-07-10 20:20:18,172 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-07-10 20:20:18,172 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\app-log-2025-07-09.txt
+2025-07-10 20:20:18,521 - __main__ - INFO - Starting ShipStation Reporter Script (main orchestrator)...
+2025-07-10 20:20:18,521 - src.services.reporting_logic.report_data_loader - INFO - Loading all configuration data...
+2025-07-10 20:20:18,522 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:20:18,522 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:20:18,523 - src.services.gcp.secret_manager - DEBUG - No valid credentials_path provided. Attempting to use Application Default Credentials.
+2025-07-10 20:20:18,523 - src.services.gcp.secret_manager - CRITICAL - GCP Default Credentials not found. Ensure you are authenticated (e.g., 'gcloud auth application-default login') or provide a valid service account file via 'credentials_path'.
+2025-07-10 20:20:18,524 - src.services.google_sheets.api_client - ERROR - Failed to retrieve Google Sheets service account key from Secret Manager.
+2025-07-10 20:20:18,524 - src.services.reporting_logic.report_data_loader - WARNING - No data or malformed data found in 'ORA_Configuration' worksheet. Returning None.
+2025-07-10 20:24:37,049 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-07-10 20:24:37,049 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\app-log-2025-07-09.txt
+2025-07-10 20:24:37,440 - __main__ - INFO - Starting ShipStation Reporter Script (main orchestrator)...
+2025-07-10 20:24:37,440 - src.services.reporting_logic.report_data_loader - INFO - Loading all configuration data...
+2025-07-10 20:24:37,440 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:24:37,440 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:24:37,509 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-07-10 20:24:38,104 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-10 20:24:38,106 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-07-10 20:24:38,106 - src.services.google_sheets.api_client - INFO - Successfully authenticated with Google Sheets API.
+2025-07-10 20:24:38,106 - src.services.google_sheets.api_client - DEBUG - Opening Google Sheet by ID: '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo'.
+2025-07-10 20:24:38,133 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-10 20:24:38,323 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-10 20:24:38,327 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-07-10 20:24:40,172 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:40,532 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:40,535 - src.services.google_sheets.api_client - DEBUG - Reading data from worksheet: 'ORA_Configuration'.
+2025-07-10 20:24:40,928 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27ORA_Configuration%27 HTTP/1.1" 200 None
+2025-07-10 20:24:40,938 - src.services.google_sheets.api_client - INFO - Successfully fetched 43 rows from worksheet 'ORA_Configuration'.
+2025-07-10 20:24:40,957 - src.services.reporting_logic.report_data_loader - INFO - Successfully loaded all configuration data.
+2025-07-10 20:24:40,958 - src.services.reporting_logic.report_data_loader - INFO - Loading inventory transactions...
+2025-07-10 20:24:40,958 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:24:40,958 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:24:40,960 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-07-10 20:24:41,243 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-10 20:24:41,246 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-07-10 20:24:41,247 - src.services.google_sheets.api_client - INFO - Successfully authenticated with Google Sheets API.
+2025-07-10 20:24:41,248 - src.services.google_sheets.api_client - DEBUG - Opening Google Sheet by ID: '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo'.
+2025-07-10 20:24:41,269 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-10 20:24:41,431 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-10 20:24:41,433 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-07-10 20:24:41,686 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:41,995 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:41,996 - src.services.google_sheets.api_client - DEBUG - Reading data from worksheet: 'Inventory_Transactions'.
+2025-07-10 20:24:42,346 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27Inventory_Transactions%27 HTTP/1.1" 200 None
+2025-07-10 20:24:42,350 - src.services.google_sheets.api_client - INFO - Successfully fetched 13 rows from worksheet 'Inventory_Transactions'.
+2025-07-10 20:24:42,352 - src.services.reporting_logic.report_data_loader - DEBUG - Inventory_Transactions dtypes BEFORE date conversion:
+Date               object
+SKU                 int64
+Quantity            int64
+TransactionType    object
+Notes              object
+2025-07-10 20:24:42,353 - src.services.reporting_logic.report_data_loader - DEBUG - Inventory_Transactions 'Date' column head BEFORE conversion:
+0    5/16/2025
+1    5/20/2025
+2    5/25/2025
+3     5/2/2025
+4    5/12/2025
+2025-07-10 20:24:42,364 - src.services.reporting_logic.report_data_loader - DEBUG - Inventory_Transactions 'Date' column head AFTER conversion and dropna:
+0   2025-05-16
+1   2025-05-20
+2   2025-05-25
+3   2025-05-02
+4   2025-05-12
+2025-07-10 20:24:42,366 - src.services.reporting_logic.report_data_loader - INFO - Successfully loaded 13 inventory transactions.
+2025-07-10 20:24:42,366 - src.services.reporting_logic.report_data_loader - INFO - Loading shipped items data...
+2025-07-10 20:24:42,367 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:24:42,367 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:24:42,370 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-07-10 20:24:42,642 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-10 20:24:42,643 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-07-10 20:24:42,644 - src.services.google_sheets.api_client - INFO - Successfully authenticated with Google Sheets API.
+2025-07-10 20:24:42,644 - src.services.google_sheets.api_client - DEBUG - Opening Google Sheet by ID: '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo'.
+2025-07-10 20:24:42,666 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-10 20:24:42,819 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-10 20:24:42,822 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-07-10 20:24:43,258 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:43,594 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:43,596 - src.services.google_sheets.api_client - DEBUG - Reading data from worksheet: 'Shipped_Items_Data'.
+2025-07-10 20:24:43,964 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27Shipped_Items_Data%27 HTTP/1.1" 200 None
+2025-07-10 20:24:43,973 - src.services.google_sheets.api_client - INFO - Successfully fetched 799 rows from worksheet 'Shipped_Items_Data'.
+2025-07-10 20:24:43,982 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data 'Date' column head AFTER conversion and dropna:
+0   2025-06-02
+1   2025-06-02
+2   2025-06-02
+3   2025-06-02
+4   2025-06-02
+2025-07-10 20:24:43,983 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data dtypes BEFORE SKU/Quantity processing:
+Ship Date                   object
+SKU - Lot                   object
+Quantity Shipped             int64
+Base SKU                     int64
+Quantity_Shipped             int64
+Date                datetime64[ns]
+2025-07-10 20:24:43,987 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data head BEFORE SKU/Quantity processing:
+  Ship Date       SKU - Lot  Quantity Shipped  Base SKU  Quantity_Shipped       Date
+0  6/2/2025  17612 - 250101                 1     17612                 1 2025-06-02
+1  6/2/2025  17612 - 250101                 1     17612                 1 2025-06-02
+2  6/2/2025  17612 - 250101                 2     17612                 2 2025-06-02
+3  6/2/2025  17914 - 240286                 2     17914                 2 2025-06-02
+4  6/2/2025  17612 - 250101                 1     17612                 1 2025-06-02
+2025-07-10 20:24:43,991 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data value counts for 'SKU' column (if exists, from raw data usually):
+Series([], )
+2025-07-10 20:24:43,992 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data value counts for 'SKU_Lot' column (if exists):
+Series([], )
+2025-07-10 20:24:43,994 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data value counts for 'Base SKU' column (if exists):
+Base SKU
+17612    662
+17914     75
+17904     51
+18675     11
+2025-07-10 20:24:43,995 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data dtypes AFTER SKU derivation:
+Ship Date                   object
+SKU - Lot                   object
+Quantity Shipped             int64
+SKU                         object
+Quantity_Shipped             int64
+Date                datetime64[ns]
+2025-07-10 20:24:43,997 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data head AFTER SKU derivation:
+  Ship Date       SKU - Lot  Quantity Shipped    SKU  Quantity_Shipped       Date
+0  6/2/2025  17612 - 250101                 1  17612                 1 2025-06-02
+1  6/2/2025  17612 - 250101                 1  17612                 1 2025-06-02
+2  6/2/2025  17612 - 250101                 2  17612                 2 2025-06-02
+3  6/2/2025  17914 - 240286                 2  17914                 2 2025-06-02
+4  6/2/2025  17612 - 250101                 1  17612                 1 2025-06-02
+2025-07-10 20:24:43,998 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data 'SKU' column value counts AFTER derivation:
+SKU
+17612    662
+17914     75
+17904     51
+18675     11
+2025-07-10 20:24:43,998 - src.services.reporting_logic.report_data_loader - DEBUG - Shipped_Items_Data missing values in 'SKU' column AFTER derivation:
+0
+2025-07-10 20:24:43,999 - src.services.reporting_logic.report_data_loader - INFO - Successfully loaded 799 shipped items.
+2025-07-10 20:24:43,999 - src.services.reporting_logic.report_data_loader - INFO - Loading shipped orders data...
+2025-07-10 20:24:44,000 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:24:44,000 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:24:44,005 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-07-10 20:24:44,315 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-10 20:24:44,319 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-07-10 20:24:44,320 - src.services.google_sheets.api_client - INFO - Successfully authenticated with Google Sheets API.
+2025-07-10 20:24:44,320 - src.services.google_sheets.api_client - DEBUG - Opening Google Sheet by ID: '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo'.
+2025-07-10 20:24:44,344 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-10 20:24:44,502 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-10 20:24:44,505 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-07-10 20:24:44,956 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:45,160 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:45,160 - src.services.google_sheets.api_client - DEBUG - Reading data from worksheet: 'Shipped_Orders_Data'.
+2025-07-10 20:24:45,358 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27Shipped_Orders_Data%27 HTTP/1.1" 200 None
+2025-07-10 20:24:45,362 - src.services.google_sheets.api_client - INFO - Successfully fetched 602 rows from worksheet 'Shipped_Orders_Data'.
+2025-07-10 20:24:45,366 - src.services.reporting_logic.report_data_loader - INFO - Successfully loaded 602 shipped orders.
+2025-07-10 20:24:45,367 - src.services.reporting_logic.report_data_loader - INFO - Loading weekly shipped history...
+2025-07-10 20:24:45,367 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:24:45,368 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:24:45,373 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-07-10 20:24:45,637 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-10 20:24:45,638 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-07-10 20:24:45,639 - src.services.google_sheets.api_client - INFO - Successfully authenticated with Google Sheets API.
+2025-07-10 20:24:45,640 - src.services.google_sheets.api_client - DEBUG - Opening Google Sheet by ID: '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo'.
+2025-07-10 20:24:45,663 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-10 20:24:45,822 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-10 20:24:45,823 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-07-10 20:24:46,083 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:46,399 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:46,400 - src.services.google_sheets.api_client - DEBUG - Reading data from worksheet: 'ORA_Weekly_Shipped_History'.
+2025-07-10 20:24:46,585 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27ORA_Weekly_Shipped_History%27 HTTP/1.1" 200 None
+2025-07-10 20:24:46,586 - src.services.google_sheets.api_client - INFO - Successfully fetched 60 rows from worksheet 'ORA_Weekly_Shipped_History'.
+2025-07-10 20:24:46,606 - src.services.reporting_logic.report_data_loader - INFO - Successfully loaded and unpivoted weekly shipped history. Resulting DataFrame shape: (240, 3)
+2025-07-10 20:24:46,608 - src.services.reporting_logic.report_data_loader - INFO - Loading product names map...
+2025-07-10 20:24:46,608 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:24:46,608 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:24:46,610 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-07-10 20:24:46,895 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-10 20:24:46,898 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-07-10 20:24:46,899 - src.services.google_sheets.api_client - INFO - Successfully authenticated with Google Sheets API.
+2025-07-10 20:24:46,900 - src.services.google_sheets.api_client - DEBUG - Opening Google Sheet by ID: '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo'.
+2025-07-10 20:24:46,922 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-10 20:24:47,073 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-10 20:24:47,077 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-07-10 20:24:47,338 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:47,674 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:47,676 - src.services.google_sheets.api_client - DEBUG - Reading data from worksheet: 'ORA_Configuration'.
+2025-07-10 20:24:48,090 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27ORA_Configuration%27 HTTP/1.1" 200 None
+2025-07-10 20:24:48,093 - src.services.google_sheets.api_client - INFO - Successfully fetched 43 rows from worksheet 'ORA_Configuration'.
+2025-07-10 20:24:48,096 - src.services.reporting_logic.report_data_loader - DEBUG - Raw data from ORA_Configuration for product names: <class 'pandas.core.frame.DataFrame'>
+2025-07-10 20:24:48,098 - src.services.reporting_logic.report_data_loader - DEBUG - DataFrame columns from ORA_Configuration after strip(): ['ParameterCategory', 'ParameterName', 'SKU', 'Value', 'Unit/Description', 'Notes']
+2025-07-10 20:24:48,105 - src.services.reporting_logic.report_data_loader - DEBUG - DataFrame head from ORA_Configuration for product names:
+  ParameterCategory    ParameterName    SKU Value Unit/Description                                      Notes
+0             Rates      OrderCharge         4.25              USD                    Charge per unique order
+1             Rates    PackageCharge         0.75              USD     Charge per package (1 SKU = 1 Package)
+2             Rates  SpaceRentalRate         0.45   USD/pallet/day  Daily charge per pallet of space occupied
+3      PalletConfig      PalletCount  17612    48     Units/pallet                  Units of 17612 per pallet
+4      PalletConfig      PalletCount  17904    64     Units/pallet                  Units of 17904 per pallet
+2025-07-10 20:24:48,110 - src.services.reporting_logic.report_data_loader - INFO - Successfully loaded product names map from ORA_Configuration. Shape: (5, 2)
+2025-07-10 20:24:48,111 - __main__ - INFO - Generating Monthly Charge Report...
+2025-07-10 20:24:48,112 - src.services.reporting_logic.monthly_report_generator - INFO - Generating Monthly Charge Report for 2025-6...
+2025-07-10 20:24:48,137 - src.services.reporting_logic.monthly_report_generator - DEBUG - shipped_items_df_filtered head: 
+  Ship Date       SKU - Lot  Quantity Shipped    SKU  Quantity_Shipped        Date
+0  6/2/2025  17612 - 250101                 1  17612                 1  2025-06-02
+1  6/2/2025  17612 - 250101                 1  17612                 1  2025-06-02
+2  6/2/2025  17612 - 250101                 2  17612                 2  2025-06-02
+3  6/2/2025  17914 - 240286                 2  17914                 2  2025-06-02
+4  6/2/2025  17612 - 250101                 1  17612                 1  2025-06-02
+2025-07-10 20:24:48,140 - src.services.reporting_logic.monthly_report_generator - DEBUG - shipped_items_df_filtered tail: 
+     Ship Date       SKU - Lot  Quantity Shipped    SKU  Quantity_Shipped        Date
+597  6/30/2025  17612 - 250172                 2  17612                 2  2025-06-30
+598  6/30/2025  17612 - 250172                 6  17612                 6  2025-06-30
+599  6/30/2025  17612 - 250172                16  17612                16  2025-06-30
+600  6/30/2025  17612 - 250172                 1  17612                 1  2025-06-30
+601  6/30/2025  17612 - 250172                40  17612                40  2025-06-30
+2025-07-10 20:24:48,141 - src.services.reporting_logic.monthly_report_generator - DEBUG - shipped_items_df_filtered shape: (602, 6)
+2025-07-10 20:24:48,143 - src.services.reporting_logic.monthly_report_generator - DEBUG - shipped_orders_df_filtered head: 
+  Ship Date  OrderNumber        Date
+0  6/2/2025       660875  2025-06-02
+1  6/2/2025       660975  2025-06-02
+2  6/2/2025       661025  2025-06-02
+3  6/2/2025       660915  2025-06-02
+4  6/2/2025       660885  2025-06-02
+2025-07-10 20:24:48,146 - src.services.reporting_logic.monthly_report_generator - DEBUG - shipped_orders_df_filtered tail: 
+     Ship Date  OrderNumber        Date
+597  6/30/2025       666965  2025-06-30
+598  6/30/2025       666915  2025-06-30
+599  6/30/2025       666895  2025-06-30
+600  6/30/2025       666905  2025-06-30
+601  6/30/2025       666945  2025-06-30
+2025-07-10 20:24:48,147 - src.services.reporting_logic.monthly_report_generator - DEBUG - shipped_orders_df_filtered shape: (602, 3)
+2025-07-10 20:24:48,153 - src.services.reporting_logic.inventory_calculations - INFO - --- Starting daily inventory calculation (BOD/EOD) ---
+2025-07-10 20:24:48,155 - src.services.reporting_logic.inventory_calculations - INFO - Initial Inventory (head): [('17612', 955), ('17904', 178), ('17914', 326), ('18675', 769)]...
+2025-07-10 20:24:48,156 - src.services.reporting_logic.inventory_calculations - INFO - Number of dates in report period: 30
+2025-07-10 20:24:48,157 - src.services.reporting_logic.inventory_calculations - INFO - First 5 dates: [datetime.date(2025, 6, 1) datetime.date(2025, 6, 2)
+ datetime.date(2025, 6, 3) datetime.date(2025, 6, 4)
+ datetime.date(2025, 6, 5)]
+2025-07-10 20:24:48,158 - src.services.reporting_logic.inventory_calculations - INFO - Transactions DataFrame shape: (615, 5)
+2025-07-10 20:24:48,161 - src.services.reporting_logic.inventory_calculations - INFO - Transactions DataFrame head:
+         Date    SKU  Quantity TransactionType Notes
+0  2025-05-16  17612       528         Receive      
+1  2025-05-20  17612       576         Receive      
+2  2025-05-25  17612       576         Receive      
+3  2025-05-02  17612       382         Receive      
+4  2025-05-12  17612         5          Repack      
+2025-07-10 20:24:48,162 - src.services.reporting_logic.inventory_calculations - DEBUG - Initial state of current_inventory before daily loop: {'17904': 178, '17914': 326, '17612': 955, '18795': 0, '18675': 769}
+2025-07-10 20:24:48,163 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-01 (Day 1 of 30) ---
+2025-07-10 20:24:48,163 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-01: {'17904': 178, '17914': 326, '17612': 955, '18795': 0, '18675': 769}
+2025-07-10 20:24:48,167 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-01, SKU: 17904, BOD: 178, Received: 0, Shipped: 0, Repack: 0, EOD: 178
+2025-07-10 20:24:48,239 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-01, SKU: 17914, BOD: 326, Received: 0, Shipped: 0, Repack: 0, EOD: 326
+2025-07-10 20:24:48,244 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-01, SKU: 17612, BOD: 955, Received: 0, Shipped: 0, Repack: 0, EOD: 955
+2025-07-10 20:24:48,259 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-01, SKU: 18675, BOD: 769, Received: 0, Shipped: 0, Repack: 0, EOD: 769
+2025-07-10 20:24:48,260 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-01): {'17904': np.int64(178), '17914': np.int64(326), '17612': np.int64(955), '18795': np.int64(0), '18675': np.int64(769)}
+2025-07-10 20:24:48,262 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-02 (Day 2 of 30) ---
+2025-07-10 20:24:48,263 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-02: {'17904': np.int64(178), '17914': np.int64(326), '17612': np.int64(955), '18795': np.int64(0), '18675': np.int64(769)}
+2025-07-10 20:24:48,266 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-02: 20 transactions found.
+2025-07-10 20:24:48,277 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-02, SKU: 17904, BOD: 178, Received: 0, Shipped: 2, Repack: 0, EOD: 176
+2025-07-10 20:24:48,280 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-02, SKU: 17914, BOD: 326, Received: 0, Shipped: 3, Repack: 0, EOD: 323
+2025-07-10 20:24:48,292 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-02, SKU: 17612, BOD: 955, Received: 0, Shipped: 71, Repack: 0, EOD: 884
+2025-07-10 20:24:48,298 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-02, SKU: 18675, BOD: 769, Received: 0, Shipped: 1, Repack: 0, EOD: 768
+2025-07-10 20:24:48,299 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-02): {'17904': np.int64(176), '17914': np.int64(323), '17612': np.int64(884), '18795': np.int64(0), '18675': np.int64(768)}
+2025-07-10 20:24:48,300 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-03 (Day 3 of 30) ---
+2025-07-10 20:24:48,301 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-03: {'17904': np.int64(176), '17914': np.int64(323), '17612': np.int64(884), '18795': np.int64(0), '18675': np.int64(768)}
+2025-07-10 20:24:48,304 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-03: 25 transactions found.
+2025-07-10 20:24:48,308 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-03, SKU: 17904, BOD: 176, Received: 0, Shipped: 13, Repack: 0, EOD: 163
+2025-07-10 20:24:48,312 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-03, SKU: 17914, BOD: 323, Received: 0, Shipped: 6, Repack: 0, EOD: 317
+2025-07-10 20:24:48,319 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-03, SKU: 17612, BOD: 884, Received: 0, Shipped: 94, Repack: 0, EOD: 790
+2025-07-10 20:24:48,325 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-03, SKU: 18675, BOD: 768, Received: 0, Shipped: 0, Repack: 0, EOD: 768
+2025-07-10 20:24:48,326 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-03): {'17904': np.int64(163), '17914': np.int64(317), '17612': np.int64(790), '18795': np.int64(0), '18675': np.int64(768)}
+2025-07-10 20:24:48,326 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-04 (Day 4 of 30) ---
+2025-07-10 20:24:48,327 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-04: {'17904': np.int64(163), '17914': np.int64(317), '17612': np.int64(790), '18795': np.int64(0), '18675': np.int64(768)}
+2025-07-10 20:24:48,329 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-04: 40 transactions found.
+2025-07-10 20:24:48,334 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-04, SKU: 17904, BOD: 163, Received: 0, Shipped: 7, Repack: 0, EOD: 156
+2025-07-10 20:24:48,340 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-04, SKU: 17914, BOD: 317, Received: 0, Shipped: 7, Repack: 0, EOD: 310
+2025-07-10 20:24:48,343 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-04, SKU: 17612, BOD: 790, Received: 478, Shipped: 119, Repack: 0, EOD: 1149
+2025-07-10 20:24:48,351 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-04, SKU: 18675, BOD: 768, Received: 0, Shipped: 0, Repack: 0, EOD: 768
+2025-07-10 20:24:48,352 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-04): {'17904': np.int64(156), '17914': np.int64(310), '17612': np.int64(1149), '18795': np.int64(0), '18675': np.int64(768)}
+2025-07-10 20:24:48,354 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-05 (Day 5 of 30) ---
+2025-07-10 20:24:48,355 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-05: {'17904': np.int64(156), '17914': np.int64(310), '17612': np.int64(1149), '18795': np.int64(0), '18675': np.int64(768)}
+2025-07-10 20:24:48,357 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-05: 87 transactions found.
+2025-07-10 20:24:48,360 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-05, SKU: 17904, BOD: 156, Received: 0, Shipped: 1, Repack: 0, EOD: 155
+2025-07-10 20:24:48,364 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-05, SKU: 17914, BOD: 310, Received: 0, Shipped: 7, Repack: 0, EOD: 303
+2025-07-10 20:24:48,370 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-05, SKU: 17612, BOD: 1149, Received: 0, Shipped: 296, Repack: 0, EOD: 853
+2025-07-10 20:24:48,376 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-05, SKU: 18675, BOD: 768, Received: 0, Shipped: 0, Repack: 0, EOD: 768
+2025-07-10 20:24:48,377 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-05): {'17904': np.int64(155), '17914': np.int64(303), '17612': np.int64(853), '18795': np.int64(0), '18675': np.int64(768)}
+2025-07-10 20:24:48,378 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-06 (Day 6 of 30) ---
+2025-07-10 20:24:48,378 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-06: {'17904': np.int64(155), '17914': np.int64(303), '17612': np.int64(853), '18795': np.int64(0), '18675': np.int64(768)}
+2025-07-10 20:24:48,380 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-06: 21 transactions found.
+2025-07-10 20:24:48,383 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-06, SKU: 17904, BOD: 155, Received: 0, Shipped: 2, Repack: 0, EOD: 153
+2025-07-10 20:24:48,389 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-06, SKU: 17914, BOD: 303, Received: 0, Shipped: 1, Repack: 0, EOD: 302
+2025-07-10 20:24:48,393 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-06, SKU: 17612, BOD: 853, Received: 0, Shipped: 117, Repack: 0, EOD: 736
+2025-07-10 20:24:48,400 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-06, SKU: 18675, BOD: 768, Received: 0, Shipped: 1, Repack: 0, EOD: 767
+2025-07-10 20:24:48,402 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-06): {'17904': np.int64(153), '17914': np.int64(302), '17612': np.int64(736), '18795': np.int64(0), '18675': np.int64(767)}
+2025-07-10 20:24:48,403 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-07 (Day 7 of 30) ---
+2025-07-10 20:24:48,405 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-07: {'17904': np.int64(153), '17914': np.int64(302), '17612': np.int64(736), '18795': np.int64(0), '18675': np.int64(767)}
+2025-07-10 20:24:48,409 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-07, SKU: 17904, BOD: 153, Received: 0, Shipped: 0, Repack: 0, EOD: 153
+2025-07-10 20:24:48,412 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-07, SKU: 17914, BOD: 302, Received: 0, Shipped: 0, Repack: 0, EOD: 302
+2025-07-10 20:24:48,414 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-07, SKU: 17612, BOD: 736, Received: 0, Shipped: 0, Repack: 0, EOD: 736
+2025-07-10 20:24:48,426 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-07, SKU: 18675, BOD: 767, Received: 0, Shipped: 0, Repack: 0, EOD: 767
+2025-07-10 20:24:48,430 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-07): {'17904': np.int64(153), '17914': np.int64(302), '17612': np.int64(736), '18795': np.int64(0), '18675': np.int64(767)}
+2025-07-10 20:24:48,434 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-08 (Day 8 of 30) ---
+2025-07-10 20:24:48,439 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-08: {'17904': np.int64(153), '17914': np.int64(302), '17612': np.int64(736), '18795': np.int64(0), '18675': np.int64(767)}
+2025-07-10 20:24:48,446 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-08, SKU: 17904, BOD: 153, Received: 0, Shipped: 0, Repack: 0, EOD: 153
+2025-07-10 20:24:48,456 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-08, SKU: 17914, BOD: 302, Received: 0, Shipped: 0, Repack: 0, EOD: 302
+2025-07-10 20:24:48,461 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-08, SKU: 17612, BOD: 736, Received: 0, Shipped: 0, Repack: 0, EOD: 736
+2025-07-10 20:24:48,474 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-08, SKU: 18675, BOD: 767, Received: 0, Shipped: 0, Repack: 0, EOD: 767
+2025-07-10 20:24:48,476 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-08): {'17904': np.int64(153), '17914': np.int64(302), '17612': np.int64(736), '18795': np.int64(0), '18675': np.int64(767)}
+2025-07-10 20:24:48,480 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-09 (Day 9 of 30) ---
+2025-07-10 20:24:48,481 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-09: {'17904': np.int64(153), '17914': np.int64(302), '17612': np.int64(736), '18795': np.int64(0), '18675': np.int64(767)}
+2025-07-10 20:24:48,488 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-09: 21 transactions found.
+2025-07-10 20:24:48,494 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-09, SKU: 17904, BOD: 153, Received: 0, Shipped: 2, Repack: 0, EOD: 151
+2025-07-10 20:24:48,499 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-09, SKU: 17914, BOD: 302, Received: 0, Shipped: 3, Repack: 0, EOD: 299
+2025-07-10 20:24:48,504 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-09, SKU: 17612, BOD: 736, Received: 0, Shipped: 47, Repack: 0, EOD: 689
+2025-07-10 20:24:48,512 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-09, SKU: 18675, BOD: 767, Received: 0, Shipped: 1, Repack: 0, EOD: 766
+2025-07-10 20:24:48,513 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-09): {'17904': np.int64(151), '17914': np.int64(299), '17612': np.int64(689), '18795': np.int64(0), '18675': np.int64(766)}
+2025-07-10 20:24:48,514 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-10 (Day 10 of 30) ---
+2025-07-10 20:24:48,516 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-10: {'17904': np.int64(151), '17914': np.int64(299), '17612': np.int64(689), '18795': np.int64(0), '18675': np.int64(766)}
+2025-07-10 20:24:48,523 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-10: 19 transactions found.
+2025-07-10 20:24:48,528 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-10, SKU: 17904, BOD: 151, Received: 0, Shipped: 0, Repack: 0, EOD: 151
+2025-07-10 20:24:48,532 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-10, SKU: 17914, BOD: 299, Received: 0, Shipped: 3, Repack: 0, EOD: 296
+2025-07-10 20:24:48,537 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-10, SKU: 17612, BOD: 689, Received: 0, Shipped: 87, Repack: 0, EOD: 602
+2025-07-10 20:24:48,542 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-10, SKU: 18675, BOD: 766, Received: 0, Shipped: 0, Repack: 0, EOD: 766
+2025-07-10 20:24:48,543 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-10): {'17904': np.int64(151), '17914': np.int64(296), '17612': np.int64(602), '18795': np.int64(0), '18675': np.int64(766)}
+2025-07-10 20:24:48,543 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-11 (Day 11 of 30) ---
+2025-07-10 20:24:48,544 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-11: {'17904': np.int64(151), '17914': np.int64(296), '17612': np.int64(602), '18795': np.int64(0), '18675': np.int64(766)}
+2025-07-10 20:24:48,545 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-11: 14 transactions found.
+2025-07-10 20:24:48,548 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-11, SKU: 17904, BOD: 151, Received: 0, Shipped: 1, Repack: 0, EOD: 150
+2025-07-10 20:24:48,554 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-11, SKU: 17914, BOD: 296, Received: 0, Shipped: 3, Repack: 0, EOD: 293
+2025-07-10 20:24:48,558 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-11, SKU: 17612, BOD: 602, Received: 0, Shipped: 67, Repack: 0, EOD: 535
+2025-07-10 20:24:48,562 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-11, SKU: 18675, BOD: 766, Received: 0, Shipped: 1, Repack: 0, EOD: 765
+2025-07-10 20:24:48,564 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-11): {'17904': np.int64(150), '17914': np.int64(293), '17612': np.int64(535), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,564 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-12 (Day 12 of 30) ---
+2025-07-10 20:24:48,565 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-12: {'17904': np.int64(150), '17914': np.int64(293), '17612': np.int64(535), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,566 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-12: 53 transactions found.
+2025-07-10 20:24:48,572 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-12, SKU: 17904, BOD: 150, Received: 0, Shipped: 14, Repack: 0, EOD: 136
+2025-07-10 20:24:48,575 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-12, SKU: 17914, BOD: 293, Received: 0, Shipped: 11, Repack: 0, EOD: 282
+2025-07-10 20:24:48,578 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-12, SKU: 17612, BOD: 535, Received: 0, Shipped: 234, Repack: 0, EOD: 301
+2025-07-10 20:24:48,585 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-12, SKU: 18675, BOD: 765, Received: 0, Shipped: 0, Repack: 0, EOD: 765
+2025-07-10 20:24:48,586 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-12): {'17904': np.int64(136), '17914': np.int64(282), '17612': np.int64(301), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,587 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-13 (Day 13 of 30) ---
+2025-07-10 20:24:48,588 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-13: {'17904': np.int64(136), '17914': np.int64(282), '17612': np.int64(301), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,591 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-13: 20 transactions found.
+2025-07-10 20:24:48,594 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-13, SKU: 17904, BOD: 136, Received: 0, Shipped: 1, Repack: 0, EOD: 135
+2025-07-10 20:24:48,598 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-13, SKU: 17914, BOD: 282, Received: 0, Shipped: 12, Repack: 0, EOD: 270
+2025-07-10 20:24:48,604 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-13, SKU: 17612, BOD: 301, Received: 0, Shipped: 83, Repack: 0, EOD: 218
+2025-07-10 20:24:48,610 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-13, SKU: 18675, BOD: 765, Received: 0, Shipped: 0, Repack: 0, EOD: 765
+2025-07-10 20:24:48,610 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-13): {'17904': np.int64(135), '17914': np.int64(270), '17612': np.int64(218), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,611 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-14 (Day 14 of 30) ---
+2025-07-10 20:24:48,612 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-14: {'17904': np.int64(135), '17914': np.int64(270), '17612': np.int64(218), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,615 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-14, SKU: 17904, BOD: 135, Received: 0, Shipped: 0, Repack: 0, EOD: 135
+2025-07-10 20:24:48,619 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-14, SKU: 17914, BOD: 270, Received: 0, Shipped: 0, Repack: 0, EOD: 270
+2025-07-10 20:24:48,624 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-14, SKU: 17612, BOD: 218, Received: 0, Shipped: 0, Repack: 0, EOD: 218
+2025-07-10 20:24:48,631 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-14, SKU: 18675, BOD: 765, Received: 0, Shipped: 0, Repack: 0, EOD: 765
+2025-07-10 20:24:48,631 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-14): {'17904': np.int64(135), '17914': np.int64(270), '17612': np.int64(218), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,632 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-15 (Day 15 of 30) ---
+2025-07-10 20:24:48,633 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-15: {'17904': np.int64(135), '17914': np.int64(270), '17612': np.int64(218), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,640 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-15, SKU: 17904, BOD: 135, Received: 0, Shipped: 0, Repack: 0, EOD: 135
+2025-07-10 20:24:48,644 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-15, SKU: 17914, BOD: 270, Received: 0, Shipped: 0, Repack: 0, EOD: 270
+2025-07-10 20:24:48,647 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-15, SKU: 17612, BOD: 218, Received: 0, Shipped: 0, Repack: 0, EOD: 218
+2025-07-10 20:24:48,655 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-15, SKU: 18675, BOD: 765, Received: 0, Shipped: 0, Repack: 0, EOD: 765
+2025-07-10 20:24:48,656 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-15): {'17904': np.int64(135), '17914': np.int64(270), '17612': np.int64(218), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,657 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-16 (Day 16 of 30) ---
+2025-07-10 20:24:48,657 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-16: {'17904': np.int64(135), '17914': np.int64(270), '17612': np.int64(218), '18795': np.int64(0), '18675': np.int64(765)}
+2025-07-10 20:24:48,661 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-16: 69 transactions found.
+2025-07-10 20:24:48,668 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-16, SKU: 17904, BOD: 135, Received: 0, Shipped: 2, Repack: 0, EOD: 133
+2025-07-10 20:24:48,674 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-16, SKU: 17914, BOD: 270, Received: 0, Shipped: 3, Repack: 0, EOD: 267
+2025-07-10 20:24:48,680 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-16, SKU: 17612, BOD: 218, Received: 0, Shipped: 164, Repack: 0, EOD: 54
+2025-07-10 20:24:48,695 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-16, SKU: 18675, BOD: 765, Received: 0, Shipped: 3, Repack: 0, EOD: 762
+2025-07-10 20:24:48,696 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-16): {'17904': np.int64(133), '17914': np.int64(267), '17612': np.int64(54), '18795': np.int64(0), '18675': np.int64(762)}
+2025-07-10 20:24:48,696 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-17 (Day 17 of 30) ---
+2025-07-10 20:24:48,696 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-17: {'17904': np.int64(133), '17914': np.int64(267), '17612': np.int64(54), '18795': np.int64(0), '18675': np.int64(762)}
+2025-07-10 20:24:48,699 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-17: 27 transactions found.
+2025-07-10 20:24:48,703 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-17, SKU: 17904, BOD: 133, Received: 0, Shipped: 1, Repack: 0, EOD: 132
+2025-07-10 20:24:48,708 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-17, SKU: 17914, BOD: 267, Received: 0, Shipped: 11, Repack: 0, EOD: 256
+2025-07-10 20:24:48,711 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-17, SKU: 17612, BOD: 54, Received: 0, Shipped: 56, Repack: 0, EOD: -2
+2025-07-10 20:24:48,720 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-17, SKU: 18675, BOD: 762, Received: 0, Shipped: 12, Repack: 0, EOD: 750
+2025-07-10 20:24:48,723 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-17): {'17904': np.int64(132), '17914': np.int64(256), '17612': np.int64(-2), '18795': np.int64(0), '18675': np.int64(750)}
+2025-07-10 20:24:48,724 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-18 (Day 18 of 30) ---
+2025-07-10 20:24:48,724 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-18: {'17904': np.int64(132), '17914': np.int64(256), '17612': np.int64(-2), '18795': np.int64(0), '18675': np.int64(750)}
+2025-07-10 20:24:48,726 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-18: 17 transactions found.
+2025-07-10 20:24:48,730 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-18, SKU: 17904, BOD: 132, Received: 0, Shipped: 1, Repack: 0, EOD: 131
+2025-07-10 20:24:48,734 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-18, SKU: 17914, BOD: 256, Received: 0, Shipped: 1, Repack: 0, EOD: 255
+2025-07-10 20:24:48,740 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-18, SKU: 17612, BOD: -2, Received: 576, Shipped: 57, Repack: 0, EOD: 517
+2025-07-10 20:24:48,746 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-18, SKU: 18675, BOD: 750, Received: 0, Shipped: 0, Repack: 0, EOD: 750
+2025-07-10 20:24:48,747 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-18): {'17904': np.int64(131), '17914': np.int64(255), '17612': np.int64(517), '18795': np.int64(0), '18675': np.int64(750)}
+2025-07-10 20:24:48,748 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-19 (Day 19 of 30) ---
+2025-07-10 20:24:48,748 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-19: {'17904': np.int64(131), '17914': np.int64(255), '17612': np.int64(517), '18795': np.int64(0), '18675': np.int64(750)}
+2025-07-10 20:24:48,750 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-19: 17 transactions found.
+2025-07-10 20:24:48,756 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-19, SKU: 17904, BOD: 131, Received: 0, Shipped: 2, Repack: 0, EOD: 129
+2025-07-10 20:24:48,759 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-19, SKU: 17914, BOD: 255, Received: 0, Shipped: 7, Repack: 0, EOD: 248
+2025-07-10 20:24:48,763 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-19, SKU: 17612, BOD: 517, Received: 0, Shipped: 47, Repack: 0, EOD: 470
+2025-07-10 20:24:48,769 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-19, SKU: 18675, BOD: 750, Received: 0, Shipped: 0, Repack: 0, EOD: 750
+2025-07-10 20:24:48,771 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-19): {'17904': np.int64(129), '17914': np.int64(248), '17612': np.int64(470), '18795': np.int64(0), '18675': np.int64(750)}
+2025-07-10 20:24:48,771 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-20 (Day 20 of 30) ---
+2025-07-10 20:24:48,772 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-20: {'17904': np.int64(129), '17914': np.int64(248), '17612': np.int64(470), '18795': np.int64(0), '18675': np.int64(750)}
+2025-07-10 20:24:48,774 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-20: 24 transactions found.
+2025-07-10 20:24:48,778 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-20, SKU: 17904, BOD: 129, Received: 0, Shipped: 1, Repack: 0, EOD: 128
+2025-07-10 20:24:48,781 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-20, SKU: 17914, BOD: 248, Received: 0, Shipped: 5, Repack: 0, EOD: 243
+2025-07-10 20:24:48,785 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-20, SKU: 17612, BOD: 470, Received: 0, Shipped: 76, Repack: 0, EOD: 394
+2025-07-10 20:24:48,796 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-20, SKU: 18675, BOD: 750, Received: 0, Shipped: 1, Repack: 0, EOD: 749
+2025-07-10 20:24:48,797 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-20): {'17904': np.int64(128), '17914': np.int64(243), '17612': np.int64(394), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,797 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-21 (Day 21 of 30) ---
+2025-07-10 20:24:48,799 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-21: {'17904': np.int64(128), '17914': np.int64(243), '17612': np.int64(394), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,806 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-21, SKU: 17904, BOD: 128, Received: 0, Shipped: 0, Repack: 0, EOD: 128
+2025-07-10 20:24:48,809 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-21, SKU: 17914, BOD: 243, Received: 0, Shipped: 0, Repack: 0, EOD: 243
+2025-07-10 20:24:48,812 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-21, SKU: 17612, BOD: 394, Received: 0, Shipped: 0, Repack: 0, EOD: 394
+2025-07-10 20:24:48,823 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-21, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:48,824 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-21): {'17904': np.int64(128), '17914': np.int64(243), '17612': np.int64(394), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,824 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-22 (Day 22 of 30) ---
+2025-07-10 20:24:48,826 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-22: {'17904': np.int64(128), '17914': np.int64(243), '17612': np.int64(394), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,830 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-22, SKU: 17904, BOD: 128, Received: 0, Shipped: 0, Repack: 0, EOD: 128
+2025-07-10 20:24:48,838 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-22, SKU: 17914, BOD: 243, Received: 0, Shipped: 0, Repack: 0, EOD: 243
+2025-07-10 20:24:48,843 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-22, SKU: 17612, BOD: 394, Received: 0, Shipped: 0, Repack: 0, EOD: 394
+2025-07-10 20:24:48,851 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-22, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:48,854 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-22): {'17904': np.int64(128), '17914': np.int64(243), '17612': np.int64(394), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,856 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-23 (Day 23 of 30) ---
+2025-07-10 20:24:48,857 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-23: {'17904': np.int64(128), '17914': np.int64(243), '17612': np.int64(394), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,862 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-23: 11 transactions found.
+2025-07-10 20:24:48,868 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-23, SKU: 17904, BOD: 128, Received: 0, Shipped: 6, Repack: 0, EOD: 122
+2025-07-10 20:24:48,877 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-23, SKU: 17914, BOD: 243, Received: 0, Shipped: 0, Repack: 0, EOD: 243
+2025-07-10 20:24:48,880 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-23, SKU: 17612, BOD: 394, Received: 376, Shipped: 21, Repack: 0, EOD: 749
+2025-07-10 20:24:48,894 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-23, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:48,896 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-23): {'17904': np.int64(122), '17914': np.int64(243), '17612': np.int64(749), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,897 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-24 (Day 24 of 30) ---
+2025-07-10 20:24:48,899 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-24: {'17904': np.int64(122), '17914': np.int64(243), '17612': np.int64(749), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,906 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-24: 17 transactions found.
+2025-07-10 20:24:48,915 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-24, SKU: 17904, BOD: 122, Received: 0, Shipped: 1, Repack: 0, EOD: 121
+2025-07-10 20:24:48,924 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-24, SKU: 17914, BOD: 243, Received: 0, Shipped: 1, Repack: 0, EOD: 242
+2025-07-10 20:24:48,931 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-24, SKU: 17612, BOD: 749, Received: 0, Shipped: 42, Repack: 0, EOD: 707
+2025-07-10 20:24:48,945 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-24, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:48,946 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-24): {'17904': np.int64(121), '17914': np.int64(242), '17612': np.int64(707), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,947 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-25 (Day 25 of 30) ---
+2025-07-10 20:24:48,948 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-25: {'17904': np.int64(121), '17914': np.int64(242), '17612': np.int64(707), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,951 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-25: 53 transactions found.
+2025-07-10 20:24:48,959 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-25, SKU: 17904, BOD: 121, Received: 0, Shipped: 1, Repack: 0, EOD: 120
+2025-07-10 20:24:48,966 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-25, SKU: 17914, BOD: 242, Received: 0, Shipped: 4, Repack: 0, EOD: 238
+2025-07-10 20:24:48,973 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-25, SKU: 17612, BOD: 707, Received: 0, Shipped: 173, Repack: 0, EOD: 534
+2025-07-10 20:24:48,983 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-25, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:48,984 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-25): {'17904': np.int64(120), '17914': np.int64(238), '17612': np.int64(534), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,986 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-26 (Day 26 of 30) ---
+2025-07-10 20:24:48,987 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-26: {'17904': np.int64(120), '17914': np.int64(238), '17612': np.int64(534), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:48,992 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-26: 17 transactions found.
+2025-07-10 20:24:48,997 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-26, SKU: 17904, BOD: 120, Received: 0, Shipped: 2, Repack: 0, EOD: 118
+2025-07-10 20:24:49,004 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-26, SKU: 17914, BOD: 238, Received: 0, Shipped: 9, Repack: 0, EOD: 229
+2025-07-10 20:24:49,010 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-26, SKU: 17612, BOD: 534, Received: 0, Shipped: 60, Repack: 0, EOD: 474
+2025-07-10 20:24:49,019 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-26, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:49,021 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-26): {'17904': np.int64(118), '17914': np.int64(229), '17612': np.int64(474), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,022 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-27 (Day 27 of 30) ---
+2025-07-10 20:24:49,023 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-27: {'17904': np.int64(118), '17914': np.int64(229), '17612': np.int64(474), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,026 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-27: 20 transactions found.
+2025-07-10 20:24:49,033 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-27, SKU: 17904, BOD: 118, Received: 0, Shipped: 3, Repack: 0, EOD: 115
+2025-07-10 20:24:49,039 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-27, SKU: 17914, BOD: 229, Received: 0, Shipped: 6, Repack: 0, EOD: 223
+2025-07-10 20:24:49,046 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-27, SKU: 17612, BOD: 474, Received: 0, Shipped: 51, Repack: 0, EOD: 423
+2025-07-10 20:24:49,058 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-27, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:49,059 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-27): {'17904': np.int64(115), '17914': np.int64(223), '17612': np.int64(423), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,060 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-28 (Day 28 of 30) ---
+2025-07-10 20:24:49,060 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-28: {'17904': np.int64(115), '17914': np.int64(223), '17612': np.int64(423), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,068 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-28, SKU: 17904, BOD: 115, Received: 0, Shipped: 0, Repack: 0, EOD: 115
+2025-07-10 20:24:49,074 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-28, SKU: 17914, BOD: 223, Received: 0, Shipped: 0, Repack: 0, EOD: 223
+2025-07-10 20:24:49,080 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-28, SKU: 17612, BOD: 423, Received: 0, Shipped: 0, Repack: 0, EOD: 423
+2025-07-10 20:24:49,089 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-28, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:49,090 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-28): {'17904': np.int64(115), '17914': np.int64(223), '17612': np.int64(423), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,092 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-29 (Day 29 of 30) ---
+2025-07-10 20:24:49,093 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-29: {'17904': np.int64(115), '17914': np.int64(223), '17612': np.int64(423), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,099 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-29, SKU: 17904, BOD: 115, Received: 0, Shipped: 0, Repack: 0, EOD: 115
+2025-07-10 20:24:49,107 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-29, SKU: 17914, BOD: 223, Received: 0, Shipped: 0, Repack: 0, EOD: 223
+2025-07-10 20:24:49,111 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-29, SKU: 17612, BOD: 423, Received: 0, Shipped: 0, Repack: 0, EOD: 423
+2025-07-10 20:24:49,122 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-29, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:49,123 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-29): {'17904': np.int64(115), '17914': np.int64(223), '17612': np.int64(423), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,126 - src.services.reporting_logic.inventory_calculations - DEBUG - --- Processing date: 2025-06-30 (Day 30 of 30) ---
+2025-07-10 20:24:49,128 - src.services.reporting_logic.inventory_calculations - DEBUG - BOD_Inventory (copy of current_inventory) for 2025-06-30: {'17904': np.int64(115), '17914': np.int64(223), '17612': np.int64(423), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,131 - src.services.reporting_logic.inventory_calculations - INFO - Processing daily transactions for 2025-06-30: 13 transactions found.
+2025-07-10 20:24:49,143 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-30, SKU: 17904, BOD: 115, Received: 0, Shipped: 3, Repack: 0, EOD: 112
+2025-07-10 20:24:49,147 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-30, SKU: 17914, BOD: 223, Received: 0, Shipped: 1, Repack: 0, EOD: 222
+2025-07-10 20:24:49,153 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-30, SKU: 17612, BOD: 423, Received: 0, Shipped: 84, Repack: 0, EOD: 339
+2025-07-10 20:24:49,160 - src.services.reporting_logic.inventory_calculations - INFO - Date: 2025-06-30, SKU: 18675, BOD: 749, Received: 0, Shipped: 0, Repack: 0, EOD: 749
+2025-07-10 20:24:49,163 - src.services.reporting_logic.inventory_calculations - DEBUG - current_inventory (after processing 2025-06-30): {'17904': np.int64(112), '17914': np.int64(222), '17612': np.int64(339), '18795': np.int64(0), '18675': np.int64(749)}
+2025-07-10 20:24:49,183 - src.services.reporting_logic.inventory_calculations - INFO - Final daily_inventory_df to be returned from calculate_daily_inventory (head):
+         Date    SKU  BOD_Inventory  EOD_Inventory
+2  2025-06-01  17612            955            955
+0  2025-06-01  17904            178            178
+1  2025-06-01  17914            326            326
+4  2025-06-01  18675            769            769
+3  2025-06-01  18795              0              0
+2025-07-10 20:24:49,187 - src.services.reporting_logic.inventory_calculations - INFO - Final daily_inventory_df to be returned from calculate_daily_inventory (tail):
+           Date    SKU  BOD_Inventory  EOD_Inventory
+147  2025-06-30  17612            423            339
+145  2025-06-30  17904            115            112
+146  2025-06-30  17914            223            222
+149  2025-06-30  18675            749            749
+148  2025-06-30  18795              0              0
+2025-07-10 20:24:49,189 - src.services.reporting_logic.inventory_calculations - INFO - Daily inventory calculation complete. Shape: (150, 4)
+2025-07-10 20:24:49,190 - src.services.reporting_logic.monthly_report_generator - INFO - --- Inspecting daily_inventory_df after calculation ---
+2025-07-10 20:24:49,193 - src.services.reporting_logic.monthly_report_generator - INFO - daily_inventory_df head:
+         Date    SKU  BOD_Inventory  EOD_Inventory
+2  2025-06-01  17612            955            955
+0  2025-06-01  17904            178            178
+1  2025-06-01  17914            326            326
+4  2025-06-01  18675            769            769
+3  2025-06-01  18795              0              0
+2025-07-10 20:24:49,197 - src.services.reporting_logic.monthly_report_generator - INFO - daily_inventory_df tail:
+           Date    SKU  BOD_Inventory  EOD_Inventory
+147  2025-06-30  17612            423            339
+145  2025-06-30  17904            115            112
+146  2025-06-30  17914            223            222
+149  2025-06-30  18675            749            749
+148  2025-06-30  18795              0              0
+2025-07-10 20:24:49,198 - src.services.reporting_logic.monthly_report_generator - INFO - daily_inventory_df shape: (150, 4)
+2025-07-10 20:24:49,212 - src.services.reporting_logic.monthly_report_generator - INFO - EOD_Inventory description across all SKUs:
+count     150.000000
+mean      339.020000
+std       298.957259
+min        -2.000000
+25%       120.250000
+50%       243.000000
+75%       736.000000
+max      1149.000000
+2025-07-10 20:24:49,218 - src.services.reporting_logic.monthly_report_generator - INFO - Daily EOD_Inventory for SKU 17612:
+           Date  EOD_Inventory
+2    2025-06-01            955
+7    2025-06-02            884
+12   2025-06-03            790
+17   2025-06-04           1149
+22   2025-06-05            853
+27   2025-06-06            736
+32   2025-06-07            736
+37   2025-06-08            736
+42   2025-06-09            689
+47   2025-06-10            602
+52   2025-06-11            535
+57   2025-06-12            301
+62   2025-06-13            218
+67   2025-06-14            218
+72   2025-06-15            218
+77   2025-06-16             54
+82   2025-06-17             -2
+87   2025-06-18            517
+92   2025-06-19            470
+97   2025-06-20            394
+102  2025-06-21            394
+107  2025-06-22            394
+112  2025-06-23            749
+117  2025-06-24            707
+122  2025-06-25            534
+127  2025-06-26            474
+132  2025-06-27            423
+137  2025-06-28            423
+142  2025-06-29            423
+147  2025-06-30            339
+2025-07-10 20:24:49,225 - src.services.reporting_logic.monthly_report_generator - INFO - Daily EOD_Inventory for SKU 17904:
+           Date  EOD_Inventory
+0    2025-06-01            178
+5    2025-06-02            176
+10   2025-06-03            163
+15   2025-06-04            156
+20   2025-06-05            155
+25   2025-06-06            153
+30   2025-06-07            153
+35   2025-06-08            153
+40   2025-06-09            151
+45   2025-06-10            151
+50   2025-06-11            150
+55   2025-06-12            136
+60   2025-06-13            135
+65   2025-06-14            135
+70   2025-06-15            135
+75   2025-06-16            133
+80   2025-06-17            132
+85   2025-06-18            131
+90   2025-06-19            129
+95   2025-06-20            128
+100  2025-06-21            128
+105  2025-06-22            128
+110  2025-06-23            122
+115  2025-06-24            121
+120  2025-06-25            120
+125  2025-06-26            118
+130  2025-06-27            115
+135  2025-06-28            115
+140  2025-06-29            115
+145  2025-06-30            112
+2025-07-10 20:24:49,233 - src.services.reporting_logic.monthly_report_generator - INFO - Daily Unique SKUs Shipped (count > 0):
+2025-07-10 20:24:49,266 - src.services.reporting_logic.monthly_report_generator - INFO - Date
+2025-06-02    4
+2025-06-03    3
+2025-06-04    3
+2025-06-05    3
+2025-06-06    4
+2025-06-09    4
+2025-06-10    2
+2025-06-11    4
+2025-06-12    3
+2025-06-13    3
+2025-06-16    4
+2025-06-17    4
+2025-06-18    3
+2025-06-19    3
+2025-06-20    4
+2025-06-23    2
+2025-06-24    3
+2025-06-25    3
+2025-06-26    3
+2025-06-27    3
+2025-06-30    3
+2025-07-10 20:24:49,296 - src.services.reporting_logic.monthly_report_generator - INFO - --- Inspecting PalletsUsed before summing ---
+2025-07-10 20:24:49,303 - src.services.reporting_logic.monthly_report_generator - INFO - PalletsUsed description across all SKUs:
+count    150.000000
+mean       6.813333
+std        6.502851
+min        0.000000
+25%        2.000000
+50%        4.000000
+75%       16.000000
+max       24.000000
+2025-07-10 20:24:49,310 - src.services.reporting_logic.monthly_report_generator - INFO - Daily PalletsUsed for SKU 17612:
+           Date  PalletsUsed
+2    2025-06-01           20
+7    2025-06-02           19
+12   2025-06-03           17
+17   2025-06-04           24
+22   2025-06-05           18
+27   2025-06-06           16
+32   2025-06-07           16
+37   2025-06-08           16
+42   2025-06-09           15
+47   2025-06-10           13
+52   2025-06-11           12
+57   2025-06-12            7
+62   2025-06-13            5
+67   2025-06-14            5
+72   2025-06-15            5
+77   2025-06-16            2
+82   2025-06-17            0
+87   2025-06-18           11
+92   2025-06-19           10
+97   2025-06-20            9
+102  2025-06-21            9
+107  2025-06-22            9
+112  2025-06-23           16
+117  2025-06-24           15
+122  2025-06-25           12
+127  2025-06-26           10
+132  2025-06-27            9
+137  2025-06-28            9
+142  2025-06-29            9
+147  2025-06-30            8
+2025-07-10 20:24:49,315 - src.services.reporting_logic.monthly_report_generator - INFO - Summed PalletsUsed per Date (head):
+Date
+2025-06-01    45
+2025-06-02    43
+2025-06-03    40
+2025-06-04    47
+2025-06-05    41
+2025-07-10 20:24:49,316 - src.services.reporting_logic.monthly_report_generator - INFO - Summed PalletsUsed per Date (tail):
+Date
+2025-06-26    31
+2025-06-27    30
+2025-06-28    30
+2025-06-29    30
+2025-06-30    29
+2025-07-10 20:24:49,317 - src.services.reporting_logic.monthly_report_generator - INFO - Pallet counts used: {'17612': 48, '17904': 64, '17914': 80, '18675': 48}
+2025-07-10 20:24:49,318 - src.services.reporting_logic.monthly_report_generator - INFO - Rates dictionary used: {'OrderCharge': 4.25, 'PackageCharge': 0.75, 'SpaceRentalRate': 0.45}
+2025-07-10 20:24:49,324 - src.services.reporting_logic.monthly_report_generator - INFO - --- Final Space Rental Charge in Report DataFrame ---
+2025-07-10 20:24:49,327 - src.services.reporting_logic.monthly_report_generator - INFO - Space Rental Charge column (head):
+Date
+2025-06-01    20.25
+2025-06-02    19.35
+2025-06-03    18.00
+2025-06-04    21.15
+2025-06-05    18.45
+2025-07-10 20:24:49,329 - src.services.reporting_logic.monthly_report_generator - INFO - Space Rental Charge column (tail):
+Date
+2025-06-26    13.95
+2025-06-27    13.50
+2025-06-28    13.50
+2025-06-29    13.50
+2025-06-30    13.05
+2025-07-10 20:24:49,341 - src.services.reporting_logic.monthly_report_generator - DEBUG - Key SKUs list: ['17612', '17904', '17914', '18675', '18795']
+2025-07-10 20:24:49,342 - src.services.reporting_logic.monthly_report_generator - DEBUG - Daily Shipped Pivot table shape: (21, 4)
+2025-07-10 20:24:49,343 - src.services.reporting_logic.monthly_report_generator - DEBUG - Daily Shipped Pivot table columns: ['17612', '17904', '17914', '18675']
+2025-07-10 20:24:49,349 - src.services.reporting_logic.monthly_report_generator - DEBUG - Daily Shipped Pivot table head:
+SKU         17612  17904  17914  18675
+Date                                  
+2025-06-02   71.0    2.0    3.0    1.0
+2025-06-03   94.0   13.0    6.0    0.0
+2025-06-04  119.0    7.0    7.0    0.0
+2025-06-05  296.0    1.0    7.0    0.0
+2025-06-06  117.0    2.0    1.0    1.0
+2025-07-10 20:24:49,362 - src.services.reporting_logic.monthly_report_generator - DEBUG - Daily Shipped Pivot table info:
+None
+2025-07-10 20:24:49,364 - src.services.reporting_logic.monthly_report_generator - DEBUG - Daily Shipped Pivot table columns AFTER string conversion: ['17612', '17904', '17914', '18675']
+2025-07-10 20:24:49,371 - src.services.reporting_logic.monthly_report_generator - DEBUG - Populated '17612_Shipped' from pivot for SKU '17612'. Head:
+Date
+2025-06-01      NaN
+2025-06-02     71.0
+2025-06-03     94.0
+2025-06-04    119.0
+2025-06-05    296.0
+2025-07-10 20:24:49,373 - src.services.reporting_logic.monthly_report_generator - DEBUG - Non-zero count for '17612_Shipped': 30
+2025-07-10 20:24:49,377 - src.services.reporting_logic.monthly_report_generator - DEBUG - Populated '17904_Shipped' from pivot for SKU '17904'. Head:
+Date
+2025-06-01     NaN
+2025-06-02     2.0
+2025-06-03    13.0
+2025-06-04     7.0
+2025-06-05     1.0
+2025-07-10 20:24:49,380 - src.services.reporting_logic.monthly_report_generator - DEBUG - Non-zero count for '17904_Shipped': 29
+2025-07-10 20:24:49,385 - src.services.reporting_logic.monthly_report_generator - DEBUG - Populated '17914_Shipped' from pivot for SKU '17914'. Head:
+Date
+2025-06-01    NaN
+2025-06-02    3.0
+2025-06-03    6.0
+2025-06-04    7.0
+2025-06-05    7.0
+2025-07-10 20:24:49,388 - src.services.reporting_logic.monthly_report_generator - DEBUG - Non-zero count for '17914_Shipped': 29
+2025-07-10 20:24:49,394 - src.services.reporting_logic.monthly_report_generator - DEBUG - Populated '18675_Shipped' from pivot for SKU '18675'. Head:
+Date
+2025-06-01    NaN
+2025-06-02    1.0
+2025-06-03    0.0
+2025-06-04    0.0
+2025-06-05    0.0
+2025-07-10 20:24:49,396 - src.services.reporting_logic.monthly_report_generator - DEBUG - Non-zero count for '18675_Shipped': 16
+2025-07-10 20:24:49,398 - src.services.reporting_logic.monthly_report_generator - WARNING - SKU '18795' not found in daily_shipped_pivot columns. '18795_Shipped' column set to 0.
+2025-07-10 20:24:49,402 - src.services.reporting_logic.monthly_report_generator - DEBUG - Set '18795_Shipped' to 0. Head:
+Date
+2025-06-01    0
+2025-06-02    0
+2025-06-03    0
+2025-06-04    0
+2025-06-05    0
+2025-07-10 20:24:49,407 - src.services.reporting_logic.monthly_report_generator - DEBUG - Applied fillna(0) to '17612_Shipped'. Head:
+Date
+2025-06-01      0.0
+2025-06-02     71.0
+2025-06-03     94.0
+2025-06-04    119.0
+2025-06-05    296.0
+2025-07-10 20:24:49,410 - src.services.reporting_logic.monthly_report_generator - DEBUG - Applied fillna(0) to '17904_Shipped'. Head:
+Date
+2025-06-01     0.0
+2025-06-02     2.0
+2025-06-03    13.0
+2025-06-04     7.0
+2025-06-05     1.0
+2025-07-10 20:24:49,414 - src.services.reporting_logic.monthly_report_generator - DEBUG - Applied fillna(0) to '17914_Shipped'. Head:
+Date
+2025-06-01    0.0
+2025-06-02    3.0
+2025-06-03    6.0
+2025-06-04    7.0
+2025-06-05    7.0
+2025-07-10 20:24:49,419 - src.services.reporting_logic.monthly_report_generator - DEBUG - Applied fillna(0) to '18675_Shipped'. Head:
+Date
+2025-06-01    0.0
+2025-06-02    1.0
+2025-06-03    0.0
+2025-06-04    0.0
+2025-06-05    0.0
+2025-07-10 20:24:49,423 - src.services.reporting_logic.monthly_report_generator - DEBUG - Applied fillna(0) to '18795_Shipped'. Head:
+Date
+2025-06-01    0
+2025-06-02    0
+2025-06-03    0
+2025-06-04    0
+2025-06-05    0
+2025-07-10 20:24:49,424 - src.services.reporting_logic.monthly_report_generator - DEBUG - Report DataFrame after adding SKU_Shipped columns (head):
+2025-07-10 20:24:49,435 - src.services.reporting_logic.monthly_report_generator - DEBUG -             Num_Orders  Num_Packages  Orders Charge  Packages Charge  Space Rental Charge  Total Charge  17612_Shipped  17904_Shipped  17914_Shipped  18675_Shipped  18795_Shipped
+Date                                                                                                                                                                              
+2025-06-01         0.0           0.0           0.00             0.00                20.25         20.25            0.0            0.0            0.0            0.0              0
+2025-06-02        19.0          77.0          80.75            57.75                19.35        157.85           71.0            2.0            3.0            1.0              0
+2025-06-03        22.0         113.0          93.50            84.75                18.00        196.25           94.0           13.0            6.0            0.0              0
+2025-06-04        35.0         133.0         148.75            99.75                21.15        269.65          119.0            7.0            7.0            0.0              0
+2025-06-05        83.0         304.0         352.75           228.00                18.45        599.20          296.0            1.0            7.0            0.0              0
+2025-07-10 20:24:49,438 - src.services.reporting_logic.monthly_report_generator - DEBUG - Report DataFrame after adding SKU_Shipped columns (columns and dtypes):
+2025-07-10 20:24:49,449 - src.services.reporting_logic.monthly_report_generator - DEBUG - None
+2025-07-10 20:24:49,450 - src.services.reporting_logic.monthly_report_generator - DEBUG - Report DataFrame after adding SKU_Shipped columns (tail):
+2025-07-10 20:24:49,461 - src.services.reporting_logic.monthly_report_generator - DEBUG -             Num_Orders  Num_Packages  Orders Charge  Packages Charge  Space Rental Charge  Total Charge  17612_Shipped  17904_Shipped  17914_Shipped  18675_Shipped  18795_Shipped
+Date                                                                                                                                                                              
+2025-06-26        14.0          71.0          59.50            53.25                13.95        126.70           60.0            2.0            9.0            0.0              0
+2025-06-27        17.0          60.0          72.25            45.00                13.50        130.75           51.0            3.0            6.0            0.0              0
+2025-06-28         0.0           0.0           0.00             0.00                13.50         13.50            0.0            0.0            0.0            0.0              0
+2025-06-29         0.0           0.0           0.00             0.00                13.50         13.50            0.0            0.0            0.0            0.0              0
+2025-06-30        10.0          88.0          42.50            66.00                13.05        121.55           84.0            3.0            1.0            0.0              0
+2025-07-10 20:24:49,489 - src.services.reporting_logic.monthly_report_generator - DEBUG - Final Report DataFrame AFTER all formatting (head):
+2025-07-10 20:24:49,496 - src.services.reporting_logic.monthly_report_generator - DEBUG -        Date  # Of Orders  17612 17904 17914 18675 18795   Orders Packages Space Rental    Total
+0  6/1/2025          0.0      -     -     -     -     -    $0.00    $0.00       $20.25   $20.25
+1  6/2/2025         19.0   71.0   2.0   3.0   1.0     -   $80.75   $57.75       $19.35  $157.85
+2  6/3/2025         22.0   94.0  13.0   6.0     -     -   $93.50   $84.75       $18.00  $196.25
+3  6/4/2025         35.0  119.0   7.0   7.0     -     -  $148.75   $99.75       $21.15  $269.65
+4  6/5/2025         83.0  296.0   1.0   7.0     -     -  $352.75  $228.00       $18.45  $599.20
+2025-07-10 20:24:49,497 - src.services.reporting_logic.monthly_report_generator - DEBUG - Final Report DataFrame AFTER all formatting (columns and dtypes):
+2025-07-10 20:24:49,510 - src.services.reporting_logic.monthly_report_generator - DEBUG - None
+2025-07-10 20:24:49,512 - src.services.reporting_logic.monthly_report_generator - DEBUG - Final Report DataFrame AFTER all formatting (tail):
+2025-07-10 20:24:49,522 - src.services.reporting_logic.monthly_report_generator - DEBUG -          Date  # Of Orders   17612 17904  17914 18675 18795    Orders  Packages Space Rental     Total
+26  6/27/2025         17.0    51.0   3.0    6.0     -     -    $72.25    $45.00       $13.50   $130.75
+27  6/28/2025          0.0       -     -      -     -     -     $0.00     $0.00       $13.50    $13.50
+28  6/29/2025          0.0       -     -      -     -     -     $0.00     $0.00       $13.50    $13.50
+29  6/30/2025         10.0    84.0   3.0    1.0     -     -    $42.50    $66.00       $13.05   $121.55
+30      TOTAL        552.0  2046.0  66.0  104.0  20.0     -  $2346.00  $1677.00      $459.90  $4482.90
+2025-07-10 20:24:49,524 - src.services.reporting_logic.monthly_report_generator - INFO - Monthly Charge Report generated successfully.
+2025-07-10 20:24:49,526 - __main__ - WARNING - Monthly totals DataFrame was empty or None. Only main monthly report data will be written.
+2025-07-10 20:24:49,527 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:24:49,528 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:24:49,538 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-07-10 20:24:49,796 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-10 20:24:49,799 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-07-10 20:24:49,801 - src.services.google_sheets.api_client - INFO - Successfully authenticated with Google Sheets API.
+2025-07-10 20:24:49,802 - src.services.google_sheets.api_client - DEBUG - Opening Google Sheet by ID '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo' to write to worksheet 'Monthly Charge Report'.
+2025-07-10 20:24:49,865 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-10 20:24:50,031 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-10 20:24:50,034 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-07-10 20:24:50,433 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:50,819 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:51,260 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "POST /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27Monthly%20Charge%20Report%27:clear HTTP/1.1" 200 None
+2025-07-10 20:24:51,638 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "POST /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo:batchUpdate HTTP/1.1" 200 None
+2025-07-10 20:24:51,644 - gspread_dataframe - DEBUG - 352 cell updates to send
+2025-07-10 20:24:52,150 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27Monthly%20Charge%20Report%27%21A1%3AK32?valueInputOption=USER_ENTERED HTTP/1.1" 200 None
+2025-07-10 20:24:52,153 - gspread_dataframe - DEBUG - Cell update response: {'spreadsheetId': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'updatedRange': "'Monthly Charge Report'!A1:K32", 'updatedRows': 32, 'updatedColumns': 11, 'updatedCells': 352}
+2025-07-10 20:24:52,154 - src.services.google_sheets.api_client - INFO - Successfully wrote 31 rows to worksheet 'Monthly Charge Report'.
+2025-07-10 20:24:52,157 - __main__ - INFO - Monthly Charge Report written successfully.
+2025-07-10 20:24:52,158 - __main__ - INFO - Generating Weekly Inventory Report...
+2025-07-10 20:24:52,159 - src.services.reporting_logic.inventory_calculations - INFO - Calculating current inventory for week 2025-07-07 to 2025-07-13...
+2025-07-10 20:24:52,159 - src.services.reporting_logic.inventory_calculations - DEBUG - Initial inventory for current calculation: {'17612': 1006, '17904': 108, '17914': 175, '18675': 749}
+2025-07-10 20:24:52,164 - src.services.reporting_logic.inventory_calculations - DEBUG - Weekly transactions shape: (2, 5)
+2025-07-10 20:24:52,165 - src.services.reporting_logic.inventory_calculations - DEBUG - Weekly shipped items shape: (62, 6)
+2025-07-10 20:24:52,174 - src.services.reporting_logic.inventory_calculations - DEBUG - All weekly transactions head:
+     SKU  Quantity TransactionType
+0  17612       576         Receive
+1  18795      6279         Receive
+2  17612         2            Ship
+3  17612         6            Ship
+4  17612         1            Ship
+2025-07-10 20:24:52,176 - src.services.reporting_logic.inventory_calculations - DEBUG - All weekly transactions tail:
+      SKU  Quantity TransactionType
+59  17914         1            Ship
+60  17914         1            Ship
+61  17914         1            Ship
+62  17914         1            Ship
+63  17914         2            Ship
+2025-07-10 20:24:52,177 - src.services.reporting_logic.inventory_calculations - DEBUG - All weekly transactions shape: (64, 3)
+2025-07-10 20:24:52,193 - src.services.reporting_logic.inventory_calculations - INFO - Current inventory calculation complete. Shape: (5, 2)
+2025-07-10 20:24:52,194 - root - INFO - Calculating 12-Month Rolling Average...
+2025-07-10 20:24:52,203 - root - DEBUG - Calculating rolling average for 52 weeks prior to 2025-07-10
+2025-07-10 20:24:52,206 - root - DEBUG - Found 200 shipment records in the last 52 weeks.
+2025-07-10 20:24:52,212 - root - INFO - Successfully calculated 12-month rolling average.
+2025-07-10 20:24:52,212 - root - DEBUG - Final rolling average DataFrame shape: (4, 2)
+2025-07-10 20:24:52,213 - root - DEBUG - Final rolling average DataFrame shape: (4, 2)
+2025-07-10 20:24:52,214 - root - DEBUG - Final rolling average DataFrame columns: ['SKU', '12-Month Rolling Average']
+2025-07-10 20:24:52,223 - src.services.google_sheets.api_client - DEBUG - Authenticating with Google Sheets API...
+2025-07-10 20:24:52,224 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-10 20:24:52,229 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-07-10 20:24:52,506 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-10 20:24:52,510 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-07-10 20:24:52,511 - src.services.google_sheets.api_client - INFO - Successfully authenticated with Google Sheets API.
+2025-07-10 20:24:52,512 - src.services.google_sheets.api_client - DEBUG - Opening Google Sheet by ID '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo' to write to worksheet 'Weekly Report'.
+2025-07-10 20:24:52,581 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-10 20:24:52,749 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-10 20:24:52,755 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-07-10 20:24:53,185 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:53,630 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-07-10 20:24:54,001 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "POST /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27Weekly%20Report%27:clear HTTP/1.1" 200 None
+2025-07-10 20:24:54,387 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "POST /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo:batchUpdate HTTP/1.1" 200 None
+2025-07-10 20:24:54,388 - gspread_dataframe - DEBUG - 24 cell updates to send
+2025-07-10 20:24:54,742 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27Weekly%20Report%27%21A1%3AD6?valueInputOption=USER_ENTERED HTTP/1.1" 200 None
+2025-07-10 20:24:54,744 - gspread_dataframe - DEBUG - Cell update response: {'spreadsheetId': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'updatedRange': "'Weekly Report'!A1:D6", 'updatedRows': 6, 'updatedColumns': 4, 'updatedCells': 24}
+2025-07-10 20:24:54,745 - src.services.google_sheets.api_client - INFO - Successfully wrote 5 rows to worksheet 'Weekly Report'.
+2025-07-10 20:24:54,746 - __main__ - INFO - Weekly Inventory Report written successfully.
+2025-07-10 20:24:54,746 - __main__ - INFO - Script finished successfully.

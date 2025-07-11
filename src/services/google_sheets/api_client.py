@@ -18,8 +18,9 @@ def _get_gspread_client():
         sa_key_json_str = access_secret_version(
             project_id=settings.YOUR_GCP_PROJECT_ID,
             secret_id=settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID,
-            credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH
+            #credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH  # <-- UNCOMMENT THIS LINE FOR DEVELOPMENT
         )
+
         if not sa_key_json_str:
             logger.error("Failed to retrieve Google Sheets service account key from Secret Manager.")
             return None

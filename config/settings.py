@@ -15,8 +15,8 @@ YOUR_GCP_PROJECT_ID = "ora-automation-project"
 
 # Correct, absolute path to the service account key file, located
 # in a 'config' folder outside the main project directory.
-# SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json"
-
+# SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json" # LOCAL DEVELOPMENT
+SERVICE_ACCOUNT_KEY_PATH = None # FOR PRODUCTION
 
 # --- ShipStation API Configuration ---
 SHIPSTATION_BASE_URL = "https://ssapi.shipstation.com"
