@@ -4,25 +4,23 @@ options:
 
 steps:
 # DEBUGGING STEP: List contents of the project for verification
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # CHANGED THIS LINE
-  entrypoint: 'bash' # Explicitly use bash from this image
-  args: ['-c', 'ls -R .'] # This command will list all files and folders recursively from the root
-  dir: . # Run this command from the root of your fetched repository
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args: ['-c', 'ls -R .']
+  dir: .
 
 # Step to deploy shipstation-reporter-function
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk' # CHANGED THIS LINE
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      # Copy requirements.txt to src/ for deployment context
       cp requirements.txt src/
-      # Rename the script to main.py for Cloud Functions standard entry point
-      mv src/shipstation_reporter.py src/main.py
-      
+      mv src/shipstation_reporter.py src/main.py # This is still needed for main.py
+
       gcloud functions deploy shipstation-reporter-function \
         --runtime python311 \
-        --entry-point main \
+        --entry-point shipstation_reporter_http_trigger \ # CHANGED THIS LINE
         --source=./src \
         --trigger-http \
         --allow-unauthenticated \

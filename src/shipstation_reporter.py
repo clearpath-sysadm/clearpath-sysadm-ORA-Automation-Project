@@ -33,9 +33,10 @@ from src.services.data_processing import shipment_processor # Import the shipmen
 
 logger = logging.getLogger(__name__)
 
-def main():
-    """Main orchestrating function for generating all reports."""
-    logger.info("Starting ShipStation Reporter Script (main orchestrator)...")
+# Renamed original main() to run_reporter_logic()
+def run_reporter_logic():
+    """Contains the core logic of the ShipStation Reporter."""
+    logger.info("Starting ShipStation Reporter Script (core logic)...")
 
     # Load all configuration data
     (
@@ -133,7 +134,23 @@ def main():
     else:
         logger.error("Weekly Inventory Report generation failed. Missing current inventory data or product names map.")
 
-    logger.info("Script finished successfully.")
+    logger.info("Script core logic finished successfully.") # Added this line for clarity
 
-if __name__ == "__main__":
-    main()
+
+# This is the new entry point for the Cloud Function (HTTP trigger)
+def shipstation_reporter_http_trigger(request): # This function name should be your --entry-point
+    """
+    Cloud Function entry point for HTTP trigger.
+    Triggers the ShipStation Reporter logic.
+    """
+    logger.info("Cloud Function received HTTP trigger. Starting reporter logic.")
+    try:
+        run_reporter_logic() # Call your existing logic
+        logger.info("Cloud Function execution completed successfully.")
+        return 'ShipStation Reporter script executed successfully!', 200
+    except Exception as e:
+        logger.critical(f"Cloud Function execution failed: {e}", exc_info=True)
+        return f"ShipStation Reporter script failed: {e}", 500
+
+# Removed the 'if __name__ == "__main__": main()' block as it's not needed for Cloud Functions
+# The Cloud Function environment will call shipstation_reporter_http_trigger directly.
