@@ -131,7 +131,7 @@ def run_reporter_logic():
         
         write_dataframe_to_sheet(weekly_report_df[['SKU', 'Product', 'Current Inventory', '12-Month Rolling Average']], settings.GOOGLE_SHEET_ID, settings.WEEKLY_REPORT_OUTPUT_TAB_NAME)
         #########logger.info("Weekly Inventory Report written successfully.")
-    else:
+    #######else:
         #########logger.error("Weekly Inventory Report generation failed. Missing current inventory data or product names map.")
 
     #########logger.info("Script core logic finished successfully.") # Added this line for clarity
@@ -152,24 +152,24 @@ def run_reporter_logic():
 #         logger.critical(f"Cloud Function execution failed: {e}", exc_info=True)
 #         return f"ShipStation Reporter script failed: {e}", 500
 
-def shipstation_reporter_http_trigger(request):
-    """
-    Cloud Function entry point for HTTP trigger.
-    Returns a simple success message to pass health check.
-    """
-    # Ensure your logging setup is robust for Cloud Functions
-    # If setup_logging is writing to a local file, it might cause issues.
-    # It's better to let Cloud Functions handle logging to stdout/stderr for Cloud Logging.
-    # Temporarily comment out your custom logging setup to rule it out.
-    # from utils.logging_config import setup_logging
-    # log_dir = os.path.join(project_root, 'logs')
-    # log_file_path = os.path.join(log_dir, 'app-log-2025-07-09.txt')
-    # os.makedirs(log_dir, exist_ok=True)
-    # setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
-    # Also remove any lines that set up local file logging, like log_file_path = ...
+    def shipstation_reporter_http_trigger(request):
+        """
+        Cloud Function entry point for HTTP trigger.
+        Returns a simple success message to pass health check.
+        """
+        # Ensure your logging setup is robust for Cloud Functions
+        # If setup_logging is writing to a local file, it might cause issues.
+        # It's better to let Cloud Functions handle logging to stdout/stderr for Cloud Logging.
+        # Temporarily comment out your custom logging setup to rule it out.
+        # from utils.logging_config import setup_logging
+        # log_dir = os.path.join(project_root, 'logs')
+        # log_file_path = os.path.join(log_dir, 'app-log-2025-07-09.txt')
+        # os.makedirs(log_dir, exist_ok=True)
+        # setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
+        # Also remove any lines that set up local file logging, like log_file_path = ...
 
-    #########logger.info("Cloud Function received HTTP trigger. Testing basic response for health check.")
-    return 'Hello World! Container is up and running.', 200
+        #########logger.info("Cloud Function received HTTP trigger. Testing basic response for health check.")
+        return 'Hello World! Container is up and running.', 200
 
 
 # Removed the 'if __name__ == "__main__": main()' block as it's not needed for Cloud Functions
