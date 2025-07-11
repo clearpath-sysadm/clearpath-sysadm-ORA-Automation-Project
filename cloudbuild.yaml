@@ -15,9 +15,6 @@ steps:
   args:
     - '-c'
     - |
-      # Remove any 'mv' commands here that rename shipstation_reporter.py to main.py
-      # as it will stay in src/.
-      
       gcloud functions deploy shipstation-reporter-function \
         --runtime python311 \
         --entry-point src.shipstation_reporter.shipstation_reporter_http_trigger \ # <--- CHANGE THIS LINE
