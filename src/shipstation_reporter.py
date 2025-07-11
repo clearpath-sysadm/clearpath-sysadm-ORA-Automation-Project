@@ -151,7 +151,7 @@ logger = logging.getLogger(__name__)
 #         logger.critical(f"Cloud Function execution failed: {e}", exc_info=True)
 #         return f"ShipStation Reporter script failed: {e}", 500
 
-    def shipstation_reporter_http_trigger(request):
+def shipstation_reporter_http_trigger(request):
         """
         Cloud Function entry point for HTTP trigger.
         Returns a simple success message to pass health check.
