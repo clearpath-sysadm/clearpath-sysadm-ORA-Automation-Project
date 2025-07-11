@@ -14,12 +14,12 @@ project_root = os.path.abspath(os.path.join(current_dir, '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# --- Logging Configuration ---
-from utils.logging_config import setup_logging
-log_dir = os.path.join(project_root, 'logs')
-log_file_path = os.path.join(log_dir, 'app-log-2025-07-09.txt')
-os.makedirs(log_dir, exist_ok=True)
-setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
+# # --- Logging Configuration ---
+# from utils.logging_config import setup_logging
+# log_dir = os.path.join(project_root, 'logs')
+# log_file_path = os.path.join(log_dir, 'app-log-2025-07-09.txt')
+# os.makedirs(log_dir, exist_ok=True)
+# setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
 
 from config import settings
 from src.services.google_sheets.api_client import get_google_sheet_data, write_dataframe_to_sheet
