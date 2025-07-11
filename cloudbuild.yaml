@@ -17,7 +17,7 @@ steps:
     - |
       gcloud functions deploy shipstation-reporter-function \
         --runtime python311 \
-        --entry-point src.shipstation_reporter.shipstation_reporter_http_trigger \ # <--- CHANGE THIS LINE
+        --entry-point src.shipstation_reporter.shipstation_reporter_http_trigger \ 
         --source=. \
         --trigger-http \
         --allow-unauthenticated \
