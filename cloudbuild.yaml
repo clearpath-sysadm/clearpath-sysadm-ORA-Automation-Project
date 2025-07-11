@@ -6,7 +6,7 @@ steps:
 # DEBUGGING STEP: List contents of the project for verification
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
-  args: ['-c', 'ls -R .'] # This ls -R . will now show everything from the project root
+  args: ['-c', 'ls -R .']
   dir: .
 
 # Step to deploy shipstation-reporter-function
@@ -15,30 +15,13 @@ steps:
   args:
     - '-c'
     - |
-      # No need to cp requirements.txt to src/ or mv src/shipstation_reporter.py if it's already at root or we adjust imports
-      # Assuming shipstation_reporter.py is moved to project root and renamed to main.py before this step
-      # Or, more simply, if shipstation_reporter.py is ALREADY at the root and you set entry-point accordingly.
-      # If shipstation_reporter.py is still in src/, you'd adjust imports to `from .src.config import settings` (relative import)
-      # OR you'd need to ensure `src` is a package.
-
-      # For simplicity with --source=. :
-      # Ensure shipstation_reporter.py is ALREADY at the project root and named main.py
-      # Or, keep its current name if it's the entrypoint itself, and change the --entry-point flag to it directly.
-
-      # Let's assume your local project now looks like:
-      # my_project/
-      # ├── requirements.txt
-      # ├── main.py  # This is your original shipstation_reporter.py
-      # ├── config/
-      # │   └── settings.py
-      # └── src/
-      #     └── services/
-      #         └── ...
-
+      # Remove any 'mv' commands here that rename shipstation_reporter.py to main.py
+      # as it will stay in src/.
+      
       gcloud functions deploy shipstation-reporter-function \
         --runtime python311 \
-        --entry-point shipstation_reporter_http_trigger \
-        --source=. \ # <--- CHANGE THIS TO DEPLOY THE ENTIRE PROJECT ROOT
+        --entry-point src.shipstation_reporter.shipstation_reporter_http_trigger \ # <--- CHANGE THIS LINE
+        --source=. \
         --trigger-http \
         --allow-unauthenticated \
         --region=us-central1 \
