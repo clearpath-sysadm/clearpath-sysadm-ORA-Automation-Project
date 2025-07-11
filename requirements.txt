@@ -2,6 +2,7 @@ pandas
 requests
 sqlalchemy
 gspread
+gspread_dataframe
 google-cloud-secret-manager
 google-auth-oauthlib
 google-api-python-client
