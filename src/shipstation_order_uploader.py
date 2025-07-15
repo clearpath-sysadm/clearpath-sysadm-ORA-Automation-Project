@@ -42,6 +42,28 @@ if not logging.getLogger().handlers:
 logger = logging.getLogger(__name__)
 
 
+
+
+# --- Cloud Function Entry Point (for Deployment) ---
+# This function name should be your --entry-point when deploying to Google Cloud Functions.
+# For example: gcloud functions deploy shipstation_order_uploader --entry-point shipstation_order_uploader_http_trigger
+#
+# LOCAL TESTING NOTE: When running locally, this block is typically commented out or
+#                     the 'if __name__ == "__main__":' block below is used instead.
+#                     For deployment, this block MUST be active.
+#
+def shipstation_order_uploader_http_trigger(request):
+    logger.info({"message": "Cloud Function received HTTP trigger for order uploader.", "trigger_type": "HTTP"})
+    try:
+        success, message = run_order_uploader_logic()
+        if success:
+            return message, 200
+        else:
+            return message, 500
+    except Exception as e:
+        logger.critical({"message": "Cloud Function execution failed for order uploader", "error": str(e)}, exc_info=True)
+        return f"ShipStation Order Uploader script failed: {e}", 500
+
 # --- Core Order Uploader Logic (Reusable Function) ---
 def run_order_uploader_logic():
     """
@@ -212,38 +234,16 @@ def run_order_uploader_logic():
     logger.info({"message": "ShipStation Order Uploader Script finished", "status": "completed"})
     return True, 'ShipStation Order Uploader script executed successfully!'
 
-
-# --- Cloud Function Entry Point (for Deployment) ---
-# This function name should be your --entry-point when deploying to Google Cloud Functions.
-# For example: gcloud functions deploy shipstation_order_uploader --entry-point shipstation_order_uploader_http_trigger
-#
-# LOCAL TESTING NOTE: When running locally, this block is typically commented out or
-#                     the 'if __name__ == "__main__":' block below is used instead.
-#                     For deployment, this block MUST be active.
-#
-# def shipstation_order_uploader_http_trigger(request):
-#     logger.info({"message": "Cloud Function received HTTP trigger for order uploader.", "trigger_type": "HTTP"})
-#     try:
-#         success, message = run_order_uploader_logic()
-#         if success:
-#             return message, 200
-#         else:
-#             return message, 500
-#     except Exception as e:
-#         logger.critical({"message": "Cloud Function execution failed for order uploader", "error": str(e)}, exc_info=True)
-#         return f"ShipStation Order Uploader script failed: {e}", 500
-
-
-# --- Local Execution Block (for Local Testing) ---
-# This block is for local testing only. It directly calls the core logic.
-# When deploying to a Cloud Function, this block should be commented out,
-# and the 'shipstation_order_uploader_http_trigger' function above should be active.
-if __name__ == "__main__":
-    print("--- Running shipstation_order_uploader_logic locally ---")
-    success, message = run_order_uploader_logic()
-    if success:
-        print(f"Local Test Result: SUCCESS - {message}")
-    else:
-        print(f"Local Test Result: FAILED - {message}")
-    print("--- Local execution finished ---")
+# # --- Local Execution Block (for Local Testing) ---
+# # This block is for local testing only. It directly calls the core logic.
+# # When deploying to a Cloud Function, this block should be commented out,
+# # and the 'shipstation_order_uploader_http_trigger' function above should be active.
+# if __name__ == "__main__":
+#     print("--- Running shipstation_order_uploader_logic locally ---")
+#     success, message = run_order_uploader_logic()
+#     if success:
+#         print(f"Local Test Result: SUCCESS - {message}")
+#     else:
+#         print(f"Local Test Result: FAILED - {message}")
+#     print("--- Local execution finished ---")
 

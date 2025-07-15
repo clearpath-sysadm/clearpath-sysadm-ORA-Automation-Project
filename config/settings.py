@@ -22,9 +22,9 @@ YOUR_GCP_PROJECT_ID = "ora-automation-project"
 #                                             and secrets are fetched via Secret Manager using ADC.
 # Uncomment the appropriate line based on your environment.
 # LOCAL DEVELOPMENT VERSION:
-SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json"
+# SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json"
 # CLOUD DEPLOYMENT VERSION:
-# SERVICE_ACCOUNT_KEY_PATH = None
+SERVICE_ACCOUNT_KEY_PATH = None
 
 
 # --- ShipStation API Configuration ---
