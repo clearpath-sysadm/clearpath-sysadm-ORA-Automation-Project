@@ -13,10 +13,19 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # --- Google Cloud Project Configuration ---
 YOUR_GCP_PROJECT_ID = "ora-automation-project"
 
-# Correct, absolute path to the service account key file, located
-# in a 'config' folder outside the main project directory.
-# SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json" # LOCAL DEVELOPMENT
-SERVICE_ACCOUNT_KEY_PATH = None # FOR PRODUCTION
+# SERVICE_ACCOUNT_KEY_PATH:
+# For local development: Point to the absolute path of your Google Service Account JSON key file.
+# This file is used by the 'google-cloud-secret-manager' client library for local authentication
+# when retrieving secrets, and by 'googleapiclient' for Sheets/Drive API access.
+# For cloud deployment (Google Cloud Functions): This should be None. GCFs use their
+#                                             assigned service account automatically for GCP services,
+#                                             and secrets are fetched via Secret Manager using ADC.
+# Uncomment the appropriate line based on your environment.
+# LOCAL DEVELOPMENT VERSION:
+SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json"
+# CLOUD DEPLOYMENT VERSION:
+# SERVICE_ACCOUNT_KEY_PATH = None
+
 
 # --- ShipStation API Configuration ---
 SHIPSTATION_BASE_URL = "https://ssapi.shipstation.com"
@@ -27,11 +36,15 @@ SHIPSTATION_SHIPMENTS_ENDPOINT = f"{SHIPSTATION_BASE_URL}/shipments"
 SHIPSTATION_ORDERS_ENDPOINT = f"{SHIPSTATION_BASE_URL}/orders"
 
 
-# --- Google Sheets API Configuration ---
+# --- Google Sheets & Drive API Configuration ---
 GOOGLE_SHEET_ID = "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo"
-# --- THIS IS THE FIX ---
-# Updated to match the exact name of the secret in your GCP Secret Manager screenshot.
-GOOGLE_SHEETS_SA_KEY_SECRET_ID = "google-sheets-service-account-key" 
+# GOOGLE_SHEETS_SA_KEY_SECRET_ID:
+# The Secret Manager ID for your Google Sheets service account JSON key.
+# This secret should contain the *content* of the JSON key, not its path.
+# Used for both local (via secret_manager.access_secret_version) and cloud environments
+# to authenticate with Google Sheets and Google Drive APIs.
+GOOGLE_SHEETS_SA_KEY_SECRET_ID = "google-sheets-service-account-key"
+
 ORA_PROCESSING_STATE_TAB_NAME = 'ORA_Processing_State'
 MONTHLY_CHARGE_REPORT_OUTPUT_TAB_NAME = 'Monthly Charge Report'
 WEEKLY_REPORT_OUTPUT_TAB_NAME = 'Weekly Report'
@@ -42,10 +55,15 @@ ORA_CONFIGURATION_TAB_NAME = 'ORA_Configuration'
 SKU_LOT_TAB_NAME = 'SKU_Lot'
 SHIPPED_ITEMS_DATA_TAB_NAME = "Shipped_Items_Data"
 SHIPPED_ORDERS_DATA_TAB_NAME = "Shipped_Orders_Data"
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
+# SCOPES: Comprehensive list of Google API scopes required for the service account.
+# 'https://www.googleapis.com/auth/spreadsheets' for Sheets read/write.
+# 'https://www.googleapis.com/auth/drive.readonly' for Drive file content read.
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
 
 
 # --- Product Bundle Configuration ---
+# This configuration is static and does not change based on environment.
 BUNDLE_CONFIG = {
     "18075": [{"component_id": "17612", "multiplier": 1}],
     "18225": [{"component_id": "17612", "multiplier": 40}],
@@ -110,11 +128,50 @@ BUNDLE_CONFIG = {
 }
 
 
-# --- X-Cart XML Data Path ---
+# --- X-Cart XML Data Source Configuration ---
+# X_CART_XML_PATH: Local file path for X-Cart XML.
+# This variable is ONLY used during local development/testing of the uploader
+# when reading from a local XML file.
+# LOCAL DEVELOPMENT VERSION:
 X_CART_XML_PATH = os.path.join(PROJECT_ROOT, "src", "test_data", "x_cart_orders_uat_test.xml")
+# CLOUD DEPLOYMENT VERSION (This variable is not used in cloud, can be commented out or set to None):
+# X_CART_XML_PATH = None
+
+# X_CART_XML_FILE_ID: Google Drive File ID for the X-Cart XML.
+# This variable will be used when the script is deployed to Google Cloud Functions
+# to fetch the XML data directly from Google Drive.
+# You MUST replace 'your_google_drive_file_id_here' with the actual ID.
+# X_CART_XML_FILE_ID = "1rNudeesa_c6q--KIKUAOLwXta_gyRqAE" # Updated with provided File ID
+X_CART_XML_FILE_ID = "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY" # Updated with new File ID
+
+
+
+# --- Notification & Reporting Configuration ---
+# DAILY_SUMMARY_RECIPIENTS: List of email addresses for the daily order import summary digest email.
+# These are the recipients for the high-level operational summary.
+DAILY_SUMMARY_RECIPIENTS = ["nathan@clearpathai.co"]
+
+# NOTIFICATION_RECIPIENTS: List of email addresses for critical error notifications.
+# These recipients will receive immediate alerts for significant issues (e.g., via Cloud Logging alerts).
+# This list can be the same as or different from DAILY_SUMMARY_RECIPIENTS based on who needs immediate technical alerts.
+NOTIFICATION_RECIPIENTS = ["nathan@clearpathai.co"]
+
+# EMAIL_SERVICE_API_KEY_SECRET_ID:
+# The Secret Manager ID for the API key of your chosen third-party email service (e.g., SendGrid).
+# This key is used by the notification_manager to send emails.
+# IMPORTANT: You need to create a secret in Google Cloud Secret Manager.
+# 1. Go to Google Cloud Console -> Secret Manager.
+# 2. Click "Create Secret".
+# 3. Give it a name (e.g., "sendgrid-api-key" or "ora-email-api-key").
+# 4. In the "Secret value" field, paste your actual SendGrid API Key (or other email service API key).
+# 5. Click "Create Secret".
+# 6. Use the name you gave it as the value for this variable below.
+EMAIL_SERVICE_API_KEY_SECRET_ID = "sendgrid-api-key" # Example Secret Manager ID for SendGrid API Key
 
 
 # --- Settings Class ---
+# This class encapsulates all the above constants, making them accessible
+# as attributes (e.g., settings.YOUR_GCP_PROJECT_ID) throughout the application.
 class Settings:
     def __init__(self):
         self.PROJECT_ROOT = PROJECT_ROOT
@@ -141,6 +198,11 @@ class Settings:
         self.SCOPES = SCOPES
         self.BUNDLE_CONFIG = BUNDLE_CONFIG
         self.X_CART_XML_PATH = X_CART_XML_PATH
+        self.X_CART_XML_FILE_ID = X_CART_XML_FILE_ID
+        self.DAILY_SUMMARY_RECIPIENTS = DAILY_SUMMARY_RECIPIENTS
+        self.NOTIFICATION_RECIPIENTS = NOTIFICATION_RECIPIENTS
+        self.EMAIL_SERVICE_API_KEY_SECRET_ID = EMAIL_SERVICE_API_KEY_SECRET_ID
+
 
 # Initialize a global settings object for easy import
 settings = Settings()

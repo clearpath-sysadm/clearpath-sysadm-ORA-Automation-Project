@@ -13425,3 +13425,1680 @@ dtype: object
 2025-07-10 11:33:16,707 - __main__ - INFO - Skipping duplicate order: 667685 (normalized: 667685) already exists in ShipStation.
 2025-07-10 11:33:16,707 - __main__ - INFO - Skipped 1 duplicate orders.
 2025-07-10 11:33:16,708 - __main__ - WARNING - No new unique orders to send to ShipStation after duplicate check. Exiting.
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:25:06.138859Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 34148, "thread": 34008}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:25:06.138859Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 34148, "thread": 34008}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:26:33.468496Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 31940, "thread": 13768}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:26:33.468496Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 31940, "thread": 13768}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:41.020211Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:41.021209Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 25128, "thread": 34436}
+{"severity": "INFO", "timestamp": "2025-07-14T15:43:41.725224Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:41.725224Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:41.800080Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 25128, "thread": 34436}
+{"severity": "INFO", "timestamp": "2025-07-14T15:43:42.199032Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:42.200033Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:42.203289Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 25128, "thread": 34436}
+{"severity": "INFO", "timestamp": "2025-07-14T15:43:42.522413Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 25128, "thread": 34436}
+{"severity": "INFO", "timestamp": "2025-07-14T15:43:42.523417Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:42.524413Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:42.527399Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 25128, "thread": 34436}
+{"severity": "INFO", "timestamp": "2025-07-14T15:43:42.858474Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 25128, "thread": 34436}
+{"severity": "INFO", "timestamp": "2025-07-14T15:43:42.858474Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 25128, "thread": 34436}
+{"severity": "INFO", "timestamp": "2025-07-14T15:43:42.859474Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1rNudeesa_c6q--KIKUAOLwXta_gyRqAE", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 25128, "thread": 34436}
+{"severity": "INFO", "timestamp": "2025-07-14T15:43:42.863473Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:42.892455Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 46, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:42.897965Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1rNudeesa_c6q--KIKUAOLwXta_gyRqAE?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:43:42.919282Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 25128, "thread": 34436}
+{"severity": "WARNING", "timestamp": "2025-07-14T15:43:43.284096Z", "logger": "googleapiclient.http", "message": "Encountered 403 Forbidden with reason \"accessNotConfigured\"", "module": "http", "funcName": "_should_retry_response", "lineno": 140, "process": 25128, "thread": 34436}
+{"severity": "ERROR", "timestamp": "2025-07-14T15:43:43.284096Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API HTTP error during file fetch.", "file_id": "1rNudeesa_c6q--KIKUAOLwXta_gyRqAE", "error_code": 403, "error_details": "{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Google Drive API has not been used in project 577226238729 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=577226238729 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.\",\n    \"errors\": [\n      {\n        \"message\": \"Google Drive API has not been used in project 577226238729 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=577226238729 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.\",\n        \"domain\": \"usageLimits\",\n        \"reason\": \"accessNotConfigured\",\n        \"extendedHelp\": \"https://console.developers.google.com\"\n      }\n    ],\n    \"status\": \"PERMISSION_DENIED\"\n  }\n}\n", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 61, "process": 25128, "thread": 34436, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\google_drive\\api_client.py\", line 50, in fetch_xml_content_from_drive\n    xml_content_bytes = request.execute()\n                        ^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\venv\\Lib\\site-packages\\googleapiclient\\_helpers.py\", line 130, in positional_wrapper\n    return wrapped(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\venv\\Lib\\site-packages\\googleapiclient\\http.py\", line 938, in execute\n    raise HttpError(resp, content, uri=self.uri)\ngoogleapiclient.errors.HttpError: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files/1rNudeesa_c6q--KIKUAOLwXta_gyRqAE?alt=json returned \"Google Drive API has not been used in project 577226238729 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=577226238729 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.\". Details: \"[{'message': 'Google Drive API has not been used in project 577226238729 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=577226238729 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]\">"}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T15:43:43.287096Z", "logger": "__main__", "message": "No XML content retrieved from Google Drive or an error occurred during fetch.", "file_id": "1rNudeesa_c6q--KIKUAOLwXta_gyRqAE", "action": "exiting", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 97, "process": 25128, "thread": 34436}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:48:58.848415Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:48:58.849649Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 28820, "thread": 29972}
+{"severity": "INFO", "timestamp": "2025-07-14T15:48:59.523777Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:48:59.523777Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:48:59.555294Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 28820, "thread": 29972}
+{"severity": "INFO", "timestamp": "2025-07-14T15:49:00.041597Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:49:00.042622Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:49:00.045597Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 28820, "thread": 29972}
+{"severity": "INFO", "timestamp": "2025-07-14T15:49:00.344929Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 28820, "thread": 29972}
+{"severity": "INFO", "timestamp": "2025-07-14T15:49:00.345884Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:49:00.345884Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:49:00.347914Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 28820, "thread": 29972}
+{"severity": "INFO", "timestamp": "2025-07-14T15:49:00.627491Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 28820, "thread": 29972}
+{"severity": "INFO", "timestamp": "2025-07-14T15:49:00.628498Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 28820, "thread": 29972}
+{"severity": "INFO", "timestamp": "2025-07-14T15:49:00.630511Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1rNudeesa_c6q--KIKUAOLwXta_gyRqAE", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 28820, "thread": 29972}
+{"severity": "INFO", "timestamp": "2025-07-14T15:49:00.638121Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:49:00.640621Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 46, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:49:00.646161Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1rNudeesa_c6q--KIKUAOLwXta_gyRqAE?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:49:00.666152Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 28820, "thread": 29972}
+{"severity": "ERROR", "timestamp": "2025-07-14T15:49:01.130190Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API HTTP error during file fetch.", "file_id": "1rNudeesa_c6q--KIKUAOLwXta_gyRqAE", "error_code": 404, "error_details": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"File not found: 1rNudeesa_c6q--KIKUAOLwXta_gyRqAE.\",\n    \"errors\": [\n      {\n        \"message\": \"File not found: 1rNudeesa_c6q--KIKUAOLwXta_gyRqAE.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\",\n        \"location\": \"fileId\",\n        \"locationType\": \"parameter\"\n      }\n    ]\n  }\n}\n", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 61, "process": 28820, "thread": 29972, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\google_drive\\api_client.py\", line 50, in fetch_xml_content_from_drive\n    xml_content_bytes = request.execute()\n                        ^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\venv\\Lib\\site-packages\\googleapiclient\\_helpers.py\", line 130, in positional_wrapper\n    return wrapped(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\venv\\Lib\\site-packages\\googleapiclient\\http.py\", line 938, in execute\n    raise HttpError(resp, content, uri=self.uri)\ngoogleapiclient.errors.HttpError: <HttpError 404 when requesting https://www.googleapis.com/drive/v3/files/1rNudeesa_c6q--KIKUAOLwXta_gyRqAE?alt=json returned \"File not found: 1rNudeesa_c6q--KIKUAOLwXta_gyRqAE.\". Details: \"[{'message': 'File not found: 1rNudeesa_c6q--KIKUAOLwXta_gyRqAE.', 'domain': 'global', 'reason': 'notFound', 'location': 'fileId', 'locationType': 'parameter'}]\">"}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T15:49:01.134530Z", "logger": "__main__", "message": "No XML content retrieved from Google Drive or an error occurred during fetch.", "file_id": "1rNudeesa_c6q--KIKUAOLwXta_gyRqAE", "action": "exiting", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 97, "process": 28820, "thread": 29972}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:38.141153Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:38.142154Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 34556, "thread": 12084}
+{"severity": "INFO", "timestamp": "2025-07-14T15:54:38.575215Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:38.575215Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:38.587792Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 34556, "thread": 12084}
+{"severity": "INFO", "timestamp": "2025-07-14T15:54:38.911103Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:38.912395Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:38.916598Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 34556, "thread": 12084}
+{"severity": "INFO", "timestamp": "2025-07-14T15:54:39.277268Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 34556, "thread": 12084}
+{"severity": "INFO", "timestamp": "2025-07-14T15:54:39.277798Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:39.278325Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:39.281044Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 34556, "thread": 12084}
+{"severity": "INFO", "timestamp": "2025-07-14T15:54:39.565113Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 34556, "thread": 12084}
+{"severity": "INFO", "timestamp": "2025-07-14T15:54:39.566097Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 34556, "thread": 12084}
+{"severity": "INFO", "timestamp": "2025-07-14T15:54:39.567060Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 34556, "thread": 12084}
+{"severity": "INFO", "timestamp": "2025-07-14T15:54:39.572040Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:39.574048Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 46, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:39.577023Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T15:54:39.598081Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 34556, "thread": 12084}
+{"severity": "ERROR", "timestamp": "2025-07-14T15:54:40.120322Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API HTTP error during file fetch.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "error_code": 404, "error_details": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"File not found: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY.\",\n    \"errors\": [\n      {\n        \"message\": \"File not found: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\",\n        \"location\": \"fileId\",\n        \"locationType\": \"parameter\"\n      }\n    ]\n  }\n}\n", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 61, "process": 34556, "thread": 12084, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\google_drive\\api_client.py\", line 50, in fetch_xml_content_from_drive\n    xml_content_bytes = request.execute()\n                        ^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\venv\\Lib\\site-packages\\googleapiclient\\_helpers.py\", line 130, in positional_wrapper\n    return wrapped(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\venv\\Lib\\site-packages\\googleapiclient\\http.py\", line 938, in execute\n    raise HttpError(resp, content, uri=self.uri)\ngoogleapiclient.errors.HttpError: <HttpError 404 when requesting https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=json returned \"File not found: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY.\". Details: \"[{'message': 'File not found: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY.', 'domain': 'global', 'reason': 'notFound', 'location': 'fileId', 'locationType': 'parameter'}]\">"}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T15:54:40.124325Z", "logger": "__main__", "message": "No XML content retrieved from Google Drive or an error occurred during fetch.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "action": "exiting", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 97, "process": 34556, "thread": 12084}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:12.232211Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:12.233181Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 32360, "thread": 33320}
+{"severity": "INFO", "timestamp": "2025-07-14T16:03:12.652046Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:12.652046Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:12.688005Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 32360, "thread": 33320}
+{"severity": "INFO", "timestamp": "2025-07-14T16:03:13.128726Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:13.129729Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:13.132728Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 32360, "thread": 33320}
+{"severity": "INFO", "timestamp": "2025-07-14T16:03:13.507907Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 32360, "thread": 33320}
+{"severity": "INFO", "timestamp": "2025-07-14T16:03:13.508924Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:13.508924Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:13.513922Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 32360, "thread": 33320}
+{"severity": "INFO", "timestamp": "2025-07-14T16:03:13.842885Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 32360, "thread": 33320}
+{"severity": "INFO", "timestamp": "2025-07-14T16:03:13.844921Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 32360, "thread": 33320}
+{"severity": "INFO", "timestamp": "2025-07-14T16:03:13.844921Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 32360, "thread": 33320}
+{"severity": "INFO", "timestamp": "2025-07-14T16:03:13.851884Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:13.855901Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 46, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:13.858902Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:03:13.879841Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 32360, "thread": 33320}
+{"severity": "ERROR", "timestamp": "2025-07-14T16:03:14.402168Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API HTTP error during file fetch.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "error_code": 404, "error_details": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"File not found: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY.\",\n    \"errors\": [\n      {\n        \"message\": \"File not found: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY.\",\n        \"domain\": \"global\",\n        \"reason\": \"notFound\",\n        \"location\": \"fileId\",\n        \"locationType\": \"parameter\"\n      }\n    ]\n  }\n}\n", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 61, "process": 32360, "thread": 33320, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\google_drive\\api_client.py\", line 50, in fetch_xml_content_from_drive\n    xml_content_bytes = request.execute()\n                        ^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\venv\\Lib\\site-packages\\googleapiclient\\_helpers.py\", line 130, in positional_wrapper\n    return wrapped(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\venv\\Lib\\site-packages\\googleapiclient\\http.py\", line 938, in execute\n    raise HttpError(resp, content, uri=self.uri)\ngoogleapiclient.errors.HttpError: <HttpError 404 when requesting https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=json returned \"File not found: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY.\". Details: \"[{'message': 'File not found: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY.', 'domain': 'global', 'reason': 'notFound', 'location': 'fileId', 'locationType': 'parameter'}]\">"}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T16:03:14.406649Z", "logger": "__main__", "message": "No XML content retrieved from Google Drive or an error occurred during fetch.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "action": "exiting", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 97, "process": 32360, "thread": 33320}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:32.904653Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:32.905660Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 9976, "thread": 28912}
+{"severity": "INFO", "timestamp": "2025-07-14T16:15:33.467273Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:33.467273Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:33.483274Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 9976, "thread": 28912}
+{"severity": "INFO", "timestamp": "2025-07-14T16:15:33.914332Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:33.916331Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:33.918334Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 9976, "thread": 28912}
+{"severity": "INFO", "timestamp": "2025-07-14T16:15:34.264020Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 9976, "thread": 28912}
+{"severity": "INFO", "timestamp": "2025-07-14T16:15:34.265034Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:34.266036Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:34.270032Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 9976, "thread": 28912}
+{"severity": "INFO", "timestamp": "2025-07-14T16:15:34.558664Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 9976, "thread": 28912}
+{"severity": "INFO", "timestamp": "2025-07-14T16:15:34.558664Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 9976, "thread": 28912}
+{"severity": "INFO", "timestamp": "2025-07-14T16:15:34.560131Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 9976, "thread": 28912}
+{"severity": "INFO", "timestamp": "2025-07-14T16:15:34.569402Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:34.574879Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 46, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:34.580894Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:34.618803Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:15:35.213470Z", "logger": "src.services.google_drive.api_client", "message": "File content fetched from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "content_length_bytes": 4, "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 52, "process": 9976, "thread": 28912}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T16:15:35.213470Z", "logger": "src.services.google_drive.api_client", "message": "An unexpected error occurred while fetching XML from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "error": "'dict' object has no attribute 'decode'", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 85, "process": 9976, "thread": 28912, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\google_drive\\api_client.py\", line 55, in fetch_xml_content_from_drive\n    xml_string = xml_content_bytes.decode('utf-8')\n                 ^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'decode'"}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T16:15:35.217837Z", "logger": "__main__", "message": "No XML content retrieved from Google Drive or an error occurred during fetch.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "action": "exiting", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 97, "process": 9976, "thread": 28912}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:56.342836Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:56.343838Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 35628, "thread": 35612}
+{"severity": "INFO", "timestamp": "2025-07-14T16:16:56.720002Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:56.720002Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:56.732016Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 35628, "thread": 35612}
+{"severity": "INFO", "timestamp": "2025-07-14T16:16:56.999341Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:57.000443Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:57.005863Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 35628, "thread": 35612}
+{"severity": "INFO", "timestamp": "2025-07-14T16:16:57.238056Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 35628, "thread": 35612}
+{"severity": "INFO", "timestamp": "2025-07-14T16:16:57.239064Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:57.239064Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:57.241994Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 35628, "thread": 35612}
+{"severity": "INFO", "timestamp": "2025-07-14T16:16:57.496144Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 35628, "thread": 35612}
+{"severity": "INFO", "timestamp": "2025-07-14T16:16:57.498107Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 35628, "thread": 35612}
+{"severity": "INFO", "timestamp": "2025-07-14T16:16:57.499113Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 35628, "thread": 35612}
+{"severity": "INFO", "timestamp": "2025-07-14T16:16:57.504105Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:57.507102Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 46, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:57.510101Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:57.530102Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:16:58.036094Z", "logger": "src.services.google_drive.api_client", "message": "File content fetched from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "content_length_bytes": 4, "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 52, "process": 35628, "thread": 35612}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T16:16:58.037094Z", "logger": "src.services.google_drive.api_client", "message": "An unexpected error occurred while fetching XML from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "error": "'dict' object has no attribute 'decode'", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 85, "process": 35628, "thread": 35612, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\google_drive\\api_client.py\", line 55, in fetch_xml_content_from_drive\n    xml_string = xml_content_bytes.decode('utf-8')\n                 ^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'decode'"}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T16:16:58.040092Z", "logger": "__main__", "message": "No XML content retrieved from Google Drive or an error occurred during fetch.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "action": "exiting", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 97, "process": 35628, "thread": 35612}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:19.623351Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:19.623351Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 21844, "thread": 27100}
+{"severity": "INFO", "timestamp": "2025-07-14T16:23:20.001898Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:20.001898Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:20.013984Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 21844, "thread": 27100}
+{"severity": "INFO", "timestamp": "2025-07-14T16:23:20.458561Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:20.459381Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:20.461975Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 21844, "thread": 27100}
+{"severity": "INFO", "timestamp": "2025-07-14T16:23:20.769282Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 21844, "thread": 27100}
+{"severity": "INFO", "timestamp": "2025-07-14T16:23:20.769282Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:20.770282Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:20.772288Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 21844, "thread": 27100}
+{"severity": "INFO", "timestamp": "2025-07-14T16:23:21.027070Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 21844, "thread": 27100}
+{"severity": "INFO", "timestamp": "2025-07-14T16:23:21.028070Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 21844, "thread": 27100}
+{"severity": "INFO", "timestamp": "2025-07-14T16:23:21.029088Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 21844, "thread": 27100}
+{"severity": "INFO", "timestamp": "2025-07-14T16:23:21.035081Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:21.038084Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 47, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:23:21.042072Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 21844, "thread": 27100}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T16:23:21.042072Z", "logger": "src.services.google_drive.api_client", "message": "An unexpected error occurred while fetching XML from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "error": "'HttpRequest' object has no attribute 'get_media'", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 106, "process": 21844, "thread": 27100, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\google_drive\\api_client.py\", line 55, in fetch_xml_content_from_drive\n    downloader = request.get_media(file_content_stream)\n                 ^^^^^^^^^^^^^^^^^\nAttributeError: 'HttpRequest' object has no attribute 'get_media'"}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T16:23:21.044070Z", "logger": "__main__", "message": "No XML content retrieved from Google Drive or an error occurred during fetch.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "action": "exiting", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 97, "process": 21844, "thread": 27100}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:30.493444Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:30.494445Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:30.893373Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:30.893373Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:30.906369Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:31.172667Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:31.174662Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:31.180658Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:31.456969Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:31.457904Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:31.458890Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:31.464539Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:31.751592Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:31.751592Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:31.752606Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:31.755607Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:31.758617Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 48, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:31.761613Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:31.783670Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:25:32.585737Z", "logger": "src.services.google_drive.api_client", "message": "File content fetched from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "content_length_bytes": 122, "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 67, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:32.585737Z", "logger": "src.services.google_drive.api_client", "message": "XML content successfully fetched and decoded from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 73, "process": 9720, "thread": 27432}
+{"severity": "INFO", "timestamp": "2025-07-14T16:25:32.586738Z", "logger": "__main__", "message": "XML content fetched successfully from Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "content_length": 122, "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 100, "process": 9720, "thread": 27432}
+{"severity": "CRITICAL", "timestamp": "2025-07-14T16:25:32.587738Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "XML parsing error", "error": "not well-formed (invalid token): line 1, column 0", "xml_content_start": "{\n  \"kind\": \"drive#file\",\n  \"id\": \"1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY\",\n  \"name\": \"orders.xml\",\n  \"mimeType\": \"text/xml\"\n}\n", "module": "x_cart_parser", "funcName": "parse_x_cart_xml_for_shipstation_payload", "lineno": 188, "process": 9720, "thread": 27432, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\data_parsers\\x_cart_parser.py\", line 108, in parse_x_cart_xml_for_shipstation_payload\n    root = ET.fromstring(xml_content_string)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\NathanNeely\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\xml\\etree\\ElementTree.py\", line 1338, in XML\n    parser.feed(text)\nxml.etree.ElementTree.ParseError: not well-formed (invalid token): line 1, column 0"}
+{"severity": "WARNING", "timestamp": "2025-07-14T16:25:32.589737Z", "logger": "__main__", "message": "No valid orders to send to ShipStation after processing XML", "action": "exiting_gracefully", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 109, "process": 9720, "thread": 27432}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:12.114325Z", "logger": "root", "message": "Logging system initialized", "log_level": "DEBUG", "module": "logging_config", "funcName": "setup_logging", "lineno": 102, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:12.115314Z", "logger": "root", "message": "Log file output configured", "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log", "module": "logging_config", "funcName": "setup_logging", "lineno": 104, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:12.528173Z", "logger": "__main__", "message": "Starting core order uploader logic execution.", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 52, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:12.529177Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:12.541170Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:12.931045Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:12.931405Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:12.934411Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:13.176543Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'shipstation-api-secret'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:13.179095Z", "logger": "__main__", "message": "ShipStation API credentials retrieved", "api_key_truncated": "de888", "api_secret_truncated": "acd5e", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 72, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:13.180108Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:13.188192Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:13.436475Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:13.437467Z", "logger": "__main__", "message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": "{\n  \"", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 85, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:13.439485Z", "logger": "__main__", "message": "Fetching orders from X-Cart XML on Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 89, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:13.445398Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:13.448406Z", "logger": "src.services.google_drive.api_client", "message": "Google Drive API service client built successfully.", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 43, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:13.452126Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?fields=name%2CmimeType%2Csize&alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:13.473130Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:13.920327Z", "logger": "src.services.google_drive.api_client", "message": "Confirmed file metadata from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "file_name": "orders.xml", "file_mime_type": "text/xml", "file_size_bytes": "1533", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 52, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:13.924415Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=media", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:14.937288Z", "logger": "src.services.google_drive.api_client", "message": "Downloading chunk from Google Drive", "status_progress": 1.0, "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 77, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:14.938288Z", "logger": "src.services.google_drive.api_client", "message": "File content fetched from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "content_length_bytes": 1533, "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 81, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:14.938288Z", "logger": "src.services.google_drive.api_client", "message": "XML content successfully fetched and decoded from Google Drive.", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "function": "fetch_xml_content_from_drive", "module": "api_client", "funcName": "fetch_xml_content_from_drive", "lineno": 89, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:14.939291Z", "logger": "__main__", "message": "XML content fetched successfully from Google Drive", "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY", "content_length": 1533, "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 100, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:14.941293Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "XML content parsed successfully from string.", "root_tag": "DentistSelectOrders", "module": "x_cart_parser", "funcName": "parse_x_cart_xml_for_shipstation_payload", "lineno": 109, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:14.942289Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "Fetching and filtering SKU-Lot map from Google Sheets...", "module": "x_cart_parser", "funcName": "_get_active_sku_lot_map", "lineno": 22, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:14.942289Z", "logger": "src.services.google_sheets.api_client", "message": "Attempting to retrieve Google Sheets service account key from Secret Manager.", "module": "api_client", "funcName": "_get_sheets_credentials", "lineno": 33, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:14.943290Z", "logger": "src.services.gcp.secret_manager", "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 31, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:14.946636Z", "logger": "src.services.gcp.secret_manager", "message": "Using service account file for authentication.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 37, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:15.211302Z", "logger": "src.services.gcp.secret_manager", "message": "Successfully accessed secret 'google-sheets-service-account-key'.", "module": "secret_manager", "funcName": "access_secret_version", "lineno": 51, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:15.214278Z", "logger": "src.services.google_sheets.api_client", "message": "Google Sheets credentials successfully retrieved and cached.", "module": "api_client", "funcName": "_get_sheets_credentials", "lineno": 50, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:15.218275Z", "logger": "googleapiclient.discovery_cache", "message": "file_cache is only supported with oauth2client<4.0.0", "module": "__init__", "funcName": "autodetect", "lineno": 49, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:15.239690Z", "logger": "src.services.google_sheets.api_client", "message": "Fetching data from Google Sheet", "sheet_id": "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo", "worksheet": "SKU_Lot", "range": "'SKU_Lot'!A:ZZ", "module": "api_client", "funcName": "get_google_sheet_data", "lineno": 77, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:15.406126Z", "logger": "googleapiclient.discovery", "message": "URL being requested: GET https://sheets.googleapis.com/v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27SKU_Lot%27%21A%3AZZ?alt=json", "module": "discovery", "funcName": "method", "lineno": 1258, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:15.428988Z", "logger": "google_auth_httplib2", "message": "Making request: POST https://oauth2.googleapis.com/token", "module": "google_auth_httplib2", "funcName": "__call__", "lineno": 118, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:16.648726Z", "logger": "src.services.google_sheets.api_client", "message": "Successfully retrieved data from Google Sheet.", "sheet_id": "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo", "worksheet": "SKU_Lot", "rows_count": 8, "module": "api_client", "funcName": "get_google_sheet_data", "lineno": 86, "process": 22708, "thread": 21764}
+{"severity": "ERROR", "timestamp": "2025-07-14T16:27:16.649728Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "Failed to get or process SKU_Lot map from Google Sheets", "error": "'list' object has no attribute 'empty'", "module": "x_cart_parser", "funcName": "_get_active_sku_lot_map", "lineno": 48, "process": 22708, "thread": 21764, "exc_info": "Traceback (most recent call last):\n  File \"C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\src\\services\\data_parsers\\x_cart_parser.py\", line 30, in _get_active_sku_lot_map\n    if sku_lot_df is None or sku_lot_df.empty:\n                             ^^^^^^^^^^^^^^^^\nAttributeError: 'list' object has no attribute 'empty'"}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:16.653253Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "Address built from XML", "prefix": "b_", "name": "Marina Zavala", "city": "Burlington", "module": "x_cart_parser", "funcName": "build_address_from_xml", "lineno": 98, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:16.654250Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "Address built from XML", "prefix": "s_", "name": "Marina Zavala", "city": "Burlington", "module": "x_cart_parser", "funcName": "build_address_from_xml", "lineno": 98, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:16.655249Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "Applying bundle logic", "order_id": "667685", "bundle_sku": "18345", "module": "x_cart_parser", "funcName": "parse_x_cart_xml_for_shipstation_payload", "lineno": 154, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:16.656249Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "Applying bundle logic", "order_id": "667685", "bundle_sku": "18445", "module": "x_cart_parser", "funcName": "parse_x_cart_xml_for_shipstation_payload", "lineno": 154, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:16.656249Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "Order processed and added to payload", "order_id": "667685", "item_count": 2, "module": "x_cart_parser", "funcName": "parse_x_cart_xml_for_shipstation_payload", "lineno": 185, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:16.657251Z", "logger": "src.services.data_parsers.x_cart_parser", "message": "Finished parsing X-Cart XML", "total_orders_parsed": 1, "module": "x_cart_parser", "funcName": "parse_x_cart_xml_for_shipstation_payload", "lineno": 194, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:16.657251Z", "logger": "__main__", "message": "Orders prepared for upload to ShipStation", "count": 1, "stage": "payload_preparation", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 112, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:16.659782Z", "logger": "__main__", "message": "Checking for existing orders in ShipStation", "date_range_start": "2025-07-03T06:25:24+00:00Z", "date_range_end": "2025-07-14T21:27:16+00:00Z", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 149, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:16.662310Z", "logger": "src.services.shipstation.api_client", "message": "Starting ShipStation existing orders fetch from 2025-07-03T06:25:24+00:00Z to 2025-07-14T21:27:16+00:00Z...", "module": "api_client", "funcName": "fetch_shipstation_existing_orders_by_date_range", "lineno": 205, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:16.662310Z", "logger": "utils.api_utils", "message": "Attempting GET request to: https://ssapi.shipstation.com/orders", "module": "api_utils", "funcName": "make_api_request", "lineno": 78, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:16.669620Z", "logger": "urllib3.connectionpool", "message": "Starting new HTTPS connection (1): ssapi.shipstation.com:443", "module": "connectionpool", "funcName": "_new_conn", "lineno": 1049, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:17.233617Z", "logger": "urllib3.connectionpool", "message": "https://ssapi.shipstation.com:443 \"GET /orders?createDateStart=2025-07-03T06%3A25%3A24%2B00%3A00Z&pageSize=500&page=1&createDateEnd=2025-07-14T21%3A27%3A16%2B00%3A00Z HTTP/1.1\" 200 557254", "module": "connectionpool", "funcName": "_make_request", "lineno": 544, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:17.415126Z", "logger": "utils.api_utils", "message": "Successfully received response from https://ssapi.shipstation.com/orders with status code: 200", "module": "api_utils", "funcName": "make_api_request", "lineno": 100, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:17.419154Z", "logger": "src.services.shipstation.api_client", "message": "Fetched page 1: 215 existing orders.", "module": "api_client", "funcName": "fetch_shipstation_existing_orders_by_date_range", "lineno": 235, "process": 22708, "thread": 21764}
+{"severity": "DEBUG", "timestamp": "2025-07-14T16:27:17.419154Z", "logger": "src.services.shipstation.api_client", "message": "Fewer than 500 orders on page 1. Assuming last page.", "module": "api_client", "funcName": "fetch_shipstation_existing_orders_by_date_range", "lineno": 238, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:17.420151Z", "logger": "src.services.shipstation.api_client", "message": "Finished fetching existing ShipStation orders. Total retrieved: 215", "module": "api_client", "funcName": "fetch_shipstation_existing_orders_by_date_range", "lineno": 258, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:17.420151Z", "logger": "__main__", "message": "Skipping duplicate order", "orderNumber": "667685", "normalizedOrderNumber": "667685", "reason": "already exists in ShipStation", "action": "skipped_upload", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 170, "process": 22708, "thread": 21764}
+{"severity": "INFO", "timestamp": "2025-07-14T16:27:17.421122Z", "logger": "__main__", "message": "Duplicate orders skipped", "count": 1, "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 182, "process": 22708, "thread": 21764}
+{"severity": "WARNING", "timestamp": "2025-07-14T16:27:17.421122Z", "logger": "__main__", "message": "No new unique orders to send to ShipStation after duplicate check", "action": "exiting_gracefully", "module": "shipstation_order_uploader", "funcName": "run_order_uploader_logic", "lineno": 185, "process": 22708, "thread": 21764}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:48.319499Z",
+  "logger": "root",
+  "message": "Logging system initialized",
+  "log_level": "DEBUG",
+  "module": "logging_config",
+  "funcName": "setup_logging",
+  "lineno": 103,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:48.320498Z",
+  "logger": "root",
+  "message": "Log file output configured",
+  "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log",
+  "module": "logging_config",
+  "funcName": "setup_logging",
+  "lineno": 105,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:48.744104Z",
+  "logger": "__main__",
+  "message": "Starting core order uploader logic execution.",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 52,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:48.745090Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 31,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:48.756310Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Using service account file for authentication.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 37,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:49.099153Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Successfully accessed secret 'shipstation-api-key'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 51,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:49.100154Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 31,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:49.102155Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Using service account file for authentication.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 37,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:49.452083Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Successfully accessed secret 'shipstation-api-secret'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 51,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:49.453070Z",
+  "logger": "__main__",
+  "message": "ShipStation API credentials retrieved",
+  "api_key_truncated": "de888",
+  "api_secret_truncated": "acd5e",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 72,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:49.454081Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 31,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:49.457042Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Using service account file for authentication.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 37,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:49.695514Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Successfully accessed secret 'google-sheets-service-account-key'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 51,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:49.696543Z",
+  "logger": "__main__",
+  "message": "Google Sheets Service Account Key retrieved for Drive access",
+  "key_truncated": "{\n  \"",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 85,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:49.697503Z",
+  "logger": "__main__",
+  "message": "Fetching orders from X-Cart XML on Google Drive",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 89,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:49.704470Z",
+  "logger": "googleapiclient.discovery_cache",
+  "message": "file_cache is only supported with oauth2client<4.0.0",
+  "module": "__init__",
+  "funcName": "autodetect",
+  "lineno": 49,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:49.710499Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "Google Drive API service client built successfully.",
+  "function": "fetch_xml_content_from_drive",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 43,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:49.715493Z",
+  "logger": "googleapiclient.discovery",
+  "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?fields=name%2CmimeType%2Csize&alt=json",
+  "module": "discovery",
+  "funcName": "method",
+  "lineno": 1258,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:49.737498Z",
+  "logger": "google_auth_httplib2",
+  "message": "Making request: POST https://oauth2.googleapis.com/token",
+  "module": "google_auth_httplib2",
+  "funcName": "__call__",
+  "lineno": 118,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:50.261379Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "Confirmed file metadata from Google Drive.",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "file_name": "orders.xml",
+  "file_mime_type": "text/xml",
+  "file_size_bytes": "1533",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 52,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:50.266363Z",
+  "logger": "googleapiclient.discovery",
+  "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=media",
+  "module": "discovery",
+  "funcName": "method",
+  "lineno": 1258,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:51.182497Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "Downloading chunk from Google Drive",
+  "status_progress": 1.0,
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 77,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:51.183578Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "File content fetched from Google Drive.",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "content_length_bytes": 1533,
+  "function": "fetch_xml_content_from_drive",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 81,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:51.185125Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "XML content successfully fetched and decoded from Google Drive.",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "function": "fetch_xml_content_from_drive",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 89,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:51.186140Z",
+  "logger": "__main__",
+  "message": "XML content fetched successfully from Google Drive",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "content_length": 1533,
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 100,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:51.190888Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "XML content parsed successfully from string.",
+  "root_tag": "DentistSelectOrders",
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 122,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:51.191843Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Fetching and filtering SKU-Lot map from Google Sheets...",
+  "module": "x_cart_parser",
+  "funcName": "_get_active_sku_lot_map",
+  "lineno": 22,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:51.192799Z",
+  "logger": "src.services.google_sheets.api_client",
+  "message": "Attempting to retrieve Google Sheets service account key from Secret Manager.",
+  "module": "api_client",
+  "funcName": "_get_sheets_credentials",
+  "lineno": 33,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:51.193789Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 31,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:51.196828Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Using service account file for authentication.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 37,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:51.447182Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Successfully accessed secret 'google-sheets-service-account-key'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 51,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:51.449646Z",
+  "logger": "src.services.google_sheets.api_client",
+  "message": "Google Sheets credentials successfully retrieved and cached.",
+  "module": "api_client",
+  "funcName": "_get_sheets_credentials",
+  "lineno": 50,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:51.452659Z",
+  "logger": "googleapiclient.discovery_cache",
+  "message": "file_cache is only supported with oauth2client<4.0.0",
+  "module": "__init__",
+  "funcName": "autodetect",
+  "lineno": 49,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:51.457656Z",
+  "logger": "src.services.google_sheets.api_client",
+  "message": "Fetching data from Google Sheet",
+  "sheet_id": "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo",
+  "worksheet": "SKU_Lot",
+  "range": "'SKU_Lot'!A:ZZ",
+  "module": "api_client",
+  "funcName": "get_google_sheet_data",
+  "lineno": 77,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:51.706560Z",
+  "logger": "googleapiclient.discovery",
+  "message": "URL being requested: GET https://sheets.googleapis.com/v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27SKU_Lot%27%21A%3AZZ?alt=json",
+  "module": "discovery",
+  "funcName": "method",
+  "lineno": 1258,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:51.731560Z",
+  "logger": "google_auth_httplib2",
+  "message": "Making request: POST https://oauth2.googleapis.com/token",
+  "module": "google_auth_httplib2",
+  "funcName": "__call__",
+  "lineno": 118,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:52.854843Z",
+  "logger": "src.services.google_sheets.api_client",
+  "message": "Successfully retrieved data from Google Sheet.",
+  "sheet_id": "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo",
+  "worksheet": "SKU_Lot",
+  "rows_count": 8,
+  "module": "api_client",
+  "funcName": "get_google_sheet_data",
+  "lineno": 86,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:52.878292Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Successfully created active SKU-Lot map",
+  "entry_count": 5,
+  "module": "x_cart_parser",
+  "funcName": "_get_active_sku_lot_map",
+  "lineno": 58,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:52.880142Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Address built from XML",
+  "prefix": "b_",
+  "name": "Marina Zavala",
+  "city": "Burlington",
+  "module": "x_cart_parser",
+  "funcName": "build_address_from_xml",
+  "lineno": 111,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:52.880142Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Address built from XML",
+  "prefix": "s_",
+  "name": "Marina Zavala",
+  "city": "Burlington",
+  "module": "x_cart_parser",
+  "funcName": "build_address_from_xml",
+  "lineno": 111,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:52.881159Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Applying bundle logic",
+  "order_id": "667685",
+  "bundle_sku": "18345",
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 167,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:52.881159Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Applying bundle logic",
+  "order_id": "667685",
+  "bundle_sku": "18445",
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 167,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:52.881159Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Order processed and added to payload",
+  "order_id": "667685",
+  "item_count": 2,
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 198,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:52.890302Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Finished parsing X-Cart XML",
+  "total_orders_parsed": 1,
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 207,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:52.891288Z",
+  "logger": "__main__",
+  "message": "Orders prepared for upload to ShipStation",
+  "count": 1,
+  "stage": "payload_preparation",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 112,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:52.893392Z",
+  "logger": "__main__",
+  "message": "Checking for existing orders in ShipStation",
+  "date_range_start": "2025-07-03T06:25:24+00:00Z",
+  "date_range_end": "2025-07-14T21:33:52+00:00Z",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 149,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:52.893392Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Starting ShipStation existing orders fetch from 2025-07-03T06:25:24+00:00Z to 2025-07-14T21:33:52+00:00Z...",
+  "module": "api_client",
+  "funcName": "fetch_shipstation_existing_orders_by_date_range",
+  "lineno": 205,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:52.894390Z",
+  "logger": "utils.api_utils",
+  "message": "Attempting GET request to: https://ssapi.shipstation.com/orders",
+  "module": "api_utils",
+  "funcName": "make_api_request",
+  "lineno": 78,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:52.900249Z",
+  "logger": "urllib3.connectionpool",
+  "message": "Starting new HTTPS connection (1): ssapi.shipstation.com:443",
+  "module": "connectionpool",
+  "funcName": "_new_conn",
+  "lineno": 1049,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:53.330128Z",
+  "logger": "urllib3.connectionpool",
+  "message": "https://ssapi.shipstation.com:443 \"GET /orders?createDateStart=2025-07-03T06%3A25%3A24%2B00%3A00Z&pageSize=500&page=1&createDateEnd=2025-07-14T21%3A33%3A52%2B00%3A00Z HTTP/1.1\" 200 557254",
+  "module": "connectionpool",
+  "funcName": "_make_request",
+  "lineno": 544,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:53.567525Z",
+  "logger": "utils.api_utils",
+  "message": "Successfully received response from https://ssapi.shipstation.com/orders with status code: 200",
+  "module": "api_utils",
+  "funcName": "make_api_request",
+  "lineno": 100,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:53.572261Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Fetched page 1: 215 existing orders.",
+  "module": "api_client",
+  "funcName": "fetch_shipstation_existing_orders_by_date_range",
+  "lineno": 235,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:33:53.573160Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Fewer than 500 orders on page 1. Assuming last page.",
+  "module": "api_client",
+  "funcName": "fetch_shipstation_existing_orders_by_date_range",
+  "lineno": 238,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:53.574160Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Finished fetching existing ShipStation orders. Total retrieved: 215",
+  "module": "api_client",
+  "funcName": "fetch_shipstation_existing_orders_by_date_range",
+  "lineno": 258,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:53.574160Z",
+  "logger": "__main__",
+  "message": "Skipping duplicate order",
+  "orderNumber": "667685",
+  "normalizedOrderNumber": "667685",
+  "reason": "already exists in ShipStation",
+  "action": "skipped_upload",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 170,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:33:53.575158Z",
+  "logger": "__main__",
+  "message": "Duplicate orders skipped",
+  "count": 1,
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 182,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "WARNING",
+  "timestamp": "2025-07-14T16:33:53.575158Z",
+  "logger": "__main__",
+  "message": "No new unique orders to send to ShipStation after duplicate check",
+  "action": "exiting_gracefully",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 185,
+  "process": 18224,
+  "thread": 32444
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:06.535006Z",
+  "logger": "root",
+  "message": "Logging system initialized",
+  "log_level": "DEBUG",
+  "module": "logging_config",
+  "funcName": "setup_logging",
+  "lineno": 103,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:06.536079Z",
+  "logger": "root",
+  "message": "Log file output configured",
+  "path": "C:\\Users\\NathanNeely\\Projects\\ORA_Automation\\logs\\app.log",
+  "module": "logging_config",
+  "funcName": "setup_logging",
+  "lineno": 105,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:07.034503Z",
+  "logger": "__main__",
+  "message": "Starting core order uploader logic execution.",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 52,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.034503Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 31,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.049508Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Using service account file for authentication.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 37,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:07.458119Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Successfully accessed secret 'shipstation-api-key'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 51,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.459119Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 31,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.461117Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Using service account file for authentication.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 37,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:07.700562Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Successfully accessed secret 'shipstation-api-secret'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 51,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:07.701620Z",
+  "logger": "__main__",
+  "message": "ShipStation API credentials retrieved",
+  "api_key_truncated": "de888",
+  "api_secret_truncated": "acd5e",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 72,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.702642Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 31,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.706627Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Using service account file for authentication.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 37,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:07.936761Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Successfully accessed secret 'google-sheets-service-account-key'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 51,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:07.936761Z",
+  "logger": "__main__",
+  "message": "Google Sheets Service Account Key retrieved for Drive access",
+  "key_truncated": "{\n  \"",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 85,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:07.938756Z",
+  "logger": "__main__",
+  "message": "Fetching orders from X-Cart XML on Google Drive",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 89,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:07.944905Z",
+  "logger": "googleapiclient.discovery_cache",
+  "message": "file_cache is only supported with oauth2client<4.0.0",
+  "module": "__init__",
+  "funcName": "autodetect",
+  "lineno": 49,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.947876Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "Google Drive API service client built successfully.",
+  "function": "fetch_xml_content_from_drive",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 43,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.950933Z",
+  "logger": "googleapiclient.discovery",
+  "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?fields=name%2CmimeType%2Csize&alt=json",
+  "module": "discovery",
+  "funcName": "method",
+  "lineno": 1258,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:07.972932Z",
+  "logger": "google_auth_httplib2",
+  "message": "Making request: POST https://oauth2.googleapis.com/token",
+  "module": "google_auth_httplib2",
+  "funcName": "__call__",
+  "lineno": 118,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:08.438452Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "Confirmed file metadata from Google Drive.",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "file_name": "orders.xml",
+  "file_mime_type": "text/xml",
+  "file_size_bytes": "1369",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 52,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:08.442622Z",
+  "logger": "googleapiclient.discovery",
+  "message": "URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=media",
+  "module": "discovery",
+  "funcName": "method",
+  "lineno": 1258,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:09.515038Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "Downloading chunk from Google Drive",
+  "status_progress": 1.0,
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 77,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:09.516038Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "File content fetched from Google Drive.",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "content_length_bytes": 1369,
+  "function": "fetch_xml_content_from_drive",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 81,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:09.516038Z",
+  "logger": "src.services.google_drive.api_client",
+  "message": "XML content successfully fetched and decoded from Google Drive.",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "function": "fetch_xml_content_from_drive",
+  "module": "api_client",
+  "funcName": "fetch_xml_content_from_drive",
+  "lineno": 89,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:09.517043Z",
+  "logger": "__main__",
+  "message": "XML content fetched successfully from Google Drive",
+  "file_id": "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY",
+  "content_length": 1369,
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 100,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:09.518039Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "XML content parsed successfully from string.",
+  "root_tag": "DentistSelectOrders",
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 122,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:09.518039Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Fetching and filtering SKU-Lot map from Google Sheets...",
+  "module": "x_cart_parser",
+  "funcName": "_get_active_sku_lot_map",
+  "lineno": 22,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:09.519040Z",
+  "logger": "src.services.google_sheets.api_client",
+  "message": "Attempting to retrieve Google Sheets service account key from Secret Manager.",
+  "module": "api_client",
+  "funcName": "_get_sheets_credentials",
+  "lineno": 33,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:09.519040Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 31,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:09.521039Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Using service account file for authentication.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 37,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:09.730035Z",
+  "logger": "src.services.gcp.secret_manager",
+  "message": "Successfully accessed secret 'google-sheets-service-account-key'.",
+  "module": "secret_manager",
+  "funcName": "access_secret_version",
+  "lineno": 51,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:09.732947Z",
+  "logger": "src.services.google_sheets.api_client",
+  "message": "Google Sheets credentials successfully retrieved and cached.",
+  "module": "api_client",
+  "funcName": "_get_sheets_credentials",
+  "lineno": 50,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:09.735960Z",
+  "logger": "googleapiclient.discovery_cache",
+  "message": "file_cache is only supported with oauth2client<4.0.0",
+  "module": "__init__",
+  "funcName": "autodetect",
+  "lineno": 49,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:09.739953Z",
+  "logger": "src.services.google_sheets.api_client",
+  "message": "Fetching data from Google Sheet",
+  "sheet_id": "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo",
+  "worksheet": "SKU_Lot",
+  "range": "'SKU_Lot'!A:ZZ",
+  "module": "api_client",
+  "funcName": "get_google_sheet_data",
+  "lineno": 77,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:09.925926Z",
+  "logger": "googleapiclient.discovery",
+  "message": "URL being requested: GET https://sheets.googleapis.com/v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27SKU_Lot%27%21A%3AZZ?alt=json",
+  "module": "discovery",
+  "funcName": "method",
+  "lineno": 1258,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:09.945827Z",
+  "logger": "google_auth_httplib2",
+  "message": "Making request: POST https://oauth2.googleapis.com/token",
+  "module": "google_auth_httplib2",
+  "funcName": "__call__",
+  "lineno": 118,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:10.995431Z",
+  "logger": "src.services.google_sheets.api_client",
+  "message": "Successfully retrieved data from Google Sheet.",
+  "sheet_id": "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo",
+  "worksheet": "SKU_Lot",
+  "rows_count": 8,
+  "module": "api_client",
+  "funcName": "get_google_sheet_data",
+  "lineno": 86,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.017780Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Successfully created active SKU-Lot map",
+  "entry_count": 5,
+  "module": "x_cart_parser",
+  "funcName": "_get_active_sku_lot_map",
+  "lineno": 58,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.019785Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Address built from XML",
+  "prefix": "b_",
+  "name": "TEST DO NOT SHIP",
+  "city": "Testville",
+  "module": "x_cart_parser",
+  "funcName": "build_address_from_xml",
+  "lineno": 111,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.021796Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Address built from XML",
+  "prefix": "s_",
+  "name": "TEST DO NOT SHIP",
+  "city": "Testville",
+  "module": "x_cart_parser",
+  "funcName": "build_address_from_xml",
+  "lineno": 111,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.022784Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Applying bundle logic",
+  "order_id": "BUNDLE-TEST-18225-20250714165031-100001",
+  "bundle_sku": "18225",
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 167,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.023786Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Order processed and added to payload",
+  "order_id": "BUNDLE-TEST-18225-20250714165031-100001",
+  "item_count": 1,
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 198,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.023786Z",
+  "logger": "src.services.data_parsers.x_cart_parser",
+  "message": "Finished parsing X-Cart XML",
+  "total_orders_parsed": 1,
+  "module": "x_cart_parser",
+  "funcName": "parse_x_cart_xml_for_shipstation_payload",
+  "lineno": 207,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.024793Z",
+  "logger": "__main__",
+  "message": "Orders prepared for upload to ShipStation",
+  "count": 1,
+  "stage": "payload_preparation",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 112,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.035029Z",
+  "logger": "__main__",
+  "message": "Checking for existing orders in ShipStation",
+  "date_range_start": "2025-07-14T16:50:31+00:00Z",
+  "date_range_end": "2025-07-14T21:53:11+00:00Z",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 149,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.036016Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Starting ShipStation existing orders fetch from 2025-07-14T16:50:31+00:00Z to 2025-07-14T21:53:11+00:00Z...",
+  "module": "api_client",
+  "funcName": "fetch_shipstation_existing_orders_by_date_range",
+  "lineno": 205,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.037014Z",
+  "logger": "utils.api_utils",
+  "message": "Attempting GET request to: https://ssapi.shipstation.com/orders",
+  "module": "api_utils",
+  "funcName": "make_api_request",
+  "lineno": 78,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.043015Z",
+  "logger": "urllib3.connectionpool",
+  "message": "Starting new HTTPS connection (1): ssapi.shipstation.com:443",
+  "module": "connectionpool",
+  "funcName": "_new_conn",
+  "lineno": 1049,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.487702Z",
+  "logger": "urllib3.connectionpool",
+  "message": "https://ssapi.shipstation.com:443 \"GET /orders?createDateStart=2025-07-14T16%3A50%3A31%2B00%3A00Z&pageSize=500&page=1&createDateEnd=2025-07-14T21%3A53%3A11%2B00%3A00Z HTTP/1.1\" 200 18340",
+  "module": "connectionpool",
+  "funcName": "_make_request",
+  "lineno": 544,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.515961Z",
+  "logger": "utils.api_utils",
+  "message": "Successfully received response from https://ssapi.shipstation.com/orders with status code: 200",
+  "module": "api_utils",
+  "funcName": "make_api_request",
+  "lineno": 100,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.516934Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Fetched page 1: 7 existing orders.",
+  "module": "api_client",
+  "funcName": "fetch_shipstation_existing_orders_by_date_range",
+  "lineno": 235,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.517672Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Fewer than 500 orders on page 1. Assuming last page.",
+  "module": "api_client",
+  "funcName": "fetch_shipstation_existing_orders_by_date_range",
+  "lineno": 238,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.517672Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Finished fetching existing ShipStation orders. Total retrieved: 7",
+  "module": "api_client",
+  "funcName": "fetch_shipstation_existing_orders_by_date_range",
+  "lineno": 258,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.518679Z",
+  "logger": "__main__",
+  "message": "Proceeding with new unique orders for upload",
+  "count": 1,
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 188,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.518679Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "Sending payload to ShipStation API. First 500 chars: [\n  {\n    \"orderKey\": \"BUNDLE-TEST-18225-20250714165031-100001\",\n    \"orderNumber\": \"BUNDLE-TEST-18225-20250714165031-100001\",\n    \"orderDate\": \"2025-07-14T16:50:31.000Z\",\n    \"orderStatus\": \"awaiting_shipment\",\n    \"customerEmail\": \"bundle.test@example.com\",\n    \"requestedShippingService\": \"Standard Flat Rate Ground\",\n    \"billTo\": {\n      \"name\": \"TEST DO NOT SHIP\",\n      \"company\": \"TEST BILLING 18225\",\n      \"street1\": \"123 Test Lane\",\n      \"city\": \"Testville\",\n      \"state\": \"MN\",\n      \"p...",
+  "module": "api_client",
+  "funcName": "send_all_orders_to_shipstation",
+  "lineno": 58,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:11.519681Z",
+  "logger": "utils.api_utils",
+  "message": "Attempting POST request to: https://ssapi.shipstation.com/orders/createorders",
+  "module": "api_utils",
+  "funcName": "make_api_request",
+  "lineno": 78,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.520069Z",
+  "logger": "utils.api_utils",
+  "message": "Request data: [{'orderKey': 'BUNDLE-TEST-18225-20250714165031-100001', 'orderNumber': 'BUNDLE-TEST-18225-20250714165031-100001', 'orderDate': '2025-07-14T16:50:31.000Z', 'orderStatus': 'awaiting_shipment', 'customerEmail': 'bundle.test@example.com', 'requestedShippingService': 'Standard Flat Rate Ground', 'billTo': {'name': 'TEST DO NOT SHIP', 'company': 'TEST BILLING 18225', 'street1': '123 Test Lane', 'city': 'Testville', 'state': 'MN', 'postalCode': '55125', 'country': 'US', 'phone': '(555) 555-5555'}, 'shipTo': {'name': 'TEST DO NOT SHIP', 'company': 'TEST COMPANY 18225', 'street1': '123 Test Lane', 'city': 'Testville', 'state': 'MN', 'postalCode': '55125', 'country': 'US', 'phone': '(555) 555-5555'}, 'items': [{'sku': '17612 - 250195', 'name': 'Component of 18225', 'quantity': 40}]}]",
+  "module": "api_utils",
+  "funcName": "make_api_request",
+  "lineno": 81,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:11.522082Z",
+  "logger": "urllib3.connectionpool",
+  "message": "Starting new HTTPS connection (1): ssapi.shipstation.com:443",
+  "module": "connectionpool",
+  "funcName": "_new_conn",
+  "lineno": 1049,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:12.239753Z",
+  "logger": "urllib3.connectionpool",
+  "message": "https://ssapi.shipstation.com:443 \"POST /orders/createorders HTTP/1.1\" 200 197",
+  "module": "connectionpool",
+  "funcName": "_make_request",
+  "lineno": 544,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:12.241612Z",
+  "logger": "utils.api_utils",
+  "message": "Successfully received response from https://ssapi.shipstation.com/orders/createorders with status code: 200",
+  "module": "api_utils",
+  "funcName": "make_api_request",
+  "lineno": 100,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:12.244056Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "All orders sent successfully to ShipStation.",
+  "module": "api_client",
+  "funcName": "send_all_orders_to_shipstation",
+  "lineno": 75,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "DEBUG",
+  "timestamp": "2025-07-14T16:53:12.245116Z",
+  "logger": "src.services.shipstation.api_client",
+  "message": "ShipStation API response (first 500 chars): {\n  \"hasErrors\": false,\n  \"results\": [\n    {\n      \"orderId\": 198924800,\n      \"orderNumber\": \"BUNDLE-TEST-18225-20250714165031-100001\",\n      \"orderKey\": \"BUNDLE-TEST-18225-20250714165031-100001\",\n      \"success\": true,\n      \"errorMessage\": null\n    }\n  ]\n}...",
+  "module": "api_client",
+  "funcName": "send_all_orders_to_shipstation",
+  "lineno": 76,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:12.247097Z",
+  "logger": "__main__",
+  "message": "ShipStation Upload Results Summary",
+  "total_orders_attempted": 1,
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 200,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:12.247097Z",
+  "logger": "__main__",
+  "message": "ShipStation single order upload result",
+  "orderKey": "BUNDLE-TEST-18225-20250714165031-100001",
+  "success": true,
+  "errorMessage": null,
+  "type": "shipstation_api_response",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 202,
+  "process": 22236,
+  "thread": 29740
+}
+{
+  "severity": "INFO",
+  "timestamp": "2025-07-14T16:53:12.248158Z",
+  "logger": "__main__",
+  "message": "ShipStation Order Uploader Script finished",
+  "status": "completed",
+  "module": "shipstation_order_uploader",
+  "funcName": "run_order_uploader_logic",
+  "lineno": 212,
+  "process": 22236,
+  "thread": 29740
+}

@@ -1,165 +1,93 @@
-# This module provides a centralized utility for sending system notifications.
-# It's designed to log notification messages and can be extended to integrate
-# with various notification services (e.g., email, Slack, PagerDuty)
-# for critical alerts and updates within the ORA Automation Solution.
-
-# --- Functions ---
-
-# def send_notification(subject, message, severity='INFO', recipients=None):
-#   Purpose:
-#     Logs a notification message and can dispatch it to specified recipients
-#     based on configuration. Designed for informing stakeholders about
-#     critical events, warnings, or operational successes.
-#   Inputs:
-#     subject (str): The subject line of the notification.
-#     message (str): The main body or content of the notification.
-#     severity (str, optional): The severity level of the notification (e.g., 'INFO', 'WARNING', 'ERROR').
-#                                Defaults to 'INFO'.
-#     recipients (list of str, optional): A list of recipient identifiers (e.g., email addresses)
-#                                          to send the notification to. Defaults to None.
-#   Outputs:
-#     None (logs the notification and performs external dispatch if configured).
-
-
+# filename: src/utils/notification_manager.py
 """
-This module provides a centralized mechanism for sending automated notifications
-for critical errors, warnings, or significant events within the ORA project.
-
-Atomic Step 4.1.5: Develop Centralized Notification Mechanism
-- Create a dedicated module (`notification_manager.py`) responsible for sending
-  automated notifications.
-- Implement a `send_notification` function that can be called by other scripts.
-- Future enhancements will include integrating with specific notification
-  services (e.g., email, PagerDuty, Slack).
+This module provides a centralized mechanism for sending automated notifications (e.g., emails).
+It is designed to use a third-party email API service for reliable delivery from Cloud Functions.
+This version integrates with SendGrid.
 """
-
 import logging
-# from config import settings # Will be used for recipient lists, etc.
-# import smtplib # Example: for email notifications
-# from email.mime.text import MIMEText # Example: for email notifications
 
-# Initialize logger for this module
-# The main script (e.g., shipstation_reporter.py) should configure the
-# overall logging, and this module will use that configured logger.
+# Import central settings and secret manager client
+from config import settings
+from src.services.gcp.secret_manager import access_secret_version
+
+# Import SendGrid client library components
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To
+
 logger = logging.getLogger(__name__)
 
-def send_notification(
-    subject: str,
-    message: str,
-    severity: str = "INFO",
-    recipients: list = None,
-    # Add more parameters as needed, e.g., error_details, affected_component
-):
+def send_email_via_api(recipients: list, subject: str, body: str) -> bool:
     """
-    Sends an automated notification about a system event, error, or warning.
-
-    This function is designed to be the single entry point for all notifications
-    from the ORA project. In future iterations, it will integrate with
-    external notification services.
+    Sends an email using the SendGrid API service.
+    Retrieves the SendGrid API key from Secret Manager.
 
     Args:
-        subject (str): The subject line of the notification (e.g., "ORA Critical Error").
-        message (str): The main body of the notification, describing the event.
-        severity (str): The severity level of the notification (e.g., "INFO",
-                        "WARNING", "ERROR", "CRITICAL"). This can influence
-                        how and to whom the notification is sent.
-        recipients (list, optional): A list of recipient identifiers (e.g., email
-                                     addresses, user IDs for a messaging service).
-                                     If None, default recipients from settings
-                                     will be used. Defaults to None.
+        recipients (list): A list of email addresses to send the email to.
+        subject (str): The subject line of the email.
+        body (str): The plain text body of the email.
+
+    Returns:
+        bool: True if the email was successfully sent, False otherwise.
     """
-    logger.info(f"Preparing to send notification: Severity='{severity}', Subject='{subject}'")
-    logger.debug(f"Notification Message: {message}")
-    logger.debug(f"Target Recipients: {recipients if recipients else 'Default'}")
+    if not recipients:
+        logger.warning({"message": "No recipients specified for email. Skipping email send.", "subject": subject})
+        return False
 
-    # --- Placeholder for actual notification sending logic ---
-    # In a real implementation, this section would contain code to
-    # interact with an email API, a messaging service API (e.g., Slack, Teams),
-    # or an incident management tool (e.g., PagerDuty).
-
-    # Example (conceptual) for sending an email:
-    # if severity == "CRITICAL" or severity == "ERROR":
-    #     try:
-    #         # Load SMTP settings and recipients from settings.py
-    #         # smtp_server = settings.NOTIFICATION_SMTP_SERVER
-    #         # smtp_port = settings.NOTIFICATION_SMTP_PORT
-    #         # sender_email = settings.NOTIFICATION_SENDER_EMAIL
-    #         # default_recipients = settings.NOTIFICATION_DEFAULT_RECIPIENTS
-    #
-    #         # actual_recipients = recipients if recipients else default_recipients
-    #
-    #         # msg = MIMEText(message)
-    #         # msg['Subject'] = f"[ORA Project] {subject}"
-    #         # msg['From'] = sender_email
-    #         # msg['To'] = ", ".join(actual_recipients)
-    #
-    #         # with smtplib.SMTP(smtp_server, smtp_port) as server:
-    #         #     server.starttls() # Enable TLS encryption
-    #         #     # server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD) # if authentication is needed
-    #         #     server.send_message(msg)
-    #         logger.info("Email notification (simulated) sent successfully.")
-    #     except Exception as e:
-    #         logger.error(f"Failed to send email notification: {e}")
-    # else:
-    #     logger.info(f"Notification (severity={severity}) would be sent via other channels or simply logged.")
-
-    # For now, we'll just log that a notification "would have been sent".
-    # This simulates the action without needing actual external services configured yet.
-    notification_log_message = (
-        f"NOTIFICATION ALERT - Subject: '{subject}' | "
-        f"Severity: '{severity}' | Message: '{message}' | "
-        f"Recipients: {recipients if recipients else 'Default'}"
+    sendgrid_api_key = access_secret_version(
+        settings.YOUR_GCP_PROJECT_ID,
+        settings.EMAIL_SERVICE_API_KEY_SECRET_ID,
+        credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH # For local testing
     )
+    if not sendgrid_api_key:
+        logger.critical({"message": "SendGrid API key not found in Secret Manager. Cannot send email.", "secret_id": settings.EMAIL_SERVICE_API_KEY_ID, "subject": subject}) # Corrected: Use EMAIL_SERVICE_API_KEY_SECRET_ID
+        return False
 
-    if severity == "CRITICAL":
-        logger.critical(notification_log_message)
-    elif severity == "ERROR":
-        logger.error(notification_log_message)
-    elif severity == "WARNING":
-        logger.warning(notification_log_message)
-    else:
-        logger.info(notification_log_message)
+    try:
+        sg = sendgrid.SendGridAPIClient(sendgrid_api_key)
+        
+        # Ensure your 'from_email' is a verified sender in your SendGrid account.
+        # Replace "no-reply@ora-automation.com" with your actual verified sender email.
+        from_email = Email("no-reply@ora-automation.com", "ORA Automation System")
+        
+        # Convert list of recipient strings to list of SendGrid To objects
+        to_emails = [To(email) for email in recipients]
+        
+        # Create the Mail object
+        message = Mail(from_email, to_emails, subject, plain_text_content=body)
+        
+        # Send the email
+        response = sg.send(message)
+        
+        # Log the SendGrid API response for debugging and monitoring
+        logger.info({
+            "message": "Email sent via SendGrid API",
+            "sendgrid_status_code": response.status_code,
+            "sendgrid_headers": dict(response.headers), # Convert headers to dict for logging
+            "sendgrid_body": response.body.decode('utf-8') if response.body else None, # Decode body if present
+            "recipients": recipients,
+            "subject": subject
+        })
 
-    logger.info("Notification processing complete (actual sending is currently simulated).")
+        # SendGrid typically returns 200 (OK) or 202 (Accepted) for successful requests.
+        if response.status_code in [200, 202]:
+            logger.info({"message": "Email successfully sent via SendGrid.", "recipients": recipients, "subject": subject})
+            return True
+        else:
+            logger.error({
+                "message": "SendGrid API returned an error status.",
+                "sendgrid_status_code": response.status_code,
+                "sendgrid_body": response.body.decode('utf-8') if response.body else None,
+                "recipients": recipients,
+                "subject": subject
+            })
+            return False
 
+    except Exception as e:
+        logger.error({
+            "message": "An unexpected error occurred while sending email via SendGrid.",
+            "error": str(e),
+            "recipients": recipients,
+            "subject": subject
+        }, exc_info=True)
+        return False
 
-# Example of how this might be used (for testing/demonstration)
-if __name__ == "__main__":
-    # Basic logging configuration for standalone testing
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler(),
-        ]
-    )
-
-    logger.info("Testing notification_manager.py module...")
-
-    send_notification(
-        subject="Test Info Notification",
-        message="This is a test informational message.",
-        severity="INFO"
-    )
-
-    send_notification(
-        subject="Test Warning: Low Inventory",
-        message="Inventory for SKU ABC-123 is below reorder threshold.",
-        severity="WARNING"
-    )
-
-    send_notification(
-        subject="ORA Error: Google Sheets API Failure",
-        message="Failed to retrieve data from Google Sheet 'Dashboard Data'. Error: Connection timed out.",
-        severity="ERROR",
-        recipients=["admin@example.com", "ops@example.com"]
-    )
-
-    send_notification(
-        subject="ORA CRITICAL: Unhandled Exception in Main Script",
-        message="The shipstation_reporter.py script terminated unexpectedly.",
-        severity="CRITICAL",
-        recipients=["oncall@example.com"]
-    )
-
-    logger.info("Notification module testing complete.")

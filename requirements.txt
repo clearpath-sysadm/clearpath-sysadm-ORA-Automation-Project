@@ -9,3 +9,5 @@ google-api-python-client
 python-dateutil
 functions-framework
 tenacity
+sendgrid
+google-cloud-logging
