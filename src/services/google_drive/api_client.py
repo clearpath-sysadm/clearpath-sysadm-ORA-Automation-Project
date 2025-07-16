@@ -85,7 +85,7 @@ def fetch_xml_content_from_drive(file_id: str, service_account_key_json: str) ->
                 logger.warning({"message": "Fetched XML content is empty.", "file_id": file_id, "function": "fetch_xml_content_from_drive"})
                 return None
             
-            xml_string = xml_content_bytes.decode('utf-8')
+            xml_string = xml_content_bytes.decode('iso-8859-1')
             logger.info({"message": "XML content successfully fetched and decoded from Google Drive.", "file_id": file_id, "function": "fetch_xml_content_from_drive"})
             return xml_string
         else:
