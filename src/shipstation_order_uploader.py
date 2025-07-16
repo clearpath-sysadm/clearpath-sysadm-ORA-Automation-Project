@@ -229,29 +229,29 @@ def run_order_uploader_logic():
 #                     the 'if __name__ == "__main__":' block below is used instead.
 #                     For deployment, this block MUST be active.
 #
-# def shipstation_order_uploader_http_trigger(request):
-#     logger.info({"message": "Cloud Function received HTTP trigger for order uploader.", "trigger_type": "HTTP"})
-#     try:
-#         success, message = run_order_uploader_logic()
-#         if success:
-#             return message, 200
-#         else:
-#             return message, 500
-#     except Exception as e:
-#         logger.critical({"message": "Cloud Function execution failed for order uploader", "error": str(e)}, exc_info=True)
-#         return f"ShipStation Order Uploader script failed: {e}", 500
+def shipstation_order_uploader_http_trigger(request):
+    logger.info({"message": "Cloud Function received HTTP trigger for order uploader.", "trigger_type": "HTTP"})
+    try:
+        success, message = run_order_uploader_logic()
+        if success:
+            return message, 200
+        else:
+            return message, 500
+    except Exception as e:
+        logger.critical({"message": "Cloud Function execution failed for order uploader", "error": str(e)}, exc_info=True)
+        return f"ShipStation Order Uploader script failed: {e}", 500
 
 
 # --- Local Execution Block (for Local Testing) ---
 # This block is for local testing only. It directly calls the core logic.
 # When deploying to a Cloud Function, this block should be commented out,
 # and the 'shipstation_order_uploader_http_trigger' function above should be active.
-if __name__ == "__main__":
-    print("--- Running shipstation_order_uploader_logic locally ---")
-    success, message = run_order_uploader_logic()
-    if success:
-        print(f"Local Test Result: SUCCESS - {message}")
-    else:
-        print(f"Local Test Result: FAILED - {message}")
-    print("--- Local execution finished ---")
+# if __name__ == "__main__":
+#     print("--- Running shipstation_order_uploader_logic locally ---")
+#     success, message = run_order_uploader_logic()
+#     if success:
+#         print(f"Local Test Result: SUCCESS - {message}")
+#     else:
+#         print(f"Local Test Result: FAILED - {message}")
+#     print("--- Local execution finished ---")
 
