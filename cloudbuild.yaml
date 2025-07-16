@@ -9,40 +9,6 @@ steps:
   args: ['-c', 'ls -R .']
   dir: . # Run from project root
 
-# --- Deploy shipstation-order-uploader Cloud Function ---
-# Step 1.1: Copy requirements.txt to the root for deployment context.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: 'cp'
-  args: ['requirements.txt', '.'] # Copy requirements.txt to the current directory (project root)
-  dir: .
-
-# Step 1.2: Move the specific function script to main.py at the root for deployment context.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: 'mv'
-  args: ['src/shipstation_order_uploader.py', 'main.py']
-  dir: .
-
-# Step 1.3: Deploy the shipstation-order-uploader Cloud Function.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: 'gcloud'
-  args:
-    - 'functions'
-    - 'deploy'
-    - 'shipstation-order-uploader'
-    - '--runtime=python311'
-    - '--entry-point=shipstation_order_uploader_http_trigger'
-    - '--source=.' # Source is the current directory (project root)
-    - '--trigger-http'
-    - '--allow-unauthenticated'
-    - '--region=us-central1'
-    - '--memory=512MB'
-    - '--timeout=300s'
-    - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
-    - '--gen2' # Explicitly use 2nd Gen functions
-    # IMPORTANT: PYTHONPATH for runtime needs to be handled by Cloud Functions itself
-    # based on standard package structure (src/ and config/ are packages).
-  dir: .
-  id: deploy-order-uploader
 
 # --- Deploy shipstation-reporter Cloud Function ---
 # Step 2.1: Copy requirements.txt to the root for deployment context.
@@ -63,7 +29,7 @@ steps:
   args:
     - 'functions'
     - 'deploy'
-    - 'shipstation-reporter'
+    - 'shipstation-reporter-function'
     - '--runtime=python311'
     - '--entry-point=shipstation_reporter_http_trigger'
     - '--source=.'
