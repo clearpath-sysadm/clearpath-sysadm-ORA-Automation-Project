@@ -41,7 +41,7 @@ steps:
 # Note: requirements.txt is assumed to be at the project root and will be picked up by --source=.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'mv'
-  args: ['src/main_shipstation_order_uploader.py', 'main.py']
+  args: ['src/shipstation_order_uploader.py', 'main.py']
   dir: .
 
 # Step 1.2: Deploy the shipstation-order-uploader Cloud Function.
