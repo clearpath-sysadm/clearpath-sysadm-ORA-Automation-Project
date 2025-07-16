@@ -28,7 +28,13 @@ def _convert_raw_to_dataframe(raw_data: list, sheet_name: str, expected_columns:
 
     # Optional: Check for expected columns if provided
     if expected_columns:
-        missing_cols = [col for col in expected_columns if col not in df.columns]
+        # Check for case-insensitive and stripped matches
+        df_columns_lower_stripped = [col.lower().strip() for col in df.columns]
+        missing_cols = []
+        for expected_col in expected_columns:
+            if expected_col.lower().strip() not in df_columns_lower_stripped:
+                missing_cols.append(expected_col)
+
         if missing_cols:
             logger.error({
                 "message": "Missing expected columns in sheet data.",
@@ -50,9 +56,10 @@ def load_all_configuration_data(sheet_id: str) -> tuple | None:
     logger.info({"message": "Loading all configuration data from ORA_Configuration sheet."})
     
     raw_config_data = get_google_sheet_data(sheet_id, settings.ORA_CONFIGURATION_TAB_NAME)
-    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_config_data[:5] if isinstance(raw_config_data, list) else str(raw_config_data)})
     
-    # Convert raw list data to DataFrame
+    # Log raw data after fetching
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_config_data[:5] if isinstance(raw_config_data, list) else str(raw_config_data)})
+
     config_df = _convert_raw_to_dataframe(raw_config_data, settings.ORA_CONFIGURATION_TAB_NAME)
 
     if config_df is None or config_df.empty:
@@ -107,7 +114,10 @@ def load_inventory_transactions(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading inventory transactions from Google Sheet."})
     
     raw_transactions_data = get_google_sheet_data(sheet_id, settings.INVENTORY_TRANSACTIONS_TAB_NAME)
-    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_transactions_data[:5] if isinstance(raw_transactions_data, list) else str(raw_transactions_data)})
+    
+    # Log raw data after fetching
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.INVENTORY_TRANSACTIONS_TAB_NAME, "raw_data_head": raw_transactions_data[:5] if isinstance(raw_transactions_data, list) else str(raw_transactions_data)})
+
     transactions_df = _convert_raw_to_dataframe(raw_transactions_data, settings.INVENTORY_TRANSACTIONS_TAB_NAME, 
                                                 expected_columns=['Date', 'SKU', 'Quantity', 'TransactionType'])
 
@@ -138,34 +148,41 @@ def load_shipped_items_data(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading shipped items data from Google Sheet."})
     
     raw_shipped_items_data = get_google_sheet_data(sheet_id, settings.SHIPPED_ITEMS_DATA_TAB_NAME)
-    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_shipped_items_data[:5] if isinstance(raw_shipped_items_data, list) else str(raw_shipped_items_data)})
+    
+    # Log raw data after fetching
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.SHIPPED_ITEMS_DATA_TAB_NAME, "raw_data_head": raw_shipped_items_data[:5] if isinstance(raw_shipped_items_data, list) else str(raw_shipped_items_data)})
+
+    # CORRECTED: Adjust expected_columns to match actual sheet headers
     shipped_items_df = _convert_raw_to_dataframe(raw_shipped_items_data, settings.SHIPPED_ITEMS_DATA_TAB_NAME,
-                                                 expected_columns=['Date', 'SKU_Lot', 'Quantity Shipped', 'Base SKU', 'SKU'])
+                                                 expected_columns=['Ship Date', 'SKU - Lot', 'Quantity Shipped', 'Base SKU'])
 
     if shipped_items_df is None or shipped_items_df.empty:
         logger.warning({"message": "No data or malformed data found in 'Shipped_Items_Data' worksheet after conversion. Returning empty DataFrame."})
-        return pd.DataFrame(columns=['Date', 'SKU_Lot', 'Quantity Shipped', 'Base SKU', 'SKU'])
+        return pd.DataFrame(columns=['Date', 'SKU_Lot', 'Quantity Shipped', 'Base SKU', 'SKU']) # Keep original return columns for consistency downstream
 
     # --- FIX: Ultra-robust column matching for Quantity and Date ---
-    qty_col_name = None
-    date_col_name = None
-    for original_col in shipped_items_df.columns:
-        stripped_lower_col = original_col.strip().lower()
-        if stripped_lower_col == 'quantity shipped':
-            qty_col_name = original_col
-        if stripped_lower_col == 'ship date' or stripped_lower_col == 'date':
-            date_col_name = original_col
+    # Standardize column names for internal use after conversion
+    # Ensure 'Ship Date' becomes 'Date' and 'SKU - Lot' becomes 'SKU_Lot'
+    # 'Quantity Shipped' becomes 'Quantity_Shipped'
+    column_mapping = {
+        'Ship Date': 'Date',
+        'SKU - Lot': 'SKU_Lot',
+        'Quantity Shipped': 'Quantity_Shipped',
+        'Base SKU': 'Base SKU' # Keep as is or rename to 'SKU' later
+    }
+    shipped_items_df.rename(columns=column_mapping, inplace=True)
     
-    if not qty_col_name:
-        logger.error({"message": "Missing 'Quantity Shipped' column in Shipped_Items_Data. Cannot process shipment quantities.", "available_columns": shipped_items_df.columns.tolist()})
+    # Check for presence of critical columns after renaming
+    if 'Quantity_Shipped' not in shipped_items_df.columns:
+        logger.error({"message": "Missing 'Quantity_Shipped' column after renaming in Shipped_Items_Data. Cannot process shipment quantities.", "available_columns": shipped_items_df.columns.tolist()})
         return pd.DataFrame(columns=['Date', 'SKU', 'Quantity_Shipped'])
     
-    if not date_col_name:
-        logger.error({"message": "Missing 'Ship Date' or 'Date' column in Shipped_Items_Data. Cannot process shipment dates.", "available_columns": shipped_items_df.columns.tolist()})
+    if 'Date' not in shipped_items_df.columns:
+        logger.error({"message": "Missing 'Date' column after renaming in Shipped_Items_Data. Cannot process shipment dates.", "available_columns": shipped_items_df.columns.tolist()})
         return pd.DataFrame(columns=['Date', 'SKU', 'Quantity_Shipped'])
 
-    shipped_items_df['Quantity_Shipped'] = pd.to_numeric(shipped_items_df[qty_col_name], errors='coerce').fillna(0)
-    shipped_items_df['Date'] = pd.to_datetime(shipped_items_df[date_col_name], errors='coerce')
+    shipped_items_df['Quantity_Shipped'] = pd.to_numeric(shipped_items_df['Quantity_Shipped'], errors='coerce').fillna(0)
+    shipped_items_df['Date'] = pd.to_datetime(shipped_items_df['Date'], errors='coerce')
 
     shipped_items_df.dropna(subset=['Date'], inplace=True)
     
@@ -176,13 +193,11 @@ def load_shipped_items_data(sheet_id: str) -> pd.DataFrame:
     # Attempt to derive 'SKU' if 'Base SKU' exists, otherwise use 'SKU_Lot' if that's the real SKU
     if 'Base SKU' in shipped_items_df.columns:
         shipped_items_df.rename(columns={'Base SKU': 'SKU'}, inplace=True)
-    elif 'BaseSKU_from_sheet' in shipped_items_df.columns:
-        shipped_items_df.rename(columns={'BaseSKU_from_sheet': 'SKU'}, inplace=True)
-    elif 'SKU_Lot' in shipped_items_df.columns:
+    elif 'SKU_Lot' in shipped_items_df.columns: # Use SKU_Lot if Base SKU is not present
         shipped_items_df['SKU'] = shipped_items_df['SKU_Lot'].apply(lambda x: str(x).split(' - ')[0])
         logger.warning({"message": "Derived 'SKU' from 'SKU_Lot' column in Shipped_Items_Data."})
     else:
-        logger.error({"message": "Could not find a suitable 'SKU' column in Shipped_Items_Data (looked for 'Base SKU', 'BaseSKU_from_sheet', or 'SKU_Lot')."})
+        logger.error({"message": "Could not find a suitable 'SKU' column in Shipped_Items_Data (looked for 'Base SKU' or 'SKU_Lot')."})
         return pd.DataFrame(columns=['Date', 'SKU', 'Quantity_Shipped'])
     
     shipped_items_df['SKU'] = shipped_items_df['SKU'].astype(str)
@@ -196,27 +211,30 @@ def load_shipped_orders_data(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading shipped orders data from Google Sheet."})
     
     raw_shipped_orders_data = get_google_sheet_data(sheet_id, settings.SHIPPED_ORDERS_DATA_TAB_NAME)
-    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_shipped_orders_data[:5] if isinstance(raw_shipped_orders_data, list) else str(raw_shipped_orders_data)})
+    
+    # Log raw data after fetching
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.SHIPPED_ORDERS_DATA_TAB_NAME, "raw_data_head": raw_shipped_orders_data[:5] if isinstance(raw_shipped_orders_data, list) else str(raw_shipped_orders_data)})
+
+    # CORRECTED: Adjust expected_columns to match actual sheet headers
     shipped_orders_df = _convert_raw_to_dataframe(raw_shipped_orders_data, settings.SHIPPED_ORDERS_DATA_TAB_NAME,
-                                                  expected_columns=['Date', 'OrderNumber'])
+                                                  expected_columns=['Ship Date', 'OrderNumber'])
 
     if shipped_orders_df is None or shipped_orders_df.empty:
         logger.warning({"message": "No data or malformed data found in 'Shipped_Orders_Data' worksheet after conversion. Returning empty DataFrame."})
         return pd.DataFrame(columns=['Date', 'OrderNumber'])
 
-    # Handle 'Ship Date' -> 'Date' for orders
-    date_col_name = None
-    for original_col in shipped_orders_df.columns:
-        stripped_lower_col = original_col.strip().lower()
-        if stripped_lower_col == 'ship date' or stripped_lower_col == 'date':
-            date_col_name = original_col
-            break
-    
-    if not date_col_name:
-        logger.error({"message": "Missing 'Ship Date' or 'Date' column in Shipped_Orders_Data. Cannot process order dates.", "available_columns": shipped_orders_df.columns.tolist()})
-        return pd.DataFrame(columns=['Date', 'OrderNumber'])
+    # Standardize 'Ship Date' to 'Date'
+    column_mapping = {
+        'Ship Date': 'Date'
+    }
+    shipped_orders_df.rename(columns=column_mapping, inplace=True)
 
-    shipped_orders_df['Date'] = pd.to_datetime(shipped_orders_df[date_col_name], errors='coerce')
+    # Check for presence of critical 'Date' column after renaming
+    if 'Date' not in shipped_orders_df.columns:
+        logger.error({"message": "Missing 'Date' column after renaming in Shipped_Orders_Data. Cannot process order dates.", "available_columns": shipped_orders_df.columns.tolist()})
+        return pd.DataFrame(columns=['Date', 'OrderNumber'])
+    
+    shipped_orders_df['Date'] = pd.to_datetime(shipped_orders_df['Date'], errors='coerce')
     shipped_orders_df.dropna(subset=['Date'], inplace=True)
 
     if shipped_orders_df['Date'].empty:
@@ -232,23 +250,27 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading weekly shipped history from Google Sheet."})
     
     raw_data = get_google_sheet_data(sheet_id, settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME) 
-    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_data[:5] if isinstance(raw_data, list) else str(raw_data)})
     
+    # Log raw data after fetching
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME, "raw_data_head": raw_data[:5] if isinstance(raw_data, list) else str(raw_data)})
+
     # Convert raw list data to DataFrame
+    # CORRECTED: Adjust expected_columns to match actual sheet headers
     df = _convert_raw_to_dataframe(raw_data, settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME,
-                                   expected_columns=['Ship Week', 'SKU', 'ShippedQuantity']) # Include expected columns
+                                   expected_columns=['Ship Week', 'SKU', 'Quantity Shipped']) # Changed 'ShippedQuantity' to 'Quantity Shipped'
 
     if df is None or df.empty:
         logger.warning({"message": "No data or malformed data found in 'ORA_Weekly_Shipped_History' sheet after conversion. Returning empty DataFrame."})
-        return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])
+        return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity']) # Keep original return columns for consistency downstream
 
     id_vars = ['Ship Week'] 
     value_vars = [col for col in df.columns if col not in id_vars]
     
-    if not value_vars: # If no value columns found after melt
+    if not value_vars:
         logger.warning({"message": "No SKU columns found in 'ORA_Weekly_Shipped_History' for unpivoting. Returning empty DataFrame."})
         return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])
 
+    # Use 'Quantity Shipped' as the value column for melt
     long_df = pd.melt(df, id_vars=id_vars, value_vars=value_vars, var_name='SKU', value_name='ShippedQuantity')
 
     long_df.rename(columns={'Ship Week': 'Date'}, inplace=True)
@@ -270,7 +292,10 @@ def load_product_names_map(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading product names map from Google Sheet."})
     try:
         raw_data = get_google_sheet_data(sheet_id, settings.ORA_CONFIGURATION_TAB_NAME)
+        
+        # Log raw data after fetching
         logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_data[:5] if isinstance(raw_data, list) else str(raw_data)})
+
         # Convert raw list data to DataFrame
         df = _convert_raw_to_dataframe(raw_data, settings.ORA_CONFIGURATION_TAB_NAME)
 
