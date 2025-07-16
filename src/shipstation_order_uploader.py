@@ -105,7 +105,14 @@ def run_order_uploader_logic():
         return False, 'Failed to retrieve Google Sheets service account key for Google Drive access'
 
     logger.info({"message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": google_sheets_service_account_json[:5]})
-
+    
+    # --- DIAGNOSTIC LOG: Check type and beginning of XML content before parsing ---
+    logger.debug({
+        "message": "Preparing to parse XML content.",
+        "content_type": str(type(x_cart_xml_content)),
+        "content_start_snippet": x_cart_xml_content[:200] if isinstance(x_cart_xml_content, str) else str(x_cart_xml_content)
+    })
+    # --- END DIAGNOSTIC LOG ---
 
     # --- Fetch and Parse Data from X-Cart XML (from Google Drive) ---
     logger.info({"message": "Fetching orders from X-Cart XML on Google Drive", "file_id": settings.X_CART_XML_FILE_ID})
