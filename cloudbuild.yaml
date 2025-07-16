@@ -57,7 +57,7 @@ steps:
     - '--trigger-http'
     - '--allow-unauthenticated'
     - '--region=us-central1'
-    - '--memory=512MB'
+    - '--memory=1024MB'
     - '--timeout=300s'
     - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
     - '--gen2' # Explicitly use 2nd Gen functions
