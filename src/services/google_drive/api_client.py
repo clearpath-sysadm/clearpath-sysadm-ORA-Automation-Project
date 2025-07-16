@@ -85,7 +85,27 @@ def fetch_xml_content_from_drive(file_id: str, service_account_key_json: str) ->
                 logger.warning({"message": "Fetched XML content is empty.", "file_id": file_id, "function": "fetch_xml_content_from_drive"})
                 return None
             
+            # --- NEW LOGGING ADDED HERE ---
+            logger.debug({
+                "message": "Raw XML bytes snippet before decoding.",
+                "file_id": file_id,
+                "raw_bytes_start_hex": xml_content_bytes[:50].hex(), # Log hex to reveal non-printable chars
+                "raw_bytes_end_hex": xml_content_bytes[-50:].hex()
+            })
+            # --- END NEW LOGGING ---
+
+            # Decode using 'iso-8859-1' to match the XML declaration
             xml_string = xml_content_bytes.decode('iso-8859-1')
+
+            # --- NEW LOGGING ADDED HERE ---
+            logger.debug({
+                "message": "Decoded XML string snippet.",
+                "file_id": file_id,
+                "decoded_string_start": xml_string[:200], # Log first 200 chars
+                "decoded_string_end": xml_string[-200:] # Log last 200 chars
+            })
+            # --- END NEW LOGGING ---
+            
             logger.info({"message": "XML content successfully fetched and decoded from Google Drive.", "file_id": file_id, "function": "fetch_xml_content_from_drive"})
             return xml_string
         else:
