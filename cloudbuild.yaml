@@ -7,23 +7,15 @@ steps:
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'bash'
   args: ['-c', 'ls -R .']
-  dir: . # Run from project root
-
-
-# --- Deploy shipstation-reporter Cloud Function ---
-# Step 2.1: Copy requirements.txt to the root for deployment context.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: 'cp'
-  args: ['requirements.txt', '.']
   dir: .
 
-# Step 2.2: Move the specific function script to main.py at the root for deployment context.
+# This step moves shipstation_reporter.py to main.py at the root.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'mv'
   args: ['src/shipstation_reporter.py', 'main.py']
   dir: .
 
-# Step 2.3: Deploy the shipstation-reporter Cloud Function.
+# This step deploys the Cloud Function.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'gcloud'
   args:
@@ -36,9 +28,8 @@ steps:
     - '--trigger-http'
     - '--allow-unauthenticated'
     - '--region=us-central1'
-    - '--memory=512MB'
+    - '--memory=256MB'
     - '--timeout=600s'
     - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
-    - '--gen2'
+    - '--gen2' # Explicitly use 2nd Gen functions for Python 3.11
   dir: .
-  id: deploy-reporter
