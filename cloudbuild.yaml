@@ -33,7 +33,7 @@ steps:
     - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
     - '--gen2' # Explicitly use 2nd Gen functions for Python 3.11
   dir: .
-  id: deploy-uploader
+  id: deploy-shipstation-reporter
 
   # --- Deploy shipstation-order-uploader Cloud Function ---
 # Step 1.1: Copy requirements.txt to the root for deployment context.
