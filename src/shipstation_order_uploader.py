@@ -42,28 +42,6 @@ if not logging.getLogger().handlers:
 logger = logging.getLogger(__name__)
 
 
-
-
-# --- Cloud Function Entry Point (for Deployment) ---
-# This function name should be your --entry-point when deploying to Google Cloud Functions.
-# For example: gcloud functions deploy shipstation_order_uploader --entry-point shipstation_order_uploader_http_trigger
-#
-# LOCAL TESTING NOTE: When running locally, this block is typically commented out or
-#                     the 'if __name__ == "__main__":' block below is used instead.
-#                     For deployment, this block MUST be active.
-#
-def shipstation_order_uploader_http_trigger(request):
-    logger.info({"message": "Cloud Function received HTTP trigger for order uploader.", "trigger_type": "HTTP"})
-    try:
-        success, message = run_order_uploader_logic()
-        if success:
-            return message, 200
-        else:
-            return message, 500
-    except Exception as e:
-        logger.critical({"message": "Cloud Function execution failed for order uploader", "error": str(e)}, exc_info=True)
-        return f"ShipStation Order Uploader script failed: {e}", 500
-
 # --- Core Order Uploader Logic (Reusable Function) ---
 def run_order_uploader_logic():
     """
@@ -105,14 +83,7 @@ def run_order_uploader_logic():
         return False, 'Failed to retrieve Google Sheets service account key for Google Drive access'
 
     logger.info({"message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": google_sheets_service_account_json[:5]})
-    
-    # --- DIAGNOSTIC LOG: Check type and beginning of XML content before parsing ---
-    logger.debug({
-        "message": "Preparing to parse XML content.",
-        "content_type": str(type(x_cart_xml_content)),
-        "content_start_snippet": x_cart_xml_content[:200] if isinstance(x_cart_xml_content, str) else str(x_cart_xml_content)
-    })
-    # --- END DIAGNOSTIC LOG ---
+
 
     # --- Fetch and Parse Data from X-Cart XML (from Google Drive) ---
     logger.info({"message": "Fetching orders from X-Cart XML on Google Drive", "file_id": settings.X_CART_XML_FILE_ID})
@@ -127,6 +98,14 @@ def run_order_uploader_logic():
         return False, 'No XML content retrieved from Google Drive'
 
     logger.info({"message": "XML content fetched successfully from Google Drive", "file_id": settings.X_CART_XML_FILE_ID, "content_length": len(x_cart_xml_content)})
+
+    # --- DIAGNOSTIC LOG: Check type and beginning of XML content before parsing ---
+    logger.debug({
+        "message": "Preparing to parse XML content.",
+        "content_type": str(type(x_cart_xml_content)),
+        "content_start_snippet": x_cart_xml_content[:200] if isinstance(x_cart_xml_content, str) else str(x_cart_xml_content)
+    })
+    # --- END DIAGNOSTIC LOG ---
 
     # Using the modularized parser, now passing content string directly
     all_orders_payload = parse_x_cart_xml_for_shipstation_payload(
@@ -241,15 +220,38 @@ def run_order_uploader_logic():
     logger.info({"message": "ShipStation Order Uploader Script finished", "status": "completed"})
     return True, 'ShipStation Order Uploader script executed successfully!'
 
-# # --- Local Execution Block (for Local Testing) ---
-# # This block is for local testing only. It directly calls the core logic.
-# # When deploying to a Cloud Function, this block should be commented out,
-# # and the 'shipstation_order_uploader_http_trigger' function above should be active.
-# if __name__ == "__main__":
-#     print("--- Running shipstation_order_uploader_logic locally ---")
-#     success, message = run_order_uploader_logic()
-#     if success:
-#         print(f"Local Test Result: SUCCESS - {message}")
-#     else:
-#         print(f"Local Test Result: FAILED - {message}")
-#     print("--- Local execution finished ---")
+
+# --- Cloud Function Entry Point (for Deployment) ---
+# This function name should be your --entry-point when deploying to Google Cloud Functions.
+# For example: gcloud functions deploy shipstation_order_uploader --entry-point shipstation_order_uploader_http_trigger
+#
+# LOCAL TESTING NOTE: When running locally, this block is typically commented out or
+#                     the 'if __name__ == "__main__":' block below is used instead.
+#                     For deployment, this block MUST be active.
+#
+# def shipstation_order_uploader_http_trigger(request):
+#     logger.info({"message": "Cloud Function received HTTP trigger for order uploader.", "trigger_type": "HTTP"})
+#     try:
+#         success, message = run_order_uploader_logic()
+#         if success:
+#             return message, 200
+#         else:
+#             return message, 500
+#     except Exception as e:
+#         logger.critical({"message": "Cloud Function execution failed for order uploader", "error": str(e)}, exc_info=True)
+#         return f"ShipStation Order Uploader script failed: {e}", 500
+
+
+# --- Local Execution Block (for Local Testing) ---
+# This block is for local testing only. It directly calls the core logic.
+# When deploying to a Cloud Function, this block should be commented out,
+# and the 'shipstation_order_uploader_http_trigger' function above should be active.
+if __name__ == "__main__":
+    print("--- Running shipstation_order_uploader_logic locally ---")
+    success, message = run_order_uploader_logic()
+    if success:
+        print(f"Local Test Result: SUCCESS - {message}")
+    else:
+        print(f"Local Test Result: FAILED - {message}")
+    print("--- Local execution finished ---")
+
