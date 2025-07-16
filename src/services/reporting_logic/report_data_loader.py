@@ -50,6 +50,7 @@ def load_all_configuration_data(sheet_id: str) -> tuple | None:
     logger.info({"message": "Loading all configuration data from ORA_Configuration sheet."})
     
     raw_config_data = get_google_sheet_data(sheet_id, settings.ORA_CONFIGURATION_TAB_NAME)
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_config_data[:5] if isinstance(raw_config_data, list) else str(raw_config_data)})
     
     # Convert raw list data to DataFrame
     config_df = _convert_raw_to_dataframe(raw_config_data, settings.ORA_CONFIGURATION_TAB_NAME)
@@ -106,6 +107,7 @@ def load_inventory_transactions(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading inventory transactions from Google Sheet."})
     
     raw_transactions_data = get_google_sheet_data(sheet_id, settings.INVENTORY_TRANSACTIONS_TAB_NAME)
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_transactions_data[:5] if isinstance(raw_transactions_data, list) else str(raw_transactions_data)})
     transactions_df = _convert_raw_to_dataframe(raw_transactions_data, settings.INVENTORY_TRANSACTIONS_TAB_NAME, 
                                                 expected_columns=['Date', 'SKU', 'Quantity', 'TransactionType'])
 
@@ -136,6 +138,7 @@ def load_shipped_items_data(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading shipped items data from Google Sheet."})
     
     raw_shipped_items_data = get_google_sheet_data(sheet_id, settings.SHIPPED_ITEMS_DATA_TAB_NAME)
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_shipped_items_data[:5] if isinstance(raw_shipped_items_data, list) else str(raw_shipped_items_data)})
     shipped_items_df = _convert_raw_to_dataframe(raw_shipped_items_data, settings.SHIPPED_ITEMS_DATA_TAB_NAME,
                                                  expected_columns=['Date', 'SKU_Lot', 'Quantity Shipped', 'Base SKU', 'SKU'])
 
@@ -193,6 +196,7 @@ def load_shipped_orders_data(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading shipped orders data from Google Sheet."})
     
     raw_shipped_orders_data = get_google_sheet_data(sheet_id, settings.SHIPPED_ORDERS_DATA_TAB_NAME)
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_shipped_orders_data[:5] if isinstance(raw_shipped_orders_data, list) else str(raw_shipped_orders_data)})
     shipped_orders_df = _convert_raw_to_dataframe(raw_shipped_orders_data, settings.SHIPPED_ORDERS_DATA_TAB_NAME,
                                                   expected_columns=['Date', 'OrderNumber'])
 
@@ -228,6 +232,7 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading weekly shipped history from Google Sheet."})
     
     raw_data = get_google_sheet_data(sheet_id, settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME) 
+    logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_data[:5] if isinstance(raw_data, list) else str(raw_data)})
     
     # Convert raw list data to DataFrame
     df = _convert_raw_to_dataframe(raw_data, settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME,
@@ -265,7 +270,7 @@ def load_product_names_map(sheet_id: str) -> pd.DataFrame:
     logger.info({"message": "Loading product names map from Google Sheet."})
     try:
         raw_data = get_google_sheet_data(sheet_id, settings.ORA_CONFIGURATION_TAB_NAME)
-        
+        logger.debug({"message": "Raw data received from Google Sheet", "sheet": settings.ORA_CONFIGURATION_TAB_NAME, "raw_data_head": raw_data[:5] if isinstance(raw_data, list) else str(raw_data)})
         # Convert raw list data to DataFrame
         df = _convert_raw_to_dataframe(raw_data, settings.ORA_CONFIGURATION_TAB_NAME)
 
