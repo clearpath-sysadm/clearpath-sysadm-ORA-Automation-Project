@@ -80,7 +80,12 @@ def build_address_from_xml(order_element: ET.Element, address_prefix: str) -> di
     return address
 
 def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: dict) -> list[dict]:
-    """Parses an X-Cart XML file, applies SKU-Lot and bundling logic, and prepares payloads for ShipStation."""
+    """
+    Parses X-Cart XML content (as a string), applies SKU-Lot and bundling logic,
+    and prepares payloads for ShipStation.
+    Items are skipped if their SKU is not found in the active SKU-Lot map
+    or if bundle components are not defined in the active SKU-Lot map.
+    """
     orders_payload = []
     try:
         root = ET.fromstring(xml_content)
@@ -102,32 +107,59 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
             items_list = []
             for order_detail_element in order_element.findall('order_detail'):
                 original_sku_raw = order_detail_element.findtext('productid')
-                if not original_sku_raw: continue
-                cleaned_sku = str(original_sku_raw).strip()
-
-                original_quantity = int(order_detail_element.findtext('amount') or '0')
-                if original_quantity == 0: continue
+                if not original_sku_raw: 
+                    logger.warning(f"Skipping item due to missing productid for order {order_element.findtext('orderid')}")
+                    continue
                 
-                sku_after_lot_logic = f"{cleaned_sku} - {active_lot_map[cleaned_sku]}" if cleaned_sku in active_lot_map else cleaned_sku
+                cleaned_sku = str(original_sku_raw).strip()
+                original_quantity = int(order_detail_element.findtext('amount') or '0')
+                if original_quantity == 0: 
+                    logger.warning(f"Skipping item {cleaned_sku} for order {order_element.findtext('orderid')} due to zero quantity.")
+                    continue
 
-                if sku_after_lot_logic in bundle_config:
-                    for component in bundle_config[sku_after_lot_logic]:
-                        # --- THIS IS THE DEFINITIVE FIX ---
-                        # Perform the SKU-Lot lookup on the COMPONENT SKU as well.
-                        component_sku = str(component['component_id']).strip()
-                        final_component_sku = f"{component_sku} - {active_lot_map[component_sku]}" if component_sku in active_lot_map else component_sku
+                # --- NEW LOGIC FOR UNDEFINED SKU HANDLING ---
+                if cleaned_sku in bundle_config:
+                    # It's a bundle, iterate its components
+                    for component in bundle_config[cleaned_sku]:
+                        component_id = str(component['component_id']).strip()
+                        
+                        # Validate component SKU against active_lot_map
+                        if component_id not in active_lot_map:
+                            logger.warning({
+                                "message": "Skipping bundle component as its SKU is not defined in active lot map.",
+                                "order_id": order_element.findtext('orderid'),
+                                "bundle_sku": cleaned_sku,
+                                "component_sku": component_id
+                            })
+                            continue # Skip this specific component, but continue with other components
+
+                        final_component_sku = f"{component_id} - {active_lot_map[component_id]}"
                         
                         items_list.append({
                             "sku": final_component_sku,
-                            "name": f"Component of {sku_after_lot_logic}",
+                            "name": f"Component of {order_detail_element.findtext('product')}", 
                             "quantity": original_quantity * component['multiplier'],
                         })
                 else:
+                    # It's a regular product, check if it's in active_lot_map
+                    if cleaned_sku not in active_lot_map:
+                        logger.warning({
+                            "message": "Skipping regular item as its SKU is not defined in active lot map.",
+                            "order_id": order_element.findtext('orderid'),
+                            "sku": cleaned_sku,
+                            "product_name": order_detail_element.findtext('product')
+                        })
+                        continue # Skip this item entirely
+                    
+                    # Apply lot logic for regular product
+                    sku_with_lot = f"{cleaned_sku} - {active_lot_map[cleaned_sku]}"
+                    
                     items_list.append({
-                        "sku": sku_after_lot_logic,
+                        "sku": sku_with_lot,
                         "name": order_detail_element.findtext('product'),
                         "quantity": original_quantity,
                     })
+                # --- END NEW LOGIC ---
             
             order_data['items'] = items_list
             orders_payload.append(order_data)
