@@ -38,7 +38,7 @@ _log_file_path = None # Default to no file logging for cloud deployment
 
 # Ensure logging is only configured once if this script is run as main.
 if not logging.getLogger().handlers:
-    setup_logging(log_file_path=_log_file_path, log_level=logging.INFO, enable_console_logging=True)
+    setup_logging(log_file_path=_log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
 logger = logging.getLogger(__name__)
 
 
