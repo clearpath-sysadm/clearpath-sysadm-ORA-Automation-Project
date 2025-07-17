@@ -88,7 +88,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
     """
     orders_payload = []
     try:
-        root = ET.fromstring(xml_content)
+        root = ET.fromstring(xml_content) 
         active_lot_map = _get_active_sku_lot_map()
 
         for order_element in root.findall('order'):
@@ -117,7 +117,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                     logger.warning(f"Skipping item {cleaned_sku} for order {order_element.findtext('orderid')} due to zero quantity.")
                     continue
 
-                # --- NEW LOGIC FOR UNDEFINED SKU HANDLING ---
+                # --- REVISED LOGIC FOR SKU-LOT AND BUNDLE HANDLING ---
                 if cleaned_sku in bundle_config:
                     # It's a bundle, iterate its components
                     for component in bundle_config[cleaned_sku]:
@@ -133,6 +133,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                             })
                             continue # Skip this specific component, but continue with other components
 
+                        # Apply SKU-Lot logic to the component SKU
                         final_component_sku = f"{component_id} - {active_lot_map[component_id]}"
                         
                         items_list.append({
@@ -152,6 +153,9 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                         continue # Skip this item entirely
                     
                     # Apply lot logic for regular product
+                    # This is the line that was problematic: it was previously applying lot logic too early
+                    # and then using that modified SKU to check against bundle_config.
+                    # Now, lot logic is applied only after determining it's not a bundle.
                     sku_with_lot = f"{cleaned_sku} - {active_lot_map[cleaned_sku]}"
                     
                     items_list.append({
@@ -159,7 +163,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                         "name": order_detail_element.findtext('product'),
                         "quantity": original_quantity,
                     })
-                # --- END NEW LOGIC ---
+                # --- END REVISED LOGIC ---
             
             order_data['items'] = items_list
             orders_payload.append(order_data)
