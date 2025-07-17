@@ -79,12 +79,11 @@ def build_address_from_xml(order_element: ET.Element, address_prefix: str) -> di
         address["street1"] = address["street1"].encode('ascii', 'ignore').decode('ascii').strip()
     return address
 
-def parse_x_cart_xml_for_shipstation_payload(xml_file_path: str, bundle_config: dict) -> list[dict]:
+def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: dict) -> list[dict]:
     """Parses an X-Cart XML file, applies SKU-Lot and bundling logic, and prepares payloads for ShipStation."""
     orders_payload = []
     try:
-        tree = ET.parse(xml_file_path)
-        root = tree.getroot()
+        root = ET.fromstring(xml_content)
         active_lot_map = _get_active_sku_lot_map()
 
         for order_element in root.findall('order'):
