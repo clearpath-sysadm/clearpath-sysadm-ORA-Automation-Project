@@ -13,20 +13,29 @@ logger = logging.getLogger(__name__)
 
 def _get_active_sku_lot_map():
     """
-    Fetches the SKU to Lot mapping from Google Sheets and returns a dictionary
-    containing ONLY the active mappings.
+    Fetches the SKU to Lot mapping from Google Sheets, converts it to a DataFrame,
+    and returns a dictionary containing ONLY the active mappings.
     """
     try:
         logger.debug("Fetching and filtering SKU-Lot map from Google Sheets...")
         
-        sku_lot_df = get_google_sheet_data(
+        # Call get_google_sheet_data which returns list | None
+        raw_sku_lot_data = get_google_sheet_data(
             sheet_id=settings.GOOGLE_SHEET_ID, 
             worksheet_name=settings.SKU_LOT_TAB_NAME
         )
         
-        if sku_lot_df is None or sku_lot_df.empty:
+        # --- NEW LOGIC: Convert to DataFrame here ---
+        if not raw_sku_lot_data: # Handles None or empty list
             logger.warning("SKU_Lot sheet is empty or could not be read. No lot codes will be applied.")
             return {}
+
+        # Assume first row is header, rest is data
+        header = raw_sku_lot_data[0]
+        data = raw_sku_lot_data[1:]
+        
+        sku_lot_df = pd.DataFrame(data, columns=header)
+        # --- END NEW LOGIC ---
 
         required_cols = ['SKU', 'Lot', 'Active']
         if not all(col in sku_lot_df.columns for col in required_cols):
@@ -153,9 +162,6 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                         continue # Skip this item entirely
                     
                     # Apply lot logic for regular product
-                    # This is the line that was problematic: it was previously applying lot logic too early
-                    # and then using that modified SKU to check against bundle_config.
-                    # Now, lot logic is applied only after determining it's not a bundle.
                     sku_with_lot = f"{cleaned_sku} - {active_lot_map[cleaned_sku]}"
                     
                     items_list.append({
