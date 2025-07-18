@@ -1,4 +1,3 @@
-```python
 import xml.etree.ElementTree as ET
 import datetime
 import pandas as pd
@@ -264,4 +263,3 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
         return []
         
     return orders_payload
-```
