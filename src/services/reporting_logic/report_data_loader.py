@@ -15,8 +15,10 @@ def load_all_configuration_data(sheet_id: str) -> tuple | None:
     config_df = get_google_sheet_data(sheet_id, settings.ORA_CONFIGURATION_TAB_NAME)
     # --- FIX: Robustly check for empty/invalid config_df immediately ---
     if config_df is None or (isinstance(config_df, pd.DataFrame) and config_df.empty) or (isinstance(config_df, list) and not config_df):
-        logger.warning("No data or malformed data found in 'ORA_Configuration' worksheet. Returning None.")
-        return None
+        logger.warning("No data or malformed data found in 'ORA_Configuration' worksheet. Returning default empty configuration.")
+        # Return default empty values to prevent TypeError on unpacking
+        return {}, {}, {}, [], 0, 0, datetime.now().date(), datetime.now().date(), {}
+
 
     try:
         # --- FIX: Strip whitespace from column names for robustness ---
@@ -59,7 +61,10 @@ def load_all_configuration_data(sheet_id: str) -> tuple | None:
 
     except Exception as e:
         logger.error(f"Error loading all configuration data: {e}", exc_info=True)
-        return None
+        # --- FIX: Return default empty values to prevent TypeError on unpacking ---
+        # Ensure the tuple matches the expected number of unpacked variables (9 in this case)
+        return {}, {}, {}, [], 0, 0, datetime.now().date(), datetime.now().date(), {}
+
 
 def load_inventory_transactions(sheet_id: str) -> pd.DataFrame | None:
     """Loads and processes inventory transactions."""
@@ -97,7 +102,7 @@ def load_shipped_items_data(sheet_id: str) -> pd.DataFrame | None:
     """Loads and processes shipped items data."""
     logger.info("Loading shipped items data...")
     shipped_items_df = get_google_sheet_data(sheet_id, settings.SHIPPED_ITEMS_DATA_TAB_NAME)
-    if shipped_items_df is None or (isinstance(shipped_items_df, pd.DataFrame) and shipped_items_df.empty) or (isinstance(shipped_items_df, list) and not shipped_items_df):
+    if shipped_items_df is None or (isinstance(shipped_items_df, pd.DataFrame) and shipped_items_df.empty) or (isinstance(shiped_items_df, list) and not shipped_items_df):
         logger.warning("No data or malformed data found in 'Shipped_Items_Data' worksheet. Returning empty DataFrame.")
         return pd.DataFrame(columns=['Date', 'SKU_Lot', 'Quantity Shipped', 'Base SKU', 'SKU'])
 
