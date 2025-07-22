@@ -321,16 +321,17 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
     
     initial_rows = len(long_df)
     # Drop rows where either Start Date or Stop Date failed to parse
+    rows_to_drop_filter = long_df['Start_Date_Parsed'].isna() | long_df['Date'].isna()
+    rows_to_drop = long_df[rows_to_drop_filter].copy() # Capture rows before dropping
     long_df.dropna(subset=['Start_Date_Parsed', 'Date'], inplace=True)
     
     if len(long_df) < initial_rows:
-        # The warning message would still be relevant for any unparsable dates that are NOT dropped
-        # due to being outside the 52-week window but simply invalid format
         logger.warning(f"Dropped {initial_rows - len(long_df)} rows from ORA_Weekly_Shipped_History due to unparsable Start/Stop Dates.")
-        # You could add specific debug for problematic raw dates if needed
+        # New debug line to display the entire dropped rows' data
         logger.debug(f"Details of dropped rows:\n{rows_to_drop.to_string()}")
-        logger.debug(f"Problematic raw Start Dates: {long_df[long_df['Start_Date_Parsed'].isna()]['Start Date'].unique().tolist()}")
-        logger.debug(f"Problematic raw Stop Dates: {long_df[long_df['Date'].isna()]['Stop Date'].unique().tolist()}")
+        # Existing debug lines for problematic raw dates (optional to keep, as the full row provides more info)
+        logger.debug(f"Problematic raw Start Dates: {rows_to_drop['Start Date'].unique().tolist()}")
+        logger.debug(f"Problematic raw Stop Dates: {rows_to_drop['Stop Date'].unique().tolist()}")
 
 
     if long_df.empty:
