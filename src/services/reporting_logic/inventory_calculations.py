@@ -22,10 +22,6 @@ def calculate_daily_inventory(initial_inventory: dict, transactions_df: pd.DataF
         else:
             logger.info(f"Transactions DataFrame shape: {transactions_df.shape}")
             logger.info(f"Transactions DataFrame head:\n{transactions_df.head().to_string()}")
-            # Date column is already guaranteed to be datetime.date objects by report_data_loader.py
-            # This block was causing a TypeError due to redundant processing.
-            # if not transactions_df['Date'].empty and not isinstance(transactions_df['Date'].iloc[0], datetime.date):
-            #    transactions_df['Date'] = transactions_df['Date'].apply(lambda x: x.date() if isinstance(x, datetime) else x)
 
 
         # --- FIX: Standardize all SKUs to strings ---
@@ -62,7 +58,7 @@ def calculate_daily_inventory(initial_inventory: dict, transactions_df: pd.DataF
                 # logger.debug(f"Daily transactions details:\n{daily_transactions.to_string()}") # Use debug for verbose output
 
             for sku in all_skus: # 'sku' here will be a string
-                bod_qty = bod_inventory.get(sku, 0) # This will now correctly pull from the robust current_inventory with string keys
+                bod_qty = bod_inventory.get(sku, 0) 
                 
                 # Sum transactions for the day
                 # Ensure TransactionType is correctly matched (e.g. 'Ship' vs 'ship')
@@ -70,12 +66,17 @@ def calculate_daily_inventory(initial_inventory: dict, transactions_df: pd.DataF
                 received_qty = daily_transactions.loc[(daily_transactions['SKU'] == sku) & (daily_transactions['TransactionType'].astype(str).str.lower() == 'receive'), 'Quantity'].sum()
                 repack_qty = daily_transactions.loc[(daily_transactions['SKU'] == sku) & (daily_transactions['TransactionType'].astype(str).str.lower() == 'repack'), 'Quantity'].sum()
                 
-                eod_qty = bod_qty + received_qty - shipped_qty + repack_qty
+                # --- NEW: Handle Adjust Up and Adjust Down transaction types ---
+                # Adjusted to compare against "adjust up" and "adjust down" (without underscore)
+                adjust_up_qty = daily_transactions.loc[(daily_transactions['SKU'] == sku) & (daily_transactions['TransactionType'].astype(str).str.lower() == 'adjust up'), 'Quantity'].sum()
+                adjust_down_qty = daily_transactions.loc[(daily_transactions['SKU'] == sku) & (daily_transactions['TransactionType'].astype(str).str.lower() == 'adjust down'), 'Quantity'].sum()
+
+                eod_qty = bod_qty + received_qty - shipped_qty + repack_qty + adjust_up_qty - adjust_down_qty
                 current_inventory[sku] = eod_qty 
                 
                 # Log daily inventory changes for each SKU
-                if (bod_qty != eod_qty) or (shipped_qty > 0) or (received_qty > 0) or (repack_qty > 0) or (sku in initial_inventory_str_keys.keys()):
-                    logger.info(f"Date: {report_date}, SKU: {sku}, BOD: {bod_qty}, Received: {received_qty}, Shipped: {shipped_qty}, Repack: {repack_qty}, EOD: {eod_qty}")
+                if (bod_qty != eod_qty) or (shipped_qty > 0) or (received_qty > 0) or (repack_qty > 0) or (adjust_up_qty > 0) or (adjust_down_qty > 0) or (sku in initial_inventory_str_keys.keys()):
+                    logger.info(f"Date: {report_date}, SKU: {sku}, BOD: {bod_qty}, Received: {received_qty}, Shipped: {shipped_qty}, Repack: {repack_qty}, Adjust Up: {adjust_up_qty}, Adjust Down: {adjust_down_qty}, EOD: {eod_qty}")
                 # else:
                 #     logger.debug(f"Date: {report_date}, SKU: {sku}, EOD: {eod_qty} (No change)") # Use debug for non-changing inventory
                 
@@ -121,11 +122,6 @@ def calculate_current_inventory(initial_inventory: dict, inventory_transactions_
         logger.debug(f"Initial inventory for current calculation: {current_inventory}")
 
         # Filter transactions to only include those within the current week
-        # Ensure 'Date' column is datetime.date for comparison
-        # This line is redundant if report_data_loader.py already ensures datetime.date objects
-        # inventory_transactions_df['Date'] = inventory_transactions_df['Date'].apply(lambda x: x if isinstance(x, datetime.date) else x.date())
-        # shipped_items_df['Date'] = shipped_items_df['Date'].apply(lambda x: x if isinstance(x, datetime.date) else x.date())
-
         weekly_transactions_df = inventory_transactions_df[
             (inventory_transactions_df['Date'] >= current_week_start_date) & 
             (inventory_transactions_df['Date'] <= current_week_end_date)
@@ -156,15 +152,28 @@ def calculate_current_inventory(initial_inventory: dict, inventory_transactions_
         for _, row in all_weekly_transactions.iterrows():
             sku = str(row['SKU']) # Ensure SKU is string for dictionary lookup
             qty = row['Quantity']
-            if row['TransactionType'].lower() == 'ship':
+            transaction_type = row['TransactionType'].lower()
+
+            if transaction_type == 'ship':
                 current_inventory[sku] = current_inventory.get(sku, 0) - qty
-            else: # Receive, Repack
+            elif transaction_type == 'adjust down': # Explicitly handle adjust down (without underscore)
+                current_inventory[sku] = current_inventory.get(sku, 0) - qty
+            elif transaction_type == 'receive' or transaction_type == 'repack' or transaction_type == 'adjust up': # Explicitly handle receive, repack, and adjust up (without underscore)
                 current_inventory[sku] = current_inventory.get(sku, 0) + qty
+            else:
+                logger.warning(f"Unknown transaction type '{transaction_type}' for SKU '{sku}'. Quantity not applied.")
         
         # Format for output
         final_df = pd.DataFrame(list(current_inventory.items()), columns=['SKU', 'Quantity'])
         # Ensure key_skus are strings for filtering
         final_df = final_df[final_df['SKU'].isin([str(s) for s in key_skus])]
+
+        logger.info(f"Current inventory calculation complete. Shape: {final_df.shape}")
+        return final_df
+
+    except Exception as e:
+        logger.error(f"Error calculating current inventory: {e}", exc_info=True)
+        return pd.DataFrame(columns=['SKU', 'Quantity']) # Return empty DataFrame on error
 
         logger.info(f"Current inventory calculation complete. Shape: {final_df.shape}")
         return final_df
