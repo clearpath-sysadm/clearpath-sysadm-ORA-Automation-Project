@@ -261,10 +261,35 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
     logger.info("Loading weekly shipped history...")
     raw_data = get_google_sheet_data(sheet_id, settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME) 
     
-    # ... (Initial DataFrame conversion from raw_data, same as current code) ...
-    if df.empty:
+    # Initialize df to ensure it's always defined before its first use outside the initial raw_data processing blocks.
+    # This empty DataFrame will be returned if raw_data is invalid or empty after processing.
+    df = pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity']) 
+
+    # --- FIX: Convert raw_data (list of lists) to DataFrame immediately ---
+    # This block ensures raw_data is processed, or df remains an empty DataFrame
+    if raw_data is None or (isinstance(raw_data, list) and not raw_data):
+        logger.warning("No data or malformed data found in 'ORA_Weekly_Shipped_History' sheet. Returning empty DataFrame.")
+        return df # Return the already initialized df
+    
+    if isinstance(raw_data, list) and len(raw_data) > 0:
+        if len(raw_data) == 1 and all(not cell for cell in raw_data[0]): # Only empty header row
+            df = pd.DataFrame(columns=[h.strip() for h in raw_data[0]])
+        elif len(raw_data) > 0: # raw_data has content (headers + data)
+            df = pd.DataFrame(raw_data[1:], columns=[h.strip() for h in raw_data[0]])
+        else: # This 'else' covers cases where raw_data is an empty list if not caught by the very first 'if'.
+              # Ensures df is assigned here.
+            df = pd.DataFrame()
+    elif isinstance(raw_data, pd.DataFrame): # If it's already a DataFrame (e.g., from a mock)
+        df = raw_data
+    else: # Unexpected type
+        logger.error(f"Unexpected data type for ORA_Weekly_Shipped_History: {type(raw_data)}. Returning empty DataFrame.")
+        return df # Return the already initialized df
+
+    # This 'if df.empty:' check is now safe because df is guaranteed to be defined.
+    # The warning message is also updated per prior request.
+    if df.empty: 
         logger.warning("ORA_Weekly_Shipped_History DataFrame is empty after conversion. Returning empty DataFrame.")
-        return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])
+        return df # Return the defined df
 
     df.columns = df.columns.str.strip() # Strip whitespace from column names
 
@@ -273,13 +298,15 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
     
     if not all(col in df.columns for col in id_vars):
         logger.error(f"Missing expected ID columns '{id_vars}' in 'ORA_Weekly_Shipped_History' data. Available columns: {df.columns.tolist()}")
-        return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])
+        # This return should also be df for consistency if it's meant to be empty.
+        return df # Changed to return df for consistency
 
     value_vars = [col for col in df.columns if col not in id_vars]
     
     if not value_vars:
         logger.warning(f"No SKU columns found in 'ORA_Weekly_Shipped_History' to melt. Available columns: {df.columns.tolist()}")
-        return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])
+        # This return should also be df for consistency if it's meant to be empty.
+        return df # Changed to return df for consistency
 
     # Perform the melt operation
     long_df = pd.melt(df, id_vars=id_vars, value_vars=value_vars, var_name='SKU', value_name='ShippedQuantity')
@@ -307,14 +334,16 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
 
     if long_df.empty:
         logger.warning("ORA_Weekly_Shipped_History became empty after date parsing and dropping invalid dates. Cannot calculate rolling average.")
-        return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])
+        # This return should also be df for consistency if it's meant to be empty.
+        return df # Changed to return df for consistency
 
-    # ... (Rest of the function remains largely the same for ShippedQuantity and SKU cleaning) ...
+    long_df['ShippedQuantity'] = pd.to_numeric(long_df['ShippedQuantity'].replace('', 0)).fillna(0)
+    long_df['SKU'] = long_df['SKU'].astype(str).str.strip()
 
-    # Ensure final DataFrame contains expected columns
     if not all(col in long_df.columns for col in ['Date', 'SKU', 'ShippedQuantity']):
         logger.error(f"Final DataFrame from ORA_Weekly_Shipped_History is missing essential columns after processing. Columns: {long_df.columns.tolist()}")
-        return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])
+        # This return should also be df for consistency if it's meant to be empty.
+        return df # Changed to return df for consistency
 
     logger.info(f"Successfully loaded and unpivoted weekly shipped history. Resulting DataFrame shape: {long_df.shape}")
     logger.debug(f"Weekly shipped history final DataFrame head:\n{long_df.head().to_string()}")
