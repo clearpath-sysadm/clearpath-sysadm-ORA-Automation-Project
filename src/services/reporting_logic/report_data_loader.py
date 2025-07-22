@@ -328,8 +328,9 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
         # due to being outside the 52-week window but simply invalid format
         logger.warning(f"Dropped {initial_rows - len(long_df)} rows from ORA_Weekly_Shipped_History due to unparsable Start/Stop Dates.")
         # You could add specific debug for problematic raw dates if needed
-        # logger.debug(f"Problematic raw Start Dates: {long_df[long_df['Start_Date_Parsed'].isna()]['Start Date'].unique().tolist()}")
-        # logger.debug(f"Problematic raw Stop Dates: {long_df[long_df['Date'].isna()]['Stop Date'].unique().tolist()}")
+        logger.debug(f"Details of dropped rows:\n{rows_to_drop.to_string()}")
+        logger.debug(f"Problematic raw Start Dates: {long_df[long_df['Start_Date_Parsed'].isna()]['Start Date'].unique().tolist()}")
+        logger.debug(f"Problematic raw Stop Dates: {long_df[long_df['Date'].isna()]['Stop Date'].unique().tolist()}")
 
 
     if long_df.empty:
