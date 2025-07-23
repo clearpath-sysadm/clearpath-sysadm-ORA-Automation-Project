@@ -15428,3 +15428,202 @@ AttributeError: 'list' object has no attribute 'empty'
 2025-07-16 22:30:30,967 - __main__ - INFO - {'message': 'ShipStation single order upload result', 'orderKey': '670725', 'success': True, 'errorMessage': None, 'type': 'shipstation_api_response'}
 2025-07-16 22:30:30,967 - __main__ - INFO - {'message': 'ShipStation single order upload result', 'orderKey': '670735', 'success': True, 'errorMessage': None, 'type': 'shipstation_api_response'}
 2025-07-16 22:30:30,968 - __main__ - INFO - {'message': 'ShipStation Order Uploader Script finished', 'status': 'completed'}
+2025-07-16 22:55:45,453 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-07-16 22:55:45,453 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\app.log
+2025-07-16 22:55:45,864 - __main__ - INFO - {'message': 'Starting core order uploader logic execution.'}
+2025-07-16 22:55:45,865 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.
+2025-07-16 22:55:45,865 - src.services.gcp.secret_manager - DEBUG - No valid credentials_path provided. Attempting to use Application Default Credentials.
+2025-07-16 22:55:47,381 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-16 22:55:47,620 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-16 22:55:47,919 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-07-16 22:55:47,920 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.
+2025-07-16 22:55:47,922 - src.services.gcp.secret_manager - DEBUG - No valid credentials_path provided. Attempting to use Application Default Credentials.
+2025-07-16 22:55:48,959 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-16 22:55:49,148 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-16 22:55:49,405 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-07-16 22:55:49,406 - __main__ - INFO - {'message': 'ShipStation API credentials retrieved', 'api_key_truncated': 'de888', 'api_secret_truncated': 'acd5e'}
+2025-07-16 22:55:49,407 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-16 22:55:49,407 - src.services.gcp.secret_manager - DEBUG - No valid credentials_path provided. Attempting to use Application Default Credentials.
+2025-07-16 22:55:50,448 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-16 22:55:50,632 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-16 22:55:50,904 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-16 22:55:50,905 - __main__ - INFO - {'message': 'Google Sheets Service Account Key retrieved for Drive access', 'key_truncated': '{\n  "'}
+2025-07-16 22:55:50,906 - __main__ - INFO - {'message': 'Fetching orders from X-Cart XML on Google Drive', 'file_id': '1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY'}
+2025-07-16 22:55:50,914 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-07-16 22:55:50,917 - src.services.google_drive.api_client - DEBUG - {'message': 'Google Drive API service client built successfully.', 'function': 'fetch_xml_content_from_drive'}
+2025-07-16 22:55:50,921 - googleapiclient.discovery - DEBUG - URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?fields=name%2CmimeType%2Csize&alt=json
+2025-07-16 22:55:50,943 - google_auth_httplib2 - DEBUG - Making request: POST https://oauth2.googleapis.com/token
+2025-07-16 22:55:51,713 - src.services.google_drive.api_client - INFO - {'message': 'Confirmed file metadata from Google Drive.', 'file_id': '1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY', 'file_name': 'orders.xml', 'file_mime_type': 'text/xml', 'file_size_bytes': '173820'}
+2025-07-16 22:55:51,716 - googleapiclient.discovery - DEBUG - URL being requested: GET https://www.googleapis.com/drive/v3/files/1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY?alt=media
+2025-07-16 22:55:53,217 - src.services.google_drive.api_client - DEBUG - {'message': 'Downloading chunk from Google Drive', 'status_progress': 1.0, 'file_id': '1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY'}
+2025-07-16 22:55:53,218 - src.services.google_drive.api_client - INFO - {'message': 'File content fetched from Google Drive.', 'file_id': '1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY', 'content_length_bytes': 173820, 'function': 'fetch_xml_content_from_drive'}
+2025-07-16 22:55:53,218 - src.services.google_drive.api_client - DEBUG - {'message': 'Raw XML bytes snippet before decoding.', 'file_id': '1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY', 'raw_bytes_start_hex': '3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d2269736f2d383835392d31223f3e0a3c44656e7469', 'raw_bytes_end_hex': '3c2f6f726465725f64657461696c3e0a20203c2f6f726465723e0a3c2f44656e7469737453656c6563744f72646572733e0a'}
+2025-07-16 22:55:53,218 - src.services.google_drive.api_client - DEBUG - {'message': 'Decoded XML string snippet.', 'file_id': '1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY', 'decoded_string_start': '<?xml version="1.0" encoding="iso-8859-1"?>\n<DentistSelectOrders>\n  <order>\n    <orderid>669305</orderid>\n    <date>1752234961</date>\n    <date2>2025-07-11 06:56:01</date2>\n    <dentistcode>B7558</den', 'decoded_string_end': 'l>\n      <orderid>670735</orderid>\n      <amount>1</amount>\n      <product>OraCare Buy 5 Cases Get 1</product>\n      <productid>18255</productid>\n    </order_detail>\n  </order>\n</DentistSelectOrders>\n'}
+2025-07-16 22:55:53,219 - src.services.google_drive.api_client - INFO - {'message': 'XML content successfully fetched and decoded from Google Drive.', 'file_id': '1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY', 'function': 'fetch_xml_content_from_drive'}
+2025-07-16 22:55:53,219 - __main__ - INFO - {'message': 'XML content fetched successfully from Google Drive', 'file_id': '1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY', 'content_length': 173820}
+2025-07-16 22:55:53,219 - __main__ - DEBUG - {'message': 'Preparing to parse XML content.', 'content_type': "<class 'str'>", 'content_start_snippet': '<?xml version="1.0" encoding="iso-8859-1"?>\n<DentistSelectOrders>\n  <order>\n    <orderid>669305</orderid>\n    <date>1752234961</date>\n    <date2>2025-07-11 06:56:01</date2>\n    <dentistcode>B7558</den'}
+2025-07-16 22:55:53,252 - src.services.data_parsers.x_cart_parser - DEBUG - Fetching and filtering SKU-Lot map from Google Sheets...
+2025-07-16 22:55:53,253 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-07-16 22:55:53,254 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'google-sheets-service-account-key' in project 'ora-automation-project'.
+2025-07-16 22:55:53,254 - src.services.gcp.secret_manager - DEBUG - No valid credentials_path provided. Attempting to use Application Default Credentials.
+2025-07-16 22:55:54,305 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-07-16 22:55:54,521 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-07-16 22:55:54,815 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-07-16 22:55:54,819 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-07-16 22:55:54,823 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-07-16 22:55:54,829 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'SKU_Lot', 'range': "'SKU_Lot'!A:ZZ"}
+2025-07-16 22:55:55,032 - googleapiclient.discovery - DEBUG - URL being requested: GET https://sheets.googleapis.com/v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27SKU_Lot%27%21A%3AZZ?alt=json
+2025-07-16 22:55:55,052 - google_auth_httplib2 - DEBUG - Making request: POST https://oauth2.googleapis.com/token
+2025-07-16 22:55:55,681 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'SKU_Lot', 'rows_count': 8}
+2025-07-16 22:55:55,681 - src.services.data_parsers.x_cart_parser - ERROR - Failed to get or process SKU_Lot map from Google Sheets: 'list' object has no attribute 'empty'
+Traceback (most recent call last):
+  File "C:\Users\NathanNeely\Projects\ORA_Automation\src\services\data_parsers\x_cart_parser.py", line 27, in _get_active_sku_lot_map
+    if sku_lot_df is None or sku_lot_df.empty:
+                             ^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'empty'
+2025-07-16 22:55:55,686 - __main__ - INFO - {'message': 'Orders prepared for upload to ShipStation', 'count': 134, 'stage': 'payload_preparation'}
+2025-07-16 22:55:55,693 - __main__ - INFO - {'message': 'Checking for existing orders in ShipStation', 'date_range_start': '2025-07-11T11:56:01+00:00Z', 'date_range_end': '2025-07-17T03:55:55+00:00Z'}
+2025-07-16 22:55:55,694 - src.services.shipstation.api_client - DEBUG - Starting ShipStation existing orders fetch from 2025-07-11T11:56:01+00:00Z to 2025-07-17T03:55:55+00:00Z...
+2025-07-16 22:55:55,694 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/orders
+2025-07-16 22:55:55,696 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-07-16 22:55:56,151 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /orders?createDateStart=2025-07-11T11%3A56%3A01%2B00%3A00Z&pageSize=500&page=1&createDateEnd=2025-07-17T03%3A55%3A55%2B00%3A00Z HTTP/1.1" 200 390894
+2025-07-16 22:55:56,314 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/orders with status code: 200
+2025-07-16 22:55:56,318 - src.services.shipstation.api_client - INFO - Fetched page 1: 150 existing orders.
+2025-07-16 22:55:56,318 - src.services.shipstation.api_client - DEBUG - Fewer than 500 orders on page 1. Assuming last page.
+2025-07-16 22:55:56,319 - src.services.shipstation.api_client - INFO - Finished fetching existing ShipStation orders. Total retrieved: 150
+2025-07-16 22:55:56,319 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669305', 'normalizedOrderNumber': '669305', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,320 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669315', 'normalizedOrderNumber': '669315', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,320 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669325', 'normalizedOrderNumber': '669325', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,321 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669335', 'normalizedOrderNumber': '669335', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,321 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669345', 'normalizedOrderNumber': '669345', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,321 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669355', 'normalizedOrderNumber': '669355', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,322 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669365', 'normalizedOrderNumber': '669365', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,322 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669375', 'normalizedOrderNumber': '669375', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,322 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669385', 'normalizedOrderNumber': '669385', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,322 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669395', 'normalizedOrderNumber': '669395', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,323 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669405', 'normalizedOrderNumber': '669405', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,323 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669415', 'normalizedOrderNumber': '669415', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,323 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669435', 'normalizedOrderNumber': '669435', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,323 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669445', 'normalizedOrderNumber': '669445', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,324 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669455', 'normalizedOrderNumber': '669455', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,324 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669465', 'normalizedOrderNumber': '669465', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,324 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669475', 'normalizedOrderNumber': '669475', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,324 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669485', 'normalizedOrderNumber': '669485', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,325 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669495', 'normalizedOrderNumber': '669495', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,325 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669505', 'normalizedOrderNumber': '669505', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,325 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669515', 'normalizedOrderNumber': '669515', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,326 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669525', 'normalizedOrderNumber': '669525', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,326 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669535', 'normalizedOrderNumber': '669535', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,327 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669545', 'normalizedOrderNumber': '669545', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,327 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669555', 'normalizedOrderNumber': '669555', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,327 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669565', 'normalizedOrderNumber': '669565', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,328 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669575', 'normalizedOrderNumber': '669575', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,328 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669585', 'normalizedOrderNumber': '669585', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,328 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669595', 'normalizedOrderNumber': '669595', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,328 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669605', 'normalizedOrderNumber': '669605', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,329 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669615', 'normalizedOrderNumber': '669615', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,329 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669625', 'normalizedOrderNumber': '669625', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,329 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669635', 'normalizedOrderNumber': '669635', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,329 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669645', 'normalizedOrderNumber': '669645', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,330 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669655', 'normalizedOrderNumber': '669655', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,330 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669665', 'normalizedOrderNumber': '669665', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,330 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669675', 'normalizedOrderNumber': '669675', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,330 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669685', 'normalizedOrderNumber': '669685', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,331 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669695', 'normalizedOrderNumber': '669695', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,331 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669705', 'normalizedOrderNumber': '669705', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,331 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669715', 'normalizedOrderNumber': '669715', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,332 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669725', 'normalizedOrderNumber': '669725', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,332 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669745', 'normalizedOrderNumber': '669745', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,332 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669755', 'normalizedOrderNumber': '669755', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,333 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669765', 'normalizedOrderNumber': '669765', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,333 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669775', 'normalizedOrderNumber': '669775', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,334 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669785', 'normalizedOrderNumber': '669785', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,334 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669795', 'normalizedOrderNumber': '669795', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,335 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669805', 'normalizedOrderNumber': '669805', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,335 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669815', 'normalizedOrderNumber': '669815', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,336 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669825', 'normalizedOrderNumber': '669825', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,337 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669835', 'normalizedOrderNumber': '669835', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,337 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669845', 'normalizedOrderNumber': '669845', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,338 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669855', 'normalizedOrderNumber': '669855', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,338 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669865', 'normalizedOrderNumber': '669865', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,338 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669875', 'normalizedOrderNumber': '669875', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,339 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669885', 'normalizedOrderNumber': '669885', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,339 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669895', 'normalizedOrderNumber': '669895', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,339 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669905', 'normalizedOrderNumber': '669905', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,339 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669915', 'normalizedOrderNumber': '669915', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,339 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669925', 'normalizedOrderNumber': '669925', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,340 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669935', 'normalizedOrderNumber': '669935', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,340 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669945', 'normalizedOrderNumber': '669945', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,340 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669955', 'normalizedOrderNumber': '669955', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,340 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669965', 'normalizedOrderNumber': '669965', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,341 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669975', 'normalizedOrderNumber': '669975', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,341 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669985', 'normalizedOrderNumber': '669985', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,341 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '669995', 'normalizedOrderNumber': '669995', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,341 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670005', 'normalizedOrderNumber': '670005', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,342 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670015', 'normalizedOrderNumber': '670015', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,342 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670025', 'normalizedOrderNumber': '670025', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,342 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670035', 'normalizedOrderNumber': '670035', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,343 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670045', 'normalizedOrderNumber': '670045', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,343 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670055', 'normalizedOrderNumber': '670055', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,343 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670065', 'normalizedOrderNumber': '670065', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,343 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670075', 'normalizedOrderNumber': '670075', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,344 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670085', 'normalizedOrderNumber': '670085', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,344 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670095', 'normalizedOrderNumber': '670095', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,344 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670105', 'normalizedOrderNumber': '670105', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,344 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670115', 'normalizedOrderNumber': '670115', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,345 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670125', 'normalizedOrderNumber': '670125', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,346 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670135', 'normalizedOrderNumber': '670135', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,346 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670145', 'normalizedOrderNumber': '670145', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,346 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670155', 'normalizedOrderNumber': '670155', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,347 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670165', 'normalizedOrderNumber': '670165', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,347 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670175', 'normalizedOrderNumber': '670175', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,347 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670185', 'normalizedOrderNumber': '670185', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,347 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670195', 'normalizedOrderNumber': '670195', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,348 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670205', 'normalizedOrderNumber': '670205', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,348 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670215', 'normalizedOrderNumber': '670215', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,348 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670225', 'normalizedOrderNumber': '670225', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,348 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670235', 'normalizedOrderNumber': '670235', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,349 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670245', 'normalizedOrderNumber': '670245', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,349 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670255', 'normalizedOrderNumber': '670255', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,350 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670275', 'normalizedOrderNumber': '670275', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,350 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670285', 'normalizedOrderNumber': '670285', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,351 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670295', 'normalizedOrderNumber': '670295', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,351 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670305', 'normalizedOrderNumber': '670305', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,352 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670315', 'normalizedOrderNumber': '670315', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,352 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670325', 'normalizedOrderNumber': '670325', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,353 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670335', 'normalizedOrderNumber': '670335', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,354 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670345', 'normalizedOrderNumber': '670345', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,354 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670355', 'normalizedOrderNumber': '670355', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,354 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670375', 'normalizedOrderNumber': '670375', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,355 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670385', 'normalizedOrderNumber': '670385', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,355 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670395', 'normalizedOrderNumber': '670395', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,355 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670415', 'normalizedOrderNumber': '670415', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,355 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670425', 'normalizedOrderNumber': '670425', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,356 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670435', 'normalizedOrderNumber': '670435', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,356 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670445', 'normalizedOrderNumber': '670445', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,357 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670455', 'normalizedOrderNumber': '670455', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,357 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670465', 'normalizedOrderNumber': '670465', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,358 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670475', 'normalizedOrderNumber': '670475', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,358 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670485', 'normalizedOrderNumber': '670485', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,358 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670495', 'normalizedOrderNumber': '670495', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,359 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670515', 'normalizedOrderNumber': '670515', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,359 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670525', 'normalizedOrderNumber': '670525', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,359 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670545', 'normalizedOrderNumber': '670545', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,359 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670555', 'normalizedOrderNumber': '670555', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,360 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670565', 'normalizedOrderNumber': '670565', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,360 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670575', 'normalizedOrderNumber': '670575', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,360 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670585', 'normalizedOrderNumber': '670585', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,361 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670595', 'normalizedOrderNumber': '670595', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,361 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670605', 'normalizedOrderNumber': '670605', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,361 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670615', 'normalizedOrderNumber': '670615', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,362 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670635', 'normalizedOrderNumber': '670635', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,362 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670655', 'normalizedOrderNumber': '670655', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,362 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670675', 'normalizedOrderNumber': '670675', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,363 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670685', 'normalizedOrderNumber': '670685', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,363 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670695', 'normalizedOrderNumber': '670695', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,363 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670705', 'normalizedOrderNumber': '670705', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,363 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670715', 'normalizedOrderNumber': '670715', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,364 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670725', 'normalizedOrderNumber': '670725', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,364 - __main__ - INFO - {'message': 'Skipping duplicate order', 'orderNumber': '670735', 'normalizedOrderNumber': '670735', 'reason': 'already exists in ShipStation', 'action': 'skipped_upload'}
+2025-07-16 22:55:56,364 - __main__ - INFO - {'message': 'Duplicate orders skipped', 'count': 134}
+2025-07-16 22:55:56,364 - __main__ - WARNING - {'message': 'No new unique orders to send to ShipStation after duplicate check', 'action': 'exiting_gracefully'}

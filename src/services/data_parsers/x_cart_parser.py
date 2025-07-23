@@ -1,3 +1,4 @@
+# filename: src/services/data_parsers/x_cart_parser.py
 import xml.etree.ElementTree as ET
 import datetime
 import pandas as pd
@@ -206,6 +207,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                                 "sku": final_component_sku,
                                 "name": f"Component of {order_detail_element.findtext('product')}", 
                                 "quantity": original_quantity * component['multiplier'],
+                                "baseSku": component_id, # ADDED LINE
                             }
                     if order_contains_non_key_product:
                         break # Skip remaining items for this order if a bundle component was invalid
@@ -242,6 +244,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                             "sku": sku_with_lot,
                             "name": order_detail_element.findtext('product'),
                             "quantity": original_quantity,
+                            "baseSku": cleaned_sku, # ADDED LINE
                         }
             
             # After processing all order_detail_elements for the current order:

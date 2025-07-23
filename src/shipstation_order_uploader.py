@@ -1,3 +1,4 @@
+# filename: src/shipstation_order_uploader.py
 # This script serves as the main entry point for the ShipStation Order Uploader.
 # It orchestrates the process of fetching X-Cart XML order data,
 # transforming it into ShipStation-compatible payloads, and sending
@@ -8,6 +9,7 @@ import sys
 import os
 import datetime
 from dateutil import parser
+import json # ADDED FOR MAPPING PROCESSING
 
 # Add the project root to the Python path to enable imports from utils and services
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -27,6 +29,8 @@ from src.services.shipstation.api_client import send_all_orders_to_shipstation, 
 from src.services.data_parsers.x_cart_parser import parse_x_cart_xml_for_shipstation_payload
 # NEW: Import for Google Drive interaction
 from src.services.google_drive.api_client import fetch_xml_content_from_drive
+# ADDED: Import for Google Sheets API client for mapping
+from src.services.google_sheets.api_client import get_google_sheet_data
 
 
 # --- Setup Logging for this script ---
@@ -71,7 +75,8 @@ def run_order_uploader_logic():
 
     logger.info({"message": "ShipStation API credentials retrieved", "api_key_truncated": shipstation_api_key[:5], "api_secret_truncated": shipstation_api_secret[:5]})
 
-    # --- Retrieve Google Sheets Service Account Key for Google Drive Access ---
+    # --- Retrieve Google Sheets Service Account Key for Google Drive Access and Sheets Access ---
+    # This key is used for both Google Drive access (for XML) and Google Sheets access (for mapping)
     google_sheets_service_account_json = access_secret_version(
         settings.YOUR_GCP_PROJECT_ID,
         settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID,
@@ -82,7 +87,45 @@ def run_order_uploader_logic():
         logger.critical({"message": "Failed to retrieve Google Sheets service account key for Google Drive access", "action": "exiting", "severity_detail": "critical_failure"})
         return False, 'Failed to retrieve Google Sheets service account key for Google Drive access'
 
-    logger.info({"message": "Google Sheets Service Account Key retrieved for Drive access", "key_truncated": google_sheets_service_account_json[:5]})
+    logger.info({"message": "Google Sheets Service Account Key retrieved for Drive and Sheets access", "key_truncated": google_sheets_service_account_json[:5]})
+
+    # --- Load ShipStation Product Name Mapping --- (NEW SECTION)
+    product_name_mapping = {}
+    try:
+        logger.info({"message": "Loading ShipStation product name mapping from ORA_Configuration."})
+        raw_config_data = get_google_sheet_data(
+            sheet_id=settings.GOOGLE_SHEET_ID,
+            worksheet_name=settings.ORA_CONFIGURATION_TAB_NAME
+        )
+
+        if raw_config_data and len(raw_config_data) > 1:
+            header = raw_config_data[0]
+            data_rows = raw_config_data[1:]
+
+            # Dynamically find column indices for 'ParameterCategory', 'ParameterName' (for SKU), and 'Value' (for new name)
+            try:
+                param_cat_idx = header.index('ParameterCategory')
+                param_name_idx = header.index('ParameterName')
+                value_idx = header.index('Value')
+            except ValueError as e:
+                logger.error({"message": f"Missing expected column in ORA_Configuration for product name mapping: {e}"})
+                raise # Critical error if mapping columns are missing, re-raise to exit
+
+            for row in data_rows:
+                # Ensure row has enough columns before accessing
+                if len(row) > max(param_cat_idx, param_name_idx, value_idx):
+                    category = row[param_cat_idx].strip()
+                    sku_key = row[param_name_idx].strip() # This is the SKU used for lookup
+                    mapped_name = row[value_idx].strip() # This is the desired ShipStation name
+
+                    if category == 'ShipStation Product Mapping': # Use your defined category
+                        product_name_mapping[sku_key] = mapped_name
+            logger.info({"message": f"Loaded {len(product_name_mapping)} product name mappings."})
+        else:
+            logger.warning({"message": "ORA_Configuration sheet is empty or could not be read for product name mapping. No mappings will be applied."})
+    except Exception as e:
+        logger.error({"message": f"Failed to load product name mapping: {e}", "severity_detail": "non_critical_fallback"}, exc_info=True)
+        # In case of failure, mapping remains empty, and original names will be used.
 
 
     # --- Fetch and Parse Data from X-Cart XML (from Google Drive) ---
@@ -118,6 +161,33 @@ def run_order_uploader_logic():
         return True, 'No new unique orders to send to ShipStation after processing XML' # Graceful exit, no orders
 
     logger.info({"message": "Orders prepared for upload to ShipStation", "count": len(all_orders_payload), "stage": "payload_preparation"})
+
+    # --- Apply Product Name Mapping --- (NEW SECTION)
+    if product_name_mapping:
+        logger.info({"message": "Applying product name mappings to order payload."})
+        for order in all_orders_payload:
+            if 'items' in order:
+                for item in order['items']:
+                    item_base_sku = item.get('baseSku') # Get the new baseSku field from x_cart_parser
+                    if item_base_sku and item_base_sku in product_name_mapping:
+                        original_name = item.get('name', 'N/A') # Get original name for logging
+                        item['name'] = product_name_mapping[item_base_sku]
+                        logger.debug({
+                            "message": "Product name translated.",
+                            "orderKey": order.get('orderKey'),
+                            "baseSku": item_base_sku,
+                            "original_name": original_name,
+                            "translated_name": item['name']
+                        })
+                    else:
+                        logger.debug({
+                            "message": "No mapping found for item base SKU, using original name.",
+                            "orderKey": order.get('orderKey'),
+                            "baseSku": item_base_sku,
+                            "current_name": item.get('name')
+                        })
+    else:
+        logger.warning({"message": "Product name mapping is empty. All orders will use original product names."})
 
     # --- DUPLICATE ORDER PRE-CHECK LOGIC START ---
     order_numbers_to_check = {order.get('orderNumber').strip().upper() for order in all_orders_payload if order.get('orderNumber')}
@@ -254,4 +324,3 @@ def shipstation_order_uploader_http_trigger(request):
 #     else:
 #         print(f"Local Test Result: FAILED - {message}")
 #     print("--- Local execution finished ---")
-
