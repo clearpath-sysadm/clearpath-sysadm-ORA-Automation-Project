@@ -46,21 +46,21 @@ steps:
 
 # Step 1.2: Deploy the shipstation-order-uploader Cloud Function.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-entrypoint: 'gcloud'
-args:
-  - 'functions'
-  - 'deploy'
-  - 'shipstation-order-uploader'
-  - '--runtime=python311'
-  - '--entry-point=shipstation_order_uploader_http_trigger'
-  - '--source=.' # Source is the current directory (project root)
-  - '--trigger-http'
-  - '--allow-unauthenticated'
-  - '--region=us-central1'
-  - '--memory=1024MB'
-  - '--timeout=300s'
-  - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
-  - '--gen2' # Explicitly use 2nd Gen functions
+  entrypoint: 'gcloud'
+  args:
+    - 'functions'
+    - 'deploy'
+    - 'shipstation-order-uploader'
+    - '--runtime=python311'
+    - '--entry-point=shipstation_order_uploader_http_trigger'
+    - '--source=.' # Source is the current directory (project root)
+    - '--trigger-http'
+    - '--allow-unauthenticated'
+    - '--region=us-central1'
+    - '--memory=1024MB'
+    - '--timeout=300s'
+    - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
+    - '--gen2' # Explicitly use 2nd Gen functions
 dir: .
 id: deploy-order-uploader
 
