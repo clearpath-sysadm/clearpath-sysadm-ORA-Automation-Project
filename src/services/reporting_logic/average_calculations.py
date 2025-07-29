@@ -32,18 +32,22 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
 
     df = weekly_shipped_history_df.copy()
 
-    # Ensure the 'Date' column is in a proper datetime format for sorting
+    # Ensure 'Date' and 'ShippedQuantity' columns are in proper formats
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df.dropna(subset=['Date'], inplace=True)
+    # Convert ShippedQuantity to numeric, coercing errors to NaN.
+    # This handles cases where quantity values might be strings (e.g., '-')
+    df['ShippedQuantity'] = pd.to_numeric(df['ShippedQuantity'], errors='coerce')
+    
+    # Drop rows where 'Date' or 'ShippedQuantity' are NaN after conversion
+    df.dropna(subset=['Date', 'ShippedQuantity'], inplace=True)
 
     # Sort data by SKU and then by Date in descending order to get most recent entries first
     df_sorted = df.sort_values(by=['SKU', 'Date'], ascending=[True, False])
 
     # Group by SKU and take the sum of the most recent 52 quantities
     # If an SKU has less than 52 entries, it will sum whatever is available for that SKU.
-    # The division by 52 (next step) implicitly treats missing weeks as zeros for the average period.
     
-    # Store intermediate results to log
+    # Store intermediate results to log (for the get_sum_and_log function)
     intermediate_sums = {}
     
     def get_sum_and_log(x):
@@ -60,7 +64,8 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
         intermediate_sums[x.name] = current_sum # Store sum for later
         return current_sum
 
-    total_shipped_by_sku_recent_52 = df_sorted.groupby('SKU').apply(get_sum_and_log)
+    # Updated: Add include_groups=False to address FutureWarning
+    total_shipped_by_sku_recent_52 = df_sorted.groupby('SKU').apply(get_sum_and_log, include_groups=False)
 
     # Calculate the average by dividing the total quantity by 52 weeks
     # This aligns with the "divide by 52" part of the desired logic
@@ -73,7 +78,10 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
 
     # Convert the resulting pandas Series to a DataFrame
     rolling_average_df = rolling_average.reset_index()
-    rolling_average_df.rename(columns={0: '12-Month Rolling Average'}, inplace=True) 
+    # Updated: Rename the column that results from the apply operation.
+    # The name of the series from .apply is typically derived from the input or is a default.
+    # Using the name attribute of the series itself is more robust.
+    rolling_average_df.rename(columns={rolling_average_df.columns[1]: '12-Month Rolling Average'}, inplace=True) 
 
     logging.info("Successfully calculated 12-month rolling average based on 52 most recent quantities.")
     logging.debug(f"Final rolling average DataFrame shape: {rolling_average_df.shape}")
