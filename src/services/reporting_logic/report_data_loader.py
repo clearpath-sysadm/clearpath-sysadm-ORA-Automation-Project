@@ -311,7 +311,7 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
 
     # Perform the melt operation
     long_df = pd.melt(df, id_vars=id_vars, value_vars=value_vars, var_name='SKU', value_name='ShippedQuantity')
-    logging.debug(f"DataFrame before dropping NaT dates:\n{long_df[rows_to_drop_filter].to_string()}")
+
 
     # --- UPDATED: Directly convert 'Stop Date' to 'Date' column ---
     # Convert new 'Start Date' and 'Stop Date' columns to datetime objects
@@ -324,6 +324,7 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
     initial_rows = len(long_df)
     # Drop rows where either Start Date or Stop Date failed to parse
     rows_to_drop_filter = long_df['Start_Date_Parsed'].isna() | long_df['Date'].isna()
+    logging.debug(f"DataFrame before dropping NaT dates:\n{long_df[rows_to_drop_filter].to_string()}")
     rows_to_drop = long_df[rows_to_drop_filter].copy() # Capture rows before dropping
     long_df.dropna(subset=['Start_Date_Parsed', 'Date'], inplace=True)
     
