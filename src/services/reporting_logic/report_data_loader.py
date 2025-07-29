@@ -260,6 +260,7 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
     """Loads the weekly shipped history from Google Sheets."""
     logger.info("Loading weekly shipped history...")
     raw_data = get_google_sheet_data(sheet_id, settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME) 
+    logging.debug(f"Raw data from ORA_Weekly_Shipped_History (first 5 rows):\n{raw_data[:5]}")
     
     # Initialize df to ensure it's always defined before its first use outside the initial raw_data processing blocks.
     # This empty DataFrame will be returned if raw_data is invalid or empty after processing.
@@ -310,6 +311,7 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
 
     # Perform the melt operation
     long_df = pd.melt(df, id_vars=id_vars, value_vars=value_vars, var_name='SKU', value_name='ShippedQuantity')
+    logging.debug(f"DataFrame before dropping NaT dates:\n{long_df[rows_to_drop_filter].to_string()}")
 
     # --- UPDATED: Directly convert 'Stop Date' to 'Date' column ---
     # Convert new 'Start Date' and 'Stop Date' columns to datetime objects
