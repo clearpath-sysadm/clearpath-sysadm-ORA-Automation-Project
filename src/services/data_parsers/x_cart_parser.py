@@ -1,3 +1,4 @@
+# filename: src/services/data_parsers/x_cart_parser.py
 import xml.etree.ElementTree as ET
 import datetime
 import pandas as pd
@@ -129,6 +130,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
     or if bundle components are not defined in the active SKU-Lot map.
     Orders are skipped if any of their final SKUs (after bundling/lot) are not
     found in the 'Key Products' list.
+    Finally, identical base SKUs are consolidated into single line items.
     """
     orders_payload = []
     try:
@@ -139,7 +141,9 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
         for order_element in root.findall('order'):
             order_id = order_element.findtext('orderid')
             order_contains_non_key_product = False
-            current_order_skus = [] # To collect final SKUs for this specific order
+            
+            # Initialize a temporary dictionary to hold consolidated items for the current order
+            consolidated_shipstation_items = {} 
 
             order_data = {
                 'orderKey': order_id,
@@ -150,15 +154,15 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                 'requestedShippingService': order_element.findtext('shipping'),
                 'billTo': build_address_from_xml(order_element, "b_"),
                 'shipTo': build_address_from_xml(order_element, "s_"),
-                'items': []
+                'items': [] # This will be populated from consolidated_shipstation_items
             }
 
-            items_list = []
             for order_detail_element in order_element.findall('order_detail'):
                 original_sku_raw = order_detail_element.findtext('productid')
                 if not original_sku_raw: 
                     logger.warning(f"Skipping item due to missing productid for order {order_id}")
-                    continue
+                    order_contains_non_key_product = True # Mark order to be skipped
+                    break # Skip processing further items for this order
                 
                 cleaned_sku = str(original_sku_raw).strip()
                 original_quantity = int(order_detail_element.findtext('amount') or '0')
@@ -166,13 +170,12 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                     logger.warning(f"Skipping item {cleaned_sku} for order {order_id} due to zero quantity.")
                     continue
 
-                # --- REVISED LOGIC FOR SKU-LOT AND BUNDLE HANDLING ---
                 if cleaned_sku in bundle_config:
                     # It's a bundle, iterate its components
                     for component in bundle_config[cleaned_sku]:
                         component_id = str(component['component_id']).strip()
                         
-                        # Validate component SKU against active_lot_map
+                        # Validate component SKU against active_lot_map and key_product_skus
                         if component_id not in active_lot_map:
                             logger.warning({
                                 "message": "Skipping bundle component as its SKU is not defined in active lot map.",
@@ -183,19 +186,33 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                             order_contains_non_key_product = True # Mark order to be skipped
                             break # No need to process other components if one is bad
                         
+                        if component_id not in key_product_skus:
+                             logger.info({
+                                "message": "Skipping bundle component as it is not a Key Product.",
+                                "order_id": order_id,
+                                "bundle_sku": cleaned_sku,
+                                "component_sku": component_id
+                            })
+                             order_contains_non_key_product = True # Mark order to be skipped
+                             break # No need to process other components if one is not a key product
+                        
                         # Apply SKU-Lot logic to the component SKU
                         final_component_sku = f"{component_id} - {active_lot_map[component_id]}"
-                        current_order_skus.append(component_id) # Add base SKU for key product check
                         
-                        items_list.append({
-                            "sku": final_component_sku,
-                            "name": f"Component of {order_detail_element.findtext('product')}", 
-                            "quantity": original_quantity * component['multiplier'],
-                        })
+                        # CONSOLIDATION LOGIC FOR BUNDLE COMPONENTS
+                        if final_component_sku in consolidated_shipstation_items:
+                            consolidated_shipstation_items[final_component_sku]['quantity'] += (original_quantity * component['multiplier'])
+                        else:
+                            consolidated_shipstation_items[final_component_sku] = {
+                                "sku": final_component_sku,
+                                "name": f"Component of {order_detail_element.findtext('product')}", 
+                                "quantity": original_quantity * component['multiplier'],
+                                "baseSku": component_id, # ADDED LINE
+                            }
                     if order_contains_non_key_product:
                         break # Skip remaining items for this order if a bundle component was invalid
                 else:
-                    # It's a regular product, check if it's in active_lot_map
+                    # It's a regular product, check if it's in active_lot_map and key_product_skus
                     if cleaned_sku not in active_lot_map:
                         logger.warning({
                             "message": "Skipping regular item as its SKU is not defined in active lot map.",
@@ -206,35 +223,41 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                         order_contains_non_key_product = True # Mark order to be skipped
                         continue # Skip this item entirely
                     
+                    if cleaned_sku not in key_product_skus:
+                        logger.info({
+                            "message": "Skipping regular item as it is not a Key Product.",
+                            "order_id": order_id,
+                            "sku": cleaned_sku,
+                            "product_name": order_detail_element.findtext('product')
+                        })
+                        order_contains_non_key_product = True # Mark order to be skipped
+                        continue # Skip this item entirely
+                    
                     # Apply lot logic for regular product
                     sku_with_lot = f"{cleaned_sku} - {active_lot_map[cleaned_sku]}"
-                    current_order_skus.append(cleaned_sku) # Add base SKU for key product check
                     
-                    items_list.append({
-                        "sku": sku_with_lot,
-                        "name": order_detail_element.findtext('product'),
-                        "quantity": original_quantity,
-                    })
-                # --- END REVISED LOGIC ---
+                    # CONSOLIDATION LOGIC FOR REGULAR ITEMS
+                    if sku_with_lot in consolidated_shipstation_items:
+                        consolidated_shipstation_items[sku_with_lot]['quantity'] += original_quantity
+                    else:
+                        consolidated_shipstation_items[sku_with_lot] = {
+                            "sku": sku_with_lot,
+                            "name": order_detail_element.findtext('product'),
+                            "quantity": original_quantity,
+                            "baseSku": cleaned_sku, # ADDED LINE
+                        }
             
-            # --- NEW LOGIC: Check if all base SKUs for the order are 'Key Products' ---
+            # After processing all order_detail_elements for the current order:
             if order_contains_non_key_product:
                 logger.info({
-                    "message": "Skipping order because a required SKU/bundle component was not in the active lot map.",
+                    "message": "Skipping entire order due to missing active lot number or non-Key Product.",
                     "order_id": order_id
                 })
                 continue # Skip this entire order
 
-            non_key_skus_found = [sku for sku in current_order_skus if sku not in key_product_skus]
-            if non_key_skus_found:
-                logger.info({
-                    "message": "Skipping entire order because it contains non-Key Products.",
-                    "order_id": order_id,
-                    "non_key_skus": non_key_skus_found
-                })
-                continue # Skip this entire order
-
-            order_data['items'] = items_list
+            # Convert the consolidated_shipstation_items dictionary back into a list
+            order_data['items'] = list(consolidated_shipstation_items.values())
+            
             orders_payload.append(order_data)
             logger.info(f"Successfully processed order {order_id} and added to payload.")
 

@@ -1,21 +1,24 @@
+# TESTING DEPLOYMENT 2025-07-10 (2ND ATTEMPT)#
+
+
 import pandas as pd
-from datetime import datetime, date # Import date as well for explicit date objects
-import os
-import sys
+# from datetime import datetime, date # Import date as well for explicit date objects
+# import os
+# import sys
 import logging
 
-# --- Dynamic Path Adjustment for Module Imports ---
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# # --- Dynamic Path Adjustment for Module Imports ---
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# project_root = os.path.abspath(os.path.join(current_dir, '..'))
+# if project_root not in sys.path:
+#     sys.path.insert(0, project_root)
 
-# --- Logging Configuration ---
-from utils.logging_config import setup_logging
-log_dir = os.path.join(project_root, 'logs')
-log_file_path = os.path.join(log_dir, 'app-log-2025-07-09.txt')
-os.makedirs(log_dir, exist_ok=True)
-setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
+# # --- Logging Configuration ---
+# from utils.logging_config import setup_logging
+# log_dir = os.path.join(project_root, 'logs')
+# log_file_path = os.path.join(log_dir, 'app-log-2025-07-09.txt')
+# os.makedirs(log_dir, exist_ok=True)
+# setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
 
 from config import settings
 from src.services.google_sheets.api_client import get_google_sheet_data, write_dataframe_to_sheet
@@ -29,9 +32,10 @@ from src.services.data_processing import shipment_processor # Import the shipmen
 
 logger = logging.getLogger(__name__)
 
-def main():
-    """Main orchestrating function for generating all reports."""
-    logger.info("Starting ShipStation Reporter Script (main orchestrator)...")
+# Renamed original main() to run_reporter_logic()
+def run_reporter_logic():
+    """Contains the core logic of the ShipStation Reporter."""
+    logger.info("Starting ShipStation Reporter Script (core logic)...")
 
     # Load all configuration data
     (
@@ -82,7 +86,7 @@ def main():
             final_monthly_df = pd.concat([monthly_report_df, monthly_totals_df.rename(index={0: 'TOTAL'})])
         else:
             final_monthly_df = monthly_report_df # If totals are empty, just use the main report
-            logger.warning("Monthly totals DataFrame was empty or None. Only main monthly report data will be written.")
+            #########logger.warning("Monthly totals DataFrame was empty or None. Only main monthly report data will be written.")
 
         write_dataframe_to_sheet(final_monthly_df, settings.GOOGLE_SHEET_ID, settings.MONTHLY_CHARGE_REPORT_OUTPUT_TAB_NAME)
         logger.info("Monthly Charge Report written successfully.")
@@ -129,7 +133,43 @@ def main():
     else:
         logger.error("Weekly Inventory Report generation failed. Missing current inventory data or product names map.")
 
-    logger.info("Script finished successfully.")
+    logger.info("Script core logic finished successfully.") # Added this line for clarity
 
-if __name__ == "__main__":
-    main()
+
+# This is the new entry point for the Cloud Function (HTTP trigger)
+def shipstation_reporter_http_trigger(request): # This function name should be your --entry-point
+    """
+    Cloud Function entry point for HTTP trigger.
+    Triggers the ShipStation Reporter logic.
+    """
+    logger.info("Cloud Function received HTTP trigger. Starting reporter logic.")
+    try:
+        run_reporter_logic() # Call your existing logic
+        logger.info("Cloud Function execution completed successfully.")
+        return 'ShipStation Reporter script executed successfully!', 200
+    except Exception as e:
+        logger.critical(f"Cloud Function execution failed: {e}", exc_info=True)
+        return f"ShipStation Reporter script failed: {e}", 500
+
+    # def shipstation_reporter_http_trigger(request):
+    #     """
+    #     Cloud Function entry point for HTTP trigger.
+    #     Returns a simple success message to pass health check.
+    #     """
+    #     # Ensure your logging setup is robust for Cloud Functions
+    #     # If setup_logging is writing to a local file, it might cause issues.
+    #     # It's better to let Cloud Functions handle logging to stdout/stderr for Cloud Logging.
+    #     # Temporarily comment out your custom logging setup to rule it out.
+    #     # from utils.logging_config import setup_logging
+    #     # log_dir = os.path.join(project_root, 'logs')
+    #     # log_file_path = os.path.join(log_dir, 'app-log-2025-07-09.txt')
+    #     # os.makedirs(log_dir, exist_ok=True)
+    #     # setup_logging(log_file_path=log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
+    #     # Also remove any lines that set up local file logging, like log_file_path = ...
+
+    #     logger.info("Cloud Function received HTTP trigger. Testing basic response for health check.")
+    #     return 'Hello World! Container is up and running.', 200
+
+
+# Removed the 'if __name__ == "__main__": main()' block as it's not needed for Cloud Functions
+# The Cloud Function environment will call shipstation_reporter_http_trigger directly.

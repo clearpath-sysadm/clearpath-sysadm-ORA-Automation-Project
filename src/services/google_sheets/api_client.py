@@ -1,83 +1,241 @@
+# filename: src/services/google_sheets/api_client.py
+"""
+This module provides functions for reading from and writing to Google Sheets
+using the Google Sheets API. It handles authentication internally via Secret Manager.
+"""
+import json
 import logging
 import pandas as pd
-import json
-import gspread
-from gspread_dataframe import set_with_dataframe
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
+# Import central settings and secret manager client
+from config import settings
 from src.services.gcp.secret_manager import access_secret_version
-from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-def _get_gspread_client():
+# Cache for credentials to avoid repeated Secret Manager access and credential building
+_cached_credentials = None
+
+def _get_sheets_credentials():
     """
-    Authenticates with Google Sheets API using service account credentials
-    fetched from Secret Manager and returns an authorized gspread client.
+    Helper function to get authenticated Google Sheets credentials.
+    Retrieves the service account key from Secret Manager and caches it.
     """
+    global _cached_credentials
+    if _cached_credentials:
+        logger.debug({"message": "Using cached Google Sheets credentials."})
+        return _cached_credentials
+
     try:
-        logger.debug("Authenticating with Google Sheets API...")
-        sa_key_json_str = access_secret_version(
-            project_id=settings.YOUR_GCP_PROJECT_ID,
-            secret_id=settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID,
-            credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH
+        logger.debug({"message": "Attempting to retrieve Google Sheets service account key from Secret Manager."})
+        service_account_key_json = access_secret_version(
+            settings.YOUR_GCP_PROJECT_ID,
+            settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID,
+            credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH # For local testing
         )
-        if not sa_key_json_str:
-            logger.error("Failed to retrieve Google Sheets service account key from Secret Manager.")
-            return None
-        
-        sa_info = json.loads(sa_key_json_str)
 
-        # --- THIS IS THE FIX ---
-        # The service_account_from_dict function returns an already authorized client.
-        # Calling gspread.authorize() on it is redundant and causes the TypeError.
-        client = gspread.service_account_from_dict(sa_info)
-        
-        logger.info("Successfully authenticated with Google Sheets API.")
-        return client
+        if not service_account_key_json:
+            logger.critical({"message": "Failed to retrieve Google Sheets service account key from Secret Manager.", "secret_id": settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID})
+            raise ValueError("Google Sheets service account key not available.")
 
+        creds_info = json.loads(service_account_key_json)
+        
+        # Build credentials with all necessary scopes from settings
+        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=settings.SCOPES)
+        
+        _cached_credentials = creds # Cache the credentials
+        logger.info({"message": "Google Sheets credentials successfully retrieved and cached."})
+        return creds
+
+    except json.JSONDecodeError as e:
+        logger.critical({"message": "Failed to parse Google Sheets service account JSON key.", "error": str(e)}, exc_info=True)
+        raise ValueError("Invalid Google Sheets service account JSON format.") from e
     except Exception as e:
-        logger.critical(f"An error occurred during Google Sheets authentication: {e}", exc_info=True)
-        return None
+        logger.critical({"message": "An unexpected error occurred while getting Google Sheets credentials.", "error": str(e)}, exc_info=True)
+        raise RuntimeError("Could not establish Google Sheets credentials.") from e
 
-def get_google_sheet_data(sheet_id: str, worksheet_name: str) -> pd.DataFrame | None:
+def get_google_sheet_data(sheet_id: str, worksheet_name: str) -> list | None:
     """
-    Fetches all data from a specified worksheet using the Google Sheet ID.
+    Retrieves data from a Google Sheet using a service account.
+
+    Args:
+        sheet_id (str): The ID of the Google Sheet.
+        worksheet_name (str): The name of the specific worksheet (tab) to read from.
+
+    Returns:
+        list | None: A list of lists representing the sheet data, or None if an error occurs.
     """
-    client = _get_gspread_client()
-    if not client:
-        return None
     try:
-        logger.debug(f"Opening Google Sheet by ID: '{sheet_id}'.")
-        spreadsheet = client.open_by_key(sheet_id)
-        worksheet = spreadsheet.worksheet(worksheet_name)
-        logger.debug(f"Reading data from worksheet: '{worksheet_name}'.")
-        data = worksheet.get_all_records()
-        df = pd.DataFrame(data)
-        logger.info(f"Successfully fetched {len(df)} rows from worksheet '{worksheet_name}'.")
-        return df
-    except gspread.exceptions.SpreadsheetNotFound:
-        logger.error(f"Google Sheet with ID '{sheet_id}' not found or access denied.")
-        return None
-    except gspread.exceptions.WorksheetNotFound:
-        logger.error(f"Worksheet '{worksheet_name}' not found in the specified Google Sheet.")
+        creds = _get_sheets_credentials()
+        service = build('sheets', 'v4', credentials=creds)
+        
+        range_name = f"'{worksheet_name}'!A:ZZ" # Fetch all data from the sheet
+        
+        logger.debug({"message": "Fetching data from Google Sheet", "sheet_id": sheet_id, "worksheet": worksheet_name, "range": range_name})
+        result = service.spreadsheets().values().get(
+            spreadsheetId=sheet_id, range=range_name).execute()
+        values = result.get('values', [])
+
+        if not values:
+            logger.warning({"message": "No data found in Google Sheet or worksheet is empty.", "sheet_id": sheet_id, "worksheet": worksheet_name})
+            return [] # Return empty list if no values
+        else:
+            logger.info({"message": "Successfully retrieved data from Google Sheet.", "sheet_id": sheet_id, "worksheet": worksheet_name, "rows_count": len(values)})
+            return values
+    except HttpError as e:
+        logger.error({
+            "message": "Google Sheets API HTTP error during data retrieval.",
+            "sheet_id": sheet_id,
+            "worksheet": worksheet_name,
+            "error_code": e.resp.status,
+            "error_details": e.content.decode('utf-8'),
+            "function": "get_google_sheet_data"
+        }, exc_info=True)
         return None
     except Exception as e:
-        logger.error(f"An unexpected error occurred while fetching data from Google Sheets: {e}", exc_info=True)
+        logger.error({
+            "message": "An unexpected error occurred while retrieving data from Google Sheet.",
+            "sheet_id": sheet_id,
+            "worksheet": worksheet_name,
+            "error": str(e),
+            "function": "get_google_sheet_data"
+        }, exc_info=True)
         return None
 
-def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: str):
+def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: str, header_row: bool = True):
     """
-    Writes a pandas DataFrame to a specified worksheet using the Google Sheet ID.
+    Writes a Pandas DataFrame to a Google Sheet, clearing existing content first.
+    Applies cell alignment formatting: header row centered, data rows right-justified.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to write.
+        sheet_id (str): The ID of the Google Sheet.
+        worksheet_name (str): The name of the specific worksheet (tab) to write to.
+        header_row (bool): If True, the DataFrame's columns will be written as the first row.
     """
-    client = _get_gspread_client()
-    if not client:
-        logger.error("Cannot write to sheet, gspread client not available.")
+    if df.empty:
+        logger.warning({"message": "DataFrame is empty, nothing to write to Google Sheet.", "sheet_id": sheet_id, "worksheet": worksheet_name})
         return
+
     try:
-        logger.debug(f"Opening Google Sheet by ID '{sheet_id}' to write to worksheet '{worksheet_name}'.")
-        spreadsheet = client.open_by_key(sheet_id)
-        worksheet = spreadsheet.worksheet(worksheet_name)
-        worksheet.clear()
-        set_with_dataframe(worksheet, df)
-        logger.info(f"Successfully wrote {len(df)} rows to worksheet '{worksheet_name}'.")
+        creds = _get_sheets_credentials()
+        service = build('sheets', 'v4', credentials=creds)
+
+        # Prepare data for writing
+        values_to_write = [df.columns.tolist()] if header_row else []
+        values_to_write.extend(df.values.tolist())
+
+        body = {
+            'values': values_to_write
+        }
+        range_name = f"'{worksheet_name}'!A1" # Start writing from A1
+
+        # 1. Clear existing data (optional but good for fresh reports)
+        logger.debug({"message": "Clearing existing data in Google Sheet before writing.", "sheet_id": sheet_id, "worksheet": worksheet_name})
+        clear_range = f"'{worksheet_name}'!A:ZZ" # Clear entire sheet
+        service.spreadsheets().values().clear(
+            spreadsheetId=sheet_id, range=clear_range
+        ).execute()
+
+        # 2. Write new data
+        logger.debug({"message": "Writing new data to Google Sheet.", "sheet_id": sheet_id, "worksheet": worksheet_name, "rows_to_write": len(values_to_write)})
+        result = service.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range=range_name,
+            valueInputOption='RAW', # RAW means no parsing, USER_ENTERED means parsing (e.g. "1/2" becomes date)
+            body=body
+        ).execute()
+        logger.info({"message": "Data successfully written to Google Sheet.", "sheet_id": sheet_id, "worksheet": worksheet_name, "updated_cells": result.get('updatedCells')})
+
+        # 3. Apply formatting (header centered, data rows right-justified)
+        requests = []
+        # Header row formatting (centered)
+        if header_row and values_to_write:
+            # Dynamically get sheetId from the spreadsheet metadata
+            spreadsheet_metadata = service.spreadsheets().get(spreadsheetId=sheet_id).execute()
+            sheet_id_for_formatting = None
+            for sheet_prop in spreadsheet_metadata.get('sheets', []):
+                if sheet_prop.get('properties', {}).get('title') == worksheet_name:
+                    sheet_id_for_formatting = sheet_prop.get('properties', {}).get('sheetId')
+                    break
+            
+            if sheet_id_for_formatting is None:
+                logger.warning({"message": "Could not find sheetId for formatting. Skipping header formatting.", "sheet_id": sheet_id, "worksheet": worksheet_name})
+            else:
+                requests.append({
+                    "repeatCell": {
+                        "range": {
+                            "sheetId": sheet_id_for_formatting,
+                            "startRowIndex": 0,
+                            "endRowIndex": 1,
+                            "startColumnIndex": 0,
+                            "endColumnIndex": len(df.columns)
+                        },
+                        "cell": {
+                            "userEnteredFormat": {
+                                "horizontalAlignment": "CENTER"
+                            }
+                        },
+                        "fields": "userEnteredFormat.horizontalAlignment"
+                    }
+                })
+        
+        # Data rows formatting (right-justified)
+        if len(values_to_write) > (1 if header_row else 0):
+            # Dynamically get sheetId from the spreadsheet metadata
+            spreadsheet_metadata = service.spreadsheets().get(spreadsheetId=sheet_id).execute()
+            sheet_id_for_formatting = None
+            for sheet_prop in spreadsheet_metadata.get('sheets', []):
+                if sheet_prop.get('properties', {}).get('title') == worksheet_name:
+                    sheet_id_for_formatting = sheet_prop.get('properties', {}).get('sheetId')
+                    break
+            
+            if sheet_id_for_formatting is None:
+                logger.warning({"message": "Could not find sheetId for formatting. Skipping data row formatting.", "sheet_id": sheet_id, "worksheet": worksheet_name})
+            else:
+                requests.append({
+                    "repeatCell": {
+                        "range": {
+                            "sheetId": sheet_id_for_formatting,
+                            "startRowIndex": (1 if header_row else 0),
+                            "endRowIndex": len(values_to_write),
+                            "startColumnIndex": 0,
+                            "endColumnIndex": len(df.columns)
+                        },
+                        "cell": {
+                            "userEnteredFormat": {
+                                "horizontalAlignment": "RIGHT"
+                            }
+                        },
+                        "fields": "userEnteredFormat.horizontalAlignment"
+                    }
+                })
+        
+        if requests:
+            service.spreadsheets().batchUpdate(
+                spreadsheetId=sheet_id,
+                body={'requests': requests}
+            ).execute()
+            logger.info({"message": "Google Sheet formatting applied successfully.", "sheet_id": sheet_id, "worksheet": worksheet_name})
+
+    except HttpError as e:
+        logger.error({
+            "message": "Google Sheets API HTTP error during data write or formatting.",
+            "sheet_id": sheet_id,
+            "worksheet": worksheet_name,
+            "error_code": e.resp.status,
+            "error_details": e.content.decode('utf-8'),
+            "function": "write_dataframe_to_sheet"
+        }, exc_info=True)
     except Exception as e:
-        logger.error(f"An error occurred while writing data to Google Sheets: {e}", exc_info=True)
+        logger.error({
+            "message": "An unexpected error occurred while writing data to Google Sheet.",
+            "sheet_id": sheet_id,
+            "worksheet": worksheet_name,
+            "error": str(e),
+            "function": "write_dataframe_to_sheet"
+        }, exc_info=True)
+
