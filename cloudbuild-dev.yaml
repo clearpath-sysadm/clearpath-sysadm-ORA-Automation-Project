@@ -1,3 +1,4 @@
+# Lastupdated 2025-08-08
 # cloudbuild.yaml
 options:
   logging: CLOUD_LOGGING_ONLY
