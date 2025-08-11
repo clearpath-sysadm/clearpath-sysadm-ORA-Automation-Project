@@ -10,11 +10,9 @@ import os
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 
+
 # --- Google Cloud Project Configuration ---
-# uncomment for prod
-# YOUR_GCP_PROJECT_ID = "ora-automation-project"
-# uncomment for dev
-YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
+YOUR_GCP_PROJECT_ID = "ora-automation-project"
 
 # SERVICE_ACCOUNT_KEY_PATH:
 # For local development: Point to the absolute path of your Google Service Account JSON key file.
@@ -26,8 +24,14 @@ YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 # Uncomment the appropriate line based on your environment.
 # LOCAL DEVELOPMENT VERSION:
 # SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json"
+
+_SERVICE_ACCOUNT_BASE_PATH = r"C:\Users\NathanNeely\Projects\config"
+_SERVICE_ACCOUNT_FILENAME = "ora-automation-project-2345f75740f8.json"
+SERVICE_ACCOUNT_KEY_PATH = os.path.join(_SERVICE_ACCOUNT_BASE_PATH, _SERVICE_ACCOUNT_FILENAME)
+
+
 # CLOUD DEPLOYMENT VERSION:
-SERVICE_ACCOUNT_KEY_PATH = None
+# SERVICE_ACCOUNT_KEY_PATH = None
 
 
 # --- ShipStation API Configuration ---
