@@ -12,7 +12,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 
 # --- Google Cloud Project Configuration ---
-YOUR_GCP_PROJECT_ID = "ora-automation-project"
+YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 
 # SERVICE_ACCOUNT_KEY_PATH:
 # For local development: Point to the absolute path of your Google Service Account JSON key file.

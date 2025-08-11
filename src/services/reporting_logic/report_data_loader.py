@@ -260,8 +260,13 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
     """Loads the weekly shipped history from Google Sheets."""
     logger.info("Loading weekly shipped history...")
     raw_data = get_google_sheet_data(sheet_id, settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME) 
-    logging.debug(f"Raw data from ORA_Weekly_Shipped_History (first 5 rows):\n{raw_data[:5]}")
-    
+    if raw_data is not None:
+        logging.debug(f"Raw data from ORA_Weekly_Shipped_History (first 5 rows):\n{raw_data[:5]}")
+        # Continue with the rest of your logic that uses raw_data
+    else:
+        # Handle the error case gracefully, for example, by logging a warning.
+        logging.warning("Failed to retrieve weekly shipped history data. The function returned None.")
+
     # Initialize df to ensure it's always defined before its first use outside the initial raw_data processing blocks.
     # This empty DataFrame will be returned if raw_data is invalid or empty after processing.
     df = pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity']) 
