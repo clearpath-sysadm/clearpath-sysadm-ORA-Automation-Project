@@ -21032,3 +21032,578 @@ AttributeError: 'list' object has no attribute 'empty'
 50        2025-08-02  2025-08-08   456.0   12.0   31.0    3.0   16.0
 2025-08-11 11:10:11,930 - __main__ - INFO - 
 --- All live tests finished successfully! ---
+2025-08-11 17:07:29,409 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-08-11 17:07:29,410 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\app.log
+2025-08-11 17:07:29,423 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-08-11 17:07:29,423 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\logs\app.log
+2025-08-11 17:07:29,423 - __main__ - INFO - --- Starting live test of shipment_processor.py functions with comprehensive data ---
+2025-08-11 17:07:29,424 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-11 17:07:29,425 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'shipstation-api-key' in project 'ora-automation-project'.
+2025-08-11 17:07:29,472 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-08-11 17:07:29,998 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-11 17:07:29,999 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-11 17:07:30,000 - src.services.gcp.secret_manager - DEBUG - Attempting to access secret 'shipstation-api-secret' in project 'ora-automation-project'.
+2025-08-11 17:07:30,002 - src.services.gcp.secret_manager - DEBUG - Using service account file for authentication.
+2025-08-11 17:07:30,450 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-11 17:07:30,451 - __main__ - INFO - Reading last processed dates from Google Sheets...
+2025-08-11 17:07:30,454 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-08-11 17:07:30,478 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-08-11 17:07:30,648 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-08-11 17:07:30,651 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-08-11 17:07:31,054 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-08-11 17:07:31,171 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-08-11 17:07:31,300 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27ORA_Weekly_Shipped_History%27%21B%3AB HTTP/1.1" 200 None
+2025-08-11 17:07:31,302 - root - INFO - Successfully retrieved data from Google Sheet ID: 1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo, Sheet: ORA_Weekly_Shipped_History, Range: B:B
+2025-08-11 17:07:31,303 - __main__ - INFO - Last recorded stop date for weekly history: 2025-08-08
+2025-08-11 17:07:31,307 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-08-11 17:07:31,329 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2025-08-11 17:07:31,503 - urllib3.connectionpool - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2025-08-11 17:07:31,507 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): sheets.googleapis.com:443
+2025-08-11 17:07:31,687 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-08-11 17:07:31,785 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo?includeGridData=false HTTP/1.1" 200 None
+2025-08-11 17:07:31,905 - urllib3.connectionpool - DEBUG - https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo/values/%27Shipped_Orders_Data%27%21A%3AA HTTP/1.1" 200 None
+2025-08-11 17:07:31,908 - root - INFO - Successfully retrieved data from Google Sheet ID: 1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo, Sheet: Shipped_Orders_Data, Range: A:A
+2025-08-11 17:07:31,910 - __main__ - INFO - Last recorded date for monthly data: 2025-08-08
+2025-08-11 17:07:31,911 - __main__ - INFO - Using comprehensive date range: 2024-08-16 to 2025-08-11
+2025-08-11 17:07:31,911 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2024-08-16 with includeShipmentItems=true and status='shipped'...
+2025-08-11 17:07:31,911 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:31,914 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:32,527 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=1&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 837906
+2025-08-11 17:07:32,768 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:32,773 - src.services.shipstation.api_client - INFO - Fetched page 1 of 16. Total shipments so far: 500
+2025-08-11 17:07:32,775 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:32,776 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:33,250 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=2&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 838194
+2025-08-11 17:07:33,466 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:33,472 - src.services.shipstation.api_client - INFO - Fetched page 2 of 16. Total shipments so far: 1000
+2025-08-11 17:07:33,473 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:33,474 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:33,973 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=3&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 837021
+2025-08-11 17:07:34,163 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:34,168 - src.services.shipstation.api_client - INFO - Fetched page 3 of 16. Total shipments so far: 1500
+2025-08-11 17:07:34,170 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:34,172 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:34,627 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=4&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 838084
+2025-08-11 17:07:34,840 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:34,871 - src.services.shipstation.api_client - INFO - Fetched page 4 of 16. Total shipments so far: 2000
+2025-08-11 17:07:34,872 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:34,873 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:35,343 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=5&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 837109
+2025-08-11 17:07:35,576 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:35,583 - src.services.shipstation.api_client - INFO - Fetched page 5 of 16. Total shipments so far: 2500
+2025-08-11 17:07:35,584 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:35,585 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:36,129 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=6&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 841587
+2025-08-11 17:07:36,333 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:36,339 - src.services.shipstation.api_client - INFO - Fetched page 6 of 16. Total shipments so far: 3000
+2025-08-11 17:07:36,340 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:36,341 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:36,775 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=7&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 837570
+2025-08-11 17:07:36,974 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:36,980 - src.services.shipstation.api_client - INFO - Fetched page 7 of 16. Total shipments so far: 3500
+2025-08-11 17:07:36,981 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:36,982 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:37,504 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=8&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 838448
+2025-08-11 17:07:37,714 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:37,721 - src.services.shipstation.api_client - INFO - Fetched page 8 of 16. Total shipments so far: 4000
+2025-08-11 17:07:37,721 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:37,723 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:38,193 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=9&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 837569
+2025-08-11 17:07:38,394 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:38,398 - src.services.shipstation.api_client - INFO - Fetched page 9 of 16. Total shipments so far: 4500
+2025-08-11 17:07:38,400 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:38,402 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:38,990 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=10&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 841454
+2025-08-11 17:07:39,189 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:39,197 - src.services.shipstation.api_client - INFO - Fetched page 10 of 16. Total shipments so far: 5000
+2025-08-11 17:07:39,198 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:39,199 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:39,605 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=11&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 838349
+2025-08-11 17:07:39,843 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:39,849 - src.services.shipstation.api_client - INFO - Fetched page 11 of 16. Total shipments so far: 5500
+2025-08-11 17:07:39,849 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:39,850 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:40,308 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=12&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 841738
+2025-08-11 17:07:40,517 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:40,523 - src.services.shipstation.api_client - INFO - Fetched page 12 of 16. Total shipments so far: 6000
+2025-08-11 17:07:40,524 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:40,526 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:40,998 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=13&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 837417
+2025-08-11 17:07:41,220 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:41,227 - src.services.shipstation.api_client - INFO - Fetched page 13 of 16. Total shipments so far: 6500
+2025-08-11 17:07:41,228 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:41,230 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:41,686 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=14&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 837618
+2025-08-11 17:07:41,890 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:41,897 - src.services.shipstation.api_client - INFO - Fetched page 14 of 16. Total shipments so far: 7000
+2025-08-11 17:07:41,898 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:41,900 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:42,303 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=15&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 803505
+2025-08-11 17:07:42,528 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:42,537 - src.services.shipstation.api_client - INFO - Fetched page 15 of 16. Total shipments so far: 7500
+2025-08-11 17:07:42,538 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-11 17:07:42,539 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-08-11 17:07:42,831 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /shipments?shipDateStart=2024-08-16&shipDateEnd=2025-08-11&includeShipmentItems=true&page=16&pageSize=500&shipmentStatus=shipped HTTP/1.1" 200 20826
+2025-08-11 17:07:42,879 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-11 17:07:42,880 - src.services.shipstation.api_client - INFO - Fetched page 16 of 16. Total shipments so far: 7513
+2025-08-11 17:07:42,881 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 7513
+2025-08-11 17:07:42,883 - __main__ - INFO - Filtered out 418 voided shipments. Processing 7095 non-voided shipments.
+2025-08-11 17:07:42,883 - __main__ - INFO - 
+--- Testing process_shipped_items ---
+2025-08-11 17:07:42,883 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-11 17:07:42,937 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 7099 rows.
+2025-08-11 17:07:42,945 - __main__ - INFO - Resulting DataFrame for Shipped_Items_Data:
+2025-08-11 17:07:42,950 - __main__ - INFO -       Ship Date       SKU - Lot  Quantity Shipped Base SKU
+6897 2025-08-01  17914 - 240286                 1    17914
+6898 2025-08-01  17612 - 250195                 2    17612
+6899 2025-08-01  17612 - 250195                 6    17612
+6900 2025-08-01  17612 - 250195                 6    17612
+6901 2025-08-01  17612 - 250195                 6    17612
+6902 2025-08-01  17612 - 250195                 1    17612
+6903 2025-08-01  17612 - 250195                 6    17612
+6904 2025-08-01  17612 - 250195                 2    17612
+6905 2025-08-01  17612 - 250195                 1    17612
+6906 2025-08-01  17612 - 250195                 1    17612
+6907 2025-08-01  17914 - 240286                 1    17914
+6908 2025-08-01  17612 - 250195                 1    17612
+6909 2025-08-01   18795 - 11001                 1    18795
+6910 2025-08-01  17612 - 250195                 1    17612
+6911 2025-08-01  17612 - 250195                 1    17612
+6912 2025-08-01  17612 - 250195                 1    17612
+6913 2025-08-01  17612 - 250195                 1    17612
+6914 2025-08-01   18795 - 11001                 1    18795
+6915 2025-08-04  17612 - 250195                16    17612
+6916 2025-08-04  17612 - 250195                 1    17612
+6917 2025-08-04  17612 - 250195                 2    17612
+6918 2025-08-04  17612 - 250195                 1    17612
+6919 2025-08-04   18795 - 11001                 1    18795
+6920 2025-08-04  17612 - 250195                 6    17612
+6921 2025-08-04  17612 - 250195                 6    17612
+6922 2025-08-04   18795 - 11001                 1    18795
+6923 2025-08-04  17914 - 240286                 1    17914
+6924 2025-08-04  17612 - 250195                 2    17612
+6925 2025-08-04  17914 - 240286                 2    17914
+6926 2025-08-05   18795 - 11001                 1    18795
+6927 2025-08-05  17612 - 250195                 1    17612
+6928 2025-08-05  17612 - 250195                 3    17612
+6929 2025-08-05  17612 - 250195                 6    17612
+6930 2025-08-05  17612 - 250195                 5    17612
+6931 2025-08-05  17612 - 250195                 6    17612
+6932 2025-08-05  18675 - 240231                 1    18675
+6933 2025-08-05  17612 - 250195                 6    17612
+6934 2025-08-05  17612 - 250195                 1    17612
+6935 2025-08-05  17612 - 250195                 2    17612
+6936 2025-08-05  17612 - 250195                 2    17612
+6937 2025-08-05  17612 - 250195                 2    17612
+6938 2025-08-05  17914 - 240286                 6    17914
+6939 2025-08-05  17612 - 250195                 2    17612
+6940 2025-08-05  17612 - 250195                 2    17612
+6941 2025-08-05  17612 - 250195                 2    17612
+6942 2025-08-05  17612 - 250195                 6    17612
+6943 2025-08-05  17612 - 250195                15    17612
+6944 2025-08-05  17612 - 250195                 7    17612
+6945 2025-08-05  17612 - 250195                 2    17612
+6946 2025-08-05  17612 - 250195                 2    17612
+6947 2025-08-05   18795 - 11001                 1    18795
+6948 2025-08-05  17612 - 250195                 2    17612
+6949 2025-08-05  17612 - 250195                 1    17612
+6950 2025-08-05  17612 - 250195                 4    17612
+6951 2025-08-05  17612 - 250195                 3    17612
+6952 2025-08-05  17612 - 250195                 3    17612
+6953 2025-08-05  17612 - 250195                 6    17612
+6954 2025-08-05  17612 - 250195                 2    17612
+6955 2025-08-05  17612 - 250195                 5    17612
+6956 2025-08-05  17612 - 250195                 3    17612
+6957 2025-08-05  17612 - 250195                 2    17612
+6958 2025-08-05  17612 - 250195                 2    17612
+6959 2025-08-05  17612 - 250195                 2    17612
+6960 2025-08-05  17612 - 250195                 1    17612
+6961 2025-08-05  17612 - 250195                 2    17612
+6962 2025-08-05  17612 - 250195                 6    17612
+6963 2025-08-05  17612 - 250195                 1    17612
+6964 2025-08-05  17612 - 250195                 1    17612
+6965 2025-08-05  17612 - 250195                 3    17612
+6966 2025-08-05  17612 - 250195                 1    17612
+6967 2025-08-05  17612 - 250195                 5    17612
+6968 2025-08-05  17612 - 250195                 1    17612
+6969 2025-08-05  17612 - 250195                 1    17612
+6970 2025-08-05  17612 - 250195                 2    17612
+6971 2025-08-05  17612 - 250195                 6    17612
+6972 2025-08-05  17612 - 250195                 2    17612
+6973 2025-08-05  17612 - 250195                 1    17612
+6974 2025-08-05  17612 - 250195                 7    17612
+6975 2025-08-05  17612 - 250195                 1    17612
+6976 2025-08-05  17612 - 250195                 1    17612
+6977 2025-08-05  17612 - 250195                 2    17612
+6978 2025-08-05   18795 - 11001                 1    18795
+6979 2025-08-05  17612 - 250195                 3    17612
+6980 2025-08-05  17612 - 250195                 2    17612
+6981 2025-08-05  17612 - 250195                 5    17612
+6982 2025-08-05  17612 - 250195                 1    17612
+6983 2025-08-05  17612 - 250195                 2    17612
+6984 2025-08-05  17612 - 250195                10    17612
+6985 2025-08-05  17904 - 240276                 1    17904
+6986 2025-08-05  17612 - 250195                 5    17612
+6987 2025-08-05  17612 - 250195                 3    17612
+6988 2025-08-05  17904 - 240276                 1    17904
+6989 2025-08-05  17612 - 250195                 5    17612
+6990 2025-08-05  17612 - 250195                 1    17612
+6991 2025-08-05  17612 - 250195                 5    17612
+6992 2025-08-05  17612 - 250195                 1    17612
+6993 2025-08-05  17612 - 250195                 2    17612
+6994 2025-08-05  17612 - 250195                 2    17612
+6995 2025-08-05  17612 - 250195                 6    17612
+6996 2025-08-05  17612 - 250195                 6    17612
+6997 2025-08-05  17612 - 250195                 1    17612
+6998 2025-08-05  17612 - 250195                 1    17612
+6999 2025-08-05  17612 - 250195                 6    17612
+7000 2025-08-05  17612 - 250195                 3    17612
+7001 2025-08-05  17612 - 250195                 1    17612
+7002 2025-08-05  17612 - 250195                 2    17612
+7003 2025-08-05  17612 - 250195                 3    17612
+7004 2025-08-05   18795 - 11001                 1    18795
+7005 2025-08-05  17612 - 250195                 1    17612
+7006 2025-08-05  17612 - 250195                 2    17612
+7007 2025-08-05  17612 - 250195                 1    17612
+7008 2025-08-05  17612 - 250195                 1    17612
+7009 2025-08-05  17904 - 240276                 1    17904
+7010 2025-08-06  17904 - 240276                 1    17904
+7011 2025-08-06  17612 - 250195                 2    17612
+7012 2025-08-06  17612 - 250195                15    17612
+7013 2025-08-06  17612 - 250195                 2    17612
+7014 2025-08-06  17612 - 250195                 6    17612
+7015 2025-08-06  17612 - 250195                 1    17612
+7016 2025-08-06  17612 - 250195                 6    17612
+7017 2025-08-06  17612 - 250195                 6    17612
+7018 2025-08-06  17612 - 250195                 1    17612
+7019 2025-08-06  17612 - 250195                 6    17612
+7020 2025-08-06  17612 - 250195                 1    17612
+7021 2025-08-06   18795 - 11001                 1    18795
+7022 2025-08-06  17914 - 240286                 1    17914
+7023 2025-08-06  17914 - 240286                 6    17914
+7024 2025-08-06  17612 - 250195                 1    17612
+7025 2025-08-06  17612 - 250195                 1    17612
+7026 2025-08-06  17612 - 250195                 1    17612
+7027 2025-08-06  17612 - 250195                 2    17612
+7028 2025-08-06  17914 - 240286                 3    17914
+7029 2025-08-06  17612 - 250195                 1    17612
+7030 2025-08-06   18795 - 11001                 1    18795
+7031 2025-08-06  17612 - 250195                 1    17612
+7032 2025-08-06  17904 - 240276                 1    17904
+7033 2025-08-06  17914 - 240286                 1    17914
+7034 2025-08-06  17612 - 250195                 1    17612
+7035 2025-08-06  17612 - 250195                 1    17612
+7036 2025-08-06  17612 - 250195                 1    17612
+7037 2025-08-07  17612 - 250195                 6    17612
+7038 2025-08-07  17904 - 240276                 1    17904
+7039 2025-08-07  17612 - 250195                 6    17612
+7040 2025-08-07  17612 - 250195                 1    17612
+7041 2025-08-07  17612 - 250216                 1    17612
+7042 2025-08-07  17904 - 240276                 1    17904
+7043 2025-08-07  17612 - 250195                 1    17612
+7044 2025-08-07  17612 - 250195                 1    17612
+7045 2025-08-07  17612 - 250195                 1    17612
+7046 2025-08-07   18795 - 11001                 1    18795
+7047 2025-08-07  17612 - 250216                 3    17612
+7048 2025-08-07  17914 - 240286                 3    17914
+7049 2025-08-07  17914 - 240286                 3    17914
+7050 2025-08-07   18795 - 11001                 2    18795
+7051 2025-08-07  17612 - 250195                 1    17612
+7052 2025-08-07   18795 - 11001                 1    18795
+7053 2025-08-07  17612 - 250195                 1    17612
+7054 2025-08-07  17612 - 250195                 1    17612
+7055 2025-08-08  17612 - 250216                15    17612
+7056 2025-08-08  17612 - 250216                 6    17612
+7057 2025-08-08   18795 - 11001                 1    18795
+7058 2025-08-08  17612 - 250216                 5    17612
+7059 2025-08-08  17914 - 240286                 1    17914
+7060 2025-08-08   18795 - 11001                 1    18795
+7061 2025-08-08  17612 - 250216                 2    17612
+7062 2025-08-08  17612 - 250216                 6    17612
+7063 2025-08-08  17612 - 250216                 6    17612
+7064 2025-08-08  17612 - 250216                18    17612
+7065 2025-08-08  17914 - 240286                 3    17914
+7066 2025-08-08  17612 - 250216                 6    17612
+7067 2025-08-08  17612 - 250216                 1    17612
+7068 2025-08-08  17612 - 250216                 6    17612
+7069 2025-08-08  17612 - 250216                 1    17612
+7070 2025-08-08  17904 - 240276                 1    17904
+7071 2025-08-08  17612 - 250216                 6    17612
+7072 2025-08-08  17612 - 250216                 3    17612
+7073 2025-08-08  17904 - 240276                 2    17904
+7074 2025-08-08  17612 - 250216                 1    17612
+7075 2025-08-08  17612 - 250216                 6    17612
+7076 2025-08-08   18795 - 11001                 1    18795
+7077 2025-08-08  17612 - 250216                 6    17612
+7078 2025-08-08  17904 - 240276                 1    17904
+7079 2025-08-08  17612 - 250216                 1    17612
+7080 2025-08-08  17612 - 250216                 6    17612
+7081 2025-08-08  17612 - 250216                 5    17612
+7082 2025-08-08  17904 - 240276                 1    17904
+7083 2025-08-08  17612 - 250216                 2    17612
+7084 2025-08-08  17612 - 250216                 3    17612
+7085 2025-08-08  18675 - 240231                 2    18675
+7086 2025-08-08   18795 - 11001                 1    18795
+7087 2025-08-08  17914 - 240286                 1    17914
+7088 2025-08-11  17612 - 250216                 7    17612
+7089 2025-08-11  17904 - 240276                 1    17904
+7090 2025-08-11  17612 - 250216                 1    17612
+7091 2025-08-11  17612 - 250216                 1    17612
+7092 2025-08-11  17914 - 240286                 6    17914
+7093 2025-08-11  17612 - 250216                 6    17612
+7094 2025-08-11  17612 - 250216                 2    17612
+7095 2025-08-11  17612 - 250216                 2    17612
+7096 2025-08-11  17612 - 250216                 1    17612
+7097 2025-08-11  17904 - 240276                 1    17904
+7098 2025-08-11   18795 - 11001                 1    18795
+2025-08-11 17:07:42,952 - __main__ - INFO - 
+--- Testing process_shipped_orders ---
+2025-08-11 17:07:42,953 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-11 17:07:42,994 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 6554 unique order rows.
+2025-08-11 17:07:42,998 - __main__ - INFO - Resulting DataFrame for Shipped_Orders_Data:
+2025-08-11 17:07:43,000 - __main__ - INFO -       Ship Date OrderNumber
+6904 2025-08-01      673745
+6910 2025-08-01      673615
+6909 2025-08-01      673645
+6908 2025-08-01      673675
+6907 2025-08-01      673625
+6906 2025-08-01      673655
+6905 2025-08-01      673685
+6903 2025-08-01      673635
+6898 2025-08-01      673725
+6901 2025-08-01      673755
+6900 2025-08-01      673765
+6899 2025-08-01      673715
+6896 2025-08-01      673705
+6895 2025-08-01      673785
+6894 2025-08-01      673735
+6893 2025-08-01      673665
+6902 2025-08-01      673775
+6917 2025-08-04      673835
+6920 2025-08-04      673845
+6919 2025-08-04      673815
+6918 2025-08-04      673795
+6916 2025-08-04      673865
+6921 2025-08-04      100439
+6914 2025-08-04      673885
+6913 2025-08-04      673895
+6912 2025-08-04      673905
+6911 2025-08-04      673805
+6915 2025-08-04      673875
+6984 2025-08-05      673975
+6983 2025-08-05      674675
+7005 2025-08-05      674645
+6981 2025-08-05      674685
+6980 2025-08-05      674365
+6979 2025-08-05      673985
+6978 2025-08-05      100441
+6977 2025-08-05      674515
+6973 2025-08-05      674695
+6975 2025-08-05      674275
+6972 2025-08-05      674535
+6971 2025-08-05      674285
+6970 2025-08-05      674115
+6969 2025-08-05      674545
+6968 2025-08-05      674295
+6967 2025-08-05      673995
+6966 2025-08-05      674125
+6976 2025-08-05      674375
+6985 2025-08-05      674105
+6987 2025-08-05      674505
+6988 2025-08-05      673955
+6965 2025-08-05      674305
+7004 2025-08-05      674345
+7003 2025-08-05      674065
+7002 2025-08-05      674215
+7001 2025-08-05      674075
+7000 2025-08-05      673935
+6999 2025-08-05      674355
+6998 2025-08-05      674225
+6997 2025-08-05      674235
+6996 2025-08-05      674085
+6995 2025-08-05      674485
+6994 2025-08-05      674095
+6993 2025-08-05      674245
+6992 2025-08-05      674655
+6991 2025-08-05      673945
+6990 2025-08-05      674255
+6989 2025-08-05      674665
+6986 2025-08-05      673965
+6964 2025-08-05      674005
+6982 2025-08-05      674265
+6962 2025-08-05      674145
+6939 2025-08-05      100440
+6938 2025-08-05      674735
+6937 2025-08-05      674625
+6935 2025-08-05      674315
+6934 2025-08-05      674205
+6933 2025-08-05      674635
+6932 2025-08-05      674445
+6931 2025-08-05      674325
+6930 2025-08-05      674455
+6929 2025-08-05      674745
+6927 2025-08-05      674335
+6926 2025-08-05      674465
+6925 2025-08-05      674605
+6924 2025-08-05      674475
+6923 2025-08-05      674525
+6922 2025-08-05      673925
+6963 2025-08-05      674385
+6940 2025-08-05      674425
+6941 2025-08-05      674615
+6936 2025-08-05      674435
+6944 2025-08-05      674195
+6961 2025-08-05      674555
+6960 2025-08-05      674015
+6959 2025-08-05      674155
+6958 2025-08-05      674705
+6942 2025-08-05      674055
+6956 2025-08-05      674165
+6955 2025-08-05      674025
+6954 2025-08-05      674405
+6953 2025-08-05      674035
+6957 2025-08-05      674395
+6951 2025-08-05      674565
+6950 2025-08-05      674415
+6949 2025-08-05      674725
+6948 2025-08-05      674185
+6947 2025-08-05      674575
+6946 2025-08-05      674045
+6952 2025-08-05      674175
+6945 2025-08-05      674585
+7021 2025-08-06      674805
+7023 2025-08-06      674845
+7024 2025-08-06      674795
+7025 2025-08-06      674985
+7030 2025-08-06      674885
+7029 2025-08-06      674955
+7031 2025-08-06      674785
+7032 2025-08-06      674825
+7020 2025-08-06      674855
+7027 2025-08-06      674765
+7017 2025-08-06      674815
+7026 2025-08-06      674965
+7015 2025-08-06      100443
+7016 2025-08-06      674925
+7006 2025-08-06      674755
+7008 2025-08-06      100442
+7009 2025-08-06      674905
+7007 2025-08-06      674775
+7011 2025-08-06      674915
+7012 2025-08-06      100444
+7013 2025-08-06      674835
+7014 2025-08-06      674935
+7010 2025-08-06      674945
+7043 2025-08-07      100445
+7049 2025-08-07      675065
+7048 2025-08-07      675025
+7046 2025-08-07      675075
+7045 2025-08-07      675155
+7044 2025-08-07      675035
+7041 2025-08-07      675085
+7042 2025-08-07      675195
+7039 2025-08-07      675145
+7038 2025-08-07      675125
+7037 2025-08-07      675005
+7036 2025-08-07      675015
+7035 2025-08-07      675165
+7034 2025-08-07      675175
+7033 2025-08-07      674995
+7040 2025-08-07      675055
+7070 2025-08-08      675435
+7071 2025-08-08      675315
+7072 2025-08-08      675405
+7073 2025-08-08      675425
+7075 2025-08-08      675395
+7076 2025-08-08      100446
+7079 2025-08-08      675375
+7078 2025-08-08      675385
+7083 2025-08-08      675415
+7080 2025-08-08      675245
+7081 2025-08-08      675305
+7082 2025-08-08      675365
+7068 2025-08-08      675455
+7077 2025-08-08      675475
+7067 2025-08-08      100447
+7055 2025-08-08      675505
+7065 2025-08-08      675205
+7051 2025-08-08      675295
+7052 2025-08-08      675345
+7066 2025-08-08      675465
+7054 2025-08-08      675275
+7056 2025-08-08      675515
+7058 2025-08-08      675495
+7053 2025-08-08      675285
+7060 2025-08-08      675265
+7061 2025-08-08      675235
+7062 2025-08-08      675485
+7063 2025-08-08      675225
+7064 2025-08-08      675325
+7059 2025-08-08      675335
+7091 2025-08-11      675615
+7084 2025-08-11      675535
+7085 2025-08-11      675605
+7087 2025-08-11      675575
+7088 2025-08-11      675545
+7090 2025-08-11      675645
+7092 2025-08-11      675555
+2025-08-11 17:07:43,002 - __main__ - INFO - 
+--- Testing aggregate_weekly_shipped_history ---
+2025-08-11 17:07:43,003 - src.services.data_processing.shipment_processor - INFO - Aggregating weekly shipment history for SKUs: ['17612', '17904', '17914', '18675', '18795']...
+2025-08-11 17:07:43,078 - src.services.data_processing.shipment_processor - INFO - Aggregation complete. Final report has 52 weekly rows.
+2025-08-11 17:07:43,080 - __main__ - INFO - Resulting DataFrame for ORA_Weekly_Shipped_History:
+2025-08-11 17:07:43,087 - __main__ - INFO - Base SKU  Start Date   Stop Date   17612  17904  17914  18675  18795
+0         2024-08-10  2024-08-16    95.0    1.0    0.0    0.0    0.0
+1         2024-08-17  2024-08-23   454.0    8.0   18.0    1.0    0.0
+2         2024-08-24  2024-08-30   592.0   11.0   27.0   14.0    0.0
+3         2024-08-31  2024-09-06   406.0    0.0   19.0    2.0    0.0
+4         2024-09-07  2024-09-13   442.0    0.0   24.0    2.0    0.0
+5         2024-09-14  2024-09-20   443.0    0.0   30.0    1.0    0.0
+6         2024-09-21  2024-09-27   529.0   41.0   23.0    2.0    0.0
+7         2024-09-28  2024-10-04   725.0   12.0   38.0    6.0    0.0
+8         2024-10-05  2024-10-11   531.0   16.0   38.0    8.0    0.0
+9         2024-10-12  2024-10-18   508.0   12.0   22.0    2.0    0.0
+10        2024-10-19  2024-10-25   730.0   20.0   46.0    7.0    0.0
+11        2024-10-26  2024-11-01   508.0   32.0   38.0   21.0    0.0
+12        2024-11-02  2024-11-08   532.0    5.0   21.0   15.0    0.0
+13        2024-11-09  2024-11-15   466.0    7.0   14.0    1.0    0.0
+14        2024-11-16  2024-11-22   233.0   10.0   52.0    0.0    0.0
+15        2024-11-23  2024-11-29   245.0    3.0   10.0    0.0    0.0
+16        2024-11-30  2024-12-06  1221.0    9.0   48.0    0.0    0.0
+17        2024-12-07  2024-12-13   582.0   17.0   46.0    1.0    0.0
+18        2024-12-14  2024-12-20   409.0   13.0   10.0    1.0    0.0
+19        2024-12-21  2024-12-27   187.0    2.0    3.0    0.0    0.0
+20        2024-12-28  2025-01-03   249.0   14.0   11.0    0.0    0.0
+21        2025-01-04  2025-01-10   542.0    6.0   31.0    7.0    0.0
+22        2025-01-11  2025-01-17   429.0   13.0   37.0    0.0    0.0
+23        2025-01-18  2025-01-24   424.0   13.0   21.0    0.0    0.0
+24        2025-01-25  2025-01-31   354.0   21.0   34.0    7.0    0.0
+25        2025-02-01  2025-02-07   486.0    7.0   28.0    3.0    0.0
+26        2025-02-08  2025-02-14   531.0   11.0   28.0    0.0    0.0
+27        2025-02-15  2025-02-21   355.0   10.0   34.0    0.0    0.0
+28        2025-02-22  2025-02-28   423.0   17.0   20.0    7.0    0.0
+29        2025-03-01  2025-03-07   519.0   14.0   23.0   11.0    0.0
+30        2025-03-08  2025-03-14   474.0   11.0   61.0    1.0    0.0
+31        2025-03-15  2025-03-21   417.0   18.0    5.0    2.0    0.0
+32        2025-03-22  2025-03-28   447.0    5.0   20.0    1.0    0.0
+33        2025-03-29  2025-04-04   455.0    7.0   34.0   13.0    0.0
+34        2025-04-12  2025-04-18   501.0    8.0   18.0    3.0    0.0
+35        2025-04-19  2025-04-25   519.0   18.0   22.0    0.0    0.0
+36        2025-04-26  2025-05-02   622.0   16.0   36.0    1.0    0.0
+37        2025-05-03  2025-05-09   479.0   25.0   17.0   15.0    0.0
+38        2025-05-10  2025-05-16   531.0   16.0   69.0    2.0    0.0
+39        2025-05-17  2025-05-23   502.0   16.0   30.0    0.0    0.0
+40        2025-05-24  2025-05-30   334.0    4.0   21.0    5.0    0.0
+41        2025-05-31  2025-06-06   697.0   25.0   24.0    2.0    0.0
+42        2025-06-07  2025-06-13   518.0   18.0   32.0    2.0    0.0
+43        2025-06-14  2025-06-20   400.0    7.0   27.0   16.0    0.0
+44        2025-06-21  2025-06-27   347.0   13.0   20.0    0.0    0.0
+45        2025-06-28  2025-07-04   569.0    7.0   32.0    0.0    0.0
+46        2025-07-05  2025-07-11   379.0   17.0   18.0    2.0    3.0
+47        2025-07-12  2025-07-18   514.0   18.0   20.0    2.0    1.0
+48        2025-07-19  2025-07-25   483.0   15.0   19.0    1.0    9.0
+49        2025-07-26  2025-08-01   308.0    1.0   13.0    6.0   14.0
+50        2025-08-02  2025-08-08   456.0   12.0   31.0    3.0   16.0
+51        2025-08-09  2025-08-15    20.0    2.0    6.0    0.0    1.0
+2025-08-11 17:07:43,087 - __main__ - INFO - 
+--- All live tests finished successfully! ---
