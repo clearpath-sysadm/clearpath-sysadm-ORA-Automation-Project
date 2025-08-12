@@ -1,0 +1,387 @@
+import pandas as pd
+import logging
+import os
+import sys
+
+# Add the project root to the Python path to enable imports from utils and services
+# This path is relative to the current file (report_data_loader.py)
+# report_data_loader.py is in ORA_Automation/src/services/reporting_logic/
+# So, to get to ORA_Automation, we need to go up three levels (reporting_logic, services, src).
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Import the Google Sheets API client service, as this module will use it to read data
+from src.services.google_sheets.sheets_api import get_google_sheet_data
+# Re-import setup_logging after path adjustment for direct script execution
+from utils.logging_config import setup_logging
+
+
+# Setup logging for this module. This assumes setup_logging from utils.logging_config
+# has already been called in the main application entry point.
+# Ensure logging is only configured once if this script is run as main.
+_log_dir = os.path.join(project_root, 'logs') # Use project_root for logs
+_log_file = os.path.join(_log_dir, 'app.log')
+if not logging.getLogger().handlers: # Check if handlers already exist to prevent re-setup
+    setup_logging(log_file_path=_log_file, log_level=logging.DEBUG, enable_console_logging=True)
+logger = logging.getLogger(__name__)
+
+
+def get_key_skus_and_product_names(spreadsheet_id: str, config_sheet_name: str, service_account_file_path: str) -> tuple[list, dict]:
+    """
+    Reads the 'ORA_Configuration' Google Sheet to extract the list of "Key Products (SKUs)"
+    and their corresponding product names.
+
+    Assumes the sheet structure: 'ParameterCategory', 'ParameterName', 'SKU', 'Value', etc.
+    It looks for rows where 'ParameterCategory' == 'Key Products'.
+
+    Args:
+        spreadsheet_id (str): The ID of the Google Sheet spreadsheet.
+        config_sheet_name (str): The name of the configuration sheet (e.g., 'ORA_Configuration').
+        service_account_file_path (str): The file path to the Google service account JSON key.
+
+    Returns:
+        tuple[list, dict]: 
+            - list: A sorted list of unique key SKU IDs (e.g., ['17612', '17904']).
+            - dict: A dictionary mapping SKU IDs to their product names (e.g., {'17612': 'PT Kit'}).
+                    Returns empty list and empty dict if no data or malformed data is found.
+    """
+    logger.info(f"Attempting to read Key SKUs and Product Names from '{config_sheet_name}' sheet...")
+    # Read the relevant range from the Google Sheet.
+    raw_config_data = get_google_sheet_data(
+        spreadsheet_id,
+        f'{config_sheet_name}!A:F', # Assuming columns A-F cover ParameterCategory, ParameterName, SKU, Value
+        service_account_file_path
+    )
+
+    key_skus = []
+    product_names_map = {} 
+
+    if raw_config_data and len(raw_config_data) > 1:
+        # Extract headers and data rows.
+        headers = [h.strip() for h in raw_config_data[0]]
+        data_rows = raw_config_data[1:]
+
+        try:
+            # Find column indices for robust access.
+            param_cat_idx = headers.index('ParameterCategory')
+            param_name_idx = headers.index('ParameterName') 
+            sku_idx = headers.index('SKU')
+            value_idx = headers.index('Value') # Included for robustness, though not used for Key Products logic
+            
+            for i, row in enumerate(data_rows):
+                # Ensure row has enough columns to avoid IndexError, considering the maximum index needed.
+                if len(row) > max(param_cat_idx, param_name_idx, sku_idx, value_idx):
+                    category = row[param_cat_idx].strip()
+                    name = row[param_name_idx].strip()
+                    sku = row[sku_idx].strip() if sku_idx < len(row) and row[sku_idx] else None
+
+                    if category == 'Key Products' and sku:
+                        key_skus.append(sku)
+                        product_names_map[sku] = name # Map SKU to its product name
+                        logger.debug(f"Found Key Product: SKU='{sku}', Name='{name}' (Row {i+2}).")
+                else:
+                    logger.warning(f"Skipping malformed row in '{config_sheet_name}' at index {i+2}. Not enough columns.")
+        except ValueError as e:
+            logger.error(
+                f"Missing expected column in '{config_sheet_name}' sheet "
+                f"(e.g., 'ParameterCategory', 'SKU', or 'ParameterName'): {e}", 
+                exc_info=True # Log full traceback
+            )
+        except Exception as e:
+            logger.error(
+                f"An unexpected error occurred while parsing '{config_sheet_name}': {e}", 
+                exc_info=True
+            )
+    else:
+        logger.warning(f"No data or malformed data found in '{config_sheet_name}' sheet for Key Products extraction.")
+    
+    # Return unique and sorted key SKUs, and the product names map.
+    unique_key_skus = sorted(list(set(key_skus)))
+    
+    logger.info(f"Successfully extracted {len(unique_key_skus)} unique key SKUs and their names from '{config_sheet_name}'.")
+    return unique_key_skus, product_names_map
+
+
+def get_weekly_shipped_history(spreadsheet_id: str, sheet_name: str, service_account_file_path: str, key_skus_for_report: list) -> pd.DataFrame:
+    """
+    Reads historical weekly aggregated SKU shipment quantities from the specified Google Sheet tab.
+    It handles the "Ship Week" date range format and unpivots the data.
+
+    Args:
+        spreadsheet_id (str): The ID of the Google Sheet spreadsheet.
+        sheet_name (str): The name of the weekly shipped history sheet (e.g., 'ORA_Weekly_Shipped_History').
+        service_account_file_path (str): The file path to the Google service account JSON key.
+        key_skus_for_report (list): A list of key SKUs to filter for when unpivoting data.
+
+    Returns:
+        pd.DataFrame: A DataFrame with columns 'WeekEndDate', 'SKU', and 'ShippedQuantity'.
+                      Returns an empty DataFrame if no data is retrieved or parsing fails.
+    """
+    logger.info(f"Attempting to read historical weekly shipped data from '{sheet_name}' sheet...")
+    # Read the relevant range from the Google Sheet.
+    range_name = f'{sheet_name}!A:E' # Assuming week, and 4 SKUs columns A-E
+    raw_history_data = get_google_sheet_data( # Using imported function
+        spreadsheet_id,
+        range_name,
+        service_account_file_path
+    )
+
+    weekly_shipped_df = pd.DataFrame()
+    if raw_history_data and len(raw_history_data) > 0: 
+        headers = [h.strip() for h in raw_history_data[0]]
+        data_rows = raw_history_data[1:]
+
+        if not headers or not data_rows:
+            logger.warning(f"No valid headers or data rows found in '{sheet_name}'. Returning empty DataFrame.")
+            return pd.DataFrame(columns=['WeekEndDate', 'SKU', 'ShippedQuantity'])
+
+        df_temp = pd.DataFrame(data_rows, columns=headers)
+
+        id_vars = ['Ship Week'] # Column containing the week date range
+        
+        # Identify value columns by matching headers with key SKUs.
+        value_vars = [str(col).strip() for col in headers if str(col).strip() in key_skus_for_report]
+        
+        if not value_vars:
+            logger.error(
+                f"No matching SKU columns found in '{sheet_name}' based on key_skus_for_report: {key_skus_for_report}. "
+                f"Available headers: {headers}. Returning empty DataFrame."
+            )
+            return pd.DataFrame(columns=['WeekEndDate', 'SKU', 'ShippedQuantity'])
+
+        # Unpivot the DataFrame (melt) to transform SKU columns into rows.
+        weekly_shipped_df = pd.melt(
+            df_temp,
+            id_vars=id_vars,
+            value_vars=value_vars,
+            var_name='SKU',        
+            value_name='ShippedQuantity' 
+        )
+
+        # Rename 'Ship Week' to 'WeekEndDate' for consistency.
+        weekly_shipped_df.rename(columns={'Ship Week': 'WeekEndDate'}, inplace=True)
+
+        # Process 'WeekEndDate' column, handling date ranges (e.g., 'MM/DD/YYYY - MM/DD/YYYY').
+        if 'WeekEndDate' in weekly_shipped_df.columns: 
+            try:
+                weekly_shipped_df['WeekEndDate'] = weekly_shipped_df['WeekEndDate'].apply(
+                    lambda x: pd.to_datetime(str(x).split(' - ')[1].strip()) if ' - ' in str(x) else pd.to_datetime(x)
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Could not convert 'WeekEndDate' column (date range) to datetime in '{sheet_name}'. "
+                    f"Details: {e}. Setting to NaT.", 
+                    exc_info=True
+                )
+                weekly_shipped_df['WeekEndDate'] = pd.NaT # Set to Not a Time if parsing fails
+
+        # Ensure 'SKU' is string and 'ShippedQuantity' is numeric.
+        if 'SKU' in weekly_shipped_df.columns:
+            weekly_shipped_df['SKU'] = weekly_shipped_df['SKU'].astype(str)
+        if 'ShippedQuantity' in weekly_shipped_df.columns:
+            try:
+                # Coerce to numeric, filling non-numeric values with NaN, then fill NaN with 0.
+                weekly_shipped_df['ShippedQuantity'] = pd.to_numeric(weekly_shipped_df['ShippedQuantity'], errors='coerce').fillna(0)
+            except Exception as e:
+                logger.warning(
+                    f"Could not convert 'ShippedQuantity' column to numeric in '{sheet_name}' after melt. "
+                    f"Details: {e}. Setting to 0.", 
+                    exc_info=True
+                )
+                weekly_shipped_df['ShippedQuantity'] = 0 
+
+    else:
+        logger.warning(f"No data retrieved from '{sheet_name}' sheet or sheet is empty/malformed. Returning empty DataFrame.")
+    logger.debug(f"Columns of weekly_shipped_df after melt and rename: {weekly_shipped_df.columns.tolist()}")
+    logger.info(f"Finished reading historical weekly shipped data. Resulting DataFrame shape: {weekly_shipped_df.shape}")
+    logger.debug(f"Weekly shipped history DataFrame head:\n{weekly_shipped_df.head()}")
+    return weekly_shipped_df
+
+
+def load_all_configuration_data(spreadsheet_id: str, config_sheet_name: str, inventory_transactions_sheet_name: str, service_account_file_path: str, key_skus_from_config: list) -> tuple[dict, dict, dict, pd.DataFrame]:
+    """
+    Loads all relevant configuration data (Rates, Pallet Config, Initial Inventory)
+    and Inventory Transactions from Google Sheets.
+
+    Args:
+        spreadsheet_id (str): The ID of the Google Sheet.
+        config_sheet_name (str): The name of the ORA Configuration sheet.
+        inventory_transactions_sheet_name (str): The name of the Inventory Transactions sheet.
+        service_account_file_path (str): Path to the service account JSON key file.
+        key_skus_from_config (list): List of key SKUs obtained from get_key_skus_and_product_names,
+                                     used for filtering/validation of config data.
+
+    Returns:
+        tuple[dict, dict, dict, pd.DataFrame]: A tuple containing:
+            - rates (dict): Dictionary of rates (e.g., {'OrderCharge': 4.25}).
+            - pallet_counts (dict): Dictionary of pallet counts per SKU (e.g., {'17612': 48}).
+            - initial_inventory (dict): Dictionary of initial inventory per SKU (e.g., {'17612': 1000}).
+            - inventory_transactions_df (pd.DataFrame): DataFrame of raw inventory transactions.
+    """
+    logger.info("Loading all configuration data from Google Sheets...")
+
+    # Load ORA_Configuration data
+    raw_config_data = get_google_sheet_data(
+        spreadsheet_id,
+        f'{config_sheet_name}!A:F', # Read wide enough to cover all relevant columns
+        service_account_file_path
+    )
+
+    rates = {}
+    pallet_counts = {}
+    initial_inventory = {}
+
+    if raw_config_data and len(raw_config_data) > 1:
+        headers = [h.strip() for h in raw_config_data[0]]
+        data_rows = raw_config_data[1:]
+
+        try:
+            param_cat_idx = headers.index('ParameterCategory')
+            param_name_idx = headers.index('ParameterName')
+            sku_idx = headers.index('SKU') if 'SKU' in headers else -1 # SKU might not be in every row category
+            value_idx = headers.index('Value')
+            
+            for i, row in enumerate(data_rows):
+                # Ensure row has enough columns to avoid IndexError
+                if len(row) > max(param_cat_idx, param_name_idx, value_idx, (sku_idx if sku_idx != -1 else 0)):
+                    category = row[param_cat_idx].strip()
+                    name = row[param_name_idx].strip()
+                    value_str = row[value_idx].strip() 
+                    sku_from_row = row[sku_idx].strip() if sku_idx != -1 and sku_idx < len(row) and row[sku_idx] else None
+
+                    if category == 'Rates':
+                        try: 
+                            rates[name] = float(value_str)
+                            logger.debug(f"Loaded Rate: {name}={rates[name]} (Row {i+2}).")
+                        except ValueError: 
+                            logger.warning(f"Could not convert rate '{value_str}' for {name} to float (Row {i+2}).") 
+                    elif category == 'PalletConfig':
+                        if sku_from_row and sku_from_row in key_skus_from_config: # Only load for key SKUs
+                            try: 
+                                pallet_counts[sku_from_row] = int(value_str)
+                                logger.debug(f"Loaded Pallet Config: SKU='{sku_from_row}', Count={pallet_counts[sku_from_row]} (Row {i+2}).")
+                            except ValueError: 
+                                logger.warning(f"Could not convert pallet count '{value_str}' for {sku_from_row} to int (Row {i+2}).") 
+                        elif sku_from_row:
+                            logger.debug(f"Skipping PalletConfig for SKU '{sku_from_row}' (Row {i+2}): not in key SKUs for report.")
+                    elif category == 'InitialInventory':
+                        if sku_from_row and sku_from_row in key_skus_from_config: # Only load for key SKUs
+                            try: 
+                                initial_inventory[sku_from_row] = int(value_str)
+                                logger.debug(f"Loaded Initial Inventory: SKU='{sku_from_row}', Quantity={initial_inventory[sku_from_row]} (Row {i+2}).")
+                            except ValueError: 
+                                logger.warning(f"Could not convert initial inventory '{value_str}' for {sku_from_row} to int (Row {i+2}).") 
+                        elif sku_from_row:
+                            logger.debug(f"Skipping InitialInventory for SKU '{sku_from_row}' (Row {i+2}): not in key SKUs for report.")
+                else:
+                    logger.warning(f"Skipping malformed row in '{config_sheet_name}' at index {i+2}. Not enough columns or essential data missing.")
+        except ValueError as e:
+            logger.error(f"Data extraction from '{config_sheet_name}' failed after validation: {e}", exc_info=True)
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while parsing '{config_sheet_name}': {e}", exc_info=True)
+    else:
+        logger.warning(f"No data or malformed data found in '{config_sheet_name}' sheet for configuration extraction.")
+
+    logger.info(f"Loaded Rates: {rates}")
+    logger.info(f"Loaded Pallet Counts: {pallet_counts}")
+    logger.info(f"Loaded Initial Inventory: {initial_inventory}")
+
+    # Load Inventory_Transactions data
+    logger.info(f"Loading Inventory Transactions from '{inventory_transactions_sheet_name}' sheet...")
+    raw_inventory_transactions_data = get_google_sheet_data(
+        spreadsheet_id,
+        f'{inventory_transactions_sheet_name}!A:D', # Assuming Date, SKU, TransactionType, Quantity
+        service_account_file_path
+    )
+    
+    inventory_transactions_df = pd.DataFrame()
+    if raw_inventory_transactions_data and len(raw_inventory_transactions_data) > 1:
+        headers = [h.strip() for h in raw_inventory_transactions_data[0]]
+        data_rows = raw_inventory_transactions_data[1:]
+        if headers: 
+            inventory_transactions_df = pd.DataFrame(data_rows, columns=headers)
+            # Ensure 'Date' and 'Quantity' columns are in correct types.
+            if 'Date' in inventory_transactions_df.columns:
+                try:
+                    inventory_transactions_df['Date'] = pd.to_datetime(inventory_transactions_df['Date'])
+                except Exception as e:
+                    logger.warning(f"Could not convert 'Date' column to datetime in Inventory_Transactions. Details: {e}", exc_info=True)
+            if 'Quantity' in inventory_transactions_df.columns:
+                try:
+                    inventory_transactions_df['Quantity'] = pd.to_numeric(inventory_transactions_df['Quantity'], errors='coerce').fillna(0)
+                except Exception as e:
+                    logger.warning(f"Could not convert 'Quantity' column to numeric in Inventory_Transactions. Details: {e}", exc_info=True)
+            
+            logger.info(f"Loaded Inventory Transactions. Shape: {inventory_transactions_df.shape}")
+            logger.debug(f"Inventory Transactions head:\n{inventory_transactions_df.head()}")
+        else:
+            logger.error(f"'{inventory_transactions_sheet_name}' sheet has no headers. Returning empty DataFrame for transactions.")
+    else:
+        logger.warning(f"No data or malformed data retrieved from '{inventory_transactions_sheet_name}' sheet. Returning empty DataFrame for transactions.")
+    
+    return rates, pallet_counts, initial_inventory, inventory_transactions_df
+
+
+# This block is for independent testing of the module.
+if __name__ == "__main__":
+    # Add the project root to the Python path to enable imports from utils and services
+    # This path is relative to the current file (report_data_loader.py)
+    # report_data_loader.py is in ORA_Automation/src/services/reporting_logic/
+    # So, to get to ORA_Automation, we need to go up three levels (reporting_logic, services, src).
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')) 
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+
+    # Re-import setup_logging after path adjustment
+    # from utils.logging_config import setup_logging # Already imported globally at the top
+    # Ensure logging is only configured once if this script is run as main.
+    _log_dir = os.path.join(project_root, 'logs') 
+    _log_file = os.path.join(_log_dir, 'app.log')
+    # Use the globally defined logger variable, so it's already set up by setup_logging at the top of the module if it's imported correctly.
+    # If run directly, ensure the basic config is done.
+    if not logging.getLogger().handlers:
+        logging.basicConfig(level=logging.INFO, # Or DEBUG for more verbosity
+                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+
+
+    logger.info("Starting independent test of Report Data Loader module...")
+
+    # --- Dummy Configuration (Replace with actuals for full test) ---
+    DUMMY_GOOGLE_SHEET_ID = '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo' 
+    DUMMY_CONFIG_SHEET_NAME = 'ORA_Configuration'
+    DUMMY_WEEKLY_HISTORY_SHEET_NAME = 'ORA_Weekly_Shipped_History'
+    DUMMY_INVENTORY_TRANSACTIONS_SHEET_NAME = 'Inventory_TRANSACTIONS' # Match your actual sheet name
+
+    # Path to your service account JSON key (ensure it has Sheets API permissions)
+    DUMMY_SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\ORA_Automation\config\ora-automation-project-2345f75740f8.json" 
+
+    # Test get_key_skus_and_product_names
+    logger.info("Testing get_key_skus_and_product_names...")
+    key_skus, product_names_map = get_key_skus_and_product_names(
+        DUMMY_GOOGLE_SHEET_ID, DUMMY_CONFIG_SHEET_NAME, DUMMY_SERVICE_ACCOUNT_KEY_PATH
+    )
+    logger.info(f"Retrieved Key SKUs: {key_skus}")
+    logger.info(f"Retrieved Product Names Map: {product_names_map}")
+
+    # Test get_weekly_shipped_history
+    logger.info("Testing get_weekly_shipped_history...")
+    weekly_history_df = get_weekly_shipped_history(
+        DUMMY_GOOGLE_SHEET_ID, DUMMY_WEEKLY_HISTORY_SHEET_NAME, DUMMY_SERVICE_ACCOUNT_KEY_PATH, key_skus
+    )
+    logger.info(f"Retrieved Weekly Shipped History DataFrame shape: {weekly_history_df.shape}")
+    logger.debug(f"Weekly Shipped History Head:\n{weekly_history_df.head()}")
+
+    # Test load_all_configuration_data
+    logger.info("Testing load_all_configuration_data...")
+    rates, pallet_counts, initial_inventory, inventory_transactions_df = load_all_configuration_data(
+        DUMMY_GOOGLE_SHEET_ID, DUMMY_CONFIG_SHEET_NAME, DUMMY_INVENTORY_TRANSACTIONS_SHEET_NAME, DUMMY_SERVICE_ACCOUNT_KEY_PATH, key_skus
+    )
+    logger.info(f"Loaded Rates: {rates}")
+    logger.info(f"Loaded Pallet Counts: {pallet_counts}")
+    logger.info(f"Loaded Initial Inventory: {initial_inventory}")
+    logger.info(f"Loaded Inventory Transactions DataFrame shape: {inventory_transactions_df.shape}")
+    logger.debug(f"Inventory Transactions DataFrame Head:\n{inventory_transactions_df.head()}")
+
+    logger.info("Independent test of Report Data Loader module finished.")

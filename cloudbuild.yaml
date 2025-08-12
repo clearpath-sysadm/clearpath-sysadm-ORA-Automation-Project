@@ -1,0 +1,69 @@
+## cloudbuild.yaml
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+# This step lists the contents of the project for debugging purposes.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args: ['-c', 'ls -R .']
+  dir: . # Run from project root
+
+# --- Deploy shipstation-reporter Cloud Function ---
+# This step moves shipstation_reporter.py to main.py at the root.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'mv'
+  args: ['src/shipstation_reporter.py', 'main.py']
+  dir: .
+
+# This step deploys the Cloud Function.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - 'functions'
+    - 'deploy'
+    - 'shipstation-reporter-function'
+    - '--runtime=python311'
+    - '--entry-point=shipstation_reporter_http_trigger'
+    - '--source=.' # Source is the current directory (project root)
+    - '--trigger-http'
+    - '--allow-unauthenticated'
+    - '--region=us-central1'
+    - '--memory=1024MB'
+    - '--timeout=600s'
+    - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
+    - '--gen2' # Explicitly use 2nd Gen functions for Python 3.11
+  dir: .
+  id: deploy-shipstation-reporter
+
+# # --- Deploy shipstation-order-uploader Cloud Function ---
+# # Step 1.1: Move the specific function script to main.py at the root for deployment context.
+# # Note: requirements.txt is assumed to be at the project root and will be picked up by --source=.
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#   entrypoint: 'mv'
+#   args: ['src/shipstation_order_uploader.py', 'main.py']
+#   dir: .
+
+# # Step 1.2: Deploy the shipstation-order-uploader Cloud Function.
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#   entrypoint: 'gcloud'
+#   args:
+#     - 'functions'
+#     - 'deploy'
+#     - 'shipstation-order-uploader'
+#     - '--runtime=python311'
+#     - '--entry-point=shipstation_order_uploader_http_trigger'
+#     - '--source=.' # Source is the current directory (project root)
+#     - '--trigger-http'
+#     - '--allow-unauthenticated'
+#     - '--region=us-central1'
+#     - '--memory=1024MB'
+#     - '--timeout=300s'
+#     - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
+#     - '--gen2' # Explicitly use 2nd Gen functions
+#     # Note: For internal Python imports (e.g., from 'config' or 'src.services'),
+#     # Cloud Functions typically adds the source directory (here, '.') to PYTHONPATH.
+#     # If you encounter ImportError for internal modules, you might need to
+#     # flatten your project structure or set PYTHONPATH explicitly in the runtime environment.
+#   dir: .
+#   id: deploy-order-uploader
