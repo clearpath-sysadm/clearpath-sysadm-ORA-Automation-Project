@@ -1,2 +1,6 @@
 venv/ 
 *.json 
+logs/
+tests/
+__pycache__/
+*.pyc
