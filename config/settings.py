@@ -1,4 +1,5 @@
 
+
 # filename: settings.py
 """
 Centralized configuration settings for the ORA Project.
@@ -25,21 +26,39 @@ YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 #                                             and secrets are fetched via Secret Manager using ADC.
 
 
-# --- Service Account Key Path Logic ---
-# If the environment variable 'ORA_ENV' is set to 'CLOUD', use None (cloud default credentials).
-# Otherwise, use the local file path for local development.
-if os.environ.get('ORA_ENV', '').upper() == 'CLOUD':
-    SERVICE_ACCOUNT_KEY_PATH = None
+
+# --- Service Account Key Path Logic (Auto-detect local vs cloud) ---
+_SERVICE_ACCOUNT_BASE_PATH = r"C:\Users\NathanNeely\Projects\config"
+_SERVICE_ACCOUNT_FILENAME = "ora-automation-project-dev-25acb5551197.json"
+_LOCAL_KEY_PATH = os.path.join(_SERVICE_ACCOUNT_BASE_PATH, _SERVICE_ACCOUNT_FILENAME)
+if os.path.exists(_LOCAL_KEY_PATH):
+    SERVICE_ACCOUNT_KEY_PATH = _LOCAL_KEY_PATH
 else:
-    _SERVICE_ACCOUNT_BASE_PATH = r"C:\Users\NathanNeely\Projects\config"
-    _SERVICE_ACCOUNT_FILENAME = "ora-automation-project-dev-25acb5551197.json"
-    SERVICE_ACCOUNT_KEY_PATH = os.path.join(_SERVICE_ACCOUNT_BASE_PATH, _SERVICE_ACCOUNT_FILENAME)
+    SERVICE_ACCOUNT_KEY_PATH = None
 
 # Debug: Log which SERVICE_ACCOUNT_KEY_PATH is being used at import time
 import logging
-logging.basicConfig(level=logging.INFO)
+import os
+LOG_FILE_PATH = os.path.join(PROJECT_ROOT, 'settings-debug.log')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s %(name)s %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE_PATH, mode='a', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger("settings")
 logger.info(f"SERVICE_ACCOUNT_KEY_PATH is set to: {SERVICE_ACCOUNT_KEY_PATH}")
+# Extra debug: Log file existence and partial contents for SERVICE_ACCOUNT_KEY_PATH
+if SERVICE_ACCOUNT_KEY_PATH:
+    logger.info(f"File exists: {os.path.exists(SERVICE_ACCOUNT_KEY_PATH)}")
+    try:
+        with open(SERVICE_ACCOUNT_KEY_PATH, 'r') as f:
+            first_100 = f.read(100)
+        logger.info(f"First 100 chars of key file: {first_100}")
+    except Exception as e:
+        logger.error(f"Could not read key file: {e}")
 
 
 # --- ShipStation API Configuration ---

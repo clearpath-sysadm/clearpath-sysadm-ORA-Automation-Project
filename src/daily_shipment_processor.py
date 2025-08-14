@@ -43,7 +43,22 @@ setup_logging(log_file_path=log_file, log_level=logging.INFO, enable_console_log
 logger = logging.getLogger(__name__)
 
 
-def update_weekly_history_incrementally(daily_items_df, existing_history_df, target_skus):
+def update_weekly_history_incrementally(daily_items_df, existing_history_df, target_skus, shipment_data):
+    # --- Ensure all variables are defined before use ---
+    today = datetime.date.today()
+    start_of_current_week = today - datetime.timedelta(days=today.weekday())
+
+    # After filtering for current week, log the DataFrame and unique SKUs
+    current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
+    # Debug print for SKU 17612 quantity in current week
+    sku_17612_df = current_week_items_df[current_week_items_df['Base SKU'] == '17612']
+    print("\n[DEBUG] Current week total Quantity Shipped for SKU 17612:", sku_17612_df['Quantity Shipped'].sum())
+    print("[DEBUG] Current week rows for SKU 17612:")
+    print(sku_17612_df)
+    logger.info(f"Full current_week_items_df for current week:\n{current_week_items_df}")
+    logger.info(f"current_week_items_df shape: {current_week_items_df.shape}")
+    logger.info(f"current_week_items_df head:\n{current_week_items_df.head(10)}")
+    logger.info(f"Unique 'Base SKU' values in current_week_items_df: {sorted(current_week_items_df['Base SKU'].unique())}")
     """
     Updates the 52-week history with the latest data for the current week.
 
@@ -57,33 +72,97 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     """
     logger.info("Starting incremental update of the 52-week history tab...")
 
+    """
+    Updates the 52-week history with the latest data for the current week.
+
+    Args:
+        daily_items_df (pd.DataFrame): DataFrame with the last 32 days of granular shipped items.
+        existing_history_df (pd.DataFrame): DataFrame with the current 52-week history.
+        target_skus (list): A list of SKUs to be included in the weekly history.
+
+    Returns:
+        pd.DataFrame: The updated 52-week history DataFrame.
+    """
+
+
     # Ensure 'Ship Date' is in datetime format
     daily_items_df['Ship Date'] = pd.to_datetime(daily_items_df['Ship Date']).dt.date
+
+    logger.info(f"Current week starts on: {start_of_current_week}")
+    logger.info(f"Unique Ship Dates in daily_items_df: {sorted(daily_items_df['Ship Date'].unique())}")
+    logger.info(f"Min Ship Date: {daily_items_df['Ship Date'].min()}, Max Ship Date: {daily_items_df['Ship Date'].max()}")
+
+    # Now safe to filter and log current week items
+    current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
+    logger.info(f"current_week_items_df shape: {current_week_items_df.shape}")
+    logger.info(f"current_week_items_df head:\n{current_week_items_df.head(10)}")
+    logger.info(f"Unique 'Base SKU' values in current_week_items_df: {sorted(current_week_items_df['Base SKU'].unique())}")
 
     # Determine the start of the current week (Monday)
     today = datetime.date.today()
     start_of_current_week = today - datetime.timedelta(days=today.weekday())
     logger.info(f"Current week starts on: {start_of_current_week}")
+    # Debug: Show unique Ship Dates and min/max
+    logger.debug(f"Unique Ship Dates in daily_items_df: {sorted(daily_items_df['Ship Date'].unique())}")
+    logger.debug(f"Min Ship Date: {daily_items_df['Ship Date'].min()}, Max Ship Date: {daily_items_df['Ship Date'].max()}")
+
+    # --- DEBUG LOGGING FOR SKU 17612 ---
+    logger.debug(f"Today's date: {today}")
+    logger.debug("Today's shipments for SKU 17612:")
+    logger.debug(daily_items_df[daily_items_df['Base SKU'] == '17612'])
+    if not existing_history_df.empty:
+        last_row = existing_history_df.tail(1)
+        logger.debug("Last row in ORA_Weekly_Shipped_History:")
+        logger.debug(last_row)
+        if '17612' in existing_history_df.columns:
+            logger.debug(f"Value for 17612 in last row: {last_row['17612'].values[0]}")
+        logger.debug(f"Last week Start Date: {last_row['Start Date'].values[0]}, Stop Date: {last_row['Stop Date'].values[0]}")
+    today_sum = daily_items_df[daily_items_df['Base SKU'] == '17612']['Quantity Shipped'].sum()
+    logger.debug(f"Sum of today's shipments for SKU 17612: {today_sum}")
 
     # Filter the daily items to get only shipments from the current week
     current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
+
+    logger.debug("Filtered daily_items_df for current week:")
+    logger.debug(current_week_items_df)
+
+    for sku in target_skus:
+        sku_filtered = current_week_items_df[current_week_items_df['Base SKU'].astype(str) == str(sku)]
+        logger.debug(f"Current week items for SKU {sku}:")
+        logger.debug(sku_filtered)
 
     if current_week_items_df.empty:
         logger.info("No shipments found for the current week yet. History remains unchanged.")
         return existing_history_df
 
-    # Aggregate this new weekly data
-    # We need to convert the DataFrame back to a list of dicts for the existing function
-    current_week_shipments_list = current_week_items_df.to_dict('records')
-    # The aggregate function needs the full shipment structure, so we adapt
-    # For simplicity, we'll simulate the structure needed by aggregate_weekly_shipped_history
-    # A more robust solution would be a new, dedicated aggregation function.
-    # This is a placeholder for the logic that correctly aggregates the current week.
-    # Let's assume a simplified aggregation for now.
+    # Aggregate this new weekly data using the original raw shipment data filtered for the current week
+    # This assumes you have access to the original shipment_data (raw API response) in scope
+    # You may need to pass shipment_data as an argument to this function if not already available
+    def filter_shipments_for_week(shipment_data, start_of_week, end_of_week):
+        filtered = []
+        for s in shipment_data:
+            ship_date = s.get('shipDate')
+            if ship_date:
+                ship_date_dt = datetime.datetime.strptime(ship_date[:10], '%Y-%m-%d').date()
+                if start_of_week <= ship_date_dt <= start_of_week + datetime.timedelta(days=6):
+                    filtered.append(s)
+        return filtered
+
+    current_week_shipments = filter_shipments_for_week(shipment_data, start_of_current_week, start_of_current_week + datetime.timedelta(days=6))
     current_week_summary_df = aggregate_weekly_shipped_history(
-        current_week_items_df.to_dict('records'), # This will need adjustment based on function's needs
+        current_week_shipments,
         target_skus
     )
+
+    # Debug print: show the summary DataFrame and the row to be written
+    print("\n[DEBUG] Aggregated weekly summary DataFrame (current_week_summary_df):")
+    print(current_week_summary_df)
+    if not current_week_summary_df.empty:
+        print("[DEBUG] Aggregated values by SKU for the current week:")
+        for sku in target_skus:
+            print(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
+        print("[DEBUG] Full row to be written to sheet:")
+        print(current_week_summary_df.iloc[0])
 
     if current_week_summary_df.empty:
         logger.warning("Aggregation of current week's data resulted in an empty DataFrame.")
@@ -182,13 +261,20 @@ def run_daily_shipment_pull(request=None):
         # Note: get_google_sheet_data should return a DataFrame
         existing_history_df = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
 
-        if existing_history_df is not None and not existing_history_df.empty:
+        # Convert list of lists to DataFrame if needed
+        sheet_data = existing_history_df
+        if sheet_data and len(sheet_data) > 1:
+            existing_history_df = pd.DataFrame(sheet_data[1:], columns=sheet_data[0])
+        else:
+            # Define expected columns for the weekly history tab (match actual sheet layout)
+            expected_columns = ['Start Date', 'Stop Date', '17612', '17904', '17914', '18675', '18795']
+            existing_history_df = pd.DataFrame(columns=expected_columns)
+
+        if not existing_history_df.empty:
             # This is a placeholder for the SKUs that are tracked weekly.
             # This should ideally be loaded from a config file or another sheet.
             target_skus = ['17612', '17904', '17914', '18675', '18795']
-            
-            updated_history_df = update_weekly_history_incrementally(items_df.copy(), existing_history_df.copy(), target_skus)
-            
+            updated_history_df = update_weekly_history_incrementally(items_df.copy(), existing_history_df.copy(), target_skus, shipment_data)
             logger.info(f"Overwriting '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}' with updated 52-week history...")
             write_dataframe_to_sheet(updated_history_df, GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
         else:
