@@ -36,6 +36,18 @@ def get_shipstation_credentials():
     """
     Retrieves ShipStation API credentials securely from Google Cloud Secret Manager.
     """
+    # In src/services/shipstation/api_client.py
+
+# Add this import at the top of the file
+from config.settings import SERVICE_ACCOUNT_KEY_PATH 
+
+def get_shipstation_credentials():
+    """
+    Retrieves ShipStation API credentials securely from Google Cloud Secret Manager.
+    """
+    # Add this line for debugging
+    print(f"DEBUG: Using service account key path: {SERVICE_ACCOUNT_KEY_PATH}")
+
     try:
         logger.info("Attempting to retrieve ShipStation API Key from Secret Manager...")
         api_key = access_secret_version(

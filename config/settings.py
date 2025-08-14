@@ -26,7 +26,7 @@ YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 # SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json"
 
 _SERVICE_ACCOUNT_BASE_PATH = r"C:\Users\NathanNeely\Projects\config"
-_SERVICE_ACCOUNT_FILENAME = "ora-automation-project-2345f75740f8.json"
+_SERVICE_ACCOUNT_FILENAME = "ora-automation-project-dev-25acb5551197.json"
 SERVICE_ACCOUNT_KEY_PATH = os.path.join(_SERVICE_ACCOUNT_BASE_PATH, _SERVICE_ACCOUNT_FILENAME)
 
 
