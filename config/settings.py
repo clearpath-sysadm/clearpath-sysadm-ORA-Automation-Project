@@ -1,3 +1,9 @@
+
+# Debug: Log which SERVICE_ACCOUNT_KEY_PATH is being used at import time
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("settings")
+logger.info(f"SERVICE_ACCOUNT_KEY_PATH is set to: {SERVICE_ACCOUNT_KEY_PATH}")
 # filename: settings.py
 """
 Centralized configuration settings for the ORA Project.
@@ -8,6 +14,7 @@ import os
 # --- Project Root Path ---
 # Defines the base directory of the project for relative pathing if needed.
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
 
 
 
@@ -22,6 +29,7 @@ YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 #                                             assigned service account automatically for GCP services,
 #                                             and secrets are fetched via Secret Manager using ADC.
 
+
 # --- Service Account Key Path Logic ---
 # If the environment variable 'ORA_ENV' is set to 'CLOUD', use None (cloud default credentials).
 # Otherwise, use the local file path for local development.
@@ -31,6 +39,12 @@ else:
     _SERVICE_ACCOUNT_BASE_PATH = r"C:\Users\NathanNeely\Projects\config"
     _SERVICE_ACCOUNT_FILENAME = "ora-automation-project-dev-25acb5551197.json"
     SERVICE_ACCOUNT_KEY_PATH = os.path.join(_SERVICE_ACCOUNT_BASE_PATH, _SERVICE_ACCOUNT_FILENAME)
+
+# Debug: Log which SERVICE_ACCOUNT_KEY_PATH is being used at import time
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("settings")
+logger.info(f"SERVICE_ACCOUNT_KEY_PATH is set to: {SERVICE_ACCOUNT_KEY_PATH}")
 
 
 # --- ShipStation API Configuration ---
