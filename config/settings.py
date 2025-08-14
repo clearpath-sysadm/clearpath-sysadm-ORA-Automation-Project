@@ -1,9 +1,4 @@
 
-# Debug: Log which SERVICE_ACCOUNT_KEY_PATH is being used at import time
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("settings")
-logger.info(f"SERVICE_ACCOUNT_KEY_PATH is set to: {SERVICE_ACCOUNT_KEY_PATH}")
 # filename: settings.py
 """
 Centralized configuration settings for the ORA Project.
