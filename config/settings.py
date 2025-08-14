@@ -21,17 +21,16 @@ YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 # For cloud deployment (Google Cloud Functions): This should be None. GCFs use their
 #                                             assigned service account automatically for GCP services,
 #                                             and secrets are fetched via Secret Manager using ADC.
-# Uncomment the appropriate line based on your environment.
-# LOCAL DEVELOPMENT VERSION:
-# SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json"
 
-_SERVICE_ACCOUNT_BASE_PATH = r"C:\Users\NathanNeely\Projects\config"
-_SERVICE_ACCOUNT_FILENAME = "ora-automation-project-dev-25acb5551197.json"
-SERVICE_ACCOUNT_KEY_PATH = os.path.join(_SERVICE_ACCOUNT_BASE_PATH, _SERVICE_ACCOUNT_FILENAME)
-
-
-# CLOUD DEPLOYMENT VERSION:
-# SERVICE_ACCOUNT_KEY_PATH = None
+# --- Service Account Key Path Logic ---
+# If the environment variable 'ORA_ENV' is set to 'CLOUD', use None (cloud default credentials).
+# Otherwise, use the local file path for local development.
+if os.environ.get('ORA_ENV', '').upper() == 'CLOUD':
+    SERVICE_ACCOUNT_KEY_PATH = None
+else:
+    _SERVICE_ACCOUNT_BASE_PATH = r"C:\Users\NathanNeely\Projects\config"
+    _SERVICE_ACCOUNT_FILENAME = "ora-automation-project-dev-25acb5551197.json"
+    SERVICE_ACCOUNT_KEY_PATH = os.path.join(_SERVICE_ACCOUNT_BASE_PATH, _SERVICE_ACCOUNT_FILENAME)
 
 
 # --- ShipStation API Configuration ---
