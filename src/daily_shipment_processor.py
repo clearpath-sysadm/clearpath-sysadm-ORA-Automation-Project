@@ -58,8 +58,8 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
     # Debug log for SKU 17612 quantity in current week
     sku_17612_df = current_week_items_df[current_week_items_df['Base SKU'] == '17612']
-    logger.debug(f"Current week total Quantity Shipped for SKU 17612: {sku_17612_df['Quantity Shipped'].sum()}")
-    logger.debug(f"Current week rows for SKU 17612:\n{sku_17612_df}")
+    logger.info(f"Current week total Quantity Shipped for SKU 17612: {sku_17612_df['Quantity Shipped'].sum()}")
+    logger.info(f"Current week rows for SKU 17612:\n{sku_17612_df}")
     logger.info(f"Full current_week_items_df for current week:\n{current_week_items_df}")
     logger.info(f"current_week_items_df shape: {current_week_items_df.shape}")
     logger.info(f"current_week_items_df head:\n{current_week_items_df.head(10)}")
@@ -108,33 +108,33 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     start_of_current_week = today - datetime.timedelta(days=today.weekday())
     logger.info(f"Current week starts on: {start_of_current_week}")
     # Debug: Show unique Ship Dates and min/max
-    logger.debug(f"Unique Ship Dates in daily_items_df: {sorted(daily_items_df['Ship Date'].unique())}")
-    logger.debug(f"Min Ship Date: {daily_items_df['Ship Date'].min()}, Max Ship Date: {daily_items_df['Ship Date'].max()}")
+    logger.info(f"Unique Ship Dates in daily_items_df: {sorted(daily_items_df['Ship Date'].unique())}")
+    logger.info(f"Min Ship Date: {daily_items_df['Ship Date'].min()}, Max Ship Date: {daily_items_df['Ship Date'].max()}")
 
     # --- DEBUG LOGGING FOR SKU 17612 ---
-    logger.debug(f"Today's date: {today}")
-    logger.debug("Today's shipments for SKU 17612:")
-    logger.debug(daily_items_df[daily_items_df['Base SKU'] == '17612'])
+    logger.info(f"Today's date: {today}")
+    logger.info("Today's shipments for SKU 17612:")
+    logger.info(daily_items_df[daily_items_df['Base SKU'] == '17612'])
     if not existing_history_df.empty:
         last_row = existing_history_df.tail(1)
-        logger.debug("Last row in ORA_Weekly_Shipped_History:")
-        logger.debug(last_row)
+        logger.info("Last row in ORA_Weekly_Shipped_History:")
+        logger.info(last_row)
         if '17612' in existing_history_df.columns:
-            logger.debug(f"Value for 17612 in last row: {last_row['17612'].values[0]}")
-        logger.debug(f"Last week Start Date: {last_row['Start Date'].values[0]}, Stop Date: {last_row['Stop Date'].values[0]}")
+            logger.info(f"Value for 17612 in last row: {last_row['17612'].values[0]}")
+        logger.info(f"Last week Start Date: {last_row['Start Date'].values[0]}, Stop Date: {last_row['Stop Date'].values[0]}")
     today_sum = daily_items_df[daily_items_df['Base SKU'] == '17612']['Quantity Shipped'].sum()
-    logger.debug(f"Sum of today's shipments for SKU 17612: {today_sum}")
+    logger.info(f"Sum of today's shipments for SKU 17612: {today_sum}")
 
     # Filter the daily items to get only shipments from the current week
     current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
 
-    logger.debug("Filtered daily_items_df for current week:")
-    logger.debug(current_week_items_df)
+    logger.info("Filtered daily_items_df for current week:")
+    logger.info(current_week_items_df)
 
     for sku in target_skus:
         sku_filtered = current_week_items_df[current_week_items_df['Base SKU'].astype(str) == str(sku)]
-        logger.debug(f"Current week items for SKU {sku}:")
-        logger.debug(sku_filtered)
+        logger.info(f"Current week items for SKU {sku}:")
+        logger.info(sku_filtered)
 
     if current_week_items_df.empty:
         logger.info("No shipments found for the current week yet. History remains unchanged.")
@@ -160,12 +160,12 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     )
 
     # Debug log: show the summary DataFrame and the row to be written
-    logger.debug(f"Aggregated weekly summary DataFrame (current_week_summary_df):\n{current_week_summary_df}")
+    logger.info(f"Aggregated weekly summary DataFrame (current_week_summary_df):\n{current_week_summary_df}")
     if not current_week_summary_df.empty:
-        logger.debug("Aggregated values by SKU for the current week:")
+        logger.info("Aggregated values by SKU for the current week:")
         for sku in target_skus:
-            logger.debug(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
-        logger.debug(f"Full row to be written to sheet:\n{current_week_summary_df.iloc[0]}")
+            logger.info(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
+        logger.info(f"Full row to be written to sheet:\n{current_week_summary_df.iloc[0]}")
 
     if current_week_summary_df.empty:
         logger.warning("Aggregation of current week's data resulted in an empty DataFrame.")
@@ -243,7 +243,7 @@ def run_daily_shipment_pull(request=None):
     Args:
         request: The request object from a Google Cloud Function trigger (optional).
     """
-    logger.debug("DEBUG TEST LOG LINE: If you see this, DEBUG logs are working!")
+    logger.info("DEBUG TEST LOG LINE: If you see this, DEBUG logs are working!")
     logger.info("--- Starting Daily Shipment Processor ---")
     # Print effective logger and handler levels for troubleshooting
     logger.info(f"Logger effective level: {logging.getLevelName(logger.getEffectiveLevel())}")
@@ -331,9 +331,9 @@ def run_daily_shipment_pull(request=None):
 
         # --- DEBUG: Log the last 5 rows of loaded weekly history to verify data freshness ---
         if not existing_history_df.empty:
-            logger.debug(f"Loaded weekly history from Google Sheet (last 5 rows):\n{existing_history_df[['Start Date', 'Stop Date']].tail(5)}")
+            logger.info(f"Loaded weekly history from Google Sheet (last 5 rows):\n{existing_history_df[['Start Date', 'Stop Date']].tail(5)}")
         else:
-            logger.debug("[EMPTY DATAFRAME]")
+            logger.info("[EMPTY DATAFRAME]")
 
         if not existing_history_df.empty:
             # This is a placeholder for the SKUs that are tracked weekly.
