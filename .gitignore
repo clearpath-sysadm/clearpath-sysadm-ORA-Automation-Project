@@ -4,3 +4,4 @@ logs/
 tests/
 __pycache__/
 *.pyc
+markdown/
