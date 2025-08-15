@@ -63,7 +63,7 @@ steps:
     - '--timeout=600s'
     - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project-dev'
     - '--gen2'
-    - '--set-env-vars=PYTHON_LOG_LEVEL=DEBUG'
+#    - '--set-env-vars=PYTHON_LOG_LEVEL=DEBUG'
   dir: .
   id: daily_weekly_history_update
 
