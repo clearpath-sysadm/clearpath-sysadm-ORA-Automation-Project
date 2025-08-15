@@ -36,29 +36,37 @@ if os.path.exists(_LOCAL_KEY_PATH):
 else:
     SERVICE_ACCOUNT_KEY_PATH = None
 
-# Debug: Log which SERVICE_ACCOUNT_KEY_PATH is being used at import time
-import logging
-import os
-LOG_FILE_PATH = os.path.join(PROJECT_ROOT, 'settings-debug.log')
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s %(levelname)s %(name)s %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE_PATH, mode='a', encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("settings")
-logger.info(f"SERVICE_ACCOUNT_KEY_PATH is set to: {SERVICE_ACCOUNT_KEY_PATH}")
-# Extra debug: Log file existence and partial contents for SERVICE_ACCOUNT_KEY_PATH
-if SERVICE_ACCOUNT_KEY_PATH:
-    logger.info(f"File exists: {os.path.exists(SERVICE_ACCOUNT_KEY_PATH)}")
-    try:
-        with open(SERVICE_ACCOUNT_KEY_PATH, 'r') as f:
-            first_100 = f.read(100)
-        logger.info(f"First 100 chars of key file: {first_100}")
-    except Exception as e:
-        logger.error(f"Could not read key file: {e}")
+
+# --- Environment Detection Logic ---
+def get_environment():
+    """
+    Returns a string representing the current environment: 'cloud', 'local', or 'unknown'.
+    - 'cloud': Running in Google Cloud Functions or App Engine
+    - 'local': Running on a developer machine or local server
+    - 'unknown': Could not determine
+    """
+    # Google Cloud Functions
+    if os.environ.get('K_SERVICE') or os.environ.get('FUNCTION_TARGET'):
+        return 'cloud'
+    # Google App Engine
+    if os.environ.get('GAE_ENV', '').startswith('standard'):
+        return 'cloud'
+    # Local development (common heuristics)
+    if os.environ.get('USERNAME', '').lower() in ['nathanneely', 'dev', 'user']:
+        return 'local'
+    if os.environ.get('COMPUTERNAME', '').lower().startswith('nathan'):
+        return 'local'
+    if os.environ.get('HOME') or os.environ.get('USERPROFILE'):
+        # If a service account key file exists locally, assume local
+        if SERVICE_ACCOUNT_KEY_PATH and os.path.exists(SERVICE_ACCOUNT_KEY_PATH):
+            return 'local'
+    return 'unknown'
+
+# Boolean flags for convenience
+ENVIRONMENT = get_environment()
+IS_CLOUD_ENV = ENVIRONMENT == 'cloud'
+IS_LOCAL_ENV = ENVIRONMENT == 'local'
+# Logging setup removed; now handled only in main script
 
 
 # --- ShipStation API Configuration ---

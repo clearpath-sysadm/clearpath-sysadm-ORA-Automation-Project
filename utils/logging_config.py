@@ -1,6 +1,9 @@
+
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+# Environment detection for logging behavior
+from config.settings import IS_CLOUD_ENV, IS_LOCAL_ENV
 
 def setup_logging(log_file_path=None, log_level=logging.INFO, enable_console_logging=True):
     """
@@ -19,51 +22,56 @@ def setup_logging(log_file_path=None, log_level=logging.INFO, enable_console_log
         enable_console_logging (bool, optional): If True, log messages will also be
                                                  printed to the console. Defaults to True.
     """
+
+
     # Create logger
     logger = logging.getLogger()
     logger.setLevel(log_level)
 
-    # Prevent adding multiple handlers if setup_logging is called multiple times
-    # This is important in environments where scripts might be re-run without full process restart
-    if not logger.handlers:
-        # Define a consistent log format
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
+    # Remove all existing handlers to avoid duplicate logs or missing output
+    while logger.handlers:
+        logger.handlers.pop()
 
-        # 1. Console Handler (optional)
-        if enable_console_logging:
-            console_handler = logging.StreamHandler()
-            console_handler.setFormatter(formatter)
-            logger.addHandler(console_handler)
+    # Define a consistent log format
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
 
-        # 2. File Handler (optional, only if log_file_path is provided)
+    # 1. Console Handler (always enabled in cloud, optional locally)
+    if IS_CLOUD_ENV or enable_console_logging:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        console_handler.setLevel(logging.DEBUG if IS_LOCAL_ENV else logging.INFO)
+        logger.addHandler(console_handler)
+
+    # 2. File Handler (only if log_file_path is provided and not in cloud)
+    if log_file_path and not IS_CLOUD_ENV:
+        # Ensure the log directory exists
+        log_directory = os.path.dirname(log_file_path)
+        if log_directory and not os.path.exists(log_directory):
+            try:
+                os.makedirs(log_directory)
+            except OSError as e:
+                # Log an error if directory creation fails, but don't stop execution
+                # Console handler will still work if enabled
+                logger.error(f"Could not create log directory {log_directory}: {e}")
+                log_file_path = None # Disable file logging if directory cannot be created
+
         if log_file_path:
-            # Ensure the log directory exists
-            log_directory = os.path.dirname(log_file_path)
-            if log_directory and not os.path.exists(log_directory):
-                try:
-                    os.makedirs(log_directory)
-                except OSError as e:
-                    # Log an error if directory creation fails, but don't stop execution
-                    # Console handler will still work if enabled
-                    logger.error(f"Could not create log directory {log_directory}: {e}")
-                    log_file_path = None # Disable file logging if directory cannot be created
-
-            if log_file_path:
-                # Rotating file handler:
-                # maxBytes: 10 MB per file
-                # backupCount: keep 5 backup log files (app.log.1, app.log.2, etc.)
-                file_handler = RotatingFileHandler(
-                    log_file_path,
-                    maxBytes=10 * 1024 * 1024,  # 10 MB
-                    backupCount=5
-                )
-                file_handler.setFormatter(formatter)
-                logger.addHandler(file_handler)
+            # Rotating file handler:
+            # maxBytes: 10 MB per file
+            # backupCount: keep 5 backup log files (app.log.1, app.log.2, etc.)
+            file_handler = RotatingFileHandler(
+                log_file_path,
+                maxBytes=10 * 1024 * 1024,  # 10 MB
+                backupCount=5
+            )
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
 
     # Log a message to confirm setup (at DEBUG level, so it's not always visible)
     logger.debug(f"Logging system initialized with level: {logging.getLevelName(log_level)}")
+    logger.info(f"Logging environment: {'CLOUD' if IS_CLOUD_ENV else 'LOCAL' if IS_LOCAL_ENV else 'UNKNOWN'}")
     if log_file_path:
         logger.debug(f"Log file output to: {log_file_path}")
 

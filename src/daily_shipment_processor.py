@@ -1,15 +1,9 @@
 # src/daily_shipment_processor.py
-
 import sys
 import os
 import logging
 import datetime
 import pandas as pd
-
-# Set root logger level from PYTHON_LOG_LEVEL environment variable (default to DEBUG)
-log_level_str = os.environ.get("PYTHON_LOG_LEVEL", "DEBUG").upper()
-log_level = getattr(logging, log_level_str, logging.DEBUG)
-logging.getLogger().setLevel(log_level)
 
 # --- Dynamic Path Adjustment for Module Imports ---
 # Add the project root to the Python path to enable imports from services and utils
@@ -18,19 +12,20 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # --- Import Constants and Modules ---
-# Import constants directly from settings.py
+
+# Import constants and environment detection from settings.py
 from config.settings import (
     GOOGLE_SHEET_ID,
     SHIPPED_ITEMS_DATA_TAB_NAME,
     SHIPPED_ORDERS_DATA_TAB_NAME,
     ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME, # Added for the weekly history update
-    SHIPSTATION_SHIPMENTS_ENDPOINT
+    SHIPSTATION_SHIPMENTS_ENDPOINT,
+    IS_CLOUD_ENV, IS_LOCAL_ENV, SERVICE_ACCOUNT_KEY_PATH
 )
-# --- Cloud Function HTTP Entry Point ---
 
 # Import necessary modules
 from utils.logging_config import setup_logging
-from src.services.data_processing.shipment_processor import (
+from src.services.data_processing.shipment_processor import (     
     process_shipped_items,
     process_shipped_orders,
     aggregate_weekly_shipped_history # Re-added for weekly aggregation
@@ -42,11 +37,19 @@ from src.services.shipstation.api_client import (
     fetch_shipstation_shipments
 )
 
-# --- Logging Configuration ---
-log_dir = os.path.join(project_root, 'logs')
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'daily_processor.log') # Dedicated log file
-setup_logging(log_file_path=log_file, log_level=log_level, enable_console_logging=True)
+
+# --- Environment-Aware Logging Configuration ---
+if IS_LOCAL_ENV:
+    log_dir = os.path.join(project_root, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'daily_processor.log')
+    setup_logging(log_file_path=log_file, log_level=logging.INFO, enable_console_logging=True)
+elif IS_CLOUD_ENV:
+    # In cloud, log to stdout/stderr only (Google Cloud Logging will pick up)
+    setup_logging(log_file_path=None, log_level=logging.INFO, enable_console_logging=True)
+else:
+    # Fallback: log to console only
+    setup_logging(log_file_path=None, log_level=logging.INFO, enable_console_logging=True)
 logger = logging.getLogger(__name__)
 
 
@@ -57,10 +60,11 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
 
     # After filtering for current week, log the DataFrame and unique SKUs
     current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
-    # Debug log for SKU 17612 quantity in current week
+    # Debug print for SKU 17612 quantity in current week
     sku_17612_df = current_week_items_df[current_week_items_df['Base SKU'] == '17612']
-    logger.info(f"Current week total Quantity Shipped for SKU 17612: {sku_17612_df['Quantity Shipped'].sum()}")
-    logger.info(f"Current week rows for SKU 17612:\n{sku_17612_df}")
+    print("\n[DEBUG] Current week total Quantity Shipped for SKU 17612:", sku_17612_df['Quantity Shipped'].sum())
+    print("[DEBUG] Current week rows for SKU 17612:")
+    print(sku_17612_df)
     logger.info(f"Full current_week_items_df for current week:\n{current_week_items_df}")
     logger.info(f"current_week_items_df shape: {current_week_items_df.shape}")
     logger.info(f"current_week_items_df head:\n{current_week_items_df.head(10)}")
@@ -74,7 +78,7 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
         target_skus (list): A list of SKUs to be included in the weekly history.
 
     Returns:
-        pd.DataFrame: The updated 52-week history DataFrame.
+        pd.DataFrame: The updated 52-week history DataFrame.      
     """
     logger.info("Starting incremental update of the 52-week history tab...")
 
@@ -87,7 +91,7 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
         target_skus (list): A list of SKUs to be included in the weekly history.
 
     Returns:
-        pd.DataFrame: The updated 52-week history DataFrame.
+        pd.DataFrame: The updated 52-week history DataFrame.      
     """
 
 
@@ -109,33 +113,33 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     start_of_current_week = today - datetime.timedelta(days=today.weekday())
     logger.info(f"Current week starts on: {start_of_current_week}")
     # Debug: Show unique Ship Dates and min/max
-    logger.info(f"Unique Ship Dates in daily_items_df: {sorted(daily_items_df['Ship Date'].unique())}")
-    logger.info(f"Min Ship Date: {daily_items_df['Ship Date'].min()}, Max Ship Date: {daily_items_df['Ship Date'].max()}")
+    logger.debug(f"Unique Ship Dates in daily_items_df: {sorted(daily_items_df['Ship Date'].unique())}")
+    logger.debug(f"Min Ship Date: {daily_items_df['Ship Date'].min()}, Max Ship Date: {daily_items_df['Ship Date'].max()}")
 
     # --- DEBUG LOGGING FOR SKU 17612 ---
-    logger.info(f"Today's date: {today}")
-    logger.info("Today's shipments for SKU 17612:")
-    logger.info(daily_items_df[daily_items_df['Base SKU'] == '17612'])
+    logger.debug(f"Today's date: {today}")
+    logger.debug("Today's shipments for SKU 17612:")
+    logger.debug(daily_items_df[daily_items_df['Base SKU'] == '17612'])
     if not existing_history_df.empty:
         last_row = existing_history_df.tail(1)
-        logger.info("Last row in ORA_Weekly_Shipped_History:")
-        logger.info(last_row)
+        logger.debug("Last row in ORA_Weekly_Shipped_History:")   
+        logger.debug(last_row)
         if '17612' in existing_history_df.columns:
-            logger.info(f"Value for 17612 in last row: {last_row['17612'].values[0]}")
-        logger.info(f"Last week Start Date: {last_row['Start Date'].values[0]}, Stop Date: {last_row['Stop Date'].values[0]}")
+            logger.debug(f"Value for 17612 in last row: {last_row['17612'].values[0]}")
+        logger.debug(f"Last week Start Date: {last_row['Start Date'].values[0]}, Stop Date: {last_row['Stop Date'].values[0]}")     
     today_sum = daily_items_df[daily_items_df['Base SKU'] == '17612']['Quantity Shipped'].sum()
-    logger.info(f"Sum of today's shipments for SKU 17612: {today_sum}")
+    logger.debug(f"Sum of today's shipments for SKU 17612: {today_sum}")
 
     # Filter the daily items to get only shipments from the current week
     current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
 
-    logger.info("Filtered daily_items_df for current week:")
-    logger.info(current_week_items_df)
+    logger.debug("Filtered daily_items_df for current week:")     
+    logger.debug(current_week_items_df)
 
     for sku in target_skus:
         sku_filtered = current_week_items_df[current_week_items_df['Base SKU'].astype(str) == str(sku)]
-        logger.info(f"Current week items for SKU {sku}:")
-        logger.info(sku_filtered)
+        logger.debug(f"Current week items for SKU {sku}:")        
+        logger.debug(sku_filtered)
 
     if current_week_items_df.empty:
         logger.info("No shipments found for the current week yet. History remains unchanged.")
@@ -155,34 +159,20 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
         return filtered
 
     current_week_shipments = filter_shipments_for_week(shipment_data, start_of_current_week, start_of_current_week + datetime.timedelta(days=6))
-    current_week_summary_df = aggregate_weekly_shipped_history(
+    current_week_summary_df = aggregate_weekly_shipped_history(   
         current_week_shipments,
         target_skus
     )
 
-    # Debug log: show the summary DataFrame and the row to be written
-    logger.info(f"Aggregated weekly summary DataFrame (current_week_summary_df):\n{current_week_summary_df}")
-
+    # Debug print: show the summary DataFrame and the row to be written
+    print("\n[DEBUG] Aggregated weekly summary DataFrame (current_week_summary_df):")
+    print(current_week_summary_df)
     if not current_week_summary_df.empty:
-        logger.info("Aggregated values by SKU for the current week:")
+        print("[DEBUG] Aggregated values by SKU for the current week:")
         for sku in target_skus:
-            logger.info(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
-        logger.info(f"Full row to be written to sheet:\n{current_week_summary_df.iloc[0]}")
-
-# This is the new entry point for the Cloud Function (HTTP trigger)
-def daily_shipment_processor_http_trigger(request):
-    """
-    Cloud Function entry point for HTTP trigger.
-    Triggers the daily shipment processor logic.
-    """
-    logger.info("Cloud Function received HTTP trigger. Starting daily shipment processor logic.")
-    try:
-        result, status = run_daily_shipment_pull(request)
-        logger.info("Cloud Function execution completed successfully.")
-        return result, status
-    except Exception as e:
-        logger.critical(f"Cloud Function execution failed: {e}", exc_info=True)
-        return f"Daily Shipment Processor script failed: {e}", 500
+            print(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
+        print("[DEBUG] Full row to be written to sheet:")
+        print(current_week_summary_df.iloc[0])
 
     if current_week_summary_df.empty:
         logger.warning("Aggregation of current week's data resulted in an empty DataFrame.")
@@ -197,15 +187,15 @@ def daily_shipment_processor_http_trigger(request):
 
     if week_exists:
         logger.info("Current week found in history. Updating the last row.")
-        # Update the last row, assuming it's the current week
-        # A safer method would be to find the index by date
+        # Update the last row, assuming it's the current week     
+        # A safer method would be to find the index by date       
         idx_to_update = existing_history_df[existing_history_df['Start Date'] == start_of_current_week].index
         existing_history_df.loc[idx_to_update] = new_week_row.values
     else:
         logger.info("This is a new week. Appending new week and removing the oldest.")
         # Append the new row and drop the oldest
         updated_history_df = pd.concat([existing_history_df, new_week_row.to_frame().T], ignore_index=True)
-        # Sort by date to be sure, then drop the first row
+        # Sort by date to be sure, then drop the first row        
         updated_history_df = updated_history_df.sort_values(by='Start Date', ascending=True)
         updated_history_df = updated_history_df.iloc[1:]
         existing_history_df = updated_history_df
@@ -223,7 +213,7 @@ def daily_shipment_processor_http_trigger(request):
     # --- ENFORCE 52 WEEKS: Trim to most recent 52 weeks (by Start Date) ---
     if len(existing_history_df) > 52:
         logger.info(f"History has {len(existing_history_df)} weeks. Trimming to the most recent 52 weeks.")
-        existing_history_df = existing_history_df.sort_values(by="Start Date", ascending=True).iloc[-52:].reset_index(drop=True)
+        existing_history_df = existing_history_df.sort_values(by="Start Date", ascending=True).iloc[-52:].reset_index(drop=True)    
     elif len(existing_history_df) < 52:
         logger.warning(f"History has only {len(existing_history_df)} weeks. (No padding implemented.)")
 
@@ -232,13 +222,13 @@ def daily_shipment_processor_http_trigger(request):
     # --- ENSURE CURRENT WEEK IS PRESENT AND CORRECT ---
     # (This logic is already handled above: update or append current week)
 
-    # --- FINAL VALIDATION: Ensure all requirements are met ---
+    # --- FINAL VALIDATION: Ensure all requirements are met ---   
     # 1. No duplicate weeks
     num_dupes = existing_history_df.duplicated(subset=["Start Date", "Stop Date"]).sum()
     # 2. Exactly 52 weeks
     num_weeks = len(existing_history_df)
     # 3. Most recent week is current week
-    most_recent_start = existing_history_df['Start Date'].max()
+    most_recent_start = existing_history_df['Start Date'].max()   
     expected_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
 
     logger.info(f"Validation: {num_dupes} duplicate week(s) found. {num_weeks} total weeks. Most recent week: {most_recent_start}, Expected: {expected_start}.")
@@ -247,7 +237,7 @@ def daily_shipment_processor_http_trigger(request):
     assert num_weeks == 52, f"Weekly history does not have exactly 52 weeks: {num_weeks}"
     assert most_recent_start == expected_start, f"Most recent week ({most_recent_start}) is not the current week ({expected_start})"
 
-    logger.info("Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.")
+    logger.info("Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.")    
 
     return existing_history_df
 
@@ -260,117 +250,102 @@ def run_daily_shipment_pull(request=None):
     Args:
         request: The request object from a Google Cloud Function trigger (optional).
     """
-    logger.info("DEBUG TEST LOG LINE: If you see this, DEBUG logs are working!")
+
     logger.info("--- Starting Daily Shipment Processor ---")
-    # Print effective logger and handler levels for troubleshooting
-    logger.info(f"Logger effective level: {logging.getLevelName(logger.getEffectiveLevel())}")
-    for i, handler in enumerate(logger.handlers):
-        logger.info(f"Handler {i} level: {logging.getLevelName(handler.level)}")
-    # try block removed; already handled below
-        # --- 1. Get ShipStation Credentials ---
+    try:
+        # --- 1. Get ShipStation Credentials (Environment-Aware) ---
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
+            logger.critical("Failed to get ShipStation credentials.")
+            return "Failed to get credentials", 500
 
-            try:
-                # --- 1. Get ShipStation Credentials ---
-                api_key, api_secret = get_shipstation_credentials()
-                if not api_key or not api_secret:
-                    return "Failed to get credentials", 500
+        # --- 2. Determine the 32-Day Rolling Date Range ---
+        today = datetime.date.today()
+        start_date = today - datetime.timedelta(days=32)
+        end_date_str = today.strftime('%Y-%m-%d')
+        start_date_str = start_date.strftime('%Y-%m-%d')
+        logger.info(f"Using rolling 32-day date range: {start_date_str} to {end_date_str}")
+        logger.info(f"Environment: {'CLOUD' if IS_CLOUD_ENV else 'LOCAL' if IS_LOCAL_ENV else 'UNKNOWN'}")
+        logger.info(f"Service Account Key Path: {SERVICE_ACCOUNT_KEY_PATH}")
 
-                # --- 2. Determine the 32-Day Rolling Date Range ---
-                today = datetime.date.today()
-                start_date = today - datetime.timedelta(days=32)
-                end_date_str = today.strftime('%Y-%m-%d')
-                start_date_str = start_date.strftime('%Y-%m-%d')
-                logger.info(f"Using rolling 32-day date range: {start_date_str} to {end_date_str}")
+        # --- 3. Fetch Data from ShipStation API ---
+        shipment_data = fetch_shipstation_shipments(
+            api_key=api_key,
+            api_secret=api_secret,
+            shipments_endpoint=SHIPSTATION_SHIPMENTS_ENDPOINT,    
+            start_date=start_date_str,
+            end_date=end_date_str,
+            shipment_status="shipped"
+        )
 
-                # --- 3. Fetch Data from ShipStation API ---
-                shipment_data = fetch_shipstation_shipments(
-                    api_key=api_key,
-                    api_secret=api_secret,
-                    shipments_endpoint=SHIPSTATION_SHIPMENTS_ENDPOINT,
-                    start_date=start_date_str,
-                    end_date=end_date_str,
-                    shipment_status="shipped"
-                )
+        if not shipment_data:
+            logger.warning("No shipment data returned from ShipStation API for the specified range. Exiting.")
+            return "No data returned from API", 200
 
-                if not shipment_data:
-                    logger.warning("No shipment data returned from ShipStation API for the specified range. Exiting.")
-                    return "No data returned from API", 200
+        non_voided_shipments = [shipment for shipment in shipment_data if not shipment.get('voided', False)]
+        logger.info(f"Processing {len(non_voided_shipments)} non-voided shipments.")
 
-                non_voided_shipments = [shipment for shipment in shipment_data if not shipment.get('voided', False)]
-                logger.info(f"Processing {len(non_voided_shipments)} non-voided shipments.")
+        if not non_voided_shipments:
+            logger.info("No non-voided shipments to process. Exiting.")
+            return "No non-voided shipments", 200
 
-                if not non_voided_shipments:
-                    logger.info("No non-voided shipments to process. Exiting.")
-                    return "No non-voided shipments", 200
+        # --- 4. Process Data into DataFrames ---
+        logger.info("Processing data for Shipped_Items_Data tab...")
+        items_df = process_shipped_items(non_voided_shipments)    
 
-                # --- 4. Process Data into DataFrames ---
-                logger.info("Processing data for Shipped_Items_Data tab...")
-                items_df = process_shipped_items(non_voided_shipments)
+        logger.info("Processing data for Shipped_Orders_Data tab...")
+        orders_df = process_shipped_orders(non_voided_shipments)  
 
-                logger.info("Processing data for Shipped_Orders_Data tab...")
-                orders_df = process_shipped_orders(non_voided_shipments)
+        # --- 5. Overwrite Transactional Google Sheet Tabs ---    
+        if not items_df.empty:
+            logger.info(f"Overwriting '{SHIPPED_ITEMS_DATA_TAB_NAME}' tab with {len(items_df)} rows...")
+            write_dataframe_to_sheet(items_df, GOOGLE_SHEET_ID, SHIPPED_ITEMS_DATA_TAB_NAME)
+        else:
+            logger.warning(f"Shipped Items DataFrame is empty. Skipping write to '{SHIPPED_ITEMS_DATA_TAB_NAME}'.")
 
-                # --- 5. Overwrite Transactional Google Sheet Tabs ---
-                if not items_df.empty:
-                    logger.info(f"Overwriting '{SHIPPED_ITEMS_DATA_TAB_NAME}' tab with {len(items_df)} rows...")
-                    write_dataframe_to_sheet(items_df, GOOGLE_SHEET_ID, SHIPPED_ITEMS_DATA_TAB_NAME)
+        if not orders_df.empty:
+            logger.info(f"Overwriting '{SHIPPED_ORDERS_DATA_TAB_NAME}' tab with {len(orders_df)} rows...")
+            write_dataframe_to_sheet(orders_df, GOOGLE_SHEET_ID, SHIPPED_ORDERS_DATA_TAB_NAME)
+        else:
+            logger.warning(f"Shipped Orders DataFrame is empty. Skipping write to '{SHIPPED_ORDERS_DATA_TAB_NAME}'.")
+
+        # --- 6. Incrementally Update the Weekly Shipped History Tab ---
+        logger.info("Fetching existing 52-week history for update...")
+        sheet_data = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
+
+        # Always robustly convert to DataFrame, even if empty or malformed
+        if sheet_data and len(sheet_data) > 1:
+            header = sheet_data[0]
+            header_len = len(header)
+            cleaned_rows = []
+            for row in sheet_data[1:]:
+                if len(row) > header_len:
+                    cleaned_rows.append(row[:header_len])
+                elif len(row) < header_len:
+                    cleaned_rows.append(row + ['ERROR'] * (header_len - len(row)))
                 else:
-                    logger.warning(f"Shipped Items DataFrame is empty. Skipping write to '{SHIPPED_ITEMS_DATA_TAB_NAME}'.")
+                    cleaned_rows.append(row)
+            existing_history_df = pd.DataFrame(cleaned_rows, columns=header)
+        else:
+            # If the sheet is empty or malformed, create an empty DataFrame with expected columns
+            # This should match the actual sheet layout; update as needed
+            expected_columns = ['Start Date', 'Stop Date', '17612', '17904', '17914', '18675', '18795']
+            existing_history_df = pd.DataFrame(columns=expected_columns)
 
-                if not orders_df.empty:
-                    logger.info(f"Overwriting '{SHIPPED_ORDERS_DATA_TAB_NAME}' tab with {len(orders_df)} rows...")
-                    write_dataframe_to_sheet(orders_df, GOOGLE_SHEET_ID, SHIPPED_ORDERS_DATA_TAB_NAME)
-                else:
-                    logger.warning(f"Shipped Orders DataFrame is empty. Skipping write to '{SHIPPED_ORDERS_DATA_TAB_NAME}'.")
+        # This is a placeholder for the SKUs that are tracked weekly.
+        # This should ideally be loaded from a config file or another sheet.
+        target_skus = ['17612', '17904', '17914', '18675', '18795']
+        updated_history_df = update_weekly_history_incrementally(items_df.copy(), existing_history_df.copy(), target_skus, shipment_data)
+        logger.info(f"Overwriting '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}' with updated 52-week history...")
+        write_dataframe_to_sheet(updated_history_df, GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
 
-                # --- 6. Incrementally Update the Weekly Shipped History Tab ---
-                logger.info("Fetching existing 52-week history for update...")
-                # Note: get_google_sheet_data should return a DataFrame
-                existing_history_df = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
+        logger.info("--- Daily Shipment Processor finished successfully! ---")
+        return "Process completed successfully", 200
 
-                # Convert list of lists to DataFrame if needed, with robust row handling
-                sheet_data = existing_history_df
-                if sheet_data and len(sheet_data) > 1:
-                    header = sheet_data[0]
-                    header_len = len(header)
-                    cleaned_rows = []
-                    for row in sheet_data[1:]:
-                        # Truncate rows with extra columns, pad short rows with 'ERROR'
-                        if len(row) > header_len:
-                            cleaned_rows.append(row[:header_len])
-                        elif len(row) < header_len:
-                            cleaned_rows.append(row + ['ERROR'] * (header_len - len(row)))
-                        else:
-                            cleaned_rows.append(row)
-                    existing_history_df = pd.DataFrame(cleaned_rows, columns=header)
-                else:
-                    # Define expected columns for the weekly history tab (match actual sheet layout)
-                    expected_columns = ['Start Date', 'Stop Date', '17612', '17904', '17914', '18675', '18795']
-                    existing_history_df = pd.DataFrame(columns=expected_columns)
+    except Exception as e:
+        logger.critical(f"An unhandled error occurred in the daily shipment processor: {e}", exc_info=True)
+        return f"An error occurred: {e}", 500
 
-                # --- DEBUG: Log the last 5 rows of loaded weekly history to verify data freshness ---
-                if not existing_history_df.empty:
-                    logger.info(f"Loaded weekly history from Google Sheet (last 5 rows):\n{existing_history_df[['Start Date', 'Stop Date']].tail(5)}")
-                else:
-                    logger.info("[EMPTY DATAFRAME]")
-
-                if not existing_history_df.empty:
-                    # This is a placeholder for the SKUs that are tracked weekly.
-                    # This should ideally be loaded from a config file or another sheet.
-                    target_skus = ['17612', '17904', '17914', '18675', '18795']
-                    updated_history_df = update_weekly_history_incrementally(items_df.copy(), existing_history_df.copy(), target_skus, shipment_data)
-                    logger.info(f"Overwriting '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}' with updated 52-week history...")
-                    write_dataframe_to_sheet(updated_history_df, GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
-                else:
-                    logger.warning(f"Could not read existing weekly history from '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}'. Skipping update.")
-
-                logger.info("--- Daily Shipment Processor finished successfully! ---")
-                return "Process completed successfully", 200
-
-            except Exception as e:
-                logger.critical(f"An unhandled error occurred in the daily shipment processor: {e}", exc_info=True)
-                return f"An error occurred: {e}", 500
-
-        # --- Cloud Function HTTP Entry Point ---
+# This allows the script to be run directly for testing purposes
+if __name__ == "__main__":
+    run_daily_shipment_pull()
