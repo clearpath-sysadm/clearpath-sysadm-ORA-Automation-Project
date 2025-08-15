@@ -162,11 +162,27 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
 
     # Debug log: show the summary DataFrame and the row to be written
     logger.info(f"Aggregated weekly summary DataFrame (current_week_summary_df):\n{current_week_summary_df}")
+
     if not current_week_summary_df.empty:
         logger.info("Aggregated values by SKU for the current week:")
         for sku in target_skus:
             logger.info(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
         logger.info(f"Full row to be written to sheet:\n{current_week_summary_df.iloc[0]}")
+
+# This is the new entry point for the Cloud Function (HTTP trigger)
+def daily_shipment_processor_http_trigger(request):
+    """
+    Cloud Function entry point for HTTP trigger.
+    Triggers the daily shipment processor logic.
+    """
+    logger.info("Cloud Function received HTTP trigger. Starting daily shipment processor logic.")
+    try:
+        result, status = run_daily_shipment_pull(request)
+        logger.info("Cloud Function execution completed successfully.")
+        return result, status
+    except Exception as e:
+        logger.critical(f"Cloud Function execution failed: {e}", exc_info=True)
+        return f"Daily Shipment Processor script failed: {e}", 500
 
     if current_week_summary_df.empty:
         logger.warning("Aggregation of current week's data resulted in an empty DataFrame.")
