@@ -11,32 +11,61 @@ steps:
 
 # --- Deploy shipstation-reporter Cloud Function ---
 # This step moves shipstation_reporter.py to main.py at the root.
+#- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#  entrypoint: 'mv'
+#  args: ['src/shipstation_reporter.py', 'main.py']
+#  dir: .
+#
+# This step deploys the Cloud Function.
+#- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#  entrypoint: 'gcloud'
+#  args:
+#    - 'functions'
+#    - 'deploy'
+#    - 'shipstation-reporter-function'
+#    - '--project=ora-automation-project-dev'
+#    - '--runtime=python311'
+#    - '--entry-point=shipstation_reporter_http_trigger'
+#    - '--source=.' # Source is the current directory (project root)
+#    - '--trigger-http'
+#    - '--allow-unauthenticated'
+#    - '--region=us-central1'
+#    - '--memory=1024MB'
+#    - '--timeout=600s'
+#    - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project-dev'
+#    - '--gen2' # Explicitly use 2nd Gen functions for Python 3.11
+#    - '--set-env-vars=PYTHON_LOG_LEVEL=DEBUG'
+#  dir: .
+#  id: daily_shipment_processor
+
+# --- Deploy daily-weekly-history-update Cloud Function ---
+# This step moves daily_shipment_processor.py to main.py at the root.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'mv'
-  args: ['src/shipstation_reporter.py', 'main.py']
+  args: ['src/daily_shipment_processor.py', 'main.py']
   dir: .
 
-# This step deploys the Cloud Function.
+# This step deploys the daily-weekly-history-update Cloud Function.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: 'gcloud'
   args:
     - 'functions'
     - 'deploy'
-    - 'shipstation-reporter-function'
+    - 'daily-weekly-history-update'
     - '--project=ora-automation-project-dev'
     - '--runtime=python311'
-    - '--entry-point=shipstation_reporter_http_trigger'
-    - '--source=.' # Source is the current directory (project root)
+    - '--entry-point=daily_shipment_processor_http_trigger'
+    - '--source=.'
     - '--trigger-http'
     - '--allow-unauthenticated'
     - '--region=us-central1'
     - '--memory=1024MB'
     - '--timeout=600s'
     - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project-dev'
-    - '--gen2' # Explicitly use 2nd Gen functions for Python 3.11
+    - '--gen2'
     - '--set-env-vars=PYTHON_LOG_LEVEL=DEBUG'
   dir: .
-  id: daily_shipment_processor
+  id: daily_weekly_history_update
 
 # # --- Deploy shipstation-order-uploader Cloud Function ---
 # # Step 1.1: Move the specific function script to main.py at the root for deployment context.

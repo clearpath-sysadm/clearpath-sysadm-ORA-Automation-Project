@@ -249,110 +249,111 @@ def run_daily_shipment_pull(request=None):
     logger.info(f"Logger effective level: {logging.getLevelName(logger.getEffectiveLevel())}")
     for i, handler in enumerate(logger.handlers):
         logger.info(f"Handler {i} level: {logging.getLevelName(handler.level)}")
-    try:
+    # try block removed; already handled below
         # --- 1. Get ShipStation Credentials ---
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
-            return "Failed to get credentials", 500
 
-        # --- 2. Determine the 32-Day Rolling Date Range ---
-        today = datetime.date.today()
-        start_date = today - datetime.timedelta(days=32)
-        end_date_str = today.strftime('%Y-%m-%d')
-        start_date_str = start_date.strftime('%Y-%m-%d')
-        logger.info(f"Using rolling 32-day date range: {start_date_str} to {end_date_str}")
+            try:
+                # --- 1. Get ShipStation Credentials ---
+                api_key, api_secret = get_shipstation_credentials()
+                if not api_key or not api_secret:
+                    return "Failed to get credentials", 500
 
-        # --- 3. Fetch Data from ShipStation API ---
-        shipment_data = fetch_shipstation_shipments(
-            api_key=api_key,
-            api_secret=api_secret,
-            shipments_endpoint=SHIPSTATION_SHIPMENTS_ENDPOINT,
-            start_date=start_date_str,
-            end_date=end_date_str,
-            shipment_status="shipped"
-        )
+                # --- 2. Determine the 32-Day Rolling Date Range ---
+                today = datetime.date.today()
+                start_date = today - datetime.timedelta(days=32)
+                end_date_str = today.strftime('%Y-%m-%d')
+                start_date_str = start_date.strftime('%Y-%m-%d')
+                logger.info(f"Using rolling 32-day date range: {start_date_str} to {end_date_str}")
 
-        if not shipment_data:
-            logger.warning("No shipment data returned from ShipStation API for the specified range. Exiting.")
-            return "No data returned from API", 200
+                # --- 3. Fetch Data from ShipStation API ---
+                shipment_data = fetch_shipstation_shipments(
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    shipments_endpoint=SHIPSTATION_SHIPMENTS_ENDPOINT,
+                    start_date=start_date_str,
+                    end_date=end_date_str,
+                    shipment_status="shipped"
+                )
 
-        non_voided_shipments = [shipment for shipment in shipment_data if not shipment.get('voided', False)]
-        logger.info(f"Processing {len(non_voided_shipments)} non-voided shipments.")
+                if not shipment_data:
+                    logger.warning("No shipment data returned from ShipStation API for the specified range. Exiting.")
+                    return "No data returned from API", 200
 
-        if not non_voided_shipments:
-            logger.info("No non-voided shipments to process. Exiting.")
-            return "No non-voided shipments", 200
+                non_voided_shipments = [shipment for shipment in shipment_data if not shipment.get('voided', False)]
+                logger.info(f"Processing {len(non_voided_shipments)} non-voided shipments.")
 
-        # --- 4. Process Data into DataFrames ---
-        logger.info("Processing data for Shipped_Items_Data tab...")
-        items_df = process_shipped_items(non_voided_shipments)
+                if not non_voided_shipments:
+                    logger.info("No non-voided shipments to process. Exiting.")
+                    return "No non-voided shipments", 200
 
-        logger.info("Processing data for Shipped_Orders_Data tab...")
-        orders_df = process_shipped_orders(non_voided_shipments)
+                # --- 4. Process Data into DataFrames ---
+                logger.info("Processing data for Shipped_Items_Data tab...")
+                items_df = process_shipped_items(non_voided_shipments)
 
-        # --- 5. Overwrite Transactional Google Sheet Tabs ---
-        if not items_df.empty:
-            logger.info(f"Overwriting '{SHIPPED_ITEMS_DATA_TAB_NAME}' tab with {len(items_df)} rows...")
-            write_dataframe_to_sheet(items_df, GOOGLE_SHEET_ID, SHIPPED_ITEMS_DATA_TAB_NAME)
-        else:
-            logger.warning(f"Shipped Items DataFrame is empty. Skipping write to '{SHIPPED_ITEMS_DATA_TAB_NAME}'.")
+                logger.info("Processing data for Shipped_Orders_Data tab...")
+                orders_df = process_shipped_orders(non_voided_shipments)
 
-        if not orders_df.empty:
-            logger.info(f"Overwriting '{SHIPPED_ORDERS_DATA_TAB_NAME}' tab with {len(orders_df)} rows...")
-            write_dataframe_to_sheet(orders_df, GOOGLE_SHEET_ID, SHIPPED_ORDERS_DATA_TAB_NAME)
-        else:
-            logger.warning(f"Shipped Orders DataFrame is empty. Skipping write to '{SHIPPED_ORDERS_DATA_TAB_NAME}'.")
-
-        # --- 6. Incrementally Update the Weekly Shipped History Tab ---
-        logger.info("Fetching existing 52-week history for update...")
-        # Note: get_google_sheet_data should return a DataFrame
-        existing_history_df = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
-
-
-        # Convert list of lists to DataFrame if needed, with robust row handling
-        sheet_data = existing_history_df
-        if sheet_data and len(sheet_data) > 1:
-            header = sheet_data[0]
-            header_len = len(header)
-            cleaned_rows = []
-            for row in sheet_data[1:]:
-                # Truncate rows with extra columns, pad short rows with 'ERROR'
-                if len(row) > header_len:
-                    cleaned_rows.append(row[:header_len])
-                elif len(row) < header_len:
-                    cleaned_rows.append(row + ['ERROR'] * (header_len - len(row)))
+                # --- 5. Overwrite Transactional Google Sheet Tabs ---
+                if not items_df.empty:
+                    logger.info(f"Overwriting '{SHIPPED_ITEMS_DATA_TAB_NAME}' tab with {len(items_df)} rows...")
+                    write_dataframe_to_sheet(items_df, GOOGLE_SHEET_ID, SHIPPED_ITEMS_DATA_TAB_NAME)
                 else:
-                    cleaned_rows.append(row)
-            existing_history_df = pd.DataFrame(cleaned_rows, columns=header)
-        else:
-            # Define expected columns for the weekly history tab (match actual sheet layout)
-            expected_columns = ['Start Date', 'Stop Date', '17612', '17904', '17914', '18675', '18795']
-            existing_history_df = pd.DataFrame(columns=expected_columns)
+                    logger.warning(f"Shipped Items DataFrame is empty. Skipping write to '{SHIPPED_ITEMS_DATA_TAB_NAME}'.")
 
-        # --- DEBUG: Log the last 5 rows of loaded weekly history to verify data freshness ---
-        if not existing_history_df.empty:
-            logger.info(f"Loaded weekly history from Google Sheet (last 5 rows):\n{existing_history_df[['Start Date', 'Stop Date']].tail(5)}")
-        else:
-            logger.info("[EMPTY DATAFRAME]")
+                if not orders_df.empty:
+                    logger.info(f"Overwriting '{SHIPPED_ORDERS_DATA_TAB_NAME}' tab with {len(orders_df)} rows...")
+                    write_dataframe_to_sheet(orders_df, GOOGLE_SHEET_ID, SHIPPED_ORDERS_DATA_TAB_NAME)
+                else:
+                    logger.warning(f"Shipped Orders DataFrame is empty. Skipping write to '{SHIPPED_ORDERS_DATA_TAB_NAME}'.")
 
-        if not existing_history_df.empty:
-            # This is a placeholder for the SKUs that are tracked weekly.
-            # This should ideally be loaded from a config file or another sheet.
-            target_skus = ['17612', '17904', '17914', '18675', '18795']
-            updated_history_df = update_weekly_history_incrementally(items_df.copy(), existing_history_df.copy(), target_skus, shipment_data)
-            logger.info(f"Overwriting '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}' with updated 52-week history...")
-            write_dataframe_to_sheet(updated_history_df, GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
-        else:
-            logger.warning(f"Could not read existing weekly history from '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}'. Skipping update.")
+                # --- 6. Incrementally Update the Weekly Shipped History Tab ---
+                logger.info("Fetching existing 52-week history for update...")
+                # Note: get_google_sheet_data should return a DataFrame
+                existing_history_df = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
 
+                # Convert list of lists to DataFrame if needed, with robust row handling
+                sheet_data = existing_history_df
+                if sheet_data and len(sheet_data) > 1:
+                    header = sheet_data[0]
+                    header_len = len(header)
+                    cleaned_rows = []
+                    for row in sheet_data[1:]:
+                        # Truncate rows with extra columns, pad short rows with 'ERROR'
+                        if len(row) > header_len:
+                            cleaned_rows.append(row[:header_len])
+                        elif len(row) < header_len:
+                            cleaned_rows.append(row + ['ERROR'] * (header_len - len(row)))
+                        else:
+                            cleaned_rows.append(row)
+                    existing_history_df = pd.DataFrame(cleaned_rows, columns=header)
+                else:
+                    # Define expected columns for the weekly history tab (match actual sheet layout)
+                    expected_columns = ['Start Date', 'Stop Date', '17612', '17904', '17914', '18675', '18795']
+                    existing_history_df = pd.DataFrame(columns=expected_columns)
 
-        logger.info("--- Daily Shipment Processor finished successfully! ---")
-        return "Process completed successfully", 200
+                # --- DEBUG: Log the last 5 rows of loaded weekly history to verify data freshness ---
+                if not existing_history_df.empty:
+                    logger.info(f"Loaded weekly history from Google Sheet (last 5 rows):\n{existing_history_df[['Start Date', 'Stop Date']].tail(5)}")
+                else:
+                    logger.info("[EMPTY DATAFRAME]")
 
-    except Exception as e:
-        logger.critical(f"An unhandled error occurred in the daily shipment processor: {e}", exc_info=True)
-        return f"An error occurred: {e}", 500
+                if not existing_history_df.empty:
+                    # This is a placeholder for the SKUs that are tracked weekly.
+                    # This should ideally be loaded from a config file or another sheet.
+                    target_skus = ['17612', '17904', '17914', '18675', '18795']
+                    updated_history_df = update_weekly_history_incrementally(items_df.copy(), existing_history_df.copy(), target_skus, shipment_data)
+                    logger.info(f"Overwriting '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}' with updated 52-week history...")
+                    write_dataframe_to_sheet(updated_history_df, GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
+                else:
+                    logger.warning(f"Could not read existing weekly history from '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}'. Skipping update.")
 
-# This allows the script to be run directly for testing purposes
-if __name__ == "__main__":
-    run_daily_shipment_pull()
+                logger.info("--- Daily Shipment Processor finished successfully! ---")
+                return "Process completed successfully", 200
+
+            except Exception as e:
+                logger.critical(f"An unhandled error occurred in the daily shipment processor: {e}", exc_info=True)
+                return f"An error occurred: {e}", 500
+
+        # --- Cloud Function HTTP Entry Point ---
