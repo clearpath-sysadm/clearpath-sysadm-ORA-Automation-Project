@@ -39,7 +39,7 @@ from src.services.shipstation.api_client import (
 log_dir = os.path.join(project_root, 'logs')
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, 'daily_processor.log') # Dedicated log file
-setup_logging(log_file_path=log_file, log_level=logging.INFO, enable_console_logging=True)
+setup_logging(log_file_path=log_file, log_level=logging.DEBUG, enable_console_logging=True)
 logger = logging.getLogger(__name__)
 
 
