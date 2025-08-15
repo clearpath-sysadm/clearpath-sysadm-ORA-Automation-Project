@@ -56,11 +56,10 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
 
     # After filtering for current week, log the DataFrame and unique SKUs
     current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
-    # Debug print for SKU 17612 quantity in current week
+    # Debug log for SKU 17612 quantity in current week
     sku_17612_df = current_week_items_df[current_week_items_df['Base SKU'] == '17612']
-    print("\n[DEBUG] Current week total Quantity Shipped for SKU 17612:", sku_17612_df['Quantity Shipped'].sum())
-    print("[DEBUG] Current week rows for SKU 17612:")
-    print(sku_17612_df)
+    logger.debug(f"Current week total Quantity Shipped for SKU 17612: {sku_17612_df['Quantity Shipped'].sum()}")
+    logger.debug(f"Current week rows for SKU 17612:\n{sku_17612_df}")
     logger.info(f"Full current_week_items_df for current week:\n{current_week_items_df}")
     logger.info(f"current_week_items_df shape: {current_week_items_df.shape}")
     logger.info(f"current_week_items_df head:\n{current_week_items_df.head(10)}")
@@ -160,15 +159,13 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
         target_skus
     )
 
-    # Debug print: show the summary DataFrame and the row to be written
-    print("\n[DEBUG] Aggregated weekly summary DataFrame (current_week_summary_df):")
-    print(current_week_summary_df)
+    # Debug log: show the summary DataFrame and the row to be written
+    logger.debug(f"Aggregated weekly summary DataFrame (current_week_summary_df):\n{current_week_summary_df}")
     if not current_week_summary_df.empty:
-        print("[DEBUG] Aggregated values by SKU for the current week:")
+        logger.debug("Aggregated values by SKU for the current week:")
         for sku in target_skus:
-            print(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
-        print("[DEBUG] Full row to be written to sheet:")
-        print(current_week_summary_df.iloc[0])
+            logger.debug(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
+        logger.debug(f"Full row to be written to sheet:\n{current_week_summary_df.iloc[0]}")
 
     if current_week_summary_df.empty:
         logger.warning("Aggregation of current week's data resulted in an empty DataFrame.")
@@ -327,12 +324,11 @@ def run_daily_shipment_pull(request=None):
             expected_columns = ['Start Date', 'Stop Date', '17612', '17904', '17914', '18675', '18795']
             existing_history_df = pd.DataFrame(columns=expected_columns)
 
-        # --- DEBUG: Print the last 5 rows of loaded weekly history to verify data freshness ---
-        print("Loaded weekly history from Google Sheet (last 5 rows):")
+        # --- DEBUG: Log the last 5 rows of loaded weekly history to verify data freshness ---
         if not existing_history_df.empty:
-            print(existing_history_df[['Start Date', 'Stop Date']].tail(5))
+            logger.debug(f"Loaded weekly history from Google Sheet (last 5 rows):\n{existing_history_df[['Start Date', 'Stop Date']].tail(5)}")
         else:
-            print("[EMPTY DATAFRAME]")
+            logger.debug("[EMPTY DATAFRAME]")
 
         if not existing_history_df.empty:
             # This is a placeholder for the SKUs that are tracked weekly.
