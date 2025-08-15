@@ -142,18 +142,8 @@ def aggregate_weekly_shipped_history(raw_shipment_data: list, target_skus: list)
     df = pd.DataFrame(extracted_data)
     df.dropna(subset=['Quantity'], inplace=True) # Remove any rows where quantity conversion failed
     
-    # Define a custom week start day (Saturday)
-    # pandas.Grouper(freq='W-SAT') starts the week on Sunday and ends on Saturday
-    # For a Sat-Fri week, we can use a custom offset
-    # The simplest way is to manually calculate week numbers and years
-    df['WeekYear'] = df['Ship Date'].apply(lambda d: d.isocalendar()[0])
-    df['WeekNumber'] = df['Ship Date'].apply(lambda d: d.isocalendar()[1])
-    
-    # A cleaner way for Sat-Fri is to use a lambda with Grouper's origin argument, but this works too
-    # Let's adjust to a Saturday-Friday week.
-    df['DayOfWeek'] = df['Ship Date'].apply(lambda d: d.weekday()) # Mon=0, Sat=5, Sun=6
-    df['AdjustedDate'] = df['Ship Date'] - pd.to_timedelta(df['DayOfWeek'].apply(lambda x: (x + 2) % 7), unit='d') # Sets Sat as the week start
-    df['Start Date'] = df['AdjustedDate']
+    # Align weeks to start on Monday (ISO week)
+    df['Start Date'] = df['Ship Date'] - pd.to_timedelta(df['Ship Date'].apply(lambda d: d.weekday()), unit='d')  # Monday as week start
     df['Stop Date'] = df['Start Date'] + pd.to_timedelta(6, unit='d')
 
     # Group by the custom week and SKU, then sum the quantities
