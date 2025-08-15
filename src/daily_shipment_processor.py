@@ -243,7 +243,12 @@ def run_daily_shipment_pull(request=None):
     Args:
         request: The request object from a Google Cloud Function trigger (optional).
     """
+    logger.debug("DEBUG TEST LOG LINE: If you see this, DEBUG logs are working!")
     logger.info("--- Starting Daily Shipment Processor ---")
+    # Print effective logger and handler levels for troubleshooting
+    logger.info(f"Logger effective level: {logging.getLevelName(logger.getEffectiveLevel())}")
+    for i, handler in enumerate(logger.handlers):
+        logger.info(f"Handler {i} level: {logging.getLevelName(handler.level)}")
     try:
         # --- 1. Get ShipStation Credentials ---
         api_key, api_secret = get_shipstation_credentials()
