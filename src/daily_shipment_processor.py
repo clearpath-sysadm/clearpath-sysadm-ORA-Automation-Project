@@ -351,7 +351,7 @@ if __name__ == "__main__":
     run_daily_shipment_pull()
 
 # Google Cloud Function entry point
-def daily_weekly_history_update(request):
+def daily_shipment_processor_http_trigger(request):
     """
     Google Cloud Function HTTP trigger for daily-weekly-history-update.
     Mirrors the pattern used in the shipstation reporter module.
