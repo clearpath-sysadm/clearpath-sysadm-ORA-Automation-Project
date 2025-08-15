@@ -1,9 +1,13 @@
 # src/daily_shipment_processor.py
+
 import sys
 import os
 import logging
 import datetime
 import pandas as pd
+
+# Force root logger to DEBUG for all cloud/local runs
+logging.getLogger().setLevel(logging.DEBUG)
 
 # --- Dynamic Path Adjustment for Module Imports ---
 # Add the project root to the Python path to enable imports from services and utils
