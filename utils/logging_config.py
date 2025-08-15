@@ -75,10 +75,10 @@ def setup_logging(log_file_path=None, log_level=logging.INFO, enable_console_log
     if log_file_path:
         logger.debug(f"Log file output to: {log_file_path}")
 
-
-# Example usage (for testing this module directly)
-if __name__ == '__main__':
-    # Set up logging to a test file in a 'test_logs' subdirectory
+                if IS_CLOUD_ENV:
+                    log_dir = "/tmp/logs"
+                else:
+                    log_dir = "logs"
     # Ensure 'test_logs' directory exists or is created by the function
     test_log_dir = os.path.join(os.getcwd(), 'test_logs')
     test_log_file = os.path.join(test_log_dir, 'ora_test.log')
