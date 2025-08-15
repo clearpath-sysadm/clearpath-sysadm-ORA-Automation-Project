@@ -142,10 +142,9 @@ def aggregate_weekly_shipped_history(raw_shipment_data: list, target_skus: list)
     df = pd.DataFrame(extracted_data)
     df.dropna(subset=['Quantity'], inplace=True) # Remove any rows where quantity conversion failed
     
-    # Define week boundaries: Monday as start, Sunday as end
-    df['DayOfWeek'] = df['Ship Date'].apply(lambda d: d.weekday())  # Mon=0, Sun=6
-    df['Start Date'] = df['Ship Date'] - pd.to_timedelta(df['DayOfWeek'], unit='d')  # Monday as start
-    df['Stop Date'] = df['Start Date'] + pd.to_timedelta(6, unit='d')  # Sunday as end
+    # Align weeks to start on Monday (ISO week)
+    df['Start Date'] = df['Ship Date'] - pd.to_timedelta(df['Ship Date'].apply(lambda d: d.weekday()), unit='d')  # Monday as week start
+    df['Stop Date'] = df['Start Date'] + pd.to_timedelta(6, unit='d')
 
     # Group by the custom week and SKU, then sum the quantities
     aggregated_df = df.groupby(['Start Date', 'Stop Date', 'Base SKU'])['Quantity'].sum().reset_index()
