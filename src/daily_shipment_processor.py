@@ -6,8 +6,10 @@ import logging
 import datetime
 import pandas as pd
 
-# Force root logger to DEBUG for all cloud/local runs
-logging.getLogger().setLevel(logging.DEBUG)
+# Set root logger level from PYTHON_LOG_LEVEL environment variable (default to DEBUG)
+log_level_str = os.environ.get("PYTHON_LOG_LEVEL", "DEBUG").upper()
+log_level = getattr(logging, log_level_str, logging.DEBUG)
+logging.getLogger().setLevel(log_level)
 
 # --- Dynamic Path Adjustment for Module Imports ---
 # Add the project root to the Python path to enable imports from services and utils
@@ -43,7 +45,7 @@ from src.services.shipstation.api_client import (
 log_dir = os.path.join(project_root, 'logs')
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, 'daily_processor.log') # Dedicated log file
-setup_logging(log_file_path=log_file, log_level=logging.DEBUG, enable_console_logging=True)
+setup_logging(log_file_path=log_file, log_level=log_level, enable_console_logging=True)
 logger = logging.getLogger(__name__)
 
 
