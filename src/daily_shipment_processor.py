@@ -26,6 +26,7 @@ from config.settings import (
     ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME, # Added for the weekly history update
     SHIPSTATION_SHIPMENTS_ENDPOINT
 )
+# --- Cloud Function HTTP Entry Point ---
 
 # Import necessary modules
 from utils.logging_config import setup_logging
