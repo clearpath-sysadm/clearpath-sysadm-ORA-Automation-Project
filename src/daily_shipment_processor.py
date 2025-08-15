@@ -190,6 +190,45 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
         updated_history_df = updated_history_df.iloc[1:]
         existing_history_df = updated_history_df
 
+
+    # --- DEDUPLICATION STEP: Ensure only one entry per week (by Start Date and Stop Date), keeping the most recent ---
+    # Sort by Start Date and Stop Date to ensure consistent ordering
+    existing_history_df = existing_history_df.sort_values(by=["Start Date", "Stop Date", "Ship Date" if "Ship Date" in existing_history_df.columns else "Start Date"], ascending=True)
+    # Drop duplicates, keeping the last (most recent) entry for each week
+    before_dedup = len(existing_history_df)
+    existing_history_df = existing_history_df.drop_duplicates(subset=["Start Date", "Stop Date"], keep="last").reset_index(drop=True)
+    after_dedup = len(existing_history_df)
+    logger.info(f"Deduplication complete: {before_dedup - after_dedup} duplicate week(s) removed. {after_dedup} unique weeks remain.")
+
+    # --- ENFORCE 52 WEEKS: Trim to most recent 52 weeks (by Start Date) ---
+    if len(existing_history_df) > 52:
+        logger.info(f"History has {len(existing_history_df)} weeks. Trimming to the most recent 52 weeks.")
+        existing_history_df = existing_history_df.sort_values(by="Start Date", ascending=True).iloc[-52:].reset_index(drop=True)
+    elif len(existing_history_df) < 52:
+        logger.warning(f"History has only {len(existing_history_df)} weeks. (No padding implemented.)")
+
+    logger.info(f"History now contains {len(existing_history_df)} weeks after enforcing 52-week rule.")
+
+    # --- ENSURE CURRENT WEEK IS PRESENT AND CORRECT ---
+    # (This logic is already handled above: update or append current week)
+
+    # --- FINAL VALIDATION: Ensure all requirements are met ---
+    # 1. No duplicate weeks
+    num_dupes = existing_history_df.duplicated(subset=["Start Date", "Stop Date"]).sum()
+    # 2. Exactly 52 weeks
+    num_weeks = len(existing_history_df)
+    # 3. Most recent week is current week
+    most_recent_start = existing_history_df['Start Date'].max()
+    expected_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
+
+    logger.info(f"Validation: {num_dupes} duplicate week(s) found. {num_weeks} total weeks. Most recent week: {most_recent_start}, Expected: {expected_start}.")
+
+    assert num_dupes == 0, "Duplicate weeks found after deduplication!"
+    assert num_weeks == 52, f"Weekly history does not have exactly 52 weeks: {num_weeks}"
+    assert most_recent_start == expected_start, f"Most recent week ({most_recent_start}) is not the current week ({expected_start})"
+
+    logger.info("Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.")
+
     return existing_history_df
 
 def run_daily_shipment_pull(request=None):
@@ -261,14 +300,33 @@ def run_daily_shipment_pull(request=None):
         # Note: get_google_sheet_data should return a DataFrame
         existing_history_df = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
 
-        # Convert list of lists to DataFrame if needed
+
+        # Convert list of lists to DataFrame if needed, with robust row handling
         sheet_data = existing_history_df
         if sheet_data and len(sheet_data) > 1:
-            existing_history_df = pd.DataFrame(sheet_data[1:], columns=sheet_data[0])
+            header = sheet_data[0]
+            header_len = len(header)
+            cleaned_rows = []
+            for row in sheet_data[1:]:
+                # Truncate rows with extra columns, pad short rows with 'ERROR'
+                if len(row) > header_len:
+                    cleaned_rows.append(row[:header_len])
+                elif len(row) < header_len:
+                    cleaned_rows.append(row + ['ERROR'] * (header_len - len(row)))
+                else:
+                    cleaned_rows.append(row)
+            existing_history_df = pd.DataFrame(cleaned_rows, columns=header)
         else:
             # Define expected columns for the weekly history tab (match actual sheet layout)
             expected_columns = ['Start Date', 'Stop Date', '17612', '17904', '17914', '18675', '18795']
             existing_history_df = pd.DataFrame(columns=expected_columns)
+
+        # --- DEBUG: Print the last 5 rows of loaded weekly history to verify data freshness ---
+        print("Loaded weekly history from Google Sheet (last 5 rows):")
+        if not existing_history_df.empty:
+            print(existing_history_df[['Start Date', 'Stop Date']].tail(5))
+        else:
+            print("[EMPTY DATAFRAME]")
 
         if not existing_history_df.empty:
             # This is a placeholder for the SKUs that are tracked weekly.
