@@ -34,6 +34,7 @@ steps:
     - '--timeout=600s'
     - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project-dev'
     - '--gen2' # Explicitly use 2nd Gen functions for Python 3.11
+    - '--set-env-vars=PYTHON_LOG_LEVEL=DEBUG'
   dir: .
   id: daily_shipment_processor
 
