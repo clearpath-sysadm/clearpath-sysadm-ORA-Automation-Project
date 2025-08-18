@@ -140,8 +140,6 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
 
         for order_element in root.findall('order'):
             order_id = order_element.findtext('orderid')
-            order_contains_non_key_product = False
-            
             # Initialize a temporary dictionary to hold consolidated items for the current order
             consolidated_shipstation_items = {} 
 
@@ -161,9 +159,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                 original_sku_raw = order_detail_element.findtext('productid')
                 if not original_sku_raw: 
                     logger.warning(f"Skipping item due to missing productid for order {order_id}")
-                    order_contains_non_key_product = True # Mark order to be skipped
-                    break # Skip processing further items for this order
-                
+                    continue
                 cleaned_sku = str(original_sku_raw).strip()
                 original_quantity = int(order_detail_element.findtext('amount') or '0')
                 if original_quantity == 0: 
@@ -174,7 +170,6 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                     # It's a bundle, iterate its components
                     for component in bundle_config[cleaned_sku]:
                         component_id = str(component['component_id']).strip()
-                        
                         # Validate component SKU against active_lot_map and key_product_skus
                         if component_id not in active_lot_map:
                             logger.warning({
@@ -183,22 +178,17 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                                 "bundle_sku": cleaned_sku,
                                 "component_sku": component_id
                             })
-                            order_contains_non_key_product = True # Mark order to be skipped
-                            break # No need to process other components if one is bad
-                        
+                            continue
                         if component_id not in key_product_skus:
-                             logger.info({
+                            logger.info({
                                 "message": "Skipping bundle component as it is not a Key Product.",
                                 "order_id": order_id,
                                 "bundle_sku": cleaned_sku,
                                 "component_sku": component_id
                             })
-                             order_contains_non_key_product = True # Mark order to be skipped
-                             break # No need to process other components if one is not a key product
-                        
+                            continue
                         # Apply SKU-Lot logic to the component SKU
                         final_component_sku = f"{component_id} - {active_lot_map[component_id]}"
-                        
                         # CONSOLIDATION LOGIC FOR BUNDLE COMPONENTS
                         if final_component_sku in consolidated_shipstation_items:
                             consolidated_shipstation_items[final_component_sku]['quantity'] += (original_quantity * component['multiplier'])
@@ -209,8 +199,6 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                                 "quantity": original_quantity * component['multiplier'],
                                 "baseSku": component_id, # ADDED LINE
                             }
-                    if order_contains_non_key_product:
-                        break # Skip remaining items for this order if a bundle component was invalid
                 else:
                     # It's a regular product, check if it's in active_lot_map and key_product_skus
                     if cleaned_sku not in active_lot_map:
@@ -220,9 +208,7 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                             "sku": cleaned_sku,
                             "product_name": order_detail_element.findtext('product')
                         })
-                        order_contains_non_key_product = True # Mark order to be skipped
                         continue # Skip this item entirely
-                    
                     if cleaned_sku not in key_product_skus:
                         logger.info({
                             "message": "Skipping regular item as it is not a Key Product.",
@@ -230,12 +216,9 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                             "sku": cleaned_sku,
                             "product_name": order_detail_element.findtext('product')
                         })
-                        order_contains_non_key_product = True # Mark order to be skipped
                         continue # Skip this item entirely
-                    
                     # Apply lot logic for regular product
                     sku_with_lot = f"{cleaned_sku} - {active_lot_map[cleaned_sku]}"
-                    
                     # CONSOLIDATION LOGIC FOR REGULAR ITEMS
                     if sku_with_lot in consolidated_shipstation_items:
                         consolidated_shipstation_items[sku_with_lot]['quantity'] += original_quantity
@@ -246,20 +229,28 @@ def parse_x_cart_xml_for_shipstation_payload(xml_content: str, bundle_config: di
                             "quantity": original_quantity,
                             "baseSku": cleaned_sku, # ADDED LINE
                         }
-            
-            # After processing all order_detail_elements for the current order:
-            if order_contains_non_key_product:
-                logger.info({
-                    "message": "Skipping entire order due to missing active lot number or non-Key Product.",
-                    "order_id": order_id
-                })
-                continue # Skip this entire order
 
-            # Convert the consolidated_shipstation_items dictionary back into a list
+            # After processing all order_detail_elements for the current order:
             order_data['items'] = list(consolidated_shipstation_items.values())
-            
+            has_valid_item = bool(order_data['items'])
+            has_invalid_item = not has_valid_item
+            if not has_valid_item:
+                logger.info({
+                    "message": "Skipping entire order because it contains no valid items after filtering.",
+                    "order_id": order_id,
+                    "has_valid_item": has_valid_item,
+                    "has_invalid_item": has_invalid_item
+                })
+                continue # Skip this entire order if no valid items
+
+            logger.info({
+                "message": "Order processed and added to payload.",
+                "order_id": order_id,
+                "has_valid_item": has_valid_item,
+                "has_invalid_item": has_invalid_item,
+                "item_count": len(order_data['items'])
+            })
             orders_payload.append(order_data)
-            logger.info(f"Successfully processed order {order_id} and added to payload.")
 
     except Exception as e:
         logger.critical(f"An unexpected error occurred during XML processing: {e}", exc_info=True)

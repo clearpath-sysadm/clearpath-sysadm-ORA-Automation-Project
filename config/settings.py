@@ -10,8 +10,6 @@ import os
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 
-# --- Google Cloud Project Configuration ---
-YOUR_GCP_PROJECT_ID = "ora-automation-project"
 
 # SERVICE_ACCOUNT_KEY_PATH:
 # For local development: Point to the absolute path of your Google Service Account JSON key file.
@@ -20,11 +18,55 @@ YOUR_GCP_PROJECT_ID = "ora-automation-project"
 # For cloud deployment (Google Cloud Functions): This should be None. GCFs use their
 #                                             assigned service account automatically for GCP services,
 #                                             and secrets are fetched via Secret Manager using ADC.
-# Uncomment the appropriate line based on your environment.
-# LOCAL DEVELOPMENT VERSION:
-# SERVICE_ACCOUNT_KEY_PATH = r"C:\Users\NathanNeely\Projects\config\ora-automation-project-2345f75740f8.json"
-# CLOUD DEPLOYMENT VERSION:
-SERVICE_ACCOUNT_KEY_PATH = None
+
+# --- Service Account Key Path Logic (Auto-detect local vs cloud) ---
+_SERVICE_ACCOUNT_BASE_PATH = r"C:\Users\NathanNeely\Projects\config"
+_SERVICE_ACCOUNT_FILENAME = "ora-automation-project-dev-25acb5551197.json"
+_LOCAL_KEY_PATH = os.path.join(_SERVICE_ACCOUNT_BASE_PATH, _SERVICE_ACCOUNT_FILENAME)
+if os.path.exists(_LOCAL_KEY_PATH):
+    SERVICE_ACCOUNT_KEY_PATH = _LOCAL_KEY_PATH
+else:
+    SERVICE_ACCOUNT_KEY_PATH = None
+
+# --- Environment Detection Logic ---
+def get_environment():
+    """
+    Returns a string representing the current environment: 'cloud', 'local', or 'unknown'.
+    - 'cloud': Running in Google Cloud Functions or App Engine
+    - 'local': Running on a developer machine or local server
+    - 'unknown': Could not determine
+    """
+    # Google Cloud Functions
+    if os.environ.get('K_SERVICE') or os.environ.get('FUNCTION_TARGET'):
+        return 'cloud'
+    # Google App Engine
+    if os.environ.get('GAE_ENV', '').startswith('standard'):
+        return 'cloud'
+    # Local development (common heuristics)
+    if os.environ.get('USERNAME', '').lower() in ['nathanneely', 'dev', 'user']:
+        return 'local'
+    if os.environ.get('COMPUTERNAME', '').lower().startswith('nathan'):
+        return 'local'
+    if os.environ.get('HOME') or os.environ.get('USERPROFILE'):
+        # If a service account key file exists locally, assume local
+        if SERVICE_ACCOUNT_KEY_PATH and os.path.exists(SERVICE_ACCOUNT_KEY_PATH):
+            return 'local'
+    return 'unknown'
+
+# Boolean flags for convenience
+ENVIRONMENT = get_environment()
+IS_CLOUD_ENV = ENVIRONMENT == 'cloud'
+IS_LOCAL_ENV = ENVIRONMENT == 'local'
+
+
+# --- Google Cloud Project Configuration ---
+
+if IS_LOCAL_ENV:
+    YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
+elif IS_CLOUD_ENV:
+    YOUR_GCP_PROJECT_ID = "ora-automation-project"
+#else:
+#    setup_logging(log_file_path=None, log_level=logging.DEBUG, enable_console_logging=True)
 
 
 # --- ShipStation API Configuration ---

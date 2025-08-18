@@ -1,0 +1,53 @@
+2025-08-15 11:10:47,717 INFO settings SERVICE_ACCOUNT_KEY_PATH is set to: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 11:10:47,718 INFO settings File exists: True
+2025-08-15 11:10:47,718 INFO settings First 100 chars of key file: {
+  "type": "service_account",
+  "project_id": "ora-automation-project-dev",
+  "private_key_id": "64
+2025-08-15 11:10:48,057 DEBUG root Logging system initialized with level: DEBUG
+2025-08-15 11:10:48,057 DEBUG root Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\daily_processor.log
+2025-08-15 11:15:47,702 INFO settings SERVICE_ACCOUNT_KEY_PATH is set to: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 11:15:47,702 INFO settings File exists: True
+2025-08-15 11:15:47,702 INFO settings First 100 chars of key file: {
+  "type": "service_account",
+  "project_id": "ora-automation-project-dev",
+  "private_key_id": "64
+2025-08-15 11:15:48,042 DEBUG root Logging system initialized with level: DEBUG
+2025-08-15 11:15:48,042 DEBUG root Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\daily_processor.log
+2025-08-15 11:15:48,043 INFO __main__ [TEST] Logger setup complete. This should appear in daily_processor.log and console.
+2025-08-15 11:18:21,288 INFO settings SERVICE_ACCOUNT_KEY_PATH is set to: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 11:18:21,289 INFO settings File exists: True
+2025-08-15 11:18:21,289 INFO settings First 100 chars of key file: {
+  "type": "service_account",
+  "project_id": "ora-automation-project-dev",
+  "private_key_id": "64
+2025-08-15 11:18:21,632 DEBUG root Logging system initialized with level: DEBUG
+2025-08-15 11:18:21,632 DEBUG root Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\daily_processor.log
+2025-08-15 11:18:21,632 INFO __main__ [TEST] Logger setup complete. This should appear in daily_processor.log and console.
+2025-08-15 11:24:00,421 INFO settings SERVICE_ACCOUNT_KEY_PATH is set to: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 11:24:00,421 INFO settings File exists: True
+2025-08-15 11:24:00,421 INFO settings First 100 chars of key file: {
+  "type": "service_account",
+  "project_id": "ora-automation-project-dev",
+  "private_key_id": "64
+2025-08-15 11:24:00,784 DEBUG root Logging system initialized with level: DEBUG
+2025-08-15 11:24:00,785 DEBUG root Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\daily_processor.log
+2025-08-15 11:24:00,785 INFO __main__ [TEST] Logger setup complete. This should appear in daily_processor.log and console.
+2025-08-15 11:26:19,519 INFO settings SERVICE_ACCOUNT_KEY_PATH is set to: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 11:26:19,519 INFO settings File exists: True
+2025-08-15 11:26:19,520 INFO settings First 100 chars of key file: {
+  "type": "service_account",
+  "project_id": "ora-automation-project-dev",
+  "private_key_id": "64
+2025-08-15 11:26:19,874 DEBUG root Logging system initialized with level: DEBUG
+2025-08-15 11:26:19,874 DEBUG root Log file output to: C:\Users\NathanNeely\Desktop\daily_processor.log
+2025-08-15 11:26:19,874 INFO __main__ [TEST] Logger setup complete. This should appear in daily_processor.log and console.
+2025-08-15 11:30:50,986 INFO settings SERVICE_ACCOUNT_KEY_PATH is set to: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 11:30:50,987 INFO settings File exists: True
+2025-08-15 11:30:50,987 INFO settings First 100 chars of key file: {
+  "type": "service_account",
+  "project_id": "ora-automation-project-dev",
+  "private_key_id": "64
+2025-08-15 11:30:51,326 DEBUG root Logging system initialized with level: DEBUG
+2025-08-15 11:30:51,326 DEBUG root Log file output to: C:\Users\NathanNeely\Desktop\daily_processor.log
+2025-08-15 11:30:51,326 INFO __main__ [TEST] Logger setup complete. This should appear in daily_processor.log and console.

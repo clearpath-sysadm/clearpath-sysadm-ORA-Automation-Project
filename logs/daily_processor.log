@@ -1,0 +1,1135 @@
+2025-08-15 11:20:37,508 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-08-15 11:20:37,508 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\daily_processor.log
+2025-08-15 11:20:37,508 - __main__ - INFO - [TEST] Standalone logger test. This should appear in daily_processor.log and console.
+2025-08-15 11:28:25,570 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-08-15 11:28:25,570 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\daily_processor.log
+2025-08-15 11:28:25,571 - __main__ - INFO - [TEST] Standalone logger test. This should appear in daily_processor.log and console.
+2025-08-15 11:29:03,633 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-08-15 11:29:03,633 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\daily_processor.log
+2025-08-15 11:29:03,633 - __main__ - INFO - [TEST] Standalone logger test. This should appear in daily_processor.log and console.
+2025-08-15 13:26:48,859 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-08-15 13:26:48,860 - root - DEBUG - Log file output to: C:\Users\NathanNeely\Projects\ORA_Automation\logs\daily_processor.log
+2025-08-15 13:26:48,860 - __main__ - INFO - [TEST] Logger setup complete. This should appear in daily_processor.log and console.
+2025-08-15 13:26:48,860 - __main__ - INFO - [DIAG] Script loaded and logger initialized.
+2025-08-15 13:31:47,129 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:31:47,130 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:31:47,522 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:31:47,523 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:31:47,857 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:31:47,858 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:31:47,859 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:31:47,860 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:31:48,627 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:31:48,634 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:31:48,635 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:31:49,854 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:31:49,858 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:31:49,858 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:31:49,859 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:31:49,860 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:31:49,860 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:31:49,866 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:31:49,866 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:31:49,867 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:31:49,871 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:31:49,872 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:31:49,872 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:31:49,876 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:31:49,879 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:31:50,156 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:31:50,157 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:31:50,160 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:31:50,163 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:31:51,254 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:31:52,107 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:31:52,661 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:31:52,662 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:31:52,663 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:31:52,665 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:31:52,666 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:31:52,670 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:31:52,676 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:31:53,283 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:31:54,154 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:31:54,701 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:31:54,702 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:31:54,702 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:31:54,705 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:31:54,712 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:31:55,220 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:31:55,222 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:35:25,825 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:35:25,825 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:35:26,115 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:35:26,117 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:35:26,415 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:35:26,416 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:35:26,417 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:35:26,419 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:35:27,113 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:35:27,125 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:35:27,126 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:35:36,619 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:35:36,623 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:35:36,624 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:35:36,624 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:35:36,625 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:35:36,625 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:35:36,632 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:35:36,632 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:35:36,633 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:35:36,641 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:35:36,641 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:35:36,641 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:35:36,643 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:35:36,645 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:35:36,909 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:35:36,912 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:35:36,917 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:35:36,919 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:35:37,723 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:35:38,038 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:35:38,569 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:35:38,572 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:35:38,573 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:35:38,574 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:35:38,575 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:35:38,577 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:35:38,582 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:35:38,971 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:35:39,219 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:35:39,707 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:35:39,708 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:35:39,708 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:35:39,709 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:35:39,714 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:35:40,112 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:35:40,114 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:35:58,267 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:35:58,267 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:35:58,586 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:35:58,588 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:35:58,843 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:35:58,843 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:35:58,843 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:35:58,844 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:35:59,664 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:35:59,672 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:35:59,673 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:36:01,557 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:36:01,562 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:36:01,562 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:36:01,563 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:36:01,563 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:36:01,564 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:36:01,569 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:36:01,569 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:36:01,569 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:36:01,576 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:36:01,576 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:36:01,577 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:36:01,579 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:36:01,581 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:36:01,855 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:36:01,856 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:36:01,859 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:36:01,862 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:36:02,497 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:36:02,803 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:36:03,326 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:36:03,327 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:36:03,329 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:36:03,331 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:36:03,334 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:36:03,336 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:36:03,342 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:36:03,719 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:36:03,941 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:36:04,402 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:36:04,402 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:36:04,403 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:36:04,405 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:36:04,409 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:36:04,826 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:36:04,827 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:37:50,541 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:37:50,542 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:37:50,848 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:37:50,848 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:37:51,082 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:37:51,083 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:37:51,085 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:37:51,087 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:37:52,002 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:37:52,010 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:37:52,011 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:37:52,621 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:37:52,625 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:37:52,625 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:37:52,627 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:37:52,627 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:37:52,628 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:37:52,636 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:37:52,636 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:37:52,637 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:37:52,643 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:37:52,644 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:37:52,645 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:37:52,646 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:37:52,649 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:37:53,045 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:37:53,047 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:37:53,050 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:37:53,053 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:37:53,897 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:37:54,231 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:37:54,801 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:37:54,802 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:37:54,803 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:37:54,803 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:37:54,805 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:37:54,807 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:37:54,809 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:37:55,228 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:37:55,462 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:37:56,019 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:37:56,019 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:37:56,020 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:37:56,021 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:37:56,026 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:37:56,407 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:37:56,408 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:38:52,398 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:38:52,398 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:38:52,702 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:38:52,702 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:38:52,943 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:38:52,945 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:38:52,945 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:38:52,947 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:39:23,195 - utils.api_utils - ERROR - Request failed for https://ssapi.shipstation.com/shipments due to network/request issue: HTTPSConnectionPool(host='ssapi.shipstation.com', port=443): Read timed out. (read timeout=30)
+2025-08-15 13:39:27,197 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:39:32,787 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:39:32,795 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:39:32,795 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:39:34,204 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:39:34,207 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:39:34,208 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:39:34,208 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:39:34,208 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:39:34,208 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:39:34,214 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:39:34,215 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:39:34,215 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:39:34,222 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:39:34,222 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:39:34,223 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:39:34,227 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:39:34,230 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:39:34,573 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:39:34,576 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:39:34,579 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:39:34,609 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:39:35,321 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:39:35,614 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:39:36,128 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:39:36,130 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:39:36,131 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:39:36,134 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:39:36,137 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:39:36,141 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:39:36,146 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:39:36,527 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:39:36,753 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:39:37,273 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:39:37,274 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:39:37,275 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:39:37,277 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:39:37,281 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:39:37,688 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:39:37,690 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:41:37,829 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:41:37,831 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:41:38,156 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:41:38,157 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:41:38,419 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:41:38,419 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:41:38,419 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:41:38,420 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:41:43,803 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:41:43,812 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:41:43,812 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:41:44,606 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:41:44,610 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:41:44,610 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:41:44,611 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:41:44,611 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:41:44,611 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:41:44,631 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:41:44,632 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:41:44,633 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:41:44,646 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:41:44,646 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:41:44,647 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:41:44,649 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:41:44,652 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:41:44,936 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:41:44,938 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:41:44,942 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:41:44,946 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:41:45,736 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:41:46,158 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:41:47,062 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:41:47,090 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:41:47,094 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:41:47,194 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:41:47,241 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:41:47,249 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:41:47,263 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:41:47,910 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:41:48,149 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:41:48,685 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:41:48,687 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:41:48,687 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:41:48,690 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:41:48,697 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:41:49,083 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:41:49,095 - __main__ - INFO - Starting weekly history update...
+2025-08-15 13:41:49,108 - __main__ - INFO - Full current_week_items_df for current week:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+..          ...             ...               ...      ...
+776  2025-08-15  17612 - 250216                 2    17612
+777  2025-08-15  17612 - 250216                 1    17612
+778  2025-08-15  17612 - 250216                 1    17612
+779  2025-08-15  17612 - 250216                 1    17612
+780  2025-08-15  17612 - 250216                 1    17612
+
+[186 rows x 4 columns]
+2025-08-15 13:41:49,108 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 13:41:49,111 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 13:41:49,114 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 13:41:49,115 - __main__ - INFO - Starting incremental update of the 52-week history tab...
+2025-08-15 13:41:49,126 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 13:41:49,127 - __main__ - INFO - Unique Ship Dates in daily_items_df: [datetime.date(2025, 7, 14), datetime.date(2025, 7, 15), datetime.date(2025, 7, 16), datetime.date(2025, 7, 17), datetime.date(2025, 7, 18), datetime.date(2025, 7, 21), datetime.date(2025, 7, 22), datetime.date(2025, 7, 23), datetime.date(2025, 7, 24), datetime.date(2025, 7, 25), datetime.date(2025, 7, 28), datetime.date(2025, 7, 29), datetime.date(2025, 7, 30), datetime.date(2025, 7, 31), datetime.date(2025, 8, 1), datetime.date(2025, 8, 4), datetime.date(2025, 8, 5), datetime.date(2025, 8, 6), datetime.date(2025, 8, 7), datetime.date(2025, 8, 8), datetime.date(2025, 8, 11), datetime.date(2025, 8, 12), datetime.date(2025, 8, 13), datetime.date(2025, 8, 14), datetime.date(2025, 8, 15)]
+2025-08-15 13:41:49,128 - __main__ - INFO - Min Ship Date: 2025-07-14, Max Ship Date: 2025-08-15
+2025-08-15 13:41:49,128 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 13:41:49,131 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 13:41:49,133 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 13:41:49,135 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 13:41:49,142 - src.services.data_processing.shipment_processor - INFO - Aggregating weekly shipment history for SKUs: ['17612', '17904', '17914', '18675', '18795']...
+2025-08-15 13:41:49,210 - src.services.data_processing.shipment_processor - INFO - Aggregation complete. Final report has 1 weekly rows.
+2025-08-15 13:41:49,228 - __main__ - INFO - Current week found in history. Updating the last row.
+2025-08-15 13:41:49,234 - __main__ - INFO - Deduplication complete: 1 duplicate week(s) removed. 52 unique weeks remain.
+2025-08-15 13:41:49,235 - __main__ - INFO - History now contains 52 weeks after enforcing 52-week rule.
+2025-08-15 13:41:49,235 - __main__ - INFO - Validation: 0 duplicate week(s) found. 52 total weeks. Most recent week: 2025-08-11, Expected: 2025-08-11.
+2025-08-15 13:41:49,236 - __main__ - INFO - Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.
+2025-08-15 13:41:49,241 - __main__ - INFO - Overwriting 'ORA_Weekly_Shipped_History' with updated 52-week history...
+2025-08-15 13:41:49,241 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Start Date': 'object', 'Stop Date': 'object', '17612': 'object', '17904': 'object', '17914': 'object', '18675': 'object', '18795': 'object'}}
+2025-08-15 13:41:49,242 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Start Date': [datetime.date(2024, 8, 19), datetime.date(2024, 8, 26), datetime.date(2024, 9, 2)], 'Stop Date': ['2024-08-25', '2024-09-01', '2024-09-08'], '17612': ['461', '454', '592'], '17904': ['10', '8', '11'], '17914': ['36', '18', '27'], '18675': ['1', '1', '14'], '18795': ['0', '0', '0']}}
+2025-08-15 13:41:49,243 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:41:49,246 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:41:49,249 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 13:41:49,699 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_to_write': 53}
+2025-08-15 13:41:49,894 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'updated_cells': 371}
+2025-08-15 13:41:50,373 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 13:41:50,374 - __main__ - INFO - Weekly history tab update complete.
+2025-08-15 13:41:50,375 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:49:46,179 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:49:46,180 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:49:46,515 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:49:46,516 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:49:46,790 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:49:46,792 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:49:46,792 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:49:46,793 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:49:48,520 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:49:48,525 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:49:48,527 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:49:52,497 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:49:52,500 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:49:52,501 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:49:52,502 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:49:52,502 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:49:52,502 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:49:52,509 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:49:52,509 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:49:52,510 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:49:52,515 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:49:52,516 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:49:52,517 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:49:52,519 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:49:52,523 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:49:52,778 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:49:52,779 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:49:52,783 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:49:52,786 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:49:53,700 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:49:53,999 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:49:54,503 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:49:54,504 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:49:54,506 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:49:54,507 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:49:54,510 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:49:54,511 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:49:54,517 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:49:54,918 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:49:55,131 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:49:55,666 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:49:55,668 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:49:55,669 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:49:55,671 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:49:55,681 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:49:56,133 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:49:56,135 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:50:46,769 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:50:46,769 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:50:47,109 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:50:47,110 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:50:47,402 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:50:47,403 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:50:47,403 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:50:47,405 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:50:52,257 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:50:52,265 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:50:52,265 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:50:53,219 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:50:53,222 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:50:53,223 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:50:53,223 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:50:53,225 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:50:53,225 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:50:53,230 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:50:53,231 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:50:53,231 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:50:53,239 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:50:53,240 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:50:53,241 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:50:53,243 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:50:53,244 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:50:53,496 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:50:53,498 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:50:53,503 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:50:53,508 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:50:54,181 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:50:54,534 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:50:55,088 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:50:55,089 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:50:55,090 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:50:55,092 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:50:55,095 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:50:55,099 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:50:55,104 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:50:55,584 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:50:55,870 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:50:56,367 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:50:56,369 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:50:56,369 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:50:56,372 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:50:56,375 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:50:56,813 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:50:56,815 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:55:04,412 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:55:04,413 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:55:04,761 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:55:04,762 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:55:04,999 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:55:05,000 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:55:05,001 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:55:05,002 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:55:30,415 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:55:30,422 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:55:30,422 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:55:31,445 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:55:31,448 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:55:31,449 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:55:31,449 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:55:31,449 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:55:31,450 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:55:31,455 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:55:31,456 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:55:31,456 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:55:31,462 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:55:31,462 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:55:31,463 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:55:31,464 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:55:31,466 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:55:31,806 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:55:31,808 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:55:31,811 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:55:31,813 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:55:32,654 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:55:32,967 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:55:33,586 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:55:33,587 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:55:33,587 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:55:33,588 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:55:33,589 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:55:33,591 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:55:33,596 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:55:33,983 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:55:34,231 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:55:34,805 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:55:34,806 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:55:34,806 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:55:34,808 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:55:34,813 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:55:35,237 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 13:55:35,249 - __main__ - INFO - Full current_week_items_df for current week:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+..          ...             ...               ...      ...
+776  2025-08-15  17612 - 250216                 2    17612
+777  2025-08-15  17612 - 250216                 1    17612
+778  2025-08-15  17612 - 250216                 1    17612
+779  2025-08-15  17612 - 250216                 1    17612
+780  2025-08-15  17612 - 250216                 1    17612
+
+[186 rows x 4 columns]
+2025-08-15 13:55:35,250 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 13:55:35,257 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 13:55:35,258 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 13:55:35,259 - __main__ - INFO - Starting incremental update of the 52-week history tab...
+2025-08-15 13:55:35,262 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 13:55:35,263 - __main__ - INFO - Unique Ship Dates in daily_items_df: [datetime.date(2025, 7, 14), datetime.date(2025, 7, 15), datetime.date(2025, 7, 16), datetime.date(2025, 7, 17), datetime.date(2025, 7, 18), datetime.date(2025, 7, 21), datetime.date(2025, 7, 22), datetime.date(2025, 7, 23), datetime.date(2025, 7, 24), datetime.date(2025, 7, 25), datetime.date(2025, 7, 28), datetime.date(2025, 7, 29), datetime.date(2025, 7, 30), datetime.date(2025, 7, 31), datetime.date(2025, 8, 1), datetime.date(2025, 8, 4), datetime.date(2025, 8, 5), datetime.date(2025, 8, 6), datetime.date(2025, 8, 7), datetime.date(2025, 8, 8), datetime.date(2025, 8, 11), datetime.date(2025, 8, 12), datetime.date(2025, 8, 13), datetime.date(2025, 8, 14), datetime.date(2025, 8, 15)]
+2025-08-15 13:55:35,263 - __main__ - INFO - Min Ship Date: 2025-07-14, Max Ship Date: 2025-08-15
+2025-08-15 13:55:35,266 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 13:55:35,275 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 13:55:35,276 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 13:55:35,277 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 13:55:35,288 - src.services.data_processing.shipment_processor - INFO - Aggregating weekly shipment history for SKUs: ['17612', '17904', '17914', '18675', '18795']...
+2025-08-15 13:55:35,309 - src.services.data_processing.shipment_processor - INFO - Aggregation complete. Final report has 1 weekly rows.
+2025-08-15 13:55:35,324 - __main__ - INFO - Current week found in history. Updating the last row.
+2025-08-15 13:55:35,330 - __main__ - INFO - Deduplication complete: 1 duplicate week(s) removed. 52 unique weeks remain.
+2025-08-15 13:55:35,330 - __main__ - INFO - History now contains 52 weeks after enforcing 52-week rule.
+2025-08-15 13:55:35,331 - __main__ - INFO - Validation: 0 duplicate week(s) found. 52 total weeks. Most recent week: 2025-08-11, Expected: 2025-08-11.
+2025-08-15 13:55:35,332 - __main__ - INFO - Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.
+2025-08-15 13:55:35,333 - __main__ - INFO - Overwriting 'ORA_Weekly_Shipped_History' with updated 52-week history...
+2025-08-15 13:55:35,334 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Start Date': 'object', 'Stop Date': 'object', '17612': 'object', '17904': 'object', '17914': 'object', '18675': 'object', '18795': 'object'}}
+2025-08-15 13:55:35,336 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Start Date': [datetime.date(2024, 8, 19), datetime.date(2024, 8, 26), datetime.date(2024, 9, 2)], 'Stop Date': ['2024-08-25', '2024-09-01', '2024-09-08'], '17612': ['461', '454', '592'], '17904': ['10', '8', '11'], '17914': ['36', '18', '27'], '18675': ['1', '1', '14'], '18795': ['0', '0', '0']}}
+2025-08-15 13:55:35,339 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:55:35,341 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:55:35,358 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 13:55:36,056 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_to_write': 53}
+2025-08-15 13:55:36,289 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'updated_cells': 371}
+2025-08-15 13:55:36,894 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 13:55:36,895 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:56:30,420 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:56:30,420 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:56:30,668 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:56:30,668 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:56:30,949 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:56:30,951 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:56:30,951 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:56:30,953 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:56:47,345 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:56:47,354 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:56:47,354 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:56:47,909 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:56:47,915 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:56:47,916 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:56:47,917 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:56:47,917 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:56:47,918 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:56:47,925 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:56:47,926 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:56:47,927 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:56:47,935 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:56:47,937 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:56:47,938 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:56:47,940 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:56:47,942 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:56:48,267 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:56:48,269 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:56:48,275 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:56:48,278 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:56:48,883 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:56:49,205 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:56:49,763 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:56:49,765 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:56:49,766 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:56:49,766 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:56:49,768 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:56:49,769 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:56:49,774 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:56:50,161 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 13:56:50,388 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 13:56:50,960 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 13:56:50,960 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 13:56:50,961 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:56:50,963 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:56:50,968 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 13:56:51,347 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 53}
+2025-08-15 13:56:51,360 - __main__ - INFO - Full current_week_items_df for current week:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+..          ...             ...               ...      ...
+776  2025-08-15  17612 - 250216                 2    17612
+777  2025-08-15  17612 - 250216                 1    17612
+778  2025-08-15  17612 - 250216                 1    17612
+779  2025-08-15  17612 - 250216                 1    17612
+780  2025-08-15  17612 - 250216                 1    17612
+
+[186 rows x 4 columns]
+2025-08-15 13:56:51,361 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 13:56:51,367 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 13:56:51,367 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 13:56:51,367 - __main__ - INFO - Starting incremental update of the 52-week history tab...
+2025-08-15 13:56:51,369 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 13:56:51,370 - __main__ - INFO - Unique Ship Dates in daily_items_df: [datetime.date(2025, 7, 14), datetime.date(2025, 7, 15), datetime.date(2025, 7, 16), datetime.date(2025, 7, 17), datetime.date(2025, 7, 18), datetime.date(2025, 7, 21), datetime.date(2025, 7, 22), datetime.date(2025, 7, 23), datetime.date(2025, 7, 24), datetime.date(2025, 7, 25), datetime.date(2025, 7, 28), datetime.date(2025, 7, 29), datetime.date(2025, 7, 30), datetime.date(2025, 7, 31), datetime.date(2025, 8, 1), datetime.date(2025, 8, 4), datetime.date(2025, 8, 5), datetime.date(2025, 8, 6), datetime.date(2025, 8, 7), datetime.date(2025, 8, 8), datetime.date(2025, 8, 11), datetime.date(2025, 8, 12), datetime.date(2025, 8, 13), datetime.date(2025, 8, 14), datetime.date(2025, 8, 15)]
+2025-08-15 13:56:51,370 - __main__ - INFO - Min Ship Date: 2025-07-14, Max Ship Date: 2025-08-15
+2025-08-15 13:56:51,371 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 13:56:51,375 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 13:56:51,375 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 13:56:51,376 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 13:56:51,382 - src.services.data_processing.shipment_processor - INFO - Aggregating weekly shipment history for SKUs: ['17612', '17904', '17914', '18675', '18795']...
+2025-08-15 13:56:51,392 - src.services.data_processing.shipment_processor - INFO - Aggregation complete. Final report has 1 weekly rows.
+2025-08-15 13:56:51,403 - __main__ - INFO - Current week found in history. Updating the last row.
+2025-08-15 13:56:51,405 - __main__ - INFO - Deduplication complete: 0 duplicate week(s) removed. 52 unique weeks remain.
+2025-08-15 13:56:51,406 - __main__ - INFO - History now contains 52 weeks after enforcing 52-week rule.
+2025-08-15 13:56:51,407 - __main__ - INFO - Validation: 0 duplicate week(s) found. 52 total weeks. Most recent week: 2025-08-11, Expected: 2025-08-11.
+2025-08-15 13:56:51,407 - __main__ - INFO - Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.
+2025-08-15 13:56:51,407 - __main__ - INFO - Overwriting 'ORA_Weekly_Shipped_History' with updated 52-week history...
+2025-08-15 13:56:51,408 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Start Date': 'object', 'Stop Date': 'object', '17612': 'object', '17904': 'object', '17914': 'object', '18675': 'object', '18795': 'object'}}
+2025-08-15 13:56:51,409 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Start Date': [datetime.date(2024, 8, 19), datetime.date(2024, 8, 26), datetime.date(2024, 9, 2)], 'Stop Date': ['2024-08-25', '2024-09-01', '2024-09-08'], '17612': ['461', '454', '592'], '17904': ['10', '8', '11'], '17914': ['36', '18', '27'], '18675': ['1', '1', '14'], '18795': ['0', '0', '0']}}
+2025-08-15 13:56:51,409 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:56:51,413 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:56:51,427 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 13:56:51,833 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_to_write': 53}
+2025-08-15 13:56:52,015 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'updated_cells': 371}
+2025-08-15 13:56:52,588 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 13:56:52,589 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 13:59:55,337 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 13:59:55,338 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 13:59:55,845 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 13:59:55,847 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 13:59:56,198 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 13:59:56,198 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 13:59:56,199 - __main__ - INFO - Environment: LOCAL
+2025-08-15 13:59:56,201 - __main__ - INFO - Service Account Key Path: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 13:59:56,202 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 13:59:56,203 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:59:56,877 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:59:56,887 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 13:59:56,888 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 13:59:57,754 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 13:59:57,758 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 13:59:57,759 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 13:59:57,760 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 13:59:57,761 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 13:59:57,761 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 13:59:57,771 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 13:59:57,772 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 13:59:57,772 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 13:59:57,784 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 13:59:57,784 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 13:59:57,786 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 13:59:57,789 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 13:59:57,792 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 13:59:58,107 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 13:59:58,109 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 13:59:58,115 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:59:58,119 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:59:58,949 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 13:59:59,292 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 13:59:59,869 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 13:59:59,869 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 13:59:59,870 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 13:59:59,870 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 13:59:59,872 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 13:59:59,874 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 13:59:59,877 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 14:00:00,301 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 14:00:00,536 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 14:00:01,035 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 14:00:01,035 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 14:00:01,036 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:00:01,037 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:00:01,042 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 14:00:01,470 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 14:00:01,485 - __main__ - INFO - Full current_week_items_df for current week:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+..          ...             ...               ...      ...
+776  2025-08-15  17612 - 250216                 2    17612
+777  2025-08-15  17612 - 250216                 1    17612
+778  2025-08-15  17612 - 250216                 1    17612
+779  2025-08-15  17612 - 250216                 1    17612
+780  2025-08-15  17612 - 250216                 1    17612
+
+[186 rows x 4 columns]
+2025-08-15 14:00:01,486 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 14:00:01,491 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 14:00:01,492 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 14:00:01,492 - __main__ - INFO - Starting incremental update of the 52-week history tab...
+2025-08-15 14:00:01,496 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 14:00:01,497 - __main__ - INFO - Unique Ship Dates in daily_items_df: [datetime.date(2025, 7, 14), datetime.date(2025, 7, 15), datetime.date(2025, 7, 16), datetime.date(2025, 7, 17), datetime.date(2025, 7, 18), datetime.date(2025, 7, 21), datetime.date(2025, 7, 22), datetime.date(2025, 7, 23), datetime.date(2025, 7, 24), datetime.date(2025, 7, 25), datetime.date(2025, 7, 28), datetime.date(2025, 7, 29), datetime.date(2025, 7, 30), datetime.date(2025, 7, 31), datetime.date(2025, 8, 1), datetime.date(2025, 8, 4), datetime.date(2025, 8, 5), datetime.date(2025, 8, 6), datetime.date(2025, 8, 7), datetime.date(2025, 8, 8), datetime.date(2025, 8, 11), datetime.date(2025, 8, 12), datetime.date(2025, 8, 13), datetime.date(2025, 8, 14), datetime.date(2025, 8, 15)]
+2025-08-15 14:00:01,498 - __main__ - INFO - Min Ship Date: 2025-07-14, Max Ship Date: 2025-08-15
+2025-08-15 14:00:01,499 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 14:00:01,504 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 14:00:01,505 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 14:00:01,505 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 14:00:01,513 - src.services.data_processing.shipment_processor - INFO - Aggregating weekly shipment history for SKUs: ['17612', '17904', '17914', '18675', '18795']...
+2025-08-15 14:00:01,528 - src.services.data_processing.shipment_processor - INFO - Aggregation complete. Final report has 1 weekly rows.
+2025-08-15 14:00:01,542 - __main__ - INFO - Current week found in history. Updating the last row.
+2025-08-15 14:00:01,545 - __main__ - INFO - Deduplication complete: 1 duplicate week(s) removed. 52 unique weeks remain.
+2025-08-15 14:00:01,546 - __main__ - INFO - History now contains 52 weeks after enforcing 52-week rule.
+2025-08-15 14:00:01,548 - __main__ - INFO - Validation: 0 duplicate week(s) found. 52 total weeks. Most recent week: 2025-08-11, Expected: 2025-08-11.
+2025-08-15 14:00:01,549 - __main__ - INFO - Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.
+2025-08-15 14:00:01,550 - __main__ - INFO - Overwriting 'ORA_Weekly_Shipped_History' with updated 52-week history...
+2025-08-15 14:00:01,552 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Start Date': 'object', 'Stop Date': 'object', '17612': 'object', '17904': 'object', '17914': 'object', '18675': 'object', '18795': 'object'}}
+2025-08-15 14:00:01,554 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Start Date': [datetime.date(2024, 8, 19), datetime.date(2024, 8, 26), datetime.date(2024, 9, 2)], 'Stop Date': ['2024-08-25', '2024-09-01', '2024-09-08'], '17612': ['461', '454', '592'], '17904': ['10', '8', '11'], '17914': ['36', '18', '27'], '18675': ['1', '1', '14'], '18795': ['0', '0', '0']}}
+2025-08-15 14:00:01,555 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:00:01,558 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:00:01,576 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 14:00:02,010 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_to_write': 53}
+2025-08-15 14:00:02,195 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'updated_cells': 371}
+2025-08-15 14:00:02,718 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 14:00:02,720 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 14:02:22,260 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 14:02:22,260 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 14:02:22,616 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 14:02:22,616 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 14:02:22,876 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 14:02:22,877 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 14:02:22,878 - __main__ - INFO - Environment: LOCAL
+2025-08-15 14:02:22,879 - __main__ - INFO - Service Account Key Path: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 14:02:22,879 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 14:02:22,880 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 14:02:24,832 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 14:02:24,839 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 14:02:24,840 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 14:02:25,403 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 14:02:25,407 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 14:02:25,408 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 14:02:25,408 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 14:02:25,409 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 14:02:25,409 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 14:02:25,415 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 14:02:25,415 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 14:02:25,415 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 14:02:25,422 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 14:02:25,423 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 14:02:25,423 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 14:02:25,425 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 14:02:25,428 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 14:02:25,779 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 14:02:25,781 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 14:02:25,785 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:02:25,788 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 14:02:26,690 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 14:02:27,023 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 14:02:27,688 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 14:02:27,690 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 14:02:27,691 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 14:02:27,693 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 14:02:27,695 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:02:27,697 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:02:27,701 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 14:02:28,123 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 14:02:28,377 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 14:02:28,935 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 14:02:28,936 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 14:02:28,936 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:02:28,938 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:02:28,943 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 14:02:29,381 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 14:02:29,397 - __main__ - INFO - Full current_week_items_df for current week:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+..          ...             ...               ...      ...
+776  2025-08-15  17612 - 250216                 2    17612
+777  2025-08-15  17612 - 250216                 1    17612
+778  2025-08-15  17612 - 250216                 1    17612
+779  2025-08-15  17612 - 250216                 1    17612
+780  2025-08-15  17612 - 250216                 1    17612
+
+[186 rows x 4 columns]
+2025-08-15 14:02:29,399 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 14:02:29,402 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 14:02:29,403 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 14:02:29,403 - __main__ - INFO - Starting incremental update of the 52-week history tab...
+2025-08-15 14:02:29,406 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 14:02:29,407 - __main__ - INFO - Unique Ship Dates in daily_items_df: [datetime.date(2025, 7, 14), datetime.date(2025, 7, 15), datetime.date(2025, 7, 16), datetime.date(2025, 7, 17), datetime.date(2025, 7, 18), datetime.date(2025, 7, 21), datetime.date(2025, 7, 22), datetime.date(2025, 7, 23), datetime.date(2025, 7, 24), datetime.date(2025, 7, 25), datetime.date(2025, 7, 28), datetime.date(2025, 7, 29), datetime.date(2025, 7, 30), datetime.date(2025, 7, 31), datetime.date(2025, 8, 1), datetime.date(2025, 8, 4), datetime.date(2025, 8, 5), datetime.date(2025, 8, 6), datetime.date(2025, 8, 7), datetime.date(2025, 8, 8), datetime.date(2025, 8, 11), datetime.date(2025, 8, 12), datetime.date(2025, 8, 13), datetime.date(2025, 8, 14), datetime.date(2025, 8, 15)]
+2025-08-15 14:02:29,408 - __main__ - INFO - Min Ship Date: 2025-07-14, Max Ship Date: 2025-08-15
+2025-08-15 14:02:29,409 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 14:02:29,413 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 14:02:29,413 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 14:02:29,415 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 14:02:29,420 - src.services.data_processing.shipment_processor - INFO - Aggregating weekly shipment history for SKUs: ['17612', '17904', '17914', '18675', '18795']...
+2025-08-15 14:02:29,432 - src.services.data_processing.shipment_processor - INFO - Aggregation complete. Final report has 1 weekly rows.
+2025-08-15 14:02:29,440 - __main__ - INFO - Current week found in history. Updating the last row.
+2025-08-15 14:02:29,442 - __main__ - INFO - Deduplication complete: 1 duplicate week(s) removed. 52 unique weeks remain.
+2025-08-15 14:02:29,443 - __main__ - INFO - History now contains 52 weeks after enforcing 52-week rule.
+2025-08-15 14:02:29,445 - __main__ - INFO - Validation: 0 duplicate week(s) found. 52 total weeks. Most recent week: 2025-08-11, Expected: 2025-08-11.
+2025-08-15 14:02:29,447 - __main__ - INFO - Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.
+2025-08-15 14:02:29,447 - __main__ - INFO - Overwriting 'ORA_Weekly_Shipped_History' with updated 52-week history...
+2025-08-15 14:02:29,448 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Start Date': 'object', 'Stop Date': 'object', '17612': 'object', '17904': 'object', '17914': 'object', '18675': 'object', '18795': 'object'}}
+2025-08-15 14:02:29,448 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Start Date': [datetime.date(2024, 8, 19), datetime.date(2024, 8, 26), datetime.date(2024, 9, 2)], 'Stop Date': ['2024-08-25', '2024-09-01', '2024-09-08'], '17612': ['461', '454', '592'], '17904': ['10', '8', '11'], '17914': ['36', '18', '27'], '18675': ['1', '1', '14'], '18795': ['0', '0', '0']}}
+2025-08-15 14:02:29,450 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:02:29,452 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:02:29,467 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 14:02:29,887 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_to_write': 53}
+2025-08-15 14:02:30,079 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'updated_cells': 371}
+2025-08-15 14:02:30,656 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 14:02:30,656 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 14:04:17,197 - root - INFO - Logging environment: LOCAL
+2025-08-15 14:04:17,198 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 14:04:17,198 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 14:04:17,503 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 14:04:17,504 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 14:04:17,768 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 14:04:17,768 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 14:04:17,769 - __main__ - INFO - Environment: LOCAL
+2025-08-15 14:04:17,769 - __main__ - INFO - Service Account Key Path: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 14:04:17,770 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 14:04:17,770 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 14:04:48,010 - utils.api_utils - ERROR - Request failed for https://ssapi.shipstation.com/shipments due to network/request issue: HTTPSConnectionPool(host='ssapi.shipstation.com', port=443): Read timed out. (read timeout=30)
+2025-08-15 14:04:52,012 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 14:04:52,671 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 14:04:52,680 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 14:04:52,681 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 14:04:53,252 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 14:04:53,257 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 14:04:53,258 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 14:04:53,258 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 14:04:53,259 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 14:04:53,260 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 14:04:53,266 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 14:04:53,267 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 14:04:53,267 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 14:04:53,275 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 14:04:53,276 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 14:04:53,276 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 14:04:53,279 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 14:04:53,282 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 14:04:53,637 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 14:04:53,640 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 14:04:53,645 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:04:53,675 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 14:04:54,419 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 14:04:54,708 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 14:04:55,246 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 14:04:55,246 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 14:04:55,248 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 14:04:55,249 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 14:04:55,252 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:04:55,256 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:04:55,261 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 14:04:55,715 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 14:04:56,046 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 14:04:56,608 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 14:04:56,609 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 14:04:56,610 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:04:56,614 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:04:56,619 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 14:04:57,016 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 53}
+2025-08-15 14:04:57,029 - __main__ - INFO - Full current_week_items_df for current week:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+..          ...             ...               ...      ...
+776  2025-08-15  17612 - 250216                 2    17612
+777  2025-08-15  17612 - 250216                 1    17612
+778  2025-08-15  17612 - 250216                 1    17612
+779  2025-08-15  17612 - 250216                 1    17612
+780  2025-08-15  17612 - 250216                 1    17612
+
+[186 rows x 4 columns]
+2025-08-15 14:04:57,030 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 14:04:57,032 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 14:04:57,034 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 14:04:57,034 - __main__ - INFO - Starting incremental update of the 52-week history tab...
+2025-08-15 14:04:57,036 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 14:04:57,037 - __main__ - INFO - Unique Ship Dates in daily_items_df: [datetime.date(2025, 7, 14), datetime.date(2025, 7, 15), datetime.date(2025, 7, 16), datetime.date(2025, 7, 17), datetime.date(2025, 7, 18), datetime.date(2025, 7, 21), datetime.date(2025, 7, 22), datetime.date(2025, 7, 23), datetime.date(2025, 7, 24), datetime.date(2025, 7, 25), datetime.date(2025, 7, 28), datetime.date(2025, 7, 29), datetime.date(2025, 7, 30), datetime.date(2025, 7, 31), datetime.date(2025, 8, 1), datetime.date(2025, 8, 4), datetime.date(2025, 8, 5), datetime.date(2025, 8, 6), datetime.date(2025, 8, 7), datetime.date(2025, 8, 8), datetime.date(2025, 8, 11), datetime.date(2025, 8, 12), datetime.date(2025, 8, 13), datetime.date(2025, 8, 14), datetime.date(2025, 8, 15)]
+2025-08-15 14:04:57,038 - __main__ - INFO - Min Ship Date: 2025-07-14, Max Ship Date: 2025-08-15
+2025-08-15 14:04:57,039 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 14:04:57,043 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 14:04:57,043 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 14:04:57,043 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 14:04:57,051 - src.services.data_processing.shipment_processor - INFO - Aggregating weekly shipment history for SKUs: ['17612', '17904', '17914', '18675', '18795']...
+2025-08-15 14:04:57,078 - src.services.data_processing.shipment_processor - INFO - Aggregation complete. Final report has 1 weekly rows.
+2025-08-15 14:04:57,089 - __main__ - INFO - Current week found in history. Updating the last row.
+2025-08-15 14:04:57,092 - __main__ - INFO - Deduplication complete: 0 duplicate week(s) removed. 52 unique weeks remain.
+2025-08-15 14:04:57,093 - __main__ - INFO - History now contains 52 weeks after enforcing 52-week rule.
+2025-08-15 14:04:57,095 - __main__ - INFO - Validation: 0 duplicate week(s) found. 52 total weeks. Most recent week: 2025-08-11, Expected: 2025-08-11.
+2025-08-15 14:04:57,095 - __main__ - INFO - Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.
+2025-08-15 14:04:57,096 - __main__ - INFO - Overwriting 'ORA_Weekly_Shipped_History' with updated 52-week history...
+2025-08-15 14:04:57,097 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Start Date': 'object', 'Stop Date': 'object', '17612': 'object', '17904': 'object', '17914': 'object', '18675': 'object', '18795': 'object'}}
+2025-08-15 14:04:57,098 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Start Date': [datetime.date(2024, 8, 19), datetime.date(2024, 8, 26), datetime.date(2024, 9, 2)], 'Stop Date': ['2024-08-25', '2024-09-01', '2024-09-08'], '17612': ['461', '454', '592'], '17904': ['10', '8', '11'], '17914': ['36', '18', '27'], '18675': ['1', '1', '14'], '18795': ['0', '0', '0']}}
+2025-08-15 14:04:57,101 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:04:57,104 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:04:57,107 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 14:04:57,511 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_to_write': 53}
+2025-08-15 14:04:57,701 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'updated_cells': 371}
+2025-08-15 14:04:58,297 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 14:04:58,298 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---
+2025-08-15 14:42:55,523 - root - INFO - Logging environment: LOCAL
+2025-08-15 14:42:55,524 - __main__ - INFO - --- Starting Daily Shipment Processor ---
+2025-08-15 14:42:55,524 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Key from Secret Manager...
+2025-08-15 14:42:55,871 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-key'.
+2025-08-15 14:42:55,872 - src.services.shipstation.api_client - INFO - Attempting to retrieve ShipStation API Secret from Secret Manager...
+2025-08-15 14:42:56,184 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'shipstation-api-secret'.
+2025-08-15 14:42:56,185 - __main__ - INFO - Using rolling 32-day date range: 2025-07-14 to 2025-08-15
+2025-08-15 14:42:56,186 - __main__ - INFO - Environment: LOCAL
+2025-08-15 14:42:56,187 - __main__ - INFO - Service Account Key Path: C:\Users\NathanNeely\Projects\config\ora-automation-project-dev-25acb5551197.json
+2025-08-15 14:42:56,188 - src.services.shipstation.api_client - INFO - Starting raw shipment fetch from 2025-07-14 with includeShipmentItems=true and status='shipped'...
+2025-08-15 14:42:56,189 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 14:43:01,757 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 14:43:01,765 - src.services.shipstation.api_client - INFO - Fetched page 1 of 2. Total shipments so far: 500
+2025-08-15 14:43:01,766 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-08-15 14:43:03,138 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-08-15 14:43:03,141 - src.services.shipstation.api_client - INFO - Fetched page 2 of 2. Total shipments so far: 782
+2025-08-15 14:43:03,141 - src.services.shipstation.api_client - INFO - Finished fetching ShipStation shipments. Total retrieved: 782
+2025-08-15 14:43:03,143 - __main__ - INFO - Processing 781 non-voided shipments.
+2025-08-15 14:43:03,143 - __main__ - INFO - Processing data for Shipped_Items_Data tab...
+2025-08-15 14:43:03,143 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Items_Data tab...
+2025-08-15 14:43:03,163 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 781 rows.
+2025-08-15 14:43:03,163 - __main__ - INFO - Processing data for Shipped_Orders_Data tab...
+2025-08-15 14:43:03,164 - src.services.data_processing.shipment_processor - INFO - Processing raw shipment data for Shipped_Orders_Data tab...
+2025-08-15 14:43:03,174 - src.services.data_processing.shipment_processor - INFO - Finished processing. Resulting DataFrame has 724 unique order rows.
+2025-08-15 14:43:03,175 - __main__ - INFO - Overwriting 'Shipped_Items_Data' tab with 781 rows...
+2025-08-15 14:43:03,176 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'SKU - Lot': 'object', 'Quantity Shipped': 'int64', 'Base SKU': 'object'}}
+2025-08-15 14:43:03,177 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'SKU - Lot': ['17612 - 250195', '17612 - 250195', '17612 - 250195'], 'Quantity Shipped': [6, 2, 6], 'Base SKU': ['17612', '17612', '17612']}}
+2025-08-15 14:43:03,180 - src.services.google_sheets.api_client - DEBUG - {'message': 'Attempting to retrieve Google Sheets service account key from Secret Manager.'}
+2025-08-15 14:43:03,564 - src.services.gcp.secret_manager - INFO - Successfully accessed secret 'google-sheets-service-account-key'.
+2025-08-15 14:43:03,566 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheets credentials successfully retrieved and cached.'}
+2025-08-15 14:43:03,575 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:43:03,580 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 14:43:04,443 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'rows_to_write': 782}
+2025-08-15 14:43:04,734 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data', 'updated_cells': 3128}
+2025-08-15 14:43:05,261 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Items_Data'}
+2025-08-15 14:43:05,262 - __main__ - INFO - Overwriting 'Shipped_Orders_Data' tab with 724 rows...
+2025-08-15 14:43:05,263 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Ship Date': 'object', 'OrderNumber': 'object'}}
+2025-08-15 14:43:05,264 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Ship Date': [datetime.date(2025, 7, 14), datetime.date(2025, 7, 14), datetime.date(2025, 7, 14)], 'OrderNumber': ['669495', '669455', '669445']}}
+2025-08-15 14:43:05,266 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:43:05,269 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:43:05,274 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 14:43:05,685 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'rows_to_write': 725}
+2025-08-15 14:43:05,895 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data', 'updated_cells': 1450}
+2025-08-15 14:43:06,570 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'Shipped_Orders_Data'}
+2025-08-15 14:43:06,571 - __main__ - INFO - Fetching existing 52-week history for update...
+2025-08-15 14:43:06,572 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:43:06,575 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:43:06,579 - src.services.google_sheets.api_client - DEBUG - {'message': 'Fetching data from Google Sheet', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'range': "'ORA_Weekly_Shipped_History'!A:ZZ"}
+2025-08-15 14:43:07,187 - src.services.google_sheets.api_client - INFO - {'message': 'Successfully retrieved data from Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_count': 54}
+2025-08-15 14:43:07,227 - __main__ - INFO - Full current_week_items_df for current week:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+..          ...             ...               ...      ...
+776  2025-08-15  17612 - 250216                 2    17612
+777  2025-08-15  17612 - 250216                 1    17612
+778  2025-08-15  17612 - 250216                 1    17612
+779  2025-08-15  17612 - 250216                 1    17612
+780  2025-08-15  17612 - 250216                 1    17612
+
+[186 rows x 4 columns]
+2025-08-15 14:43:07,229 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 14:43:07,241 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 14:43:07,246 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 14:43:07,248 - __main__ - INFO - Starting incremental update of the 52-week history tab...
+2025-08-15 14:43:07,276 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 14:43:07,278 - __main__ - INFO - Unique Ship Dates in daily_items_df: [datetime.date(2025, 7, 14), datetime.date(2025, 7, 15), datetime.date(2025, 7, 16), datetime.date(2025, 7, 17), datetime.date(2025, 7, 18), datetime.date(2025, 7, 21), datetime.date(2025, 7, 22), datetime.date(2025, 7, 23), datetime.date(2025, 7, 24), datetime.date(2025, 7, 25), datetime.date(2025, 7, 28), datetime.date(2025, 7, 29), datetime.date(2025, 7, 30), datetime.date(2025, 7, 31), datetime.date(2025, 8, 1), datetime.date(2025, 8, 4), datetime.date(2025, 8, 5), datetime.date(2025, 8, 6), datetime.date(2025, 8, 7), datetime.date(2025, 8, 8), datetime.date(2025, 8, 11), datetime.date(2025, 8, 12), datetime.date(2025, 8, 13), datetime.date(2025, 8, 14), datetime.date(2025, 8, 15)]
+2025-08-15 14:43:07,322 - __main__ - INFO - Min Ship Date: 2025-07-14, Max Ship Date: 2025-08-15
+2025-08-15 14:43:07,326 - __main__ - INFO - current_week_items_df shape: (186, 4)
+2025-08-15 14:43:07,342 - __main__ - INFO - current_week_items_df head:
+      Ship Date       SKU - Lot  Quantity Shipped Base SKU
+595  2025-08-11  17612 - 250216                 7    17612
+596  2025-08-11  17904 - 240276                 1    17904
+597  2025-08-11  17612 - 250216                 1    17612
+598  2025-08-11  17612 - 250216                 1    17612
+599  2025-08-11  17914 - 240286                 6    17914
+600  2025-08-11  17612 - 250216                 6    17612
+601  2025-08-11  17612 - 250216                 2    17612
+602  2025-08-11  17612 - 250216                 2    17612
+603  2025-08-11  17612 - 250216                 1    17612
+604  2025-08-11  17904 - 240276                 1    17904
+2025-08-15 14:43:07,346 - __main__ - INFO - Unique 'Base SKU' values in current_week_items_df: ['17612', '17904', '17914', '18675', '18795']
+2025-08-15 14:43:07,348 - __main__ - INFO - Current week starts on: 2025-08-11
+2025-08-15 14:43:07,476 - src.services.data_processing.shipment_processor - INFO - Aggregating weekly shipment history for SKUs: ['17612', '17904', '17914', '18675', '18795']...
+2025-08-15 14:43:07,590 - src.services.data_processing.shipment_processor - INFO - Aggregation complete. Final report has 1 weekly rows.
+2025-08-15 14:43:07,663 - __main__ - INFO - Current week found in history. Updating the last row.
+2025-08-15 14:43:07,690 - __main__ - INFO - Deduplication complete: 1 duplicate week(s) removed. 52 unique weeks remain.
+2025-08-15 14:43:07,692 - __main__ - INFO - History now contains 52 weeks after enforcing 52-week rule.
+2025-08-15 14:43:07,696 - __main__ - INFO - Validation: 0 duplicate week(s) found. 52 total weeks. Most recent week: 2025-08-11, Expected: 2025-08-11.
+2025-08-15 14:43:07,699 - __main__ - INFO - Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.
+2025-08-15 14:43:07,701 - __main__ - INFO - Overwriting 'ORA_Weekly_Shipped_History' with updated 52-week history...
+2025-08-15 14:43:07,708 - src.services.google_sheets.api_client - DEBUG - {'message': 'DataFrame dtypes before upload', 'dtypes': {'Start Date': 'object', 'Stop Date': 'object', '17612': 'object', '17904': 'object', '17914': 'object', '18675': 'object', '18795': 'object'}}
+2025-08-15 14:43:07,710 - src.services.google_sheets.api_client - DEBUG - {'message': 'Sample data before upload', 'sample': {'Start Date': [datetime.date(2024, 8, 19), datetime.date(2024, 8, 26), datetime.date(2024, 9, 2)], 'Stop Date': ['2024-08-25', '2024-09-01', '2024-09-08'], '17612': ['461', '454', '592'], '17904': ['10', '8', '11'], '17914': ['36', '18', '27'], '18675': ['1', '1', '14'], '18795': ['0', '0', '0']}}
+2025-08-15 14:43:07,716 - src.services.google_sheets.api_client - DEBUG - {'message': 'Using cached Google Sheets credentials.'}
+2025-08-15 14:43:07,726 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-08-15 14:43:07,762 - src.services.google_sheets.api_client - DEBUG - {'message': 'Clearing existing data in Google Sheet before writing.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 14:43:08,588 - src.services.google_sheets.api_client - DEBUG - {'message': 'Writing new data to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'rows_to_write': 53}
+2025-08-15 14:43:08,774 - src.services.google_sheets.api_client - INFO - {'message': 'Data successfully written to Google Sheet.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History', 'updated_cells': 371}
+2025-08-15 14:43:09,471 - src.services.google_sheets.api_client - INFO - {'message': 'Google Sheet formatting applied successfully.', 'sheet_id': '1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo', 'worksheet': 'ORA_Weekly_Shipped_History'}
+2025-08-15 14:43:09,474 - __main__ - INFO - --- Daily Shipment Processor finished successfully! ---

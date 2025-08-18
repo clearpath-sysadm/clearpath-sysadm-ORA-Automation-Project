@@ -20,8 +20,9 @@ if project_root not in sys.path:
 from utils.logging_config import setup_logging
 import logging
 
+
 # Import from centralized configuration settings
-from config import settings
+from config.settings import settings, IS_CLOUD_ENV, IS_LOCAL_ENV, SERVICE_ACCOUNT_KEY_PATH
 
 # Import necessary service modules
 from src.services.gcp.secret_manager import access_secret_version
@@ -33,17 +34,24 @@ from src.services.google_drive.api_client import fetch_xml_content_from_drive
 from src.services.google_sheets.api_client import get_google_sheet_data
 
 
-# --- Setup Logging for this script ---
-# In a Cloud Function, logs go to stdout/stderr and are picked up by Cloud Logging.
-# For local development, you might still want a file log.
-_log_file_path = None # Default to no file logging for cloud deployment
-# If running locally and you want file logs, uncomment and adjust this line:
+import pathlib
+# --- Environment-Aware Logging Configuration ---
+if IS_LOCAL_ENV:
+    log_dir = os.path.join(project_root, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'shipstation_order_uploader.log')
+    setup_logging(log_file_path=log_file, log_level=logging.DEBUG, enable_console_logging=True)
+elif IS_CLOUD_ENV:
+    setup_logging(log_file_path=None, log_level=logging.DEBUG, enable_console_logging=True)
+else:
+    setup_logging(log_file_path=None, log_level=logging.DEBUG, enable_console_logging=True)
+logger = logging.getLogger(__name__)
+logging.getLogger().setLevel(logging.DEBUG)
+logger.info(f"Environment detected: {'CLOUD' if IS_CLOUD_ENV else 'LOCAL' if IS_LOCAL_ENV else 'UNKNOWN'}")
+logger.info(f"Service Account Key Path: {SERVICE_ACCOUNT_KEY_PATH}")
 # _log_log_file_path = os.path.join(project_root, 'logs', 'shipstation_order_uploader.log')
 
-# Ensure logging is only configured once if this script is run as main.
-if not logging.getLogger().handlers:
-    setup_logging(log_file_path=_log_file_path, log_level=logging.DEBUG, enable_console_logging=True)
-logger = logging.getLogger(__name__)
+
 
 
 # --- Core Order Uploader Logic (Reusable Function) ---
@@ -243,17 +251,33 @@ def run_order_uploader_logic():
             normalized_order_number = order_number.strip().upper()
         else:
             normalized_order_number = None
-        
+
+        # Add item validity flags for logging
+        items = order.get('items', [])
+        has_valid_item = bool(items)
+        has_invalid_item = not has_valid_item
+
         if normalized_order_number and normalized_order_number in existing_order_numbers_set:
             logger.info({
                 "message": "Skipping duplicate order",
                 "orderNumber": order_number,
                 "normalizedOrderNumber": normalized_order_number,
                 "reason": "already exists in ShipStation",
-                "action": "skipped_upload"
+                "action": "skipped_upload",
+                "has_valid_item": has_valid_item,
+                "has_invalid_item": has_invalid_item,
+                "item_count": len(items)
             })
             skipped_orders_count += 1
         else:
+            logger.info({
+                "message": "Order will be uploaded to ShipStation",
+                "orderNumber": order_number,
+                "normalizedOrderNumber": normalized_order_number,
+                "has_valid_item": has_valid_item,
+                "has_invalid_item": has_invalid_item,
+                "item_count": len(items)
+            })
             new_orders_payload.append(order)
     
     if skipped_orders_count > 0:
@@ -316,11 +340,20 @@ def shipstation_order_uploader_http_trigger(request):
 # This block is for local testing only. It directly calls the core logic.
 # When deploying to a Cloud Function, this block should be commented out,
 # and the 'shipstation_order_uploader_http_trigger' function above should be active.
-# if __name__ == "__main__":
-#     print("--- Running shipstation_order_uploader_logic locally ---")
-#     success, message = run_order_uploader_logic()
-#     if success:
-#         print(f"Local Test Result: SUCCESS - {message}")
-#     else:
-#         print(f"Local Test Result: FAILED - {message}")
-#     print("--- Local execution finished ---")
+if __name__ == "__main__":
+    print("--- Running shipstation_order_uploader_logic locally ---")
+    logger.info({
+        "message": "Local execution started for shipstation_order_uploader_logic.",
+        "IS_LOCAL_ENV": IS_LOCAL_ENV,
+        "IS_CLOUD_ENV": IS_CLOUD_ENV,
+        "SERVICE_ACCOUNT_KEY_PATH": SERVICE_ACCOUNT_KEY_PATH
+    })
+    success, message = run_order_uploader_logic()
+    if success:
+        print(f"Local Test Result: SUCCESS - {message}")
+        logger.info({"message": f"Local Test Result: SUCCESS - {message}"})
+    else:
+        print(f"Local Test Result: FAILED - {message}")
+        logger.error({"message": f"Local Test Result: FAILED - {message}"})
+    print("--- Local execution finished ---")
+    logger.info({"message": "Local execution finished for shipstation_order_uploader_logic."})
