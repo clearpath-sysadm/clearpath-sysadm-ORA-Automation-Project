@@ -64,7 +64,7 @@ IS_LOCAL_ENV = ENVIRONMENT == 'local'
 if IS_LOCAL_ENV:
     YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 elif IS_CLOUD_ENV:
-    YOUR_GCP_PROJECT_ID = "ora-automation-project"
+    YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 #else:
 #    setup_logging(log_file_path=None, log_level=logging.DEBUG, enable_console_logging=True)
 
