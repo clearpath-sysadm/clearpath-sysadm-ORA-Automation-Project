@@ -38,7 +38,8 @@ def setup_logging(log_file_path=None, log_level=logging.INFO, enable_console_log
     if IS_CLOUD_ENV or enable_console_logging:
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
-        console_handler.setLevel(logging.DEBUG if IS_LOCAL_ENV else logging.INFO)
+        # Set DEBUG level for both local and cloud (prod) environments
+        console_handler.setLevel(logging.DEBUG)
         logger.addHandler(console_handler)
 
     # 2. File Handler (only if log_file_path is provided and not in cloud)
