@@ -24,7 +24,7 @@ steps:
     - 'functions'
     - 'deploy'
     - 'daily-weekly-history-update'
-    - '--project=ora-automation-project-dev'
+    - '--project=ora-automation-project'
     - '--runtime=python311'
     - '--entry-point=daily_shipment_processor_http_trigger'
     - '--source=.'
@@ -33,7 +33,7 @@ steps:
     - '--region=us-central1'
     - '--memory=1024MB'
     - '--timeout=600s'
-    - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project-dev'
+    - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
     - '--gen2'
 #    - '--set-env-vars=PYTHON_LOG_LEVEL=DEBUG'
   dir: .
