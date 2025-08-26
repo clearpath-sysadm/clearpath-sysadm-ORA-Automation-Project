@@ -1,2 +1,7 @@
 venv/ 
 *.json 
+deployed-source
+logs/
+tests/
+__pycache__/
+*.pyc
