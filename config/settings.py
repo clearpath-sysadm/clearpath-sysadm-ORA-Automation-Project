@@ -1,3 +1,5 @@
+
+
 # filename: settings.py
 """
 Centralized configuration settings for the ORA Project.
@@ -8,6 +10,8 @@ import os
 # --- Project Root Path ---
 # Defines the base directory of the project for relative pathing if needed.
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
 
 
 

@@ -4,6 +4,7 @@ from config.settings import settings
 from src.services.google_sheets.api_client import get_google_sheet_data
 from datetime import datetime # Import datetime for parsing dates
 import os # Ensure os is imported here as well for consistency
+from utils.google_sheets_utils import safe_sheet_to_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -19,19 +20,11 @@ def load_all_configuration_data(sheet_id: str) -> tuple | None:
         logger.warning("No data or malformed data found in 'ORA_Configuration' worksheet. Returning default empty configuration.")
         return {}, {}, {}, [], 0, 0, datetime.now().date(), datetime.now().date(), {}
     
-    # If raw_config_data is a list of lists, convert to DataFrame. Assume first row is header.
-    if isinstance(raw_config_data, list) and len(raw_config_data) > 0:
-        # Handle case where sheet is empty except for headers or completely empty
-        if len(raw_config_data) == 1 and all(not cell for cell in raw_config_data[0]): # Only empty header row
-            config_df = pd.DataFrame(columns=[h.strip() for h in raw_config_data[0]])
-        elif len(raw_config_data) > 0:
-            config_df = pd.DataFrame(raw_config_data[1:], columns=[h.strip() for h in raw_config_data[0]])
-        else: # Completely empty sheet
-            config_df = pd.DataFrame()
-    elif isinstance(raw_config_data, pd.DataFrame): # If it's already a DataFrame (e.g., from a mock)
-        config_df = raw_config_data
-    else: # Unexpected type
-        logger.error(f"Unexpected data type for ORA_Configuration: {type(raw_config_data)}. Returning empty configuration.")
+
+    # Use safe_sheet_to_dataframe for robust DataFrame construction
+    config_df = safe_sheet_to_dataframe(raw_config_data)
+    if config_df is None:
+        logger.error(f"safe_sheet_to_dataframe returned None for ORA_Configuration. Returning empty configuration.")
         return {}, {}, {}, [], 0, 0, datetime.now().date(), datetime.now().date(), {}
 
     # Check if DataFrame is empty after conversion
@@ -87,18 +80,9 @@ def load_inventory_transactions(sheet_id: str) -> pd.DataFrame | None:
         logger.warning("No data or malformed data found in 'Inventory_Transactions' worksheet. Returning empty DataFrame.")
         return pd.DataFrame(columns=['Date', 'SKU', 'Quantity', 'TransactionType'])
     
-    if isinstance(raw_transactions_data, list) and len(raw_transactions_data) > 0:
-        if len(raw_transactions_data) == 1 and all(not cell for cell in raw_transactions_data[0]): # Only empty header row
-            transactions_df = pd.DataFrame(columns=[h.strip() for h in raw_transactions_data[0]])
-        elif len(raw_transactions_data) > 0:
-            transactions_df = pd.DataFrame(raw_transactions_data[1:], columns=[h.strip() for h in raw_transactions_data[0]])
-        else:
-            transactions_df = pd.DataFrame()
-    elif isinstance(raw_transactions_data, pd.DataFrame):
-        transactions_df = raw_transactions_data
-    else:
-        logger.error(f"Unexpected data type for Inventory_Transactions: {type(raw_transactions_data)}. Returning empty DataFrame.")
-        return pd.DataFrame(columns=['Date', 'SKU', 'Quantity', 'TransactionType'])
+
+    # Use safe_sheet_to_dataframe for robust DataFrame construction
+    transactions_df = safe_sheet_to_dataframe(raw_transactions_data)
 
     if transactions_df.empty:
         logger.warning("Inventory_Transactions DataFrame is empty after conversion. Returning empty DataFrame.")
@@ -139,18 +123,9 @@ def load_shipped_items_data(sheet_id: str) -> pd.DataFrame | None:
         logger.warning("No data or malformed data found in 'Shipped_Items_Data' worksheet. Returning empty DataFrame.")
         return pd.DataFrame(columns=['Date', 'SKU_Lot', 'Quantity Shipped', 'Base SKU', 'SKU'])
     
-    if isinstance(raw_shipped_items_data, list) and len(raw_shipped_items_data) > 0:
-        if len(raw_shipped_items_data) == 1 and all(not cell for cell in raw_shipped_items_data[0]): # Only empty header row
-            shipped_items_df = pd.DataFrame(columns=[h.strip() for h in raw_shipped_items_data[0]])
-        elif len(raw_shipped_items_data) > 0:
-            shipped_items_df = pd.DataFrame(raw_shipped_items_data[1:], columns=[h.strip() for h in raw_shipped_items_data[0]])
-        else:
-            shipped_items_df = pd.DataFrame()
-    elif isinstance(raw_shipped_items_data, pd.DataFrame):
-        shipped_items_df = raw_shipped_items_data
-    else:
-        logger.error(f"Unexpected data type for Shipped_Items_Data: {type(raw_shipped_items_data)}. Returning empty DataFrame.")
-        return pd.DataFrame(columns=['Date', 'SKU_Lot', 'Quantity Shipped', 'Base SKU', 'SKU'])
+
+    # Use safe_sheet_to_dataframe for robust DataFrame construction
+    shipped_items_df = safe_sheet_to_dataframe(raw_shipped_items_data)
 
     if shipped_items_df.empty:
         logger.warning("Shipped_Items_Data DataFrame is empty after conversion. Returning empty DataFrame.")
@@ -219,18 +194,9 @@ def load_shipped_orders_data(sheet_id: str) -> pd.DataFrame | None:
         logger.warning("No data or malformed data found in 'Shipped_Orders_Data' worksheet. Returning empty DataFrame.")
         return pd.DataFrame(columns=['Date', 'OrderNumber'])
 
-    if isinstance(raw_shipped_orders_data, list) and len(raw_shipped_orders_data) > 0:
-        if len(raw_shipped_orders_data) == 1 and all(not cell for cell in raw_shipped_orders_data[0]): # Only empty header row
-            shipped_orders_df = pd.DataFrame(columns=[h.strip() for h in raw_shipped_orders_data[0]])
-        elif len(raw_shipped_orders_data) > 0:
-            shipped_orders_df = pd.DataFrame(raw_shipped_orders_data[1:], columns=[h.strip() for h in raw_shipped_orders_data[0]])
-        else:
-            shipped_orders_df = pd.DataFrame()
-    elif isinstance(raw_shipped_orders_data, pd.DataFrame):
-        shipped_orders_df = raw_shipped_orders_data
-    else:
-        logger.error(f"Unexpected data type for Shipped_Orders_Data: {type(raw_shipped_orders_data)}. Returning empty DataFrame.")
-        return pd.DataFrame(columns=['Date', 'OrderNumber'])
+
+    # Use safe_sheet_to_dataframe for robust DataFrame construction
+    shipped_orders_df = safe_sheet_to_dataframe(raw_shipped_orders_data)
 
     if shipped_orders_df.empty:
         logger.warning("Shipped_Orders_Data DataFrame is empty after conversion. Returning empty DataFrame.")
@@ -260,8 +226,13 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
     """Loads the weekly shipped history from Google Sheets."""
     logger.info("Loading weekly shipped history...")
     raw_data = get_google_sheet_data(sheet_id, settings.ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME) 
-    logging.debug(f"Raw data from ORA_Weekly_Shipped_History (first 5 rows):\n{raw_data[:5]}")
-    
+    if raw_data is not None:
+        logging.debug(f"Raw data from ORA_Weekly_Shipped_History (first 5 rows):\n{raw_data[:5]}")
+        # Continue with the rest of your logic that uses raw_data
+    else:
+        # Handle the error case gracefully, for example, by logging a warning.
+        logging.warning("Failed to retrieve weekly shipped history data. The function returned None.")
+
     # Initialize df to ensure it's always defined before its first use outside the initial raw_data processing blocks.
     # This empty DataFrame will be returned if raw_data is invalid or empty after processing.
     df = pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity']) 
@@ -272,19 +243,9 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
         logger.warning("No data or malformed data found in 'ORA_Weekly_Shipped_History' sheet. Returning empty DataFrame.")
         return df # Return the already initialized df
     
-    if isinstance(raw_data, list) and len(raw_data) > 0:
-        if len(raw_data) == 1 and all(not cell for cell in raw_data[0]): # Only empty header row
-            df = pd.DataFrame(columns=[h.strip() for h in raw_data[0]])
-        elif len(raw_data) > 0: # raw_data has content (headers + data)
-            df = pd.DataFrame(raw_data[1:], columns=[h.strip() for h in raw_data[0]])
-        else: # This 'else' covers cases where raw_data is an empty list if not caught by the very first 'if'.
-              # Ensures df is assigned here.
-            df = pd.DataFrame()
-    elif isinstance(raw_data, pd.DataFrame): # If it's already a DataFrame (e.g., from a mock)
-        df = raw_data
-    else: # Unexpected type
-        logger.error(f"Unexpected data type for ORA_Weekly_Shipped_History: {type(raw_data)}. Returning empty DataFrame.")
-        return df # Return the already initialized df
+
+    # Use safe_sheet_to_dataframe for robust DataFrame construction
+    df = safe_sheet_to_dataframe(raw_data)
 
     # This 'if df.empty:' check is now safe because df is guaranteed to be defined.
     # The warning message is also updated per prior request.
@@ -364,31 +325,20 @@ def load_product_names_map(sheet_id: str) -> pd.DataFrame | None:
     logger.info("Loading product names map...")
     try:
         raw_data = get_google_sheet_data(sheet_id, settings.ORA_CONFIGURATION_TAB_NAME)
-        
         logger.debug(f"Raw data from ORA_Configuration for product names: {raw_data[:2] if isinstance(raw_data, list) else type(raw_data)}")
 
         # --- FIX: Convert raw_data (list of lists) to DataFrame immediately ---
         if raw_data is None or (isinstance(raw_data, list) and not raw_data):
             logger.warning("No data or malformed data found in 'ORA_Configuration' worksheet for product names map. Returning empty DataFrame.")
             return pd.DataFrame(columns=['SKU', 'Product'])
-        
-        if isinstance(raw_data, list) and len(raw_data) > 0:
-            if len(raw_data) == 1 and all(not cell for cell in raw_data[0]): # Only empty header row
-                df = pd.DataFrame(columns=[h.strip() for h in raw_data[0]])
-            elif len(raw_data) > 0:
-                df = pd.DataFrame(raw_data[1:], columns=[h.strip() for h in raw_data[0]])
-            else:
-                df = pd.DataFrame()
-        elif isinstance(raw_data, pd.DataFrame):
-            df = raw_data
-        else:
-            logger.warning("Raw data for ORA_Configuration is malformed. Returning empty DataFrame.")
-            return pd.DataFrame(columns=['SKU', 'Product'])
+
+        # Use safe_sheet_to_dataframe for robust DataFrame construction
+        df = safe_sheet_to_dataframe(raw_data)
 
         if df.empty:
             logger.warning("ORA_Configuration DataFrame is empty after conversion. Returning empty DataFrame.")
             return pd.DataFrame(columns=['SKU', 'Product'])
-        
+
         df.columns = df.columns.str.strip()
 
         logger.debug(f"DataFrame columns from ORA_Configuration after strip(): {df.columns.tolist()}")
