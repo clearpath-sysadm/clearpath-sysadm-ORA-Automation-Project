@@ -134,8 +134,20 @@ def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: st
         "sample": df.head(3).to_dict(orient='list')
     })
 
-    # Convert all date/datetime objects to strings to avoid JSON serialization errors
-    df = df.applymap(lambda x: x.isoformat() if hasattr(x, 'isoformat') else x)
+    # Robustly convert all values to native Python types for JSON serialization
+    import numpy as np
+    def make_serializable(val):
+        if isinstance(val, (np.generic,)):
+            return val.item()
+        if hasattr(val, 'isoformat'):
+            return val.isoformat()
+        if isinstance(val, (list, tuple)):
+            return [make_serializable(v) for v in val]
+        if isinstance(val, dict):
+            return {k: make_serializable(v) for k, v in val.items()}
+        return val
+
+    df = df.applymap(make_serializable)
 
     try:
         creds = _get_sheets_credentials()
@@ -150,12 +162,6 @@ def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: st
         }
         range_name = f"'{worksheet_name}'!A1" # Start writing from A1
 
-        # 1. Clear existing data (optional but good for fresh reports)
-        logger.debug({"message": "Clearing existing data in Google Sheet before writing.", "sheet_id": sheet_id, "worksheet": worksheet_name})
-        clear_range = f"'{worksheet_name}'!A:ZZ" # Clear entire sheet
-        service.spreadsheets().values().clear(
-            spreadsheetId=sheet_id, range=clear_range
-        ).execute()
 
         # 2. Write new data
         logger.debug({"message": "Writing new data to Google Sheet.", "sheet_id": sheet_id, "worksheet": worksheet_name, "rows_to_write": len(values_to_write)})
