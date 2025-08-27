@@ -111,32 +111,14 @@ def get_google_sheet_data(sheet_id: str, worksheet_name: str) -> list | None:
 def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: str, header_row: bool = True):
     # ...existing code for writing and formatting...
 
-    # 4. Clear all rows after row 53 (i.e., row 54 and beyond)
+    # 4. Clear all rows after row 53 (i.e., row 54 and beyond) using values().clear
     try:
-        spreadsheet_metadata = service.spreadsheets().get(spreadsheetId=sheet_id).execute()
-        sheet_id_for_clearing = None
-        for sheet_prop in spreadsheet_metadata.get('sheets', []):
-            if sheet_prop.get('properties', {}).get('title') == worksheet_name:
-                sheet_id_for_clearing = sheet_prop.get('properties', {}).get('sheetId')
-                break
-        if sheet_id_for_clearing is not None:
-            # Google Sheets API is 0-indexed; row 53 is index 52, so row 54 is index 53
-            clear_request = {
-                "updateCells": {
-                    "range": {
-                        "sheetId": sheet_id_for_clearing,
-                        "startRowIndex": 53,
-                    },
-                    "fields": "userEnteredValue"
-                }
-            }
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=sheet_id,
-                body={'requests': [clear_request]}
-            ).execute()
-            logger.info({"message": "Cleared all rows after row 53 (row 54 and beyond)", "sheet_id": sheet_id, "worksheet": worksheet_name})
-        else:
-            logger.warning({"message": "Could not find sheetId for clearing rows after 53.", "sheet_id": sheet_id, "worksheet": worksheet_name})
+        clear_range = f"'{worksheet_name}'!A54:ZZ"
+        service.spreadsheets().values().clear(
+            spreadsheetId=sheet_id,
+            range=clear_range
+        ).execute()
+        logger.info({"message": "Cleared all rows after row 53 (row 54 and beyond)", "sheet_id": sheet_id, "worksheet": worksheet_name})
     except Exception as e:
         logger.error({"message": "Failed to clear rows after row 53.", "sheet_id": sheet_id, "worksheet": worksheet_name, "error": str(e)})
     """
@@ -273,6 +255,7 @@ def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: st
                 body={'requests': requests}
             ).execute()
             logger.info({"message": "Google Sheet formatting applied successfully.", "sheet_id": sheet_id, "worksheet": worksheet_name})
+            
 
     except HttpError as e:
         logger.error({
@@ -291,4 +274,15 @@ def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: st
             "error": str(e),
             "function": "write_dataframe_to_sheet"
         }, exc_info=True)
+
+            # 4. Clear all rows after row 53 (i.e., row 54 and beyond) using values().clear
+    try:
+        clear_range = f"'{worksheet_name}'!A54:ZZ"
+        service.spreadsheets().values().clear(
+            spreadsheetId=sheet_id,
+            range=clear_range
+        ).execute()
+        logger.info({"message": "Cleared all rows after row 53 (row 54 and beyond)", "sheet_id": sheet_id, "worksheet": worksheet_name})
+    except Exception as e:
+        logger.error({"message": "Failed to clear rows after row 53.", "sheet_id": sheet_id, "worksheet": worksheet_name, "error": str(e)})
 
