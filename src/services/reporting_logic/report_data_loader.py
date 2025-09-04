@@ -6,7 +6,19 @@ from datetime import datetime # Import datetime for parsing dates
 import os # Ensure os is imported here as well for consistency
 from utils.google_sheets_utils import safe_sheet_to_dataframe
 
-logger = logging.getLogger(__name__)
+# Set up a dedicated logger for report_data_loader
+log_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'logs')
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, 'report_data_loader.log')
+
+logger = logging.getLogger('report_data_loader')
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.propagate = False
 
 def load_all_configuration_data(sheet_id: str) -> tuple | None:
     """
@@ -111,6 +123,10 @@ def load_inventory_transactions(sheet_id: str) -> pd.DataFrame | None:
     transactions_df['SKU'] = transactions_df['SKU'].astype(str).str.strip() # Ensure SKU is stripped
 
     logger.info(f"Successfully loaded {len(transactions_df)} inventory transactions.")
+    # --- DEBUG LOGGING FOR SKU 17612 ---
+    sku_17612_df = transactions_df[transactions_df['SKU'] == '17612']
+    logger.info(f"[DEBUG] Inventory_Transactions: Found {len(sku_17612_df)} rows for SKU 17612. Total quantity: {sku_17612_df['Quantity'].sum()}")
+    logger.debug(f"[DEBUG] Inventory_Transactions rows for SKU 17612:\n{sku_17612_df.to_string(index=False)}")
     return transactions_df
 
 def load_shipped_items_data(sheet_id: str) -> pd.DataFrame | None:
@@ -182,6 +198,11 @@ def load_shipped_items_data(sheet_id: str) -> pd.DataFrame | None:
     shipped_items_df['SKU'] = shipped_items_df['SKU'].astype(str).str.strip() # Ensure final SKU column is string and stripped
     shipped_items_df['Date'] = shipped_items_df['Date'].dt.date
     logger.info(f"Successfully loaded {len(shipped_items_df)} shipped items.")
+        # --- FINAL LOGGING: Shipped Items DataFrame before return ---
+    logger.debug(f"Shipped Items DataFrame before return: shape={shipped_items_df.shape}, columns={list(shipped_items_df.columns)}")
+    logger.debug(f"Shipped Items DataFrame head:\n{shipped_items_df.head()}\n")
+    if shipped_items_df.empty:
+            logger.warning("Shipped Items DataFrame is empty before return from load_shipped_items_data.")
     return shipped_items_df
 
 def load_shipped_orders_data(sheet_id: str) -> pd.DataFrame | None:
@@ -197,6 +218,10 @@ def load_shipped_orders_data(sheet_id: str) -> pd.DataFrame | None:
 
     # Use safe_sheet_to_dataframe for robust DataFrame construction
     shipped_orders_df = safe_sheet_to_dataframe(raw_shipped_orders_data)
+
+    # Log the full number of records loaded before any truncation/filtering
+    logger.info(f"Loaded Shipped Orders DataFrame BEFORE truncation: {shipped_orders_df.shape[0]} rows")
+    logger.debug(f"Shipped Orders DataFrame head BEFORE truncation:\n{shipped_orders_df.head(10)}")
 
     if shipped_orders_df.empty:
         logger.warning("Shipped_Orders_Data DataFrame is empty after conversion. Returning empty DataFrame.")
@@ -303,7 +328,15 @@ def load_weekly_shipped_history(sheet_id: str) -> pd.DataFrame | None:
         # This return should also be df for consistency if it's meant to be empty.
         return df # Changed to return df for consistency
 
-    long_df['ShippedQuantity'] = pd.to_numeric(long_df['ShippedQuantity'].replace('', 0)).fillna(0)
+    # Robustly handle numbers with commas and whitespace
+    long_df['ShippedQuantity'] = (
+        long_df['ShippedQuantity']
+            .replace('', 0)
+            .astype(str)
+            .str.replace(',', '', regex=False)
+            .str.strip()
+    )
+    long_df['ShippedQuantity'] = pd.to_numeric(long_df['ShippedQuantity'], errors='coerce').fillna(0)
     long_df['SKU'] = long_df['SKU'].astype(str).str.strip()
 
     if not all(col in long_df.columns for col in ['Date', 'SKU', 'ShippedQuantity']):

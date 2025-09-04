@@ -22,7 +22,18 @@ from config import settings
 from utils.api_utils import make_api_request
 from src.services.gcp.secret_manager import access_secret_version
 
-logger = logging.getLogger(__name__)
+log_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'logs')
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, 'shipstation_api_client.log')
+
+logger = logging.getLogger('shipstation_api_client')
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.propagate = False
 
 def get_shipstation_headers(api_key: str, api_secret: str) -> dict:
     """

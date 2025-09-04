@@ -15,6 +15,10 @@ import logging
 def generate_weekly_inventory_report(current_inventory_df: pd.DataFrame, rolling_average_df: pd.DataFrame, product_names_map: dict) -> pd.DataFrame:
     """
     Generates the weekly inventory report by combining current inventory with rolling averages.
+
+    Note:
+    - No row limit is applied to current_inventory_df or product_names_map.
+    - rolling_average_df should be generated from the weekly shipped history tab, using the 52 most recent weeks per SKU in the rolling average calculation.
     """
     logging.info("Generating Weekly Inventory Report...")
     

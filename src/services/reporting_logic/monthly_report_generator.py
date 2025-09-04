@@ -1,10 +1,23 @@
 import pandas as pd
 import logging
+import os
 from datetime import datetime, timedelta
 import math
 from . import inventory_calculations
 
-logger = logging.getLogger(__name__)
+log_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+log_dir = os.path.join(log_dir, 'logs')
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, 'monthly_report_generator.log')
+
+logger = logging.getLogger('monthly_report_generator')
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.propagate = False
 
 def generate_monthly_charge_report(
     rates: dict,
@@ -22,9 +35,13 @@ def generate_monthly_charge_report(
     This version has the correct function signature and logic.
     """
     try:
+    # Moved EOM inventory values section to end of log output
         logger.info(f"Generating Monthly Charge Report for {year}-{month}...")
         start_date = datetime(year, month, 1).date()
         end_date = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        # --- LOGGING: Shipped Items DataFrame after loading ---
+        logger.debug(f"Shipped Items DataFrame after loading: shape={shipped_items_df.shape}, columns={list(shipped_items_df.columns)}")
+        logger.debug(f"Shipped Items DataFrame head:\n{shipped_items_df.head()}\n")
         all_dates = pd.date_range(start=start_date, end=end_date, freq='D').date
         
         # Ensure 'Date' columns are datetime.date objects for proper filtering
@@ -33,6 +50,31 @@ def generate_monthly_charge_report(
         shipped_orders_df['Date'] = pd.to_datetime(shipped_orders_df['Date']).dt.date 
         
         # Filter shipments to only include those within the report month
+        # Log inventory transaction summary for the month
+        month_transactions = inventory_transactions_df[
+            (inventory_transactions_df['Date'] >= start_date) & (inventory_transactions_df['Date'] <= end_date)
+        ]
+        logger.info(f"Total inventory transactions for month: {len(month_transactions)}")
+        if 'TransactionType' in month_transactions.columns:
+            logger.info("Inventory transactions by type:")
+            logger.info(month_transactions['TransactionType'].value_counts().to_string())
+            logger.info("Sum of quantities by type:")
+            logger.info(month_transactions.groupby('TransactionType')['Quantity'].sum().to_string())
+            if 'SKU' in month_transactions.columns:
+                logger.info("Sum of quantities by TransactionType and SKU:")
+                logger.info(month_transactions.groupby(['TransactionType', 'SKU'])['Quantity'].sum().to_string())
+
+        # Log detailed inventory transactions for audit
+        logger.info("===== Detailed Inventory Transactions for Month =====")
+        if not month_transactions.empty:
+            for idx, row in month_transactions.iterrows():
+                logger.info(f"Date: {row['Date']} | SKU: {row['SKU']} | Type: {row['TransactionType']} | Qty: {row['Quantity']}")
+        else:
+            logger.info("No inventory transactions for this month.")
+        logger.info("===== End of Detailed Inventory Transactions =====\n")
+        # --- LOGGING: Shipped Items DataFrame after date conversion ---
+        logger.debug(f"Shipped Items DataFrame after date conversion: shape={shipped_items_df.shape}, columns={list(shipped_items_df.columns)}")
+        logger.debug(f"Shipped Items DataFrame head:\n{shipped_items_df.head()}\n")
         shipped_items_df_filtered = shipped_items_df[(shipped_items_df['Date'] >= start_date) & (shipped_items_df['Date'] <= end_date)].copy()
         shipped_orders_df_filtered = shipped_orders_df[(shipped_orders_df['Date'] >= start_date) & (shipped_orders_df['Date'] <= end_date)].copy()
 
@@ -131,8 +173,11 @@ def generate_monthly_charge_report(
         report_df = report_df.join(daily_space_charge.rename('Space Rental Charge')).fillna(0)
         
         logger.info("--- Final Space Rental Charge in Report DataFrame ---")
-        logger.info(f"Space Rental Charge column (head):\n{report_df['Space Rental Charge'].head().to_string()}")
-        logger.info(f"Space Rental Charge column (tail):\n{report_df['Space Rental Charge'].tail().to_string()}")
+        #logger.info(f"Space Rental Charge column (head):\n{report_df['Space Rental Charge'].head().to_string()}")
+        #logger.info(f"Space Rental Charge column (tail):\n{report_df['Space Rental Charge'].tail().to_string()}")
+
+        logger.info("--- Full Space Rental Charge column for audit ---")
+        logger.info(report_df['Space Rental Charge'].to_string())
 
         report_df['Total Charge'] = report_df['Orders Charge'] + report_df['Packages Charge'] + report_df['Space Rental Charge']
         
@@ -240,6 +285,63 @@ def generate_monthly_charge_report(
         logger.debug("Final Report DataFrame AFTER all formatting (tail):")
         logger.debug(final_report_df.tail().to_string())
 
+            # Log inventory transaction summary for the month at the end for easy access
+        logger.info("\n===== Inventory Transaction Summary for Month =====")
+        month_transactions = inventory_transactions_df[
+                (inventory_transactions_df['Date'] >= start_date) & (inventory_transactions_df['Date'] <= end_date)
+            ]
+        logger.info(f"Total inventory transactions for month: {len(month_transactions)}")
+        if 'TransactionType' in month_transactions.columns:
+                logger.info("Inventory transactions by type:")
+                logger.info(month_transactions['TransactionType'].value_counts().to_string())
+                logger.info("Sum of quantities by type:")
+                logger.info(month_transactions.groupby('TransactionType')['Quantity'].sum().to_string())
+                if 'SKU' in month_transactions.columns:
+                    logger.info("Sum of quantities by TransactionType and SKU:")
+                    logger.info(month_transactions.groupby(['TransactionType', 'SKU'])['Quantity'].sum().to_string())
+        logger.info("===== End of Inventory Transaction Summary =====\n")
+
+            # Log previous EOM inventory values from Configuration tab at the end for easy access
+        logger.info("===== Previous End of Month (EOM) Inventory Values from Configuration Tab =====")
+        for sku, qty in start_of_month_inventory.items():
+                logger.info(f"SKU: {sku} | EOM Inventory: {qty}")
+        logger.info("===== End of Previous EOM Inventory Values =====\n")
+
+        # Log summary calculation for each SKU
+        logger.info("===== Monthly Inventory Movement Summary by SKU =====")
+        for sku in start_of_month_inventory.keys():
+            bom = start_of_month_inventory.get(sku, 0)
+            received = 0
+            shipped = 0
+            repacked = 0
+            if not inventory_transactions_df.empty:
+                received = inventory_transactions_df[(inventory_transactions_df['SKU'] == sku) & (inventory_transactions_df['TransactionType'] == 'Receive') & (inventory_transactions_df['Date'] >= start_date) & (inventory_transactions_df['Date'] <= end_date)]['Quantity'].sum()
+                repacked = inventory_transactions_df[(inventory_transactions_df['SKU'] == sku) & (inventory_transactions_df['TransactionType'] == 'Repack') & (inventory_transactions_df['Date'] >= start_date) & (inventory_transactions_df['Date'] <= end_date)]['Quantity'].sum()
+            if not shipped_items_df.empty:
+                shipped = shipped_items_df[(shipped_items_df['SKU'] == sku) & (shipped_items_df['Date'] >= start_date) & (shipped_items_df['Date'] <= end_date)]['Quantity_Shipped'].sum()
+            eom_calc = bom + received + repacked - shipped
+            # Get actual EOM from daily_inventory_df
+            actual_eom = None
+            if 'daily_inventory_df' in locals() and daily_inventory_df is not None and not daily_inventory_df.empty:
+                eom_row = daily_inventory_df[(daily_inventory_df['SKU'] == sku) & (daily_inventory_df['Date'] == end_date)]
+                if not eom_row.empty and 'EOD_Inventory' in eom_row.columns:
+                    actual_eom = int(eom_row['EOD_Inventory'].iloc[0])
+            logger.info(f"SKU: {sku} | BOM: {bom} | Received: {received} | Repacked: {repacked} | Shipped: {shipped} | Calculated EOM: {eom_calc} | Actual EOM: {actual_eom}")
+        logger.info("===== End of Monthly Inventory Movement Summary =====\n")
+
+        # Log Previous End of Month (EOM) inventory values from Configuration tab at the end
+        logger.info("===== Previous End of Month (EOM) Inventory Values from Configuration tab =====")
+        for sku, qty in start_of_month_inventory.items():
+            pallet_size = pallet_counts.get(sku, '-')  # Cases per pallet
+            # Calculate pallets used (inventory pallet count, including partials)
+            pallets_used = '-'
+            try:
+                if isinstance(pallet_size, (int, float)) and pallet_size > 0:
+                    pallets_used = int(math.ceil(qty / pallet_size))
+            except Exception:
+                pass
+            logger.info(f"SKU: {sku} | EOM Inventory: {qty} | Pallet Size: {pallet_size} | Pallets Used: {pallets_used}")
+        logger.info("===== End of Previous EOM Inventory Values =====\n")
 
         logger.info("Monthly Charge Report generated successfully.")
         return final_report_df, None

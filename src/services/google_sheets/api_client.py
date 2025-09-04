@@ -112,18 +112,18 @@ def get_google_sheet_data(sheet_id: str, worksheet_name: str) -> list | None:
         return None
 
 def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: str, header_row: bool = True):
-    # ...existing code for writing and formatting...
-
-    # 4. Clear all rows after row 53 (i.e., row 54 and beyond) using values().clear
-    try:
-        clear_range = f"'{worksheet_name}'!A54:ZZ"
-        service.spreadsheets().values().clear(
-            spreadsheetId=sheet_id,
-            range=clear_range
-        ).execute()
-        logger.info({"message": "Cleared all rows after row 53 (row 54 and beyond)", "sheet_id": sheet_id, "worksheet": worksheet_name})
-    except Exception as e:
-        logger.error({"message": "Failed to clear rows after row 53.", "sheet_id": sheet_id, "worksheet": worksheet_name, "error": str(e)})
+    # Only clear rows after 53 for the Weekly History tab
+    from config.settings import ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME
+    if worksheet_name == ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME:
+        try:
+            clear_range = f"'{worksheet_name}'!A54:ZZ"
+            service.spreadsheets().values().clear(
+                spreadsheetId=sheet_id,
+                range=clear_range
+            ).execute()
+            logger.info({"message": "Cleared all rows after row 53 (row 54 and beyond)", "sheet_id": sheet_id, "worksheet": worksheet_name})
+        except Exception as e:
+            logger.error({"message": "Failed to clear rows after row 53.", "sheet_id": sheet_id, "worksheet": worksheet_name, "error": str(e)})
     """
     Writes a Pandas DataFrame to a Google Sheet, clearing existing content first.
     Applies cell alignment formatting: header row centered, data rows right-justified.
@@ -278,14 +278,4 @@ def write_dataframe_to_sheet(df: pd.DataFrame, sheet_id: str, worksheet_name: st
             "function": "write_dataframe_to_sheet"
         }, exc_info=True)
 
-            # 4. Clear all rows after row 53 (i.e., row 54 and beyond) using values().clear
-    try:
-        clear_range = f"'{worksheet_name}'!A54:ZZ"
-        service.spreadsheets().values().clear(
-            spreadsheetId=sheet_id,
-            range=clear_range
-        ).execute()
-        logger.info({"message": "Cleared all rows after row 53 (row 54 and beyond)", "sheet_id": sheet_id, "worksheet": worksheet_name})
-    except Exception as e:
-        logger.error({"message": "Failed to clear rows after row 53.", "sheet_id": sheet_id, "worksheet": worksheet_name, "error": str(e)})
 

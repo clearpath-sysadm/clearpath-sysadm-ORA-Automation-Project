@@ -1,13 +1,32 @@
-# TESTING DEPLOYMENT 2025-07-10 (2ND ATTEMPT)#
+# Entry point for direct script execution
 
-
+import sys
+import os
 import pandas as pd
 # from datetime import datetime, date # Import date as well for explicit date objects
-# import os
-# import sys
 import logging
 
-# # --- Dynamic Path Adjustment for Module Imports ---
+# --- Dynamic Path Adjustment for Module Imports ---
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+
+from config import settings
+from utils.logging_config import setup_logging
+
+# --- Dedicated logger for shipstation_reporter ---
+log_dir = os.path.join(project_root, 'logs')
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, 'shipstation_reporter.log')
+logger = logging.getLogger('shipstation_reporter')
+logger.setLevel(logging.INFO)
+file_handler = logging.FileHandler(log_file)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.propagate = False
+logger.info("ShipStation Reporter started. Environment: %s", "LOCAL" if settings.IS_LOCAL_ENV else "CLOUD" if settings.IS_CLOUD_ENV else "UNKNOWN")
 # current_dir = os.path.dirname(os.path.abspath(__file__))
 # project_root = os.path.abspath(os.path.join(current_dir, '..'))
 # if project_root not in sys.path:
@@ -30,7 +49,7 @@ from src.services.reporting_logic import (
 )
 from src.services.data_processing import shipment_processor # Import the shipment_processor
 
-logger = logging.getLogger(__name__)
+## logger already set above
 
 # Renamed original main() to run_reporter_logic()
 def run_reporter_logic():
@@ -68,6 +87,7 @@ def run_reporter_logic():
 
     # --- Monthly Charge Report Generation ---
     logger.info("Generating Monthly Charge Report...")
+    logger.debug("Configuration: GOOGLE_SHEET_ID=%s, Output Tabs: %s, %s", settings.GOOGLE_SHEET_ID, getattr(settings, 'MONTHLY_CHARGE_REPORT_OUTPUT_TAB_NAME', None), getattr(settings, 'WEEKLY_REPORT_OUTPUT_TAB_NAME', None))
     monthly_report_df, monthly_totals_df = monthly_report_generator.generate_monthly_charge_report(
         rates,
         pallet_counts,
@@ -170,6 +190,7 @@ def shipstation_reporter_http_trigger(request): # This function name should be y
     #     logger.info("Cloud Function received HTTP trigger. Testing basic response for health check.")
     #     return 'Hello World! Container is up and running.', 200
 
-
+if __name__ == "__main__":
+    run_reporter_logic()
 # Removed the 'if __name__ == "__main__": main()' block as it's not needed for Cloud Functions
 # The Cloud Function environment will call shipstation_reporter_http_trigger directly.

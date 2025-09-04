@@ -38,6 +38,7 @@ from src.services.shipstation.api_client import (
 )
 
 
+
 # --- Environment-Aware Logging Configuration ---
 if IS_LOCAL_ENV:
     log_dir = os.path.join(project_root, 'logs')
@@ -51,6 +52,23 @@ else:
     # Fallback: log to console only
     setup_logging(log_file_path=None, log_level=logging.INFO, enable_console_logging=True)
 logger = logging.getLogger(__name__)
+
+# --- DEBUG: Print and log service account key path, existence, environment, project ID, and secret names ---
+print(f"[DEBUG] SERVICE_ACCOUNT_KEY_PATH: {SERVICE_ACCOUNT_KEY_PATH}")
+print(f"[DEBUG] SERVICE_ACCOUNT_KEY_PATH exists: {os.path.exists(SERVICE_ACCOUNT_KEY_PATH) if SERVICE_ACCOUNT_KEY_PATH else 'None'}")
+print(f"[DEBUG] IS_LOCAL_ENV: {IS_LOCAL_ENV}")
+print(f"[DEBUG] IS_CLOUD_ENV: {IS_CLOUD_ENV}")
+import config.settings as _settings
+print(f"[DEBUG] YOUR_GCP_PROJECT_ID: {_settings.YOUR_GCP_PROJECT_ID}")
+print(f"[DEBUG] SHIPSTATION_API_KEY_SECRET_ID: {_settings.SHIPSTATION_API_KEY_SECRET_ID}")
+print(f"[DEBUG] SHIPSTATION_API_SECRET_SECRET_ID: {_settings.SHIPSTATION_API_SECRET_SECRET_ID}")
+logger.info(f"[DEBUG] SERVICE_ACCOUNT_KEY_PATH: {SERVICE_ACCOUNT_KEY_PATH}")
+logger.info(f"[DEBUG] SERVICE_ACCOUNT_KEY_PATH exists: {os.path.exists(SERVICE_ACCOUNT_KEY_PATH) if SERVICE_ACCOUNT_KEY_PATH else 'None'}")
+logger.info(f"[DEBUG] IS_LOCAL_ENV: {IS_LOCAL_ENV}")
+logger.info(f"[DEBUG] IS_CLOUD_ENV: {IS_CLOUD_ENV}")
+logger.info(f"[DEBUG] YOUR_GCP_PROJECT_ID: {_settings.YOUR_GCP_PROJECT_ID}")
+logger.info(f"[DEBUG] SHIPSTATION_API_KEY_SECRET_ID: {_settings.SHIPSTATION_API_KEY_SECRET_ID}")
+logger.info(f"[DEBUG] SHIPSTATION_API_SECRET_SECRET_ID: {_settings.SHIPSTATION_API_SECRET_SECRET_ID}")
 
 
 def update_weekly_history_incrementally(daily_items_df, existing_history_df, target_skus, shipment_data):
@@ -261,7 +279,7 @@ def run_daily_shipment_pull(request=None):
 
         # --- 2. Determine the 32-Day Rolling Date Range ---
         today = datetime.date.today()
-        start_date = today - datetime.timedelta(days=32)
+        start_date = today - datetime.timedelta(days=40)
         end_date_str = today.strftime('%Y-%m-%d')
         start_date_str = start_date.strftime('%Y-%m-%d')
         logger.info(f"Using rolling 32-day date range: {start_date_str} to {end_date_str}")
