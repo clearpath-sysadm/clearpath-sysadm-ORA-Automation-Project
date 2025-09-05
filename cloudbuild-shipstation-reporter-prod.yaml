@@ -1,0 +1,39 @@
+# cloudbuild-dev.yaml
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+# This step lists the contents of the project for debugging purposes.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args: ['-c', 'ls -R .']
+  dir: . # Run from project root
+
+# --- Deploy shipstation-reporter Cloud Function ---
+# This step moves shipstation_reporter.py to main.py at the root.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'mv'
+  args: ['src/shipstation_reporter.py', 'main.py']
+  dir: .
+
+# This step deploys the Cloud Function.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - 'functions'
+    - 'deploy'
+    - 'shipstation-reporter-function'
+    - '--project=ora-automation-project'
+    - '--runtime=python311'
+    - '--entry-point=shipstation_reporter_http_trigger'
+    - '--source=.' # Source is the current directory (project root)
+    - '--trigger-http'
+    - '--allow-unauthenticated'
+    - '--region=us-central1'
+    - '--memory=1024MB'
+    - '--timeout=600s'
+    - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
+    - '--gen2' # Explicitly use 2nd Gen functions for Python 3.11
+  dir: .
+  id: deploy-shipstation-reporter
+
