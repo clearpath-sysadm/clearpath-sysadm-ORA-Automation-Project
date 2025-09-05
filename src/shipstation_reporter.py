@@ -1,9 +1,6 @@
-# Entry point for direct script execution
-
 import sys
 import os
 import pandas as pd
-# from datetime import datetime, date # Import date as well for explicit date objects
 import logging
 
 # --- Dynamic Path Adjustment for Module Imports ---
@@ -11,22 +8,28 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-
 from config import settings
-from utils.logging_config import setup_logging
 
-# --- Dedicated logger for shipstation_reporter ---
-log_dir = os.path.join(project_root, 'logs')
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'shipstation_reporter.log')
+# --- Environment Detection ---
+ENV = getattr(settings, 'get_environment', lambda: 'unknown')()
+IS_LOCAL_ENV = ENV == 'local'
+IS_CLOUD_ENV = ENV == 'cloud'
+
+# --- Logging Setup ---
 logger = logging.getLogger('shipstation_reporter')
 logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(log_file)
+if IS_LOCAL_ENV:
+    log_dir = os.path.join(project_root, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'shipstation_reporter.log')
+    handler = logging.FileHandler(log_file)
+else:
+    handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 logger.propagate = False
-logger.info("ShipStation Reporter started. Environment: %s", "LOCAL" if settings.IS_LOCAL_ENV else "CLOUD" if settings.IS_CLOUD_ENV else "UNKNOWN")
+logger.info(f"ShipStation Reporter started. Environment: {ENV.upper()}")
 # current_dir = os.path.dirname(os.path.abspath(__file__))
 # project_root = os.path.abspath(os.path.join(current_dir, '..'))
 # if project_root not in sys.path:
