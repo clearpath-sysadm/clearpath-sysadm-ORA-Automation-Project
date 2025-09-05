@@ -65,7 +65,7 @@ IS_LOCAL_ENV = ENVIRONMENT == 'local'
 
 # --- Google Cloud Project Configuration ---
 
-YOUR_GCP_PROJECT_ID = "ora-automation-project"
+YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 # if IS_LOCAL_ENV:
 #     YOUR_GCP_PROJECT_ID = "ora-automation-project-dev"
 # elif IS_CLOUD_ENV:

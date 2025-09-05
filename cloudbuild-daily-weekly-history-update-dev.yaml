@@ -24,7 +24,7 @@ steps:
     - 'functions'
     - 'deploy'
     - 'daily-weekly-history-update'
-    - '--project=ora-automation-project'
+    - '--project=ora-automation-project-dev'
     - '--runtime=python311'
     - '--entry-point=daily_shipment_processor_http_trigger'
     - '--source=.'
@@ -37,5 +37,5 @@ steps:
     - '--gen2'
 #    - '--set-env-vars=PYTHON_LOG_LEVEL=DEBUG'
   dir: .
-  id: daily_weekly_history_update
+  id: daily_weekly_history_update-dev
 
