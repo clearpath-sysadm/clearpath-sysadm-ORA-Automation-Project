@@ -1,24 +1,34 @@
+
 import pandas as pd
 import logging
-from config.settings import settings
+import os
+from config import settings
 from src.services.google_sheets.api_client import get_google_sheet_data
-from datetime import datetime # Import datetime for parsing dates
-import os # Ensure os is imported here as well for consistency
+from datetime import datetime
 from utils.google_sheets_utils import safe_sheet_to_dataframe
 
-# Set up a dedicated logger for report_data_loader
-log_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'logs')
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'report_data_loader.log')
+# --- Environment Detection ---
+ENV = getattr(settings, 'get_environment', lambda: 'unknown')()
+IS_LOCAL_ENV = ENV == 'local'
+IS_CLOUD_ENV = ENV == 'cloud'
 
+# --- Logging Setup ---
 logger = logging.getLogger('report_data_loader')
 logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(log_file)
-file_handler.setLevel(logging.DEBUG)
+if IS_LOCAL_ENV:
+    log_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'report_data_loader.log')
+    handler = logging.FileHandler(log_file)
+    handler.setLevel(logging.DEBUG)
+else:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 logger.propagate = False
+logger.info(f"Report Data Loader started. Environment: {ENV.upper()}")
 
 def load_all_configuration_data(sheet_id: str) -> tuple | None:
     """

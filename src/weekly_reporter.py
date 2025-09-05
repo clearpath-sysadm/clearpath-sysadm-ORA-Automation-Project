@@ -22,13 +22,33 @@ from src.services.reporting_logic.report_data_loader import get_key_skus_and_pro
 # Import centralized configuration settings
 from config.settings import settings 
 
-# Setup logging for this module.
-_log_dir = os.path.join(project_root, 'logs')
-_log_file = os.path.join(_log_dir, 'app.log')
-if not logging.getLogger().handlers:
-    from utils.logging_config import setup_logging
-    setup_logging(log_file_path=_log_file, log_level=logging.DEBUG, enable_console_logging=True)
-logger = logging.getLogger(__name__)
+
+# --- Environment Detection ---
+try:
+    from config import settings
+    ENV = getattr(settings, 'get_environment', lambda: 'unknown')()
+except ImportError:
+    ENV = 'unknown'
+IS_LOCAL_ENV = ENV == 'local'
+IS_CLOUD_ENV = ENV == 'cloud'
+
+# --- Logging Setup ---
+logger = logging.getLogger('weekly_reporter')
+logger.setLevel(logging.DEBUG)
+if IS_LOCAL_ENV:
+    log_dir = os.path.join(project_root, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'weekly_reporter.log')
+    handler = logging.FileHandler(log_file)
+    handler.setLevel(logging.DEBUG)
+else:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.propagate = False
+logger.info(f"Weekly Reporter started. Environment: {ENV.upper()}")
 
 
 def generate_weekly_inventory_report(google_sheet_id: str, weekly_report_tab_name: str):

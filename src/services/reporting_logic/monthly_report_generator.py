@@ -5,19 +5,33 @@ from datetime import datetime, timedelta
 import math
 from . import inventory_calculations
 
-log_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..')
-log_dir = os.path.join(log_dir, 'logs')
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'monthly_report_generator.log')
 
+# --- Environment Detection ---
+try:
+    from config import settings
+    ENV = getattr(settings, 'get_environment', lambda: 'unknown')()
+except ImportError:
+    ENV = 'unknown'
+IS_LOCAL_ENV = ENV == 'local'
+IS_CLOUD_ENV = ENV == 'cloud'
+
+# --- Logging Setup ---
 logger = logging.getLogger('monthly_report_generator')
 logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(log_file)
-file_handler.setLevel(logging.DEBUG)
+if IS_LOCAL_ENV:
+    log_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'monthly_report_generator.log')
+    handler = logging.FileHandler(log_file)
+    handler.setLevel(logging.DEBUG)
+else:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 logger.propagate = False
+logger.info(f"Monthly Report Generator started. Environment: {ENV.upper()}")
 
 def generate_monthly_charge_report(
     rates: dict,
