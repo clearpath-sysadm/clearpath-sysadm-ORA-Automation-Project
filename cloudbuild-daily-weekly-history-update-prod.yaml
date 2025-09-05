@@ -1,0 +1,41 @@
+# cloudbuild-dev.yaml
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+# This step lists the contents of the project for debugging purposes.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args: ['-c', 'ls -R .']
+  dir: . # Run from project root
+
+
+# --- Deploy daily-weekly-history-update Cloud Function ---
+# This step moves daily_shipment_processor.py to main.py at the root.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'mv'
+  args: ['src/daily_shipment_processor.py', 'main.py']
+  dir: .
+
+# This step deploys the daily-weekly-history-update Cloud Function.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - 'functions'
+    - 'deploy'
+    - 'daily-weekly-history-update'
+    - '--project=ora-automation-project'
+    - '--runtime=python311'
+    - '--entry-point=daily_shipment_processor_http_trigger'
+    - '--source=.'
+    - '--trigger-http'
+    - '--allow-unauthenticated'
+    - '--region=us-central1'
+    - '--memory=1024MB'
+    - '--timeout=600s'
+    - '--set-env-vars=GCP_PROJECT_ID=ora-automation-project'
+    - '--gen2'
+#    - '--set-env-vars=PYTHON_LOG_LEVEL=DEBUG'
+  dir: .
+  id: daily_weekly_history_update
+
