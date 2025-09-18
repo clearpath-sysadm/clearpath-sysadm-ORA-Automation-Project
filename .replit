@@ -6,3 +6,26 @@ packages = ["glibcLocales"]
 
 [agent]
 expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "weekly-reporter"
+
+[[workflows.workflow]]
+name = "weekly-reporter"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python src/weekly_reporter.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
