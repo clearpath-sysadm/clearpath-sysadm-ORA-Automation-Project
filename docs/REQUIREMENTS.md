@@ -35,6 +35,7 @@
 - **Business Analytics**: Quick metrics, trends, performance summaries
 - **Manual Controls**: Ability to trigger automation workflows on-demand
 - **File Processing Status**: XML file access status, last processed file timestamps
+- **Real-time Order Monitoring**: Display of XML file polling status and new order detection
 
 ### Data Integration
 - **Google Sheets**: Primary data source for business operations
@@ -42,6 +43,7 @@
 - **ShipStation API**: Order management and shipping integration
 - **Email Notifications**: Automated reports and alerts via SendGrid
 - **Secret Management**: Secure credential storage via Google Cloud Secret Manager
+- **Automated Polling**: Check XML file every 5 minutes for new orders
 
 ### Product Coverage
 - **SKU Management**: Support for 5 key ORA products
@@ -69,6 +71,8 @@
 - **External File Access**:
   - Google Drive API integration for retrieving X-Cart XML order files
   - File parsing capabilities for XML order data processing
+  - **Automated XML Monitoring**: Continuous polling service to check XML file every 5 minutes
+  - **Order Detection Logic**: Compare file contents to detect new orders since last check
 
 ### Development Environment
 - **Development Mode**: Continue supporting DEV_MODE bypass system
@@ -82,6 +86,8 @@
 - **Update Frequency**: Data refresh every 15-30 seconds
 - **Concurrent Users**: Support 5-10 simultaneous users maximum
 - **Availability**: 99% uptime during business hours
+- **XML Polling Frequency**: Check for new orders every 5 minutes (300 seconds)
+- **Order Processing**: New orders detected and processed within 5-10 minutes
 
 ### Security
 - **Authentication**: Basic access control (if publicly accessible)
@@ -114,7 +120,9 @@
 - [ ] Inventory alerts show current stock levels and warnings
 - [ ] Automation status reflects actual workflow execution
 - [ ] Updates occur automatically without manual refresh
-- [ ] Total implementation time under 8 hours
+- [ ] XML file polling service checks for new orders every 5 minutes
+- [ ] New orders automatically trigger processing workflow
+- [ ] Total implementation time under 10 hours (updated for polling service)
 - [ ] Zero additional hosting costs
 
 ### Nice-to-Have Features
@@ -158,6 +166,12 @@
 - Add basic authentication if publicly accessible
 - Test manual workflow execution
 
+### Phase 4: XML Polling Service (2-3 hours)
+- Implement 5-minute XML file polling mechanism
+- Add order detection and change tracking logic
+- Integrate with existing shipstation_order_uploader.py workflow
+- Add polling status monitoring to dashboard
+
 ## 📋 Acceptance Criteria
 
 ### Dashboard Functionality
@@ -174,10 +188,11 @@
 - **File Access**: Reliable connection to Google Drive for XML file retrieval
 
 ### Cost/Time Targets
-- **Development Time**: Complete implementation in under 8 hours
+- **Development Time**: Complete implementation in under 10 hours (includes XML polling service)
 - **Operational Cost**: Zero additional monthly hosting fees
 - **Maintenance**: Less than 1 hour per month ongoing support
 - **Learning Curve**: Business users productive within 15 minutes
+- **Polling Reliability**: 99%+ successful XML file checks during business hours
 
 ## 🔧 Technical Constraints
 
