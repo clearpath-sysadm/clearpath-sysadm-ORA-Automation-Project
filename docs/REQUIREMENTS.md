@@ -34,9 +34,11 @@
 - **Automation Status**: Workflow monitoring, last run times, success/failure indicators
 - **Business Analytics**: Quick metrics, trends, performance summaries
 - **Manual Controls**: Ability to trigger automation workflows on-demand
+- **File Processing Status**: XML file access status, last processed file timestamps
 
 ### Data Integration
 - **Google Sheets**: Primary data source for business operations
+- **Google Drive/Docs**: Access to XML files containing order data (X-Cart exports)
 - **ShipStation API**: Order management and shipping integration
 - **Email Notifications**: Automated reports and alerts via SendGrid
 - **Secret Management**: Secure credential storage via Google Cloud Secret Manager
@@ -61,9 +63,12 @@
 - **Existing Scripts**: 
   - weekly_reporter.py - Weekly inventory reports
   - daily_shipment_processor.py - Daily shipment processing
-  - shipstation_order_uploader.py - Order upload automation
+  - shipstation_order_uploader.py - Order upload automation (requires XML file access)
   - shipstation_reporter.py - Shipment reports
   - main_order_import_daily_reporter.py - Daily import summaries
+- **External File Access**:
+  - Google Drive API integration for retrieving X-Cart XML order files
+  - File parsing capabilities for XML order data processing
 
 ### Development Environment
 - **Development Mode**: Continue supporting DEV_MODE bypass system
@@ -163,9 +168,10 @@
 
 ### Integration Quality
 - **Automation Scripts**: Continue functioning without modification
-- **Development Mode**: DEV_MODE bypass system remains operational
+- **Development Mode**: DEV_MODE bypass system remains operational (including XML file mock data)
 - **Performance**: No impact on existing automation workflow execution
 - **Reliability**: Dashboard available 99% of time during business hours
+- **File Access**: Reliable connection to Google Drive for XML file retrieval
 
 ### Cost/Time Targets
 - **Development Time**: Complete implementation in under 8 hours
@@ -178,7 +184,8 @@
 ### Must Preserve
 - All existing automation script functionality
 - Development bypass system for offline testing
-- Google Cloud integrations (Sheets, Secret Manager)
+- Google Cloud integrations (Sheets, Drive, Secret Manager)
+- XML file processing capabilities for order data
 - Python-based architecture and dependencies
 
 ### Must Avoid
