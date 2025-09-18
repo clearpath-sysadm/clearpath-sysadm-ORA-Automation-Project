@@ -1,5 +1,22 @@
 # ORA Automation Project - Database Schema
 
+## Table of Contents
+
+- [SQLite Tables & Field Definitions](#sqlite-tables--field-definitions)
+  - [workflows](#workflows)
+  - [inventory_current](#inventory_current)
+  - [inventory_transactions](#inventory_transactions)
+  - [shipped_items](#shipped_items)
+  - [shipped_orders](#shipped_orders)
+  - [weekly_shipped_history](#weekly_shipped_history)
+  - [system_kpis](#system_kpis)
+  - [configuration_params](#configuration_params)
+- [Data Flow Integration](#data-flow-integration)
+  - [From Automation Scripts to Database](#from-automation-scripts-to-database)
+  - [For Dashboard Queries](#for-dashboard-queries)
+- [Initial Seed Data](#initial-seed-data)
+- [Indexing Strategy](#indexing-strategy)
+
 ## SQLite Tables & Field Definitions
 
 ### **workflows**
