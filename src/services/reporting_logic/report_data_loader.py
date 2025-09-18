@@ -402,3 +402,57 @@ def load_product_names_map(sheet_id: str) -> pd.DataFrame | None:
     except Exception as e:
         logger.error(f"Error loading product names map: {e}", exc_info=True)
         return None
+
+
+def get_key_skus_and_product_names(google_sheet_id: str) -> tuple:
+    """
+    Gets key SKUs and product names from Google Sheets configuration.
+    
+    Returns:
+        tuple: (key_skus_list, product_names_map_df)
+    """
+    logger.info("Getting key SKUs and product names...")
+    try:
+        # Load product names map
+        product_names_df = load_product_names_map(google_sheet_id)
+        if product_names_df is None or product_names_df.empty:
+            logger.warning("No product names found.")
+            return [], pd.DataFrame(columns=['SKU', 'Product'])
+        
+        # Get key SKUs list
+        key_skus_list = product_names_df['SKU'].tolist()
+        
+        logger.info(f"Successfully retrieved {len(key_skus_list)} key SKUs and product names.")
+        return key_skus_list, product_names_df
+    except Exception as e:
+        logger.error(f"Error getting key SKUs and product names: {e}", exc_info=True)
+        return [], pd.DataFrame(columns=['SKU', 'Product'])
+
+
+def get_weekly_shipped_history(google_sheet_id: str, key_skus_list: list) -> pd.DataFrame:
+    """
+    Gets weekly shipped history for the specified key SKUs.
+    
+    Args:
+        google_sheet_id (str): Google Sheet ID
+        key_skus_list (list): List of key SKUs to filter by
+        
+    Returns:
+        pd.DataFrame: Weekly shipped history data
+    """
+    logger.info(f"Getting weekly shipped history for {len(key_skus_list)} key SKUs...")
+    try:
+        # Load weekly shipped history
+        weekly_history_df = load_weekly_shipped_history(google_sheet_id)
+        if weekly_history_df is None or weekly_history_df.empty:
+            logger.warning("No weekly shipped history found.")
+            return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])
+        
+        # Filter for key SKUs only
+        filtered_df = weekly_history_df[weekly_history_df['SKU'].isin(key_skus_list)].copy()
+        
+        logger.info(f"Successfully retrieved weekly shipped history: {len(filtered_df)} records for key SKUs.")
+        return filtered_df
+    except Exception as e:
+        logger.error(f"Error getting weekly shipped history: {e}", exc_info=True)
+        return pd.DataFrame(columns=['Date', 'SKU', 'ShippedQuantity'])

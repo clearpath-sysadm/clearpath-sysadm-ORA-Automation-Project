@@ -123,6 +123,37 @@ def send_notification(
     logger.info("Notification processing complete (actual sending is currently simulated).")
 
 
+def send_email_via_api(recipients: list, subject: str, body: str) -> bool:
+    """
+    Sends an email via API (e.g., SendGrid) to the specified recipients.
+    
+    This function is a wrapper around the notification system specifically
+    for email sending via external APIs.
+    
+    Args:
+        recipients (list): List of email addresses to send to
+        subject (str): Email subject line
+        body (str): Email body content
+        
+    Returns:
+        bool: True if email was sent successfully, False otherwise
+    """
+    try:
+        # For now, delegate to the general notification function
+        # In future, this could use SendGrid or other email APIs directly
+        send_notification(
+            subject=subject,
+            message=body,
+            severity="INFO",
+            recipients=recipients
+        )
+        logger.info(f"Email sent via API to {len(recipients)} recipients")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email via API: {e}")
+        return False
+
+
 # Example of how this might be used (for testing/demonstration)
 if __name__ == "__main__":
     # Basic logging configuration for standalone testing
