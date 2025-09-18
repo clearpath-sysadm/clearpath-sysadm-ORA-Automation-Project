@@ -99,6 +99,7 @@ def get_google_sheet_data(sheet_id: str, worksheet_name: str) -> list | None:
                 return data
             except FileNotFoundError:
                 logger.warning(f"Fixture file not found: {fixture_path}")
+                return [["Column1", "Column2"], ["No", "Data"]]
         
         # Fallback empty data
         logger.warning(f"No fixture available for worksheet '{worksheet_name}', returning empty data")
