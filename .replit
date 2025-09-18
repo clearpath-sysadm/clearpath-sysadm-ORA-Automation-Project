@@ -25,7 +25,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python src/weekly_reporter.py"
+args = "export DEV_MODE=1 && python src/weekly_reporter.py"
 
 [workflows.workflow.metadata]
 outputType = "console"

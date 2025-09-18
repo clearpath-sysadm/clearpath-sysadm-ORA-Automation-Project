@@ -63,6 +63,23 @@ IS_CLOUD_ENV = ENVIRONMENT == 'cloud'
 IS_LOCAL_ENV = ENVIRONMENT == 'local'
 
 
+# --- Development Mode Configuration ---
+# These flags allow the app to run without external credentials for testing/demo purposes
+# They are automatically disabled in cloud environments for security
+
+# Development mode master switch
+DEV_MODE = os.environ.get('DEV_MODE', '0').lower() in ['1', 'true', 'yes'] and not IS_CLOUD_ENV
+
+# Individual service bypasses (only work when DEV_MODE is enabled)
+DEV_BYPASS_SECRETS = DEV_MODE and os.environ.get('DEV_BYPASS_SECRETS', '1').lower() in ['1', 'true', 'yes']
+DEV_FAKE_SHEETS = DEV_MODE and os.environ.get('DEV_FAKE_SHEETS', '1').lower() in ['1', 'true', 'yes']  
+DEV_FAKE_SHIPSTATION = DEV_MODE and os.environ.get('DEV_FAKE_SHIPSTATION', '1').lower() in ['1', 'true', 'yes']
+DEV_DISABLE_EMAILS = DEV_MODE and os.environ.get('DEV_DISABLE_EMAILS', '1').lower() in ['1', 'true', 'yes']
+
+# Path to development fixtures
+DEV_FIXTURES_PATH = os.path.join(PROJECT_ROOT, 'src', 'test_data', 'dev_fixtures')
+
+
 # --- Google Cloud Project Configuration ---
 
 YOUR_GCP_PROJECT_ID = "ora-automation-project"
@@ -250,6 +267,14 @@ class Settings:
         self.DAILY_SUMMARY_RECIPIENTS = DAILY_SUMMARY_RECIPIENTS
         self.NOTIFICATION_RECIPIENTS = NOTIFICATION_RECIPIENTS
         self.EMAIL_SERVICE_API_KEY_SECRET_ID = EMAIL_SERVICE_API_KEY_SECRET_ID
+        
+        # Development mode flags
+        self.DEV_MODE = DEV_MODE
+        self.DEV_BYPASS_SECRETS = DEV_BYPASS_SECRETS
+        self.DEV_FAKE_SHEETS = DEV_FAKE_SHEETS
+        self.DEV_FAKE_SHIPSTATION = DEV_FAKE_SHIPSTATION
+        self.DEV_DISABLE_EMAILS = DEV_DISABLE_EMAILS
+        self.DEV_FIXTURES_PATH = DEV_FIXTURES_PATH
 
 
 # Initialize a global settings object for easy import

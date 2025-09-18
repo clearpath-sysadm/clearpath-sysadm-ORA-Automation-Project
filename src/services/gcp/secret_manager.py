@@ -8,6 +8,9 @@ from google.cloud import secretmanager
 from google.oauth2 import service_account
 from google.auth.exceptions import DefaultCredentialsError
 
+# Import settings for development mode bypasses
+from config.settings import settings
+
 logger = logging.getLogger(__name__)
 
 def access_secret_version(project_id: str, secret_id: str, version_id: str = "latest", credentials_path: str = None) -> str | None:
@@ -27,6 +30,35 @@ def access_secret_version(project_id: str, secret_id: str, version_id: str = "la
     Returns:
         str | None: The secret payload as a string, or None if an error occurs.
     """
+    # Development mode bypass - return mock secrets without hitting GCP
+    if settings.DEV_BYPASS_SECRETS:
+        logger.info(f"🔧 DEV BYPASS ACTIVE - Secret Manager: Returning mock value for '{secret_id}'")
+        
+        # Return mock values for different secret types
+        mock_secrets = {
+            "google-sheets-service-account-key": '{"type": "service_account", "project_id": "mock-project", "private_key_id": "mock-key-id", "private_key": "-----BEGIN PRIVATE KEY-----\\nMOCK_PRIVATE_KEY\\n-----END PRIVATE KEY-----\\n", "client_email": "mock-service@mock-project.iam.gserviceaccount.com", "client_id": "mock-client-id", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://oauth2.googleapis.com/token"}',
+            "shipstation-api-key": "mock-shipstation-key",
+            "shipstation-api-secret": "mock-shipstation-secret", 
+            "sendgrid-api-key": "mock-sendgrid-key"
+        }
+        
+        # Check for environment variable override first
+        env_var = f"DEV_SECRET_{secret_id.upper().replace('-', '_')}"
+        env_value = os.environ.get(env_var)
+        if env_value:
+            logger.debug(f"Using environment variable {env_var} for secret '{secret_id}'")
+            return env_value
+            
+        # Return mock value if available
+        mock_value = mock_secrets.get(secret_id)
+        if mock_value:
+            logger.debug(f"Using mock value for secret '{secret_id}'")
+            return mock_value
+        
+        # Fallback for unknown secrets
+        logger.warning(f"No mock value defined for secret '{secret_id}', returning generic mock")
+        return f"mock-value-for-{secret_id}"
+    
     try:
         logger.debug(f"Attempting to access secret '{secret_id}' in project '{project_id}'.")
 

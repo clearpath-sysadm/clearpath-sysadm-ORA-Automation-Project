@@ -74,6 +74,36 @@ def get_google_sheet_data(sheet_id: str, worksheet_name: str) -> list | None:
     Returns:
         list | None: A list of lists representing the sheet data, or None if an error occurs.
     """
+    # Development mode bypass - return fixture data
+    if settings.DEV_FAKE_SHEETS:
+        logger.info(f"🔧 DEV BYPASS ACTIVE - Google Sheets: Loading fixture for '{worksheet_name}'")
+        import json
+        import os
+        
+        # Map worksheet names to fixture files
+        fixture_map = {
+            "ORA_Configuration": "ora_configuration.json",
+            "ORA_Weekly_Shipped_History": "ora_weekly_shipped_history.json", 
+            "Inventory_Transactions": "inventory_transactions.json",
+            "Shipped_Items_Data": "shipped_items_data.json",
+            "Shipped_Orders_Data": "shipped_orders_data.json"
+        }
+        
+        fixture_file = fixture_map.get(worksheet_name)
+        if fixture_file:
+            fixture_path = os.path.join(settings.DEV_FIXTURES_PATH, fixture_file)
+            try:
+                with open(fixture_path, 'r') as f:
+                    data = json.load(f)
+                logger.info(f"Loaded {len(data)} rows from fixture '{fixture_file}'")
+                return data
+            except FileNotFoundError:
+                logger.warning(f"Fixture file not found: {fixture_path}")
+        
+        # Fallback empty data
+        logger.warning(f"No fixture available for worksheet '{worksheet_name}', returning empty data")
+        return [["Column1", "Column2"], ["Sample", "Data"]]
+    
     try:
         creds = _get_sheets_credentials()
         service = build('sheets', 'v4', credentials=creds)

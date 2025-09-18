@@ -85,7 +85,10 @@ def generate_weekly_inventory_report(google_sheet_id: str, weekly_report_tab_nam
         return
 
     # 4. Calculate Current Inventory
-    current_inventory_df = calculate_current_inventory(inventory_transactions_df, shipped_items_df, key_skus_list)
+    from datetime import datetime, timedelta
+    current_week_end_date = datetime.now().date()
+    current_week_start_date = current_week_end_date - timedelta(days=7)
+    current_inventory_df = calculate_current_inventory({}, inventory_transactions_df, shipped_items_df, key_skus_list, current_week_start_date, current_week_end_date)
     # --- NEW DIAGNOSTIC LOGGING ---
     if current_inventory_df is not None:
         logger.debug(f"Step 4 Complete: Calculated current inventory for {len(current_inventory_df)} SKUs.")

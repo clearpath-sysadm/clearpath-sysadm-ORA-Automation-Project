@@ -138,6 +138,13 @@ def send_email_via_api(recipients: list, subject: str, body: str) -> bool:
     Returns:
         bool: True if email was sent successfully, False otherwise
     """
+    # Development mode bypass  
+    if settings.DEV_DISABLE_EMAILS:
+        logger.info(f"🔧 DEV BYPASS ACTIVE - Email: Would send to {recipients}")
+        logger.info(f"Subject: {subject}")
+        logger.info(f"Body: {body[:200]}...")
+        return True
+        
     try:
         # For now, delegate to the general notification function
         # In future, this could use SendGrid or other email APIs directly
