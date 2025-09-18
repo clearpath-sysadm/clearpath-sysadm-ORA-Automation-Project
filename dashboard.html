@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORA Automation Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .header-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .header-icon:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            width: 240px;
+            background: white;
+            border-right: 1px solid #e1e8ed;
+            padding: 1.5rem 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: #536471;
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: #f7f9fc;
+            color: #1d1f23;
+        }
+
+        .nav-item.active {
+            background: #e8f4fd;
+            color: #1d9bf0;
+            border-left-color: #1d9bf0;
+            font-weight: 500;
+        }
+
+        .nav-item span {
+            margin-left: 0.75rem;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e1e8ed;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1d1f23;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: #536471;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .stat-change.positive {
+            color: #00ba7c;
+        }
+
+        .stat-change.negative {
+            color: #f91880;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .status-green { background: #00ba7c; }
+        .status-yellow { background: #ffad1f; }
+        .status-red { background: #f91880; }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e1e8ed;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1d1f23;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            background: #fff8e1;
+            border-left: 4px solid #ffad1f;
+        }
+
+        .alert-item.critical {
+            background: #ffeef0;
+            border-left-color: #f91880;
+        }
+
+        .alert-item.normal {
+            background: #e8f5e8;
+            border-left-color: #00ba7c;
+        }
+
+        .automation-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .automation-info h4 {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .automation-info p {
+            color: #536471;
+            font-size: 0.9rem;
+        }
+
+        .automation-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #1d9bf0;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1a8cd8;
+        }
+
+        .btn-secondary {
+            background: #e1e8ed;
+            color: #536471;
+        }
+
+        .btn-secondary:hover {
+            background: #cfd9de;
+        }
+
+        .progress-bar {
+            width: 100px;
+            height: 6px;
+            background: #e1e8ed;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #1d9bf0;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🧪 ORA Business Automation Dashboard</h1>
+        <div class="header-actions">
+            <div class="header-icon">🔔</div>
+            <div class="header-icon">👤</div>
+            <div class="header-icon">⚙️</div>
+            <div class="header-icon">📊</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+            <a href="#" class="nav-item active">
+                🏠 <span>Overview</span>
+            </a>
+            <a href="#" class="nav-item">
+                📦 <span>Inventory</span>
+            </a>
+            <a href="#" class="nav-item">
+                🚢 <span>Shipments</span>
+            </a>
+            <a href="#" class="nav-item">
+                📊 <span>Reports</span>
+            </a>
+            <a href="#" class="nav-item">
+                ⚙️ <span>Automation</span>
+            </a>
+            <a href="#" class="nav-item">
+                📧 <span>Notifications</span>
+            </a>
+            <a href="#" class="nav-item">
+                🔧 <span>Settings</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">47</div>
+                    <div class="stat-label">Today's Orders</div>
+                    <div class="stat-change positive">+8% from yesterday</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Pending Uploads</div>
+                    <div class="stat-change">3 new since last hour</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">35</div>
+                    <div class="stat-label">Shipments Sent</div>
+                    <div class="stat-change positive">+15% this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value"><span class="status-indicator status-green"></span>Online</div>
+                    <div class="stat-label">System Status</div>
+                    <div class="stat-change">All services operational</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">📦 Inventory Alerts</div>
+                <div class="alert-item critical">
+                    <strong>⚠️ ORA Clarity Complete (17612)</strong> - Low Stock: 45 units remaining
+                </div>
+                <div class="alert-item">
+                    <strong>⚠️ ORA Travel Pack (17975)</strong> - Reorder Point: 28 units remaining
+                </div>
+                <div class="alert-item normal">
+                    <strong>✅ ORA Essential Kit (17904)</strong> - Normal Stock: 420 units available
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">⚙️ Automation Status</div>
+                <div class="automation-item">
+                    <div class="automation-info">
+                        <h4>📊 Weekly Reporter</h4>
+                        <p>Last run: 2 minutes ago • Duration: 45s</p>
+                    </div>
+                    <div class="automation-status">
+                        <span class="status-indicator status-green"></span>
+                        <span>Completed</span>
+                        <a href="#" class="btn btn-secondary">📊 View</a>
+                    </div>
+                </div>
+                
+                <div class="automation-item">
+                    <div class="automation-info">
+                        <h4>📦 Daily Order Uploader</h4>
+                        <p>Last run: 1 hour ago • 127 orders processed</p>
+                    </div>
+                    <div class="automation-status">
+                        <span class="status-indicator status-green"></span>
+                        <span>Completed</span>
+                        <a href="#" class="btn btn-primary">🔄 Manual</a>
+                    </div>
+                </div>
+                
+                <div class="automation-item">
+                    <div class="automation-info">
+                        <h4>🚢 ShipStation Sync</h4>
+                        <p>Running for 5 minutes • Syncing shipment data</p>
+                    </div>
+                    <div class="automation-status">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 67%"></div>
+                        </div>
+                        <span>67%</span>
+                        <a href="#" class="btn btn-secondary">⏸️ Pause</a>
+                    </div>
+                </div>
+                
+                <div class="automation-item">
+                    <div class="automation-info">
+                        <h4>📈 Monthly Report</h4>
+                        <p>Next scheduled: January 31, 2025 at 6:00 AM</p>
+                    </div>
+                    <div class="automation-status">
+                        <span class="status-indicator status-yellow"></span>
+                        <span>Scheduled</span>
+                        <a href="#" class="btn btn-primary">▶️ Run Now</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">📊 Quick Analytics</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <strong>Total Orders This Month</strong><br>
+                        <span style="font-size: 1.2rem; color: #1d9bf0;">1,247</span>
+                    </div>
+                    <div>
+                        <strong>Average Daily Shipments</strong><br>
+                        <span style="font-size: 1.2rem; color: #1d9bf0;">42</span>
+                    </div>
+                    <div>
+                        <strong>Top Product</strong><br>
+                        <span style="font-size: 1.2rem; color: #1d9bf0;">ORA Clarity Complete</span>
+                    </div>
+                    <div>
+                        <strong>Inventory Turnover</strong><br>
+                        <span style="font-size: 1.2rem; color: #1d9bf0;">2.3x monthly</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Add some basic interactivity
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Simulate progress updates
+        setInterval(() => {
+            const progressBar = document.querySelector('.progress-fill');
+            if (progressBar) {
+                let currentWidth = parseInt(progressBar.style.width) || 67;
+                if (currentWidth < 100) {
+                    progressBar.style.width = (currentWidth + 1) + '%';
+                    progressBar.parentElement.nextElementSibling.textContent = (currentWidth + 1) + '%';
+                }
+            }
+        }, 2000);
+
+        // Add click handlers for buttons
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('Feature coming soon: ' + this.textContent.trim());
+            });
+        });
+    </script>
+</body>
+</html>
