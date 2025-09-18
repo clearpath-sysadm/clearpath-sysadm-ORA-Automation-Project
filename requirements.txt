@@ -11,3 +11,16 @@ functions-framework
 tenacity
 sendgrid
 google-cloud-logging
+functions-framework
+google-api-python-client
+google-auth-oauthlib
+google-cloud-logging
+google-cloud-secret-manager
+gspread
+gspread_dataframe
+pandas
+python-dateutil
+requests
+sendgrid
+sqlalchemy
+tenacity
