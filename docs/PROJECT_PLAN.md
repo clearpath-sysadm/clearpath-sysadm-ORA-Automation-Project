@@ -130,6 +130,7 @@ def get_secret(secret_name: str) -> Optional[str]:
 
 **Implementation (Minimal):**
 ```python
+import os
 import sqlite3
 from contextlib import contextmanager
 from typing import Optional
@@ -472,14 +473,25 @@ execute_query("""
 
 **Critical Issue Resolved:** Static HTML cannot query SQLite directly. Flask API provides data endpoints.
 
+**API Endpoint Specifications:**
+
+| Endpoint | Method | Request Params | Response Schema | Status Codes | Error Handling |
+|----------|--------|---------------|-----------------|--------------|----------------|
+| `/api/kpis` | GET | None | `{"date": "YYYY-MM-DD", "total_orders": int, "total_packages": int, ...}` or `{}` | 200: Success (empty object if no data)<br>500: DB error | Return empty `{}` if no data, log DB errors |
+| `/api/inventory` | GET | None | `[{"product_id": str, "product_name": str, "quantity_on_hand": int, "alert_threshold": int, "status": str}, ...]` | 200: Success<br>500: DB error | Return `[]` if no data, log DB errors |
+| `/api/workflows` | GET | None | `[{"name": str, "display_name": str, "status": str, "last_run_time": "YYYY-MM-DD HH:MM:SS", "details": str}, ...]` | 200: Success<br>500: DB error | Return `[]` if no data, log DB errors |
+| `/api/weekly_shipped` | GET | None | `[{"start_date": "YYYY-MM-DD", "product_id": str, "quantity_shipped": int}, ...]` (52 weeks) | 200: Success<br>500: DB error | Return `[]` if no data, log DB errors |
+
 **Tasks:**
 - [ ] Create `dashboard_api.py` with Flask endpoints
-- [ ] Implement `/api/kpis` endpoint (system_kpis data)
-- [ ] Implement `/api/inventory` endpoint (inventory_current data)
-- [ ] Implement `/api/workflows` endpoint (workflow status)
-- [ ] Implement `/api/weekly_shipped` endpoint (weekly averages)
+- [ ] Implement `/api/kpis` endpoint (GET) - Returns latest system_kpis row
+- [ ] Implement `/api/inventory` endpoint (GET) - Returns all inventory_current rows ordered by quantity
+- [ ] Implement `/api/workflows` endpoint (GET) - Returns all workflows ordered by last_run_time
+- [ ] Implement `/api/weekly_shipped` endpoint (GET) - Returns 52 weeks of data from weekly_shipped_history
+- [ ] Add error handling: try/except with logging, return empty data structures on errors
+- [ ] Add database connection handling: PRAGMA foreign_keys ON, proper closing
 - [ ] Update `index.html` to fetch from API endpoints instead of Google Sheets
-- [ ] Test API endpoints return correct JSON
+- [ ] Test all 4 API endpoints return correct JSON
 
 **Implementation:**
 ```python
@@ -492,8 +504,11 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 DATABASE_PATH = os.getenv('DATABASE_PATH', 'ora.db')
 
 def get_db_connection():
+    """Get database connection with proper configuration"""
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 8000")
     return conn
 
 @app.route('/')
@@ -502,52 +517,72 @@ def index():
 
 @app.route('/api/kpis')
 def get_kpis():
-    conn = get_db_connection()
-    cursor = conn.execute("""
-        SELECT * FROM system_kpis 
-        ORDER BY date DESC LIMIT 1
-    """)
-    row = cursor.fetchone()
-    conn.close()
-    return jsonify(dict(row)) if row else jsonify({})
+    """GET /api/kpis - Returns latest system KPIs"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.execute("""
+            SELECT * FROM system_kpis 
+            ORDER BY date DESC LIMIT 1
+        """)
+        row = cursor.fetchone()
+        conn.close()
+        return jsonify(dict(row)) if row else jsonify({}), 200
+    except Exception as e:
+        print(f"Error fetching KPIs: {e}")
+        return jsonify({"error": "Database error"}), 500
 
 @app.route('/api/inventory')
 def get_inventory():
-    conn = get_db_connection()
-    cursor = conn.execute("""
-        SELECT product_id, product_name, quantity_on_hand, 
-               alert_threshold, status
-        FROM inventory_current
-        ORDER BY quantity_on_hand ASC
-    """)
-    rows = cursor.fetchall()
-    conn.close()
-    return jsonify([dict(row) for row in rows])
+    """GET /api/inventory - Returns current inventory levels"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.execute("""
+            SELECT product_id, product_name, quantity_on_hand, 
+                   alert_threshold, status
+            FROM inventory_current
+            ORDER BY quantity_on_hand ASC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        return jsonify([dict(row) for row in rows]), 200
+    except Exception as e:
+        print(f"Error fetching inventory: {e}")
+        return jsonify({"error": "Database error"}), 500
 
 @app.route('/api/workflows')
 def get_workflows():
-    conn = get_db_connection()
-    cursor = conn.execute("""
-        SELECT name, display_name, status, last_run_time, details
-        FROM workflows
-        ORDER BY last_run_time DESC
-    """)
-    rows = cursor.fetchall()
-    conn.close()
-    return jsonify([dict(row) for row in rows])
+    """GET /api/workflows - Returns workflow status"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.execute("""
+            SELECT name, display_name, status, last_run_time, details
+            FROM workflows
+            ORDER BY last_run_time DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        return jsonify([dict(row) for row in rows]), 200
+    except Exception as e:
+        print(f"Error fetching workflows: {e}")
+        return jsonify({"error": "Database error"}), 500
 
 @app.route('/api/weekly_shipped')
 def get_weekly_shipped():
-    conn = get_db_connection()
-    cursor = conn.execute("""
-        SELECT start_date, product_id, quantity_shipped
-        FROM weekly_shipped_history
-        WHERE start_date >= date('now', '-52 weeks')
-        ORDER BY start_date DESC
-    """)
-    rows = cursor.fetchall()
-    conn.close()
-    return jsonify([dict(row) for row in rows])
+    """GET /api/weekly_shipped - Returns 52 weeks of shipping data"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.execute("""
+            SELECT start_date, product_id, quantity_shipped
+            FROM weekly_shipped_history
+            WHERE start_date >= date('now', '-52 weeks')
+            ORDER BY start_date DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        return jsonify([dict(row) for row in rows]), 200
+    except Exception as e:
+        print(f"Error fetching weekly shipped: {e}")
+        return jsonify({"error": "Database error"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
@@ -611,49 +646,67 @@ async function loadInventory() {
 **Replit Core Plan:** Scheduled Deployments included with monthly credits ✅
 
 **Deployment 1: Weekly Reporter**
-```
+```yaml
 Name: weekly-reporter
 Type: Scheduled Deployment
-Schedule: "Every Monday at 8 AM"
+Schedule: "Every Monday at 8 AM" → Cron: 0 8 * * 1
 Command: python src/weekly_reporter.py
-Secrets: Inherit from main deployment
+Environment Variables:
+  - DATABASE_PATH=/home/runner/ORA-Automation/ora.db
+Secrets (auto-inherited):
+  - SHIPSTATION_API_KEY (if needed)
+  - SHIPSTATION_API_SECRET (if needed)
 Build Command: (leave empty)
-Timeout: 10 minutes
+Timeout: 10 minutes (600 seconds)
 ```
 
 **Steps:**
-1. [ ] Click "Deploy" → "New Deployment"
-2. [ ] Select "Scheduled Deployment"
-3. [ ] Enter name: weekly-reporter
-4. [ ] Enter schedule: "Every Monday at 8 AM" (Replit AI converts to cron)
+1. [ ] Click "Deploy" button in Replit
+2. [ ] Select "Scheduled Deployment" type
+3. [ ] Enter name: `weekly-reporter`
+4. [ ] Enter schedule: Type "Every Monday at 8 AM" (Replit AI converts to cron: `0 8 * * 1`)
 5. [ ] Enter command: `python src/weekly_reporter.py`
-6. [ ] Set timeout: 10 minutes
-7. [ ] Click "Deploy"
+6. [ ] Verify environment variables: DATABASE_PATH should be inherited
+7. [ ] Set timeout: 10 minutes
+8. [ ] Click "Deploy"
+9. [ ] Verify first run in logs after Monday 8 AM
 
 **Deployment 2: Daily Shipment Processor**
-```
+```yaml
 Name: daily-shipment-processor
 Type: Scheduled Deployment
-Schedule: "Every day at 9 AM"
+Schedule: "Every day at 9 AM" → Cron: 0 9 * * *
 Command: python src/daily_shipment_processor.py
-Secrets: Inherit from main deployment
+Environment Variables:
+  - DATABASE_PATH=/home/runner/ORA-Automation/ora.db
+Secrets (auto-inherited):
+  - SHIPSTATION_API_KEY (required)
+  - SHIPSTATION_API_SECRET (required)
 Build Command: (leave empty)
-Timeout: 15 minutes
+Timeout: 15 minutes (900 seconds)
 ```
 
 **Steps:**
 1. [ ] Click "Deploy" → "New Deployment"
-2. [ ] Select "Scheduled Deployment"
-3. [ ] Enter name: daily-shipment-processor
-4. [ ] Enter schedule: "Every day at 9 AM"
+2. [ ] Select "Scheduled Deployment" type
+3. [ ] Enter name: `daily-shipment-processor`
+4. [ ] Enter schedule: Type "Every day at 9 AM" (Replit AI converts to cron: `0 9 * * *`)
 5. [ ] Enter command: `python src/daily_shipment_processor.py`
-6. [ ] Set timeout: 15 minutes
-7. [ ] Click "Deploy"
+6. [ ] Verify environment variables: DATABASE_PATH should be inherited
+7. [ ] Verify secrets: SHIPSTATION_API_KEY and SHIPSTATION_API_SECRET must be available
+8. [ ] Set timeout: 15 minutes
+9. [ ] Click "Deploy"
+10. [ ] Verify first run in logs after 9 AM next day
+
+**Cron Expression Reference:**
+- Weekly Reporter: `0 8 * * 1` (0 minutes, 8 AM, every day, every month, Monday)
+- Daily Shipment: `0 9 * * *` (0 minutes, 9 AM, every day, every month, every weekday)
 
 **Verification:**
-- [ ] Check deployment logs after first run
-- [ ] Verify database updates (workflows table status)
-- [ ] Confirm cron schedule is correct
+- [ ] Check deployment logs after first run (Replit Publishing tool → Logs)
+- [ ] Verify database updates: `SELECT * FROM workflows WHERE name IN ('weekly_reporter', 'daily_shipment_processor')`
+- [ ] Confirm cron schedule displays correctly in Replit deployment settings
+- [ ] Verify secrets accessible: Check logs for "Retrieved secret" messages (not values)
 
 **Deliverables:**
 - 2 scheduled deployments active
