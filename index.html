@@ -82,6 +82,49 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Skeleton Loaders */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            border-radius: 4px;
+        }
+
+        body.dark-mode .skeleton {
+            background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+            background-size: 200% 100%;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text {
+            height: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .skeleton-title {
+            height: 2rem;
+            width: 60%;
+        }
+
+        .skeleton-card {
+            height: 120px;
+            border-radius: 12px;
+        }
+
+        .skeleton-alert {
+            height: 60px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
         .header h1 {
             font-size: 1.5rem;
             font-weight: 600;
@@ -424,45 +467,63 @@
         </nav>
 
         <main class="main-content">
-            <div class="stats-grid">
-                <div class="stat-card">
+            <div class="stats-grid" id="stats-section">
+                <!-- Skeleton Loaders -->
+                <div class="skeleton-card skeleton" id="stat-skeleton-1"></div>
+                <div class="skeleton-card skeleton" id="stat-skeleton-2"></div>
+                <div class="skeleton-card skeleton" id="stat-skeleton-3"></div>
+                <div class="skeleton-card skeleton" id="stat-skeleton-4"></div>
+                
+                <!-- Actual Stat Cards -->
+                <div class="stat-card hidden" data-stat-card>
                     <div class="stat-value">47</div>
                     <div class="stat-label">Today's Orders</div>
                     <div class="stat-change positive">+8% from yesterday</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card hidden" data-stat-card>
                     <div class="stat-value">12</div>
                     <div class="stat-label">Pending Uploads</div>
                     <div class="stat-change">3 new since last hour</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card hidden" data-stat-card>
                     <div class="stat-value">35</div>
                     <div class="stat-label">Shipments Sent</div>
                     <div class="stat-change positive">+15% this week</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card hidden" data-stat-card>
                     <div class="stat-value"><span class="status-indicator status-green"></span>Online</div>
                     <div class="stat-label">System Status</div>
                     <div class="stat-change">All services operational</div>
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="alerts-section">
                 <div class="card-header">📦 Inventory Alerts</div>
-                <div class="alert-item critical">
+                <!-- Skeleton Loaders -->
+                <div class="skeleton-alert skeleton" id="alert-skeleton-1"></div>
+                <div class="skeleton-alert skeleton" id="alert-skeleton-2"></div>
+                <div class="skeleton-alert skeleton" id="alert-skeleton-3"></div>
+                
+                <!-- Actual Alerts -->
+                <div class="alert-item critical hidden" data-alert-item>
                     <strong>⚠️ ORA Clarity Complete (17612)</strong> - Low Stock: 45 units remaining
                 </div>
-                <div class="alert-item">
+                <div class="alert-item hidden" data-alert-item>
                     <strong>⚠️ ORA Travel Pack (17975)</strong> - Reorder Point: 28 units remaining
                 </div>
-                <div class="alert-item normal">
+                <div class="alert-item normal hidden" data-alert-item>
                     <strong>✅ ORA Essential Kit (17904)</strong> - Normal Stock: 420 units available
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="automation-section">
                 <div class="card-header">⚙️ Automation Status</div>
-                <div class="automation-item">
+                <!-- Skeleton Loaders -->
+                <div class="skeleton-alert skeleton" id="auto-skeleton-1"></div>
+                <div class="skeleton-alert skeleton" id="auto-skeleton-2"></div>
+                
+                <!-- Actual Automation Items -->
+                <div class="automation-item hidden" data-automation-item>
                     <div class="automation-info">
                         <h4>📊 Weekly Reporter</h4>
                         <p>Last run: 2 minutes ago • Duration: 45s</p>
@@ -474,7 +535,7 @@
                     </div>
                 </div>
                 
-                <div class="automation-item">
+                <div class="automation-item hidden" data-automation-item>
                     <div class="automation-info">
                         <h4>📦 Daily Order Uploader</h4>
                         <p>Last run: 1 hour ago • 127 orders processed</p>
@@ -486,7 +547,7 @@
                     </div>
                 </div>
                 
-                <div class="automation-item">
+                <div class="automation-item hidden" data-automation-item>
                     <div class="automation-info">
                         <h4>🚢 ShipStation Sync</h4>
                         <p>Running for 5 minutes • Syncing shipment data</p>
@@ -500,7 +561,7 @@
                     </div>
                 </div>
                 
-                <div class="automation-item">
+                <div class="automation-item hidden" data-automation-item>
                     <div class="automation-info">
                         <h4>📈 Monthly Report</h4>
                         <p>Next scheduled: January 31, 2025 at 6:00 AM</p>
@@ -559,16 +620,74 @@
             }
         }
 
+        // Show/hide skeletons and content
+        function showSkeletons() {
+            // Stats
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`stat-skeleton-${i}`).classList.remove('hidden');
+            }
+            document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.add('hidden'));
+            
+            // Alerts
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`alert-skeleton-${i}`).classList.remove('hidden');
+            }
+            document.querySelectorAll('[data-alert-item]').forEach(el => el.classList.add('hidden'));
+            
+            // Automation
+            for (let i = 1; i <= 2; i++) {
+                document.getElementById(`auto-skeleton-${i}`).classList.remove('hidden');
+            }
+            document.querySelectorAll('[data-automation-item]').forEach(el => el.classList.add('hidden'));
+        }
+
+        function hideSkeletons() {
+            // Stats
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`stat-skeleton-${i}`).classList.add('hidden');
+            }
+            document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.remove('hidden'));
+            
+            // Alerts
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`alert-skeleton-${i}`).classList.add('hidden');
+            }
+            document.querySelectorAll('[data-alert-item]').forEach(el => el.classList.remove('hidden'));
+            
+            // Automation
+            for (let i = 1; i <= 2; i++) {
+                document.getElementById(`auto-skeleton-${i}`).classList.add('hidden');
+            }
+            document.querySelectorAll('[data-automation-item]').forEach(el => el.classList.remove('hidden'));
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                
+                // Hide skeletons and show actual content
+                hideSkeletons();
+                
+                console.log('Dashboard data loaded');
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                // Even on error, show content (will add error banners in next task)
+                hideSkeletons();
+            }
+        }
+
         // Manual refresh handler
         document.getElementById('refresh-button').addEventListener('click', async function() {
             if (isRefreshing) return;
             
             isRefreshing = true;
             this.classList.add('refreshing');
+            showSkeletons();
             
             try {
-                // Simulate data refresh (will be replaced with actual API calls)
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await loadDashboardData();
                 lastUpdateTime = Date.now();
                 updateTimestamp();
                 console.log('Dashboard refreshed');
@@ -600,8 +719,8 @@
                         refreshBtn.classList.add('refreshing');
                         
                         try {
-                            // Simulate data refresh (will be replaced with actual API calls)
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            showSkeletons();
+                            await loadDashboardData();
                             lastUpdateTime = Date.now();
                             updateTimestamp();
                             console.log('Auto-refresh completed');
@@ -639,6 +758,9 @@
 
         // Start auto-refresh on page load
         startAutoRefresh();
+
+        // Initial data load
+        loadDashboardData();
 
         // Dark mode toggle functionality
         const darkModeToggle = document.getElementById('dark-mode-toggle');
