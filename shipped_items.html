@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipped Items - ORA Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #667eea;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: #f3f4f6;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #6b7280;
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .sku-badge {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Shipped Items</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/shipped_orders.html">Shipped Orders</a>
+                <a href="/charge_report.html">Charge Report</a>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalItems">-</div>
+                <div class="stat-label">Total Line Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalQuantity">-</div>
+                <div class="stat-label">Total Units Shipped</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="uniqueSkus">-</div>
+                <div class="stat-label">Unique SKUs</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" class="search-box" id="searchBox" placeholder="Search by SKU, order number, or ship date...">
+            <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
+        </div>
+
+        <div id="errorMessage"></div>
+
+        <div class="table-container">
+            <div id="loading" class="loading">Loading shipped items...</div>
+            <table id="itemsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Ship Date</th>
+                        <th>Base SKU</th>
+                        <th>SKU/Lot</th>
+                        <th>Quantity</th>
+                        <th>Order Number</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let allItems = [];
+
+        async function fetchItems() {
+            try {
+                const response = await fetch('/api/shipped_items');
+                const result = await response.json();
+                
+                if (result.success) {
+                    allItems = result.data;
+                    renderItems(allItems);
+                    updateStats();
+                } else {
+                    showError('Failed to load items: ' + result.error);
+                }
+            } catch (error) {
+                showError('Error fetching data: ' + error.message);
+            }
+        }
+
+        function renderItems(items) {
+            const tbody = document.getElementById('itemsBody');
+            const table = document.getElementById('itemsTable');
+            const loading = document.getElementById('loading');
+            
+            if (items.length === 0) {
+                loading.textContent = 'No items found';
+                table.style.display = 'none';
+                loading.style.display = 'block';
+                return;
+            }
+            
+            tbody.innerHTML = items.map(item => `
+                <tr>
+                    <td>${item.ship_date || '-'}</td>
+                    <td><span class="sku-badge">${item.base_sku || '-'}</span></td>
+                    <td>${item.sku_lot || '-'}</td>
+                    <td><strong>${item.quantity_shipped || 0}</strong></td>
+                    <td>${item.order_number || '-'}</td>
+                </tr>
+            `).join('');
+            
+            loading.style.display = 'none';
+            table.style.display = 'table';
+        }
+
+        function updateStats() {
+            const totalItems = allItems.length;
+            const totalQuantity = allItems.reduce((sum, item) => sum + (item.quantity_shipped || 0), 0);
+            const uniqueSkus = new Set(allItems.map(item => item.base_sku)).size;
+            
+            document.getElementById('totalItems').textContent = totalItems.toLocaleString();
+            document.getElementById('totalQuantity').textContent = totalQuantity.toLocaleString();
+            document.getElementById('uniqueSkus').textContent = uniqueSkus;
+        }
+
+        function filterItems() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            if (!searchTerm) {
+                renderItems(allItems);
+                return;
+            }
+            
+            const filtered = allItems.filter(item => 
+                (item.base_sku && item.base_sku.toLowerCase().includes(searchTerm)) ||
+                (item.sku_lot && item.sku_lot.toLowerCase().includes(searchTerm)) ||
+                (item.order_number && item.order_number.toLowerCase().includes(searchTerm)) ||
+                (item.ship_date && item.ship_date.includes(searchTerm))
+            );
+            
+            renderItems(filtered);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('itemsTable').style.display = 'none';
+            document.getElementById('errorMessage').innerHTML = '';
+            fetchItems();
+        }
+
+        document.getElementById('searchBox').addEventListener('input', filterItems);
+
+        fetchItems();
+    </script>
+</body>
+</html>

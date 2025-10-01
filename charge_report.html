@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Charge Report - ORA Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #667eea;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: #f3f4f6;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .table-container {
+            background: #2d2d3d;
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #5b21b6;
+            color: white;
+        }
+
+        th {
+            text-align: center;
+            padding: 12px 8px;
+            font-weight: 600;
+            border-right: 1px solid #6d28d9;
+            white-space: nowrap;
+        }
+
+        th:last-child {
+            border-right: none;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-right: 1px solid #4a4a5a;
+            text-align: center;
+            color: white;
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        tbody tr {
+            background: #3d3d4d;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #2d2d3d;
+        }
+
+        tbody tr:hover {
+            background: #4d4d5d;
+        }
+
+        .total-row {
+            background: #1f1f2e !important;
+            font-weight: 700;
+            border-top: 2px solid #5b21b6;
+        }
+
+        .total-row td {
+            padding: 14px 8px;
+        }
+
+        .currency {
+            color: #4ade80;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: white;
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .date-cell {
+            text-align: left;
+            padding-left: 16px;
+        }
+
+        .stat-highlight {
+            color: #e9d5ff;
+            font-weight: 600;
+        }
+
+        .info-text {
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        .export-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .export-btn:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💵 Monthly Charge Report</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/shipped_orders.html">Shipped Orders</a>
+                <a href="/shipped_items.html">Shipped Items</a>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div>
+                <div class="info-text">Last 31 days of shipment charges</div>
+                <div class="info-text">Orders: $4.25 ea | Packages: $3.40 ea | Space: $18.00/day</div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn export-btn" onclick="exportToCSV()">📥 Export CSV</button>
+                <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <div id="errorMessage"></div>
+
+        <div class="table-container">
+            <div id="loading" class="loading">Loading charge report...</div>
+            <table id="reportTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th># Of Orders</th>
+                        <th>17612</th>
+                        <th>17904</th>
+                        <th>17914</th>
+                        <th>18675</th>
+                        <th>18795</th>
+                        <th>Orders</th>
+                        <th>Packages</th>
+                        <th>Space Rental</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="reportBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let reportData = [];
+        let totalsRow = null;
+
+        async function fetchReport() {
+            try {
+                const response = await fetch('/api/charge_report');
+                const result = await response.json();
+                
+                if (result.success) {
+                    reportData = result.data;
+                    totalsRow = result.totals;
+                    renderReport();
+                } else {
+                    showError('Failed to load report: ' + result.error);
+                }
+            } catch (error) {
+                showError('Error fetching data: ' + error.message);
+            }
+        }
+
+        function formatCurrency(amount) {
+            return '$' + amount.toFixed(2);
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+        }
+
+        function renderReport() {
+            const tbody = document.getElementById('reportBody');
+            const table = document.getElementById('reportTable');
+            const loading = document.getElementById('loading');
+            
+            if (reportData.length === 0) {
+                loading.textContent = 'No data available for the selected period';
+                table.style.display = 'none';
+                loading.style.display = 'block';
+                return;
+            }
+            
+            let html = reportData.map(row => `
+                <tr>
+                    <td class="date-cell">${formatDate(row.date)}</td>
+                    <td class="stat-highlight">${row.order_count}</td>
+                    <td>${row.sku_17612 || '-'}</td>
+                    <td>${row.sku_17904 || '-'}</td>
+                    <td>${row.sku_17914 || '-'}</td>
+                    <td>${row.sku_18675 || '-'}</td>
+                    <td>${row.sku_18795 || '-'}</td>
+                    <td class="currency">${formatCurrency(row.orders_charge)}</td>
+                    <td class="currency">${formatCurrency(row.packages_charge)}</td>
+                    <td class="currency">${formatCurrency(row.space_rental)}</td>
+                    <td class="currency stat-highlight">${formatCurrency(row.total)}</td>
+                </tr>
+            `).join('');
+            
+            if (totalsRow) {
+                html += `
+                    <tr class="total-row">
+                        <td class="date-cell">TOTAL</td>
+                        <td class="stat-highlight">${totalsRow.order_count}</td>
+                        <td>${totalsRow.sku_17612}</td>
+                        <td>${totalsRow.sku_17904}</td>
+                        <td>${totalsRow.sku_17914}</td>
+                        <td>${totalsRow.sku_18675}</td>
+                        <td>${totalsRow.sku_18795}</td>
+                        <td class="currency">${formatCurrency(totalsRow.orders_charge)}</td>
+                        <td class="currency">${formatCurrency(totalsRow.packages_charge)}</td>
+                        <td class="currency">${formatCurrency(totalsRow.space_rental)}</td>
+                        <td class="currency stat-highlight">${formatCurrency(totalsRow.total)}</td>
+                    </tr>
+                `;
+            }
+            
+            tbody.innerHTML = html;
+            loading.style.display = 'none';
+            table.style.display = 'table';
+        }
+
+        function exportToCSV() {
+            if (reportData.length === 0) return;
+            
+            let csv = 'Date,# Of Orders,17612,17904,17914,18675,18795,Orders,Packages,Space Rental,Total\n';
+            
+            reportData.forEach(row => {
+                csv += `${row.date},${row.order_count},${row.sku_17612},${row.sku_17904},${row.sku_17914},${row.sku_18675},${row.sku_18795},${row.orders_charge},${row.packages_charge},${row.space_rental},${row.total}\n`;
+            });
+            
+            if (totalsRow) {
+                csv += `TOTAL,${totalsRow.order_count},${totalsRow.sku_17612},${totalsRow.sku_17904},${totalsRow.sku_17914},${totalsRow.sku_18675},${totalsRow.sku_18795},${totalsRow.orders_charge},${totalsRow.packages_charge},${totalsRow.space_rental},${totalsRow.total}\n`;
+            }
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `charge_report_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('reportTable').style.display = 'none';
+            document.getElementById('errorMessage').innerHTML = '';
+            fetchReport();
+        }
+
+        fetchReport();
+    </script>
+</body>
+</html>

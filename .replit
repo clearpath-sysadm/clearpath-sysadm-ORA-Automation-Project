@@ -41,7 +41,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python -m http.server 5000"
+args = "python app.py"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -56,7 +56,7 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 33277
+localPort = 33429
 externalPort = 3000
 
 [[ports]]

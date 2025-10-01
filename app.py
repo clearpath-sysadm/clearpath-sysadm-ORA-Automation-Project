@@ -1,0 +1,397 @@
+"""
+ORA Automation Dashboard - Flask Application
+Serves the dashboard UI and provides API endpoints for real-time data.
+"""
+import os
+import sys
+from flask import Flask, jsonify, render_template, send_from_directory
+from datetime import datetime, timedelta
+import sqlite3
+
+# Add project root to path
+project_root = os.path.abspath(os.path.dirname(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from src.services.database.db_utils import get_connection, execute_query
+
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+
+# Configure Flask
+app.config['JSON_SORT_KEYS'] = False
+
+# Database path
+DB_PATH = os.path.join(project_root, 'ora.db')
+
+# List of allowed HTML files to serve (security: prevent directory traversal)
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html']
+
+@app.route('/')
+def index():
+    """Serve the main dashboard"""
+    return send_from_directory(project_root, 'index.html')
+
+@app.route('/<path:filename>')
+def serve_page(filename):
+    """Serve HTML pages only (security: whitelist approach)"""
+    if filename in ALLOWED_PAGES:
+        return send_from_directory(project_root, filename)
+    else:
+        return "Not found", 404
+
+# API Endpoints
+
+@app.route('/api/shipped_orders')
+def api_shipped_orders():
+    """Get all shipped orders with pagination"""
+    try:
+        query = """
+            SELECT 
+                id,
+                ship_date,
+                order_number,
+                customer_email,
+                total_items,
+                shipstation_order_id,
+                created_at
+            FROM shipped_orders
+            ORDER BY ship_date DESC, id DESC
+            LIMIT 1000
+        """
+        results = execute_query(query)
+        
+        orders = []
+        for row in results:
+            orders.append({
+                'id': row[0],
+                'ship_date': row[1],
+                'order_number': row[2],
+                'customer_email': row[3] or '',
+                'total_items': row[4] or 0,
+                'shipstation_order_id': row[5] or '',
+                'created_at': row[6]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': orders,
+            'count': len(orders)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/shipped_items')
+def api_shipped_items():
+    """Get all shipped items with pagination"""
+    try:
+        query = """
+            SELECT 
+                id,
+                ship_date,
+                sku_lot,
+                base_sku,
+                quantity_shipped,
+                order_number,
+                created_at
+            FROM shipped_items
+            ORDER BY ship_date DESC, id DESC
+            LIMIT 5000
+        """
+        results = execute_query(query)
+        
+        items = []
+        for row in results:
+            items.append({
+                'id': row[0],
+                'ship_date': row[1],
+                'sku_lot': row[2] or '',
+                'base_sku': row[3],
+                'quantity_shipped': row[4],
+                'order_number': row[5] or '',
+                'created_at': row[6]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': items,
+            'count': len(items)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/charge_report')
+def api_charge_report():
+    """
+    Generate charge report showing daily breakdown of:
+    - Date
+    - # of Orders
+    - Quantity by SKU (17612, 17904, 17914, 18675, 18795)
+    - Orders charge ($4.25 per order)
+    - Packages charge ($3.40 per package)
+    - Space Rental ($18-$23.40 daily)
+    - Total
+    """
+    try:
+        # Get date range from query params, default to last 31 days
+        # For now, we'll use the last 31 days of data
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=31)
+        
+        # Get daily order counts
+        orders_query = """
+            SELECT 
+                ship_date,
+                COUNT(DISTINCT order_number) as order_count
+            FROM shipped_orders
+            WHERE ship_date >= ? AND ship_date <= ?
+            GROUP BY ship_date
+            ORDER BY ship_date
+        """
+        orders_results = execute_query(orders_query, (str(start_date), str(end_date)))
+        
+        # Get daily SKU quantities
+        skus_query = """
+            SELECT 
+                ship_date,
+                base_sku,
+                SUM(quantity_shipped) as total_qty
+            FROM shipped_items
+            WHERE ship_date >= ? AND ship_date <= ?
+            GROUP BY ship_date, base_sku
+            ORDER BY ship_date, base_sku
+        """
+        skus_results = execute_query(skus_query, (str(start_date), str(end_date)))
+        
+        # Build daily data structure
+        daily_data = {}
+        
+        # Populate order counts
+        for row in orders_results:
+            date = row[0]
+            order_count = row[1]
+            if date not in daily_data:
+                daily_data[date] = {
+                    'date': date,
+                    'order_count': 0,
+                    'skus': {
+                        '17612': 0,
+                        '17904': 0,
+                        '17914': 0,
+                        '18675': 0,
+                        '18795': 0
+                    }
+                }
+            daily_data[date]['order_count'] = order_count
+        
+        # Populate SKU quantities
+        for row in skus_results:
+            date = row[0]
+            sku = row[1]
+            qty = row[2]
+            if date not in daily_data:
+                daily_data[date] = {
+                    'date': date,
+                    'order_count': 0,
+                    'skus': {
+                        '17612': 0,
+                        '17904': 0,
+                        '17914': 0,
+                        '18675': 0,
+                        '18795': 0
+                    }
+                }
+            if sku in daily_data[date]['skus']:
+                daily_data[date]['skus'][sku] = qty
+        
+        # Calculate charges
+        ORDER_CHARGE = 4.25  # $ per order
+        PACKAGE_CHARGE = 3.40  # $ per package (assumed 1 package per order)
+        SPACE_RENTAL_BASE = 18.00  # $ per day base rate
+        SPACE_RENTAL_INCREMENT = 0.18  # $ increment per order above base
+        
+        report_data = []
+        for date, data in sorted(daily_data.items()):
+            order_count = data['order_count']
+            
+            # Calculate charges
+            orders_charge = order_count * ORDER_CHARGE
+            packages_charge = order_count * PACKAGE_CHARGE  # Assume 1 package per order
+            
+            # Space rental: $18 base + variable based on volume (up to $23.40)
+            # Linear scaling: adds $0.18 per order, capped at $23.40
+            space_rental = SPACE_RENTAL_BASE + min(order_count * SPACE_RENTAL_INCREMENT, 5.40)
+            space_rental = min(space_rental, 23.40)  # Hard cap at $23.40
+            
+            total_charge = orders_charge + packages_charge + space_rental
+            
+            report_data.append({
+                'date': date,
+                'order_count': order_count,
+                'sku_17612': data['skus']['17612'],
+                'sku_17904': data['skus']['17904'],
+                'sku_17914': data['skus']['17914'],
+                'sku_18675': data['skus']['18675'],
+                'sku_18795': data['skus']['18795'],
+                'orders_charge': round(orders_charge, 2),
+                'packages_charge': round(packages_charge, 2),
+                'space_rental': round(space_rental, 2),
+                'total': round(total_charge, 2)
+            })
+        
+        # Calculate totals
+        if report_data:
+            totals = {
+                'date': 'TOTAL',
+                'order_count': sum(r['order_count'] for r in report_data),
+                'sku_17612': sum(r['sku_17612'] for r in report_data),
+                'sku_17904': sum(r['sku_17904'] for r in report_data),
+                'sku_17914': sum(r['sku_17914'] for r in report_data),
+                'sku_18675': sum(r['sku_18675'] for r in report_data),
+                'sku_18795': sum(r['sku_18795'] for r in report_data),
+                'orders_charge': round(sum(r['orders_charge'] for r in report_data), 2),
+                'packages_charge': round(sum(r['packages_charge'] for r in report_data), 2),
+                'space_rental': round(sum(r['space_rental'] for r in report_data), 2),
+                'total': round(sum(r['total'] for r in report_data), 2)
+            }
+        else:
+            totals = None
+        
+        return jsonify({
+            'success': True,
+            'data': report_data,
+            'totals': totals,
+            'count': len(report_data)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/kpis')
+def api_kpis():
+    """Get latest KPIs for dashboard"""
+    try:
+        query = """
+            SELECT 
+                snapshot_date,
+                orders_today,
+                shipments_sent,
+                total_revenue_cents,
+                pending_uploads,
+                system_status
+            FROM system_kpis
+            ORDER BY snapshot_date DESC
+            LIMIT 1
+        """
+        results = execute_query(query)
+        
+        if results:
+            row = results[0]
+            kpis = {
+                'date': row[0],
+                'orders_today': row[1] or 0,
+                'shipments_sent': row[2] or 0,
+                'total_revenue': round((row[3] or 0) / 100, 2),
+                'pending_uploads': row[4] or 0,
+                'system_status': row[5] or 'online'
+            }
+        else:
+            kpis = {}
+        
+        return jsonify(kpis)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/inventory/alerts')
+def api_inventory_alerts():
+    """Get inventory alerts"""
+    try:
+        query = """
+            SELECT 
+                sku,
+                product_name,
+                current_quantity,
+                reorder_point,
+                alert_level,
+                last_updated
+            FROM inventory_current
+            WHERE alert_level != 'normal'
+            ORDER BY 
+                CASE alert_level 
+                    WHEN 'critical' THEN 1
+                    WHEN 'low' THEN 2
+                    ELSE 3
+                END,
+                last_updated DESC
+        """
+        results = execute_query(query)
+        
+        alerts = []
+        for row in results:
+            alerts.append({
+                'sku': row[0],
+                'product_name': row[1],
+                'current_quantity': row[2],
+                'reorder_point': row[3],
+                'alert_level': row[4],
+                'last_updated': row[5]
+            })
+        
+        return jsonify(alerts)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/workflows/status')
+def api_workflows_status():
+    """Get workflow status"""
+    try:
+        query = """
+            SELECT 
+                name,
+                display_name,
+                status,
+                last_run_at,
+                duration_seconds,
+                records_processed,
+                details
+            FROM workflows
+            WHERE enabled = 1
+            ORDER BY last_run_at DESC
+        """
+        results = execute_query(query)
+        
+        workflows = []
+        for row in results:
+            workflows.append({
+                'name': row[0],
+                'display_name': row[1],
+                'status': row[2],
+                'last_run_at': row[3],
+                'duration_seconds': row[4] or 0,
+                'records_processed': row[5] or 0,
+                'details': row[6] or ''
+            })
+        
+        return jsonify(workflows)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+if __name__ == '__main__':
+    # Bind to 0.0.0.0:5000 for Replit
+    app.run(host='0.0.0.0', port=5000, debug=False)
