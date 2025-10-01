@@ -2,7 +2,13 @@
 Week Utilities for Rolling Average Calculations
 
 Provides functions to calculate week boundaries and determine complete vs partial weeks.
-Weeks are defined as Monday (start) to Sunday (end).
+
+BUSINESS RULES:
+- Calendar weeks run Monday (start) to Sunday (end)
+- Shipping only occurs Monday through Friday
+- Friday is the last shipping day of the week
+- Weekly inventory reports are sent on Friday
+- A week is considered "complete" for reporting once Friday has passed
 """
 
 import datetime
@@ -40,16 +46,24 @@ def get_current_week_boundaries() -> Tuple[datetime.date, datetime.date]:
 
 def is_week_complete(week_end_date: datetime.date) -> bool:
     """
-    Determine if a week is complete (i.e., the week's Sunday has passed).
+    Determine if a week is complete for reporting purposes.
+    
+    BUSINESS RULE: Friday is the last shipping day. A week is considered complete
+    once Friday has passed, even though the calendar week runs Monday-Sunday.
     
     Args:
         week_end_date: The end date of the week (should be a Sunday)
         
     Returns:
-        True if the week is complete (today > week_end_date), False otherwise
+        True if the week is complete (Friday has passed), False otherwise
     """
     today = datetime.date.today()
-    return today > week_end_date
+    
+    # Calculate Friday of that week (week_end_date is Sunday, so Friday is -2 days)
+    friday_of_week = week_end_date - datetime.timedelta(days=2)
+    
+    # Week is complete if we're past Friday (i.e., today is Saturday or later)
+    return today > friday_of_week
 
 
 def get_prior_complete_week_boundaries() -> Tuple[datetime.date, datetime.date]:
