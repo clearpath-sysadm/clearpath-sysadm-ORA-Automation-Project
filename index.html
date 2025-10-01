@@ -190,6 +190,141 @@
             }
         }
 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        body.dark-mode .modal {
+            background: #15202b;
+            color: #e7e9ea;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        body.dark-mode .modal-header {
+            border-bottom-color: #38444d;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #536471;
+            padding: 0.25rem;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #1d1f23;
+        }
+
+        body.dark-mode .modal-close:hover {
+            color: #e7e9ea;
+        }
+
+        .command-box {
+            background: #f7f9fa;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        body.dark-mode .command-box {
+            background: #1e2732;
+            border-color: #38444d;
+            color: #8ecf4d;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #1d9bf0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .copy-button:hover {
+            background: #1a8cd8;
+        }
+
+        .copy-button.copied {
+            background: #00ba7c;
+        }
+
+        .modal-footer {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        body.dark-mode .modal-footer {
+            border-top-color: #38444d;
+        }
+
         .header h1 {
             font-size: 1.5rem;
             font-weight: 600;
@@ -642,7 +777,7 @@
                     <div class="automation-status">
                         <span class="status-indicator status-green"></span>
                         <span>Completed</span>
-                        <a href="#" class="btn btn-secondary">📊 View</a>
+                        <button class="btn btn-secondary" onclick="showAutomationModal('weekly-reporter', 'Weekly Reporter', 'python src/weekly_reporter.py')">View Logs</button>
                     </div>
                 </div>
                 
@@ -654,7 +789,7 @@
                     <div class="automation-status">
                         <span class="status-indicator status-green"></span>
                         <span>Completed</span>
-                        <a href="#" class="btn btn-primary">🔄 Manual</a>
+                        <button class="btn btn-primary" onclick="showAutomationModal('order-uploader', 'Daily Order Uploader', 'python src/shipstation_order_uploader.py')">Run Now</button>
                     </div>
                 </div>
                 
