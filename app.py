@@ -547,6 +547,45 @@ def api_workflows_status():
             'error': str(e)
         }), 500
 
+@app.route('/api/sync_shipstation', methods=['POST'])
+def api_sync_shipstation():
+    """Trigger ShipStation sync manually"""
+    try:
+        import subprocess
+        import threading
+        
+        def run_sync():
+            """Run sync in background thread"""
+            try:
+                result = subprocess.run(
+                    ['python3', 'src/daily_shipment_processor.py'],
+                    cwd=project_root,
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+                print(f"Sync completed with return code: {result.returncode}")
+                if result.stdout:
+                    print(f"Sync output: {result.stdout}")
+                if result.stderr:
+                    print(f"Sync errors: {result.stderr}")
+            except Exception as e:
+                print(f"Sync error: {e}")
+        
+        # Start sync in background thread
+        thread = threading.Thread(target=run_sync, daemon=True)
+        thread.start()
+        
+        return jsonify({
+            'success': True,
+            'message': 'ShipStation sync started in background'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)

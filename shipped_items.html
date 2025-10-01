@@ -100,6 +100,20 @@
             background: #5568d3;
         }
 
+        .btn-secondary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #059669;
+        }
+
+        .btn-secondary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
         .table-container {
             background: white;
             border-radius: 12px;
@@ -249,6 +263,7 @@
             </select>
             <input type="text" class="search-box" id="searchBox" placeholder="Search by SKU, lot number, or ship date...">
             <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="syncShipStation()" id="syncBtn">⬇️ Sync ShipStation</button>
         </div>
 
         <div id="errorMessage"></div>
@@ -420,6 +435,43 @@
             document.getElementById('skuFilter').value = '';
             document.getElementById('searchBox').value = '';
             fetchItems();
+        }
+
+        async function syncShipStation() {
+            const syncBtn = document.getElementById('syncBtn');
+            const originalText = syncBtn.textContent;
+            
+            try {
+                syncBtn.disabled = true;
+                syncBtn.textContent = '⏳ Syncing...';
+                
+                const response = await fetch('/api/sync_shipstation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    syncBtn.textContent = '✅ Synced!';
+                    setTimeout(() => {
+                        syncBtn.textContent = originalText;
+                        syncBtn.disabled = false;
+                        refreshData();
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || 'Sync failed');
+                }
+            } catch (error) {
+                syncBtn.textContent = '❌ Sync Failed';
+                showError('Failed to sync ShipStation: ' + error.message);
+                setTimeout(() => {
+                    syncBtn.textContent = originalText;
+                    syncBtn.disabled = false;
+                }, 2000);
+            }
         }
 
         document.getElementById('searchBox').addEventListener('input', filterItems);
