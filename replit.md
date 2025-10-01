@@ -119,6 +119,14 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - ✅ "Last updated" timestamp with relative time display
 - ✅ Clickable inventory alerts
 
+**Manual Sync Feature Complete (October 2025):**
+- ✅ API endpoint `/api/sync_shipstation` triggers ShipStation data refresh
+- ✅ Green "Sync ShipStation" button on Shipped Items and Shipped Orders pages
+- ✅ Background thread processing with 120-second timeout
+- ✅ Button states: ⏳ Syncing → ✅ Synced! → auto-refresh data
+- ✅ Error handling with ❌ Sync Failed state
+- ⏳ Scheduled daily sync (requires Replit Scheduled Deployments configuration)
+
 **Database Architecture (December 2024):**
 - Designed complete SQLite schema replacing Google Sheets
 - Expert reviews confirm SQLite as optimal choice (vs PostgreSQL)
