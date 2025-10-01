@@ -164,22 +164,45 @@ def get_secret(secret_name: str) -> Optional[str]:
 
 ---
 
-#### 1.3 Basic Database Utilities (1 hour)
+#### 1.3 Basic Database Utilities (1 hour) ✅ **COMPLETED**
 
 **Objective:** Simple, functional db_utils - no pooling, no complex decorators
 
 **Tasks:**
-- [ ] Create `src/services/database/db_utils.py` with basic functions:
-  - Simple connection getter
-  - Basic transaction context manager
-  - Simple execute_query() helper
-  - Basic UPSERT helper
-- [ ] Skip: connection pooling, row factories, complex error handling
+- [x] **Create `src/services/database/db_utils.py`** with basic functions:
+  - **Action:** Created `get_connection()` - Simple SQLite connection with foreign keys enabled
+  - **Action:** Created `transaction()` - Context manager with BEGIN IMMEDIATE for safe concurrent writes
+  - **Action:** Created `execute_query()` - Simple query execution with parameterized queries
+  - **Action:** Created `upsert()` - Basic UPSERT implementation using ON CONFLICT clause
+  - **Result:** 47 lines of minimal, functional database utilities
+  
+- [x] **Skip complex features** - No pooling, no row factories, no complex error handling
+  - **Action:** Kept implementation minimal as per MVP requirements
+  - **Result:** Simple, maintainable code that meets immediate needs
 
-**Deliverables:**
-- `src/services/database/db_utils.py` (NEW - minimal version)
-- Functional database operations
-- Transaction safety with BEGIN IMMEDIATE
+**Deliverables:** ✅
+- `src/services/database/db_utils.py` (NEW - 47 lines, minimal version)
+- `src/services/database/__init__.py` (NEW - package exports)
+- Functional database operations (get_connection, transaction, execute_query, upsert)
+- Transaction safety with BEGIN IMMEDIATE (prevents write conflicts)
+
+**Files Created:**
+- `src/services/database/db_utils.py` - Core database utilities
+- `src/services/database/__init__.py` - Package initialization
+
+**Validation:** ✅
+- Syntax check passed (both files compile successfully)
+- **NO LSP errors** - Clean implementation with proper type hints
+- DATABASE_PATH configurable via environment variable (defaults to 'ora.db')
+- Foreign keys enforced on all connections
+
+**Architect Review:** ✅ **APPROVED** (Pass status)
+- All utilities implemented correctly (connection, transaction, execute_query, upsert)
+- BEGIN IMMEDIATE ensures write safety for MVP (acceptable for low concurrency)
+- UPSERT implementation safe for idempotent operations
+- Note: Architect identified optimization opportunities (read-only helper, upsert validation) - deferred to Phase 2
+
+**Status:** ✅ **COMPLETED** - Awaiting HITL approval to proceed to Task 1.4
 
 **Implementation (Minimal):**
 ```python
