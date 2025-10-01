@@ -219,6 +219,8 @@ CREATE INDEX idx_kpis_date ON system_kpis(snapshot_date);
 ### **configuration_params**
 *Business configuration and settings (replaces ORA_Configuration sheet)*
 
+**Purpose:** Stores all business configuration including rates, pallet counts, reorder points, and initial inventory values
+
 ```sql
 CREATE TABLE configuration_params (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -236,6 +238,14 @@ CREATE TABLE configuration_params (
 CREATE INDEX idx_config_category ON configuration_params(category);
 CREATE INDEX idx_config_sku ON configuration_params(sku);
 ```
+
+**Key Categories:**
+- `Rates` - OrderCharge, PackageCharge, SpaceRentalRate (for monthly charge report)
+- `PalletConfig` - Items per pallet for each SKU (space rental calculations)
+- `Inventory` - ReorderPoint for each SKU
+- `InitialInventory` - EOD_Prior_Week (weekly report), EOM_Previous_Month (monthly report)
+- `Reporting` - CurrentMonthlyReportYear, CurrentMonthlyReportMonth
+- `SKU_Lot` - Product lot mappings
 
 ### **orders_inbox**
 *Staging area for incoming orders from XML file before ShipStation upload*
@@ -320,6 +330,33 @@ INSERT INTO schema_migrations (version, description) VALUES
 (1, 'Initial schema with 12 tables for Google Sheets replacement');
 ```
 
+### **monthly_charge_reports** (Optional - Historical Archive)
+*Monthly charge report snapshots for audit trail*
+
+**Purpose:** Store generated monthly charge reports for historical reference
+
+```sql
+CREATE TABLE monthly_charge_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_date DATE NOT NULL,
+    report_year INTEGER NOT NULL,
+    report_month INTEGER NOT NULL,
+    num_orders INTEGER,
+    num_packages INTEGER,
+    orders_charge_cents INTEGER,
+    packages_charge_cents INTEGER,
+    space_rental_charge_cents INTEGER,
+    total_charge_cents INTEGER,
+    report_data TEXT,                           -- JSON blob of full daily report
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(report_year, report_month, report_date)
+) STRICT;
+
+-- Indexes
+CREATE INDEX idx_monthly_reports_year_month ON monthly_charge_reports(report_year, report_month);
+CREATE INDEX idx_monthly_reports_date ON monthly_charge_reports(report_date);
+```
+
 ## Foreign Key Relationships
 
 ```
@@ -354,6 +391,11 @@ order_items_inbox.order_id ──→ orders_inbox.id (CASCADE DELETE)
 **shipstation_order_uploader.py:**
 - Reads: `orders_inbox` (WHERE status='pending'), `order_items_inbox`, `configuration_params`
 - Writes: Updates `orders_inbox.status` and `shipstation_order_id`, `workflows`
+
+**shipstation_reporter.py (Monthly Charge Report):**
+- Reads: `configuration_params`, `inventory_transactions`, `shipped_items`, `shipped_orders`, `weekly_shipped_history`
+- Writes: `monthly_charge_reports` (optional), `workflows`
+- Generates: Daily charge breakdown (orders, packages, space rental), monthly totals
 
 **XML Polling Service (5-minute intervals):**
 - Reads: Google Drive XML file, `polling_state`
@@ -459,7 +501,7 @@ INSERT INTO workflows (name, display_name, status, enabled) VALUES
 ('weekly_reporter', 'Weekly Inventory Reporter', 'scheduled', 1),
 ('daily_shipment_processor', 'Daily Shipment Processor', 'scheduled', 1),
 ('shipstation_order_uploader', 'ShipStation Order Uploader', 'scheduled', 1),
-('shipstation_reporter', 'ShipStation Reporter', 'scheduled', 1),
+('shipstation_reporter', 'Monthly Charge & Weekly Report Generator', 'scheduled', 1),
 ('main_order_import_daily_reporter', 'Daily Import Reporter', 'scheduled', 1),
 ('xml_polling_service', 'XML File Polling Service', 'scheduled', 1);
 
@@ -484,10 +526,11 @@ INSERT INTO schema_migrations (version, description) VALUES
 ### Migration Strategy
 
 **Phase 1: Database Setup (2-3 hours)**
-1. Create SQLite database with all 12 tables
+1. Create SQLite database with all 12 tables (+ optional monthly_charge_reports)
 2. Enable WAL mode and configure PRAGMAs
 3. Create all indexes
 4. Insert initial seed data
+5. Migrate configuration params (rates, pallet counts, reorder points)
 
 **Phase 2: ETL Development (2-3 hours)**
 1. Build one-time ETL script using existing Google Sheets client

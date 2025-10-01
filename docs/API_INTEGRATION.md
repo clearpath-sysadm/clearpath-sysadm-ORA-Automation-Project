@@ -539,7 +539,162 @@ def aggregate_weekly_shipments():
 - Reads: `orders_inbox` (WHERE status='pending'), `order_items_inbox`
 - Writes: Updates `orders_inbox.status` and `shipstation_order_id`
 
+### 4. Monthly Charge Report Generator (`shipstation_reporter.py`)
+
+**Purpose:** Generate monthly charge reports with daily breakdowns
+
+**Database Operations:**
+- Reads: `configuration_params`, `inventory_transactions`, `shipped_items`, `shipped_orders`, `weekly_shipped_history`
+- Writes: `monthly_charge_reports` (optional), `workflows`
+
+**Report Components:**
+- Daily order charges (orders × OrderCharge rate)
+- Daily package charges (packages × PackageCharge rate)
+- Daily space rental (pallets used × SpaceRentalRate)
+- Daily inventory levels (BOD/EOD)
+- Shipped quantities per SKU
+- Monthly totals
+
 **Implementation:**
+
+```python
+# src/shipstation_reporter.py
+
+import math
+from datetime import datetime, timedelta
+from services.database.db_utils import db, update_workflow_status
+
+def generate_monthly_charge_report(year: int, month: int):
+    """Generate monthly charge report with daily breakdown"""
+    
+    workflow_name = 'shipstation_reporter'
+    start_time = datetime.now()
+    
+    try:
+        update_workflow_status(workflow_name, 'running')
+        
+        # 1. Get configuration (rates, pallet counts)
+        rates = db.execute_query("""
+            SELECT parameter_name, value
+            FROM configuration_params
+            WHERE category = 'Rates'
+        """)
+        
+        rates_dict = {row['parameter_name']: float(row['value']) / 100.0 for row in rates}  # Convert cents to dollars
+        
+        pallet_counts = db.execute_query("""
+            SELECT sku, value
+            FROM configuration_params
+            WHERE category = 'PalletConfig'
+        """)
+        
+        pallet_dict = {row['sku']: int(row['value']) for row in pallet_counts}
+        
+        # 2. Get EOM previous month inventory (starting point)
+        eom_inventory = db.execute_query("""
+            SELECT sku, value
+            FROM configuration_params
+            WHERE category = 'InitialInventory' 
+            AND parameter_name = 'EOM_Previous_Month'
+        """)
+        
+        initial_inventory = {row['sku']: int(row['value']) for row in eom_inventory}
+        
+        # 3. Calculate date range
+        start_date = datetime(year, month, 1).date()
+        end_date = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        
+        # 4. Get month's shipments
+        shipped_orders = db.execute_query("""
+            SELECT ship_date, order_number
+            FROM shipped_orders
+            WHERE ship_date BETWEEN ? AND ?
+        """, (start_date, end_date))
+        
+        shipped_items = db.execute_query("""
+            SELECT ship_date, base_sku, SUM(quantity_shipped) as total_qty
+            FROM shipped_items
+            WHERE ship_date BETWEEN ? AND ?
+            GROUP BY ship_date, base_sku
+        """, (start_date, end_date))
+        
+        # 5. Calculate daily charges
+        daily_reports = []
+        current_inventory = initial_inventory.copy()
+        
+        current_date = start_date
+        while current_date <= end_date:
+            # Orders and packages for this day
+            day_orders = [o for o in shipped_orders if o['ship_date'] == str(current_date)]
+            day_items = [i for i in shipped_items if i['ship_date'] == str(current_date)]
+            
+            num_orders = len(day_orders)
+            num_packages = sum(i['total_qty'] for i in day_items)
+            
+            # Update inventory for shipped items
+            for item in day_items:
+                sku = item['base_sku']
+                if sku in current_inventory:
+                    current_inventory[sku] -= item['total_qty']
+            
+            # Calculate pallets used (EOD inventory)
+            total_pallets = sum(
+                math.ceil(qty / pallet_dict.get(sku, 1)) 
+                for sku, qty in current_inventory.items()
+                if pallet_dict.get(sku)
+            )
+            
+            # Calculate charges (store as cents)
+            orders_charge = int(num_orders * rates_dict.get('OrderCharge', 0) * 100)
+            packages_charge = int(num_packages * rates_dict.get('PackageCharge', 0) * 100)
+            space_charge = int(total_pallets * rates_dict.get('SpaceRentalRate', 0) * 100)
+            total_charge = orders_charge + packages_charge + space_charge
+            
+            # Store daily report
+            with db.transaction() as conn:
+                conn.execute("""
+                    INSERT INTO monthly_charge_reports 
+                    (report_date, report_year, report_month, num_orders, num_packages,
+                     orders_charge_cents, packages_charge_cents, space_rental_charge_cents,
+                     total_charge_cents)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(report_year, report_month, report_date) DO UPDATE SET
+                        num_orders = excluded.num_orders,
+                        num_packages = excluded.num_packages,
+                        orders_charge_cents = excluded.orders_charge_cents,
+                        packages_charge_cents = excluded.packages_charge_cents,
+                        space_rental_charge_cents = excluded.space_rental_charge_cents,
+                        total_charge_cents = excluded.total_charge_cents
+                """, (current_date, year, month, num_orders, num_packages,
+                      orders_charge, packages_charge, space_charge, total_charge))
+            
+            daily_reports.append({
+                'date': current_date,
+                'orders': num_orders,
+                'packages': num_packages,
+                'total_charge': total_charge / 100.0  # Convert to dollars for display
+            })
+            
+            current_date += timedelta(days=1)
+        
+        # 6. Update workflow status
+        duration = int((datetime.now() - start_time).total_seconds())
+        update_workflow_status(
+            workflow_name,
+            'completed',
+            duration=duration,
+            records_processed=len(daily_reports),
+            details=f'Generated monthly charge report for {year}-{month:02d}'
+        )
+        
+        return daily_reports
+        
+    except Exception as e:
+        update_workflow_status(workflow_name, 'failed', details=str(e))
+        raise
+```
+
+### 5. ShipStation Order Uploader (Continued)
 
 ```python
 # src/shipstation_order_uploader.py

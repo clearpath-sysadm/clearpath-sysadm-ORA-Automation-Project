@@ -34,7 +34,7 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - `src/weekly_reporter.py` - Calculates inventory levels and weekly averages
 - `src/daily_shipment_processor.py` - Fetches shipments from ShipStation API and stores in database
 - `src/shipstation_order_uploader.py` - Uploads orders from inbox to ShipStation
-- `src/shipstation_reporter.py` - Generates shipment reports
+- `src/shipstation_reporter.py` - **Generates monthly charge reports** (orders, packages, space rental) + weekly inventory reports
 - `src/main_order_import_daily_reporter.py` - Daily import summary reporter
 - **NEW:** XML Polling Service (5-minute intervals) - Detects new orders from Google Drive
 

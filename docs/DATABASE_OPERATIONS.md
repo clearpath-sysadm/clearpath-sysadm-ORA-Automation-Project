@@ -339,14 +339,26 @@ def weekly_maintenance(db_path='ora.db'):
 
 **First day of each month:**
 
-1. **Database backup archive**
+1. **Generate Monthly Charge Report**
+   ```bash
+   # Run monthly charge report for previous month
+   python src/shipstation_reporter.py --year 2025 --month 1
+   
+   # Verify report generated
+   sqlite3 ora.db "SELECT report_date, total_charge_cents/100.0 as total_charge 
+                   FROM monthly_charge_reports 
+                   WHERE report_year=2025 AND report_month=1 
+                   ORDER BY report_date;"
+   ```
+
+2. **Database backup archive**
    ```bash
    # Archive backups older than 30 days
    tar -czf backups/archive_$(date +%Y%m).tar.gz backups/ora_*.db
    find backups -name "ora_*.db" -mtime +30 -delete
    ```
 
-2. **Performance review**
+3. **Performance review**
    - Review slow query logs
    - Check index usage statistics
    - Verify backup integrity
