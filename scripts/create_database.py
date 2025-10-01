@@ -79,7 +79,8 @@ def create_inventory_transactions_table(conn):
             quantity INTEGER NOT NULL CHECK (quantity != 0),
             transaction_type TEXT NOT NULL CHECK (transaction_type IN ('Receive', 'Ship', 'Adjust Up', 'Adjust Down')),
             notes TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(date, sku, transaction_type, quantity)
         ) STRICT
     """)
     
@@ -114,11 +115,12 @@ def create_shipped_items_table(conn):
         CREATE TABLE IF NOT EXISTS shipped_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ship_date TEXT NOT NULL,
-            sku_lot TEXT,
+            sku_lot TEXT NOT NULL DEFAULT '',
             base_sku TEXT NOT NULL,
             quantity_shipped INTEGER NOT NULL CHECK (quantity_shipped > 0),
             order_number TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(order_number, base_sku, sku_lot),
             FOREIGN KEY (order_number) REFERENCES shipped_orders(order_number)
         ) STRICT
     """)

@@ -96,7 +96,8 @@ def parse_date(date_value):
         elif hasattr(date_value, 'to_pydatetime'):
             return date_value.to_pydatetime().strftime('%Y-%m-%d')
         
-        return str(date_value)
+        # If no format matched, return None (don't convert to string)
+        return None
     except:
         return None
 
@@ -210,12 +211,15 @@ def migrate_inventory_transactions(conn, dry_run=False) -> Tuple[int, int]:
         
         if not dry_run:
             try:
-                conn.execute("""
-                    INSERT INTO inventory_transactions (
+                cursor = conn.execute("""
+                    INSERT OR IGNORE INTO inventory_transactions (
                         date, sku, quantity, transaction_type, notes
                     ) VALUES (?, ?, ?, ?, ?)
                 """, (date_str, sku, quantity, trans_type, notes))
-                rows_migrated += 1
+                if cursor.rowcount > 0:
+                    rows_migrated += 1
+                else:
+                    rows_skipped += 1
             except sqlite3.Error as e:
                 print(f"  ⚠️  Error inserting row {idx}: {e}")
                 rows_skipped += 1
@@ -271,12 +275,15 @@ def migrate_shipped_orders(conn, dry_run=False) -> Tuple[int, int]:
         
         if not dry_run:
             try:
-                conn.execute("""
+                cursor = conn.execute("""
                     INSERT OR IGNORE INTO shipped_orders (
                         ship_date, order_number, customer_email, total_items, shipstation_order_id
                     ) VALUES (?, ?, ?, ?, ?)
                 """, (ship_date, order_number, customer_email, total_items, shipstation_order_id))
-                rows_migrated += 1
+                if cursor.rowcount > 0:
+                    rows_migrated += 1
+                else:
+                    rows_skipped += 1
             except sqlite3.Error as e:
                 print(f"  ⚠️  Error inserting row {idx}: {e}")
                 rows_skipped += 1
@@ -310,13 +317,13 @@ def migrate_shipped_items(conn, dry_run=False) -> Tuple[int, int]:
     # Expected columns: Ship_Date, SKU_Lot, Base_SKU, Quantity_Shipped, Order_Number
     for idx, row in df.iterrows():
         ship_date = parse_date(row.get('Ship_Date', None))
-        sku_lot = row.get('SKU_Lot', None)
+        sku_lot = row.get('SKU_Lot', '') or ''  # Convert None/NULL to empty string
         base_sku = row.get('Base_SKU', '')
         quantity_shipped = row.get('Quantity_Shipped', 0)
         order_number = row.get('Order_Number', None)
         
-        # Skip if missing critical fields
-        if not ship_date or not base_sku:
+        # Skip if missing critical fields (require order_number for deduplication)
+        if not ship_date or not base_sku or not order_number:
             rows_skipped += 1
             continue
         
@@ -336,12 +343,15 @@ def migrate_shipped_items(conn, dry_run=False) -> Tuple[int, int]:
         
         if not dry_run:
             try:
-                conn.execute("""
-                    INSERT INTO shipped_items (
+                cursor = conn.execute("""
+                    INSERT OR IGNORE INTO shipped_items (
                         ship_date, sku_lot, base_sku, quantity_shipped, order_number
                     ) VALUES (?, ?, ?, ?, ?)
                 """, (ship_date, sku_lot, base_sku, quantity_shipped, order_number))
-                rows_migrated += 1
+                if cursor.rowcount > 0:
+                    rows_migrated += 1
+                else:
+                    rows_skipped += 1
             except sqlite3.Error as e:
                 print(f"  ⚠️  Error inserting row {idx}: {e}")
                 rows_skipped += 1
@@ -401,12 +411,15 @@ def migrate_weekly_shipped_history(conn, dry_run=False) -> Tuple[int, int]:
         
         if not dry_run:
             try:
-                conn.execute("""
+                cursor = conn.execute("""
                     INSERT OR IGNORE INTO weekly_shipped_history (
                         start_date, end_date, sku, quantity_shipped
                     ) VALUES (?, ?, ?, ?)
                 """, (start_date, end_date, sku, quantity_shipped))
-                rows_migrated += 1
+                if cursor.rowcount > 0:
+                    rows_migrated += 1
+                else:
+                    rows_skipped += 1
             except sqlite3.Error as e:
                 print(f"  ⚠️  Error inserting row {idx}: {e}")
                 rows_skipped += 1
