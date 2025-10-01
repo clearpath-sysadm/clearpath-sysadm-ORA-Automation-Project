@@ -77,7 +77,7 @@ def create_inventory_transactions_table(conn):
             date TEXT NOT NULL,
             sku TEXT NOT NULL,
             quantity INTEGER NOT NULL CHECK (quantity != 0),
-            transaction_type TEXT NOT NULL CHECK (transaction_type IN ('Receive', 'Ship', 'Adjust Up', 'Adjust Down')),
+            transaction_type TEXT NOT NULL CHECK (transaction_type IN ('Receive', 'Ship', 'Adjust Up', 'Adjust Down', 'Repack')),
             notes TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(date, sku, transaction_type, quantity)

@@ -127,7 +127,7 @@ CREATE TABLE inventory_transactions (
     date DATE NOT NULL,
     sku TEXT NOT NULL,
     quantity INTEGER NOT NULL CHECK (quantity != 0),
-    transaction_type TEXT NOT NULL CHECK (transaction_type IN ('Receive', 'Ship', 'Adjust Up', 'Adjust Down')),
+    transaction_type TEXT NOT NULL CHECK (transaction_type IN ('Receive', 'Ship', 'Adjust Up', 'Adjust Down', 'Repack')),
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) STRICT;
