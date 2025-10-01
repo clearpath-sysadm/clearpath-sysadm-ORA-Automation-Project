@@ -770,9 +770,128 @@ execute_query("""
 
 ---
 
-### Phase 5: Replit Deployment & Dashboard API (2.5 hours)
+### Phase 5: Dashboard & Deployment (4 hours)
 
-#### 5.1 Configure Replit Secrets (30 min)
+#### 5.1 Dashboard UI/UX Improvements (1.5 hours) - MVP POLISH
+
+**Status:** ⏳ Ready to start
+
+**Objective:** Make dashboard production-ready with data freshness, actionability, and professional polish
+
+**Expert Review Summary:**
+- Current dashboard has solid visual design and responsive layout
+- Missing critical production features: data refresh, loading states, error handling
+- Buttons/navigation don't work (all show "coming soon" alerts)
+- Emojis need replacement with professional SVG icons
+- No timestamps or freshness indicators
+
+**Tasks:**
+
+**A) Data Freshness & States (45 minutes)**
+- [ ] Add "Last updated: X minutes ago" timestamp in header
+- [ ] Add manual Refresh button next to timestamp
+- [ ] Implement auto-refresh loop (60 seconds) with Page Visibility API pause
+- [ ] Add skeleton loaders for KPI cards, Alerts, and Automation sections
+- [ ] Add inline error banners for failed data fetches
+- [ ] Show loading state during refresh
+
+**B) Actionability (30 minutes)**
+- [ ] Make Inventory Alerts clickable: link to `#inventory?productId=17612`
+- [ ] Add "📧 Create PO" button with mailto: pre-filled purchase order template
+- [ ] Automation "Run Now" opens modal with CLI command and Copy button:
+  ```
+  python src/weekly_reporter.py
+  ```
+- [ ] Automation "View" links to workflow logs
+- [ ] Replace generic "coming soon" alerts with actual actions
+
+**C) Professional Polish (30 minutes)**
+- [ ] Replace all emoji icons with inline SVG icons:
+  - 🔔 → Bell icon (notifications)
+  - 👤 → Profile icon (user)
+  - ⚙️ → Gear icon (settings)
+  - 📊 → Chart icon (reports)
+  - 🌙/☀️ → Moon/Sun icons (dark mode toggle)
+  - Status indicators → Solid SVG circles
+- [ ] Implement hash-based navigation (#overview, #inventory, #shipments, etc.)
+- [ ] Persist active navigation tab in localStorage
+- [ ] Sort inventory alerts by severity (critical → warning → normal)
+- [ ] Add count badges on sidebar: "Inventory (3)" when alerts exist
+- [ ] Add "View all" links at bottom of Alerts and Automation sections
+- [ ] Use consistent button labels ("View Logs" vs "View")
+- [ ] Add trend arrows: ↑ +8% (green) or ↓ -3% (red)
+
+**Database Integration:**
+```javascript
+// Fetch real-time data from database
+async function refreshDashboard() {
+    try {
+        // Fetch KPIs from system_kpis table
+        const kpis = await fetch('/api/kpis').then(r => r.json());
+        
+        // Fetch inventory alerts from inventory_current table
+        const alerts = await fetch('/api/inventory/alerts').then(r => r.json());
+        
+        // Fetch workflow status from workflows table
+        const workflows = await fetch('/api/workflows/status').then(r => r.json());
+        
+        updateUI({ kpis, alerts, workflows });
+        updateTimestamp();
+    } catch (error) {
+        showErrorBanner('Failed to load data. Click Refresh to retry.');
+    }
+}
+```
+
+**Quick UX Wins:**
+- Sort alerts by: severity (critical first), then time
+- Show count badges on sidebar for Inventory and Automation sections
+- Add keyboard focus outlines for accessibility
+- Add aria-live regions for screen readers
+
+**Information Hierarchy:**
+1. Header: Company name | System health | Last updated + Refresh
+2. KPI Cards: Most important metrics at a glance
+3. Alerts + Automation: Errors/warnings surface first (side-by-side)
+4. Quick Analytics: Bottom (exploratory, less urgent)
+
+**Deferred to Phase 2:**
+- ❌ Real-time charts/graphs (use simple numbers + arrows for now)
+- ❌ Historical trend sparklines
+- ❌ Advanced icon library via CDN
+- ❌ Full SPA framework (React/Vue)
+- ❌ Role-based access control
+- ❌ Mobile-specific optimizations beyond responsive CSS
+
+**Acceptance Criteria:**
+- [ ] Timestamp updates automatically every 60 seconds
+- [ ] Manual refresh button works and shows loading state
+- [ ] Skeleton loaders appear during data fetch
+- [ ] Error banners show when API fails
+- [ ] Inventory alerts link to detail pages
+- [ ] "Create PO" mailto opens with pre-filled template
+- [ ] Automation modals show copyable CLI commands
+- [ ] All emoji icons replaced with professional SVG
+- [ ] Hash-based navigation works (browser back button supported)
+- [ ] Active nav tab persists on page reload
+- [ ] Alerts sorted by severity
+- [ ] Count badges show on sidebar when applicable
+
+**Deliverables:**
+- Production-ready dashboard UI
+- Functional navigation and actions
+- Professional icon system
+- Data freshness indicators
+
+**Estimated ROI:**
+- **Before:** Static demo page, users can't act on insights
+- **After:** Functional dashboard, users can refresh data, take actions, navigate sections
+- **Time Investment:** 1.5 hours
+- **User Impact:** 80% more functional, production-ready
+
+---
+
+#### 5.2 Configure Replit Secrets (30 min)
 
 **Replit Plan Confirmed:** Core ($25/month) - Scheduled Deployments available ✅
 
@@ -803,7 +922,7 @@ execute_query("""
 
 ---
 
-#### 5.2 Create Flask API for Dashboard (1 hour)
+#### 5.3 Create Flask API for Dashboard (1 hour)
 
 **Objective:** Build minimal API to serve real-time data to dashboard
 
@@ -948,7 +1067,7 @@ async function loadInventory() {
 
 ---
 
-#### 5.3 Deploy Flask API to Replit (30 min)
+#### 5.4 Deploy Flask API to Replit (30 min)
 
 **Objective:** Deploy Flask API as Reserved VM
 
@@ -975,7 +1094,7 @@ async function loadInventory() {
 
 ---
 
-#### 5.4 Create Scheduled Deployments (30 min)
+#### 5.5 Create Scheduled Deployments (30 min)
 
 **Objective:** Automate 2 critical scripts with cron schedules
 
@@ -1051,7 +1170,7 @@ Timeout: 15 minutes (900 seconds)
 
 ---
 
-#### 5.5 Minimal Monitoring Setup (30 min)
+#### 5.6 Minimal Monitoring Setup (30 min)
 
 **Objective:** Basic health checks and error tracking
 
