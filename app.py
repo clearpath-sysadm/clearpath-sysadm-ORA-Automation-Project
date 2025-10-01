@@ -24,7 +24,7 @@ app.config['JSON_SORT_KEYS'] = False
 DB_PATH = os.path.join(project_root, 'ora.db')
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html']
 
 @app.route('/')
 def index():
@@ -833,6 +833,60 @@ def api_weekly_inventory_report():
             'success': True,
             'data': report,
             'count': len(report)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/weekly_shipped_history', methods=['GET'])
+def api_weekly_shipped_history():
+    """Get 52 weeks of weekly shipped history for all SKUs"""
+    try:
+        # Get filter parameters
+        from flask import request
+        sku_filter = request.args.get('sku', None)
+        
+        # Build query
+        if sku_filter:
+            query = """
+                SELECT 
+                    start_date,
+                    end_date,
+                    sku,
+                    quantity_shipped
+                FROM weekly_shipped_history
+                WHERE sku = ?
+                ORDER BY start_date DESC
+                LIMIT 52
+            """
+            results = execute_query(query, (sku_filter,))
+        else:
+            query = """
+                SELECT 
+                    start_date,
+                    end_date,
+                    sku,
+                    quantity_shipped
+                FROM weekly_shipped_history
+                ORDER BY start_date DESC, sku
+            """
+            results = execute_query(query)
+        
+        history = []
+        for row in results:
+            history.append({
+                'start_date': row[0],
+                'end_date': row[1],
+                'sku': row[2],
+                'quantity_shipped': row[3]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': history,
+            'count': len(history)
         })
     except Exception as e:
         return jsonify({

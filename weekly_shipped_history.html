@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Shipped History - ORA Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: #f3f4f6;
+        }
+
+        .nav-links a.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .controls select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .record-count {
+            color: #666;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .summary-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .sku-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Weekly Shipped History</h1>
+            <nav class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/shipped_orders.html">Shipped Orders</a>
+                <a href="/shipped_items.html">Shipped Items</a>
+                <a href="/inventory_transactions.html">Inventory Transactions</a>
+                <a href="/weekly_shipped_history.html" class="active">Weekly Shipped History</a>
+            </nav>
+        </div>
+
+        <div class="controls">
+            <label for="skuFilter">
+                <strong>Filter by SKU:</strong>
+            </label>
+            <select id="skuFilter">
+                <option value="">All SKUs</option>
+                <option value="17612">17612</option>
+                <option value="17904">17904</option>
+                <option value="17914">17914</option>
+                <option value="17975">17975</option>
+                <option value="18675">18675</option>
+                <option value="18795">18795</option>
+            </select>
+            <button class="btn btn-primary" onclick="applyFilter()">Apply Filter</button>
+            <button class="btn btn-primary" onclick="clearFilter()">Clear Filter</button>
+        </div>
+
+        <div id="summarySection" class="summary-cards" style="display: none;">
+            <div class="summary-card">
+                <h3>Total Weeks</h3>
+                <div class="value" id="totalWeeks">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Total Shipped</h3>
+                <div class="value" id="totalShipped">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Weekly Average</h3>
+                <div class="value" id="weeklyAvg">0</div>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <div class="table-title">52-Week Shipping History</div>
+                <div class="record-count" id="recordCount">Loading...</div>
+            </div>
+
+            <div id="loadingMessage" class="loading">
+                Loading weekly shipped history...
+            </div>
+
+            <table id="historyTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Week Start</th>
+                        <th>Week End</th>
+                        <th>SKU</th>
+                        <th class="text-right">Quantity Shipped</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentFilter = '';
+
+        async function loadHistory(skuFilter = '') {
+            try {
+                document.getElementById('loadingMessage').style.display = 'block';
+                document.getElementById('historyTable').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('summarySection').style.display = 'none';
+
+                const url = skuFilter 
+                    ? `/api/weekly_shipped_history?sku=${encodeURIComponent(skuFilter)}`
+                    : '/api/weekly_shipped_history';
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to load data');
+                }
+
+                displayHistory(result.data, result.count);
+                calculateSummary(result.data, skuFilter);
+            } catch (error) {
+                console.error('Error loading history:', error);
+                document.getElementById('errorMessage').textContent = 
+                    'Error loading data: ' + error.message;
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('loadingMessage').style.display = 'none';
+            }
+        }
+
+        function displayHistory(data, count) {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #666;">No data available</td></tr>';
+                document.getElementById('recordCount').textContent = '0 records';
+            } else {
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${row.start_date}</td>
+                        <td>${row.end_date}</td>
+                        <td><span class="sku-badge">${row.sku}</span></td>
+                        <td class="text-right">${row.quantity_shipped}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('recordCount').textContent = `${count} records`;
+            }
+
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('historyTable').style.display = 'table';
+        }
+
+        function calculateSummary(data, skuFilter) {
+            if (skuFilter && data.length > 0) {
+                const totalWeeks = data.length;
+                const totalShipped = data.reduce((sum, row) => sum + row.quantity_shipped, 0);
+                const weeklyAvg = Math.round(totalShipped / totalWeeks);
+
+                document.getElementById('totalWeeks').textContent = totalWeeks;
+                document.getElementById('totalShipped').textContent = totalShipped.toLocaleString();
+                document.getElementById('weeklyAvg').textContent = weeklyAvg;
+                document.getElementById('summarySection').style.display = 'grid';
+            } else {
+                document.getElementById('summarySection').style.display = 'none';
+            }
+        }
+
+        function applyFilter() {
+            const sku = document.getElementById('skuFilter').value;
+            currentFilter = sku;
+            loadHistory(sku);
+        }
+
+        function clearFilter() {
+            document.getElementById('skuFilter').value = '';
+            currentFilter = '';
+            loadHistory();
+        }
+
+        loadHistory();
+    </script>
+</body>
+</html>
