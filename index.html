@@ -410,6 +410,17 @@
             margin-left: 0.75rem;
         }
 
+        .badge {
+            display: inline-block;
+            background: #f91880;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+            font-weight: 600;
+        }
+
         .main-content {
             flex: 1;
             padding: 2rem;
@@ -685,7 +696,7 @@
                 🏠 <span>Overview</span>
             </a>
             <a href="#" class="nav-item">
-                📦 <span>Inventory</span>
+                📦 <span>Inventory <span class="badge" id="inventory-badge">2</span></span>
             </a>
             <a href="#" class="nav-item">
                 🚢 <span>Shipments</span>
@@ -750,14 +761,14 @@
                 <div class="skeleton-alert skeleton" id="alert-skeleton-2"></div>
                 <div class="skeleton-alert skeleton" id="alert-skeleton-3"></div>
                 
-                <!-- Actual Alerts -->
-                <a href="#inventory?productId=17612" class="alert-item critical hidden alert-link" data-alert-item data-product-id="17612">
+                <!-- Actual Alerts (sorted by severity: critical → warning → normal) -->
+                <a href="#inventory?productId=17612" class="alert-item critical hidden alert-link" data-alert-item data-product-id="17612" data-severity="critical">
                     <strong>⚠️ ORA Clarity Complete (17612)</strong> - Low Stock: 45 units remaining
                 </a>
-                <a href="#inventory?productId=17975" class="alert-item hidden alert-link" data-alert-item data-product-id="17975">
+                <a href="#inventory?productId=17975" class="alert-item hidden alert-link" data-alert-item data-product-id="17975" data-severity="warning">
                     <strong>⚠️ ORA Travel Pack (17975)</strong> - Reorder Point: 28 units remaining
                 </a>
-                <a href="#inventory?productId=17904" class="alert-item normal hidden alert-link" data-alert-item data-product-id="17904">
+                <a href="#inventory?productId=17904" class="alert-item normal hidden alert-link" data-alert-item data-product-id="17904" data-severity="normal">
                     <strong>✅ ORA Essential Kit (17904)</strong> - Normal Stock: 420 units available
                 </a>
             </div>
@@ -1061,7 +1072,6 @@
 
         // Create Purchase Order functionality
         function createPurchaseOrder() {
-            // Get all critical/low stock alerts
             const alerts = document.querySelectorAll('.alert-item.critical, .alert-item:not(.normal):not(.critical)');
             const lowStockProducts = [];
             
@@ -1085,8 +1095,13 @@
                 `ORA Automation System`
             );
             
-            // Open default email client with pre-filled template
             window.location.href = `mailto:purchasing@example.com?subject=${subject}&body=${body}`;
+        }
+
+        // Simple automation command display (MVP)
+        function showAutomationModal(id, name, command) {
+            const message = `${name}\n\nCommand:\n${command}\n\nCopy this command to run manually in the terminal.`;
+            prompt('Copy this command:', command);
         }
 
         // Dark mode toggle functionality
