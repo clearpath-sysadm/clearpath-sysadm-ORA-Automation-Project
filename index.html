@@ -583,6 +583,63 @@
         // Update timestamp every 10 seconds
         setInterval(updateTimestamp, 10000);
 
+        // Auto-refresh with Page Visibility API
+        let autoRefreshInterval = null;
+        let refreshIntervalMs = 60000; // 60 seconds
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) return; // Already running
+            
+            autoRefreshInterval = setInterval(async () => {
+                if (!document.hidden) {
+                    console.log('Auto-refreshing dashboard...');
+                    const refreshBtn = document.getElementById('refresh-button');
+                    
+                    if (!isRefreshing) {
+                        isRefreshing = true;
+                        refreshBtn.classList.add('refreshing');
+                        
+                        try {
+                            // Simulate data refresh (will be replaced with actual API calls)
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            lastUpdateTime = Date.now();
+                            updateTimestamp();
+                            console.log('Auto-refresh completed');
+                        } catch (error) {
+                            console.error('Auto-refresh failed:', error);
+                        } finally {
+                            isRefreshing = false;
+                            refreshBtn.classList.remove('refreshing');
+                        }
+                    }
+                }
+            }, refreshIntervalMs);
+            
+            console.log('Auto-refresh started (60s interval)');
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                console.log('Auto-refresh stopped');
+            }
+        }
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+                console.log('Tab hidden - auto-refresh paused');
+            } else {
+                startAutoRefresh();
+                console.log('Tab visible - auto-refresh resumed');
+            }
+        });
+
+        // Start auto-refresh on page load
+        startAutoRefresh();
+
         // Dark mode toggle functionality
         const darkModeToggle = document.getElementById('dark-mode-toggle');
         const body = document.body;
