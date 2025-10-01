@@ -45,6 +45,7 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
 
     for shipment in raw_shipment_data:
         ship_date = shipment.get('shipDate')
+        order_number = shipment.get('orderNumber')
         if not ship_date:
             continue  # Skip shipments with no ship date
 
@@ -61,7 +62,8 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
                     'Ship Date': ship_date,
                     'SKU - Lot': sku_lot,
                     'Quantity Shipped': quantity,
-                    'Base SKU': base_sku
+                    'Base SKU': base_sku,
+                    'OrderNumber': order_number
                 })
 
     df = pd.DataFrame(extracted_data)

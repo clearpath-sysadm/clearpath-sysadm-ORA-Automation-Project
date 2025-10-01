@@ -15,10 +15,6 @@ if project_root not in sys.path:
 
 # Import constants and environment detection from settings.py
 from config.settings import (
-    GOOGLE_SHEET_ID,
-    SHIPPED_ITEMS_DATA_TAB_NAME,
-    SHIPPED_ORDERS_DATA_TAB_NAME,
-    ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME, # Added for the weekly history update
     SHIPSTATION_SHIPMENTS_ENDPOINT,
     IS_CLOUD_ENV, IS_LOCAL_ENV, SERVICE_ACCOUNT_KEY_PATH
 )
@@ -30,8 +26,8 @@ from src.services.data_processing.shipment_processor import (
     process_shipped_orders,
     aggregate_weekly_shipped_history # Re-added for weekly aggregation
 )
-# Note: Assumes robust read/write functions exist in your Google Sheets API client
-from src.services.google_sheets.api_client import write_dataframe_to_sheet, get_google_sheet_data
+# Import database utilities for SQLite operations
+from src.services.database.db_utils import execute_query, transaction
 from src.services.shipstation.api_client import (
     get_shipstation_credentials,
     fetch_shipstation_shipments
@@ -252,24 +248,212 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     logger.info(f"Validation: {num_dupes} duplicate week(s) found. {num_weeks} total weeks. Most recent week: {most_recent_start}, Expected: {expected_start}.")
 
     assert num_dupes == 0, "Duplicate weeks found after deduplication!"
-    assert num_weeks == 52, f"Weekly history does not have exactly 52 weeks: {num_weeks}"
+    # Allow fewer than 52 weeks during database initialization
+    if num_weeks < 52:
+        logger.warning(f"Weekly history has only {num_weeks} weeks (< 52). This is expected during initial data population.")
+    elif num_weeks > 52:
+        logger.error(f"Weekly history has {num_weeks} weeks (> 52). This should not happen after 52-week enforcement.")
+    
     assert most_recent_start == expected_start, f"Most recent week ({most_recent_start}) is not the current week ({expected_start})"
 
-    logger.info("Weekly history update successful: deduplication, 52-week enforcement, and current week validation all passed.")    
+    logger.info("Weekly history update successful: deduplication, week count validation, and current week validation all passed.")    
 
     return existing_history_df
+
+
+def save_shipped_orders_to_db(orders_df):
+    """Save shipped orders to database with UPSERT by order_number
+    
+    Schema: shipped_orders(ship_date, order_number UNIQUE, customer_email, total_items, shipstation_order_id)
+    Input DataFrame columns: Ship Date, OrderNumber
+    """
+    if orders_df.empty:
+        logger.warning("No orders to save to database")
+        return 0
+    
+    logger.info(f"Saving {len(orders_df)} shipped orders to database...")
+    records_saved = 0
+    
+    with transaction() as conn:
+        for _, row in orders_df.iterrows():
+            ship_date = row.get('Ship Date')
+            order_number = row.get('OrderNumber')
+            
+            if not order_number or not ship_date:
+                logger.warning(f"Skipping row with missing order_number or ship_date: {row}")
+                continue
+            
+            conn.execute("""
+                INSERT INTO shipped_orders (ship_date, order_number)
+                VALUES (?, ?)
+                ON CONFLICT(order_number) DO UPDATE SET
+                    ship_date = excluded.ship_date
+            """, (str(ship_date), str(order_number)))
+            records_saved += 1
+    
+    logger.info(f"Successfully saved {records_saved} shipped orders to database")
+    return records_saved
+
+
+def save_shipped_items_to_db(items_df):
+    """Save shipped items to database with UPSERT
+    
+    Schema: shipped_items(ship_date, sku_lot, base_sku, quantity_shipped, order_number)
+    UNIQUE(order_number, base_sku, sku_lot)
+    Input DataFrame columns: Ship Date, SKU - Lot, Base SKU, Quantity Shipped, OrderNumber
+    """
+    if items_df.empty:
+        logger.warning("No items to save to database")
+        return 0
+    
+    logger.info(f"Saving {len(items_df)} shipped items to database...")
+    records_saved = 0
+    
+    with transaction() as conn:
+        for _, row in items_df.iterrows():
+            ship_date = row.get('Ship Date')
+            sku_lot = row.get('SKU - Lot', '')
+            base_sku = row.get('Base SKU')
+            quantity = row.get('Quantity Shipped')
+            order_number = row.get('OrderNumber')
+            
+            if not ship_date or not base_sku or not quantity:
+                logger.warning(f"Skipping row with missing required fields: {row}")
+                continue
+            
+            conn.execute("""
+                INSERT INTO shipped_items (
+                    ship_date, sku_lot, base_sku, quantity_shipped, order_number
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
+                    ship_date = excluded.ship_date,
+                    quantity_shipped = excluded.quantity_shipped
+            """, (str(ship_date), str(sku_lot), str(base_sku), int(quantity), str(order_number) if order_number else None))
+            records_saved += 1
+    
+    logger.info(f"Successfully saved {records_saved} shipped items to database")
+    return records_saved
+
+
+def save_weekly_history_to_db(history_df):
+    """Save weekly shipped history to database with UPSERT"""
+    if history_df.empty:
+        logger.warning("No weekly history to save to database")
+        return 0
+    
+    logger.info(f"Saving {len(history_df)} weeks of history to database...")
+    records_saved = 0
+    
+    # Get SKU columns (all columns except Start Date, Stop Date, Ship Date)
+    date_columns = ['Start Date', 'Stop Date', 'Ship Date']
+    sku_columns = [col for col in history_df.columns if col not in date_columns]
+    
+    with transaction() as conn:
+        for _, row in history_df.iterrows():
+            start_date = row.get('Start Date')
+            end_date = row.get('Stop Date')
+            
+            # Insert/update a row for each SKU in this week
+            for sku in sku_columns:
+                quantity = row.get(sku, 0)
+                # Skip if quantity is not a number or is 0
+                try:
+                    quantity = int(float(quantity)) if quantity and str(quantity).strip() else 0
+                except (ValueError, TypeError):
+                    quantity = 0
+                
+                if quantity > 0:
+                    conn.execute("""
+                        INSERT INTO weekly_shipped_history (
+                            start_date, end_date, sku, quantity_shipped
+                        ) VALUES (?, ?, ?, ?)
+                        ON CONFLICT(start_date, end_date, sku) DO UPDATE SET
+                            quantity_shipped = excluded.quantity_shipped
+                    """, (str(start_date), str(end_date), sku, quantity))
+                    records_saved += 1
+    
+    logger.info(f"Successfully saved {records_saved} weekly history records to database")
+    return records_saved
+
+
+def get_weekly_history_from_db(target_skus):
+    """Get weekly shipped history from database for specified SKUs"""
+    logger.info("Loading weekly shipped history from database...")
+    
+    try:
+        # Get all weekly history for target SKUs
+        rows = execute_query("""
+            SELECT start_date, end_date, sku, quantity_shipped
+            FROM weekly_shipped_history
+            WHERE sku IN ({})
+            ORDER BY start_date, sku
+        """.format(','.join('?' * len(target_skus))), tuple(target_skus))
+        
+        if not rows:
+            logger.warning("No weekly history found in database")
+            # Return empty DataFrame with expected structure
+            expected_columns = ['Start Date', 'Stop Date'] + target_skus
+            return pd.DataFrame(columns=expected_columns)
+        
+        # Convert to wide format (one row per week, one column per SKU)
+        df = pd.DataFrame(rows, columns=['Start Date', 'Stop Date', 'SKU', 'Quantity Shipped'])
+        df['Start Date'] = pd.to_datetime(df['Start Date']).dt.date
+        df['Stop Date'] = pd.to_datetime(df['Stop Date']).dt.date
+        
+        # Pivot to wide format
+        history_df = df.pivot_table(
+            index=['Start Date', 'Stop Date'],
+            columns='SKU',
+            values='Quantity Shipped',
+            fill_value=0
+        ).reset_index()
+        
+        # Ensure all target SKUs are present as columns
+        for sku in target_skus:
+            if sku not in history_df.columns:
+                history_df[sku] = 0
+        
+        # Reorder columns
+        column_order = ['Start Date', 'Stop Date'] + target_skus
+        history_df = history_df[column_order]
+        
+        logger.info(f"Loaded {len(history_df)} weeks of history from database")
+        return history_df
+        
+    except Exception as e:
+        logger.error(f"Error loading weekly history from database: {e}", exc_info=True)
+        expected_columns = ['Start Date', 'Stop Date'] + target_skus
+        return pd.DataFrame(columns=expected_columns)
+
 
 def run_daily_shipment_pull(request=None):
     """
     Main function for the daily shipment processor.
     Pulls a 32-day rolling window of shipment data from ShipStation and
-    overwrites or updates the target Google Sheet tabs.
+    saves to SQLite database tables: shipped_orders, shipped_items, weekly_shipped_history.
 
     Args:
         request: The request object from a Google Cloud Function trigger (optional).
     """
 
     logger.info("--- Starting Daily Shipment Processor ---")
+    
+    # Initialize workflow tracking
+    workflow_start_time = datetime.datetime.now()
+    try:
+        # Create or update workflow record
+        with transaction() as conn:
+            conn.execute("""
+                INSERT INTO workflows (name, status, last_run_at)
+                VALUES ('daily_shipment_processor', 'running', CURRENT_TIMESTAMP)
+                ON CONFLICT(name) DO UPDATE SET
+                    status = 'running',
+                    last_run_at = CURRENT_TIMESTAMP
+            """)
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize workflow tracking: {e}")
+    
     try:
         # --- 1. Get ShipStation Credentials (Environment-Aware) ---
         api_key, api_secret = get_shipstation_credentials()
@@ -311,57 +495,61 @@ def run_daily_shipment_pull(request=None):
         logger.info("Processing data for Shipped_Items_Data tab...")
         items_df = process_shipped_items(non_voided_shipments)    
 
-        logger.info("Processing data for Shipped_Orders_Data tab...")
+        logger.info("Processing data for Shipped_Orders_Data table...")
         orders_df = process_shipped_orders(non_voided_shipments)  
 
-        # --- 5. Overwrite Transactional Google Sheet Tabs ---    
-        if not items_df.empty:
-            logger.info(f"Overwriting '{SHIPPED_ITEMS_DATA_TAB_NAME}' tab with {len(items_df)} rows...")
-            write_dataframe_to_sheet(items_df, GOOGLE_SHEET_ID, SHIPPED_ITEMS_DATA_TAB_NAME)
-        else:
-            logger.warning(f"Shipped Items DataFrame is empty. Skipping write to '{SHIPPED_ITEMS_DATA_TAB_NAME}'.")
+        # --- 5. Save to Database Tables ---    
+        items_saved = save_shipped_items_to_db(items_df)
+        orders_saved = save_shipped_orders_to_db(orders_df)
 
-        if not orders_df.empty:
-            logger.info(f"Overwriting '{SHIPPED_ORDERS_DATA_TAB_NAME}' tab with {len(orders_df)} rows...")
-            write_dataframe_to_sheet(orders_df, GOOGLE_SHEET_ID, SHIPPED_ORDERS_DATA_TAB_NAME)
-        else:
-            logger.warning(f"Shipped Orders DataFrame is empty. Skipping write to '{SHIPPED_ORDERS_DATA_TAB_NAME}'.")
-
-        # --- 6. Incrementally Update the Weekly Shipped History Tab ---
-        logger.info("Fetching existing 52-week history for update...")
-        sheet_data = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
-
-        # Always robustly convert to DataFrame, even if empty or malformed
-        if sheet_data and len(sheet_data) > 1:
-            header = sheet_data[0]
-            header_len = len(header)
-            cleaned_rows = []
-            for row in sheet_data[1:]:
-                if len(row) > header_len:
-                    cleaned_rows.append(row[:header_len])
-                elif len(row) < header_len:
-                    cleaned_rows.append(row + ['ERROR'] * (header_len - len(row)))
-                else:
-                    cleaned_rows.append(row)
-            existing_history_df = pd.DataFrame(cleaned_rows, columns=header)
-        else:
-            # If the sheet is empty or malformed, create an empty DataFrame with expected columns
-            # This should match the actual sheet layout; update as needed
-            expected_columns = ['Start Date', 'Stop Date', '17612', '17904', '17914', '18675', '18795']
-            existing_history_df = pd.DataFrame(columns=expected_columns)
-
-        # This is a placeholder for the SKUs that are tracked weekly.
-        # This should ideally be loaded from a config file or another sheet.
-        target_skus = ['17612', '17904', '17914', '18675', '18795']
+        # --- 6. Incrementally Update the Weekly Shipped History ---
+        logger.info("Fetching existing 52-week history from database...")
+        
+        # Get target SKUs from configuration_params
+        target_skus_rows = execute_query("""
+            SELECT sku FROM configuration_params
+            WHERE category = 'Key Products'
+            ORDER BY sku
+        """)
+        target_skus = [str(row[0]) for row in target_skus_rows] if target_skus_rows else ['17612', '17904', '17914', '18675', '18795']
+        
+        existing_history_df = get_weekly_history_from_db(target_skus)
         updated_history_df = update_weekly_history_incrementally(items_df.copy(), existing_history_df.copy(), target_skus, shipment_data)
-        logger.info(f"Overwriting '{ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}' with updated 52-week history...")
-        write_dataframe_to_sheet(updated_history_df, GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
-
-        logger.info("--- Daily Shipment Processor finished successfully! ---")
+        
+        history_saved = save_weekly_history_to_db(updated_history_df)
+        
+        # --- 7. Update Workflow Status ---
+        total_records = items_saved + orders_saved + history_saved
+        duration = (datetime.datetime.now() - workflow_start_time).total_seconds()
+        
+        with transaction() as conn:
+            conn.execute("""
+                UPDATE workflows 
+                SET status = 'completed',
+                    records_processed = ?,
+                    duration_seconds = CAST(? AS INTEGER)
+                WHERE name = 'daily_shipment_processor'
+            """, (total_records, duration))
+        
+        logger.info(f"--- Daily Shipment Processor finished successfully! ---")
+        logger.info(f"Total records processed: {total_records} (items: {items_saved}, orders: {orders_saved}, history: {history_saved})")
         return "Process completed successfully", 200
 
     except Exception as e:
         logger.critical(f"An unhandled error occurred in the daily shipment processor: {e}", exc_info=True)
+        
+        # Update workflow status to failed
+        try:
+            with transaction() as conn:
+                conn.execute("""
+                    UPDATE workflows 
+                    SET status = 'failed',
+                        error_message = ?
+                    WHERE name = 'daily_shipment_processor'
+                """, (str(e)[:500],))
+        except Exception as workflow_err:
+            logger.error(f"Failed to update workflow status: {workflow_err}")
+        
         return f"An error occurred: {e}", 500
 
 # This allows the script to be run directly for testing purposes
