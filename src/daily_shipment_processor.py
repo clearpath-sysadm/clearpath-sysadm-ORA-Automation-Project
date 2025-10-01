@@ -32,6 +32,12 @@ from src.services.shipstation.api_client import (
     get_shipstation_credentials,
     fetch_shipstation_shipments
 )
+# Import week utilities for handling complete vs partial weeks
+from src.services.reporting_logic.week_utils import (
+    get_current_week_boundaries,
+    is_week_complete,
+    get_prior_complete_week_boundaries
+)
 
 
 
@@ -68,196 +74,153 @@ logger.info(f"[DEBUG] SHIPSTATION_API_SECRET_SECRET_ID: {_settings.SHIPSTATION_A
 
 
 def update_weekly_history_incrementally(daily_items_df, existing_history_df, target_skus, shipment_data):
-    # --- Ensure all variables are defined before use ---
+    """
+    Updates the 52-week history with COMPLETE weeks only (excludes current/partial week).
+    
+    IMPORTANT: Only processes weeks where Sunday has passed. The current/partial week
+    is excluded to prevent artificially lowering the 52-week rolling average.
+
+    Args:
+        daily_items_df (pd.DataFrame): DataFrame with the last 32 days of granular shipped items.
+        existing_history_df (pd.DataFrame): DataFrame with the current 52-week history.
+        target_skus (list): A list of SKUs to be included in the weekly history.
+        shipment_data: Raw shipment data from ShipStation API.
+
+    Returns:
+        pd.DataFrame: The updated 52-week history DataFrame (only complete weeks).      
+    """
+    logger.info("Starting incremental update of the 52-week history (COMPLETE weeks only)...")
+    
+    # Get current and prior week boundaries
+    current_monday, current_sunday = get_current_week_boundaries()
+    prior_monday, prior_sunday = get_prior_complete_week_boundaries()
     today = datetime.date.today()
-    start_of_current_week = today - datetime.timedelta(days=today.weekday())
-
-    # After filtering for current week, log the DataFrame and unique SKUs
-    current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
-    # Debug print for SKU 17612 quantity in current week
-    sku_17612_df = current_week_items_df[current_week_items_df['Base SKU'] == '17612']
-    print("\n[DEBUG] Current week total Quantity Shipped for SKU 17612:", sku_17612_df['Quantity Shipped'].sum())
-    print("[DEBUG] Current week rows for SKU 17612:")
-    print(sku_17612_df)
-    logger.info(f"Full current_week_items_df for current week:\n{current_week_items_df}")
-    logger.info(f"current_week_items_df shape: {current_week_items_df.shape}")
-    logger.info(f"current_week_items_df head:\n{current_week_items_df.head(10)}")
-    logger.info(f"Unique 'Base SKU' values in current_week_items_df: {sorted(current_week_items_df['Base SKU'].unique())}")
-    """
-    Updates the 52-week history with the latest data for the current week.
-
-    Args:
-        daily_items_df (pd.DataFrame): DataFrame with the last 32 days of granular shipped items.
-        existing_history_df (pd.DataFrame): DataFrame with the current 52-week history.
-        target_skus (list): A list of SKUs to be included in the weekly history.
-
-    Returns:
-        pd.DataFrame: The updated 52-week history DataFrame.      
-    """
-    logger.info("Starting incremental update of the 52-week history tab...")
-
-    """
-    Updates the 52-week history with the latest data for the current week.
-
-    Args:
-        daily_items_df (pd.DataFrame): DataFrame with the last 32 days of granular shipped items.
-        existing_history_df (pd.DataFrame): DataFrame with the current 52-week history.
-        target_skus (list): A list of SKUs to be included in the weekly history.
-
-    Returns:
-        pd.DataFrame: The updated 52-week history DataFrame.      
-    """
-
-
+    
+    logger.info(f"Today: {today}")
+    logger.info(f"Current week (INCOMPLETE): {current_monday} to {current_sunday}")
+    logger.info(f"Prior complete week: {prior_monday} to {prior_sunday}")
+    
+    # Process the most recent COMPLETE week (prior week)
+    processed_week_start = prior_monday
+    processed_week_end = prior_sunday
+    
     # Ensure 'Ship Date' is in datetime format
     daily_items_df['Ship Date'] = pd.to_datetime(daily_items_df['Ship Date']).dt.date
-
-    logger.info(f"Current week starts on: {start_of_current_week}")
-    logger.info(f"Unique Ship Dates in daily_items_df: {sorted(daily_items_df['Ship Date'].unique())}")
-    logger.info(f"Min Ship Date: {daily_items_df['Ship Date'].min()}, Max Ship Date: {daily_items_df['Ship Date'].max()}")
-
-    # Now safe to filter and log current week items
-    current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
-    logger.info(f"current_week_items_df shape: {current_week_items_df.shape}")
-    logger.info(f"current_week_items_df head:\n{current_week_items_df.head(10)}")
-    logger.info(f"Unique 'Base SKU' values in current_week_items_df: {sorted(current_week_items_df['Base SKU'].unique())}")
-
-    # Determine the start of the current week (Monday)
-    today = datetime.date.today()
-    start_of_current_week = today - datetime.timedelta(days=today.weekday())
-    logger.info(f"Current week starts on: {start_of_current_week}")
-    # Debug: Show unique Ship Dates and min/max
-    logger.debug(f"Unique Ship Dates in daily_items_df: {sorted(daily_items_df['Ship Date'].unique())}")
-    logger.debug(f"Min Ship Date: {daily_items_df['Ship Date'].min()}, Max Ship Date: {daily_items_df['Ship Date'].max()}")
-
-    # --- DEBUG LOGGING FOR SKU 17612 ---
-    logger.debug(f"Today's date: {today}")
-    logger.debug("Today's shipments for SKU 17612:")
-    logger.debug(daily_items_df[daily_items_df['Base SKU'] == '17612'])
-    if not existing_history_df.empty:
-        last_row = existing_history_df.tail(1)
-        logger.debug("Last row in ORA_Weekly_Shipped_History:")   
-        logger.debug(last_row)
-        if '17612' in existing_history_df.columns:
-            logger.debug(f"Value for 17612 in last row: {last_row['17612'].values[0]}")
-        logger.debug(f"Last week Start Date: {last_row['Start Date'].values[0]}, Stop Date: {last_row['Stop Date'].values[0]}")     
-    today_sum = daily_items_df[daily_items_df['Base SKU'] == '17612']['Quantity Shipped'].sum()
-    logger.debug(f"Sum of today's shipments for SKU 17612: {today_sum}")
-
-    # Filter the daily items to get only shipments from the current week
-    current_week_items_df = daily_items_df[daily_items_df['Ship Date'] >= start_of_current_week].copy()
-
-    logger.debug("Filtered daily_items_df for current week:")     
-    logger.debug(current_week_items_df)
-
-    for sku in target_skus:
-        sku_filtered = current_week_items_df[current_week_items_df['Base SKU'].astype(str) == str(sku)]
-        logger.debug(f"Current week items for SKU {sku}:")        
-        logger.debug(sku_filtered)
-
-    if current_week_items_df.empty:
-        logger.info("No shipments found for the current week yet. History remains unchanged.")
+    
+    logger.info(f"Ship dates range: {daily_items_df['Ship Date'].min()} to {daily_items_df['Ship Date'].max()}")
+    
+    # Filter for the processed week (prior complete week) only
+    processed_week_items_df = daily_items_df[
+        (daily_items_df['Ship Date'] >= processed_week_start) &
+        (daily_items_df['Ship Date'] <= processed_week_end)
+    ].copy()
+    
+    logger.info(f"Found {len(processed_week_items_df)} shipment items for processed week {processed_week_start} to {processed_week_end}")
+    
+    if processed_week_items_df.empty:
+        logger.info(f"No shipments found for the processed week ({processed_week_start} to {processed_week_end}). "
+                   "Purging any partial weeks and returning existing history.")
+        # Purge any partial weeks (>= current_monday) from existing history
+        existing_history_df['Start Date'] = pd.to_datetime(existing_history_df['Start Date']).dt.date
+        existing_history_df = existing_history_df[existing_history_df['Start Date'] < current_monday].reset_index(drop=True)
         return existing_history_df
-
-    # Aggregate this new weekly data using the original raw shipment data filtered for the current week
-    # This assumes you have access to the original shipment_data (raw API response) in scope
-    # You may need to pass shipment_data as an argument to this function if not already available
-    def filter_shipments_for_week(shipment_data, start_of_week, end_of_week):
+    
+    # Helper function to filter raw shipment data for a specific week
+    def filter_shipments_for_week(shipment_data, start_date, end_date):
         filtered = []
         for s in shipment_data:
-            ship_date = s.get('shipDate')
-            if ship_date:
-                ship_date_dt = datetime.datetime.strptime(ship_date[:10], '%Y-%m-%d').date()
-                if start_of_week <= ship_date_dt <= start_of_week + datetime.timedelta(days=6):
+            ship_date_str = s.get('shipDate')
+            if ship_date_str:
+                ship_date = datetime.datetime.strptime(ship_date_str[:10], '%Y-%m-%d').date()
+                if start_date <= ship_date <= end_date:
                     filtered.append(s)
         return filtered
-
-    current_week_shipments = filter_shipments_for_week(shipment_data, start_of_current_week, start_of_current_week + datetime.timedelta(days=6))
-    current_week_summary_df = aggregate_weekly_shipped_history(   
-        current_week_shipments,
+    
+    # Get shipments for the processed week
+    processed_week_shipments = filter_shipments_for_week(
+        shipment_data, processed_week_start, processed_week_end
+    )
+    
+    # Aggregate the processed week's data
+    processed_week_summary_df = aggregate_weekly_shipped_history(
+        processed_week_shipments,
         target_skus
     )
-
-    # Debug print: show the summary DataFrame and the row to be written
-    print("\n[DEBUG] Aggregated weekly summary DataFrame (current_week_summary_df):")
-    print(current_week_summary_df)
-    if not current_week_summary_df.empty:
-        print("[DEBUG] Aggregated values by SKU for the current week:")
-        for sku in target_skus:
-            print(f"  SKU {sku}: {current_week_summary_df.iloc[0].get(str(sku), 'N/A')}")
-        print("[DEBUG] Full row to be written to sheet:")
-        print(current_week_summary_df.iloc[0])
-
-    if current_week_summary_df.empty:
-        logger.warning("Aggregation of current week's data resulted in an empty DataFrame.")
+    
+    if processed_week_summary_df.empty:
+        logger.warning(f"Aggregation of processed week ({processed_week_start} to {processed_week_end}) resulted in empty DataFrame.")
+        # Still purge partial weeks before returning
+        existing_history_df['Start Date'] = pd.to_datetime(existing_history_df['Start Date']).dt.date
+        existing_history_df = existing_history_df[existing_history_df['Start Date'] < current_monday].reset_index(drop=True)
         return existing_history_df
-
-    # The first row of the summary is the one we want
-    new_week_row = current_week_summary_df.iloc[0]
-
-    # Check if the existing history already has a row for this week
+    
+    # Get the aggregated row
+    new_week_row = processed_week_summary_df.iloc[0]
+    
+    logger.info(f"Aggregated data for week {processed_week_start} to {processed_week_end}")
+    
+    # Ensure Start Date column is datetime for comparison
     existing_history_df['Start Date'] = pd.to_datetime(existing_history_df['Start Date']).dt.date
-    week_exists = start_of_current_week in existing_history_df['Start Date'].values
-
+    
+    # Check if this week already exists in history
+    week_exists = processed_week_start in existing_history_df['Start Date'].values
+    
     if week_exists:
-        logger.info("Current week found in history. Updating the last row.")
-        # Update the last row, assuming it's the current week     
-        # A safer method would be to find the index by date       
-        idx_to_update = existing_history_df[existing_history_df['Start Date'] == start_of_current_week].index
+        logger.info(f"Week {processed_week_start} already exists in history. Updating it.")
+        idx_to_update = existing_history_df[existing_history_df['Start Date'] == processed_week_start].index
         existing_history_df.loc[idx_to_update] = new_week_row.values
     else:
-        logger.info("This is a new week. Appending new week and removing the oldest.")
-        # Append the new row and drop the oldest
+        logger.info(f"Week {processed_week_start} is new. Appending to history.")
         updated_history_df = pd.concat([existing_history_df, new_week_row.to_frame().T], ignore_index=True)
-        # Sort by date to be sure, then drop the first row        
         updated_history_df = updated_history_df.sort_values(by='Start Date', ascending=True)
-        updated_history_df = updated_history_df.iloc[1:]
+        # If we now have more than 52 weeks, drop the oldest
+        if len(updated_history_df) > 52:
+            updated_history_df = updated_history_df.iloc[-52:]
         existing_history_df = updated_history_df
-
-
-    # --- DEDUPLICATION STEP: Ensure only one entry per week (by Start Date and Stop Date), keeping the most recent ---
-    # Sort by Start Date and Stop Date to ensure consistent ordering
-    existing_history_df = existing_history_df.sort_values(by=["Start Date", "Stop Date", "Ship Date" if "Ship Date" in existing_history_df.columns else "Start Date"], ascending=True)
-    # Drop duplicates, keeping the last (most recent) entry for each week
+    
+    # PURGE any partial weeks (rows with Start Date >= current_monday)
+    before_purge = len(existing_history_df)
+    existing_history_df = existing_history_df[existing_history_df['Start Date'] < current_monday].reset_index(drop=True)
+    after_purge = len(existing_history_df)
+    if before_purge > after_purge:
+        logger.info(f"Purged {before_purge - after_purge} partial week(s) (Start Date >= {current_monday})")
+    
+    # Deduplication: Ensure only one entry per week
+    existing_history_df = existing_history_df.sort_values(by=["Start Date", "Stop Date"], ascending=True)
     before_dedup = len(existing_history_df)
     existing_history_df = existing_history_df.drop_duplicates(subset=["Start Date", "Stop Date"], keep="last").reset_index(drop=True)
     after_dedup = len(existing_history_df)
-    logger.info(f"Deduplication complete: {before_dedup - after_dedup} duplicate week(s) removed. {after_dedup} unique weeks remain.")
-
-    # --- ENFORCE 52 WEEKS: Trim to most recent 52 weeks (by Start Date) ---
-    if len(existing_history_df) > 52:
-        logger.info(f"History has {len(existing_history_df)} weeks. Trimming to the most recent 52 weeks.")
-        existing_history_df = existing_history_df.sort_values(by="Start Date", ascending=True).iloc[-52:].reset_index(drop=True)    
-    elif len(existing_history_df) < 52:
-        logger.warning(f"History has only {len(existing_history_df)} weeks. (No padding implemented.)")
-
-    logger.info(f"History now contains {len(existing_history_df)} weeks after enforcing 52-week rule.")
-
-    # --- ENSURE CURRENT WEEK IS PRESENT AND CORRECT ---
-    # (This logic is already handled above: update or append current week)
-
-    # --- FINAL VALIDATION: Ensure all requirements are met ---   
-    # 1. No duplicate weeks
-    num_dupes = existing_history_df.duplicated(subset=["Start Date", "Stop Date"]).sum()
-    # 2. Exactly 52 weeks
-    num_weeks = len(existing_history_df)
-    # 3. Most recent week is current week
-    most_recent_start = existing_history_df['Start Date'].max()   
-    expected_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
-
-    logger.info(f"Validation: {num_dupes} duplicate week(s) found. {num_weeks} total weeks. Most recent week: {most_recent_start}, Expected: {expected_start}.")
-
-    assert num_dupes == 0, "Duplicate weeks found after deduplication!"
-    # Allow fewer than 52 weeks during database initialization
-    if num_weeks < 52:
-        logger.warning(f"Weekly history has only {num_weeks} weeks (< 52). This is expected during initial data population.")
-    elif num_weeks > 52:
-        logger.error(f"Weekly history has {num_weeks} weeks (> 52). This should not happen after 52-week enforcement.")
+    if before_dedup > after_dedup:
+        logger.info(f"Deduplication removed {before_dedup - after_dedup} duplicate(s). {after_dedup} unique weeks remain.")
     
-    assert most_recent_start == expected_start, f"Most recent week ({most_recent_start}) is not the current week ({expected_start})"
-
-    logger.info("Weekly history update successful: deduplication, week count validation, and current week validation all passed.")    
-
+    # Enforce 52-week limit
+    if len(existing_history_df) > 52:
+        logger.info(f"History has {len(existing_history_df)} weeks. Trimming to most recent 52.")
+        existing_history_df = existing_history_df.sort_values(by="Start Date", ascending=True).iloc[-52:].reset_index(drop=True)
+    
+    logger.info(f"Final history contains {len(existing_history_df)} weeks")
+    
+    # Validation
+    num_dupes = existing_history_df.duplicated(subset=["Start Date", "Stop Date"]).sum()
+    num_weeks = len(existing_history_df)
+    most_recent_start = existing_history_df['Start Date'].max() if not existing_history_df.empty else None
+    
+    logger.info(f"Validation: {num_dupes} duplicates, {num_weeks} total weeks, most recent week: {most_recent_start}")
+    
+    assert num_dupes == 0, "Duplicate weeks found after deduplication!"
+    
+    if num_weeks < 52:
+        logger.warning(f"History has only {num_weeks} weeks (< 52). Expected during initial data population.")
+    elif num_weeks > 52:
+        logger.error(f"History has {num_weeks} weeks (> 52). This should not happen after enforcement!")
+    
+    # Most recent week should be the processed week (prior complete week), NOT current week
+    if most_recent_start and most_recent_start != processed_week_start:
+        logger.warning(f"Most recent week ({most_recent_start}) is not the processed week ({processed_week_start}). "
+                      "This may be normal if processed week had no shipments.")
+    
+    logger.info("Weekly history update successful (COMPLETE weeks only, partial week excluded).")
+    
     return existing_history_df
 
 
