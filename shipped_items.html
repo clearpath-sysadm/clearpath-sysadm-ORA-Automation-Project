@@ -183,6 +183,34 @@
             font-weight: 500;
             font-size: 13px;
         }
+
+        .filter-select {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .table-wrapper {
+            max-height: 600px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .table-wrapper thead th {
+            position: sticky;
+            top: 0;
+            background: #f9fafb;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -213,6 +241,12 @@
         </div>
 
         <div class="controls">
+            <select class="filter-select" id="dateFilter" onchange="applyFilters()">
+                <option value="">All Dates</option>
+            </select>
+            <select class="filter-select" id="skuFilter" onchange="applyFilters()">
+                <option value="">All SKUs</option>
+            </select>
             <input type="text" class="search-box" id="searchBox" placeholder="Search by SKU, lot number, or ship date...">
             <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
         </div>
@@ -221,18 +255,20 @@
 
         <div class="table-container">
             <div id="loading" class="loading">Loading shipped items...</div>
-            <table id="itemsTable" style="display: none;">
-                <thead>
-                    <tr>
-                        <th>Ship Date</th>
-                        <th>SKU - Lot</th>
-                        <th>Quantity Shipped</th>
-                        <th>Base SKU</th>
-                    </tr>
-                </thead>
-                <tbody id="itemsBody">
-                </tbody>
-            </table>
+            <div class="table-wrapper" id="tableWrapper" style="display: none;">
+                <table id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th>Ship Date</th>
+                            <th>SKU - Lot</th>
+                            <th>Quantity Shipped</th>
+                            <th>Base SKU</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -246,6 +282,7 @@
                 
                 if (result.success) {
                     allItems = result.data;
+                    populateFilters();
                     renderItems(allItems);
                     updateStats();
                 } else {
@@ -256,29 +293,72 @@
             }
         }
 
+        function populateFilters() {
+            const dateFilter = document.getElementById('dateFilter');
+            const skuFilter = document.getElementById('skuFilter');
+            
+            const uniqueDates = [...new Set(allItems.map(item => item.ship_date).filter(Boolean))].sort().reverse();
+            const uniqueSkus = [...new Set(allItems.map(item => item.base_sku).filter(Boolean))].sort();
+            
+            dateFilter.innerHTML = '<option value="">All Dates</option>';
+            uniqueDates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date;
+                option.textContent = date;
+                dateFilter.appendChild(option);
+            });
+            
+            skuFilter.innerHTML = '<option value="">All SKUs</option>';
+            uniqueSkus.forEach(sku => {
+                const option = document.createElement('option');
+                option.value = sku;
+                option.textContent = `SKU ${sku}`;
+                skuFilter.appendChild(option);
+            });
+        }
+
         function renderItems(items) {
             const tbody = document.getElementById('itemsBody');
-            const table = document.getElementById('itemsTable');
+            const tableWrapper = document.getElementById('tableWrapper');
             const loading = document.getElementById('loading');
             
             if (items.length === 0) {
                 loading.textContent = 'No items found';
-                table.style.display = 'none';
+                tableWrapper.style.display = 'none';
                 loading.style.display = 'block';
                 return;
             }
             
-            tbody.innerHTML = items.map(item => `
-                <tr>
-                    <td>${item.ship_date || '-'}</td>
-                    <td>${item.sku_lot || '-'}</td>
-                    <td><strong>${item.quantity_shipped || 0}</strong></td>
-                    <td><span class="sku-badge">${item.base_sku || '-'}</span></td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = '';
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                
+                const dateCell = document.createElement('td');
+                dateCell.textContent = item.ship_date || '-';
+                row.appendChild(dateCell);
+                
+                const lotCell = document.createElement('td');
+                lotCell.textContent = item.sku_lot || '-';
+                row.appendChild(lotCell);
+                
+                const qtyCell = document.createElement('td');
+                const qtyStrong = document.createElement('strong');
+                qtyStrong.textContent = item.quantity_shipped || 0;
+                qtyCell.appendChild(qtyStrong);
+                row.appendChild(qtyCell);
+                
+                const skuCell = document.createElement('td');
+                const skuBadge = document.createElement('span');
+                skuBadge.className = 'sku-badge';
+                skuBadge.textContent = item.base_sku || '-';
+                skuCell.appendChild(skuBadge);
+                row.appendChild(skuCell);
+                
+                tbody.appendChild(row);
+            });
             
             loading.style.display = 'none';
-            table.style.display = 'table';
+            tableWrapper.style.display = 'block';
         }
 
         function updateStats() {
@@ -291,33 +371,53 @@
             document.getElementById('uniqueSkus').textContent = uniqueSkus;
         }
 
-        function filterItems() {
+        function applyFilters() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const skuFilter = document.getElementById('skuFilter').value;
             const searchTerm = document.getElementById('searchBox').value.toLowerCase();
             
-            if (!searchTerm) {
-                renderItems(allItems);
-                return;
+            let filtered = allItems;
+            
+            if (dateFilter) {
+                filtered = filtered.filter(item => item.ship_date === dateFilter);
             }
             
-            const filtered = allItems.filter(item => 
-                (item.base_sku && item.base_sku.toLowerCase().includes(searchTerm)) ||
-                (item.sku_lot && item.sku_lot.toLowerCase().includes(searchTerm)) ||
-                (item.ship_date && item.ship_date.includes(searchTerm))
-            );
+            if (skuFilter) {
+                filtered = filtered.filter(item => item.base_sku === skuFilter);
+            }
+            
+            if (searchTerm) {
+                filtered = filtered.filter(item => 
+                    (item.base_sku && item.base_sku.toLowerCase().includes(searchTerm)) ||
+                    (item.sku_lot && item.sku_lot.toLowerCase().includes(searchTerm)) ||
+                    (item.ship_date && item.ship_date.includes(searchTerm))
+                );
+            }
             
             renderItems(filtered);
         }
 
+        function filterItems() {
+            applyFilters();
+        }
+
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
-            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+            errorDiv.innerHTML = '';
+            const errorBox = document.createElement('div');
+            errorBox.className = 'error';
+            errorBox.textContent = String(message);
+            errorDiv.appendChild(errorBox);
             document.getElementById('loading').style.display = 'none';
         }
 
         function refreshData() {
             document.getElementById('loading').style.display = 'block';
-            document.getElementById('itemsTable').style.display = 'none';
+            document.getElementById('tableWrapper').style.display = 'none';
             document.getElementById('errorMessage').innerHTML = '';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('skuFilter').value = '';
+            document.getElementById('searchBox').value = '';
             fetchItems();
         }
 
