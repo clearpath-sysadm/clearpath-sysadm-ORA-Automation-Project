@@ -70,7 +70,7 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
 
     # Ensure columns are in the correct order for the sheet
     if not df.empty:
-        df = df[['Ship Date', 'SKU - Lot', 'Quantity Shipped', 'Base SKU']]
+        df = df[['Ship Date', 'SKU - Lot', 'Quantity Shipped', 'Base SKU', 'OrderNumber']]
 
     logger.info(f"Finished processing. Resulting DataFrame has {len(df)} rows.")
     return df

@@ -321,6 +321,9 @@ def save_shipped_items_to_db(items_df):
                 logger.warning(f"Skipping row with missing required fields: {row}")
                 continue
             
+            # Ensure sku_lot is never None/NaN - coalesce to empty string
+            sku_lot = str(sku_lot) if sku_lot and str(sku_lot) != 'nan' else ''
+            
             conn.execute("""
                 INSERT INTO shipped_items (
                     ship_date, sku_lot, base_sku, quantity_shipped, order_number
@@ -328,7 +331,7 @@ def save_shipped_items_to_db(items_df):
                 ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
                     ship_date = excluded.ship_date,
                     quantity_shipped = excluded.quantity_shipped
-            """, (str(ship_date), str(sku_lot), str(base_sku), int(quantity), str(order_number) if order_number else None))
+            """, (str(ship_date), sku_lot, str(base_sku), int(quantity), str(order_number) if order_number else None))
             records_saved += 1
     
     logger.info(f"Successfully saved {records_saved} shipped items to database")
@@ -498,9 +501,10 @@ def run_daily_shipment_pull(request=None):
         logger.info("Processing data for Shipped_Orders_Data table...")
         orders_df = process_shipped_orders(non_voided_shipments)  
 
-        # --- 5. Save to Database Tables ---    
-        items_saved = save_shipped_items_to_db(items_df)
+        # --- 5. Save to Database Tables ---
+        # Save orders first, then items (respects foreign key constraint)
         orders_saved = save_shipped_orders_to_db(orders_df)
+        items_saved = save_shipped_items_to_db(items_df)
 
         # --- 6. Incrementally Update the Weekly Shipped History ---
         logger.info("Fetching existing 52-week history from database...")
