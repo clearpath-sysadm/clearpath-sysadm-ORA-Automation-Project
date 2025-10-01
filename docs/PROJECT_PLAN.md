@@ -1,156 +1,205 @@
-# ORA Automation System - Project Plan
+# ORA Automation System - MVP Project Plan
 
 ## Executive Summary
 
 **Project:** Migrate ORA automation system from Google Cloud + Google Sheets to Replit + SQLite database
 
-**Duration:** 5-7 business days (28 hours total)  
-**Budget:** 10-13 hours core development + buffer  
+**Approach:** MVP-first strategy - Core migration first, enhancement later  
+**Duration:** 3-4 business days (10-13 hours total)  
+**Budget:** 10-13 hours (optimized from 28-hour full scope)  
 **Cost Constraint:** Zero-cost infrastructure (Replit VM + SQLite)  
 **Team Size:** 1 developer
+
+**Architect Review:** ✅ Reviewed and optimized for efficiency and budget compliance
 
 ---
 
 ## Project Objectives
 
-### Primary Goals
-1. **Replace Google Sheets** with SQLite database (complete replacement, not augmentation)
+### Primary Goals (MVP Scope)
+1. **Replace Google Sheets** with SQLite database for critical workflows
 2. **Migrate to Replit** infrastructure from Google Cloud
-3. **Maintain all functionality** with zero downtime
-4. **Improve code quality** (fix 57 LSP diagnostics)
+3. **Deploy 2 critical automation scripts** (weekly reporter + daily shipment processor)
+4. **Fix critical code issues** (duplicate functions, null checks, type safety)
 5. **Achieve zero operational cost**
 
-### Success Criteria
-- ✅ All 6 automation scripts running on Replit
-- ✅ SQLite database with 100% data migration accuracy
-- ✅ Monthly charge reports generating correctly
-- ✅ Real-time dashboard with dark mode
+### Success Criteria (MVP)
+- ✅ 2 critical automation scripts running on Replit (weekly_reporter, daily_shipment_processor)
+- ✅ SQLite database with critical tables migrated
+- ✅ Core inventory tracking functional
+- ✅ Zero LSP errors in refactored code
 - ✅ Zero-cost infrastructure confirmed
-- ✅ Zero LSP errors in codebase
+- ✅ Rollback procedure documented and tested
+
+### Deferred to Phase 2 (Future)
+- Remaining 4 automation scripts (order uploader, monthly reporter, XML poller, import reporter)
+- Full table migration (complete historical data)
+- Advanced features (connection pooling, extensive unit tests)
+- Dashboard enhancements (already functional, no changes needed)
 
 ---
 
 ## Project Phases
 
-### Phase 1: Code Improvements & Preparation (6-8 hours)
+### Phase 1: Minimal Code Foundation (3 hours)
 
-#### 1.1 Fix Critical Code Issues (2 hours)
+#### 1.1 Critical LSP Fixes Only (1 hour)
 
-**Objective:** Resolve all LSP diagnostics and type safety issues
+**Objective:** Fix only blocking issues, defer cosmetic improvements
 
 **Tasks:**
 - [ ] Remove duplicate `get_shipstation_credentials()` function in `src/services/shipstation/api_client.py`
-- [ ] Add null checking for DataFrames in `src/shipstation_reporter.py`
-- [ ] Fix pandas type annotations in `src/services/reporting_logic/monthly_report_generator.py`
-- [ ] Resolve all 57 LSP diagnostics
+- [ ] Add null checking for DataFrames in `src/shipstation_reporter.py` (lines 98-100, 127-128)
+- [ ] Fix critical type errors only (not cosmetic pandas warnings)
 
 **Deliverables:**
-- Zero LSP errors
-- Type-safe pandas operations
-- Clean code passing validation
+- No blocking LSP errors
+- Code runs without crashes
+- Type safety for critical operations
 
 **Files Modified:**
 - `src/services/shipstation/api_client.py`
 - `src/shipstation_reporter.py`
-- `src/services/reporting_logic/monthly_report_generator.py`
 
 ---
 
-#### 1.2 Create Unified Secrets Management (2-3 hours)
+#### 1.2 Minimal Secrets Management (1 hour)
 
-**Objective:** Single source of truth for secrets, compatible with both Replit and GCP
+**Objective:** Universal secret getter, no complex architecture
 
 **Tasks:**
-- [ ] Create `src/services/secrets.py` with universal secret getter
-- [ ] Add Replit environment detection to `config/settings.py`
-- [ ] Refactor ShipStation API client to use new secrets module
-- [ ] Refactor Google Sheets API client to use new secrets module
-- [ ] Test with environment variables
+- [ ] Create `src/services/secrets.py` with simple get_secret() function
+- [ ] Add Replit environment detection (check for REPL_ID)
+- [ ] Update only 2 critical scripts to use new secrets module
 
 **Deliverables:**
-- `src/services/secrets.py` (NEW)
-- Updated API clients using unified secrets
-- Backwards compatible with GCP Secret Manager
+- `src/services/secrets.py` (NEW - minimal implementation)
+- ShipStation API client using unified secrets
+- Google Sheets client using unified secrets
 
-**Implementation:**
+**Implementation (Minimal):**
 ```python
-# Priority order: Replit Secrets → Environment → GCP Secret Manager
+import os
+from typing import Optional
+
 def get_secret(secret_name: str) -> Optional[str]:
-    if os.getenv('REPL_ID'):  # Replit
-        return os.getenv(secret_name)
-    # Fallback to GCP...
+    """Universal secret getter - Replit first, then GCP fallback"""
+    # Replit environment?
+    if os.getenv('REPL_ID') or os.getenv('REPLIT_ENV'):
+        value = os.getenv(secret_name)
+        if value:
+            return value
+    
+    # Fallback to GCP Secret Manager
+    try:
+        from src.services.gcp.secret_manager import access_secret_version
+        from config.settings import settings
+        return access_secret_version(
+            settings.YOUR_GCP_PROJECT_ID,
+            secret_name,
+            credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH
+        )
+    except Exception:
+        return None
 ```
 
 ---
 
-#### 1.3 Standardize Error Handling (2 hours)
+#### 1.3 Basic Database Utilities (1 hour)
 
-**Objective:** Consistent error handling and workflow status tracking
+**Objective:** Simple, functional db_utils - no pooling, no complex decorators
 
 **Tasks:**
-- [ ] Create `src/utils/error_handling.py` with decorators
-- [ ] Apply error handling to all 6 automation scripts
-- [ ] Implement automatic workflow status updates on failures
-- [ ] Add structured logging
+- [ ] Create `src/services/database/db_utils.py` with basic functions:
+  - Simple connection getter
+  - Basic transaction context manager
+  - Simple execute_query() helper
+  - Basic UPSERT helper
+- [ ] Skip: connection pooling, row factories, complex error handling
 
 **Deliverables:**
-- `src/utils/error_handling.py` (NEW)
-- Consistent error patterns across all scripts
-- Automatic failure tracking
+- `src/services/database/db_utils.py` (NEW - minimal version)
+- Functional database operations
+- Transaction safety with BEGIN IMMEDIATE
 
-**Implementation:**
+**Implementation (Minimal):**
 ```python
-@handle_errors(workflow_name='weekly_reporter')
-def calculate_inventory_levels():
-    # Automatic error logging + workflow status update
+import sqlite3
+from contextlib import contextmanager
+from typing import Optional
+
+DATABASE_PATH = os.getenv('DATABASE_PATH', 'ora.db')
+
+def get_connection():
+    """Get SQLite connection"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+@contextmanager
+def transaction():
+    """Transaction context manager"""
+    conn = get_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def execute_query(sql: str, params: tuple = ()):
+    """Execute query and return results"""
+    with transaction() as conn:
+        cursor = conn.execute(sql, params)
+        return cursor.fetchall()
+
+def upsert(table: str, data: dict, conflict_columns: list):
+    """Simple UPSERT implementation"""
+    columns = ', '.join(data.keys())
+    placeholders = ', '.join(['?'] * len(data))
+    conflict = ', '.join(conflict_columns)
+    update_clause = ', '.join([f"{k}=excluded.{k}" for k in data.keys()])
+    
+    sql = f"""
+    INSERT INTO {table} ({columns}) VALUES ({placeholders})
+    ON CONFLICT({conflict}) DO UPDATE SET {update_clause}
+    """
+    with transaction() as conn:
+        conn.execute(sql, tuple(data.values()))
 ```
 
 ---
 
-#### 1.4 Code Review & Testing (1 hour)
+### Phase 2: Database Setup (2 hours)
 
-**Objective:** Validate all improvements before database work
+#### 2.1 Create Core Schema (1 hour)
 
-**Tasks:**
-- [ ] Run all scripts in DEV_MODE with fixtures
-- [ ] Verify error handling works correctly
-- [ ] Test secret retrieval from environment variables
-- [ ] Confirm zero LSP diagnostics
+**Objective:** Create only tables needed for 2 critical scripts
 
-**Acceptance Criteria:**
-- All scripts execute in dev mode
-- Secrets retrieved successfully
-- No runtime errors
+**Critical Tables (MVP):**
+1. workflows (for status tracking)
+2. configuration_params (for rates and config)
+3. inventory_transactions (for inventory calculations)
+4. inventory_current (for current stock levels)
+5. shipped_items (for shipment tracking)
+6. shipped_orders (for shipment tracking)
+7. weekly_shipped_history (for aggregations)
+8. system_kpis (for dashboard metrics)
 
----
-
-### Phase 2: Database Setup & Schema Implementation (3-4 hours)
-
-#### 2.1 Create Database Schema (1 hour)
-
-**Objective:** Production-ready SQLite database with complete schema
+**Deferred Tables:**
+- orders_inbox, order_items_inbox (for order uploader - Phase 2)
+- polling_state (for XML poller - Phase 2)
+- schema_migrations (nice to have)
+- monthly_charge_reports (monthly reporter - Phase 2)
 
 **Tasks:**
 - [ ] Create `scripts/create_database.py`
-- [ ] Implement 12 core tables + optional `monthly_charge_reports`
-- [ ] Apply STRICT typing, foreign keys, CHECK constraints
-- [ ] Create all indexes per `DATABASE_SCHEMA.md`
-- [ ] Configure PRAGMA settings (WAL mode, foreign keys ON)
-
-**Database Tables:**
-1. workflows
-2. inventory_current
-3. inventory_transactions
-4. shipped_items
-5. shipped_orders
-6. weekly_shipped_history
-7. system_kpis
-8. configuration_params
-9. orders_inbox
-10. order_items_inbox
-11. polling_state
-12. schema_migrations
-13. monthly_charge_reports (optional)
+- [ ] Implement 8 critical tables with STRICT typing, foreign keys, CHECK constraints
+- [ ] Create essential indexes only
+- [ ] Configure PRAGMA settings
 
 **PRAGMA Settings:**
 ```sql
@@ -158,164 +207,118 @@ PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA foreign_keys = ON;
 PRAGMA busy_timeout = 8000;
-PRAGMA temp_store = MEMORY;
-PRAGMA cache_size = -20000;
 ```
 
 **Deliverables:**
 - `scripts/create_database.py` (NEW)
-- `ora.db` database file
-- All constraints enforced
+- `ora.db` with 8 core tables
+- Foreign keys enforced, indexes created
 
 ---
 
-#### 2.2 Create Database Utilities Module (1-2 hours)
+#### 2.2 Seed Minimal Data (1 hour)
 
-**Objective:** Robust database operations with transaction safety
-
-**Tasks:**
-- [ ] Implement `src/services/database/db_utils.py`
-- [ ] Add connection management with context managers
-- [ ] Implement transaction handling (BEGIN IMMEDIATE)
-- [ ] Create UPSERT helper functions
-- [ ] Add query execution helpers
-- [ ] Include row_factory for dict-like access
-
-**Key Features:**
-- Connection pooling
-- Automatic rollback on errors
-- UPSERT for idempotency
-- Context managers for safety
-
-**Deliverables:**
-- `src/services/database/db_utils.py` (NEW)
-- Unit tests for critical functions
-
----
-
-#### 2.3 Seed Initial Data (1 hour)
-
-**Objective:** Populate database with initial configuration
+**Objective:** Seed only data needed for MVP scripts
 
 **Tasks:**
 - [ ] Create `scripts/seed_database.py`
-- [ ] Seed 6 workflows with correct display names
-- [ ] Seed 5 key products in inventory_current
-- [ ] Initialize polling_state table (single row)
-- [ ] Add initial schema_migrations entry
-
-**Initial Data:**
-- Workflows: weekly_reporter, daily_shipment_processor, shipstation_order_uploader, shipstation_reporter, main_order_import_daily_reporter, xml_polling_service
-- Products: 17612, 17914, 17904, 17975, 18675
+- [ ] Seed 2 workflows: weekly_reporter, daily_shipment_processor
+- [ ] Seed 5 key products in inventory_current (17612, 17914, 17904, 17975, 18675)
+- [ ] Seed configuration_params (Rates, PalletConfig, InitialInventory)
 
 **Deliverables:**
 - `scripts/seed_database.py` (NEW)
 - Database ready for migration
+- Minimal test data for validation
 
 ---
 
-### Phase 3: Google Sheets to SQLite Migration (4-5 hours)
+### Phase 3: Critical Data Migration (2 hours)
 
-#### 3.1 Build ETL Migration Script (2-3 hours)
+#### 3.1 Build Targeted ETL (1 hour)
 
-**Objective:** Safe, validated data migration from Google Sheets
+**Objective:** Migrate only data needed for 2 critical scripts
+
+**Tables to Migrate (MVP):**
+1. ORA_Configuration → configuration_params
+2. Inventory_Transactions → inventory_transactions
+3. Shipped_Orders_Data → shipped_orders (last 90 days only)
+4. Shipped_Items_Data → shipped_items (last 90 days only)
+5. ORA_Weekly_Shipped_History → weekly_shipped_history (last 12 weeks)
+
+**Deferred:**
+- Full historical data (migrate in Phase 2)
+- SKU_Lot table
+- ORA_Processing_State
 
 **Tasks:**
-- [ ] Create `scripts/migrate_from_sheets.py`
-- [ ] Implement data transformation functions
-- [ ] Add dry-run mode for testing
+- [ ] Create `scripts/migrate_critical_tables.py`
+- [ ] Implement data transformations (currency → cents, dates, booleans)
+- [ ] Add dry-run mode
 - [ ] Implement row count validation
-- [ ] Add checksum verification for critical tables
-
-**Data Transformations:**
-```python
-# Currency: $12.34 → 1234 (cents as INTEGER)
-# Dates: MM/DD/YYYY → YYYY-MM-DD
-# Booleans: TRUE/FALSE → 1/0
-```
-
-**Sheet Mapping:**
-| Google Sheet | SQLite Table | Transformation |
-|--------------|--------------|----------------|
-| ORA_Configuration | configuration_params | Category-based split |
-| Inventory_Transactions | inventory_transactions | Direct mapping |
-| Shipped_Orders_Data | shipped_orders | Direct mapping |
-| Shipped_Items_Data | shipped_items | Direct mapping |
-| ORA_Weekly_Shipped_History | weekly_shipped_history | Direct mapping |
-| SKU_Lot | configuration_params | category='SKU_Lot' |
-| ORA_Processing_State | polling_state | Single row |
 
 **Deliverables:**
-- `scripts/migrate_from_sheets.py` (NEW)
-- Dry-run validation report
-- Transformation verification
+- `scripts/migrate_critical_tables.py` (NEW)
+- ETL script for 5 critical tables
+- Dry-run validation
 
 ---
 
-#### 3.2 Execute Migration (1 hour)
+#### 3.2 Execute Migration & Validate (1 hour)
 
-**Objective:** Migrate all historical data with zero loss
+**Objective:** Migrate critical data with validation
 
 **Tasks:**
-- [ ] Freeze writes to Google Sheets (48-hour notice)
-- [ ] Export all sheets to CSV backup
-- [ ] Run ETL script with transaction per table
-- [ ] Verify row counts match source (100%)
-- [ ] Run ANALYZE on all tables
-- [ ] Take post-migration database snapshot
-
-**Pre-Migration Checklist:**
-- [ ] All Google Sheets frozen
-- [ ] CSV backups created
-- [ ] Test database verified
-- [ ] Rollback procedure documented
+- [ ] Export critical sheets to CSV backup
+- [ ] Run ETL script with dry-run first
+- [ ] Execute migration for 5 tables
+- [ ] Verify row counts match source
+- [ ] Validate weekly totals (last 12 weeks)
+- [ ] Document rollback procedure
 
 **Validation Queries:**
 ```sql
 -- Verify row counts
-SELECT COUNT(*) FROM shipped_orders;  -- Compare to Sheets
-SELECT COUNT(*) FROM shipped_items;   -- Compare to Sheets
+SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= date('now', '-90 days');
+SELECT COUNT(*) FROM shipped_items WHERE ship_date >= date('now', '-90 days');
 
 -- Verify weekly totals
 SELECT start_date, SUM(quantity_shipped) 
 FROM weekly_shipped_history 
+WHERE start_date >= date('now', '-12 weeks')
 GROUP BY start_date;
 ```
 
 **Deliverables:**
-- Migrated production database
-- Validation report
-- Backup snapshots
+- Critical data migrated successfully
+- Validation report (row counts, weekly totals)
+- CSV backups created
+- Rollback procedure documented
 
 ---
 
-#### 3.3 Validation & Rollback Preparation (1 hour)
+### Phase 4: Script Integration (3 hours)
 
-**Objective:** Confirm data integrity and prepare rollback
+#### 4.1 Per-Script Migration Checklist
 
-**Tasks:**
-- [ ] Compare weekly shipped totals (Sheets vs SQLite)
-- [ ] Verify inventory transaction sums
-- [ ] Check configuration parameters loaded correctly
-- [ ] Test sample dashboard queries
-- [ ] Document rollback procedure
-- [ ] Test rollback on copy
+**Critical Scripts Priority:**
 
-**Acceptance Criteria:**
-- Weekly totals match within ±1%
-- All configuration present
-- Foreign key integrity verified
-- Rollback tested successfully
+| Priority | Script | DB Reads | DB Writes | Secrets Used | Success Criteria | Time |
+|----------|--------|----------|-----------|--------------|------------------|------|
+| 1 | weekly_reporter.py | configuration_params<br>inventory_transactions<br>shipped_items<br>weekly_shipped_history | inventory_current<br>system_kpis<br>workflows | None | Inventory levels accurate<br>Weekly averages correct | 1.5h |
+| 2 | daily_shipment_processor.py | configuration_params | shipped_orders<br>shipped_items<br>weekly_shipped_history<br>workflows | SHIPSTATION_API_KEY<br>SHIPSTATION_API_SECRET | Orders stored correctly<br>Weekly aggregations accurate | 1.5h |
 
-**Deliverables:**
-- Validation report
-- Rollback procedure document
+**Deferred to Phase 2:**
+| Script | Reason | Estimated Time |
+|--------|--------|----------------|
+| shipstation_order_uploader.py | Requires orders_inbox table | 1h |
+| shipstation_reporter.py | Monthly report - not time critical | 1.5h |
+| main_order_import_daily_reporter.py | Import summary - not critical | 0.5h |
+| xml_polling_service.py | Requires polling_state table | 1h |
 
 ---
 
-### Phase 4: Script Integration with Database (5-6 hours)
-
-#### 4.1 Update Weekly Reporter (1 hour)
+#### 4.2 Update Weekly Reporter (1.5 hours)
 
 **File:** `src/weekly_reporter.py`
 
@@ -324,18 +327,34 @@ GROUP BY start_date;
 - [ ] Update inventory calculations using db_utils
 - [ ] Implement transaction handling
 - [ ] Test with real migrated data
+- [ ] Verify workflow status updates
 
 **Database Operations:**
-- Read: `configuration_params`, `inventory_transactions`, `shipped_items`, `weekly_shipped_history`
-- Write: `inventory_current`, `system_kpis`, `workflows`
+```python
+# Read operations
+config = execute_query("SELECT * FROM configuration_params WHERE category='Rates'")
+transactions = execute_query("SELECT * FROM inventory_transactions WHERE transaction_date >= ?", (start_date,))
+shipped = execute_query("SELECT * FROM shipped_items WHERE ship_date >= ?", (start_date,))
+
+# Write operations
+upsert('inventory_current', inventory_data, conflict_columns=['product_id'])
+upsert('system_kpis', kpi_data, conflict_columns=['date'])
+execute_query("UPDATE workflows SET status='completed' WHERE name='weekly_reporter'")
+```
+
+**Acceptance Criteria:**
+- [ ] Inventory levels calculated correctly
+- [ ] Weekly averages match Google Sheets baseline
+- [ ] Workflow status updates in database
+- [ ] Script runs without errors
 
 **Deliverables:**
 - Updated `weekly_reporter.py`
-- Verified inventory calculations
+- Verified calculations
 
 ---
 
-#### 4.2 Update Daily Shipment Processor (1 hour)
+#### 4.3 Update Daily Shipment Processor (1.5 hours)
 
 **File:** `src/daily_shipment_processor.py`
 
@@ -344,505 +363,442 @@ GROUP BY start_date;
 - [ ] Implement batch insert for shipped_items
 - [ ] Update weekly_shipped_history aggregation
 - [ ] Add UPSERT for idempotency
+- [ ] Test with ShipStation API
 
 **Database Operations:**
-- Read: ShipStation API, `configuration_params`
-- Write: `shipped_items`, `shipped_orders`, `weekly_shipped_history`, `workflows`
+```python
+# Batch insert shipped_orders
+for order in shipstation_orders:
+    upsert('shipped_orders', order_data, conflict_columns=['shipment_id'])
+
+# Batch insert shipped_items
+for item in order['items']:
+    execute_query("INSERT INTO shipped_items (...) VALUES (...)", item_data)
+
+# Update weekly aggregation
+execute_query("""
+    INSERT INTO weekly_shipped_history (start_date, end_date, product_id, quantity_shipped)
+    SELECT 
+        date(ship_date, 'weekday 0', '-6 days') as start_date,
+        date(ship_date, 'weekday 0') as end_date,
+        sku,
+        SUM(quantity)
+    FROM shipped_items
+    WHERE ship_date >= ?
+    GROUP BY start_date, sku
+    ON CONFLICT(start_date, product_id) DO UPDATE SET quantity_shipped = excluded.quantity_shipped
+""", (start_date,))
+```
+
+**Acceptance Criteria:**
+- [ ] ShipStation data stored correctly in database
+- [ ] Weekly aggregations calculated accurately
+- [ ] Script can re-run without duplicates (idempotent)
+- [ ] Workflow status tracked
 
 **Deliverables:**
 - Updated `daily_shipment_processor.py`
 - Idempotent operations verified
+- Weekly aggregations accurate
 
 ---
 
-#### 4.3 Update ShipStation Order Uploader (1 hour)
-
-**File:** `src/shipstation_order_uploader.py`
-
-**Tasks:**
-- [ ] Read from orders_inbox table
-- [ ] Update status after ShipStation upload
-- [ ] Handle failures with proper status tracking
-- [ ] Test pending orders workflow
-
-**Database Operations:**
-- Read: `orders_inbox`, `order_items_inbox`
-- Write: Update `orders_inbox.status`, `shipstation_order_id`
-
-**Deliverables:**
-- Updated `shipstation_order_uploader.py`
-- Status tracking verified
-
----
-
-#### 4.4 Update Monthly Charge Report Generator (1-2 hours)
-
-**File:** `src/shipstation_reporter.py`
-
-**Tasks:**
-- [ ] Replace Sheets data sources with SQLite queries
-- [ ] Load rates from configuration_params
-- [ ] Load pallet counts from configuration
-- [ ] Calculate daily charges from database
-- [ ] Store results in monthly_charge_reports table
-
-**Charge Calculations:**
-- Daily order charges = orders × OrderCharge rate
-- Daily package charges = packages × PackageCharge rate
-- Daily space rental = pallets × SpaceRentalRate
-- Monthly totals
-
-**Database Operations:**
-- Read: `configuration_params`, `inventory_transactions`, `shipped_items`, `shipped_orders`, `weekly_shipped_history`
-- Write: `monthly_charge_reports`, `workflows`
-
-**Deliverables:**
-- Updated `shipstation_reporter.py`
-- Monthly report accuracy verified
-
----
-
-#### 4.5 Update Remaining Scripts (1 hour)
-
-**Files:** 
-- `src/main_order_import_daily_reporter.py`
-- XML polling service (if applicable)
-
-**Tasks:**
-- [ ] Update all remaining scripts to use database
-- [ ] Remove Google Sheets dependencies
-- [ ] Test all scripts end-to-end
-- [ ] Verify workflow tracking
-
-**Deliverables:**
-- All 6 automation scripts database-enabled
-- Google Sheets client marked deprecated
-
----
-
-### Phase 5: Replit Deployment Configuration (3-4 hours)
+### Phase 5: Replit Deployment (2 hours)
 
 #### 5.1 Configure Replit Secrets (30 min)
 
-**Objective:** Set up secure secret management in Replit
+**Objective:** Set up all required secrets in Replit
+
+**Secrets Matrix:**
+
+| Secret Name | Value Source | Used By | Required |
+|-------------|--------------|---------|----------|
+| SHIPSTATION_API_KEY | ShipStation account | daily_shipment_processor | ✅ Yes |
+| SHIPSTATION_API_SECRET | ShipStation account | daily_shipment_processor | ✅ Yes |
+| DATABASE_PATH | /home/runner/ORA-Automation/ora.db | All scripts | ✅ Yes |
+| GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY | GCP service account JSON | Migration only | ✅ Yes (temp) |
+| SENDGRID_API_KEY | SendGrid account | Notifications (future) | ❌ No |
 
 **Tasks:**
-- [ ] Add SHIPSTATION_API_KEY to Replit Secrets
-- [ ] Add SHIPSTATION_API_SECRET to Replit Secrets
-- [ ] Add GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY (migration only)
-- [ ] Add SENDGRID_API_KEY (optional)
-- [ ] Add DATABASE_PATH=/home/runner/ORA-Automation/ora.db
-
-**Replit Secrets Panel:**
-```
-SHIPSTATION_API_KEY=<your_key>
-SHIPSTATION_API_SECRET=<your_secret>
-DATABASE_PATH=/home/runner/ORA-Automation/ora.db
-GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
-SENDGRID_API_KEY=<your_key>
-```
+- [ ] Open Replit Secrets panel (Tools → Secrets)
+- [ ] Add SHIPSTATION_API_KEY
+- [ ] Add SHIPSTATION_API_SECRET
+- [ ] Add DATABASE_PATH
+- [ ] Add GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY (for migration, remove after)
+- [ ] Verify all secrets with: `python -c "import os; print(os.getenv('SHIPSTATION_API_KEY')[:5])"`
 
 **Deliverables:**
-- All secrets configured
-- Secrets accessible via `os.getenv()`
+- All 4 required secrets configured
+- Secrets accessible via os.getenv()
+- No secrets in code or git
 
 ---
 
-#### 5.2 Configure Reserved VM Deployment (1 hour)
+#### 5.2 Create Reserved VM Deployment (30 min)
 
 **Objective:** Deploy always-on dashboard server
 
-**Tasks:**
-- [ ] Set up Reserved VM deployment
-- [ ] Configure run command: `python -m http.server 5000`
-- [ ] Set output type: webview
-- [ ] Configure port: 5000
-- [ ] Test dashboard accessibility
+**Steps:**
+1. [ ] Click "Deploy" button in Replit
+2. [ ] Select "Reserved VM" deployment type
+3. [ ] Configure deployment:
+   ```
+   Name: ora-dashboard
+   Type: Reserved VM
+   Run Command: python -m http.server 5000
+   Port: 5000
+   Build Command: (leave empty)
+   ```
+4. [ ] Click "Deploy"
+5. [ ] Wait for deployment to complete
+6. [ ] Test dashboard URL
 
-**Deployment Configuration:**
-```yaml
-Type: Reserved VM
-Command: python -m http.server 5000
-Port: 5000
-Output: webview
+**Deliverables:**
+- Dashboard accessible 24/7 at Replit URL
+- Real-time data display working
+- Dark mode toggle functional
+
+---
+
+#### 5.3 Create Scheduled Deployments (1 hour)
+
+**Objective:** Automate 2 critical scripts with cron schedules
+
+**Deployment 1: Weekly Reporter**
+```
+Name: weekly-reporter
+Type: Scheduled Deployment
+Schedule: "Every Monday at 8 AM"
+Command: python src/weekly_reporter.py
+Secrets: Inherit from main deployment
+Build Command: (leave empty)
+Timeout: 10 minutes
 ```
 
-**Deliverables:**
-- Dashboard accessible 24/7
-- Real-time data display verified
+**Steps:**
+1. [ ] Click "Deploy" → "New Deployment"
+2. [ ] Select "Scheduled Deployment"
+3. [ ] Enter name: weekly-reporter
+4. [ ] Enter schedule: "Every Monday at 8 AM" (Replit AI converts to cron)
+5. [ ] Enter command: `python src/weekly_reporter.py`
+6. [ ] Set timeout: 10 minutes
+7. [ ] Click "Deploy"
 
----
-
-#### 5.3 Configure Scheduled Deployments (1-2 hours)
-
-**Objective:** Automate all periodic tasks
-
-**Tasks:**
-- [ ] Configure Weekly Reporter: "Every Monday at 8 AM"
-- [ ] Configure Daily Shipment Processor: "Every day at 9 AM"
-- [ ] Configure Monthly Charge Report: "First day of month at 10 AM"
-- [ ] Configure XML Polling: Reserved VM background task (5-min loop)
-
-**Scheduled Deployments:**
-| Workflow | Schedule | Command |
-|----------|----------|---------|
-| Weekly Reporter | Every Monday at 8 AM | `python src/weekly_reporter.py` |
-| Daily Shipment Processor | Every day at 9 AM | `python src/daily_shipment_processor.py` |
-| Monthly Charge Report | 1st of month at 10 AM | `python src/shipstation_reporter.py` |
-| XML Polling | Continuous (5-min loop) | Background task |
-
-**Deliverables:**
-- All automation scheduled
-- Logs accessible in Replit
-
----
-
-#### 5.4 Database Maintenance Setup (1 hour)
-
-**Objective:** Automated database health and backups
-
-**Tasks:**
-- [ ] Create daily health check script
-- [ ] Create daily backup script (2 AM)
-- [ ] Create weekly maintenance script (Sunday 3 AM)
-- [ ] Set up backup retention (30 days)
-- [ ] Configure monitoring alerts
-
-**Maintenance Scripts:**
-```bash
-# Daily health check (8 AM)
-scripts/daily_health_check.sh
-
-# Daily backup (2 AM)
-scripts/backup_database.sh
-
-# Weekly maintenance (Sunday 3 AM)
-scripts/weekly_maintenance.py
+**Deployment 2: Daily Shipment Processor**
+```
+Name: daily-shipment-processor
+Type: Scheduled Deployment
+Schedule: "Every day at 9 AM"
+Command: python src/daily_shipment_processor.py
+Secrets: Inherit from main deployment
+Build Command: (leave empty)
+Timeout: 15 minutes
 ```
 
+**Steps:**
+1. [ ] Click "Deploy" → "New Deployment"
+2. [ ] Select "Scheduled Deployment"
+3. [ ] Enter name: daily-shipment-processor
+4. [ ] Enter schedule: "Every day at 9 AM"
+5. [ ] Enter command: `python src/daily_shipment_processor.py`
+6. [ ] Set timeout: 15 minutes
+7. [ ] Click "Deploy"
+
+**Verification:**
+- [ ] Check deployment logs after first run
+- [ ] Verify database updates (workflows table status)
+- [ ] Confirm cron schedule is correct
+
 **Deliverables:**
-- Automated maintenance configured
-- Backup rotation working
-- Health monitoring active
+- 2 scheduled deployments active
+- Logs accessible in Replit Publishing tool
+- Scripts running on schedule
 
 ---
 
-### Phase 6: Testing & Validation (3-4 hours)
+#### 5.4 Minimal Monitoring Setup (30 min)
 
-#### 6.1 Integration Testing (1-2 hours)
-
-**Objective:** End-to-end system validation
+**Objective:** Basic health checks and error tracking
 
 **Tasks:**
-- [ ] Test complete order flow: XML → inbox → ShipStation → shipped
-- [ ] Test inventory calculations with real data
-- [ ] Test monthly charge report generation
-- [ ] Verify dashboard displays all data correctly
-- [ ] Test workflow status tracking
-- [ ] Verify dark mode toggle persistence
+- [ ] Create simple workflow status query for monitoring
+- [ ] Add basic error logging to workflow updates
+- [ ] Document manual log checking procedure
+
+**Monitoring Query:**
+```sql
+-- Check last run status
+SELECT name, status, last_run_time, details 
+FROM workflows 
+WHERE name IN ('weekly_reporter', 'daily_shipment_processor')
+ORDER BY last_run_time DESC;
+```
+
+**Manual Health Check Procedure:**
+1. Check Replit deployment logs daily
+2. Run monitoring query in database
+3. Verify workflow status = 'completed'
+4. Check for error messages in details column
+
+**Deferred to Phase 2:**
+- Automated alerting
+- SendGrid email notifications
+- Advanced monitoring dashboard
+
+**Deliverables:**
+- Monitoring query documented
+- Manual health check procedure
+- Log access instructions
+
+---
+
+### Phase 6: Testing & Cutover (1 hour)
+
+#### 6.1 Smoke Testing (30 min)
+
+**Objective:** Verify end-to-end functionality
 
 **Test Scenarios:**
-1. New order processing (XML to database)
-2. Order upload to ShipStation
-3. Daily shipment processing
-4. Weekly inventory calculation
-5. Monthly charge report generation
-6. Dashboard real-time updates
+1. **Weekly Reporter Test:**
+   - [ ] Manually trigger: `python src/weekly_reporter.py`
+   - [ ] Verify inventory_current updated
+   - [ ] Verify system_kpis updated
+   - [ ] Check workflow status = 'completed'
+
+2. **Daily Shipment Processor Test:**
+   - [ ] Manually trigger: `python src/daily_shipment_processor.py`
+   - [ ] Verify shipped_orders has new records
+   - [ ] Verify shipped_items has new records
+   - [ ] Verify weekly_shipped_history aggregated
+   - [ ] Check workflow status = 'completed'
+
+3. **Dashboard Test:**
+   - [ ] Open dashboard URL
+   - [ ] Verify KPI cards display correct data
+   - [ ] Check inventory alerts showing
+   - [ ] Verify workflow status showing
+   - [ ] Test dark mode toggle
+
+**Acceptance Criteria:**
+- All 3 tests pass without errors
+- Data flows from ShipStation → Database → Dashboard
+- Scheduled deployments running correctly
 
 **Deliverables:**
 - Test results documented
-- All workflows validated
+- All critical workflows validated
 
 ---
 
-#### 6.2 Performance Testing (1 hour)
+#### 6.2 Production Cutover (30 min)
 
-**Objective:** Verify performance meets requirements
+**Objective:** Switch to production system with rollback plan
 
-**Tasks:**
-- [ ] Test with full data load (1 year history)
-- [ ] Verify query performance (<500ms)
-- [ ] Check database size (<100MB)
-- [ ] Test concurrent access (dashboard + scripts)
-- [ ] Monitor WAL file size
+**Pre-Cutover Checklist:**
+- [ ] CSV backups of all Google Sheets created
+- [ ] Database backup created
+- [ ] Rollback procedure documented and tested
+- [ ] Team notified of cutover window
 
-**Performance Metrics:**
-- Dashboard load: < 2 seconds
-- Query execution: < 500ms
-- Database file: < 100MB
-- Concurrent users: No locking issues
+**Cutover Steps:**
+1. [ ] Stop Google Sheets-based workflows (disable Cloud Scheduler)
+2. [ ] Verify Replit scheduled deployments are active
+3. [ ] Monitor first scheduled run closely
+4. [ ] Verify data accuracy (compare to Google Sheets baseline)
+5. [ ] Confirm dashboard showing live data
 
-**Deliverables:**
-- Performance benchmark report
-- Optimization recommendations
+**Rollback Procedure (If Needed):**
+```bash
+# 1. Stop Replit deployments
+# 2. Restore Google Sheets workflows (re-enable Cloud Scheduler)
+# 3. Investigate issues
+# 4. Fix and retry cutover
+```
 
----
-
-#### 6.3 Monitoring & Logging Setup (1 hour)
-
-**Objective:** Operational visibility and alerting
-
-**Tasks:**
-- [ ] Configure structured logging
-- [ ] Set up error alerting
-- [ ] Create monitoring dashboard
-- [ ] Document troubleshooting procedures
-
-**Monitoring Checklist:**
-- [ ] Workflow execution logs
-- [ ] Database health metrics
-- [ ] Error rate tracking
-- [ ] Performance metrics
+**Post-Cutover Monitoring:**
+- [ ] Monitor for 24 hours
+- [ ] Check workflow status hourly for first 4 hours
+- [ ] Verify data accuracy daily for first week
+- [ ] Document any issues and resolutions
 
 **Deliverables:**
-- Logging infrastructure
-- Alert configuration
-- Troubleshooting guide
-
----
-
-### Phase 7: Cutover & Go-Live (2 hours)
-
-#### 7.1 Production Cutover (1 hour)
-
-**Objective:** Switch to production system
-
-**Tasks:**
-- [ ] Stop all Google Sheets-based workflows
-- [ ] Switch to Replit-based workflows
-- [ ] Monitor first 24 hours closely
-- [ ] Verify all automation running
-- [ ] Confirm data accuracy
-
-**Cutover Checklist:**
-- [ ] Google Sheets workflows stopped
-- [ ] Replit workflows running
-- [ ] Dashboard live
-- [ ] No errors in logs
-- [ ] Team notified
-
-**Deliverables:**
-- Production system live
+- Production system live on Replit
+- Google Sheets workflows stopped
+- Rollback plan tested and ready
 - Monitoring active
-- Support available
 
 ---
 
-#### 7.2 Documentation & Handoff (1 hour)
+## Project Timeline (MVP Scope)
 
-**Objective:** Complete documentation and knowledge transfer
-
-**Tasks:**
-- [ ] Update replit.md with final configuration
-- [ ] Document Replit secrets setup
-- [ ] Create troubleshooting guide
-- [ ] Archive Google Sheets (read-only)
-- [ ] Document deprecation plan
-- [ ] Create runbook for operations
-
-**Documentation Updates:**
-- Final architecture diagram
-- Replit deployment guide
-- Secret management procedures
-- Backup/restore procedures
-- Troubleshooting playbook
-
-**Deliverables:**
-- Complete documentation
-- Google Sheets archived
-- Knowledge transfer complete
-
----
-
-## Project Timeline
-
-### Week 1: Preparation & Migration
+### Week 1: Foundation & Migration
 
 | Day | Phase | Hours | Key Deliverables |
 |-----|-------|-------|------------------|
-| Mon | Phase 1.1-1.2 | 3h | Code fixes, unified secrets |
-| Tue | Phase 1.3-1.4 | 3h | Error handling, testing |
-| Wed | Phase 2 | 3h | Database setup complete |
-| Thu | Phase 3.1 | 3h | ETL script ready |
-| Fri | Phase 3.2-3.3 | 2h | Data migrated, validated |
+| Mon | Phase 1 | 3h | Minimal code foundation (secrets, db_utils, LSP fixes) |
+| Tue | Phase 2 | 2h | Core database schema + seed data |
+| Wed | Phase 3 | 2h | Critical data migration + validation |
 
 ### Week 2: Integration & Deployment
 
 | Day | Phase | Hours | Key Deliverables |
 |-----|-------|-------|------------------|
-| Mon | Phase 4.1-4.3 | 3h | 3 scripts updated |
-| Tue | Phase 4.4-4.5 | 3h | All scripts database-enabled |
-| Wed | Phase 5 | 3h | Replit fully configured |
-| Thu | Phase 6 | 3h | Testing complete |
-| Fri | Phase 7 | 2h | Production go-live |
+| Thu | Phase 4 | 3h | 2 critical scripts updated + tested |
+| Fri | Phase 5 + 6 | 3h | Replit deployment + cutover |
 
-**Total: 28 hours** (includes buffer for issues)
+**Total: 13 hours** (within budget)
+
+---
+
+## Phase 2 Roadmap (Future Enhancements)
+
+**When to Execute:** After MVP is stable (2-4 weeks later)
+
+**Remaining Work (15 hours estimated):**
+
+### Database Completion (3 hours)
+- [ ] Add remaining 5 tables (orders_inbox, order_items_inbox, polling_state, schema_migrations, monthly_charge_reports)
+- [ ] Migrate full historical data (complete Sheets → SQLite)
+- [ ] Implement connection pooling
+- [ ] Add advanced database utilities
+
+### Script Completion (6 hours)
+- [ ] Update shipstation_order_uploader.py (1h)
+- [ ] Update shipstation_reporter.py (1.5h)
+- [ ] Update main_order_import_daily_reporter.py (0.5h)
+- [ ] Create xml_polling_service.py (1h)
+- [ ] Add comprehensive error handling decorators (1h)
+- [ ] Add unit tests for critical functions (1h)
+
+### Monitoring & Operations (3 hours)
+- [ ] Implement automated alerting (SendGrid)
+- [ ] Create monitoring dashboard
+- [ ] Set up automated backups with rotation
+- [ ] Add performance monitoring
+
+### Documentation & Optimization (3 hours)
+- [ ] Complete API documentation
+- [ ] Add performance tuning guide
+- [ ] Create troubleshooting playbook
+- [ ] Optimize slow queries
 
 ---
 
 ## Risk Management
 
-### Critical Risks
+### Critical Risks (MVP Scope)
 
-| Risk | Probability | Impact | Mitigation Strategy |
-|------|-------------|--------|---------------------|
-| Data loss during migration | Low | Critical | • Multiple backups before migration<br>• Dry-run testing<br>• Rollback procedure ready<br>• CSV exports as fallback |
-| Type errors in production | Medium | High | • Fix all 57 LSP errors first<br>• Add comprehensive type hints<br>• Test with real data before cutover |
-| Replit deployment issues | Low | Medium | • Test with small dataset first<br>• Keep GCP as fallback option<br>• Staged rollout approach |
-| Performance degradation | Low | Medium | • Load test with 1 year data<br>• Monitor query execution times<br>• Optimize indexes proactively |
-| Secret management failures | Low | High | • Test all secrets before cutover<br>• Maintain backup credentials<br>• Document fallback procedures |
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Data loss during migration | Low | Critical | • CSV backups before migration<br>• Dry-run testing<br>• Rollback procedure ready |
+| Replit secrets not accessible | Low | High | • Test all secrets before cutover<br>• Keep GCP as fallback<br>• Document exact secret names |
+| Script errors after refactoring | Medium | Medium | • Test with real data before cutover<br>• Keep Google Sheets active during shadow run<br>• Rollback plan ready |
+| Performance issues | Low | Low | • Test with 90 days data (smaller dataset)<br>• Monitor query times<br>• Optimize if needed |
 
-### Mitigation Actions
+### Mitigation Strategy
 
-**Before Migration:**
-1. Complete code improvements (fix all LSP errors)
-2. Create and test rollback procedures
-3. Validate ETL with dry-run mode
-4. Backup all Google Sheets data
+**Before Cutover:**
+1. Backup all Google Sheets to CSV
+2. Test all scripts with migrated data
+3. Verify secrets accessible
+4. Document rollback procedure
+5. Run shadow mode (parallel systems) for 24 hours
 
-**During Migration:**
-1. Execute in stages with validation checkpoints
-2. Monitor database integrity continuously
-3. Keep Google Sheets as fallback
+**During Cutover:**
+1. Execute during low-traffic window
+2. Monitor logs in real-time
+3. Verify first scheduled run completes
 4. Team on standby for issues
 
-**After Migration:**
+**After Cutover:**
 1. 24-hour monitoring period
-2. Daily data validation for first week
-3. Weekly performance reviews
-4. Gradual deprecation of Google Sheets
+2. Daily validation for first week
+3. Keep Google Sheets read-only for 2 weeks
+4. Gradual confidence building
 
 ---
 
-## Success Metrics
+## Success Metrics (MVP)
 
 ### Technical KPIs
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| LSP Diagnostics | 0 errors | Code analysis tool |
-| Data Migration Accuracy | 100% row match | Automated validation |
-| Database Size | <100MB | File system check |
-| Dashboard Load Time | <2 seconds | Browser DevTools |
-| Query Performance | <500ms | Database profiling |
-| System Uptime | 99.9% | Replit monitoring |
+| Critical LSP Errors | 0 | Code analysis |
+| Data Migration Accuracy | 100% for 90-day window | Row count validation |
+| Database Size | <50MB | File system |
+| Script Success Rate | >95% | Workflow status logs |
+| System Uptime | 99% | Replit monitoring |
 
 ### Business KPIs
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Monthly Charge Reports | 100% accurate | Finance validation |
 | Inventory Tracking | Real-time | Dashboard verification |
-| Order Processing | <5 min cycle | Workflow logs |
-| Infrastructure Cost | $0/month | Billing confirmation |
-| Automation Success Rate | >95% | Workflow statistics |
+| Weekly Reporter Accuracy | 100% | Compare to Sheets baseline |
+| Daily Shipment Processing | 100% | ShipStation data validated |
+| Infrastructure Cost | $0/month | Replit billing |
 
 ### Operational KPIs
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Daily Backups | 100% success | Backup logs |
-| Error Alert Response | <1 hour | Incident tracking |
-| Documentation Completeness | 100% | Checklist review |
-| Team Training | 100% complete | Training records |
+| Deployment Success | 100% | All deployments active |
+| Rollback Readiness | <5 min | Rollback procedure tested |
+| Documentation Completeness | 100% | MVP checklist |
 
 ---
 
-## Resource Requirements
-
-### Development Tools
-- Python 3.11+
-- SQLite 3.37+ (STRICT tables support)
-- Replit account (Core membership for scheduled deployments)
-- Git for version control
-- LSP/Pylance for type checking
-
-### External Services
-- ShipStation API (existing)
-- Google Sheets API (migration only)
-- SendGrid API (optional, for notifications)
-- Google Drive (for XML file polling)
-
-### Infrastructure
-- Replit Reserved VM (dashboard + database)
-- Replit Scheduled Deployments (automation scripts)
-- Replit Secrets (API key management)
-
----
-
-## Deliverables Checklist
+## Deliverables Checklist (MVP)
 
 ### Code Artifacts
-- [ ] `src/services/secrets.py` - Unified secret management
-- [ ] `src/services/database/db_utils.py` - Database utilities
-- [ ] `src/utils/error_handling.py` - Error handling framework
-- [ ] `scripts/create_database.py` - Database schema creation
-- [ ] `scripts/seed_database.py` - Initial data seeding
-- [ ] `scripts/migrate_from_sheets.py` - ETL migration script
-- [ ] Updated automation scripts (6 files)
+- [ ] `src/services/secrets.py` - Minimal universal secret getter
+- [ ] `src/services/database/db_utils.py` - Basic database utilities
+- [ ] `scripts/create_database.py` - Core schema creation (8 tables)
+- [ ] `scripts/seed_database.py` - Minimal seed data
+- [ ] `scripts/migrate_critical_tables.py` - Targeted ETL script
+- [ ] Updated `src/weekly_reporter.py` - Database integration
+- [ ] Updated `src/daily_shipment_processor.py` - Database integration
 
 ### Database
-- [ ] `ora.db` - Production SQLite database
-- [ ] Daily backup script configured
-- [ ] Weekly maintenance scheduled
-- [ ] Monitoring queries implemented
+- [ ] `ora.db` - SQLite database with 8 core tables
+- [ ] Critical data migrated (90-day window)
+- [ ] CSV backups of Google Sheets
 
 ### Documentation
-- [ ] `docs/DATABASE_SCHEMA.md` - Complete schema (✅ Updated)
-- [ ] `docs/MIGRATION_GUIDE.md` - Migration procedures (✅ Complete)
-- [ ] `docs/DATABASE_OPERATIONS.md` - Operations guide (✅ Complete)
-- [ ] `docs/API_INTEGRATION.md` - Integration patterns (✅ Complete)
-- [ ] `docs/PROJECT_PLAN.md` - This document (✅ Complete)
-- [ ] `replit.md` - Updated project overview (✅ Updated)
+- [ ] `docs/PROJECT_PLAN.md` - This MVP plan (✅ Complete)
+- [ ] `docs/DATABASE_SCHEMA.md` - Updated for MVP tables
+- [ ] `docs/MIGRATION_GUIDE.md` - Updated with rollback procedure
+- [ ] Replit deployment guide (in this plan)
+- [ ] Secrets configuration guide (in this plan)
 
 ### Deployment
-- [ ] Replit Reserved VM configured
-- [ ] 4 Scheduled Deployments configured
-- [ ] All secrets configured in Replit
-- [ ] Monitoring and alerting active
+- [ ] Replit Reserved VM configured (dashboard)
+- [ ] 2 Scheduled Deployments configured (weekly_reporter, daily_shipment_processor)
+- [ ] 4 Replit Secrets configured
+- [ ] Basic monitoring implemented
 
 ---
 
 ## Communication Plan
 
-### Stakeholders
-- **Development Team:** Daily updates during migration
-- **Business Users:** Weekly progress reports
-- **Management:** Milestone completion notifications
+### Daily Standup (During Implementation)
+- What was completed yesterday
+- What's planned for today
+- Any blockers or issues
+- ETA for current phase
 
-### Status Updates
-- **Daily:** During active development phases
-- **Weekly:** Progress against timeline
-- **Ad-hoc:** For critical issues or blockers
+### Milestone Notifications
+- Phase completion updates
+- Migration completion
+- Cutover completion
+- Any critical issues
 
 ### Escalation Path
 1. Developer identifies issue
 2. Attempt resolution (30 min)
 3. Document and escalate if unresolved
-4. Team discussion for complex issues
-5. Rollback if critical system impact
-
----
-
-## Post-Launch Activities
-
-### Week 1 Post-Launch
-- [ ] Daily monitoring and validation
-- [ ] Performance tuning as needed
-- [ ] User feedback collection
-- [ ] Issue resolution
-
-### Week 2-4 Post-Launch
-- [ ] Deprecate Google Sheets completely
-- [ ] Archive historical Sheets data
-- [ ] Optimize based on usage patterns
-- [ ] Document lessons learned
-
-### Ongoing
-- [ ] Monthly performance reviews
-- [ ] Quarterly capacity planning
-- [ ] Continuous improvement based on metrics
-- [ ] Feature enhancement roadmap
+4. Execute rollback if critical
 
 ---
 
@@ -852,78 +808,104 @@ scripts/weekly_maintenance.py
 
 **Database Management:**
 ```bash
-# Create database
-python scripts/create_database.py --output ora.db
+# Create core database
+python scripts/create_database.py
 
-# Seed initial data
-python scripts/seed_database.py --database ora.db
+# Seed minimal data
+python scripts/seed_database.py
 
-# Run migration (dry-run)
-python scripts/migrate_from_sheets.py --dry-run
+# Migrate critical tables (dry-run)
+python scripts/migrate_critical_tables.py --dry-run
 
-# Run migration (production)
-python scripts/migrate_from_sheets.py
+# Migrate critical tables (production)
+python scripts/migrate_critical_tables.py
 ```
 
-**Automation Scripts:**
+**Script Testing:**
 ```bash
-# Weekly reporter
+# Test weekly reporter
 python src/weekly_reporter.py
 
-# Daily shipment processor
+# Test daily shipment processor
 python src/daily_shipment_processor.py
-
-# Monthly charge report
-python src/shipstation_reporter.py
 ```
 
-**Database Operations:**
+**Monitoring:**
 ```bash
-# Daily health check
-bash scripts/daily_health_check.sh
+# Check workflow status
+sqlite3 ora.db "SELECT name, status, last_run_time FROM workflows"
 
-# Manual backup
-bash scripts/backup_database.sh
-
-# Weekly maintenance
-python scripts/weekly_maintenance.py
+# Check inventory levels
+sqlite3 ora.db "SELECT * FROM inventory_current ORDER BY quantity_on_hand"
 ```
 
-### B. Important File Locations
+### B. Replit Secrets Configuration
 
-**Source Code:**
-- `/src/services/` - All service modules
-- `/src/services/database/` - Database utilities
-- `/scripts/` - Database and maintenance scripts
+**Required Secrets:**
+```
+SHIPSTATION_API_KEY=<your_api_key>
+SHIPSTATION_API_SECRET=<your_api_secret>
+DATABASE_PATH=/home/runner/ORA-Automation/ora.db
+GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY=<json_string>
+```
 
-**Documentation:**
-- `/docs/` - All technical documentation
-- `/docs/DATABASE_SCHEMA.md` - Complete schema reference
-- `/docs/MIGRATION_GUIDE.md` - Migration procedures
+**How to Add in Replit:**
+1. Open Tools → Secrets
+2. Click "+ New Secret"
+3. Enter name (exact match from table above)
+4. Paste value
+5. Click "Add Secret"
 
-**Configuration:**
-- `/config/settings.py` - Application configuration
-- `.env` - Environment variables (local only)
-- Replit Secrets - Production secrets
+### C. Rollback Procedure
 
-### C. Contact Information
+**If Critical Issues After Cutover:**
 
-**Technical Support:**
-- Documentation: `/docs/` folder
-- Issue tracking: Git issues
-- Emergency rollback: See MIGRATION_GUIDE.md
+1. **Immediate Steps (5 min):**
+   ```bash
+   # Stop Replit scheduled deployments (pause in UI)
+   # Re-enable Google Cloud Scheduler
+   # Verify Sheets-based workflows resume
+   ```
+
+2. **Investigation (30 min):**
+   - Review Replit deployment logs
+   - Check database for data corruption
+   - Identify root cause
+   - Document findings
+
+3. **Fix & Retry (varies):**
+   - Fix identified issues
+   - Test in development
+   - Schedule new cutover attempt
+
+4. **Communicate:**
+   - Notify team of rollback
+   - Provide status updates
+   - Share fix timeline
 
 ---
 
 ## Project Sign-Off
 
-**Prepared by:** Development Team  
-**Date:** [Current Date]  
-**Version:** 1.0  
-**Status:** Ready for Implementation
+**Plan Type:** MVP (Minimal Viable Product)  
+**Architect Review:** ✅ Approved for efficiency and budget compliance  
+**Budget:** 10-13 hours (optimized from 28h full scope)  
+**Status:** Ready for Implementation  
+
+**Key Optimizations Applied:**
+- ✅ Reduced from 28h to 13h by focusing on core functionality
+- ✅ Deferred 4 non-critical scripts to Phase 2
+- ✅ Limited data migration to 90-day window
+- ✅ Minimal code foundation (no over-engineering)
+- ✅ Concrete Replit deployment steps with secrets matrix
+- ✅ Embedded rollback procedure
+- ✅ Per-script migration checklist
+- ✅ Removed dashboard enhancements (already functional)
 
 ---
 
-**Next Steps:** Begin Phase 1 - Code Improvements & Preparation
+**Next Steps:** Begin Phase 1 - Minimal Code Foundation
 
-For questions or clarifications, refer to the documentation in `/docs/` or contact the development team.
+**Estimated Completion:** 3-4 business days from start
+
+For questions or clarifications, refer to this plan or the documentation in `/docs/`.
