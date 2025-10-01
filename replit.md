@@ -122,21 +122,27 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 
 ## Database Migration Status
 
-**Current State:** Google Sheets (legacy system)
-**Target State:** SQLite database (replacement)
+**Current State:** ✅ SQLite database operational with 917 historical rows
+**Legacy System:** Google Sheets (read-only for migration)
 
 **Migration Approach:** MVP-first strategy (13 hours total)
 
 **Migration Phases:**
-1. ✅ Schema Design - Complete (12 tables with constraints and indexes)
-2. ✅ Documentation - Complete (migration guide, operations, API integration, PROJECT_PLAN)
-3. ✅ Project Plan - Final review approved by architect (13-hour optimized plan)
-4. ⏳ Database Setup - Ready to start (8 core tables MVP)
-5. ⏳ ETL Development - Ready to start (12-month historical data migration)
-6. ⏳ Script Integration - Ready to start (2 critical scripts: weekly_reporter, daily_shipment_processor)
-7. ⏳ Dashboard API - Ready to start (Flask API for real-time data)
-8. ⏳ Replit Deployment - Ready to start (Core plan, Scheduled Deployments confirmed)
-9. ⏳ Cutover - Pending (switch to database, deprecate Sheets)
+1. ✅ Schema Design - COMPLETE (8 tables with constraints and 14 indexes)
+2. ✅ Documentation - COMPLETE (migration guide, operations, API integration, PROJECT_PLAN)
+3. ✅ Project Plan - COMPLETE (architect approved 13-hour optimized plan)
+4. ✅ Database Setup - COMPLETE (8 tables created, seeded with test data)
+5. ✅ ETL Development - COMPLETE (600+ line migration script with validation)
+6. ✅ Historical Data Migration - COMPLETE (917 rows, 12-month/52-week data)
+   - configuration_params: 32 rows
+   - inventory_transactions: 28 rows
+   - shipped_orders: 598 rows
+   - weekly_shipped_history: 259 rows (52-week rolling averages ready!)
+   - **Note:** shipped_items empty (source sheet missing Order_Number column)
+7. ⏳ Script Integration - Ready to start (integrate weekly_reporter, daily_shipment_processor)
+8. ⏳ Dashboard API - Ready to start (Flask API for real-time data)
+9. ⏳ Replit Deployment - Ready to start (Core plan, Scheduled Deployments confirmed)
+10. ⏳ Cutover - Pending (switch scripts to database, deprecate Sheets)
 
 **Timeline:** 13 hours (3-4 business days)
 **Infrastructure:** Replit Core ($25/month) with Scheduled Deployments
