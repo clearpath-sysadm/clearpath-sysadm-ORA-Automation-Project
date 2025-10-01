@@ -41,6 +41,162 @@ def serve_page(filename):
 
 # API Endpoints
 
+@app.route('/api/dashboard_stats')
+def api_dashboard_stats():
+    """Get dashboard statistics"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Today's orders
+        today = datetime.now().strftime('%Y-%m-%d')
+        cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date = ?", (today,))
+        todays_orders = cursor.fetchone()[0] or 0
+        
+        # Pending uploads (use 0 for now - orders_inbox table doesn't exist yet)
+        pending_uploads = 0
+        
+        # Recent shipments (last 7 days)
+        week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= ?", (week_ago,))
+        recent_shipments = cursor.fetchone()[0] or 0
+        
+        # System status (check if we have any recent workflows)
+        cursor.execute("""
+            SELECT COUNT(*) FROM workflows 
+            WHERE status = 'completed' 
+            LIMIT 1
+        """)
+        completed_count = cursor.fetchone()[0] or 0
+        system_status = 'operational' if completed_count > 0 else 'warning'
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'todays_orders': todays_orders,
+                'pending_uploads': pending_uploads,
+                'recent_shipments': recent_shipments,
+                'system_status': system_status
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/inventory_alerts')
+def api_get_inventory_alerts():
+    """Get inventory alerts for dashboard"""
+    try:
+        query = """
+            SELECT 
+                sku,
+                product_name,
+                current_quantity,
+                alert_level,
+                reorder_point,
+                last_updated
+            FROM inventory_current
+            WHERE sku IN ('17612', '17904', '17914', '17975', '18675', '18795')
+            ORDER BY 
+                CASE alert_level 
+                    WHEN 'critical' THEN 1
+                    WHEN 'warning' THEN 2
+                    ELSE 3
+                END,
+                current_quantity ASC
+        """
+        results = execute_query(query)
+        
+        alerts = []
+        for row in results:
+            sku = row[0]
+            product_name = row[1] or f'Product {sku}'
+            current_qty = row[2] or 0
+            alert_level = row[3] or 'normal'
+            reorder_point = row[4] or 100
+            
+            # Map alert_level to severity and create message
+            if alert_level == 'critical':
+                severity = 'critical'
+                message = f'Low Stock: {current_qty} units remaining'
+            elif alert_level == 'warning' or alert_level == 'low':
+                severity = 'warning'
+                message = f'Reorder Point: {current_qty} units remaining'
+            else:
+                severity = 'normal'
+                message = f'Normal Stock: {current_qty} units available'
+            
+            alerts.append({
+                'base_sku': sku,
+                'product_name': product_name,
+                'current_quantity': current_qty,
+                'severity': severity,
+                'message': message
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': alerts,
+            'count': len(alerts)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/automation_status')
+def api_automation_status():
+    """Get automation workflow status"""
+    try:
+        query = """
+            SELECT 
+                name,
+                display_name,
+                status,
+                last_run_at,
+                duration_seconds,
+                records_processed
+            FROM workflows
+            WHERE name IN ('weekly_reporter', 'daily_shipment_processor', 'shipstation_sync', 'monthly_report')
+            ORDER BY last_run_at DESC
+            LIMIT 10
+        """
+        results = execute_query(query)
+        
+        workflows_data = []
+        for row in results:
+            name = row[0]
+            display_name = row[1] or name
+            status = row[2]
+            last_run_at = row[3]
+            duration_seconds = row[4] or 0
+            records = row[5] or 0
+            
+            workflows_data.append({
+                'workflow_name': name,
+                'display_name': display_name,
+                'status': status,
+                'last_run': last_run_at,
+                'duration_seconds': duration_seconds,
+                'records_processed': records
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': workflows_data,
+            'count': len(workflows_data)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/shipped_orders')
 def api_shipped_orders():
     """Get all shipped orders with pagination"""

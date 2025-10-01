@@ -923,11 +923,14 @@
             const count = criticalWarningAlerts.length;
             const badge = document.getElementById('inventory-badge');
             
-            if (count > 0) {
-                badge.textContent = count;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
+            // Check if badge element exists
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
             }
         }
 
@@ -973,12 +976,49 @@
                 // Clear any existing error banners
                 clearErrorBanners();
                 
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 1200));
+                // Fetch all data in parallel
+                const [statsRes, alertsRes, automationRes] = await Promise.all([
+                    fetch('/api/dashboard_stats'),
+                    fetch('/api/inventory_alerts'),
+                    fetch('/api/automation_status')
+                ]);
                 
-                // Simulate occasional random errors for testing (10% chance)
-                if (Math.random() < 0.1) {
-                    throw new Error('Network error');
+                const stats = await statsRes.json();
+                const alerts = await alertsRes.json();
+                const automation = await automationRes.json();
+                
+                // Update stats cards
+                if (stats.success) {
+                    const statCards = document.querySelectorAll('[data-stat-card]');
+                    if (statCards[0]) statCards[0].querySelector('.stat-value').textContent = stats.data.todays_orders || 0;
+                    if (statCards[1]) statCards[1].querySelector('.stat-value').textContent = stats.data.pending_uploads || 0;
+                    if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = stats.data.recent_shipments || 0;
+                    if (statCards[3]) {
+                        const statusText = stats.data.system_status === 'operational' ? 'Online' : 'Warning';
+                        const statusClass = stats.data.system_status === 'operational' ? 'status-green' : 'status-yellow';
+                        statCards[3].querySelector('.stat-value').innerHTML = `<span class="status-indicator ${statusClass}"></span>${statusText}`;
+                    }
+                }
+                
+                // Update inventory alerts
+                if (alerts.success && alerts.data.length > 0) {
+                    const alertsContainer = document.getElementById('alerts-section');
+                    const existingAlerts = alertsContainer.querySelectorAll('[data-alert-item]');
+                    existingAlerts.forEach(el => el.remove());
+                    
+                    alerts.data.forEach(alert => {
+                        const alertEl = document.createElement('a');
+                        alertEl.href = `#inventory?productId=${alert.base_sku}`;
+                        alertEl.className = `alert-item ${alert.severity} alert-link`;
+                        alertEl.setAttribute('data-alert-item', '');
+                        alertEl.setAttribute('data-product-id', alert.base_sku);
+                        alertEl.setAttribute('data-severity', alert.severity);
+                        
+                        const icon = alert.severity === 'critical' ? '⚠️' : 
+                                     alert.severity === 'warning' ? '⚠️' : '✅';
+                        alertEl.innerHTML = `<strong>${icon} ${alert.product_name} (${alert.base_sku})</strong> - ${alert.message}`;
+                        alertsContainer.appendChild(alertEl);
+                    });
                 }
                 
                 // Hide skeletons and show actual content
