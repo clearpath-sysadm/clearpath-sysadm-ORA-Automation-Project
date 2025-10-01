@@ -5,12 +5,17 @@
 **Project:** Migrate ORA automation system from Google Cloud + Google Sheets to Replit + SQLite database
 
 **Approach:** MVP-first strategy - Core migration first, enhancement later  
-**Duration:** 3-4 business days (10-13 hours total)  
-**Budget:** 10-13 hours (optimized from 28-hour full scope)  
-**Cost Constraint:** Zero-cost infrastructure (Replit VM + SQLite)  
+**Duration:** 3-4 business days (13 hours total)  
+**Budget:** 13 hours (optimized from 28-hour full scope)  
+**Infrastructure:** Replit Core ($25/month) with Scheduled Deployments  
 **Team Size:** 1 developer
 
-**Architect Review:** ✅ Reviewed and optimized for efficiency and budget compliance
+**Architect Review:** ✅ Final review completed - Plan approved for implementation
+
+**Key Decisions (Final):**
+- ✅ Dashboard: Flask API for real-time data endpoints
+- ✅ Scheduling: Replit Scheduled Deployments (Core plan confirmed)
+- ✅ Data Window: Full 12-month migration for 52-week rolling averages (CRITICAL requirement)
 
 ---
 
@@ -25,17 +30,18 @@
 
 ### Success Criteria (MVP)
 - ✅ 2 critical automation scripts running on Replit (weekly_reporter, daily_shipment_processor)
-- ✅ SQLite database with critical tables migrated
-- ✅ Core inventory tracking functional
+- ✅ SQLite database with 8 core tables + 12-month historical data migrated
+- ✅ 52-week rolling averages accurate (CRITICAL business requirement)
+- ✅ Flask API serving real-time dashboard data
 - ✅ Zero LSP errors in refactored code
-- ✅ Zero-cost infrastructure confirmed
+- ✅ Replit Scheduled Deployments configured and running
 - ✅ Rollback procedure documented and tested
 
 ### Deferred to Phase 2 (Future)
 - Remaining 4 automation scripts (order uploader, monthly reporter, XML poller, import reporter)
-- Full table migration (complete historical data)
+- Remaining 5 database tables (orders_inbox, order_items_inbox, polling_state, schema_migrations, monthly_charge_reports)
 - Advanced features (connection pooling, extensive unit tests)
-- Dashboard enhancements (already functional, no changes needed)
+- Enhanced monitoring and alerting
 
 ---
 
@@ -233,67 +239,91 @@ PRAGMA busy_timeout = 8000;
 
 ---
 
-### Phase 3: Critical Data Migration (2 hours)
+### Phase 3: Full Historical Data Migration (3 hours)
 
-#### 3.1 Build Targeted ETL (1 hour)
+#### 3.1 Build Complete ETL Script (1.5 hours)
 
-**Objective:** Migrate only data needed for 2 critical scripts
+**Objective:** Migrate 12 months of data for accurate 52-week rolling averages
 
 **Tables to Migrate (MVP):**
-1. ORA_Configuration → configuration_params
-2. Inventory_Transactions → inventory_transactions
-3. Shipped_Orders_Data → shipped_orders (last 90 days only)
-4. Shipped_Items_Data → shipped_items (last 90 days only)
-5. ORA_Weekly_Shipped_History → weekly_shipped_history (last 12 weeks)
+1. ORA_Configuration → configuration_params (all rows)
+2. Inventory_Transactions → inventory_transactions (last 12 months)
+3. Shipped_Orders_Data → shipped_orders (last 12 months)
+4. Shipped_Items_Data → shipped_items (last 12 months)
+5. ORA_Weekly_Shipped_History → weekly_shipped_history (last 52 weeks)
 
-**Deferred:**
-- Full historical data (migrate in Phase 2)
+**Deferred to Phase 2:**
 - SKU_Lot table
 - ORA_Processing_State
 
 **Tasks:**
-- [ ] Create `scripts/migrate_critical_tables.py`
+- [ ] Create `scripts/migrate_historical_data.py`
 - [ ] Implement data transformations (currency → cents, dates, booleans)
-- [ ] Add dry-run mode
+- [ ] Add dry-run mode with validation
 - [ ] Implement row count validation
+- [ ] Add checksum verification for weekly totals
+
+**Critical Requirement:**
+- ⚠️ **52-week rolling average depends on complete historical data**
+- Must migrate at least 12 months for accurate business calculations
 
 **Deliverables:**
-- `scripts/migrate_critical_tables.py` (NEW)
-- ETL script for 5 critical tables
-- Dry-run validation
+- `scripts/migrate_historical_data.py` (NEW)
+- ETL script for 5 critical tables with 12-month window
+- Dry-run validation with weekly totals verification
 
 ---
 
-#### 3.2 Execute Migration & Validate (1 hour)
+#### 3.2 Execute Migration & Validate (1.5 hours)
 
-**Objective:** Migrate critical data with validation
+**Objective:** Migrate 12 months of historical data with complete validation
 
 **Tasks:**
-- [ ] Export critical sheets to CSV backup
+- [ ] Export all critical sheets to CSV backup
 - [ ] Run ETL script with dry-run first
-- [ ] Execute migration for 5 tables
+- [ ] Execute migration for 5 tables (12-month window)
 - [ ] Verify row counts match source
-- [ ] Validate weekly totals (last 12 weeks)
+- [ ] **Validate 52-week rolling totals match Google Sheets**
+- [ ] Verify inventory transaction sums
 - [ ] Document rollback procedure
+- [ ] Take post-migration database snapshot
 
 **Validation Queries:**
 ```sql
--- Verify row counts
-SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= date('now', '-90 days');
-SELECT COUNT(*) FROM shipped_items WHERE ship_date >= date('now', '-90 days');
+-- Verify row counts (12-month window)
+SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= date('now', '-12 months');
+SELECT COUNT(*) FROM shipped_items WHERE ship_date >= date('now', '-12 months');
+SELECT COUNT(*) FROM inventory_transactions WHERE transaction_date >= date('now', '-12 months');
 
--- Verify weekly totals
-SELECT start_date, SUM(quantity_shipped) 
+-- CRITICAL: Verify 52-week rolling totals
+SELECT start_date, product_id, SUM(quantity_shipped) 
 FROM weekly_shipped_history 
-WHERE start_date >= date('now', '-12 weeks')
-GROUP BY start_date;
+WHERE start_date >= date('now', '-52 weeks')
+GROUP BY start_date, product_id
+ORDER BY start_date DESC;
+
+-- Verify weekly averages (business critical)
+SELECT 
+    product_id,
+    AVG(quantity_shipped) as avg_weekly_shipped,
+    COUNT(*) as weeks_count
+FROM weekly_shipped_history 
+WHERE start_date >= date('now', '-52 weeks')
+GROUP BY product_id;
 ```
 
+**Acceptance Criteria:**
+- [ ] 12 months of data migrated successfully
+- [ ] 52-week rolling averages match Google Sheets baseline (±1% tolerance)
+- [ ] Row counts 100% match
+- [ ] No foreign key violations
+- [ ] Database integrity check passes
+
 **Deliverables:**
-- Critical data migrated successfully
-- Validation report (row counts, weekly totals)
+- 12-month historical data migrated successfully
+- 52-week validation report (CRITICAL)
 - CSV backups created
-- Rollback procedure documented
+- Rollback procedure documented and tested
 
 ---
 
@@ -403,9 +433,11 @@ execute_query("""
 
 ---
 
-### Phase 5: Replit Deployment (2 hours)
+### Phase 5: Replit Deployment & Dashboard API (2.5 hours)
 
 #### 5.1 Configure Replit Secrets (30 min)
+
+**Replit Plan Confirmed:** Core ($25/month) - Scheduled Deployments available ✅
 
 **Objective:** Set up all required secrets in Replit
 
@@ -434,35 +466,149 @@ execute_query("""
 
 ---
 
-#### 5.2 Create Reserved VM Deployment (30 min)
+#### 5.2 Create Flask API for Dashboard (1 hour)
 
-**Objective:** Deploy always-on dashboard server
+**Objective:** Build minimal API to serve real-time data to dashboard
+
+**Critical Issue Resolved:** Static HTML cannot query SQLite directly. Flask API provides data endpoints.
+
+**Tasks:**
+- [ ] Create `dashboard_api.py` with Flask endpoints
+- [ ] Implement `/api/kpis` endpoint (system_kpis data)
+- [ ] Implement `/api/inventory` endpoint (inventory_current data)
+- [ ] Implement `/api/workflows` endpoint (workflow status)
+- [ ] Implement `/api/weekly_shipped` endpoint (weekly averages)
+- [ ] Update `index.html` to fetch from API endpoints instead of Google Sheets
+- [ ] Test API endpoints return correct JSON
+
+**Implementation:**
+```python
+# dashboard_api.py
+from flask import Flask, jsonify
+import sqlite3
+import os
+
+app = Flask(__name__, static_folder='.', static_url_path='')
+DATABASE_PATH = os.getenv('DATABASE_PATH', 'ora.db')
+
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
+@app.route('/api/kpis')
+def get_kpis():
+    conn = get_db_connection()
+    cursor = conn.execute("""
+        SELECT * FROM system_kpis 
+        ORDER BY date DESC LIMIT 1
+    """)
+    row = cursor.fetchone()
+    conn.close()
+    return jsonify(dict(row)) if row else jsonify({})
+
+@app.route('/api/inventory')
+def get_inventory():
+    conn = get_db_connection()
+    cursor = conn.execute("""
+        SELECT product_id, product_name, quantity_on_hand, 
+               alert_threshold, status
+        FROM inventory_current
+        ORDER BY quantity_on_hand ASC
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
+
+@app.route('/api/workflows')
+def get_workflows():
+    conn = get_db_connection()
+    cursor = conn.execute("""
+        SELECT name, display_name, status, last_run_time, details
+        FROM workflows
+        ORDER BY last_run_time DESC
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
+
+@app.route('/api/weekly_shipped')
+def get_weekly_shipped():
+    conn = get_db_connection()
+    cursor = conn.execute("""
+        SELECT start_date, product_id, quantity_shipped
+        FROM weekly_shipped_history
+        WHERE start_date >= date('now', '-52 weeks')
+        ORDER BY start_date DESC
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+```
+
+**Update index.html:**
+```javascript
+// Replace Google Sheets API calls with:
+async function loadKPIs() {
+    const response = await fetch('/api/kpis');
+    const data = await response.json();
+    // Update dashboard with data
+}
+
+async function loadInventory() {
+    const response = await fetch('/api/inventory');
+    const data = await response.json();
+    // Update inventory cards
+}
+```
+
+**Deliverables:**
+- `dashboard_api.py` (NEW)
+- Flask API with 4 endpoints
+- Updated `index.html` to use API instead of Google Sheets
+- API tested and returning correct data
+
+---
+
+#### 5.3 Deploy Flask API to Replit (30 min)
+
+**Objective:** Deploy Flask API as Reserved VM
 
 **Steps:**
 1. [ ] Click "Deploy" button in Replit
 2. [ ] Select "Reserved VM" deployment type
 3. [ ] Configure deployment:
    ```
-   Name: ora-dashboard
+   Name: ora-dashboard-api
    Type: Reserved VM
-   Run Command: python -m http.server 5000
+   Run Command: python dashboard_api.py
    Port: 5000
    Build Command: (leave empty)
    ```
 4. [ ] Click "Deploy"
 5. [ ] Wait for deployment to complete
-6. [ ] Test dashboard URL
+6. [ ] Test dashboard URL and API endpoints
 
 **Deliverables:**
-- Dashboard accessible 24/7 at Replit URL
-- Real-time data display working
+- Flask API accessible 24/7 at Replit URL
+- Dashboard displaying real-time SQLite data
 - Dark mode toggle functional
+- All 4 API endpoints working
 
 ---
 
-#### 5.3 Create Scheduled Deployments (1 hour)
+#### 5.4 Create Scheduled Deployments (30 min)
 
 **Objective:** Automate 2 critical scripts with cron schedules
+
+**Replit Core Plan:** Scheduled Deployments included with monthly credits ✅
 
 **Deployment 1: Weekly Reporter**
 ```
@@ -516,7 +662,7 @@ Timeout: 15 minutes
 
 ---
 
-#### 5.4 Minimal Monitoring Setup (30 min)
+#### 5.5 Minimal Monitoring Setup (30 min)
 
 **Objective:** Basic health checks and error tracking
 
@@ -629,24 +775,30 @@ ORDER BY last_run_time DESC;
 
 ---
 
-## Project Timeline (MVP Scope)
+## Project Timeline (MVP Scope - FINAL)
 
 ### Week 1: Foundation & Migration
 
 | Day | Phase | Hours | Key Deliverables |
 |-----|-------|-------|------------------|
-| Mon | Phase 1 | 3h | Minimal code foundation (secrets, db_utils, LSP fixes) |
-| Tue | Phase 2 | 2h | Core database schema + seed data |
-| Wed | Phase 3 | 2h | Critical data migration + validation |
+| Mon | Phase 1 | 2h | LSP fixes + Replit-only secrets (no GCP fallback) |
+| Mon PM | Phase 2 | 1.5h | Core database schema (8 tables, no seed scripts) |
+| Tue | Phase 3 | 3h | **12-month data migration** + 52-week validation ✅ |
+| Wed | Phase 4 | 3h | 2 critical scripts updated + tested |
 
-### Week 2: Integration & Deployment
+### Week 2: Deployment & Launch
 
 | Day | Phase | Hours | Key Deliverables |
 |-----|-------|-------|------------------|
-| Thu | Phase 4 | 3h | 2 critical scripts updated + tested |
-| Fri | Phase 5 + 6 | 3h | Replit deployment + cutover |
+| Thu | Phase 5 | 2.5h | **Flask API** + Replit Scheduled Deployments ✅ |
+| Fri | Phase 6 | 1h | Testing + cutover + monitoring |
 
-**Total: 13 hours** (within budget)
+**Total: 13 hours** ✅
+
+**Critical Requirements Met:**
+- ✅ 52-week rolling averages (12-month data migration)
+- ✅ Dashboard real-time data (Flask API endpoints)
+- ✅ Replit Core scheduling (confirmed available)
 
 ---
 
@@ -691,9 +843,10 @@ ORDER BY last_run_time DESC;
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
 | Data loss during migration | Low | Critical | • CSV backups before migration<br>• Dry-run testing<br>• Rollback procedure ready |
-| Replit secrets not accessible | Low | High | • Test all secrets before cutover<br>• Keep GCP as fallback<br>• Document exact secret names |
+| 52-week average accuracy | Medium | Critical | • Migrate full 12 months of data<br>• Validate against Sheets baseline<br>• ±1% tolerance check |
+| Dashboard data not displaying | Low | High | • Flask API provides real-time endpoints<br>• Test all 4 API routes before cutover<br>• Fallback to static JSON if needed |
 | Script errors after refactoring | Medium | Medium | • Test with real data before cutover<br>• Keep Google Sheets active during shadow run<br>• Rollback plan ready |
-| Performance issues | Low | Low | • Test with 90 days data (smaller dataset)<br>• Monitor query times<br>• Optimize if needed |
+| Performance issues | Low | Low | • Test with 12-month dataset<br>• Monitor query times<br>• Optimize indexes if needed |
 
 ### Mitigation Strategy
 
