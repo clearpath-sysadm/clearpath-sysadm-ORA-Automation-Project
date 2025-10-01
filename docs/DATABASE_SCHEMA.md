@@ -157,7 +157,17 @@ CREATE TABLE shipped_items (
 CREATE INDEX idx_shipped_items_date ON shipped_items(ship_date);
 CREATE INDEX idx_shipped_items_sku_date ON shipped_items(base_sku, ship_date);
 CREATE INDEX idx_shipped_items_order ON shipped_items(order_number);
+
+-- Unique Constraint (Duplicate Prevention)
+CREATE UNIQUE INDEX uniq_shipped_items_key ON shipped_items(order_number, base_sku, sku_lot);
 ```
+
+**Duplicate Prevention Strategy:**
+- UNIQUE constraint on `(order_number, base_sku, sku_lot)` prevents re-importing same items from ShipStation
+- Enables idempotent UPSERT operations when running daily shipment processor
+- `sku_lot` is coalesced to empty string (never NULL) to ensure constraint works correctly
+- `order_number` is used for duplicate prevention only, not for daily aggregations
+- Monthly charge report counts packages by grouping `(ship_date, base_sku)` regardless of order_number
 
 ### **shipped_orders**
 *Complete shipment records by order*
