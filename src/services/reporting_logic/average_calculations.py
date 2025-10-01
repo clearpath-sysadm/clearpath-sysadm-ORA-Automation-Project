@@ -7,7 +7,7 @@ specifically focusing on rolling averages for the ORA Project reports.
 import logging
 import pandas as pd
 from datetime import datetime, timedelta
-from src.services.reporting_logic.week_utils import get_current_week_boundaries
+from src.services.reporting_logic.week_utils import get_current_week_boundaries, is_week_complete
 
 def calculate_12_month_rolling_average(weekly_shipped_history_df):
     """
@@ -46,16 +46,28 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
     df.dropna(subset=['Date', 'ShippedQuantity'], inplace=True)
     
     # DEFENSIVE FILTERING: Remove any incomplete weeks
-    # Get current week boundaries to filter out partial weeks
-    current_monday, _ = get_current_week_boundaries()
+    # Get current week boundaries to determine cutoff
+    current_monday, current_sunday = get_current_week_boundaries()
     
-    # Filter out rows from the current/incomplete week
+    # If current week is complete (Saturday/Sunday after Friday), include it
+    # Otherwise, exclude it (only include weeks before current Monday)
+    if is_week_complete(current_sunday):
+        # Current week is complete - include it in averages
+        next_monday = current_monday + pd.Timedelta(days=7)
+        cutoff_date = next_monday
+        logging.info(f"Current week is complete. Including weeks before {cutoff_date}")
+    else:
+        # Current week is incomplete - exclude it
+        cutoff_date = current_monday
+        logging.info(f"Current week is incomplete. Including only weeks before {cutoff_date}")
+    
+    # Filter out rows from incomplete weeks
     rows_before = len(df)
-    df = df[df['Date'] < pd.Timestamp(current_monday)]
+    df = df[df['Date'] < pd.Timestamp(cutoff_date)]
     rows_after = len(df)
     
     if rows_before > rows_after:
-        logging.info(f"Filtered out {rows_before - rows_after} row(s) from incomplete week(s) (>= {current_monday})")
+        logging.info(f"Filtered out {rows_before - rows_after} row(s) from incomplete week(s) (>= {cutoff_date})")
     
     if df.empty:
         logging.warning("After filtering incomplete weeks, no data remains. Cannot calculate rolling average.")

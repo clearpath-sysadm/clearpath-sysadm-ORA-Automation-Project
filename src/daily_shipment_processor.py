@@ -97,12 +97,18 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     today = datetime.date.today()
     
     logger.info(f"Today: {today}")
-    logger.info(f"Current week (INCOMPLETE): {current_monday} to {current_sunday}")
-    logger.info(f"Prior complete week: {prior_monday} to {prior_sunday}")
     
-    # Process the most recent COMPLETE week (prior week)
-    processed_week_start = prior_monday
-    processed_week_end = prior_sunday
+    # Determine which week to process based on completeness
+    # If current week is complete (today is Saturday/Sunday after Friday), process current week
+    # Otherwise, process prior week
+    if is_week_complete(current_sunday):
+        processed_week_start = current_monday
+        processed_week_end = current_sunday
+        logger.info(f"Current week is COMPLETE (Friday has passed). Processing current week: {current_monday} to {current_sunday}")
+    else:
+        processed_week_start = prior_monday
+        processed_week_end = prior_sunday
+        logger.info(f"Current week is INCOMPLETE. Processing prior complete week: {prior_monday} to {prior_sunday}")
     
     # Ensure 'Ship Date' is in datetime format
     daily_items_df['Ship Date'] = pd.to_datetime(daily_items_df['Ship Date']).dt.date
@@ -119,10 +125,11 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     
     if processed_week_items_df.empty:
         logger.info(f"No shipments found for the processed week ({processed_week_start} to {processed_week_end}). "
-                   "Purging any partial weeks and returning existing history.")
-        # Purge any partial weeks (>= current_monday) from existing history
+                   "Purging any incomplete weeks and returning existing history.")
+        # Purge any incomplete weeks (>= next Monday) from existing history
+        next_monday = current_monday + datetime.timedelta(days=7)
         existing_history_df['Start Date'] = pd.to_datetime(existing_history_df['Start Date']).dt.date
-        existing_history_df = existing_history_df[existing_history_df['Start Date'] < current_monday].reset_index(drop=True)
+        existing_history_df = existing_history_df[existing_history_df['Start Date'] < next_monday].reset_index(drop=True)
         return existing_history_df
     
     # Helper function to filter raw shipment data for a specific week
@@ -149,9 +156,10 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     
     if processed_week_summary_df.empty:
         logger.warning(f"Aggregation of processed week ({processed_week_start} to {processed_week_end}) resulted in empty DataFrame.")
-        # Still purge partial weeks before returning
+        # Still purge incomplete weeks before returning
+        next_monday = current_monday + datetime.timedelta(days=7)
         existing_history_df['Start Date'] = pd.to_datetime(existing_history_df['Start Date']).dt.date
-        existing_history_df = existing_history_df[existing_history_df['Start Date'] < current_monday].reset_index(drop=True)
+        existing_history_df = existing_history_df[existing_history_df['Start Date'] < next_monday].reset_index(drop=True)
         return existing_history_df
     
     # Get the aggregated row
@@ -178,12 +186,14 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
             updated_history_df = updated_history_df.iloc[-52:]
         existing_history_df = updated_history_df
     
-    # PURGE any partial weeks (rows with Start Date >= current_monday)
+    # PURGE any incomplete future weeks (rows with Start Date >= next Monday)
+    # This allows completed weeks (e.g., on Saturday/Sunday) to remain in history
+    next_monday = current_monday + datetime.timedelta(days=7)
     before_purge = len(existing_history_df)
-    existing_history_df = existing_history_df[existing_history_df['Start Date'] < current_monday].reset_index(drop=True)
+    existing_history_df = existing_history_df[existing_history_df['Start Date'] < next_monday].reset_index(drop=True)
     after_purge = len(existing_history_df)
     if before_purge > after_purge:
-        logger.info(f"Purged {before_purge - after_purge} partial week(s) (Start Date >= {current_monday})")
+        logger.info(f"Purged {before_purge - after_purge} incomplete week(s) (Start Date >= {next_monday})")
     
     # Deduplication: Ensure only one entry per week
     existing_history_df = existing_history_df.sort_values(by=["Start Date", "Stop Date"], ascending=True)
