@@ -102,6 +102,23 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 
 ## Recent Changes
 
+**Phase 4 Complete - Script Migration (October 2025):**
+- ✅ weekly_reporter.py fully migrated to SQLite (replaces Google Sheets API)
+- ✅ daily_shipment_processor.py fully migrated with ShipStation API integration
+- ✅ Successfully fetched 854 shipments, stored 770 orders + 847 items
+- ✅ 52-week rolling averages maintained (263 weekly history records)
+- ✅ Workflow tracking operational (status, duration, records_processed)
+- ✅ All database UPSERT operations idempotent
+- ✅ ShipStation credentials configured in Replit Secrets
+
+**Phase 5.1 Complete - Dashboard UI/UX (October 2025):**
+- ✅ Auto-refresh every 60 seconds with Page Visibility API pause
+- ✅ Manual refresh button with loading states
+- ✅ Skeleton loaders for all dashboard sections
+- ✅ Error handling with inline error banners
+- ✅ "Last updated" timestamp with relative time display
+- ✅ Clickable inventory alerts
+
 **Database Architecture (December 2024):**
 - Designed complete SQLite schema replacing Google Sheets
 - Expert reviews confirm SQLite as optimal choice (vs PostgreSQL)
@@ -110,20 +127,17 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - Implemented money storage as INTEGER (cents) instead of DECIMAL
 - Created comprehensive migration and operations documentation
 
-**Dashboard Enhancements:**
-- Functional dark mode toggle with moon/sun icons
-- localStorage persistence for theme preference
-- Responsive design for all screen sizes
-
 **Documentation:**
 - Created 4 comprehensive technical documents (SCHEMA, MIGRATION, OPERATIONS, API_INTEGRATION)
 - Documented data flow from XML files → orders_inbox → ShipStation → shipped_orders
 - Established maintenance schedules and backup procedures
+- Updated PROJECT_PLAN.md with Phase 4.3 and 5.1 completion status
 
 ## Database Migration Status
 
-**Current State:** ✅ SQLite database operational with 917 historical rows
-**Legacy System:** Google Sheets (read-only for migration)
+**Current State:** ✅ SQLite database fully operational with 3,000+ rows across all tables
+**Legacy System:** Google Sheets (deprecated, migration complete)
+**Status:** Phase 4 complete, Phase 5 (Dashboard API) in progress
 
 **Migration Approach:** MVP-first strategy (13 hours total)
 
@@ -133,14 +147,18 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 3. ✅ Project Plan - COMPLETE (architect approved 13-hour optimized plan)
 4. ✅ Database Setup - COMPLETE (8 tables created, seeded with test data)
 5. ✅ ETL Development - COMPLETE (600+ line migration script with validation)
-6. ✅ Historical Data Migration - COMPLETE (917 rows, 12-month/52-week data)
+6. ✅ Historical Data Migration - COMPLETE (917 historical rows migrated from Google Sheets)
    - configuration_params: 32 rows
    - inventory_transactions: 28 rows
-   - shipped_orders: 598 rows
-   - weekly_shipped_history: 259 rows (52-week rolling averages ready!)
-   - **Note:** shipped_items empty (source sheet missing Order_Number column)
-7. ⏳ Script Integration - Ready to start (integrate weekly_reporter, daily_shipment_processor)
-8. ⏳ Dashboard API - Ready to start (Flask API for real-time data)
+   - shipped_orders: 598 historical + 770 current = 1,368 total
+   - shipped_items: 847 rows (from ShipStation API)
+   - weekly_shipped_history: 263 weeks (52-week rolling averages maintained)
+7. ✅ Script Integration - COMPLETE (weekly_reporter + daily_shipment_processor)
+   - All Google Sheets API calls eliminated
+   - Transaction context manager for atomicity
+   - Workflow tracking with status/duration/records_processed
+   - Tested with real ShipStation API: 1,819 records processed
+8. ⏳ Dashboard API - IN PROGRESS (Flask API for real-time data)
 9. ⏳ Replit Deployment - Ready to start (Core plan, Scheduled Deployments confirmed)
 10. ⏳ Cutover - Pending (switch scripts to database, deprecate Sheets)
 
