@@ -444,8 +444,8 @@ def run_daily_shipment_pull(request=None):
         # Create or update workflow record
         with transaction() as conn:
             conn.execute("""
-                INSERT INTO workflows (name, status, last_run_at)
-                VALUES ('daily_shipment_processor', 'running', CURRENT_TIMESTAMP)
+                INSERT INTO workflows (name, display_name, status, last_run_at)
+                VALUES ('daily_shipment_processor', 'Daily Shipment Processor', 'running', CURRENT_TIMESTAMP)
                 ON CONFLICT(name) DO UPDATE SET
                     status = 'running',
                     last_run_at = CURRENT_TIMESTAMP

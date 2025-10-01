@@ -56,16 +56,26 @@ def get_shipstation_headers(api_key: str, api_secret: str) -> dict:
 
 def get_shipstation_credentials():
     """
-    Retrieves ShipStation API credentials securely using unified secrets module.
+    Retrieves ShipStation API credentials from Replit environment variables or GCP Secret Manager.
+    Prioritizes Replit environment variables for Replit deployment.
     """
     try:
-        logger.info("Attempting to retrieve ShipStation API Key...")
+        # First check Replit environment variables (most common in Replit)
+        api_key = os.getenv('SHIPSTATION_API_KEY')
+        api_secret = os.getenv('SHIPSTATION_API_SECRET')
+        
+        if api_key and api_secret:
+            logger.info("Using ShipStation credentials from Replit environment variables")
+            return api_key, api_secret
+        
+        # Fallback to GCP Secret Manager (for Google Cloud deployments)
+        logger.info("Attempting to retrieve ShipStation API Key from GCP Secret Manager...")
         api_key = get_secret(settings.SHIPSTATION_API_KEY_SECRET_ID)
-        logger.info("Attempting to retrieve ShipStation API Secret...")
+        logger.info("Attempting to retrieve ShipStation API Secret from GCP Secret Manager...")
         api_secret = get_secret(settings.SHIPSTATION_API_SECRET_SECRET_ID)
         
         if not api_key or not api_secret:
-            logger.error("Failed to retrieve ShipStation API credentials.")
+            logger.error("Failed to retrieve ShipStation API credentials from all sources.")
             return None, None
         return api_key, api_secret
     except Exception as e:
