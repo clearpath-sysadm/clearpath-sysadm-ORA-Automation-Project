@@ -408,20 +408,68 @@ PRAGMA cache_size = -20000;          -- ✅ Enabled (20MB)
 
 ---
 
-#### 2.2 Seed Minimal Data (1 hour)
+#### 2.2 Seed Minimal Data (1 hour) ✅ **COMPLETED**
 
 **Objective:** Seed only data needed for MVP scripts
 
 **Tasks:**
-- [ ] Create `scripts/seed_database.py`
-- [ ] Seed 2 workflows: weekly_reporter, daily_shipment_processor
-- [ ] Seed 5 key products in inventory_current (17612, 17914, 17904, 17975, 18675)
-- [ ] Seed configuration_params (Rates, PalletConfig, InitialInventory)
+- [x] **Create `scripts/seed_database.py`** (145 lines)
+  - **Action:** Created comprehensive seeding script with validation
+  - **Action:** Transaction-wrapped seeding for atomicity
+  - **Action:** Automatic row count verification after insert
+  - **Result:** 20 rows inserted across 4 critical tables
+  
+- [x] **Seed 2 workflows:** weekly_reporter, daily_shipment_processor
+  - **Action:** Inserted workflow records with enabled status
+  - **Result:** Both automation workflows ready for execution tracking
+  
+- [x] **Seed 5 key products** in inventory_current (17612, 17914, 17904, 17975, 18675)
+  - **Action:** ORAMD Floss Picks 90ct, 150ct, Interdental Brushes, Tongue Cleaner, Whitening Strips
+  - **Action:** Initial quantities set to 0 (will be updated by migration)
+  - **Result:** Core product catalog ready for inventory tracking
+  
+- [x] **Seed configuration_params** (Rates, PalletConfig, InitialInventory, System)
+  - **Action:** Rates - pick_pack ($0.68), storage ($0.03), monthly rental ($300)
+  - **Action:** PalletConfig - capacity (156 cases), items_per_case (12)
+  - **Action:** InitialInventory - placeholders for 5 key products
+  - **Action:** System - database_version (1.0), last_migration_date
+  - **Result:** 12 configuration parameters for business logic
 
-**Deliverables:**
-- `scripts/seed_database.py` (NEW)
-- Database ready for migration
-- Minimal test data for validation
+**Deliverables:** ✅
+- `scripts/seed_database.py` (NEW - 145 lines with validation)
+- `scripts/view_database.py` (NEW - 70 lines for database inspection)
+- Database ready for historical data migration
+- 20 rows of minimal test data across 4 tables
+
+**Files Created:**
+- `scripts/seed_database.py` - Complete seeding script with verification
+- `scripts/view_database.py` - Database inspection utility
+
+**Validation:** ✅
+- Script tested successfully - all data inserted
+- Row counts verified: workflows (2), configuration_params (12), inventory_current (5), system_kpis (1)
+- Viewer script tested on all seeded tables
+- Foreign key constraints enforced during seeding
+- Transaction rollback on error
+
+**Data Seeded:**
+- **2 workflows** - weekly_reporter, daily_shipment_processor (both enabled)
+- **5 key products** - Core ORAMD inventory items with reorder points
+- **12 config params** - Business rates, pallet configuration, system metadata
+- **1 KPI snapshot** - Initial baseline for today's date
+
+**Improvements (Post-Architect Feedback):**
+- [x] Made seeding idempotent with INSERT OR IGNORE
+- [x] Fixed success message (20 rows, not 21)
+- [x] Added note about script being safe to re-run
+
+**Architect Review:** ✅ **APPROVED** (Pass status)
+- Seed data appropriate and sufficient for MVP
+- Configuration values reasonable for initial operation
+- Viewer utility functional and useful
+- Script is idempotent (INSERT OR IGNORE prevents duplicates on re-run)
+
+**Status:** ✅ **COMPLETED** - Database ready for Phase 3 migration
 
 ---
 
