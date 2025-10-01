@@ -111,24 +111,30 @@ def calculate_daily_inventory(initial_inventory: dict, transactions_df: pd.DataF
 
 def calculate_current_inventory(initial_inventory: dict, inventory_transactions_df: pd.DataFrame, shipped_items_df: pd.DataFrame, key_skus: list, current_week_start_date: datetime.date, current_week_end_date: datetime.date) -> pd.DataFrame:
     """
-    Calculates the current inventory by applying initial values and ALL historical transactions.
-    Initial inventory + ALL receives/repacks/adjustments - ALL shipments = Current inventory
+    Calculates the current inventory by applying initial values (as of 9/19/2025) and transactions AFTER that baseline date.
+    Initial inventory (9/19/2025) + receives/repacks/adjustments AFTER 9/19 - shipments AFTER 9/19 = Current inventory
     """
     try:
-        logger.info(f"Calculating current inventory using ALL historical data...")
+        # Baseline date when InitialInventory was set
+        baseline_date = datetime.strptime('2025-09-19', '%Y-%m-%d').date()
+        logger.info(f"Calculating current inventory from baseline date: {baseline_date}")
         
         # Standardize initial_inventory keys to strings
         current_inventory = {str(k): v for k, v in initial_inventory.items()}
-        logger.info(f"Initial inventory loaded for {len(current_inventory)} SKUs")
+        logger.info(f"Initial inventory (as of {baseline_date}) loaded for {len(current_inventory)} SKUs")
         logger.debug(f"Initial inventory: {current_inventory}")
 
-        # Process ALL inventory transactions (no date filtering)
-        all_transactions_df = inventory_transactions_df.copy()
-        logger.info(f"Processing {len(all_transactions_df)} inventory transactions")
+        # Process ONLY inventory transactions AFTER the baseline date
+        all_transactions_df = inventory_transactions_df[
+            inventory_transactions_df['Date'] > baseline_date
+        ].copy()
+        logger.info(f"Processing {len(all_transactions_df)} inventory transactions after {baseline_date}")
 
-        # Process ALL shipped items (no date filtering)
-        all_shipped_items_df = shipped_items_df.copy()
-        logger.info(f"Processing {len(all_shipped_items_df)} shipped items")
+        # Process ONLY shipped items AFTER the baseline date
+        all_shipped_items_df = shipped_items_df[
+            shipped_items_df['Date'] > baseline_date
+        ].copy()
+        logger.info(f"Processing {len(all_shipped_items_df)} shipped items after {baseline_date}")
 
         # Prepare shipped items as transactions
         all_shipped_items_df['SKU'] = all_shipped_items_df['SKU'].astype(str)
