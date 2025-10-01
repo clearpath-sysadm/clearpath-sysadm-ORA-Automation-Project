@@ -241,33 +241,32 @@ def api_shipped_orders():
 
 @app.route('/api/shipped_items')
 def api_shipped_items():
-    """Get all shipped items with pagination"""
+    """Get shipped items for last 40 days"""
     try:
+        # Calculate date range: last 40 days
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=40)
+        
         query = """
             SELECT 
-                id,
                 ship_date,
                 sku_lot,
-                base_sku,
                 quantity_shipped,
-                order_number,
-                created_at
+                base_sku
             FROM shipped_items
+            WHERE ship_date >= ? AND ship_date <= ?
             ORDER BY ship_date DESC, id DESC
             LIMIT 5000
         """
-        results = execute_query(query)
+        results = execute_query(query, (start_date.isoformat(), end_date.isoformat()))
         
         items = []
         for row in results:
             items.append({
-                'id': row[0],
-                'ship_date': row[1],
-                'sku_lot': row[2] or '',
-                'base_sku': row[3],
-                'quantity_shipped': row[4],
-                'order_number': row[5] or '',
-                'created_at': row[6]
+                'ship_date': row[0],
+                'sku_lot': row[1] or '',
+                'quantity_shipped': row[2],
+                'base_sku': row[3]
             })
         
         return jsonify({

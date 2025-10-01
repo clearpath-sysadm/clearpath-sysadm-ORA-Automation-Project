@@ -194,20 +194,20 @@
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-value" id="totalItems">-</div>
-                <div class="stat-label">Total Line Items</div>
+                <div class="stat-label">Total Line Items (Last 40 Days)</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="totalQuantity">-</div>
-                <div class="stat-label">Total Units Shipped</div>
+                <div class="stat-label">Total Units Shipped (Last 40 Days)</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="uniqueSkus">-</div>
-                <div class="stat-label">Unique SKUs</div>
+                <div class="stat-label">Unique SKUs (Last 40 Days)</div>
             </div>
         </div>
 
         <div class="controls">
-            <input type="text" class="search-box" id="searchBox" placeholder="Search by SKU, order number, or ship date...">
+            <input type="text" class="search-box" id="searchBox" placeholder="Search by SKU, lot number, or ship date...">
             <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
         </div>
 
@@ -219,10 +219,9 @@
                 <thead>
                     <tr>
                         <th>Ship Date</th>
+                        <th>SKU - Lot</th>
+                        <th>Quantity Shipped</th>
                         <th>Base SKU</th>
-                        <th>SKU/Lot</th>
-                        <th>Quantity</th>
-                        <th>Order Number</th>
                     </tr>
                 </thead>
                 <tbody id="itemsBody">
@@ -266,10 +265,9 @@
             tbody.innerHTML = items.map(item => `
                 <tr>
                     <td>${item.ship_date || '-'}</td>
-                    <td><span class="sku-badge">${item.base_sku || '-'}</span></td>
                     <td>${item.sku_lot || '-'}</td>
                     <td><strong>${item.quantity_shipped || 0}</strong></td>
-                    <td>${item.order_number || '-'}</td>
+                    <td><span class="sku-badge">${item.base_sku || '-'}</span></td>
                 </tr>
             `).join('');
             
@@ -298,7 +296,6 @@
             const filtered = allItems.filter(item => 
                 (item.base_sku && item.base_sku.toLowerCase().includes(searchTerm)) ||
                 (item.sku_lot && item.sku_lot.toLowerCase().includes(searchTerm)) ||
-                (item.order_number && item.order_number.toLowerCase().includes(searchTerm)) ||
                 (item.ship_date && item.ship_date.includes(searchTerm))
             );
             
