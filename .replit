@@ -53,3 +53,7 @@ run = ["python", "src/weekly_reporter.py"]
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 33277
+externalPort = 3000

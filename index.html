@@ -15,6 +15,12 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f5f7fa;
             color: #333;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode {
+            background-color: #15202b;
+            color: #e7e9ea;
         }
 
         .header {
@@ -64,6 +70,12 @@
             background: white;
             border-right: 1px solid #e1e8ed;
             padding: 1.5rem 0;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .sidebar {
+            background: #192734;
+            border-right-color: #38444d;
         }
 
         .nav-item {
@@ -76,9 +88,18 @@
             border-left: 3px solid transparent;
         }
 
+        body.dark-mode .nav-item {
+            color: #8b98a5;
+        }
+
         .nav-item:hover {
             background: #f7f9fc;
             color: #1d1f23;
+        }
+
+        body.dark-mode .nav-item:hover {
+            background: #1c2938;
+            color: #e7e9ea;
         }
 
         .nav-item.active {
@@ -86,6 +107,11 @@
             color: #1d9bf0;
             border-left-color: #1d9bf0;
             font-weight: 500;
+        }
+
+        body.dark-mode .nav-item.active {
+            background: #1e3a52;
+            color: #1d9bf0;
         }
 
         .nav-item span {
@@ -110,6 +136,13 @@
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             border: 1px solid #e1e8ed;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .stat-card {
+            background: #192734;
+            border-color: #38444d;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .stat-value {
@@ -117,12 +150,22 @@
             font-weight: 700;
             color: #1d1f23;
             margin-bottom: 0.25rem;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .stat-value {
+            color: #e7e9ea;
         }
 
         .stat-label {
             color: #536471;
             font-size: 0.9rem;
             margin-bottom: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .stat-label {
+            color: #8b98a5;
         }
 
         .stat-change {
@@ -157,6 +200,13 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             border: 1px solid #e1e8ed;
             margin-bottom: 1.5rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .card {
+            background: #192734;
+            border-color: #38444d;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .card-header {
@@ -164,6 +214,11 @@
             font-weight: 600;
             margin-bottom: 1rem;
             color: #1d1f23;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .card-header {
+            color: #e7e9ea;
         }
 
         .alert-item {
@@ -194,16 +249,31 @@
             border: 1px solid #e1e8ed;
             border-radius: 8px;
             margin-bottom: 0.75rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .automation-item {
+            border-color: #38444d;
         }
 
         .automation-info h4 {
             font-weight: 500;
             margin-bottom: 0.25rem;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .automation-info h4 {
+            color: #e7e9ea;
         }
 
         .automation-info p {
             color: #536471;
             font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .automation-info p {
+            color: #8b98a5;
         }
 
         .automation-status {
@@ -262,6 +332,7 @@
     <header class="header">
         <h1>🧪 ORA Business Automation Dashboard</h1>
         <div class="header-actions">
+            <div class="header-icon" id="dark-mode-toggle" title="Toggle Dark Mode">🌙</div>
             <div class="header-icon">🔔</div>
             <div class="header-icon">👤</div>
             <div class="header-icon">⚙️</div>
@@ -409,6 +480,29 @@
     </div>
 
     <script>
+        // Dark mode toggle functionality
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const body = document.body;
+        
+        // Check for saved dark mode preference
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode === 'enabled') {
+            body.classList.add('dark-mode');
+            darkModeToggle.textContent = '☀️';
+        }
+        
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                darkModeToggle.textContent = '☀️';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                darkModeToggle.textContent = '🌙';
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        });
+
         // Add some basic interactivity
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function(e) {
