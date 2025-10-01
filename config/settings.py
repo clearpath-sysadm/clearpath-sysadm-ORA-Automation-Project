@@ -110,6 +110,16 @@ GOOGLE_SHEET_ID = "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo"
 # to authenticate with Google Sheets and Google Drive APIs.
 GOOGLE_SHEETS_SA_KEY_SECRET_ID = "google-sheets-service-account-key"
 
+# Google Sheets Authentication Mode
+# Options: 'auto' (default), 'connector', 'service_account'
+# - 'auto': Prefer Replit Connector if available, fallback to service account
+# - 'connector': Use Replit Connector only
+# - 'service_account': Use service account credentials only
+GS_AUTH_MODE = os.environ.get('GS_AUTH_MODE', 'auto')
+
+# Optional: Specific Replit Connector connection ID (if multiple exist)
+CONNECTORS_GOOGLE_SHEET_CONNECTION_ID = os.environ.get('CONNECTORS_GOOGLE_SHEET_CONNECTION_ID', None)
+
 ORA_PROCESSING_STATE_TAB_NAME = 'ORA_Processing_State'
 MONTHLY_CHARGE_REPORT_OUTPUT_TAB_NAME = 'Monthly Charge Report'
 WEEKLY_REPORT_OUTPUT_TAB_NAME = 'Weekly Report'

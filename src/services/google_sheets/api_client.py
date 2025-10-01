@@ -1,12 +1,15 @@
 # filename: src/services/google_sheets/api_client.py
 """
 This module provides functions for reading from and writing to Google Sheets
-using the Google Sheets API. It handles authentication internally via Secret Manager.
+using the Google Sheets API. Supports both Replit Connector OAuth2 and service account auth.
 """
 import json
 import logging
+import os
+from datetime import datetime, timedelta, timezone
 import pandas as pd
-from google.oauth2 import service_account
+import requests
+from google.oauth2 import service_account, credentials as oauth2_credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -19,28 +22,147 @@ logger = logging.getLogger(__name__)
 # Ensure this logger outputs DEBUG logs regardless of root logger config
 logger.setLevel(logging.DEBUG)
 
-# Ensure this logger outputs DEBUG logs regardless of root logger config
-logger.setLevel(logging.DEBUG)
-
 # Cache for credentials to avoid repeated Secret Manager access and credential building
 _cached_credentials = None
+
+# Cache for Replit Connector tokens (in-memory only, never persisted)
+_connector_token_cache = {
+    'access_token': None,
+    'expires_at': None
+}
+
+def _get_replit_connector_token():
+    """
+    Fetches OAuth2 access token from Replit Connectors API.
+    Implements in-memory caching with 60s expiry skew.
+    
+    Returns:
+        tuple: (access_token, expires_at_datetime) or (None, None) if unavailable
+    """
+    global _connector_token_cache
+    
+    # Check if cached token is still valid (with 60s buffer)
+    if _connector_token_cache['access_token'] and _connector_token_cache['expires_at']:
+        now = datetime.now(timezone.utc)
+        if _connector_token_cache['expires_at'] > now + timedelta(seconds=60):
+            logger.debug("Using cached Replit Connector token")
+            return _connector_token_cache['access_token'], _connector_token_cache['expires_at']
+    
+    # Determine X-REPLIT-TOKEN from environment
+    repl_identity = os.environ.get('REPL_IDENTITY')
+    web_repl_renewal = os.environ.get('WEB_REPL_RENEWAL')
+    
+    if repl_identity:
+        x_replit_token = f"repl {repl_identity}"
+    elif web_repl_renewal:
+        x_replit_token = f"depl {web_repl_renewal}"
+    else:
+        logger.warning("No REPL_IDENTITY or WEB_REPL_RENEWAL found - Replit Connector unavailable")
+        return None, None
+    
+    # Fetch token from Replit Connectors API
+    hostname = os.environ.get('REPLIT_CONNECTORS_HOSTNAME', 'connectors.replit.com')
+    url = f"https://{hostname}/api/v2/connection"
+    params = {
+        'include_secrets': 'true',
+        'connector_names': 'google-sheet'
+    }
+    headers = {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': x_replit_token
+    }
+    
+    try:
+        logger.debug(f"Fetching token from Replit Connectors API: {url}")
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        items = data.get('items', [])
+        
+        if not items:
+            logger.warning("No Google Sheets connections found in Replit Connectors")
+            return None, None
+        
+        # Use first connection or specified connection ID
+        connection = items[0]
+        if settings.CONNECTORS_GOOGLE_SHEET_CONNECTION_ID:
+            for conn in items:
+                if conn.get('id') == settings.CONNECTORS_GOOGLE_SHEET_CONNECTION_ID:
+                    connection = conn
+                    break
+        
+        # Extract access token and expiry
+        conn_settings = connection.get('settings', {})
+        access_token = conn_settings.get('access_token')
+        expires_at_str = conn_settings.get('expires_at')
+        
+        if not access_token:
+            logger.error("No access_token found in Replit Connector response")
+            return None, None
+        
+        # Parse expiry (ISO 8601 format)
+        expires_at = None
+        if expires_at_str:
+            try:
+                expires_at = datetime.fromisoformat(expires_at_str.replace('Z', '+00:00'))
+            except ValueError:
+                logger.warning(f"Could not parse expires_at: {expires_at_str}")
+        
+        # Cache the token
+        _connector_token_cache['access_token'] = access_token
+        _connector_token_cache['expires_at'] = expires_at
+        
+        logger.info("Successfully fetched token from Replit Connector")
+        return access_token, expires_at
+        
+    except requests.RequestException as e:
+        logger.error(f"Failed to fetch token from Replit Connectors: {e}")
+        return None, None
+    except Exception as e:
+        logger.error(f"Unexpected error fetching Replit Connector token: {e}", exc_info=True)
+        return None, None
+
 
 def _get_sheets_credentials():
     """
     Helper function to get authenticated Google Sheets credentials.
-    Retrieves the service account key from Secret Manager and caches it.
+    Implements auto auth strategy: prefer Replit Connector, fallback to service account.
+    
+    Returns:
+        google.auth.credentials.Credentials: Authenticated credentials
     """
     global _cached_credentials
-    if _cached_credentials:
-        logger.debug({"message": "Using cached Google Sheets credentials."})
+    
+    auth_mode = settings.GS_AUTH_MODE
+    
+    # Try Replit Connector if mode is 'auto' or 'connector'
+    if auth_mode in ['auto', 'connector']:
+        access_token, expires_at = _get_replit_connector_token()
+        
+        if access_token:
+            logger.info("Using Replit Connector OAuth2 credentials")
+            creds = oauth2_credentials.Credentials(
+                token=access_token,
+                expiry=expires_at
+            )
+            return creds
+        elif auth_mode == 'connector':
+            raise RuntimeError("GS_AUTH_MODE set to 'connector' but Replit Connector unavailable")
+        else:
+            logger.info("Replit Connector unavailable, falling back to service account")
+    
+    # Use service account credentials (cached)
+    if _cached_credentials and auth_mode != 'connector':
+        logger.debug("Using cached service account credentials")
         return _cached_credentials
 
     try:
-        logger.debug({"message": "Attempting to retrieve Google Sheets service account key."})
+        logger.debug("Attempting to retrieve Google Sheets service account key")
         service_account_key_json = get_secret(settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID)
 
         if not service_account_key_json:
-            logger.critical({"message": "Failed to retrieve Google Sheets service account key.", "secret_id": settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID})
+            logger.critical(f"Failed to retrieve Google Sheets service account key: {settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID}")
             raise ValueError("Google Sheets service account key not available.")
 
         creds_info = json.loads(service_account_key_json)
@@ -48,15 +170,15 @@ def _get_sheets_credentials():
         # Build credentials with all necessary scopes from settings
         creds = service_account.Credentials.from_service_account_info(creds_info, scopes=settings.SCOPES)
         
-        _cached_credentials = creds # Cache the credentials
-        logger.info({"message": "Google Sheets credentials successfully retrieved and cached."})
+        _cached_credentials = creds
+        logger.info("Google Sheets service account credentials successfully retrieved and cached")
         return creds
 
     except json.JSONDecodeError as e:
-        logger.critical({"message": "Failed to parse Google Sheets service account JSON key.", "error": str(e)}, exc_info=True)
+        logger.critical(f"Failed to parse Google Sheets service account JSON key: {e}", exc_info=True)
         raise ValueError("Invalid Google Sheets service account JSON format.") from e
     except Exception as e:
-        logger.critical({"message": "An unexpected error occurred while getting Google Sheets credentials.", "error": str(e)}, exc_info=True)
+        logger.critical(f"Unexpected error getting Google Sheets credentials: {e}", exc_info=True)
         raise RuntimeError("Could not establish Google Sheets credentials.") from e
 
 def get_google_sheet_data(sheet_id: str, worksheet_name: str) -> list | None:
