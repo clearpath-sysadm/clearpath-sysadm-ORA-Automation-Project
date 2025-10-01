@@ -66,6 +66,35 @@ class MigrationStats:
         
         print("\n" + "=" * 70)
 
+def list_to_dataframe(data, column_mapping=None):
+    """Convert Google Sheets list format to pandas DataFrame with normalized column names
+    
+    Args:
+        data: List of lists from Google Sheets
+        column_mapping: Optional dict to map actual column names to expected names
+    """
+    if not data or len(data) < 2:
+        return pd.DataFrame()
+    
+    # Normalize column names to match script expectations
+    headers = data[0]
+    normalized_headers = []
+    for h in headers:
+        # Replace spaces with underscores and remove special characters
+        normalized = h.replace(' ', '_').replace('-', '_').replace('/', '_')
+        # Remove extra underscores
+        normalized = '_'.join(filter(None, normalized.split('_')))
+        normalized_headers.append(normalized)
+    
+    rows = data[1:]
+    df = pd.DataFrame(rows, columns=normalized_headers)
+    
+    # Apply column mapping if provided
+    if column_mapping:
+        df = df.rename(columns=column_mapping)
+    
+    return df
+
 def dollars_to_cents(value):
     """Convert dollar amount to cents (returns int or None)"""
     if pd.isna(value) or value == '':
@@ -112,11 +141,19 @@ def migrate_configuration_params(conn, dry_run=False) -> Tuple[int, int]:
     
     # Fetch data from Google Sheets
     print(f"  Fetching data from sheet: {ORA_CONFIGURATION_TAB_NAME}")
-    df = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_CONFIGURATION_TAB_NAME)
+    data = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_CONFIGURATION_TAB_NAME)
     
-    if df is None or df.empty:
+    if data is None or len(data) < 2:
         print("  ⚠️  No data found in source sheet")
         return 0, 0
+    
+    # Map actual column names to expected names
+    column_mapping = {
+        'ParameterCategory': 'Category',
+        'ParameterName': 'Parameter_Name',
+        'Unit_Description': 'Unit_Description'
+    }
+    df = list_to_dataframe(data, column_mapping)
     
     print(f"  Found {len(df)} rows in source")
     
@@ -168,12 +205,17 @@ def migrate_inventory_transactions(conn, dry_run=False) -> Tuple[int, int]:
     print("-" * 70)
     
     print(f"  Fetching data from sheet: {INVENTORY_TRANSACTIONS_TAB_NAME}")
-    df = get_google_sheet_data(GOOGLE_SHEET_ID, INVENTORY_TRANSACTIONS_TAB_NAME)
+    data = get_google_sheet_data(GOOGLE_SHEET_ID, INVENTORY_TRANSACTIONS_TAB_NAME)
     
-    if df is None or df.empty:
+    if data is None or len(data) < 2:
         print("  ⚠️  No data found in source sheet")
         return 0, 0
     
+    # Map actual column names to expected names
+    column_mapping = {
+        'TransactionType': 'Transaction_Type'
+    }
+    df = list_to_dataframe(data, column_mapping)
     print(f"  Found {len(df)} total rows in source")
     
     rows_migrated = 0
@@ -239,18 +281,23 @@ def migrate_shipped_orders(conn, dry_run=False) -> Tuple[int, int]:
     print("-" * 70)
     
     print(f"  Fetching data from sheet: {SHIPPED_ORDERS_DATA_TAB_NAME}")
-    df = get_google_sheet_data(GOOGLE_SHEET_ID, SHIPPED_ORDERS_DATA_TAB_NAME)
+    data = get_google_sheet_data(GOOGLE_SHEET_ID, SHIPPED_ORDERS_DATA_TAB_NAME)
     
-    if df is None or df.empty:
+    if data is None or len(data) < 2:
         print("  ⚠️  No data found in source sheet")
         return 0, 0
     
+    # Map actual column names to expected names
+    column_mapping = {
+        'OrderNumber': 'Order_Number'
+    }
+    df = list_to_dataframe(data, column_mapping)
     print(f"  Found {len(df)} total rows in source")
     
     rows_migrated = 0
     rows_skipped = 0
     
-    # Expected columns: Ship_Date, Order_Number, Customer_Email, Total_Items, ShipStation_Order_ID
+    # Expected columns: Ship_Date, Order_Number (Customer_Email, Total_Items, ShipStation_Order_ID are optional)
     for idx, row in df.iterrows():
         ship_date = parse_date(row.get('Ship_Date', None))
         order_number = row.get('Order_Number', '')
@@ -303,12 +350,13 @@ def migrate_shipped_items(conn, dry_run=False) -> Tuple[int, int]:
     print("-" * 70)
     
     print(f"  Fetching data from sheet: {SHIPPED_ITEMS_DATA_TAB_NAME}")
-    df = get_google_sheet_data(GOOGLE_SHEET_ID, SHIPPED_ITEMS_DATA_TAB_NAME)
+    data = get_google_sheet_data(GOOGLE_SHEET_ID, SHIPPED_ITEMS_DATA_TAB_NAME)
     
-    if df is None or df.empty:
+    if data is None or len(data) < 2:
         print("  ⚠️  No data found in source sheet")
         return 0, 0
     
+    df = list_to_dataframe(data)
     print(f"  Found {len(df)} total rows in source")
     
     rows_migrated = 0
@@ -372,21 +420,45 @@ def migrate_weekly_shipped_history(conn, dry_run=False) -> Tuple[int, int]:
     print("-" * 70)
     
     print(f"  Fetching data from sheet: {ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME}")
-    df = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
+    data = get_google_sheet_data(GOOGLE_SHEET_ID, ORA_WEEKLY_SHIPPED_HISTORY_TAB_NAME)
     
-    if df is None or df.empty:
+    if data is None or len(data) < 2:
         print("  ⚠️  No data found in source sheet")
         return 0, 0
     
-    print(f"  Found {len(df)} total rows in source")
+    df = list_to_dataframe(data)
+    print(f"  Found {len(df)} total rows in source (wide format)")
+    
+    # The sheet is in wide format with SKUs as columns - need to unpivot
+    # First two columns are Start_Date and Stop_Date, rest are SKUs
+    if len(df.columns) < 3:
+        print("  ⚠️  Sheet does not have expected wide format (need at least Start/Stop dates + 1 SKU column)")
+        return 0, 0
+    
+    # Get date columns and SKU columns
+    date_cols = df.columns[:2].tolist()  # Start_Date, Stop_Date
+    sku_cols = df.columns[2:].tolist()   # All SKU columns
+    
+    # Rename date columns if needed
+    df = df.rename(columns={date_cols[0]: 'Start_Date', date_cols[1]: 'End_Date'})
+    
+    # Unpivot: convert from wide to long format
+    df_long = df.melt(
+        id_vars=['Start_Date', 'End_Date'],
+        value_vars=sku_cols,
+        var_name='SKU',
+        value_name='Quantity_Shipped'
+    )
+    
+    print(f"  Unpivoted to {len(df_long)} rows (long format)")
     
     rows_migrated = 0
     rows_skipped = 0
     
     # Expected columns: Start_Date, End_Date, SKU, Quantity_Shipped
-    for idx, row in df.iterrows():
+    for idx, row in df_long.iterrows():
         start_date = parse_date(row.get('Start_Date', None))
-        end_date = parse_date(row.get('End_Date', None))
+        end_date = parse_date(row.get('End_Date', None) or row.get('Stop_Date', None))
         sku = row.get('SKU', '')
         quantity_shipped = row.get('Quantity_Shipped', 0)
         
