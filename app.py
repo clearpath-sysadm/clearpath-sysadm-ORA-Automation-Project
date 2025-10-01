@@ -24,7 +24,7 @@ app.config['JSON_SORT_KEYS'] = False
 DB_PATH = os.path.join(project_root, 'ora.db')
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html']
 
 @app.route('/')
 def index():
@@ -580,6 +580,217 @@ def api_sync_shipstation():
             'success': True,
             'message': 'ShipStation sync started in background'
         })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/inventory_transactions', methods=['GET'])
+def api_get_inventory_transactions():
+    """Get inventory transactions with optional filters"""
+    try:
+        from flask import request
+        
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        sku = request.args.get('sku')
+        transaction_type = request.args.get('transaction_type')
+        
+        query = "SELECT id, date, sku, quantity, transaction_type, notes, created_at FROM inventory_transactions WHERE 1=1"
+        params = []
+        
+        if start_date:
+            query += " AND date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND date <= ?"
+            params.append(end_date)
+        if sku:
+            query += " AND sku = ?"
+            params.append(sku)
+        if transaction_type:
+            query += " AND transaction_type = ?"
+            params.append(transaction_type)
+        
+        query += " ORDER BY date DESC, created_at DESC"
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        conn.close()
+        
+        transactions = []
+        for row in results:
+            transactions.append({
+                'id': row[0],
+                'date': row[1],
+                'sku': row[2],
+                'quantity': row[3],
+                'transaction_type': row[4],
+                'notes': row[5] or '',
+                'created_at': row[6]
+            })
+        
+        return jsonify(transactions)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/inventory_transactions', methods=['POST'])
+def api_create_inventory_transaction():
+    """Create new inventory transaction"""
+    try:
+        from flask import request
+        
+        data = request.get_json()
+        date = data.get('date')
+        sku = data.get('sku')
+        quantity = data.get('quantity')
+        transaction_type = data.get('transaction_type')
+        notes = data.get('notes', '')
+        
+        if not all([date, sku, quantity, transaction_type]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields: date, sku, quantity, transaction_type'
+            }), 400
+        
+        quantity = int(quantity)
+        if quantity == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Quantity cannot be zero'
+            }), 400
+        
+        valid_types = ['Receive', 'Ship', 'Adjust Up', 'Adjust Down', 'Repack']
+        if transaction_type not in valid_types:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid transaction type. Must be one of: {", ".join(valid_types)}'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO inventory_transactions (date, sku, quantity, transaction_type, notes)
+            VALUES (?, ?, ?, ?, ?)
+        """, (date, sku, quantity, transaction_type, notes))
+        conn.commit()
+        transaction_id = cursor.lastrowid
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'id': transaction_id,
+            'message': 'Transaction created successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/inventory_transactions/<int:transaction_id>', methods=['PUT'])
+def api_update_inventory_transaction(transaction_id):
+    """Update existing inventory transaction"""
+    try:
+        from flask import request
+        
+        data = request.get_json()
+        date = data.get('date')
+        sku = data.get('sku')
+        quantity = data.get('quantity')
+        transaction_type = data.get('transaction_type')
+        notes = data.get('notes', '')
+        
+        if not all([date, sku, quantity, transaction_type]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields: date, sku, quantity, transaction_type'
+            }), 400
+        
+        quantity = int(quantity)
+        if quantity == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Quantity cannot be zero'
+            }), 400
+        
+        valid_types = ['Receive', 'Ship', 'Adjust Up', 'Adjust Down', 'Repack']
+        if transaction_type not in valid_types:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid transaction type. Must be one of: {", ".join(valid_types)}'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE inventory_transactions 
+            SET date = ?, sku = ?, quantity = ?, transaction_type = ?, notes = ?
+            WHERE id = ?
+        """, (date, sku, quantity, transaction_type, notes, transaction_id))
+        conn.commit()
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Transaction not found'
+            }), 404
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Transaction updated successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/inventory_transactions/<int:transaction_id>', methods=['DELETE'])
+def api_delete_inventory_transaction(transaction_id):
+    """Delete inventory transaction"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM inventory_transactions WHERE id = ?", (transaction_id,))
+        conn.commit()
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Transaction not found'
+            }), 404
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Transaction deleted successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/inventory_transactions/skus', methods=['GET'])
+def api_get_skus():
+    """Get list of distinct SKUs for dropdown"""
+    try:
+        query = "SELECT DISTINCT sku FROM inventory_transactions ORDER BY sku"
+        results = execute_query(query)
+        skus = [row[0] for row in results]
+        return jsonify(skus)
     except Exception as e:
         return jsonify({
             'success': False,
