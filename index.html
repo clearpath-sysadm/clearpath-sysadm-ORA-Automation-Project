@@ -352,6 +352,24 @@
             background: rgba(255,255,255,0.3);
         }
 
+        .header-nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .header-nav-link:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .header-nav-link.active {
+            background: rgba(255,255,255,0.3);
+            font-weight: 600;
+        }
+
         .container {
             display: flex;
             min-height: calc(100vh - 80px);
@@ -682,11 +700,10 @@
             </button>
         </div>
         <div class="header-actions">
-            <div class="header-icon" id="dark-mode-toggle" title="Toggle Dark Mode">🌙</div>
-            <div class="header-icon">🔔</div>
-            <div class="header-icon">👤</div>
-            <div class="header-icon">⚙️</div>
-            <div class="header-icon">📊</div>
+            <a href="/" class="header-nav-link active">Dashboard</a>
+            <a href="/shipped_orders.html" class="header-nav-link">Shipped Orders</a>
+            <a href="/shipped_items.html" class="header-nav-link">Shipped Items</a>
+            <a href="/charge_report.html" class="header-nav-link">Charge Report</a>
         </div>
     </header>
 
