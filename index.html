@@ -372,10 +372,36 @@
             margin-bottom: 1rem;
             color: #1d1f23;
             transition: color 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         body.dark-mode .card-header {
             color: #e7e9ea;
+        }
+
+        .btn-create-po {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #1d9bf0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .btn-create-po:hover {
+            background: #1a8cd8;
+            transform: translateY(-1px);
+        }
+
+        .btn-create-po:active {
+            transform: translateY(0);
         }
 
         .alert-item {
@@ -386,6 +412,18 @@
             border-radius: 8px;
             background: #fff8e1;
             border-left: 4px solid #ffad1f;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .alert-link {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .alert-link:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .alert-item.critical {
@@ -566,22 +604,27 @@
             </div>
 
             <div class="card" id="alerts-section">
-                <div class="card-header">📦 Inventory Alerts</div>
+                <div class="card-header">
+                    📦 Inventory Alerts
+                    <button class="btn-create-po" onclick="createPurchaseOrder()" title="Create Purchase Order">
+                        📧 Create PO
+                    </button>
+                </div>
                 <!-- Skeleton Loaders -->
                 <div class="skeleton-alert skeleton" id="alert-skeleton-1"></div>
                 <div class="skeleton-alert skeleton" id="alert-skeleton-2"></div>
                 <div class="skeleton-alert skeleton" id="alert-skeleton-3"></div>
                 
                 <!-- Actual Alerts -->
-                <div class="alert-item critical hidden" data-alert-item>
+                <a href="#inventory?productId=17612" class="alert-item critical hidden alert-link" data-alert-item data-product-id="17612">
                     <strong>⚠️ ORA Clarity Complete (17612)</strong> - Low Stock: 45 units remaining
-                </div>
-                <div class="alert-item hidden" data-alert-item>
+                </a>
+                <a href="#inventory?productId=17975" class="alert-item hidden alert-link" data-alert-item data-product-id="17975">
                     <strong>⚠️ ORA Travel Pack (17975)</strong> - Reorder Point: 28 units remaining
-                </div>
-                <div class="alert-item normal hidden" data-alert-item>
+                </a>
+                <a href="#inventory?productId=17904" class="alert-item normal hidden alert-link" data-alert-item data-product-id="17904">
                     <strong>✅ ORA Essential Kit (17904)</strong> - Normal Stock: 420 units available
-                </div>
+                </a>
             </div>
 
             <div class="card" id="automation-section">
@@ -880,6 +923,36 @@
 
         // Initial data load
         loadDashboardData();
+
+        // Create Purchase Order functionality
+        function createPurchaseOrder() {
+            // Get all critical/low stock alerts
+            const alerts = document.querySelectorAll('.alert-item.critical, .alert-item:not(.normal):not(.critical)');
+            const lowStockProducts = [];
+            
+            alerts.forEach(alert => {
+                const productId = alert.getAttribute('data-product-id');
+                const text = alert.textContent;
+                const match = text.match(/(.*?)\s*\((\d+)\)/);
+                if (match) {
+                    const productName = match[1].replace(/⚠️|✅/g, '').trim();
+                    lowStockProducts.push(`${productName} (ID: ${productId})`);
+                }
+            });
+            
+            const subject = encodeURIComponent('Purchase Order Request - Low Stock Items');
+            const body = encodeURIComponent(
+                `Hi Team,\n\n` +
+                `The following products are running low on inventory and need to be reordered:\n\n` +
+                lowStockProducts.map((p, i) => `${i + 1}. ${p}`).join('\n') +
+                `\n\nPlease process a purchase order for these items at your earliest convenience.\n\n` +
+                `Best regards,\n` +
+                `ORA Automation System`
+            );
+            
+            // Open default email client with pre-filled template
+            window.location.href = `mailto:purchasing@example.com?subject=${subject}&body=${body}`;
+        }
 
         // Dark mode toggle functionality
         const darkModeToggle = document.getElementById('dark-mode-toggle');
