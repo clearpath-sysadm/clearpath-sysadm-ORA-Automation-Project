@@ -193,7 +193,7 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
                 sku = str(row['SKU'])
                 product_name = str(row.get('Product Name', 'Unknown'))
                 current_quantity = int(row['Quantity']) if pd.notna(row['Quantity']) else 0
-                rolling_avg = row.get('Rolling_Avg', None)
+                rolling_avg = row.get('12-Month Rolling Average', None)
                 
                 # Convert rolling average to cents if it exists
                 weekly_avg_cents = None
