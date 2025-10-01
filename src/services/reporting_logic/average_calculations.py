@@ -7,11 +7,15 @@ specifically focusing on rolling averages for the ORA Project reports.
 import logging
 import pandas as pd
 from datetime import datetime, timedelta
+from src.services.reporting_logic.week_utils import get_current_week_boundaries
 
 def calculate_12_month_rolling_average(weekly_shipped_history_df):
     """
     Calculates the 12-month (52-week) rolling average of shipped quantities for each SKU
-    based on historical data, using the 52 most recent data points.
+    based on historical data, using the 52 most recent COMPLETE weeks only.
+    
+    IMPORTANT: Defensively filters out the current/incomplete week to ensure accurate averages.
+    Friday is the last shipping day, so weeks are complete once Friday has passed.
 
     Args:
         weekly_shipped_history_df (pd.DataFrame): A DataFrame containing the historical
@@ -21,7 +25,7 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
     Returns:
         pd.DataFrame: A DataFrame with 'SKU' and '12-Month Rolling Average'.
     """
-    logging.info("Calculating 12-Month Rolling Average using most recent 52 entries...")
+    logging.info("Calculating 12-Month Rolling Average using most recent 52 COMPLETE weeks...")
     
     # Debug log: Input DataFrame row count
     logging.debug(f"Input weekly_shipped_history_df has {len(weekly_shipped_history_df)} rows.")
@@ -31,7 +35,7 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
         return pd.DataFrame(columns=['SKU', '12-Month Rolling Average'])
 
     df = weekly_shipped_history_df.copy()
-
+    
     # Ensure 'Date' and 'ShippedQuantity' columns are in proper formats
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     # Convert ShippedQuantity to numeric, coercing errors to NaN.
@@ -40,6 +44,22 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
     
     # Drop rows where 'Date' or 'ShippedQuantity' are NaN after conversion
     df.dropna(subset=['Date', 'ShippedQuantity'], inplace=True)
+    
+    # DEFENSIVE FILTERING: Remove any incomplete weeks
+    # Get current week boundaries to filter out partial weeks
+    current_monday, _ = get_current_week_boundaries()
+    
+    # Filter out rows from the current/incomplete week
+    rows_before = len(df)
+    df = df[df['Date'] < pd.Timestamp(current_monday)]
+    rows_after = len(df)
+    
+    if rows_before > rows_after:
+        logging.info(f"Filtered out {rows_before - rows_after} row(s) from incomplete week(s) (>= {current_monday})")
+    
+    if df.empty:
+        logging.warning("After filtering incomplete weeks, no data remains. Cannot calculate rolling average.")
+        return pd.DataFrame(columns=['SKU', '12-Month Rolling Average'])
 
     # Sort data by SKU and then by Date in descending order to get most recent entries first
     df_sorted = df.sort_values(by=['SKU', 'Date'], ascending=[True, False])
