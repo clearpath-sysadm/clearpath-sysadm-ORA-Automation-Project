@@ -317,44 +317,94 @@ def upsert(table: str, data: dict, conflict_columns: list):
 
 ### Phase 2: Database Setup (2 hours)
 
-#### 2.1 Create Core Schema (1 hour)
+#### 2.1 Create Core Schema (1 hour) ✅ **COMPLETED**
 
 **Objective:** Create only tables needed for 2 critical scripts
 
-**Critical Tables (MVP):**
-1. workflows (for status tracking)
-2. configuration_params (for rates and config)
-3. inventory_transactions (for inventory calculations)
-4. inventory_current (for current stock levels)
-5. shipped_items (for shipment tracking)
-6. shipped_orders (for shipment tracking)
-7. weekly_shipped_history (for aggregations)
-8. system_kpis (for dashboard metrics)
+**Critical Tables (MVP) - All Created:**
+1. ✅ workflows (for status tracking)
+2. ✅ configuration_params (for rates and config)
+3. ✅ inventory_transactions (for inventory calculations)
+4. ✅ inventory_current (for current stock levels)
+5. ✅ shipped_items (for shipment tracking)
+6. ✅ shipped_orders (for shipment tracking)
+7. ✅ weekly_shipped_history (for aggregations)
+8. ✅ system_kpis (for dashboard metrics)
 
-**Deferred Tables:**
-- orders_inbox, order_items_inbox (for order uploader - Phase 2)
-- polling_state (for XML poller - Phase 2)
+**Deferred Tables (Phase 2+):**
+- orders_inbox, order_items_inbox (for order uploader)
+- polling_state (for XML poller)
 - schema_migrations (nice to have)
-- monthly_charge_reports (monthly reporter - Phase 2)
+- monthly_charge_reports (monthly reporter)
 
 **Tasks:**
-- [ ] Create `scripts/create_database.py`
-- [ ] Implement 8 critical tables with STRICT typing, foreign keys, CHECK constraints
-- [ ] Create essential indexes only
-- [ ] Configure PRAGMA settings
+- [x] **Create `scripts/create_database.py`** (274 lines)
+  - **Action:** Created comprehensive database creation script with validation
+  - **Action:** Fixed STRICT mode compatibility (DATETIME/DATE → TEXT types)
+  - **Result:** Automated script that creates all 8 tables with proper typing
+  
+- [x] **Implement 8 critical tables** with STRICT typing, foreign keys, CHECK constraints
+  - **Action:** All tables created with STRICT mode enabled
+  - **Action:** Added CHECK constraints for status values, quantities, etc.
+  - **Action:** Foreign key from shipped_items → shipped_orders implemented
+  - **Result:** 8 tables with full data integrity enforcement
+  
+- [x] **Create essential indexes** (14 total)
+  - **Action:** Created indexes for all frequently queried columns
+  - **Action:** Composite indexes for common query patterns (sku+date, status+enabled, etc.)
+  - **Action:** Removed redundant indexes (UNIQUE constraints already create indexes)
+  - **Result:** Optimized query performance for critical operations
+  
+- [x] **Configure PRAGMA settings**
+  - **Action:** WAL mode enabled for concurrency
+  - **Action:** Foreign keys enabled on every connection
+  - **Action:** 8-second busy timeout for lock handling
+  - **Result:** Database configured for production use
 
-**PRAGMA Settings:**
+**PRAGMA Settings Configured:**
 ```sql
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous = NORMAL;
-PRAGMA foreign_keys = ON;
-PRAGMA busy_timeout = 8000;
+PRAGMA journal_mode = WAL;           -- ✅ Enabled
+PRAGMA synchronous = NORMAL;         -- ✅ Enabled
+PRAGMA foreign_keys = ON;            -- ✅ Enabled
+PRAGMA busy_timeout = 8000;          -- ✅ Enabled
+PRAGMA temp_store = MEMORY;          -- ✅ Enabled
+PRAGMA cache_size = -20000;          -- ✅ Enabled (20MB)
 ```
 
-**Deliverables:**
-- `scripts/create_database.py` (NEW)
-- `ora.db` with 8 core tables
-- Foreign keys enforced, indexes created
+**Deliverables:** ✅
+- `scripts/create_database.py` (NEW - 270 lines with validation)
+- Schema for 8 core tables with STRICT typing
+- 14 indexes created for query optimization (removed 3 redundant)
+- Foreign keys enforced
+- Interactive confirmation for safety (non-interactive mode via OVERWRITE env)
+
+**Files Created:**
+- `scripts/create_database.py` - Complete database creation script
+
+**Validation:** ✅
+- Script tested successfully - all 8 tables created
+- All indexes created (14 total, removed 3 redundant)
+- Foreign keys verified functional
+- STRICT mode enforced (TEXT for dates, not DATETIME/DATE)
+- Automatic table verification on creation
+- Non-interactive mode tested (OVERWRITE=1)
+
+**Improvements (Post-Architect Feedback):**
+- [x] Removed 3 redundant indexes (UNIQUE constraints already create indexes)
+  - Removed idx_inventory_current_sku (sku has UNIQUE constraint)
+  - Removed idx_shipped_orders_number (order_number has UNIQUE constraint)
+  - Removed idx_kpis_date (snapshot_date has UNIQUE constraint)
+- [x] Added non-interactive mode for automation
+  - Set OVERWRITE=1 env variable to bypass interactive prompt
+  - Useful for CI/CD pipelines and automated deployments
+
+**Architect Review:** ✅ **APPROVED** (Pass status with improvements completed)
+- Schema implementation correct for all 8 tables
+- STRICT mode type mappings appropriate (TEXT for dates)
+- Indexes sufficient and optimized (no redundancy)
+- Non-interactive mode enables automation
+
+**Status:** ✅ **COMPLETED** - Awaiting HITL approval to proceed to Task 2.2
 
 ---
 
