@@ -228,15 +228,15 @@
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-value" id="totalItems">-</div>
-                <div class="stat-label">Total Line Items (Last 40 Days)</div>
+                <div class="stat-label">Total Line Items</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="totalQuantity">-</div>
-                <div class="stat-label">Total Units Shipped (Last 40 Days)</div>
+                <div class="stat-label">Total Quantity Shipped</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="uniqueSkus">-</div>
-                <div class="stat-label">Unique SKUs (Last 40 Days)</div>
+                <div class="stat-label">Unique SKUs</div>
             </div>
         </div>
 
@@ -284,7 +284,6 @@
                     allItems = result.data;
                     populateFilters();
                     renderItems(allItems);
-                    updateStats();
                 } else {
                     showError('Failed to load items: ' + result.error);
                 }
@@ -326,6 +325,7 @@
                 loading.textContent = 'No items found';
                 tableWrapper.style.display = 'none';
                 loading.style.display = 'block';
+                updateStats(items);
                 return;
             }
             
@@ -359,12 +359,13 @@
             
             loading.style.display = 'none';
             tableWrapper.style.display = 'block';
+            updateStats(items);
         }
 
-        function updateStats() {
-            const totalItems = allItems.length;
-            const totalQuantity = allItems.reduce((sum, item) => sum + (item.quantity_shipped || 0), 0);
-            const uniqueSkus = new Set(allItems.map(item => item.base_sku)).size;
+        function updateStats(items) {
+            const totalItems = items.length;
+            const totalQuantity = items.reduce((sum, item) => sum + (item.quantity_shipped || 0), 0);
+            const uniqueSkus = new Set(items.map(item => item.base_sku)).size;
             
             document.getElementById('totalItems').textContent = totalItems.toLocaleString();
             document.getElementById('totalQuantity').textContent = totalQuantity.toLocaleString();
