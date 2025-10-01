@@ -20,7 +20,7 @@ if project_root not in sys.path:
 # FIX: Import the settings object directly from the config package.
 from config import settings
 from utils.api_utils import make_api_request
-from src.services.gcp.secret_manager import access_secret_version
+from src.services.secrets import get_secret
 
 
 # --- Environment Detection ---
@@ -56,22 +56,14 @@ def get_shipstation_headers(api_key: str, api_secret: str) -> dict:
 
 def get_shipstation_credentials():
     """
-    Retrieves ShipStation API credentials securely from Google Cloud Secret Manager.
+    Retrieves ShipStation API credentials securely using unified secrets module.
     """
-
     try:
-        logger.info("Attempting to retrieve ShipStation API Key from Secret Manager...")
-        api_key = access_secret_version(
-            settings.YOUR_GCP_PROJECT_ID,
-            settings.SHIPSTATION_API_KEY_SECRET_ID,
-            credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH
-        )
-        logger.info("Attempting to retrieve ShipStation API Secret from Secret Manager...")
-        api_secret = access_secret_version(
-            settings.YOUR_GCP_PROJECT_ID,
-            settings.SHIPSTATION_API_SECRET_SECRET_ID,
-            credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH
-        )
+        logger.info("Attempting to retrieve ShipStation API Key...")
+        api_key = get_secret(settings.SHIPSTATION_API_KEY_SECRET_ID)
+        logger.info("Attempting to retrieve ShipStation API Secret...")
+        api_secret = get_secret(settings.SHIPSTATION_API_SECRET_SECRET_ID)
+        
         if not api_key or not api_secret:
             logger.error("Failed to retrieve ShipStation API credentials.")
             return None, None

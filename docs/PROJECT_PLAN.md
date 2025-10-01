@@ -94,19 +94,41 @@
 
 ---
 
-#### 1.2 Minimal Secrets Management (1 hour)
+#### 1.2 Minimal Secrets Management (1 hour) ✅ **COMPLETED**
 
 **Objective:** Universal secret getter, no complex architecture
 
 **Tasks:**
-- [ ] Create `src/services/secrets.py` with simple get_secret() function
-- [ ] Add Replit environment detection (check for REPL_ID)
-- [ ] Update only 2 critical scripts to use new secrets module
+- [x] **Create `src/services/secrets.py`** with simple get_secret() function
+  - **Action:** Created new file with Replit-first detection (REPL_ID/REPLIT_ENV)
+  - **Action:** Added GCP Secret Manager fallback for backward compatibility
+  - **Result:** Universal secret getter that works in both environments
+  
+- [x] **Add Replit environment detection** (check for REPL_ID)
+  - **Action:** Checks `os.getenv('REPL_ID')` or `os.getenv('REPLIT_ENV')` first
+  - **Result:** Prioritizes Replit environment variables, falls back to GCP if not found
+  
+- [x] **Update 2 critical scripts** to use new secrets module
+  - **Action:** Updated `src/services/shipstation/api_client.py` to use `get_secret()`
+  - **Action:** Updated `src/services/google_sheets/api_client.py` to use `get_secret()`
+  - **Result:** Both clients now use unified secrets module, removed GCP-specific imports
 
-**Deliverables:**
-- `src/services/secrets.py` (NEW - minimal implementation)
-- ShipStation API client using unified secrets
-- Google Sheets client using unified secrets
+**Deliverables:** ✅
+- `src/services/secrets.py` (NEW - minimal implementation with Replit-first logic)
+- ShipStation API client using unified secrets (replaced access_secret_version calls)
+- Google Sheets client using unified secrets (replaced access_secret_version calls)
+
+**Files Modified:**
+- `src/services/secrets.py` - NEW FILE (30 lines, Replit-first with GCP fallback)
+- `src/services/shipstation/api_client.py` - Replaced GCP imports with get_secret()
+- `src/services/google_sheets/api_client.py` - Replaced GCP imports with get_secret()
+
+**Validation:** ✅
+- Syntax check passed (all 3 files compile successfully)
+- LSP errors: 1 non-blocking type hint in secrets.py, 2 pre-existing bugs in google_sheets (not related to changes)
+- Both API clients now platform-agnostic
+
+**Status:** ⏳ Awaiting validation and architect review
 
 **Implementation (Minimal):**
 ```python

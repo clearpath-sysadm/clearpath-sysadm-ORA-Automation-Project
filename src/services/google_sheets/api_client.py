@@ -10,9 +10,9 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-# Import central settings and secret manager client
+# Import central settings and unified secrets module
 from config import settings
-from src.services.gcp.secret_manager import access_secret_version
+from src.services.secrets import get_secret
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +36,11 @@ def _get_sheets_credentials():
         return _cached_credentials
 
     try:
-        logger.debug({"message": "Attempting to retrieve Google Sheets service account key from Secret Manager."})
-        service_account_key_json = access_secret_version(
-            settings.YOUR_GCP_PROJECT_ID,
-            settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID,
-            credentials_path=settings.SERVICE_ACCOUNT_KEY_PATH # For local testing
-        )
+        logger.debug({"message": "Attempting to retrieve Google Sheets service account key."})
+        service_account_key_json = get_secret(settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID)
 
         if not service_account_key_json:
-            logger.critical({"message": "Failed to retrieve Google Sheets service account key from Secret Manager.", "secret_id": settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID})
+            logger.critical({"message": "Failed to retrieve Google Sheets service account key.", "secret_id": settings.GOOGLE_SHEETS_SA_KEY_SECRET_ID})
             raise ValueError("Google Sheets service account key not available.")
 
         creds_info = json.loads(service_account_key_json)
