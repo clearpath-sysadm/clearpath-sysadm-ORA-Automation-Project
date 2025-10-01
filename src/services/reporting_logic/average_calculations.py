@@ -53,7 +53,7 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
     # Otherwise, exclude it (only include weeks before current Monday)
     if is_week_complete(current_sunday):
         # Current week is complete - include it in averages
-        next_monday = current_monday + pd.Timedelta(days=7)
+        next_monday = current_monday + timedelta(days=7)
         cutoff_date = next_monday
         logging.info(f"Current week is complete. Including weeks before {cutoff_date}")
     else:
