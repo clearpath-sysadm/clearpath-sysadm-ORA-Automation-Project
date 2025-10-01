@@ -767,6 +767,31 @@
                 </div>
             </div>
 
+            <div class="card" id="weekly-report-section">
+                <div class="card-header">
+                    📊 Weekly Inventory Report
+                    <button class="btn btn-primary" onclick="refreshWeeklyReport()" id="weeklyReportRefreshBtn">
+                        🔄 Refresh
+                    </button>
+                </div>
+                <div id="weeklyReportLoading" class="loading" style="padding: 20px;">Loading weekly report...</div>
+                <div id="weeklyReportError"></div>
+                <div id="weeklyReportTable" style="display: none;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: #f9fafb;">
+                            <tr>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">SKU</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Product Name</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Current Qty</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">52-Week Avg</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weeklyReportBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="card" id="alerts-section">
                 <div class="card-header">
                     📦 Inventory Alerts
@@ -991,6 +1016,80 @@
             document.getElementById('error-banner-container').innerHTML = '';
         }
 
+        // Load weekly inventory report
+        async function loadWeeklyReport() {
+            const loadingDiv = document.getElementById('weeklyReportLoading');
+            const errorDiv = document.getElementById('weeklyReportError');
+            const tableDiv = document.getElementById('weeklyReportTable');
+            const tbody = document.getElementById('weeklyReportBody');
+            
+            try {
+                loadingDiv.style.display = 'block';
+                errorDiv.innerHTML = '';
+                tableDiv.style.display = 'none';
+                
+                const response = await fetch('/api/weekly_inventory_report');
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to load weekly report');
+                }
+                
+                // Render table rows
+                tbody.innerHTML = result.data.map(item => {
+                    const statusClass = item.alert_level === 'critical' ? 'critical' : 
+                                       item.alert_level === 'warning' ? 'warning' : 'normal';
+                    const statusIcon = item.alert_level === 'critical' ? '🔴' : 
+                                      item.alert_level === 'warning' ? '🟡' : '🟢';
+                    const statusText = item.alert_level === 'critical' ? 'Critical' : 
+                                      item.alert_level === 'warning' ? 'Warning' : 'Normal';
+                    
+                    return `
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                            <td style="padding: 12px;"><strong>${item.sku}</strong></td>
+                            <td style="padding: 12px;">${item.product_name}</td>
+                            <td style="padding: 12px; text-align: right;">${item.current_quantity}</td>
+                            <td style="padding: 12px; text-align: right;">${item.rolling_avg_52_weeks}</td>
+                            <td style="padding: 12px; text-align: center;">
+                                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                    ${statusIcon} ${statusText}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                loadingDiv.style.display = 'none';
+                tableDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Failed to load weekly report:', error);
+                loadingDiv.style.display = 'none';
+                errorDiv.innerHTML = `<div class="error" style="margin: 20px; padding: 16px; background: #fee2e2; color: #991b1b; border-radius: 8px;">Failed to load weekly report: ${error.message}</div>`;
+            }
+        }
+
+        // Refresh weekly report
+        async function refreshWeeklyReport() {
+            const btn = document.getElementById('weeklyReportRefreshBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Refreshing...';
+            
+            try {
+                await loadWeeklyReport();
+                btn.textContent = '✅ Refreshed!';
+                setTimeout(() => {
+                    btn.textContent = '🔄 Refresh';
+                    btn.disabled = false;
+                }, 2000);
+            } catch (error) {
+                btn.textContent = '❌ Failed';
+                setTimeout(() => {
+                    btn.textContent = '🔄 Refresh';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        }
+
         // Load dashboard data
         async function loadDashboardData() {
             try {
@@ -1143,6 +1242,7 @@
 
         // Initial data load
         loadDashboardData();
+        loadWeeklyReport();
 
         // Create Purchase Order functionality
         function createPurchaseOrder() {
