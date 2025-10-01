@@ -1038,11 +1038,11 @@
                 // Render table rows
                 tbody.innerHTML = result.data.map(item => {
                     const statusClass = item.alert_level === 'critical' ? 'critical' : 
-                                       item.alert_level === 'warning' ? 'warning' : 'normal';
+                                       item.alert_level === 'low' ? 'warning' : 'normal';
                     const statusIcon = item.alert_level === 'critical' ? '🔴' : 
-                                      item.alert_level === 'warning' ? '🟡' : '🟢';
+                                      item.alert_level === 'low' ? '🟡' : '🟢';
                     const statusText = item.alert_level === 'critical' ? 'Critical' : 
-                                      item.alert_level === 'warning' ? 'Warning' : 'Normal';
+                                      item.alert_level === 'low' ? 'Low' : 'Normal';
                     
                     return `
                         <tr style="border-bottom: 1px solid #f3f4f6;">

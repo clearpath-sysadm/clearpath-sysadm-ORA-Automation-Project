@@ -806,7 +806,7 @@ def api_weekly_inventory_report():
                 sku,
                 product_name,
                 current_quantity,
-                rolling_avg_52_weeks,
+                weekly_avg_cents,
                 alert_level,
                 reorder_point,
                 last_updated
@@ -818,11 +818,12 @@ def api_weekly_inventory_report():
         
         report = []
         for row in results:
+            weekly_avg = round((row[3] or 0) / 100.0, 2) if row[3] else 0.0
             report.append({
                 'sku': row[0],
                 'product_name': row[1],
                 'current_quantity': row[2] or 0,
-                'rolling_avg_52_weeks': round(row[3] or 0, 2),
+                'rolling_avg_52_weeks': weekly_avg,
                 'alert_level': row[4] or 'normal',
                 'reorder_point': row[5] or 0,
                 'last_updated': row[6]
