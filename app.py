@@ -797,6 +797,48 @@ def api_get_skus():
             'error': str(e)
         }), 500
 
+@app.route('/api/weekly_inventory_report', methods=['GET'])
+def api_weekly_inventory_report():
+    """Get weekly inventory report with current quantities and rolling averages"""
+    try:
+        query = """
+            SELECT 
+                sku,
+                product_name,
+                current_quantity,
+                rolling_avg_52_weeks,
+                alert_level,
+                reorder_point,
+                last_updated
+            FROM inventory_current
+            WHERE sku IN ('17612', '17904', '17914', '17975', '18675')
+            ORDER BY sku
+        """
+        results = execute_query(query)
+        
+        report = []
+        for row in results:
+            report.append({
+                'sku': row[0],
+                'product_name': row[1],
+                'current_quantity': row[2] or 0,
+                'rolling_avg_52_weeks': round(row[3] or 0, 2),
+                'alert_level': row[4] or 'normal',
+                'reorder_point': row[5] or 0,
+                'last_updated': row[6]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': report,
+            'count': len(report)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
