@@ -91,17 +91,24 @@ def run_reporter_logic():
     # --- Monthly Charge Report Generation ---
     logger.info("Generating Monthly Charge Report...")
     logger.debug("Configuration: GOOGLE_SHEET_ID=%s, Output Tabs: %s, %s", settings.GOOGLE_SHEET_ID, getattr(settings, 'MONTHLY_CHARGE_REPORT_OUTPUT_TAB_NAME', None), getattr(settings, 'WEEKLY_REPORT_OUTPUT_TAB_NAME', None))
-    monthly_report_df, monthly_totals_df = monthly_report_generator.generate_monthly_charge_report(
-        rates,
-        pallet_counts,
-        eom_previous_month_data, # IMPORTANT CHANGE: Pass eom_previous_month_data for monthly report initial inventory
-        inventory_transactions_df,
-        shipped_items_df,
-        shipped_orders_df,
-        current_report_year,
-        current_report_month,
-        key_skus_list
-    )
+    
+    # Null check for DataFrames before passing to monthly report generator
+    if inventory_transactions_df is None or shipped_items_df is None or shipped_orders_df is None:
+        logger.error("Missing required DataFrames for monthly charge report generation. Skipping monthly report.")
+        monthly_report_df = None
+        monthly_totals_df = None
+    else:
+        monthly_report_df, monthly_totals_df = monthly_report_generator.generate_monthly_charge_report(
+            rates,
+            pallet_counts,
+            eom_previous_month_data, # IMPORTANT CHANGE: Pass eom_previous_month_data for monthly report initial inventory
+            inventory_transactions_df,
+            shipped_items_df,
+            shipped_orders_df,
+            current_report_year,
+            current_report_month,
+            key_skus_list
+        )
 
     if monthly_report_df is not None and not monthly_report_df.empty:
         # Ensure monthly_totals_df is not None before attempting to rename
@@ -120,16 +127,21 @@ def run_reporter_logic():
     # --- Weekly Inventory Report Generation ---
     logger.info("Generating Weekly Inventory Report...")
     
-    # Pass the weekly_report_start_date and weekly_report_end_date to calculate_current_inventory
-    # Note: This still uses 'initial_inventory' (EOD_Prior_Week) for the weekly report's starting point
-    current_inventory_df = inventory_calculations.calculate_current_inventory(
-        initial_inventory, # This is EOD_Prior_Week from ORA_Configuration for weekly report
-        inventory_transactions_df,
-        shipped_items_df,
-        key_skus_list,
-        weekly_report_start_date,
-        weekly_report_end_date
-    )
+    # Null check for DataFrames before passing to inventory calculator
+    if inventory_transactions_df is None or shipped_items_df is None:
+        logger.error("Missing required DataFrames for inventory calculation. Skipping weekly report.")
+        current_inventory_df = None
+    else:
+        # Pass the weekly_report_start_date and weekly_report_end_date to calculate_current_inventory
+        # Note: This still uses 'initial_inventory' (EOD_Prior_Week) for the weekly report's starting point
+        current_inventory_df = inventory_calculations.calculate_current_inventory(
+            initial_inventory, # This is EOD_Prior_Week from ORA_Configuration for weekly report
+            inventory_transactions_df,
+            shipped_items_df,
+            key_skus_list,
+            weekly_report_start_date,
+            weekly_report_end_date
+        )
     
     # Ensure weekly_shipped_history_df is not None before proceeding
     if weekly_shipped_history_df is not None:
