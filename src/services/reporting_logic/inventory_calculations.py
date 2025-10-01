@@ -111,54 +111,51 @@ def calculate_daily_inventory(initial_inventory: dict, transactions_df: pd.DataF
 
 def calculate_current_inventory(initial_inventory: dict, inventory_transactions_df: pd.DataFrame, shipped_items_df: pd.DataFrame, key_skus: list, current_week_start_date: datetime.date, current_week_end_date: datetime.date) -> pd.DataFrame:
     """
-    Calculates the current inventory by applying initial values (EOD Prior Week) and
-    transactions specifically within the current week.
+    Calculates the current inventory by applying initial values and ALL historical transactions.
+    Initial inventory + ALL receives/repacks/adjustments - ALL shipments = Current inventory
     """
     try:
-        logger.info(f"Calculating current inventory for week {current_week_start_date} to {current_week_end_date}...")
+        logger.info(f"Calculating current inventory using ALL historical data...")
         
-        # --- FIX: Standardize initial_inventory keys to strings here as well ---
+        # Standardize initial_inventory keys to strings
         current_inventory = {str(k): v for k, v in initial_inventory.items()}
-        logger.debug(f"Initial inventory for current calculation: {current_inventory}")
+        logger.info(f"Initial inventory loaded for {len(current_inventory)} SKUs")
+        logger.debug(f"Initial inventory: {current_inventory}")
 
-        # Filter transactions to only include those within the current week
-        weekly_transactions_df = inventory_transactions_df[
-            (inventory_transactions_df['Date'] >= current_week_start_date) & 
-            (inventory_transactions_df['Date'] <= current_week_end_date)
-        ].copy()
+        # Process ALL inventory transactions (no date filtering)
+        all_transactions_df = inventory_transactions_df.copy()
+        logger.info(f"Processing {len(all_transactions_df)} inventory transactions")
+
+        # Process ALL shipped items (no date filtering)
+        all_shipped_items_df = shipped_items_df.copy()
+        logger.info(f"Processing {len(all_shipped_items_df)} shipped items")
+
+        # Prepare shipped items as transactions
+        all_shipped_items_df['SKU'] = all_shipped_items_df['SKU'].astype(str)
+        all_shipped_items_df.rename(columns={'Quantity_Shipped': 'Quantity'}, inplace=True)
+        all_shipped_items_df['TransactionType'] = 'Ship'
         
-        weekly_shipped_items_df = shipped_items_df[
-            (shipped_items_df['Date'] >= current_week_start_date) & 
-            (shipped_items_df['Date'] <= current_week_end_date)
-        ].copy()
-
-        logger.debug(f"Weekly transactions shape: {weekly_transactions_df.shape}")
-        logger.debug(f"Weekly shipped items shape: {weekly_shipped_items_df.shape}")
-
-        # Combine all relevant weekly transactions
-        weekly_shipped_items_df['SKU'] = weekly_shipped_items_df['SKU'].astype(str)
-        weekly_shipped_items_df.rename(columns={'Quantity_Shipped': 'Quantity'}, inplace=True)
-        weekly_shipped_items_df['TransactionType'] = 'Ship'
+        # Combine all transactions
+        all_combined_transactions = pd.concat(
+            [all_transactions_df[['SKU', 'Quantity', 'TransactionType']], 
+             all_shipped_items_df[['SKU', 'Quantity', 'TransactionType']]], 
+            ignore_index=True
+        )
+        all_combined_transactions['Quantity'] = pd.to_numeric(all_combined_transactions['Quantity'], errors='coerce').fillna(0)
         
-        all_weekly_transactions = pd.concat([weekly_transactions_df[['SKU', 'Quantity', 'TransactionType']], weekly_shipped_items_df[['SKU', 'Quantity', 'TransactionType']]], ignore_index=True)
-        all_weekly_transactions['Quantity'] = pd.to_numeric(all_weekly_transactions['Quantity'], errors='coerce').fillna(0)
-        
-        logger.debug(f"All weekly transactions head:\n{all_weekly_transactions.head().to_string()}")
-        logger.debug(f"All weekly transactions tail:\n{all_weekly_transactions.tail().to_string()}")
-        logger.debug(f"All weekly transactions shape: {all_weekly_transactions.shape}")
+        logger.info(f"Total combined transactions: {len(all_combined_transactions)}")
 
-
-        # Apply weekly transactions to the initial inventory (EOD Prior Week)
-        for _, row in all_weekly_transactions.iterrows():
-            sku = str(row['SKU']) # Ensure SKU is string for dictionary lookup
+        # Apply ALL transactions to the initial inventory
+        for _, row in all_combined_transactions.iterrows():
+            sku = str(row['SKU'])
             qty = row['Quantity']
             transaction_type = row['TransactionType'].lower()
 
             if transaction_type == 'ship':
                 current_inventory[sku] = current_inventory.get(sku, 0) - qty
-            elif transaction_type == 'adjust down': # Explicitly handle adjust down (without underscore)
+            elif transaction_type == 'adjust down':
                 current_inventory[sku] = current_inventory.get(sku, 0) - qty
-            elif transaction_type == 'receive' or transaction_type == 'repack' or transaction_type == 'adjust up': # Explicitly handle receive, repack, and adjust up (without underscore)
+            elif transaction_type in ['receive', 'repack', 'adjust up']:
                 current_inventory[sku] = current_inventory.get(sku, 0) + qty
             else:
                 logger.warning(f"Unknown transaction type '{transaction_type}' for SKU '{sku}'. Quantity not applied.")
@@ -169,15 +166,9 @@ def calculate_current_inventory(initial_inventory: dict, inventory_transactions_
         final_df = final_df[final_df['SKU'].isin([str(s) for s in key_skus])]
 
         logger.info(f"Current inventory calculation complete. Shape: {final_df.shape}")
+        logger.info(f"Final inventory by SKU:\n{final_df.to_string()}")
         return final_df
 
     except Exception as e:
         logger.error(f"Error calculating current inventory: {e}", exc_info=True)
-        return pd.DataFrame(columns=['SKU', 'Quantity']) # Return empty DataFrame on error
-
-        logger.info(f"Current inventory calculation complete. Shape: {final_df.shape}")
-        return final_df
-
-    except Exception as e:
-        logger.error(f"Error calculating current inventory: {e}", exc_info=True)
-        return pd.DataFrame(columns=['SKU', 'Quantity']) # Return empty DataFrame on error
+        return pd.DataFrame(columns=['SKU', 'Quantity'])
