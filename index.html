@@ -125,6 +125,71 @@
             display: none !important;
         }
 
+        /* Error Banners */
+        .error-banner {
+            background: #fee;
+            border: 1px solid #fcc;
+            border-left: 4px solid #f44;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideDown 0.3s ease;
+        }
+
+        body.dark-mode .error-banner {
+            background: #3a1a1a;
+            border-color: #6a2a2a;
+            border-left-color: #f44;
+            color: #faa;
+        }
+
+        .error-banner svg {
+            flex-shrink: 0;
+        }
+
+        .error-banner-content {
+            flex: 1;
+        }
+
+        .error-banner-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .error-banner-message {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .error-banner-close {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 0.25rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .error-banner-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .header h1 {
             font-size: 1.5rem;
             font-weight: 600;
@@ -467,6 +532,9 @@
         </nav>
 
         <main class="main-content">
+            <!-- Error Banner Container -->
+            <div id="error-banner-container"></div>
+
             <div class="stats-grid" id="stats-section">
                 <!-- Skeleton Loaders -->
                 <div class="skeleton-card skeleton" id="stat-skeleton-1"></div>
@@ -661,11 +729,55 @@
             document.querySelectorAll('[data-automation-item]').forEach(el => el.classList.remove('hidden'));
         }
 
+        // Error banner functions
+        function showErrorBanner(title, message) {
+            const container = document.getElementById('error-banner-container');
+            const bannerId = 'error-' + Date.now();
+            
+            const banner = document.createElement('div');
+            banner.className = 'error-banner';
+            banner.id = bannerId;
+            banner.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z" fill="currentColor"/>
+                </svg>
+                <div class="error-banner-content">
+                    <div class="error-banner-title">${title}</div>
+                    <div class="error-banner-message">${message}</div>
+                </div>
+                <button class="error-banner-close" onclick="document.getElementById('${bannerId}').remove()">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.5 3.5L3.5 12.5M3.5 3.5L12.5 12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            `;
+            
+            container.appendChild(banner);
+            
+            // Auto-dismiss after 10 seconds
+            setTimeout(() => {
+                const el = document.getElementById(bannerId);
+                if (el) el.remove();
+            }, 10000);
+        }
+
+        function clearErrorBanners() {
+            document.getElementById('error-banner-container').innerHTML = '';
+        }
+
         // Load dashboard data
         async function loadDashboardData() {
             try {
+                // Clear any existing error banners
+                clearErrorBanners();
+                
                 // Simulate API call delay
                 await new Promise(resolve => setTimeout(resolve, 1200));
+                
+                // Simulate occasional random errors for testing (10% chance)
+                if (Math.random() < 0.1) {
+                    throw new Error('Network error');
+                }
                 
                 // Hide skeletons and show actual content
                 hideSkeletons();
@@ -673,7 +785,14 @@
                 console.log('Dashboard data loaded');
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
-                // Even on error, show content (will add error banners in next task)
+                
+                // Show error banner
+                showErrorBanner(
+                    'Failed to load data',
+                    'Unable to fetch latest dashboard data. Click Refresh to retry.'
+                );
+                
+                // Still hide skeletons to show stale data
                 hideSkeletons();
             }
         }
