@@ -916,6 +916,22 @@
                 document.getElementById(`auto-skeleton-${i}`).classList.add('hidden');
             }
             document.querySelectorAll('[data-automation-item]').forEach(el => el.classList.remove('hidden'));
+            
+            // Update inventory badge count (critical + warning alerts)
+            updateInventoryBadge();
+        }
+
+        function updateInventoryBadge() {
+            const criticalWarningAlerts = document.querySelectorAll('[data-severity="critical"], [data-severity="warning"]');
+            const count = criticalWarningAlerts.length;
+            const badge = document.getElementById('inventory-badge');
+            
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
         }
 
         // Error banner functions
