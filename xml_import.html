@@ -787,6 +787,7 @@
                                     <th>Items</th>
                                     <th>Total Amount</th>
                                     <th>Status</th>
+                                    <th>ShipStation ID</th>
                                     <th>Created At</th>
                                 </tr>
                             </thead>
@@ -949,7 +950,7 @@
             const uploadBtn = document.getElementById('btn-upload-selected');
 
             if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td></tr>';
                 uploadBtn.style.display = 'none';
                 return;
             }
@@ -971,10 +972,11 @@
                     <td>${order.total_items || 0}</td>
                     <td>$${((order.total_amount_cents || 0) / 100).toFixed(2)}</td>
                     <td><span class="badge badge-${order.status}">${order.status.toUpperCase()}</span></td>
+                    <td>${order.shipstation_order_id || '-'}</td>
                     <td>${new Date(order.created_at).toLocaleString()}</td>
                 </tr>
                 <tr class="order-items-row" id="items-row-${order.id}">
-                    <td colspan="9" class="order-items-cell">
+                    <td colspan="10" class="order-items-cell">
                         <div class="items-list" id="items-list-${order.id}">
                             <div style="text-align: center; color: var(--text-tertiary); padding: 1rem;">Loading items...</div>
                         </div>
