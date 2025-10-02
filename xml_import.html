@@ -787,13 +787,12 @@
                         <table id="orders-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 40px;"></th>
                                     <th style="width: 40px;"><input type="checkbox" id="select-all" title="Select all pending orders"></th>
                                     <th>Order #</th>
                                     <th>Order Date</th>
                                     <th>Customer Email</th>
-                                    <th>Items</th>
-                                    <th>Total Amount</th>
+                                    <th>SKU - Lot</th>
+                                    <th>Quantity</th>
                                     <th>Status</th>
                                     <th>ShipStation ID</th>
                                     <th>Created At</th>
@@ -969,26 +968,16 @@
             tbody.innerHTML = orders.map(order => `
                 <tr data-order-id="${order.id}" class="order-row">
                     <td>
-                        <span class="expand-icon" onclick="toggleOrderItems(${order.id}, event)">▶</span>
-                    </td>
-                    <td>
                         ${order.status === 'pending' ? `<input type="checkbox" class="order-checkbox" data-order-id="${order.id}">` : ''}
                     </td>
                     <td><strong>${order.order_number}</strong></td>
                     <td>${order.order_date}</td>
                     <td>${order.customer_email || '-'}</td>
-                    <td>${order.total_items || 0}</td>
-                    <td>$${((order.total_amount_cents || 0) / 100).toFixed(2)}</td>
+                    <td><strong>${order.sku_lot_display}</strong></td>
+                    <td>${order.quantity}</td>
                     <td><span class="badge badge-${order.status}">${order.status.toUpperCase()}</span></td>
                     <td>${order.shipstation_order_id || '-'}</td>
                     <td>${new Date(order.created_at).toLocaleString()}</td>
-                </tr>
-                <tr class="order-items-row" id="items-row-${order.id}">
-                    <td colspan="10" class="order-items-cell">
-                        <div class="items-list" id="items-list-${order.id}">
-                            <div style="text-align: center; color: var(--text-tertiary); padding: 1rem;">Loading items...</div>
-                        </div>
-                    </td>
                 </tr>
             `).join('');
             

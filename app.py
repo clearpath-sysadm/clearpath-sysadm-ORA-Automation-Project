@@ -1066,7 +1066,7 @@ def api_xml_import():
 
 @app.route('/api/orders_inbox')
 def api_orders_inbox():
-    """Get all orders from inbox with calculated total_items"""
+    """Get all orders from inbox - one row per SKU-Lot combination"""
     try:
         query = """
             SELECT 
@@ -1075,34 +1075,37 @@ def api_orders_inbox():
                 o.order_date,
                 o.customer_email,
                 o.status,
-                COALESCE(SUM(oi.quantity), o.total_items, 0) as total_items,
-                o.total_amount_cents,
-                o.shipstation_order_id,
-                o.created_at,
-                o.updated_at
+                oi.sku,
+                oi.quantity,
+                sl.lot,
+                ssli.shipstation_order_id,
+                o.created_at
             FROM orders_inbox o
-            LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, 
-                     o.status, o.total_items, o.total_amount_cents, 
-                     o.shipstation_order_id, o.created_at, o.updated_at
-            ORDER BY o.created_at DESC
-            LIMIT 500
+            INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
+            LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
+            LEFT JOIN shipstation_order_line_items ssli ON oi.order_inbox_id = ssli.order_inbox_id AND oi.sku = ssli.sku
+            ORDER BY o.created_at DESC, oi.sku
+            LIMIT 1000
         """
         results = execute_query(query)
         
         orders = []
         for row in results:
+            sku = row[5]
+            lot = row[7]
+            sku_lot_display = f"{sku} - {lot}" if lot else sku
+            
             orders.append({
                 'id': row[0],
                 'order_number': row[1],
                 'order_date': row[2],
                 'customer_email': row[3] or '',
                 'status': row[4],
-                'total_items': int(row[5]) if row[5] else 0,
-                'total_amount_cents': row[6] or 0,
-                'shipstation_order_id': row[7] or '',
-                'created_at': row[8],
-                'updated_at': row[9]
+                'sku': sku,
+                'sku_lot_display': sku_lot_display,
+                'quantity': row[6],
+                'shipstation_order_id': row[8] or '',
+                'created_at': row[9]
             })
         
         return jsonify({
