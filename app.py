@@ -918,6 +918,15 @@ def api_weekly_inventory_report():
         """
         results = execute_query(query)
         
+        # Product name mapping for clipboard
+        product_names = {
+            '17612': 'PT Kit',
+            '17904': 'Travel Kit',
+            '17914': 'PPR Kit',
+            '18675': 'Ortho Protect',
+            '18795': 'OraPro Paste Peppermint'
+        }
+        
         # Get pallet configuration
         pallet_query = """
             SELECT sku, CAST(value AS INTEGER) as units_per_pallet
@@ -955,7 +964,7 @@ def api_weekly_inventory_report():
             
             report.append({
                 'sku': sku,
-                'product_name': row[1],
+                'product_name': product_names.get(sku, ''),
                 'current_quantity': current_qty,
                 'rolling_avg_52_weeks': weekly_avg,
                 'days_left': days_left,

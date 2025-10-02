@@ -692,43 +692,47 @@
                 white-space: nowrap;
             }
 
-            /* Make SKU column narrower */
+            /* Make SKU column narrower and sticky */
             table th:first-child,
             table td:first-child {
-                width: 60px;
+                width: 70px;
                 padding-left: 12px;
-                font-size: 13px;
+                font-size: 14px;
+                font-weight: 700;
                 position: sticky;
                 left: 0;
                 background: var(--bg-primary);
                 z-index: 1;
             }
 
-            /* Keep Product Name visible but compact on mobile */
+            /* Current Qty column */
             table th:nth-child(2),
             table td:nth-child(2) {
-                font-size: 13px;
-                min-width: 100px;
-                max-width: 150px;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                font-size: 14px;
+                font-weight: 600;
+                min-width: 80px;
             }
 
-            /* Optimize number columns */
+            /* Pallet Breakdown column */
             table th:nth-child(3),
-            table td:nth-child(3),
+            table td:nth-child(3) {
+                font-size: 13px;
+                min-width: 140px;
+            }
+
+            /* 52-Week Avg column */
             table th:nth-child(4),
             table td:nth-child(4) {
                 font-size: 14px;
                 font-weight: 600;
+                min-width: 80px;
             }
 
-            /* Days Left column - make it prominent */
+            /* Days Left column */
             table th:nth-child(5),
-            table td:nth-child(5),
-            table th:nth-child(6),
-            table td:nth-child(6) {
+            table td:nth-child(5) {
                 font-size: 14px;
+                min-width: 100px;
             }
 
             /* Make badges more compact */
@@ -1017,7 +1021,6 @@
                                 <thead>
                                     <tr>
                                         <th>SKU</th>
-                                        <th>Product Name</th>
                                         <th style="text-align: right;">Current Qty</th>
                                         <th style="text-align: center;">Pallet Breakdown</th>
                                         <th style="text-align: right;">52-Week Avg</th>
@@ -1194,7 +1197,6 @@
                     return `
                         <tr>
                             <td><strong>${item.sku}</strong></td>
-                            <td>${item.product_name}</td>
                             <td style="text-align: right;"><strong>${item.current_quantity}</strong></td>
                             <td style="text-align: center;">
                                 <span style="font-family: monospace; color: var(--text-secondary);">
@@ -1259,16 +1261,14 @@
                 }
                 
                 const htmlRows = result.data.map(item => {
-                    const palletBreakdown = item.partial_units > 0 
-                        ? `${item.full_pallets} full + ${item.partial_units} units` 
-                        : `${item.full_pallets} full`;
+                    const daysLeft = item.days_left >= 999 ? '∞' : item.days_left;
                     return `
                     <tr>
                         <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(String(item.sku))}</td>
                         <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(String(item.product_name))}</td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${escapeHtml(String(item.current_quantity))}</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(palletBreakdown)}</td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${escapeHtml(String(item.rolling_avg_52_weeks))}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${escapeHtml(String(daysLeft))}</td>
                     </tr>
                 `;}).join('');
                 
@@ -1277,10 +1277,10 @@
                         <thead>
                             <tr style="background-color: #f3f4f6;">
                                 <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">SKU</th>
-                                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Product</th>
-                                <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Current Inventory</th>
-                                <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Pallet Breakdown</th>
-                                <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">12-Month Rolling Average</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Product Name</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Current Qty</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">52-Week Avg</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Days Left</th>
                             </tr>
                         </thead>
                         <tbody>
