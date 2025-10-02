@@ -1920,13 +1920,14 @@ def api_upload_orders_to_shipstation():
                     VALUES (?, ?, ?)
                 """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                 
-                # Mark order as uploaded since it was found in ShipStation
+                # Mark order as uploaded and store ShipStation ID
                 cursor.execute("""
                     UPDATE orders_inbox
                     SET status = 'uploaded',
+                        shipstation_order_id = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                """, (order_sku_info['order_inbox_id'],))
+                """, (shipstation_id, order_sku_info['order_inbox_id']))
             else:
                 # New order - needs to be uploaded
                 new_orders.append(order)
@@ -2016,6 +2017,13 @@ def api_upload_orders_to_shipstation():
                         INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
                         VALUES (?, ?, ?)
                     """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
+                    
+                    # Also update orders_inbox.shipstation_order_id for the first SKU uploaded
+                    cursor.execute("""
+                        UPDATE orders_inbox
+                        SET shipstation_order_id = ?
+                        WHERE id = ? AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
+                    """, (shipstation_id, order_sku_info['order_inbox_id']))
                     
                     uploaded_count += 1
                 else:
