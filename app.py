@@ -334,45 +334,39 @@ def api_charge_report():
         """
         skus_results = execute_query(skus_query, (str(start_date), str(end_date)))
         
-        # Build daily data structure
+        # Build daily data structure with ALL calendar days in the month
         daily_data = {}
         
-        # Populate order counts
+        # Generate all calendar days from start_date to end_date
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = str(current_date)
+            daily_data[date_str] = {
+                'date': date_str,
+                'order_count': 0,
+                'skus': {
+                    '17612': 0,
+                    '17904': 0,
+                    '17914': 0,
+                    '18675': 0,
+                    '18795': 0
+                }
+            }
+            current_date += timedelta(days=1)
+        
+        # Populate order counts from database
         for row in orders_results:
             date = row[0]
             order_count = row[1]
-            if date not in daily_data:
-                daily_data[date] = {
-                    'date': date,
-                    'order_count': 0,
-                    'skus': {
-                        '17612': 0,
-                        '17904': 0,
-                        '17914': 0,
-                        '18675': 0,
-                        '18795': 0
-                    }
-                }
-            daily_data[date]['order_count'] = order_count
+            if date in daily_data:
+                daily_data[date]['order_count'] = order_count
         
-        # Populate SKU quantities
+        # Populate SKU quantities from database
         for row in skus_results:
             date = row[0]
             sku = row[1]
             qty = row[2]
-            if date not in daily_data:
-                daily_data[date] = {
-                    'date': date,
-                    'order_count': 0,
-                    'skus': {
-                        '17612': 0,
-                        '17904': 0,
-                        '17914': 0,
-                        '18675': 0,
-                        '18795': 0
-                    }
-                }
-            if sku in daily_data[date]['skus']:
+            if date in daily_data and sku in daily_data[date]['skus']:
                 daily_data[date]['skus'][sku] = qty
         
         # Calculate charges
