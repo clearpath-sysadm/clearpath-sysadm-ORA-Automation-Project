@@ -530,6 +530,41 @@
             text-decoration: underline;
         }
 
+        /* Auto-Ship Day Alert */
+        #autoship-alert {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: calc(var(--spacing-unit) * 2.5);
+            border-radius: 12px;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            display: none;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        #autoship-alert.weekend-notice {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+        }
+
+        #autoship-alert h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #autoship-alert p {
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.9; }
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .mobile-menu-btn {
@@ -804,6 +839,12 @@
 
             <!-- Content Area -->
             <div class="content-area">
+                <!-- Auto-Ship Day Alert (conditional) -->
+                <div id="autoship-alert">
+                    <h3><span>🚨</span> <span id="autoship-title">Auto-Ship Day</span></h3>
+                    <p id="autoship-message">High volume expected today. Prepare for increased order processing.</p>
+                </div>
+
                 <!-- FedEx Alert -->
                 <div id="fedex-alert">
                     <strong>🚚 FedEx Trailer Pickup Needed</strong><br>
@@ -1324,8 +1365,57 @@
             });
         });
 
+        // Check for Auto-Ship Day
+        function checkAutoShipDay() {
+            const today = new Date();
+            const dayOfMonth = today.getDate();
+            const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+            
+            const autoShipDays = [5, 15, 25];
+            const isAutoShipDay = autoShipDays.includes(dayOfMonth);
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            
+            const alert = document.getElementById('autoship-alert');
+            const title = document.getElementById('autoship-title');
+            const message = document.getElementById('autoship-message');
+            
+            if (isAutoShipDay) {
+                if (isWeekend) {
+                    // Weekend auto-ship day
+                    const dayName = dayOfWeek === 0 ? 'Sunday' : 'Saturday';
+                    alert.classList.add('weekend-notice');
+                    title.textContent = `Auto-Ship Day (${dayName})`;
+                    message.textContent = `Today is the ${dayOfMonth}${getDaySuffix(dayOfMonth)}, a scheduled auto-ship day falling on ${dayName}. High volume orders may have been processed Friday or will process Monday.`;
+                } else {
+                    // Regular auto-ship day
+                    alert.classList.remove('weekend-notice');
+                    title.textContent = `🚨 Auto-Ship Day - ${getDayName(dayOfWeek)}`;
+                    message.textContent = `Today is the ${dayOfMonth}${getDaySuffix(dayOfMonth)} - a high-volume auto-ship day. Expect increased order processing and shipment volume.`;
+                }
+                alert.style.display = 'block';
+            } else {
+                alert.style.display = 'none';
+            }
+        }
+        
+        function getDaySuffix(day) {
+            if (day >= 11 && day <= 13) return 'th';
+            switch (day % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
+            }
+        }
+        
+        function getDayName(dayOfWeek) {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            return days[dayOfWeek];
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            checkAutoShipDay();
             loadDashboardData();
             loadWeeklyReport();
         });
