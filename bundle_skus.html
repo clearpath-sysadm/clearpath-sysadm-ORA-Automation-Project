@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Bundle SKUs - ORA Business Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="/static/timezone-utils.js"></script>
+    <style>
+        :root {
+            --primary-blue: #2563eb;
+            --primary-blue-hover: #1d4ed8;
+            --secondary-purple: #7c3aed;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --sidebar-width: 260px;
+            --header-height: 64px;
+            --success-green: #10b981;
+            --warning-yellow: #f59e0b;
+            --error-red: #ef4444;
+            --spacing-unit: 8px;
+        }
+
+        body.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #64748b;
+            --border-color: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s;
+        }
+
+        .sidebar-header {
+            padding: calc(var(--spacing-unit) * 3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: calc(var(--spacing-unit) * 2);
+        }
+
+        .nav-section {
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 1);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: calc(var(--spacing-unit) * 0.5);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        .nav-item-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: calc(var(--spacing-unit) * 2);
+        }
+
+        .admin-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-toggle:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .admin-toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .admin-toggle.expanded .admin-toggle-icon {
+            transform: rotate(90deg);
+        }
+
+        .admin-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+        .admin-items.expanded {
+            max-height: 500px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            height: var(--header-height);
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 calc(var(--spacing-unit) * 3);
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .dark-mode-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: calc(var(--spacing-unit) * 1);
+            color: var(--text-secondary);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: calc(var(--spacing-unit) * 3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--bg-primary);
+            border-radius: 12px;
+            padding: calc(var(--spacing-unit) * 3);
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn {
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-blue-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn-danger {
+            background-color: var(--error-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-success {
+            background-color: var(--success-green);
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background-color: var(--bg-tertiary);
+        }
+
+        th {
+            text-align: left;
+            padding: calc(var(--spacing-unit) * 2);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+        }
+
+        td {
+            padding: calc(var(--spacing-unit) * 2);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        tr:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        body.dark-mode .badge-active {
+            background-color: #065f46;
+            color: #d1fae5;
+        }
+
+        body.dark-mode .badge-inactive {
+            background-color: #991b1b;
+            color: #fee2e2;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-primary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: calc(var(--spacing-unit) * 3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-tertiary);
+        }
+
+        .modal-body {
+            padding: calc(var(--spacing-unit) * 3);
+        }
+
+        .modal-footer {
+            padding: calc(var(--spacing-unit) * 3);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .form-group {
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: calc(var(--spacing-unit) * 1);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: calc(var(--spacing-unit) * 1.5);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        .component-row {
+            display: flex;
+            gap: calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+            align-items: flex-end;
+        }
+
+        .component-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .component-row button {
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+        }
+
+        .components-list {
+            margin-top: calc(var(--spacing-unit) * 2);
+        }
+
+        .component-item {
+            background-color: var(--bg-tertiary);
+            padding: calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            margin-bottom: calc(var(--spacing-unit) * 1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: calc(var(--spacing-unit) * 1);
+        }
+
+        .btn-icon {
+            padding: calc(var(--spacing-unit) * 1);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .btn-icon:hover {
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 100;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .mobile-overlay {
+                display: none;
+            }
+
+            .mobile-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">O</div>
+                <div class="sidebar-title">ORA Business</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Overview Section -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Overview</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        <span>Orders Inbox</span>
+                    </a>
+                </div>
+
+                <!-- Reports Section -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Reports</div>
+                    <a href="/weekly_shipped_history.html" class="nav-item">
+                        <span class="nav-item-icon">📈</span>
+                        <span>Weekly Reports</span>
+                    </a>
+                    <a href="/shipped_orders.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        <span>Shipped Orders</span>
+                    </a>
+                    <a href="/shipped_items.html" class="nav-item">
+                        <span class="nav-item-icon">📋</span>
+                        <span>Shipped Items</span>
+                    </a>
+                </div>
+
+                <!-- Operations Section -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">🔄</span>
+                        <span>Inventory Monitor</span>
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        <span>Charge Report</span>
+                    </a>
+                </div>
+
+                <!-- Admin Section -->
+                <div class="admin-section">
+                    <div class="admin-toggle" id="adminToggle">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="adminItems">
+                        <a href="/bundle_skus.html" class="nav-item active">
+                            <span class="nav-item-icon">📦</span>
+                            <span>Bundle SKUs</span>
+                        </a>
+                        <a href="/settings.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            <span>Settings</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                    <h1 class="page-title">Bundle SKU Management</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="dark-mode-toggle" id="darkModeToggle">🌙</button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <div class="container">
+                    <!-- Bundle SKUs Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Bundle SKUs</h2>
+                            <button class="btn btn-primary" id="addBundleBtn">+ Add Bundle</button>
+                        </div>
+
+                        <table id="bundlesTable">
+                            <thead>
+                                <tr>
+                                    <th>Bundle SKU</th>
+                                    <th>Description</th>
+                                    <th>Components</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bundlesTableBody">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Bundle Modal -->
+    <div class="modal" id="bundleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Add Bundle SKU</h3>
+                <button class="modal-close" id="modalClose">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="bundleForm">
+                    <input type="hidden" id="bundleId">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Bundle SKU</label>
+                        <input type="text" class="form-input" id="bundleSku" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-input" id="bundleDescription" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Active</label>
+                        <select class="form-input" id="bundleActive">
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Components</label>
+                        <div class="component-row">
+                            <div class="form-group" style="flex: 2;">
+                                <input type="text" class="form-input" id="componentSku" placeholder="Component SKU">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <input type="number" class="form-input" id="componentMultiplier" placeholder="Multiplier" min="1">
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="addComponentBtn">Add</button>
+                        </div>
+                        <div class="components-list" id="componentsList">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveBtn">Save Bundle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <script>
+        // Global state
+        let bundles = [];
+        let editingBundleId = null;
+        let components = [];
+
+        // Dark mode
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const prefersDark = localStorage.getItem('darkMode') === 'true';
+        
+        if (prefersDark) {
+            document.body.classList.add('dark-mode');
+            darkModeToggle.textContent = '☀️';
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            darkModeToggle.textContent = isDark ? '☀️' : '🌙';
+        });
+
+        // Mobile menu
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            mobileOverlay.classList.toggle('active');
+        });
+
+        mobileOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            mobileOverlay.classList.remove('active');
+        });
+
+        // Admin section toggle
+        const adminToggle = document.getElementById('adminToggle');
+        const adminItems = document.getElementById('adminItems');
+
+        adminToggle.addEventListener('click', () => {
+            adminToggle.classList.toggle('expanded');
+            adminItems.classList.toggle('expanded');
+        });
+
+        // Auto-expand admin section if on admin page
+        adminToggle.classList.add('expanded');
+        adminItems.classList.add('expanded');
+
+        // Modal controls
+        const bundleModal = document.getElementById('bundleModal');
+        const addBundleBtn = document.getElementById('addBundleBtn');
+        const modalClose = document.getElementById('modalClose');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const bundleForm = document.getElementById('bundleForm');
+
+        addBundleBtn.addEventListener('click', () => {
+            openModal();
+        });
+
+        modalClose.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        bundleModal.addEventListener('click', (e) => {
+            if (e.target === bundleModal) {
+                closeModal();
+            }
+        });
+
+        function openModal(bundle = null) {
+            editingBundleId = bundle ? bundle.id : null;
+            components = [];
+
+            if (bundle) {
+                document.getElementById('modalTitle').textContent = 'Edit Bundle SKU';
+                document.getElementById('bundleId').value = bundle.id;
+                document.getElementById('bundleSku').value = bundle.bundle_sku;
+                document.getElementById('bundleDescription').value = bundle.description;
+                document.getElementById('bundleActive').value = bundle.active;
+                
+                // Load existing components
+                fetch(`/api/bundle_components/${bundle.id}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            components = data.data.map((c, idx) => ({
+                                component_sku: c.component_sku,
+                                multiplier: c.multiplier,
+                                sequence: idx + 1
+                            }));
+                            renderComponents();
+                        }
+                    });
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add Bundle SKU';
+                bundleForm.reset();
+                document.getElementById('bundleId').value = '';
+                renderComponents();
+            }
+
+            bundleModal.classList.add('active');
+        }
+
+        function closeModal() {
+            bundleModal.classList.remove('active');
+            bundleForm.reset();
+            components = [];
+            editingBundleId = null;
+        }
+
+        // Component management
+        document.getElementById('addComponentBtn').addEventListener('click', () => {
+            const sku = document.getElementById('componentSku').value.trim();
+            const multiplier = parseInt(document.getElementById('componentMultiplier').value);
+
+            if (sku && multiplier > 0) {
+                components.push({
+                    component_sku: sku,
+                    multiplier: multiplier,
+                    sequence: components.length + 1
+                });
+
+                document.getElementById('componentSku').value = '';
+                document.getElementById('componentMultiplier').value = '';
+                
+                renderComponents();
+            } else {
+                alert('Please enter valid component SKU and multiplier');
+            }
+        });
+
+        function renderComponents() {
+            const list = document.getElementById('componentsList');
+            
+            if (components.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-tertiary); font-size: 14px;">No components added yet</p>';
+                return;
+            }
+
+            list.innerHTML = components.map((comp, idx) => `
+                <div class="component-item">
+                    <span>${comp.component_sku} × ${comp.multiplier}</span>
+                    <button type="button" class="btn-icon" onclick="removeComponent(${idx})">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        function removeComponent(index) {
+            components.splice(index, 1);
+            // Resequence
+            components.forEach((c, i) => c.sequence = i + 1);
+            renderComponents();
+        }
+
+        // Save bundle
+        saveBtn.addEventListener('click', async () => {
+            const bundleId = document.getElementById('bundleId').value;
+            const bundleSku = document.getElementById('bundleSku').value.trim();
+            const description = document.getElementById('bundleDescription').value.trim();
+            const active = parseInt(document.getElementById('bundleActive').value);
+
+            if (!bundleSku || !description) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            if (components.length === 0) {
+                alert('Please add at least one component');
+                return;
+            }
+
+            const payload = {
+                bundle_sku: bundleSku,
+                description: description,
+                active: active,
+                components: components
+            };
+
+            try {
+                const url = bundleId ? `/api/bundles/${bundleId}` : '/api/bundles';
+                const method = bundleId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(bundleId ? 'Bundle updated successfully' : 'Bundle created successfully');
+                    closeModal();
+                    loadBundles();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error saving bundle: ' + error.message);
+            }
+        });
+
+        // Load bundles
+        async function loadBundles() {
+            try {
+                const response = await fetch('/api/bundles');
+                const data = await response.json();
+
+                if (data.success) {
+                    bundles = data.data;
+                    renderBundles();
+                }
+            } catch (error) {
+                console.error('Error loading bundles:', error);
+            }
+        }
+
+        function renderBundles() {
+            const tbody = document.getElementById('bundlesTableBody');
+
+            if (bundles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-tertiary);">No bundles found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = bundles.map(bundle => `
+                <tr>
+                    <td><strong>${bundle.bundle_sku}</strong></td>
+                    <td>${bundle.description}</td>
+                    <td>${bundle.component_count || 0} component(s)</td>
+                    <td><span class="badge ${bundle.active ? 'badge-active' : 'badge-inactive'}">${bundle.active ? 'Active' : 'Inactive'}</span></td>
+                    <td class="action-btns">
+                        <button class="btn-icon" onclick="editBundle(${bundle.id})" title="Edit">✏️</button>
+                        <button class="btn-icon" onclick="deleteBundle(${bundle.id})" title="Delete">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function editBundle(id) {
+            const bundle = bundles.find(b => b.id === id);
+            if (bundle) {
+                openModal(bundle);
+            }
+        }
+
+        async function deleteBundle(id) {
+            if (!confirm('Are you sure you want to delete this bundle?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/bundles/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Bundle deleted successfully');
+                    loadBundles();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error deleting bundle: ' + error.message);
+            }
+        }
+
+        // Initialize
+        loadBundles();
+    </script>
+</body>
+</html>

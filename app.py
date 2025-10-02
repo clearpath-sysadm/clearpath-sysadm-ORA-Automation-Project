@@ -1477,6 +1477,208 @@ def api_upload_orders_to_shipstation():
             'trace': traceback.format_exc()
         }), 500
 
+# Bundle SKU CRUD API Endpoints
+
+@app.route('/api/bundles', methods=['GET'])
+def api_get_bundles():
+    """Get all bundle SKUs with component counts"""
+    try:
+        query = """
+            SELECT bs.id, bs.bundle_sku, bs.description, bs.active, 
+                   COUNT(bc.id) as component_count, bs.created_at
+            FROM bundle_skus bs
+            LEFT JOIN bundle_components bc ON bs.id = bc.bundle_sku_id
+            GROUP BY bs.id, bs.bundle_sku, bs.description, bs.active, bs.created_at
+            ORDER BY bs.bundle_sku
+        """
+        results = execute_query(query)
+        
+        bundles = []
+        for row in results:
+            bundles.append({
+                'id': row[0],
+                'bundle_sku': row[1],
+                'description': row[2],
+                'active': row[3],
+                'component_count': row[4],
+                'created_at': row[5]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': bundles,
+            'count': len(bundles)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/bundle_components/<int:bundle_id>', methods=['GET'])
+def api_get_bundle_components(bundle_id):
+    """Get components for a specific bundle"""
+    try:
+        query = """
+            SELECT component_sku, multiplier, sequence
+            FROM bundle_components
+            WHERE bundle_sku_id = ?
+            ORDER BY sequence
+        """
+        results = execute_query(query, (bundle_id,))
+        
+        components = []
+        for row in results:
+            components.append({
+                'component_sku': row[0],
+                'multiplier': row[1],
+                'sequence': row[2]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': components
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/bundles', methods=['POST'])
+def api_create_bundle():
+    """Create a new bundle SKU"""
+    try:
+        data = request.get_json()
+        
+        bundle_sku = data.get('bundle_sku', '').strip()
+        description = data.get('description', '').strip()
+        active = data.get('active', 1)
+        components = data.get('components', [])
+        
+        if not bundle_sku or not description:
+            return jsonify({
+                'success': False,
+                'error': 'Bundle SKU and description are required'
+            }), 400
+        
+        if not components:
+            return jsonify({
+                'success': False,
+                'error': 'At least one component is required'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Insert bundle
+        cursor.execute("""
+            INSERT INTO bundle_skus (bundle_sku, description, active)
+            VALUES (?, ?, ?)
+        """, (bundle_sku, description, active))
+        
+        bundle_id = cursor.lastrowid
+        
+        # Insert components
+        for comp in components:
+            cursor.execute("""
+                INSERT INTO bundle_components (bundle_sku_id, component_sku, multiplier, sequence)
+                VALUES (?, ?, ?, ?)
+            """, (bundle_id, comp['component_sku'], comp['multiplier'], comp['sequence']))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Bundle created successfully',
+            'bundle_id': bundle_id
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/bundles/<int:bundle_id>', methods=['PUT'])
+def api_update_bundle(bundle_id):
+    """Update an existing bundle SKU"""
+    try:
+        data = request.get_json()
+        
+        bundle_sku = data.get('bundle_sku', '').strip()
+        description = data.get('description', '').strip()
+        active = data.get('active', 1)
+        components = data.get('components', [])
+        
+        if not bundle_sku or not description:
+            return jsonify({
+                'success': False,
+                'error': 'Bundle SKU and description are required'
+            }), 400
+        
+        if not components:
+            return jsonify({
+                'success': False,
+                'error': 'At least one component is required'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Update bundle
+        cursor.execute("""
+            UPDATE bundle_skus 
+            SET bundle_sku = ?, description = ?, active = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (bundle_sku, description, active, bundle_id))
+        
+        # Delete existing components
+        cursor.execute("DELETE FROM bundle_components WHERE bundle_sku_id = ?", (bundle_id,))
+        
+        # Insert new components
+        for comp in components:
+            cursor.execute("""
+                INSERT INTO bundle_components (bundle_sku_id, component_sku, multiplier, sequence)
+                VALUES (?, ?, ?, ?)
+            """, (bundle_id, comp['component_sku'], comp['multiplier'], comp['sequence']))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Bundle updated successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/bundles/<int:bundle_id>', methods=['DELETE'])
+def api_delete_bundle(bundle_id):
+    """Delete a bundle SKU"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Delete bundle (components will cascade delete due to FK)
+        cursor.execute("DELETE FROM bundle_skus WHERE id = ?", (bundle_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Bundle deleted successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
