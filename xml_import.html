@@ -1007,8 +1007,13 @@
             const hasPending = orders.some(o => o.status === 'pending');
             uploadBtn.style.display = hasPending ? 'block' : 'none';
 
-            tbody.innerHTML = orders.map(order => `
-                <tr data-order-id="${order.id}" class="order-row">
+            tbody.innerHTML = orders.map(order => {
+                const failureTooltip = order.status === 'failed' && order.failure_reason 
+                    ? `title="${order.failure_reason}"` 
+                    : '';
+                
+                return `
+                <tr data-order-id="${order.id}" class="order-row" ${failureTooltip}>
                     <td>
                         ${order.status === 'pending' ? `<input type="checkbox" class="order-checkbox" data-order-id="${order.id}">` : ''}
                     </td>
@@ -1017,11 +1022,12 @@
                     <td>${order.customer_email || '-'}</td>
                     <td><strong>${order.sku_lot_display}</strong></td>
                     <td>${order.quantity}</td>
-                    <td><span class="badge badge-${order.status}">${order.status.toUpperCase()}</span></td>
+                    <td><span class="badge badge-${order.status}" ${failureTooltip} style="${order.status === 'failed' ? 'cursor: help;' : ''}">${order.status.toUpperCase()}</span></td>
                     <td>${order.shipstation_order_id || '-'}</td>
                     <td>${new Date(order.created_at).toLocaleString()}</td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
             
             // Update select-all checkbox
             updateSelectAll();

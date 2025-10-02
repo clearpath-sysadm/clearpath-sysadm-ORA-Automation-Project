@@ -1085,7 +1085,8 @@ def api_orders_inbox():
                 oi.quantity,
                 sl.lot,
                 ssli.shipstation_order_id,
-                o.created_at
+                o.created_at,
+                o.failure_reason
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
@@ -1111,7 +1112,8 @@ def api_orders_inbox():
                 'sku_lot_display': sku_lot_display,
                 'quantity': row[6],
                 'shipstation_order_id': row[8] or '',
-                'created_at': row[9]
+                'created_at': row[9],
+                'failure_reason': row[10] or ''
             })
         
         return jsonify({
@@ -1343,6 +1345,7 @@ def api_retry_failed_orders():
             cursor.execute(f"""
                 UPDATE orders_inbox
                 SET status = 'pending',
+                    failure_reason = NULL,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id IN ({placeholders})
                 AND status = 'failed'
@@ -1353,6 +1356,7 @@ def api_retry_failed_orders():
             cursor.execute("""
                 UPDATE orders_inbox
                 SET status = 'pending',
+                    failure_reason = NULL,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE status = 'failed'
             """)
@@ -1596,13 +1600,21 @@ def api_upload_orders_to_shipstation():
                     uploaded_count += 1
                 else:
                     failed_count += 1
-                    # Mark order as failed
+                    # Capture error details for troubleshooting
+                    error_details = error_msg or result.get('message') or 'Unknown error'
+                    
+                    # Log the failure for troubleshooting
+                    import logging
+                    logging.error(f"ShipStation upload failed for order {order_sku_info['order_number']}, SKU {order_sku_info['sku']}: {error_details}")
+                    
+                    # Mark order as failed with reason
                     cursor.execute("""
                         UPDATE orders_inbox 
                         SET status = 'failed',
+                            failure_reason = ?,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
-                    """, (order_sku_info['order_inbox_id'],))
+                    """, (error_details, order_sku_info['order_inbox_id']))
         
         # Update all successfully uploaded orders to 'uploaded' status
         # (Only if ALL SKUs for that order were uploaded successfully)
