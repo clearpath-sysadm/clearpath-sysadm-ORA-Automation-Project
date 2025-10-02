@@ -240,6 +240,7 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="/static/timezone-utils.js"></script>
 </head>
 <body>
     <div class="container">
@@ -365,10 +366,7 @@
             return '$' + amount.toFixed(2);
         }
 
-        function formatDate(dateStr) {
-            const date = new Date(dateStr + 'T00:00:00');
-            return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
-        }
+        // formatDate is now provided by timezone-utils.js
 
         function renderReport() {
             const tbody = document.getElementById('reportBody');
@@ -534,7 +532,9 @@
                 doc.setPage(i);
                 doc.setFontSize(8);
                 doc.setTextColor(...neutralGray);
-                doc.text(`Generated: ${new Date().toLocaleDateString('en-US')} | Page ${i} of ${pageCount}`, 148, pageHeight - 10, { align: 'center' });
+                const genDate = formatDate(new Date());
+                const tzIndicator = showTimezoneIndicator();
+                doc.text(`Generated: ${genDate} (${tzIndicator}) | Page ${i} of ${pageCount}`, 148, pageHeight - 10, { align: 'center' });
             }
 
             doc.save(`charge_report_${monthName}_${year}.pdf`);
