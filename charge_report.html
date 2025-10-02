@@ -237,6 +237,95 @@
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+
+        /* Mobile Responsive Card Layout */
+        @media screen and (max-width: 768px) {
+            .table-container {
+                overflow-x: visible;
+                overflow-y: visible;
+                max-height: none;
+            }
+
+            table {
+                display: block;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody {
+                display: block;
+            }
+
+            tr {
+                display: block;
+                margin-bottom: 16px;
+                border-radius: 8px;
+                overflow: hidden;
+                border: 1px solid #4a4a5a;
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 16px;
+                border-right: none;
+                border-bottom: 1px solid #4a4a5a;
+                text-align: right;
+            }
+
+            td:last-child {
+                border-bottom: none;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #e9d5ff;
+                text-align: left;
+                flex: 1;
+            }
+
+            .date-cell {
+                background: #5b21b6;
+                color: white !important;
+                font-weight: 700;
+                font-size: 15px;
+                padding-left: 16px;
+            }
+
+            .date-cell::before {
+                display: none;
+            }
+
+            .stat-highlight {
+                background: #4a4a5a;
+            }
+
+            .total-row {
+                border: 2px solid #5b21b6;
+            }
+
+            .total-row .date-cell {
+                background: #5b21b6;
+                font-size: 16px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .selector-group {
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -382,34 +471,34 @@
             
             let html = reportData.map(row => `
                 <tr>
-                    <td class="date-cell">${formatChargeReportDate(row.date)}</td>
-                    <td class="stat-highlight">${row.order_count}</td>
-                    <td>${row.sku_17612 || '-'}</td>
-                    <td>${row.sku_17904 || '-'}</td>
-                    <td>${row.sku_17914 || '-'}</td>
-                    <td>${row.sku_18675 || '-'}</td>
-                    <td>${row.sku_18795 || '-'}</td>
-                    <td class="currency">${formatCurrency(row.orders_charge)}</td>
-                    <td class="currency">${formatCurrency(row.packages_charge)}</td>
-                    <td class="currency">${formatCurrency(row.space_rental)}</td>
-                    <td class="currency stat-highlight">${formatCurrency(row.total)}</td>
+                    <td class="date-cell" data-label="Date">${formatChargeReportDate(row.date)}</td>
+                    <td class="stat-highlight" data-label="# Of Orders">${row.order_count}</td>
+                    <td data-label="17612">${row.sku_17612 || '-'}</td>
+                    <td data-label="17904">${row.sku_17904 || '-'}</td>
+                    <td data-label="17914">${row.sku_17914 || '-'}</td>
+                    <td data-label="18675">${row.sku_18675 || '-'}</td>
+                    <td data-label="18795">${row.sku_18795 || '-'}</td>
+                    <td class="currency" data-label="Orders">${formatCurrency(row.orders_charge)}</td>
+                    <td class="currency" data-label="Packages">${formatCurrency(row.packages_charge)}</td>
+                    <td class="currency" data-label="Space Rental">${formatCurrency(row.space_rental)}</td>
+                    <td class="currency stat-highlight" data-label="Total">${formatCurrency(row.total)}</td>
                 </tr>
             `).join('');
             
             if (totalsRow) {
                 html += `
                     <tr class="total-row">
-                        <td class="date-cell">TOTAL</td>
-                        <td class="stat-highlight">${totalsRow.order_count}</td>
-                        <td>${totalsRow.sku_17612}</td>
-                        <td>${totalsRow.sku_17904}</td>
-                        <td>${totalsRow.sku_17914}</td>
-                        <td>${totalsRow.sku_18675}</td>
-                        <td>${totalsRow.sku_18795}</td>
-                        <td class="currency">${formatCurrency(totalsRow.orders_charge)}</td>
-                        <td class="currency">${formatCurrency(totalsRow.packages_charge)}</td>
-                        <td class="currency">${formatCurrency(totalsRow.space_rental)}</td>
-                        <td class="currency stat-highlight">${formatCurrency(totalsRow.total)}</td>
+                        <td class="date-cell" data-label="Date">TOTAL</td>
+                        <td class="stat-highlight" data-label="# Of Orders">${totalsRow.order_count}</td>
+                        <td data-label="17612">${totalsRow.sku_17612}</td>
+                        <td data-label="17904">${totalsRow.sku_17904}</td>
+                        <td data-label="17914">${totalsRow.sku_17914}</td>
+                        <td data-label="18675">${totalsRow.sku_18675}</td>
+                        <td data-label="18795">${totalsRow.sku_18795}</td>
+                        <td class="currency" data-label="Orders">${formatCurrency(totalsRow.orders_charge)}</td>
+                        <td class="currency" data-label="Packages">${formatCurrency(totalsRow.packages_charge)}</td>
+                        <td class="currency" data-label="Space Rental">${formatCurrency(totalsRow.space_rental)}</td>
+                        <td class="currency stat-highlight" data-label="Total">${formatCurrency(totalsRow.total)}</td>
                     </tr>
                 `;
             }
