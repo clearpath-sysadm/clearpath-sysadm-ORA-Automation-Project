@@ -1303,20 +1303,29 @@ def api_upload_orders_to_shipstation():
             create_date_end
         )
         
-        existing_order_numbers = {o.get('orderNumber', '').strip().upper() for o in existing_orders}
+        # Create map of existing orders by order number for efficient lookup
+        existing_order_map = {o.get('orderNumber', '').strip().upper(): o for o in existing_orders}
         
-        # Filter out duplicates
+        # Filter out duplicates and capture their ShipStation IDs
         new_orders = []
         skipped_count = 0
         for order in shipstation_orders:
-            if order['orderNumber'].strip().upper() in existing_order_numbers:
+            order_num_upper = order['orderNumber'].strip().upper()
+            
+            if order_num_upper in existing_order_map:
                 skipped_count += 1
-                # Mark as uploaded in database anyway
+                # Get ShipStation order ID from existing order
+                existing_order = existing_order_map[order_num_upper]
+                shipstation_id = existing_order.get('orderId') or existing_order.get('orderKey')
+                
+                # Mark as uploaded and store ShipStation ID
                 cursor.execute("""
                     UPDATE orders_inbox 
-                    SET status = 'uploaded', updated_at = CURRENT_TIMESTAMP
+                    SET status = 'uploaded',
+                        shipstation_order_id = ?,
+                        updated_at = CURRENT_TIMESTAMP
                     WHERE order_number = ?
-                """, (order['orderNumber'],))
+                """, (shipstation_id, order['orderNumber']))
             else:
                 new_orders.append(order)
         
@@ -1330,7 +1339,7 @@ def api_upload_orders_to_shipstation():
                 'skipped': skipped_count
             })
         
-        # Upload to ShipStation
+        # Upload to ShipStation (single batch API call - efficient)
         upload_results = send_all_orders_to_shipstation(
             new_orders,
             api_key,
@@ -1338,30 +1347,56 @@ def api_upload_orders_to_shipstation():
             settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT
         )
         
+        # Create map of new orders by orderNumber for efficient matching
+        order_map_by_number = {o['orderNumber']: o for o in new_orders}
+        
         # Update database with results
         uploaded_count = 0
         failed_count = 0
         
         for result in upload_results:
-            order_key = result.get('orderKey')
+            # ShipStation returns orderKey which should match our orderNumber
+            order_key = result.get('orderKey', '')
+            order_id = result.get('orderId')
             success = result.get('success', False)
             error_msg = result.get('errorMessage')
             
-            if success and order_key:
-                # Find matching order number from shipstation_orders
-                matching_order = next((o for o in new_orders if o.get('orderKey') == order_key or o.get('orderNumber') == order_key), None)
-                if matching_order:
-                    order_number = matching_order['orderNumber']
+            if success:
+                # Match by orderKey (which is our orderNumber)
+                if order_key in order_map_by_number:
+                    shipstation_id = order_id or order_key
                     cursor.execute("""
                         UPDATE orders_inbox 
                         SET status = 'uploaded',
                             shipstation_order_id = ?,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE order_number = ?
-                    """, (order_key, order_number))
+                    """, (shipstation_id, order_key))
                     uploaded_count += 1
+                else:
+                    # Fallback: try to find by matching order number
+                    for order_num, order_data in order_map_by_number.items():
+                        if order_num.upper() == order_key.upper():
+                            shipstation_id = order_id or order_key
+                            cursor.execute("""
+                                UPDATE orders_inbox 
+                                SET status = 'uploaded',
+                                    shipstation_order_id = ?,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE order_number = ?
+                            """, (shipstation_id, order_num))
+                            uploaded_count += 1
+                            break
             else:
                 failed_count += 1
+                # Mark as failed in database
+                if order_key and order_key in order_map_by_number:
+                    cursor.execute("""
+                        UPDATE orders_inbox 
+                        SET status = 'failed',
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE order_number = ?
+                    """, (order_key,))
         
         conn.commit()
         conn.close()
