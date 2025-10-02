@@ -372,6 +372,11 @@
             font-weight: 600;
             font-size: 13px;
             color: var(--text-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            cursor: pointer;
+            user-select: none;
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -652,6 +657,28 @@
         .item-quantity {
             color: var(--text-secondary);
         }
+
+        /* Sortable table headers */
+        th.sortable::after {
+            content: ' ↕';
+            opacity: 0.3;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+
+        th.sortable:hover::after {
+            opacity: 0.6;
+        }
+
+        th.sort-asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+
+        th.sort-desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -788,14 +815,14 @@
                             <thead>
                                 <tr>
                                     <th style="width: 40px;"><input type="checkbox" id="select-all" title="Select all pending orders"></th>
-                                    <th>Order #</th>
-                                    <th>Order Date</th>
-                                    <th>Customer Email</th>
-                                    <th>SKU - Lot</th>
-                                    <th>Quantity</th>
-                                    <th>Status</th>
-                                    <th>ShipStation ID</th>
-                                    <th>Created At</th>
+                                    <th class="sortable" data-sort="order_number">Order #</th>
+                                    <th class="sortable" data-sort="order_date">Order Date</th>
+                                    <th class="sortable" data-sort="customer_email">Customer Email</th>
+                                    <th class="sortable" data-sort="sku_lot_display">SKU - Lot</th>
+                                    <th class="sortable" data-sort="quantity">Quantity</th>
+                                    <th class="sortable" data-sort="status">Status</th>
+                                    <th class="sortable" data-sort="shipstation_order_id">ShipStation ID</th>
+                                    <th class="sortable" data-sort="created_at">Created At</th>
                                 </tr>
                             </thead>
                             <tbody id="orders-tbody">
@@ -872,6 +899,11 @@
         // Orders Inbox Functionality
         const alertContainer = document.getElementById('alert-container');
         const btnManualImport = document.getElementById('btn-manual-import');
+        
+        // Sorting state
+        let currentOrders = [];
+        let sortColumn = null;
+        let sortDirection = 'asc';
 
         // Shared import function
         async function importFromDrive(triggerButton) {
@@ -956,6 +988,9 @@
             const tbody = document.getElementById('orders-tbody');
             const uploadBtn = document.getElementById('btn-upload-selected');
 
+            // Store orders for sorting
+            currentOrders = orders;
+
             if (orders.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td></tr>';
                 uploadBtn.style.display = 'none';
@@ -984,6 +1019,58 @@
             // Update select-all checkbox
             updateSelectAll();
         }
+
+        // Sorting function
+        function sortOrders(column) {
+            // Toggle direction if same column, otherwise reset to ascending
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            // Sort the orders
+            const sorted = [...currentOrders].sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                // Handle null/undefined
+                if (aVal == null) aVal = '';
+                if (bVal == null) bVal = '';
+
+                // Convert to numbers if numeric
+                if (column === 'quantity') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                }
+
+                // Compare
+                if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Update sort indicators
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            const activeHeader = document.querySelector(`th[data-sort="${column}"]`);
+            if (activeHeader) {
+                activeHeader.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+
+            // Re-render
+            renderOrdersTable(sorted);
+        }
+
+        // Add click handlers to sortable headers
+        document.querySelectorAll('th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const column = th.getAttribute('data-sort');
+                sortOrders(column);
+            });
+        });
 
         // Toggle order items display
         async function toggleOrderItems(orderId, event) {
