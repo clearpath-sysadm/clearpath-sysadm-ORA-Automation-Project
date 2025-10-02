@@ -1487,9 +1487,9 @@ def api_upload_orders_to_shipstation():
                     skipped_count += 1
                     shipstation_id = existing['orderId'] or existing['orderKey']
                     
-                    # Store in shipstation_order_line_items table
+                    # Store in shipstation_order_line_items table (skip if already exists)
                     cursor.execute("""
-                        INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                        INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
                         VALUES (?, ?, ?)
                     """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
                     
@@ -1536,9 +1536,9 @@ def api_upload_orders_to_shipstation():
                 if success:
                     shipstation_id = order_id or order_key
                     
-                    # Store ShipStation order ID in shipstation_order_line_items table
+                    # Store ShipStation order ID in shipstation_order_line_items table (skip if already exists)
                     cursor.execute("""
-                        INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                        INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
                         VALUES (?, ?, ?)
                     """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
                     
