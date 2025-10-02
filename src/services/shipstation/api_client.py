@@ -259,3 +259,65 @@ def fetch_shipstation_existing_orders_by_date_range(
     except Exception as e:
         logger.error(f"Error fetching existing orders: {e}", exc_info=True)
         return []
+
+def fetch_shipstation_orders_by_order_numbers(
+    api_key: str,
+    api_secret: str,
+    orders_endpoint: str,
+    order_numbers: list
+) -> list:
+    """
+    Fetches existing orders from ShipStation by specific order numbers.
+    This provides more robust duplicate detection than date-range queries.
+    
+    Args:
+        api_key: ShipStation API Key
+        api_secret: ShipStation API Secret
+        orders_endpoint: ShipStation orders API endpoint URL
+        order_numbers: List of order numbers to query
+    
+    Returns:
+        list: List of existing orders from ShipStation matching the order numbers
+    """
+    headers = get_shipstation_headers(api_key, api_secret)
+    all_orders = []
+    
+    for order_num in order_numbers:
+        params = {
+            'orderNumber': str(order_num).strip(),
+            'page': 1,
+            'pageSize': 500
+        }
+        
+        try:
+            while True:
+                response = make_api_request(
+                    url=orders_endpoint,
+                    method='GET',
+                    headers=headers,
+                    params=params,
+                    timeout=30
+                )
+                
+                if response and response.status_code == 200:
+                    data = response.json()
+                    orders_on_page = data.get('orders', [])
+                    all_orders.extend(orders_on_page)
+                    
+                    total_pages = data.get('pages', 1)
+                    current_page = data.get('page', 1)
+                    
+                    if current_page >= total_pages:
+                        break
+                    else:
+                        params['page'] += 1
+                else:
+                    logger.warning(f"Failed to fetch order {order_num}. Status: {response.status_code if response else 'N/A'}")
+                    break
+                    
+        except Exception as e:
+            logger.error(f"Error fetching order {order_num}: {e}", exc_info=True)
+            continue
+    
+    logger.info(f"Retrieved {len(all_orders)} existing orders by order numbers")
+    return all_orders

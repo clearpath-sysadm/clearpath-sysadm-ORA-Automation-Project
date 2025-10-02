@@ -1684,7 +1684,7 @@ def api_upload_orders_to_shipstation():
         from src.services.shipstation.api_client import (
             get_shipstation_credentials,
             send_all_orders_to_shipstation,
-            fetch_shipstation_existing_orders_by_date_range
+            fetch_shipstation_orders_by_order_numbers
         )
         from config.settings import settings
         from dateutil import parser as date_parser
@@ -1823,17 +1823,15 @@ def api_upload_orders_to_shipstation():
                     'sku_with_lot': sku_with_lot
                 })
         
-        # Check for duplicates in ShipStation
-        earliest_date = min([date_parser.parse(o['orderDate']) for o in shipstation_orders])
-        create_date_start = earliest_date.strftime('%Y-%m-%dT00:00:00Z')
-        create_date_end = datetime.now().strftime('%Y-%m-%dT23:59:59Z')
+        # Check for duplicates in ShipStation by querying specific order numbers
+        # This is more robust than date-range queries which can miss old orders
+        unique_order_numbers = list(set([o['orderNumber'] for o in shipstation_orders]))
         
-        existing_orders = fetch_shipstation_existing_orders_by_date_range(
+        existing_orders = fetch_shipstation_orders_by_order_numbers(
             api_key,
             api_secret,
             settings.SHIPSTATION_ORDERS_ENDPOINT,
-            create_date_start,
-            create_date_end
+            unique_order_numbers
         )
         
         # Create map of existing orders by order number AND items (SKU) for accurate duplicate detection
@@ -1914,14 +1912,49 @@ def api_upload_orders_to_shipstation():
         for batch_start in range(0, len(new_orders), BATCH_SIZE):
             batch_end = min(batch_start + BATCH_SIZE, len(new_orders))
             batch_orders = new_orders[batch_start:batch_end]
+            batch_sku_map = new_order_sku_map[batch_start:batch_end]
             
-            batch_results = send_all_orders_to_shipstation(
-                batch_orders,
-                api_key,
-                api_secret,
-                settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT
-            )
-            upload_results.extend(batch_results)
+            # Transaction-safe re-check: Verify orders haven't shipped since initial query
+            # This prevents race condition where order ships between query and upload
+            final_batch_orders = []
+            final_batch_sku_map = []
+            
+            for idx, order in enumerate(batch_orders):
+                order_num = order['orderNumber']
+                sku_info = batch_sku_map[idx]
+                
+                # Re-check if order has shipped
+                cursor.execute("""
+                    SELECT 1 FROM shipped_orders 
+                    WHERE order_number = ?
+                """, (order_num,))
+                
+                if cursor.fetchone() is None:
+                    # Order has NOT shipped - safe to upload
+                    final_batch_orders.append(order)
+                    final_batch_sku_map.append(sku_info)
+                else:
+                    # Order has shipped since initial check - skip
+                    skipped_count += 1
+                    cursor.execute("""
+                        UPDATE orders_inbox
+                        SET status = 'uploaded',
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (sku_info['order_inbox_id'],))
+            
+            # Upload only orders that passed the re-check
+            if final_batch_orders:
+                batch_results = send_all_orders_to_shipstation(
+                    final_batch_orders,
+                    api_key,
+                    api_secret,
+                    settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT
+                )
+                upload_results.extend(batch_results)
+                
+                # Update new_order_sku_map for result processing
+                new_order_sku_map[batch_start:batch_start+len(final_batch_sku_map)] = final_batch_sku_map
         
         # Update database with results
         uploaded_count = 0
