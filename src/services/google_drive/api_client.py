@@ -5,7 +5,10 @@ specifically for fetching file content.
 """
 import json
 import logging
+import os
+import requests
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from io import BytesIO
@@ -16,6 +19,94 @@ from config import settings
 
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
+
+def get_replit_google_drive_access_token():
+    """Get Google Drive access token from Replit connection"""
+    hostname = os.environ.get('REPLIT_CONNECTORS_HOSTNAME')
+    x_replit_token = os.environ.get('REPL_IDENTITY')
+    
+    if x_replit_token:
+        x_replit_token = 'repl ' + x_replit_token
+    elif os.environ.get('WEB_REPL_RENEWAL'):
+        x_replit_token = 'depl ' + os.environ.get('WEB_REPL_RENEWAL')
+    else:
+        raise Exception('X_REPLIT_TOKEN not found for repl/depl')
+    
+    url = f'https://{hostname}/api/v2/connection?include_secrets=true&connector_names=google-drive'
+    headers = {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': x_replit_token
+    }
+    
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    
+    data = response.json()
+    connection_settings = data.get('items', [{}])[0]
+    
+    access_token = connection_settings.get('settings', {}).get('access_token')
+    if not access_token:
+        raise Exception('Google Drive not connected')
+    
+    return access_token
+
+def list_xml_files_from_folder(folder_id: str):
+    """List all XML files from a Google Drive folder using Replit connection"""
+    try:
+        access_token = get_replit_google_drive_access_token()
+        
+        credentials = Credentials(token=access_token)
+        service = build('drive', 'v3', credentials=credentials)
+        
+        # Query for XML files in the folder
+        query = f"'{folder_id}' in parents and (mimeType='text/xml' or mimeType='application/xml' or name contains '.xml') and trashed=false"
+        
+        results = service.files().list(
+            q=query,
+            pageSize=100,
+            fields="files(id, name, mimeType, modifiedTime, size)"
+        ).execute()
+        
+        files = results.get('files', [])
+        logger.info(f"Found {len(files)} XML files in Google Drive folder {folder_id}")
+        
+        return files
+        
+    except Exception as e:
+        logger.error(f"Error listing files from Google Drive: {str(e)}")
+        raise
+
+def fetch_xml_from_drive_by_file_id(file_id: str) -> str:
+    """Fetch XML content from Google Drive using Replit connection"""
+    try:
+        access_token = get_replit_google_drive_access_token()
+        
+        credentials = Credentials(token=access_token)
+        service = build('drive', 'v3', credentials=credentials)
+        
+        # Get file metadata
+        file_metadata = service.files().get(fileId=file_id, fields='name,mimeType,size').execute()
+        logger.info(f"Fetching file: {file_metadata.get('name')}")
+        
+        # Download file content
+        request = service.files().get_media(fileId=file_id)
+        file_content_stream = BytesIO()
+        downloader = MediaIoBaseDownload(file_content_stream, request)
+        
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+            logger.debug(f"Download progress: {int(status.progress() * 100)}%")
+        
+        xml_content_bytes = file_content_stream.getvalue()
+        xml_string = xml_content_bytes.decode('iso-8859-1')
+        
+        logger.info(f"Successfully fetched XML content from file {file_id}")
+        return xml_string
+        
+    except Exception as e:
+        logger.error(f"Error fetching XML from Google Drive: {str(e)}")
+        raise
 
 def fetch_xml_content_from_drive(file_id: str, service_account_key_json: str) -> str | None:
     """
