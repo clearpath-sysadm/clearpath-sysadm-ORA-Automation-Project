@@ -1123,22 +1123,24 @@ def api_order_items(order_id):
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Get order items with SKU-Lot mapping from sku_lot table (active lots only)
+        # Get order items with SKU-Lot mapping and ShipStation order IDs
         cursor.execute("""
             SELECT 
                 oi.sku,
                 oi.quantity,
                 sl.lot,
-                sl.active
+                sl.active,
+                ssli.shipstation_order_id
             FROM order_items_inbox oi
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
+            LEFT JOIN shipstation_order_line_items ssli ON oi.order_inbox_id = ssli.order_inbox_id AND oi.sku = ssli.sku
             WHERE oi.order_inbox_id = ?
             ORDER BY oi.sku
         """, (order_id,))
         
         items = []
         for row in cursor.fetchall():
-            sku, quantity, lot, active = row
+            sku, quantity, lot, active, shipstation_order_id = row
             # Format as "SKU - Lot" if lot exists, otherwise just SKU
             sku_lot_display = f"{sku} - {lot}" if lot else sku
             
@@ -1146,7 +1148,8 @@ def api_order_items(order_id):
                 'sku': sku,
                 'lot': lot or '',
                 'sku_lot_display': sku_lot_display,
-                'quantity': quantity
+                'quantity': quantity,
+                'shipstation_order_id': shipstation_order_id or ''
             })
         
         conn.close()
@@ -1376,13 +1379,12 @@ def api_upload_orders_to_shipstation():
                 'uploaded': 0
             })
         
-        # Build ShipStation order payloads
+        # Build ShipStation order payloads (ONE ORDER PER SKU)
         shipstation_orders = []
-        order_map = {}  # Map order_number to order_id for later update
+        order_sku_map = []  # Track (order_inbox_id, sku, order_number) for later updates
         
         for order_row in pending_orders:
             order_id, order_number, order_date, customer_email, total_amount_cents = order_row
-            order_map[order_number] = order_id
             
             # Get order items
             cursor.execute("""
@@ -1392,48 +1394,54 @@ def api_upload_orders_to_shipstation():
             """, (order_id,))
             items = cursor.fetchall()
             
-            # Build items with SKU-Lot mapping
-            shipstation_items = []
+            # Create SEPARATE ShipStation order for EACH SKU
             for sku, qty, unit_price_cents in items:
                 lot_number = sku_lot_map.get(sku, '')
                 sku_with_lot = f"{sku}-{lot_number}" if lot_number else sku
                 
-                shipstation_items.append({
-                    'sku': sku_with_lot,
-                    'name': f'Product {sku}',
-                    'quantity': qty,
-                    'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
+                # Single-item order for this SKU with UNIQUE order number
+                unique_order_number = f"{order_number}-{sku}"
+                
+                shipstation_order = {
+                    'orderNumber': unique_order_number,  # UNIQUE order number per SKU
+                    'orderDate': order_date,
+                    'orderStatus': 'awaiting_shipment',
+                    'customerEmail': customer_email or '',
+                    'billTo': {
+                        'name': 'Customer',
+                        'street1': '',
+                        'city': '',
+                        'state': '',
+                        'postalCode': '',
+                        'country': 'US'
+                    },
+                    'shipTo': {
+                        'name': 'Customer',
+                        'street1': '',
+                        'city': '',
+                        'state': '',
+                        'postalCode': '',
+                        'country': 'US'
+                    },
+                    'items': [{
+                        'sku': sku_with_lot,
+                        'name': f'Product {sku}',
+                        'quantity': qty,
+                        'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
+                    }],
+                    'amountPaid': (unit_price_cents * qty / 100) if unit_price_cents else 0,
+                    'taxAmount': 0,
+                    'shippingAmount': 0
+                }
+                
+                shipstation_orders.append(shipstation_order)
+                order_sku_map.append({
+                    'order_inbox_id': order_id,
+                    'sku': sku,
+                    'order_number': order_number,
+                    'unique_order_number': unique_order_number,
+                    'sku_with_lot': sku_with_lot
                 })
-            
-            # Build ShipStation order payload
-            shipstation_order = {
-                'orderNumber': order_number,
-                'orderDate': order_date,
-                'orderStatus': 'awaiting_shipment',
-                'customerEmail': customer_email or '',
-                'billTo': {
-                    'name': 'Customer',
-                    'street1': '',
-                    'city': '',
-                    'state': '',
-                    'postalCode': '',
-                    'country': 'US'
-                },
-                'shipTo': {
-                    'name': 'Customer',
-                    'street1': '',
-                    'city': '',
-                    'state': '',
-                    'postalCode': '',
-                    'country': 'US'
-                },
-                'items': shipstation_items,
-                'amountPaid': (total_amount_cents / 100) if total_amount_cents else 0,
-                'taxAmount': 0,
-                'shippingAmount': 0
-            }
-            
-            shipstation_orders.append(shipstation_order)
         
         # Check for duplicates in ShipStation
         earliest_date = min([date_parser.parse(o['orderDate']) for o in shipstation_orders])
@@ -1449,30 +1457,45 @@ def api_upload_orders_to_shipstation():
         )
         
         # Create map of existing orders by order number for efficient lookup
-        existing_order_map = {o.get('orderNumber', '').strip().upper(): o for o in existing_orders}
+        # NOTE: ShipStation may have MULTIPLE orders with same order number (one per SKU)
+        existing_order_list = []
+        for o in existing_orders:
+            order_num = o.get('orderNumber', '').strip().upper()
+            existing_order_list.append({
+                'orderNumber': order_num,
+                'orderId': o.get('orderId'),
+                'orderKey': o.get('orderKey')
+            })
         
         # Filter out duplicates and capture their ShipStation IDs
         new_orders = []
+        new_order_sku_map = []
         skipped_count = 0
-        for order in shipstation_orders:
+        
+        for idx, order in enumerate(shipstation_orders):
             order_num_upper = order['orderNumber'].strip().upper()
+            order_sku_info = order_sku_map[idx]
             
-            if order_num_upper in existing_order_map:
-                skipped_count += 1
-                # Get ShipStation order ID from existing order
-                existing_order = existing_order_map[order_num_upper]
-                shipstation_id = existing_order.get('orderId') or existing_order.get('orderKey')
-                
-                # Mark as uploaded and store ShipStation ID
-                cursor.execute("""
-                    UPDATE orders_inbox 
-                    SET status = 'uploaded',
-                        shipstation_order_id = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE order_number = ?
-                """, (shipstation_id, order['orderNumber']))
-            else:
+            # Check if this specific order already exists (matching order number)
+            # NOTE: Can't match by SKU since ShipStation doesn't return that easily
+            duplicate_found = False
+            for existing in existing_order_list:
+                if existing['orderNumber'] == order_num_upper:
+                    skipped_count += 1
+                    shipstation_id = existing['orderId'] or existing['orderKey']
+                    
+                    # Store in shipstation_order_line_items table
+                    cursor.execute("""
+                        INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                        VALUES (?, ?, ?)
+                    """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
+                    
+                    duplicate_found = True
+                    break
+            
+            if not duplicate_found:
                 new_orders.append(order)
+                new_order_sku_map.append(order_sku_info)
         
         if not new_orders:
             conn.commit()
@@ -1492,56 +1515,52 @@ def api_upload_orders_to_shipstation():
             settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT
         )
         
-        # Create map of new orders by orderNumber for efficient matching
-        order_map_by_number = {o['orderNumber']: o for o in new_orders}
-        
         # Update database with results
         uploaded_count = 0
         failed_count = 0
         
-        for result in upload_results:
+        for idx, result in enumerate(upload_results):
             # ShipStation returns orderKey which should match our orderNumber
             order_key = result.get('orderKey', '')
             order_id = result.get('orderId')
             success = result.get('success', False)
             error_msg = result.get('errorMessage')
             
-            if success:
-                # Match by orderKey (which is our orderNumber)
-                if order_key in order_map_by_number:
+            # Get corresponding order_sku_info from new_order_sku_map
+            if idx < len(new_order_sku_map):
+                order_sku_info = new_order_sku_map[idx]
+                
+                if success:
                     shipstation_id = order_id or order_key
+                    
+                    # Store ShipStation order ID in shipstation_order_line_items table
                     cursor.execute("""
-                        UPDATE orders_inbox 
-                        SET status = 'uploaded',
-                            shipstation_order_id = ?,
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE order_number = ?
-                    """, (shipstation_id, order_key))
+                        INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                        VALUES (?, ?, ?)
+                    """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
+                    
                     uploaded_count += 1
                 else:
-                    # Fallback: try to find by matching order number
-                    for order_num, order_data in order_map_by_number.items():
-                        if order_num.upper() == order_key.upper():
-                            shipstation_id = order_id or order_key
-                            cursor.execute("""
-                                UPDATE orders_inbox 
-                                SET status = 'uploaded',
-                                    shipstation_order_id = ?,
-                                    updated_at = CURRENT_TIMESTAMP
-                                WHERE order_number = ?
-                            """, (shipstation_id, order_num))
-                            uploaded_count += 1
-                            break
-            else:
-                failed_count += 1
-                # Mark as failed in database
-                if order_key and order_key in order_map_by_number:
+                    failed_count += 1
+                    # Mark order as failed
                     cursor.execute("""
                         UPDATE orders_inbox 
                         SET status = 'failed',
                             updated_at = CURRENT_TIMESTAMP
-                        WHERE order_number = ?
-                    """, (order_key,))
+                        WHERE id = ?
+                    """, (order_sku_info['order_inbox_id'],))
+        
+        # Update all successfully uploaded orders to 'uploaded' status
+        # (Only if ALL SKUs for that order were uploaded successfully)
+        cursor.execute("""
+            UPDATE orders_inbox
+            SET status = 'uploaded',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id IN (
+                SELECT DISTINCT order_inbox_id 
+                FROM shipstation_order_line_items
+            )
+        """)
         
         conn.commit()
         conn.close()

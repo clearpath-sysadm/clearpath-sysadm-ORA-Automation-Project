@@ -627,13 +627,13 @@
             color: var(--text-tertiary);
             margin-bottom: calc(var(--spacing-unit) * 1);
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2fr 1fr 2fr;
             gap: calc(var(--spacing-unit) * 2);
         }
 
         .item-row {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2fr 1fr 2fr;
             gap: calc(var(--spacing-unit) * 2);
             padding: calc(var(--spacing-unit) * 1.5) 0;
             border-bottom: 1px solid var(--border-color);
@@ -1024,11 +1024,13 @@
                             <div class="items-header">
                                 <div>SKU - Lot (for ShipStation)</div>
                                 <div>Quantity</div>
+                                <div>ShipStation ID</div>
                             </div>
                             ${result.data.map(item => `
                                 <div class="item-row">
                                     <div class="item-sku">${item.sku_lot_display}</div>
                                     <div class="item-quantity">${item.quantity}</div>
+                                    <div class="item-shipstation-id">${item.shipstation_order_id || '-'}</div>
                                 </div>
                             `).join('')}
                         `;
