@@ -1467,6 +1467,14 @@ def api_upload_orders_to_shipstation():
         """)
         sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
         
+        # Fetch Product Name mappings for ShipStation display
+        cursor.execute("""
+            SELECT sku, value
+            FROM configuration_params
+            WHERE category = 'Product Names'
+        """)
+        product_name_map = {row[0]: row[1] for row in cursor.fetchall()}
+        
         # Build query for pending orders with address data
         if order_ids:
             placeholders = ','.join('?' * len(order_ids))
@@ -1518,6 +1526,7 @@ def api_upload_orders_to_shipstation():
             for sku, qty, unit_price_cents in items:
                 lot_number = sku_lot_map.get(sku, '')
                 sku_with_lot = f"{sku} - {lot_number}" if lot_number else sku
+                product_name = product_name_map.get(sku, f'Product {sku}')  # Use mapped name or fallback
                 
                 # Use original order number (no SKU appended)
                 unique_order_number = order_number
@@ -1549,7 +1558,7 @@ def api_upload_orders_to_shipstation():
                     },
                     'items': [{
                         'sku': sku_with_lot,
-                        'name': f'Product {sku}',
+                        'name': product_name,
                         'quantity': qty,
                         'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
                     }],
