@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - ORA Business</title>
+    <style>
+        :root {
+            --primary-blue: #4F46E5;
+            --primary-blue-hover: #4338CA;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --background: #FFFFFF;
+            --border-color: #E5E7EB;
+            --surface: #F9FAFB;
+            --spacing-unit: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--surface);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: calc(var(--spacing-unit) * 4);
+        }
+
+        .header {
+            background: var(--background);
+            border-bottom: 1px solid var(--border-color);
+            padding: calc(var(--spacing-unit) * 3) calc(var(--spacing-unit) * 4);
+            margin: calc(var(--spacing-unit) * -4) calc(var(--spacing-unit) * -4) calc(var(--spacing-unit) * 4);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 1);
+            padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 2);
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .back-link:hover {
+            background: var(--surface);
+        }
+
+        h1 {
+            font-size: 24px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .card {
+            background: var(--background);
+            border-radius: 12px;
+            padding: calc(var(--spacing-unit) * 3);
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .form-group {
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: calc(var(--spacing-unit) * 1);
+        }
+
+        .form-select {
+            width: 100%;
+            max-width: 400px;
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--background);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-help {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: calc(var(--spacing-unit) * 1);
+        }
+
+        .btn {
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-blue-hover);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .button-group {
+            display: flex;
+            gap: calc(var(--spacing-unit) * 2);
+            margin-top: calc(var(--spacing-unit) * 3);
+        }
+
+        .current-time {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: calc(var(--spacing-unit) * 2);
+            margin-top: calc(var(--spacing-unit) * 2);
+        }
+
+        .current-time-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: calc(var(--spacing-unit) * 1);
+        }
+
+        .current-time-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .success-message {
+            background: #ECFDF5;
+            border: 1px solid #10B981;
+            color: #047857;
+            padding: calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="/" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Back to Dashboard
+            </a>
+            <h1>⚙️ Settings</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="successMessage" class="success-message">
+            Settings saved successfully!
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Timezone Settings</h2>
+            <p class="card-description">
+                Set your preferred timezone for all dates and timestamps across the dashboard. 
+                This ensures you see accurate times regardless of server location.
+            </p>
+
+            <div class="form-group">
+                <label for="timezoneSelect" class="form-label">Timezone</label>
+                <select id="timezoneSelect" class="form-select">
+                    <optgroup label="US Timezones">
+                        <option value="America/New_York">Eastern Time (ET)</option>
+                        <option value="America/Chicago">Central Time (CT)</option>
+                        <option value="America/Denver">Mountain Time (MT)</option>
+                        <option value="America/Phoenix">Arizona (MST)</option>
+                        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                        <option value="America/Anchorage">Alaska (AKT)</option>
+                        <option value="Pacific/Honolulu">Hawaii (HST)</option>
+                    </optgroup>
+                    <optgroup label="Other Common Timezones">
+                        <option value="UTC">UTC (Coordinated Universal Time)</option>
+                        <option value="Europe/London">London (GMT/BST)</option>
+                        <option value="Europe/Paris">Paris (CET/CEST)</option>
+                        <option value="Asia/Dubai">Dubai (GST)</option>
+                        <option value="Asia/Kolkata">India (IST)</option>
+                        <option value="Asia/Singapore">Singapore (SGT)</option>
+                        <option value="Asia/Tokyo">Tokyo (JST)</option>
+                        <option value="Australia/Sydney">Sydney (AEDT/AEST)</option>
+                    </optgroup>
+                </select>
+                <p class="form-help">
+                    Current server time may differ from your selected timezone. All dates will be converted to your chosen timezone.
+                </p>
+            </div>
+
+            <div class="current-time">
+                <div class="current-time-label">Current time in selected timezone:</div>
+                <div class="current-time-value" id="currentTime">--</div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                <button class="btn btn-secondary" onclick="resetSettings()">Reset to Default</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">About</h2>
+            <p class="card-description">
+                ORA Business Dashboard v1.0<br>
+                Timezone-aware reporting and inventory management system
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Load saved timezone or use default
+        function loadSettings() {
+            const savedTimezone = localStorage.getItem('userTimezone') || 'America/New_York';
+            document.getElementById('timezoneSelect').value = savedTimezone;
+            updateCurrentTime();
+        }
+
+        // Update current time display
+        function updateCurrentTime() {
+            const timezone = document.getElementById('timezoneSelect').value;
+            const now = new Date();
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            document.getElementById('currentTime').textContent = formatter.format(now);
+        }
+
+        // Save settings
+        function saveSettings() {
+            const timezone = document.getElementById('timezoneSelect').value;
+            localStorage.setItem('userTimezone', timezone);
+            
+            // Show success message
+            const successMsg = document.getElementById('successMessage');
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 3000);
+        }
+
+        // Reset to default
+        function resetSettings() {
+            localStorage.removeItem('userTimezone');
+            document.getElementById('timezoneSelect').value = 'America/New_York';
+            updateCurrentTime();
+            saveSettings();
+        }
+
+        // Update time every second
+        setInterval(updateCurrentTime, 1000);
+
+        // Update time when timezone changes
+        document.getElementById('timezoneSelect').addEventListener('change', updateCurrentTime);
+
+        // Initialize
+        loadSettings();
+    </script>
+</body>
+</html>
