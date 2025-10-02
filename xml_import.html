@@ -318,21 +318,7 @@
     </div>
 
     <div class="container">
-        <!-- Import Section -->
-        <div class="section">
-            <div class="section-title">☁️ Import Orders from Google Drive</div>
-            
-            <div id="alert-container"></div>
-
-            <div style="text-align: center; padding: 2rem;">
-                <p style="margin-bottom: 1.5rem; color: #6b7280; font-size: 1.125rem;">
-                    Import orders from <strong>orders.xml</strong> in Google Drive
-                </p>
-                <button class="btn-process" id="btn-import-drive" style="font-size: 1.125rem; padding: 1rem 3rem;">
-                    📥 Import from Google Drive
-                </button>
-            </div>
-        </div>
+        <div id="alert-container"></div>
 
         <!-- Orders Inbox Section -->
         <div class="section">
@@ -388,7 +374,6 @@
 
     <script>
         const alertContainer = document.getElementById('alert-container');
-        const btnImportDrive = document.getElementById('btn-import-drive');
         const btnManualImport = document.getElementById('btn-manual-import');
 
         // Shared import function
@@ -433,10 +418,7 @@
             }
         }
 
-        // Import from Google Drive - Main button
-        btnImportDrive.addEventListener('click', () => importFromDrive(btnImportDrive));
-
-        // Import from Google Drive - Manual button (discreet)
+        // Import from Google Drive - Manual button
         btnManualImport.addEventListener('click', () => importFromDrive(btnManualImport));
 
         // Load orders inbox

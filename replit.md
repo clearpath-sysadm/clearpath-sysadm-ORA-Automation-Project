@@ -130,8 +130,6 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - ✅ Integrated Replit Google Drive connector with OAuth2 authentication
 - ✅ Created `src/services/google_drive/api_client.py` with Replit connection functions
 - ✅ API endpoints: `/api/google_drive/list_files` and `/api/google_drive/import_file/<file_id>`
-- ✅ Simplified XML Import page with one-click "Import from Google Drive" button
-- ✅ Automatically finds and imports orders.xml from Google Drive folder
 - ✅ **Automated Import:** `src/scheduled_xml_import.py` runs every 5 minutes
 - ✅ **Data Expiration:** Automatically deletes orders older than 60 days (2 months)
 - ✅ Workflow `xml-import-scheduler` continuously monitors Google Drive
@@ -139,7 +137,7 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - ✅ Fixed dark mode toggle null pointer error in index.html
 - ✅ **Tested successfully:** Imported 96 orders from orders.xml to orders_inbox
 - ✅ Google Drive folder ID: `1rNudeesa_c6q--KIKUAOLwXta_gyRqAE`
-- ✅ Clean UX: Single button workflow (no file listing or manual upload needed)
+- ✅ Clean UX: Removed redundant import section, kept only discreet manual button
 
 **Dashboard Enhancements (October 2025):**
 - ✅ Changed first stat card from "Today's Orders" to "Units to Ship"
