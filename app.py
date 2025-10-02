@@ -1097,9 +1097,54 @@ def api_google_drive_list_files():
             'error': str(e)
         }), 500
 
+def load_bundle_config_from_db(cursor):
+    """Load bundle configurations from database"""
+    cursor.execute("""
+        SELECT bs.bundle_sku, bc.component_sku, bc.multiplier, bc.sequence
+        FROM bundle_skus bs
+        JOIN bundle_components bc ON bs.id = bc.bundle_sku_id
+        WHERE bs.active = 1
+        ORDER BY bs.bundle_sku, bc.sequence
+    """)
+    
+    bundle_config = {}
+    for row in cursor.fetchall():
+        bundle_sku, component_sku, multiplier, sequence = row
+        
+        if bundle_sku not in bundle_config:
+            bundle_config[bundle_sku] = []
+        
+        bundle_config[bundle_sku].append({
+            'component_sku': component_sku,
+            'multiplier': multiplier
+        })
+    
+    return bundle_config
+
+def expand_bundles(line_items, bundle_config):
+    """Expand bundle SKUs into component SKUs"""
+    expanded_items = []
+    
+    for item in line_items:
+        sku = item['sku']
+        qty = item['quantity']
+        
+        if sku in bundle_config:
+            # This is a bundle - expand it
+            for component in bundle_config[sku]:
+                expanded_items.append({
+                    'sku': component['component_sku'],
+                    'quantity': qty * component['multiplier']
+                })
+        else:
+            # Regular SKU - pass through
+            expanded_items.append(item)
+    
+    return expanded_items
+
 @app.route('/api/google_drive/import_file/<file_id>', methods=['POST'])
 def api_google_drive_import_file(file_id):
-    """Import XML file from Google Drive into orders inbox"""
+    """Import XML file from Google Drive into orders inbox with bundle expansion"""
     try:
         from src.services.google_drive.api_client import fetch_xml_from_drive_by_file_id
         import xml.etree.ElementTree as ET
@@ -1113,6 +1158,10 @@ def api_google_drive_import_file(file_id):
         
         conn = get_connection()
         cursor = conn.cursor()
+        
+        # Load bundle configurations
+        bundle_config = load_bundle_config_from_db(cursor)
+        
         orders_imported = 0
         
         # Process each order
@@ -1128,7 +1177,6 @@ def api_google_drive_import_file(file_id):
                 
                 # Parse line items from order_detail elements
                 line_items = []
-                total_quantity = 0
                 
                 for detail_elem in order_elem.findall('order_detail'):
                     product_code = detail_elem.find('productid')
@@ -1138,7 +1186,12 @@ def api_google_drive_import_file(file_id):
                         sku = product_code.text.strip()
                         qty = int(quantity_elem.text.strip()) if quantity_elem is not None and quantity_elem.text else 1
                         line_items.append({'sku': sku, 'quantity': qty})
-                        total_quantity += qty
+                
+                # Expand bundles into component SKUs
+                expanded_items = expand_bundles(line_items, bundle_config)
+                
+                # Calculate total quantity from expanded items
+                total_quantity = sum(item['quantity'] for item in expanded_items)
                 
                 # Check if order already exists
                 cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
@@ -1153,8 +1206,8 @@ def api_google_drive_import_file(file_id):
                     
                     order_inbox_id = cursor.lastrowid
                     
-                    # Insert line items
-                    for item in line_items:
+                    # Insert expanded line items
+                    for item in expanded_items:
                         cursor.execute("""
                             INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
                             VALUES (?, ?, ?)

@@ -56,8 +56,53 @@ def cleanup_old_orders():
         logger.error(f"Error cleaning up old orders: {str(e)}")
         return 0
 
+def load_bundle_config(cursor):
+    """Load bundle configurations from database"""
+    cursor.execute("""
+        SELECT bs.bundle_sku, bc.component_sku, bc.multiplier, bc.sequence
+        FROM bundle_skus bs
+        JOIN bundle_components bc ON bs.id = bc.bundle_sku_id
+        WHERE bs.active = 1
+        ORDER BY bs.bundle_sku, bc.sequence
+    """)
+    
+    bundle_config = {}
+    for row in cursor.fetchall():
+        bundle_sku, component_sku, multiplier, sequence = row
+        
+        if bundle_sku not in bundle_config:
+            bundle_config[bundle_sku] = []
+        
+        bundle_config[bundle_sku].append({
+            'component_sku': component_sku,
+            'multiplier': multiplier
+        })
+    
+    return bundle_config
+
+def expand_bundle_items(line_items, bundle_config):
+    """Expand bundle SKUs into component SKUs"""
+    expanded_items = []
+    
+    for item in line_items:
+        sku = item['sku']
+        qty = item['quantity']
+        
+        if sku in bundle_config:
+            # This is a bundle - expand it
+            for component in bundle_config[sku]:
+                expanded_items.append({
+                    'sku': component['component_sku'],
+                    'quantity': qty * component['multiplier']
+                })
+        else:
+            # Regular SKU - pass through
+            expanded_items.append(item)
+    
+    return expanded_items
+
 def import_orders_from_drive():
-    """Import orders.xml from Google Drive"""
+    """Import orders.xml from Google Drive with bundle expansion"""
     try:
         files = list_xml_files_from_folder(GOOGLE_DRIVE_FOLDER_ID)
         
@@ -75,6 +120,11 @@ def import_orders_from_drive():
         
         conn = get_connection()
         cursor = conn.cursor()
+        
+        # Load bundle configurations
+        bundle_config = load_bundle_config(cursor)
+        logger.info(f"Loaded {len(bundle_config)} bundle configurations")
+        
         orders_imported = 0
         
         for order_elem in root.findall('order'):
@@ -89,7 +139,6 @@ def import_orders_from_drive():
                 
                 # Parse line items from order_detail elements
                 line_items = []
-                total_quantity = 0
                 
                 for detail_elem in order_elem.findall('order_detail'):
                     product_code = detail_elem.find('productid')
@@ -99,7 +148,12 @@ def import_orders_from_drive():
                         sku = product_code.text.strip()
                         qty = int(quantity_elem.text.strip()) if quantity_elem is not None and quantity_elem.text else 1
                         line_items.append({'sku': sku, 'quantity': qty})
-                        total_quantity += qty
+                
+                # Expand bundles into component SKUs
+                expanded_items = expand_bundle_items(line_items, bundle_config)
+                
+                # Calculate total quantity from expanded items
+                total_quantity = sum(item['quantity'] for item in expanded_items)
                 
                 cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
                 existing = cursor.fetchone()
@@ -112,8 +166,8 @@ def import_orders_from_drive():
                     
                     order_inbox_id = cursor.lastrowid
                     
-                    # Insert line items
-                    for item in line_items:
+                    # Insert expanded line items
+                    for item in expanded_items:
                         cursor.execute("""
                             INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
                             VALUES (?, ?, ?)
