@@ -433,6 +433,88 @@
             color: #fca5a5;
         }
 
+        /* Order Type Icons */
+        .order-type-icons {
+            display: inline-flex;
+            gap: 4px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .order-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            border-radius: 3px;
+            opacity: 0.85;
+        }
+
+        .icon-hawaiian {
+            background-color: #fef3c7;
+            color: #92400e;
+            font-weight: 600;
+        }
+
+        .icon-canadian {
+            background-color: #fee2e2;
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+        .icon-benco {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .icon-international {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            font-weight: 600;
+        }
+
+        .icon-manual {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+            font-weight: 600;
+        }
+
+        body.dark-mode .icon-hawaiian {
+            background-color: #451a03;
+            color: #fbbf24;
+        }
+
+        body.dark-mode .icon-canadian {
+            background-color: #450a0a;
+            color: #fca5a5;
+        }
+
+        body.dark-mode .icon-benco {
+            background-color: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        body.dark-mode .icon-international {
+            background-color: #312e81;
+            color: #a5b4fc;
+        }
+
+        body.dark-mode .icon-manual {
+            background-color: #581c87;
+            color: #e9d5ff;
+        }
+
+        @media (max-width: 768px) {
+            .order-icon {
+                width: 16px;
+                height: 16px;
+                font-size: 10px;
+            }
+        }
+
         /* Stats Grid */
         .stats-grid {
             display: grid;
@@ -1081,12 +1163,32 @@
                     ? `title="${order.failure_reason}"` 
                     : '';
                 
+                // Build order type icons
+                let icons = '';
+                if (order.is_hawaiian) {
+                    icons += '<span class="order-icon icon-hawaiian" title="Hawaiian Order">HI</span>';
+                }
+                if (order.is_canadian) {
+                    icons += '<span class="order-icon icon-canadian" title="Canadian Order">CA</span>';
+                }
+                if (order.is_benco) {
+                    icons += '<span class="order-icon icon-benco" title="Benco Order">B</span>';
+                }
+                if (order.is_international) {
+                    icons += '<span class="order-icon icon-international" title="International Order">🌐</span>';
+                }
+                if (order.is_manual) {
+                    icons += '<span class="order-icon icon-manual" title="Manual ShipStation Order">M</span>';
+                }
+                
+                const iconHtml = icons ? `<span class="order-type-icons">${icons}</span>` : '';
+                
                 return `
                 <tr data-order-id="${order.id}" class="order-row" ${failureTooltip}>
                     <td>
                         ${order.status === 'pending' ? `<input type="checkbox" class="order-checkbox" data-order-id="${order.id}">` : ''}
                     </td>
-                    <td><strong>${order.order_number}</strong></td>
+                    <td><strong>${order.order_number}</strong>${iconHtml}</td>
                     <td>${order.order_date}</td>
                     <td>${order.company_name || '-'}</td>
                     <td><strong>${order.sku_lot_display}</strong></td>

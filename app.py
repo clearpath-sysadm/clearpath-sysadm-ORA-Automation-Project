@@ -1366,12 +1366,15 @@ def api_orders_inbox():
                 ssli.shipstation_order_id,
                 o.created_at,
                 o.failure_reason,
-                o.ship_company
+                o.ship_company,
+                o.ship_state,
+                o.ship_country,
+                o.source_system
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
             LEFT JOIN shipstation_order_line_items ssli ON oi.order_inbox_id = ssli.order_inbox_id AND oi.sku = ssli.sku
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, ssli.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, ssli.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
@@ -1382,6 +1385,18 @@ def api_orders_inbox():
             sku = row[5]
             lot = row[7]
             sku_lot_display = f"{sku} - {lot}" if lot else sku
+            
+            company_name = row[11] or ''
+            ship_state = (row[12] or '').strip().upper()
+            ship_country = (row[13] or 'US').strip().upper()
+            source_system = row[14] or 'X-Cart'
+            
+            # Determine order type flags
+            is_hawaiian = ship_state == 'HI'
+            is_canadian = ship_country in ('CA', 'CANADA')
+            is_benco = 'BENCO' in company_name.upper() if company_name else False
+            is_international = ship_country not in ('US', 'USA', 'CA', 'CANADA', '') and ship_country is not None
+            is_manual = source_system == 'synced_manual'
             
             orders.append({
                 'id': row[0],
@@ -1395,7 +1410,12 @@ def api_orders_inbox():
                 'shipstation_order_id': row[8] or '',
                 'created_at': row[9],
                 'failure_reason': row[10] or '',
-                'company_name': row[11] or ''
+                'company_name': company_name,
+                'is_hawaiian': is_hawaiian,
+                'is_canadian': is_canadian,
+                'is_benco': is_benco,
+                'is_international': is_international,
+                'is_manual': is_manual
             })
         
         return jsonify({
