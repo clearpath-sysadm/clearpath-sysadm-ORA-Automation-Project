@@ -96,7 +96,8 @@ def fetch_xml_from_drive_by_file_id(file_id: str) -> str:
         done = False
         while not done:
             status, done = downloader.next_chunk()
-            logger.debug(f"Download progress: {int(status.progress() * 100)}%")
+            if status:
+                logger.debug(f"Download progress: {int(status.progress() * 100)}%")
         
         xml_content_bytes = file_content_stream.getvalue()
         xml_string = xml_content_bytes.decode('iso-8859-1')
@@ -164,8 +165,8 @@ def fetch_xml_content_from_drive(file_id: str, service_account_key_json: str) ->
         done = False
         while done is False:
             status, done = downloader.next_chunk()
-            # CORRECTED: Call the progress method to get its value for logging
-            logger.debug({"message": "Downloading chunk from Google Drive", "status_progress": status.progress(), "file_id": file_id})
+            if status:
+                logger.debug({"message": "Downloading chunk from Google Drive", "status_progress": status.progress(), "file_id": file_id})
         
         xml_content_bytes = file_content_stream.getvalue()
         
