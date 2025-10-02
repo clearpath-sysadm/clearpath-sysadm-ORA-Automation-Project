@@ -181,6 +181,21 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
             logger.warning(f"Skipping order without order_number: {order_id}")
             return False
         
+        # Extract shipping company name from ShipStation
+        ship_to = order.get('shipTo', {})
+        ship_company = ship_to.get('company', '').strip() or None
+        
+        # Map ShipStation status to database status
+        # ShipStation statuses: awaiting_payment, awaiting_shipment, shipped, on_hold, cancelled
+        status_mapping = {
+            'awaiting_payment': 'awaiting_payment',
+            'awaiting_shipment': 'pending',  # Map to pending since awaiting_shipment not in schema
+            'shipped': 'shipped',
+            'on_hold': 'on_hold',
+            'cancelled': 'cancelled'
+        }
+        db_status = status_mapping.get(order_status, 'synced_manual')
+        
         # Parse order date
         order_date_str = order.get('orderDate', '')
         try:
@@ -206,26 +221,27 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                 # Update existing order
                 conn.execute("""
                     UPDATE orders_inbox
-                    SET status = 'synced_manual',
+                    SET status = ?,
                         shipstation_order_id = ?,
                         customer_email = ?,
                         total_items = ?,
                         total_amount_cents = ?,
+                        ship_company = ?,
                         source_system = 'ShipStation Manual',
                         updated_at = CURRENT_TIMESTAMP
                     WHERE order_number = ?
-                """, (str(order_id), customer_email, total_items, total_amount_cents, order_number))
+                """, (db_status, str(order_id), customer_email, total_items, total_amount_cents, ship_company, order_number))
                 order_inbox_id = existing[0]
             else:
                 # Insert new order
                 cursor = conn.execute("""
                     INSERT INTO orders_inbox (
                         order_number, order_date, customer_email, status, shipstation_order_id,
-                        total_items, total_amount_cents, source_system
+                        total_items, total_amount_cents, ship_company, source_system
                     )
-                    VALUES (?, ?, ?, 'synced_manual', ?, ?, ?, 'ShipStation Manual')
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ShipStation Manual')
                 """, (
-                    order_number, order_date, customer_email, str(order_id), total_items, total_amount_cents
+                    order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents, ship_company
                 ))
                 order_inbox_id = cursor.lastrowid
             
@@ -268,8 +284,8 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                     """, (ship_date, str(order_id), order_number))
                 else:
                     conn.execute("""
-                        INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id, source_system)
-                        VALUES (?, ?, ?, 'ShipStation Manual')
+                        INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
+                        VALUES (?, ?, ?)
                     """, (ship_date, order_number, str(order_id)))
                 
                 # Delete existing shipped items and re-insert
