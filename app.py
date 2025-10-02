@@ -1328,12 +1328,13 @@ def api_orders_inbox():
                 sl.lot,
                 ssli.shipstation_order_id,
                 o.created_at,
-                o.failure_reason
+                o.failure_reason,
+                o.ship_company
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
             LEFT JOIN shipstation_order_line_items ssli ON oi.order_inbox_id = ssli.order_inbox_id AND oi.sku = ssli.sku
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, ssli.shipstation_order_id, o.created_at, o.failure_reason
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, ssli.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
@@ -1356,7 +1357,8 @@ def api_orders_inbox():
                 'quantity': row[6],
                 'shipstation_order_id': row[8] or '',
                 'created_at': row[9],
-                'failure_reason': row[10] or ''
+                'failure_reason': row[10] or '',
+                'company_name': row[11] or ''
             })
         
         return jsonify({

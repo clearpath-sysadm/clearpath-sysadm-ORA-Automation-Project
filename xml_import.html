@@ -816,6 +816,15 @@
                         </div>
                     </div>
 
+                    <div style="margin-bottom: 20px;">
+                        <input 
+                            type="text" 
+                            id="search-input" 
+                            placeholder="🔍 Search by order number, company name, SKU..." 
+                            style="width: 100%; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: var(--bg-primary); color: var(--text-primary);"
+                        />
+                    </div>
+
                     <div id="orders-loading" class="loading" style="display: none;">
                         <div class="spinner"></div>
                         <p style="margin-top: 1rem; color: var(--text-tertiary);">Loading orders...</p>
@@ -828,7 +837,7 @@
                                     <th style="width: 40px;"><input type="checkbox" id="select-all" title="Select all pending orders"></th>
                                     <th class="sortable" data-sort="order_number">Order #</th>
                                     <th class="sortable" data-sort="order_date">Order Date</th>
-                                    <th class="sortable" data-sort="customer_email">Customer Email</th>
+                                    <th class="sortable" data-sort="company_name">Company Name</th>
                                     <th class="sortable" data-sort="sku_lot_display">SKU - Lot</th>
                                     <th class="sortable" data-sort="quantity">Quantity</th>
                                     <th class="sortable" data-sort="status">Status</th>
@@ -914,6 +923,7 @@
         
         // Filter state - default to showing pending only
         let showPendingOnly = true;
+        let searchTerm = '';
         
         // Sorting state
         let currentOrders = [];
@@ -964,6 +974,15 @@
 
         // Import from Google Drive - Manual button
         btnManualImport.addEventListener('click', () => importFromDrive(btnManualImport));
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        searchInput.addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            if (currentOrders.length > 0) {
+                renderOrdersTable(currentOrders);
+            }
+        });
 
         // Toggle filter button
         btnToggleFilter.addEventListener('click', () => {
@@ -1031,10 +1050,21 @@
             // Store all orders for sorting
             currentOrders = orders;
 
-            // Filter based on toggle state
-            const filteredOrders = showPendingOnly 
+            // Filter based on toggle state and search term
+            let filteredOrders = showPendingOnly 
                 ? orders.filter(o => o.status === 'pending')
                 : orders;
+            
+            // Apply search filter if search term exists
+            if (searchTerm.trim()) {
+                const search = searchTerm.toLowerCase();
+                filteredOrders = filteredOrders.filter(o => 
+                    (o.order_number || '').toLowerCase().includes(search) ||
+                    (o.company_name || '').toLowerCase().includes(search) ||
+                    (o.sku || '').toLowerCase().includes(search) ||
+                    (o.sku_lot_display || '').toLowerCase().includes(search)
+                );
+            }
 
             if (filteredOrders.length === 0) {
                 const message = showPendingOnly ? 'No pending orders' : 'No orders in inbox';
@@ -1058,7 +1088,7 @@
                     </td>
                     <td><strong>${order.order_number}</strong></td>
                     <td>${order.order_date}</td>
-                    <td>${order.customer_email || '-'}</td>
+                    <td>${order.company_name || '-'}</td>
                     <td><strong>${order.sku_lot_display}</strong></td>
                     <td>${order.quantity}</td>
                     <td><span class="badge badge-${order.status}" ${failureTooltip} style="${order.status === 'failed' ? 'cursor: help;' : ''}">${order.status.toUpperCase()}</span></td>
@@ -1318,7 +1348,7 @@
             }
 
             // CSV Headers
-            const headers = ['Order #', 'Order Date', 'Customer Email', 'SKU - Lot', 'Quantity', 'Status', 'ShipStation ID', 'Created At'];
+            const headers = ['Order #', 'Order Date', 'Company Name', 'SKU - Lot', 'Quantity', 'Status', 'ShipStation ID', 'Created At'];
             
             // Build CSV rows
             const rows = ordersToExport.map(order => {
@@ -1330,7 +1360,7 @@
                 return [
                     order.order_number,
                     orderDate,
-                    order.customer_email || '',
+                    order.company_name || '',
                     skuLot,
                     order.quantity,
                     order.status,
