@@ -141,6 +141,14 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - ✅ Google Drive folder ID: `1rNudeesa_c6q--KIKUAOLwXta_gyRqAE`
 - ✅ Clean UX: Single button workflow (no file listing or manual upload needed)
 
+**Dashboard Enhancements (October 2025):**
+- ✅ Changed first stat card from "Today's Orders" to "Units to Ship"
+- ✅ Displays total quantity from order_items_inbox (pending orders)
+- ✅ FedEx trailer pickup alert triggers when units >= 185
+- ✅ Alert displays FedEx phone number: 651-846-0590 (clickable link)
+- ✅ Alert auto-shows/hides based on current units to ship
+- ✅ Updated dashboard JavaScript to properly handle FedEx alert visibility
+
 **Database Architecture (December 2024):**
 - Designed complete SQLite schema replacing Google Sheets
 - Expert reviews confirm SQLite as optimal choice (vs PostgreSQL)

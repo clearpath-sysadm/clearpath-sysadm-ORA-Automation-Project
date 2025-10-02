@@ -48,10 +48,19 @@ def api_dashboard_stats():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Today's orders
-        today = datetime.now().strftime('%Y-%m-%d')
-        cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date = ?", (today,))
-        todays_orders = cursor.fetchone()[0] or 0
+        # Units to be shipped (from pending orders)
+        cursor.execute("""
+            SELECT COALESCE(SUM(quantity), 0)
+            FROM order_items_inbox
+            WHERE order_inbox_id IN (
+                SELECT id FROM orders_inbox WHERE status = 'pending'
+            )
+        """)
+        units_to_ship = cursor.fetchone()[0] or 0
+        
+        # Check if FedEx pickup is needed (>= 185 units)
+        fedex_pickup_needed = units_to_ship >= 185
+        fedex_phone = '651-846-0590'
         
         # Pending uploads from orders_inbox
         cursor.execute("SELECT COUNT(*) FROM orders_inbox WHERE status = 'pending'")
@@ -76,7 +85,9 @@ def api_dashboard_stats():
         return jsonify({
             'success': True,
             'data': {
-                'todays_orders': todays_orders,
+                'units_to_ship': units_to_ship,
+                'fedex_pickup_needed': fedex_pickup_needed,
+                'fedex_phone': fedex_phone,
                 'pending_uploads': pending_uploads,
                 'recent_shipments': recent_shipments,
                 'system_status': system_status
