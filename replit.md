@@ -148,6 +148,9 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - ✅ Alert displays FedEx phone number: 651-846-0590 (clickable link)
 - ✅ Alert auto-shows/hides based on current units to ship
 - ✅ Updated dashboard JavaScript to properly handle FedEx alert visibility
+- ✅ Added discreet "Manual Import" button to Orders Inbox header (XML Import page)
+- ✅ Button styled with muted gray appearance (opacity 0.7) for subtle UX
+- ✅ Triggers same Google Drive import as main button
 
 **Database Architecture (December 2024):**
 - Designed complete SQLite schema replacing Google Sheets

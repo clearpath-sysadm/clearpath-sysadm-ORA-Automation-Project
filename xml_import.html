@@ -270,6 +270,37 @@
             font-size: 0.875rem;
             opacity: 0.9;
         }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-manual-import {
+            background: #6b7280;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+
+        .btn-manual-import:hover {
+            background: #4b5563;
+            opacity: 1;
+        }
+
+        .btn-manual-import:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -305,7 +336,12 @@
 
         <!-- Orders Inbox Section -->
         <div class="section">
-            <div class="section-title">📥 Orders Inbox</div>
+            <div class="section-header">
+                <div class="section-title" style="margin-bottom: 0;">📥 Orders Inbox</div>
+                <button class="btn-manual-import" id="btn-manual-import">
+                    ↻ Manual Import
+                </button>
+            </div>
             
             <div class="stats">
                 <div class="stat-card">
@@ -353,11 +389,13 @@
     <script>
         const alertContainer = document.getElementById('alert-container');
         const btnImportDrive = document.getElementById('btn-import-drive');
+        const btnManualImport = document.getElementById('btn-manual-import');
 
-        // Import from Google Drive
-        btnImportDrive.addEventListener('click', async () => {
-            btnImportDrive.disabled = true;
-            btnImportDrive.textContent = '⏳ Importing...';
+        // Shared import function
+        async function importFromDrive(triggerButton) {
+            const originalText = triggerButton.textContent;
+            triggerButton.disabled = true;
+            triggerButton.textContent = '⏳ Importing...';
 
             try {
                 // First, find orders.xml file
@@ -390,10 +428,16 @@
             } catch (error) {
                 showAlert('❌ Error: ' + error.message, 'error');
             } finally {
-                btnImportDrive.disabled = false;
-                btnImportDrive.textContent = '📥 Import from Google Drive';
+                triggerButton.disabled = false;
+                triggerButton.textContent = originalText;
             }
-        });
+        }
+
+        // Import from Google Drive - Main button
+        btnImportDrive.addEventListener('click', () => importFromDrive(btnImportDrive));
+
+        // Import from Google Drive - Manual button (discreet)
+        btnManualImport.addEventListener('click', () => importFromDrive(btnManualImport));
 
         // Load orders inbox
         async function loadOrdersInbox() {
