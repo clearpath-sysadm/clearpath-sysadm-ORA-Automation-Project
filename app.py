@@ -777,12 +777,48 @@ def api_create_inventory_transaction():
         
         conn = get_connection()
         cursor = conn.cursor()
+        
+        # Insert transaction
         cursor.execute("""
             INSERT INTO inventory_transactions (date, sku, quantity, transaction_type, notes)
             VALUES (?, ?, ?, ?, ?)
         """, (date, sku, quantity, transaction_type, notes))
-        conn.commit()
         transaction_id = cursor.lastrowid
+        
+        # Update inventory_current based on transaction type
+        # Increase: Receive, Adjust Up, Repack
+        # Decrease: Ship, Adjust Down
+        if transaction_type in ['Receive', 'Adjust Up', 'Repack']:
+            delta = quantity
+        else:  # Ship, Adjust Down
+            delta = -quantity
+        
+        # Update current quantity in inventory_current
+        cursor.execute("""
+            UPDATE inventory_current 
+            SET current_quantity = current_quantity + ?,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE sku = ?
+        """, (delta, sku))
+        
+        # If SKU doesn't exist in inventory_current, we need to handle it
+        # (though this shouldn't happen for valid SKUs)
+        if cursor.rowcount == 0:
+            # Get product name from configuration
+            cursor.execute("""
+                SELECT parameter_name FROM configuration_params 
+                WHERE category = 'Key Products' AND sku = ?
+            """, (sku,))
+            result = cursor.fetchone()
+            product_name = result[0] if result else 'Unknown Product'
+            
+            # Insert new record
+            cursor.execute("""
+                INSERT INTO inventory_current (sku, product_name, current_quantity, weekly_avg_cents, alert_level, reorder_point)
+                VALUES (?, ?, ?, 0, 'normal', 50)
+            """, (sku, product_name, max(0, delta)))
+        
+        conn.commit()
         conn.close()
         
         return jsonify({
@@ -831,20 +867,58 @@ def api_update_inventory_transaction(transaction_id):
         
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE inventory_transactions 
-            SET date = ?, sku = ?, quantity = ?, transaction_type = ?, notes = ?
-            WHERE id = ?
-        """, (date, sku, quantity, transaction_type, notes, transaction_id))
-        conn.commit()
         
-        if cursor.rowcount == 0:
+        # Get old transaction to reverse its effect
+        cursor.execute("""
+            SELECT sku, quantity, transaction_type 
+            FROM inventory_transactions 
+            WHERE id = ?
+        """, (transaction_id,))
+        old_transaction = cursor.fetchone()
+        
+        if not old_transaction:
             conn.close()
             return jsonify({
                 'success': False,
                 'error': 'Transaction not found'
             }), 404
         
+        old_sku, old_quantity, old_type = old_transaction
+        
+        # Reverse old transaction effect
+        if old_type in ['Receive', 'Adjust Up', 'Repack']:
+            old_delta = -old_quantity  # Reverse the increase
+        else:
+            old_delta = old_quantity  # Reverse the decrease
+        
+        cursor.execute("""
+            UPDATE inventory_current 
+            SET current_quantity = current_quantity + ?,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE sku = ?
+        """, (old_delta, old_sku))
+        
+        # Update the transaction
+        cursor.execute("""
+            UPDATE inventory_transactions 
+            SET date = ?, sku = ?, quantity = ?, transaction_type = ?, notes = ?
+            WHERE id = ?
+        """, (date, sku, quantity, transaction_type, notes, transaction_id))
+        
+        # Apply new transaction effect
+        if transaction_type in ['Receive', 'Adjust Up', 'Repack']:
+            new_delta = quantity
+        else:
+            new_delta = -quantity
+        
+        cursor.execute("""
+            UPDATE inventory_current 
+            SET current_quantity = current_quantity + ?,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE sku = ?
+        """, (new_delta, sku))
+        
+        conn.commit()
         conn.close()
         
         return jsonify({
@@ -863,16 +937,40 @@ def api_delete_inventory_transaction(transaction_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM inventory_transactions WHERE id = ?", (transaction_id,))
-        conn.commit()
         
-        if cursor.rowcount == 0:
+        # Get transaction to reverse its effect before deleting
+        cursor.execute("""
+            SELECT sku, quantity, transaction_type 
+            FROM inventory_transactions 
+            WHERE id = ?
+        """, (transaction_id,))
+        transaction = cursor.fetchone()
+        
+        if not transaction:
             conn.close()
             return jsonify({
                 'success': False,
                 'error': 'Transaction not found'
             }), 404
         
+        sku, quantity, transaction_type = transaction
+        
+        # Reverse transaction effect on inventory_current
+        if transaction_type in ['Receive', 'Adjust Up', 'Repack']:
+            delta = -quantity  # Reverse the increase
+        else:
+            delta = quantity  # Reverse the decrease
+        
+        cursor.execute("""
+            UPDATE inventory_current 
+            SET current_quantity = current_quantity + ?,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE sku = ?
+        """, (delta, sku))
+        
+        # Now delete the transaction
+        cursor.execute("DELETE FROM inventory_transactions WHERE id = ?", (transaction_id,))
+        conn.commit()
         conn.close()
         
         return jsonify({
