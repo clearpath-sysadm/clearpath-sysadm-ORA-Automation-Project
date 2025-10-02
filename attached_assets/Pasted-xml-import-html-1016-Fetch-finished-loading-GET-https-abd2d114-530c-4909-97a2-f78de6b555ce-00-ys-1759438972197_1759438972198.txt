@@ -1,0 +1,46 @@
+xml_import.html:1016 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1016
+setInterval
+(anonymous) @ xml_import.html:1400
+web-client-content-script.js:2  Uncaught (in promise) Error: Could not find identifiable element
+    at web-client-content-script.js:2:569123
+    at Array.map (<anonymous>)
+    at web-client-content-script.js:2:569068
+    at p (web-client-content-script.js:2:347936)
+    at Generator.<anonymous> (web-client-content-script.js:2:349275)
+    at Generator.next (web-client-content-script.js:2:348301)
+    at u (web-client-content-script.js:2:354953)
+    at i (web-client-content-script.js:2:355156)
+(anonymous) @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+p @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+u @ web-client-content-script.js:2
+i @ web-client-content-script.js:2
+Promise.then
+u @ web-client-content-script.js:2
+i @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+setTimeout
+(anonymous) @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+t @ web-client-content-script.js:2
+requestIdleCallback
+(anonymous) @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+setInterval
+(anonymous) @ web-client-content-script.js:2
+ru @ web-client-content-script.js:2
+Sl @ web-client-content-script.js:2
+(anonymous) @ web-client-content-script.js:2
+S @ web-client-content-script.js:2
+j @ web-client-content-script.js:2
+xml_import.html:1268 Fetch finished loading: POST "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/upload_orders_to_shipstation".
+uploadSelectedOrders @ xml_import.html:1268
+xml_import.html:1016 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1016
+uploadSelectedOrders @ xml_import.html:1280
