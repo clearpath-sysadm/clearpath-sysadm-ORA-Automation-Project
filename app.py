@@ -951,6 +951,25 @@ def api_xml_import():
             
             conn = get_connection()
             cursor = conn.cursor()
+            
+            # Load bundle configurations for expansion
+            cursor.execute("""
+                SELECT bs.bundle_sku, bc.component_sku, bc.multiplier
+                FROM bundle_skus bs
+                JOIN bundle_components bc ON bs.id = bc.bundle_sku_id
+                WHERE bs.active = 1
+            """)
+            
+            bundle_config = {}
+            for row in cursor.fetchall():
+                bundle_sku, component_sku, multiplier = row
+                if bundle_sku not in bundle_config:
+                    bundle_config[bundle_sku] = []
+                bundle_config[bundle_sku].append({
+                    'component_sku': component_sku,
+                    'multiplier': multiplier
+                })
+            
             orders_imported = 0
             
             # Process each order
@@ -964,9 +983,36 @@ def api_xml_import():
                     order_date_str = order_date.text.strip() if order_date is not None and order_date.text else datetime.now().strftime('%Y-%m-%d')
                     customer_email = email.text.strip() if email is not None and email.text else None
                     
-                    # Count items
-                    items = order_elem.findall('.//product')
-                    total_items = len(items)
+                    # Parse line items from order_detail elements
+                    line_items = []
+                    for detail_elem in order_elem.findall('order_detail'):
+                        product_code = detail_elem.find('productid')
+                        quantity_elem = detail_elem.find('amount')
+                        
+                        if product_code is not None and product_code.text:
+                            sku = product_code.text.strip()
+                            qty = int(quantity_elem.text.strip()) if quantity_elem is not None and quantity_elem.text else 1
+                            line_items.append({'sku': sku, 'quantity': qty})
+                    
+                    # Expand bundles into component SKUs
+                    expanded_items = []
+                    for item in line_items:
+                        sku = item['sku']
+                        qty = item['quantity']
+                        
+                        if sku in bundle_config:
+                            # This is a bundle - expand it
+                            for component in bundle_config[sku]:
+                                expanded_items.append({
+                                    'sku': component['component_sku'],
+                                    'quantity': qty * component['multiplier']
+                                })
+                        else:
+                            # Regular SKU - pass through
+                            expanded_items.append(item)
+                    
+                    # Calculate total quantity from expanded items
+                    total_quantity = sum(item['quantity'] for item in expanded_items)
                     
                     # Check if order already exists
                     cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
@@ -977,23 +1023,16 @@ def api_xml_import():
                         cursor.execute("""
                             INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
                             VALUES (?, ?, ?, 'pending', ?, 'X-Cart')
-                        """, (order_number, order_date_str, customer_email, total_items))
+                        """, (order_number, order_date_str, customer_email, total_quantity))
                         
                         order_inbox_id = cursor.lastrowid
                         
-                        # Insert order items
-                        for product in items:
-                            product_code = product.find('productcode')
-                            quantity = product.find('amount')
-                            
-                            if product_code is not None and product_code.text:
-                                sku = product_code.text.strip()
-                                qty = int(quantity.text.strip()) if quantity is not None and quantity.text else 1
-                                
-                                cursor.execute("""
-                                    INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                                    VALUES (?, ?, ?)
-                                """, (order_inbox_id, sku, qty))
+                        # Insert expanded line items
+                        for item in expanded_items:
+                            cursor.execute("""
+                                INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                                VALUES (?, ?, ?)
+                            """, (order_inbox_id, item['sku'], item['quantity']))
                         
                         orders_imported += 1
             
