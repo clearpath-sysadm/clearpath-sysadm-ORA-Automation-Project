@@ -418,6 +418,31 @@
             color: #991b1b;
         }
 
+        .badge-shipped {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-cancelled {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .badge-on_hold {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-awaiting_payment {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-synced_manual {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+        }
+
         body.dark-mode .badge-pending {
             background-color: #451a03;
             color: #fbbf24;
@@ -431,6 +456,31 @@
         body.dark-mode .badge-failed {
             background-color: #450a0a;
             color: #fca5a5;
+        }
+
+        body.dark-mode .badge-shipped {
+            background-color: #064e3b;
+            color: #6ee7b7;
+        }
+
+        body.dark-mode .badge-cancelled {
+            background-color: #374151;
+            color: #d1d5db;
+        }
+
+        body.dark-mode .badge-on_hold {
+            background-color: #451a03;
+            color: #fbbf24;
+        }
+
+        body.dark-mode .badge-awaiting_payment {
+            background-color: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        body.dark-mode .badge-synced_manual {
+            background-color: #581c87;
+            color: #e9d5ff;
         }
 
         /* Order Type Icons */
@@ -507,11 +557,169 @@
             color: #e9d5ff;
         }
 
+        /* Mobile Order Cards */
+        .orders-mobile-cards {
+            display: none;
+        }
+
+        .order-card {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .order-card:hover {
+            border-color: var(--primary-blue);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .order-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .order-card-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .order-card-number {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .order-card-customer {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .order-card-date {
+            color: var(--text-tertiary);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .order-card-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .order-card-details.expanded {
+            max-height: 200px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .order-card-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 14px;
+        }
+
+        .order-card-detail-label {
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .order-card-detail-value {
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        .order-card-expand-btn {
+            background: none;
+            border: none;
+            color: var(--primary-blue);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .order-card-expand-btn:hover {
+            text-decoration: underline;
+        }
+
+        .order-card-checkbox-container {
+            padding-bottom: 8px;
+        }
+
+        .order-card-checkbox-container input {
+            margin-right: 8px;
+        }
+
+        .order-card-checkbox-container label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .mobile-select-all {
+            display: none;
+            padding: 12px 16px;
+            background-color: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .mobile-select-all label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Zebra striping for table */
+        tr:nth-child(even) {
+            background-color: var(--bg-secondary);
+        }
+
+        tr:nth-child(odd) {
+            background-color: var(--bg-primary);
+        }
+
         @media (max-width: 768px) {
             .order-icon {
                 width: 16px;
                 height: 16px;
                 font-size: 10px;
+            }
+
+            /* Hide table, show cards on mobile */
+            .table-container {
+                display: none !important;
+            }
+
+            .orders-mobile-cards {
+                display: block;
+            }
+
+            .mobile-select-all {
+                display: block;
             }
         }
 
@@ -934,6 +1142,19 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="orders-mobile-cards" id="orders-mobile-cards">
+                        <div class="mobile-select-all" id="mobile-select-all-container" style="display: none;">
+                            <label>
+                                <input type="checkbox" id="mobile-select-all">
+                                Select all pending orders
+                            </label>
+                        </div>
+                        <div id="mobile-cards-list">
+                            <p style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -1125,8 +1346,51 @@
             retryBtn.style.display = failed > 0 ? 'block' : 'none';
         }
 
+        // Helper: Format relative date
+        function formatRelativeDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            
+            if (diffHours < 1) return 'Just now';
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Helper: Get status badge HTML with icon
+        function getStatusBadge(status, failureReason = '') {
+            const icons = {
+                'pending': '⏳',
+                'uploaded': '📤',
+                'shipped': '✅',
+                'failed': '❌',
+                'cancelled': '🚫',
+                'on_hold': '⏸️',
+                'awaiting_payment': '💳',
+                'synced_manual': '🟣'
+            };
+            const icon = icons[status] || '';
+            const tooltip = failureReason ? `title="${failureReason}" style="cursor: help;"` : '';
+            return `<span class="badge badge-${status}" ${tooltip}>${icon} ${status.toUpperCase()}</span>`;
+        }
+
+        // Helper: Get order type icons HTML
+        function getOrderTypeIcons(order) {
+            let icons = '';
+            if (order.is_hawaiian) icons += '<span class="order-icon icon-hawaiian" title="Hawaiian Order">HI</span>';
+            if (order.is_canadian) icons += '<span class="order-icon icon-canadian" title="Canadian Order">CA</span>';
+            if (order.is_benco) icons += '<span class="order-icon icon-benco" title="Benco Order">B</span>';
+            if (order.is_international) icons += '<span class="order-icon icon-international" title="International Order">🌐</span>';
+            if (order.is_manual) icons += '<span class="order-icon icon-manual" title="Manual ShipStation Order">M</span>';
+            return icons ? `<span class="order-type-icons">${icons}</span>` : '';
+        }
+
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('orders-tbody');
+            const mobileCards = document.getElementById('orders-mobile-cards');
             const uploadBtn = document.getElementById('btn-upload-selected');
 
             // Store all orders for sorting
@@ -1151,6 +1415,7 @@
             if (filteredOrders.length === 0) {
                 const message = showPendingOnly ? 'No pending orders' : 'No orders in inbox';
                 tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</td></tr>`;
+                mobileCards.innerHTML = `<p style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</p>`;
                 uploadBtn.style.display = 'none';
                 return;
             }
@@ -1158,33 +1423,13 @@
             const hasPending = filteredOrders.some(o => o.status === 'pending');
             uploadBtn.style.display = hasPending ? 'block' : 'none';
 
+            // Render desktop table rows
             tbody.innerHTML = filteredOrders.map(order => {
-                const failureTooltip = order.status === 'failed' && order.failure_reason 
-                    ? `title="${order.failure_reason}"` 
-                    : '';
-                
-                // Build order type icons
-                let icons = '';
-                if (order.is_hawaiian) {
-                    icons += '<span class="order-icon icon-hawaiian" title="Hawaiian Order">HI</span>';
-                }
-                if (order.is_canadian) {
-                    icons += '<span class="order-icon icon-canadian" title="Canadian Order">CA</span>';
-                }
-                if (order.is_benco) {
-                    icons += '<span class="order-icon icon-benco" title="Benco Order">B</span>';
-                }
-                if (order.is_international) {
-                    icons += '<span class="order-icon icon-international" title="International Order">🌐</span>';
-                }
-                if (order.is_manual) {
-                    icons += '<span class="order-icon icon-manual" title="Manual ShipStation Order">M</span>';
-                }
-                
-                const iconHtml = icons ? `<span class="order-type-icons">${icons}</span>` : '';
+                const iconHtml = getOrderTypeIcons(order);
+                const statusBadge = getStatusBadge(order.status, order.failure_reason);
                 
                 return `
-                <tr data-order-id="${order.id}" class="order-row" ${failureTooltip}>
+                <tr data-order-id="${order.id}" class="order-row">
                     <td>
                         ${order.status === 'pending' ? `<input type="checkbox" class="order-checkbox" data-order-id="${order.id}">` : ''}
                     </td>
@@ -1193,15 +1438,91 @@
                     <td>${order.company_name || '-'}</td>
                     <td><strong>${order.sku_lot_display}</strong></td>
                     <td>${order.quantity}</td>
-                    <td><span class="badge badge-${order.status}" ${failureTooltip} style="${order.status === 'failed' ? 'cursor: help;' : ''}">${order.status.toUpperCase()}</span></td>
+                    <td>${statusBadge}</td>
                     <td>${order.shipstation_order_id || '-'}</td>
-                    <td>${new Date(order.created_at).toLocaleString()}</td>
+                    <td>${formatRelativeDate(order.created_at)}</td>
                 </tr>
+                `;
+            }).join('');
+
+            // Show/hide mobile select-all based on pending orders
+            const mobileSelectAllContainer = document.getElementById('mobile-select-all-container');
+            mobileSelectAllContainer.style.display = hasPending ? 'block' : 'none';
+
+            // Render mobile cards
+            const mobileCardsList = document.getElementById('mobile-cards-list');
+            mobileCardsList.innerHTML = filteredOrders.map(order => {
+                const iconHtml = getOrderTypeIcons(order);
+                const statusBadge = getStatusBadge(order.status, order.failure_reason);
+                const customerName = (order.company_name || 'Unknown Customer').length > 40 
+                    ? (order.company_name || 'Unknown Customer').substring(0, 40) + '...' 
+                    : (order.company_name || 'Unknown Customer');
+                
+                return `
+                <div class="order-card" data-order-id="${order.id}">
+                    ${order.status === 'pending' ? `
+                    <div class="order-card-checkbox-container">
+                        <input type="checkbox" class="order-checkbox" data-order-id="${order.id}" id="mobile-checkbox-${order.id}">
+                        <label for="mobile-checkbox-${order.id}">Select for upload</label>
+                    </div>
+                    ` : ''}
+                    <div class="order-card-header">
+                        <div class="order-card-left">
+                            ${iconHtml}
+                            <span class="order-card-number">#${order.order_number}</span>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    <div class="order-card-customer" title="${order.company_name || 'Unknown Customer'}">${customerName}</div>
+                    <div class="order-card-date">${formatRelativeDate(order.order_date)} · ${order.order_date}</div>
+                    <div class="order-card-details" id="details-${order.id}">
+                        <div class="order-card-detail-row">
+                            <span class="order-card-detail-label">SKU-LOT:</span>
+                            <span class="order-card-detail-value"><strong>${order.sku_lot_display}</strong></span>
+                        </div>
+                        <div class="order-card-detail-row">
+                            <span class="order-card-detail-label">Quantity:</span>
+                            <span class="order-card-detail-value">${order.quantity}</span>
+                        </div>
+                        ${order.shipstation_order_id ? `
+                        <div class="order-card-detail-row">
+                            <span class="order-card-detail-label">ShipStation ID:</span>
+                            <span class="order-card-detail-value">${order.shipstation_order_id}</span>
+                        </div>
+                        ` : ''}
+                        <div class="order-card-detail-row">
+                            <span class="order-card-detail-label">Created:</span>
+                            <span class="order-card-detail-value">${formatRelativeDate(order.created_at)}</span>
+                        </div>
+                    </div>
+                    <button class="order-card-expand-btn" onclick="toggleCardDetails('${order.id}')" aria-expanded="false" aria-controls="details-${order.id}">
+                        <span id="expand-icon-${order.id}">▼</span> Show Details
+                    </button>
+                </div>
                 `;
             }).join('');
             
             // Update select-all checkbox
             updateSelectAll();
+        }
+
+        // Toggle mobile card details
+        function toggleCardDetails(orderId) {
+            const details = document.getElementById(`details-${orderId}`);
+            const button = details.nextElementSibling;
+            const icon = document.getElementById(`expand-icon-${orderId}`);
+            
+            if (details.classList.contains('expanded')) {
+                details.classList.remove('expanded');
+                button.setAttribute('aria-expanded', 'false');
+                icon.textContent = '▼';
+                button.childNodes[1].textContent = ' Show Details';
+            } else {
+                details.classList.add('expanded');
+                button.setAttribute('aria-expanded', 'true');
+                icon.textContent = '▲';
+                button.childNodes[1].textContent = ' Hide Details';
+            }
         }
 
         // Sorting function
