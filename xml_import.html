@@ -780,7 +780,10 @@
                 <div class="card">
                     <div class="section-header">
                         <div class="section-title">📥 Orders Inbox</div>
-                        <div style="display: flex; gap: 12px;">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <button class="btn" id="btn-toggle-filter" style="background-color: var(--primary-blue); color: white; border-color: var(--primary-blue);">
+                                Show Pending Only
+                            </button>
                             <button class="btn-upload" id="btn-upload-selected" style="display: none;">
                                 🚀 Upload Selected to ShipStation
                             </button>
@@ -902,6 +905,10 @@
         // Orders Inbox Functionality
         const alertContainer = document.getElementById('alert-container');
         const btnManualImport = document.getElementById('btn-manual-import');
+        const btnToggleFilter = document.getElementById('btn-toggle-filter');
+        
+        // Filter state - default to showing pending only
+        let showPendingOnly = true;
         
         // Sorting state
         let currentOrders = [];
@@ -953,6 +960,27 @@
         // Import from Google Drive - Manual button
         btnManualImport.addEventListener('click', () => importFromDrive(btnManualImport));
 
+        // Toggle filter button
+        btnToggleFilter.addEventListener('click', () => {
+            showPendingOnly = !showPendingOnly;
+            
+            // Update button text and style
+            if (showPendingOnly) {
+                btnToggleFilter.textContent = 'Show Pending Only';
+                btnToggleFilter.style.backgroundColor = 'var(--primary-blue)';
+                btnToggleFilter.style.borderColor = 'var(--primary-blue)';
+            } else {
+                btnToggleFilter.textContent = 'Show All Orders';
+                btnToggleFilter.style.backgroundColor = 'var(--text-secondary)';
+                btnToggleFilter.style.borderColor = 'var(--text-secondary)';
+            }
+            
+            // Re-render table with current orders
+            if (currentOrders.length > 0) {
+                renderOrdersTable(currentOrders);
+            }
+        });
+
         // Load orders inbox
         async function loadOrdersInbox() {
             const loading = document.getElementById('orders-loading');
@@ -995,19 +1023,25 @@
             const tbody = document.getElementById('orders-tbody');
             const uploadBtn = document.getElementById('btn-upload-selected');
 
-            // Store orders for sorting
+            // Store all orders for sorting
             currentOrders = orders;
 
-            if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td></tr>';
+            // Filter based on toggle state
+            const filteredOrders = showPendingOnly 
+                ? orders.filter(o => o.status === 'pending')
+                : orders;
+
+            if (filteredOrders.length === 0) {
+                const message = showPendingOnly ? 'No pending orders' : 'No orders in inbox';
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</td></tr>`;
                 uploadBtn.style.display = 'none';
                 return;
             }
 
-            const hasPending = orders.some(o => o.status === 'pending');
+            const hasPending = filteredOrders.some(o => o.status === 'pending');
             uploadBtn.style.display = hasPending ? 'block' : 'none';
 
-            tbody.innerHTML = orders.map(order => {
+            tbody.innerHTML = filteredOrders.map(order => {
                 const failureTooltip = order.status === 'failed' && order.failure_reason 
                     ? `title="${order.failure_reason}"` 
                     : '';
