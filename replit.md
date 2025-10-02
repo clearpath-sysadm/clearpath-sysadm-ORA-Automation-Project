@@ -55,6 +55,7 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 **Workflows:**
 - `dashboard-server` - Web server for dashboard UI (port 5000)
 - `weekly-reporter` - Inventory calculation automation
+- `xml-import-scheduler` - Automated XML import from Google Drive (every 5 minutes)
 
 **Environment:** 
 - Python 3.11 with all required dependencies installed
@@ -131,6 +132,9 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - ✅ API endpoints: `/api/google_drive/list_files` and `/api/google_drive/import_file/<file_id>`
 - ✅ Simplified XML Import page with one-click "Import from Google Drive" button
 - ✅ Automatically finds and imports orders.xml from Google Drive folder
+- ✅ **Automated Import:** `src/scheduled_xml_import.py` runs every 5 minutes
+- ✅ **Data Expiration:** Automatically deletes orders older than 60 days (2 months)
+- ✅ Workflow `xml-import-scheduler` continuously monitors Google Drive
 - ✅ Fixed download bug: added null check for status.progress() in MediaIoBaseDownload
 - ✅ Fixed dark mode toggle null pointer error in index.html
 - ✅ **Tested successfully:** Imported 96 orders from orders.xml to orders_inbox
