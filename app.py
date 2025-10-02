@@ -1077,6 +1077,52 @@ def api_orders_inbox():
             'error': str(e)
         }), 500
 
+@app.route('/api/order_items/<int:order_id>')
+def api_order_items(order_id):
+    """Get order items with SKU-Lot format for a specific order"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get order items with SKU-Lot mapping from sku_lot table (active lots only)
+        cursor.execute("""
+            SELECT 
+                oi.sku,
+                oi.quantity,
+                sl.lot,
+                sl.active
+            FROM order_items_inbox oi
+            LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
+            WHERE oi.order_inbox_id = ?
+            ORDER BY oi.sku
+        """, (order_id,))
+        
+        items = []
+        for row in cursor.fetchall():
+            sku, quantity, lot, active = row
+            # Format as "SKU - Lot" if lot exists, otherwise just SKU
+            sku_lot_display = f"{sku} - {lot}" if lot else sku
+            
+            items.append({
+                'sku': sku,
+                'lot': lot or '',
+                'sku_lot_display': sku_lot_display,
+                'quantity': quantity
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': items,
+            'count': len(items)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/google_drive/list_files')
 def api_google_drive_list_files():
     """List XML files from Google Drive folder"""
