@@ -151,6 +151,10 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - ✅ Added discreet "Manual Import" button to Orders Inbox header (XML Import page)
 - ✅ Button styled with muted gray appearance (opacity 0.7) for subtle UX
 - ✅ Triggers same Google Drive import as main button
+- ✅ **Weekly Inventory Email Copy:** HTML table format with plain text fallback
+- ✅ Copy button now generates formatted HTML table for email clients (Gmail, Outlook, Apple Mail)
+- ✅ Secure HTML escaping prevents injection attacks
+- ✅ Automatic fallback to plain text if HTML clipboard not supported
 
 **Database Architecture (December 2024):**
 - Designed complete SQLite schema replacing Google Sheets
