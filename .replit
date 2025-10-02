@@ -28,6 +28,10 @@ args = "dashboard-server"
 task = "workflow.run"
 args = "xml-import-scheduler"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "shipstation-units-refresh"
+
 [[workflows.workflow]]
 name = "weekly-reporter"
 author = "agent"
@@ -58,6 +62,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/scheduled_xml_import.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "shipstation-units-refresh"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python src/shipstation_units_refresher.py"
 
 [workflows.workflow.metadata]
 outputType = "console"
