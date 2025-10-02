@@ -287,9 +287,41 @@
     </div>
 
     <div class="container">
+        <!-- Google Drive Section -->
+        <div class="section">
+            <div class="section-title">☁️ Google Drive XML Files</div>
+            
+            <div id="drive-alert-container"></div>
+
+            <div id="drive-loading" class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 1rem; color: #6b7280;">Loading files from Google Drive...</p>
+            </div>
+
+            <div id="drive-files-container" style="display: none;">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Modified Date</th>
+                                <th>Size</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drive-files-tbody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: #6b7280; padding: 2rem;">No files found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Upload Section -->
         <div class="section">
-            <div class="section-title">📤 Upload X-Cart XML</div>
+            <div class="section-title">📤 Upload X-Cart XML (Manual)</div>
             
             <div id="alert-container"></div>
 
@@ -518,11 +550,109 @@
             }, 5000);
         }
 
+        function showDriveAlert(message, type) {
+            const driveAlertContainer = document.getElementById('drive-alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            driveAlertContainer.innerHTML = '';
+            driveAlertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Load Google Drive files
+        async function loadGoogleDriveFiles() {
+            const driveLoading = document.getElementById('drive-loading');
+            const driveFilesContainer = document.getElementById('drive-files-container');
+
+            driveLoading.style.display = 'block';
+            driveFilesContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/google_drive/list_files');
+                const result = await response.json();
+
+                if (result.success) {
+                    renderDriveFiles(result.data);
+                    driveFilesContainer.style.display = 'block';
+                } else {
+                    showDriveAlert('Error loading Google Drive files: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showDriveAlert('Error connecting to Google Drive: ' + error.message, 'error');
+            } finally {
+                driveLoading.style.display = 'none';
+            }
+        }
+
+        function renderDriveFiles(files) {
+            const tbody = document.getElementById('drive-files-tbody');
+
+            if (files.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #6b7280; padding: 2rem;">No XML files found in Google Drive</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = files.map(file => {
+                const modifiedDate = new Date(file.modifiedTime).toLocaleString();
+                const size = file.size ? `${(file.size / 1024).toFixed(2)} KB` : 'N/A';
+                
+                return `
+                    <tr>
+                        <td><strong>${file.name}</strong></td>
+                        <td>${modifiedDate}</td>
+                        <td>${size}</td>
+                        <td>
+                            <button 
+                                class="upload-btn" 
+                                onclick="importDriveFile('${file.id}', '${file.name}')"
+                                style="padding: 0.5rem 1.5rem; font-size: 0.875rem;"
+                            >
+                                Import
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function importDriveFile(fileId, fileName) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            
+            btn.disabled = true;
+            btn.textContent = 'Importing...';
+
+            try {
+                const response = await fetch(`/api/google_drive/import_file/${fileId}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showDriveAlert(`✅ ${result.message}`, 'success');
+                    loadOrdersInbox();
+                } else {
+                    showDriveAlert('❌ Import failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showDriveAlert('❌ Error importing file: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
         // Load orders on page load
         loadOrdersInbox();
+        loadGoogleDriveFiles();
 
         // Auto-refresh every 30 seconds
         setInterval(loadOrdersInbox, 30000);
+        setInterval(loadGoogleDriveFiles, 60000);
     </script>
 </body>
 </html>
