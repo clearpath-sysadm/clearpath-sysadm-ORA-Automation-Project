@@ -1719,6 +1719,7 @@ def api_upload_orders_to_shipstation():
         product_name_map = {row[0]: row[1] for row in cursor.fetchall()}
         
         # Build query for pending orders with address data
+        # CRITICAL: Exclude orders that already exist in shipped_orders (already fulfilled)
         if order_ids:
             placeholders = ','.join('?' * len(order_ids))
             order_query = f"""
@@ -1726,7 +1727,9 @@ def api_upload_orders_to_shipstation():
                        ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                        bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                 FROM orders_inbox 
-                WHERE status = 'pending' AND id IN ({placeholders})
+                WHERE status = 'pending' 
+                  AND id IN ({placeholders})
+                  AND order_number NOT IN (SELECT order_number FROM shipped_orders)
             """
             cursor.execute(order_query, order_ids)
         else:
@@ -1736,6 +1739,7 @@ def api_upload_orders_to_shipstation():
                        bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                 FROM orders_inbox 
                 WHERE status = 'pending'
+                  AND order_number NOT IN (SELECT order_number FROM shipped_orders)
             """)
         
         pending_orders = cursor.fetchall()
