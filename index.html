@@ -673,9 +673,17 @@
                 font-size: 14px;
                 margin-top: 8px;
             }
+
+            /* Table container with horizontal scroll */
+            #weeklyReportTable {
+                margin: 0 -16px;
+                padding: 0 16px;
+            }
+
             /* Increase base font size for readability */
             table {
                 font-size: 14px;
+                min-width: 800px;
             }
 
             table th,
@@ -690,13 +698,18 @@
                 width: 60px;
                 padding-left: 12px;
                 font-size: 13px;
+                position: sticky;
+                left: 0;
+                background: var(--bg-primary);
+                z-index: 1;
             }
 
             /* Keep Product Name visible but compact on mobile */
             table th:nth-child(2),
             table td:nth-child(2) {
                 font-size: 13px;
-                max-width: 120px;
+                min-width: 100px;
+                max-width: 150px;
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
@@ -712,7 +725,9 @@
 
             /* Days Left column - make it prominent */
             table th:nth-child(5),
-            table td:nth-child(5) {
+            table td:nth-child(5),
+            table th:nth-child(6),
+            table td:nth-child(6) {
                 font-size: 14px;
             }
 
@@ -997,7 +1012,7 @@
                         </div>
                         <div id="weeklyReportLoading" style="padding: 20px; text-align: center; color: var(--text-tertiary);">Loading weekly report...</div>
                         <div id="weeklyReportError"></div>
-                        <div id="weeklyReportTable" style="display: none;">
+                        <div id="weeklyReportTable" style="display: none; overflow-x: auto; -webkit-overflow-scrolling: touch;">
                             <table>
                                 <thead>
                                     <tr>
