@@ -1771,8 +1771,8 @@ def api_upload_orders_to_shipstation():
                 sku_with_lot = f"{sku} - {lot_number}" if lot_number else sku
                 product_name = product_name_map.get(sku, f'Product {sku}')  # Use mapped name or fallback
                 
-                # Use original order number (no SKU appended)
-                unique_order_number = order_number
+                # Append SKU to order number to ensure each SKU gets unique ShipStation order ID
+                unique_order_number = f"{order_number}-{sku}"
                 
                 shipstation_order = {
                     'orderNumber': unique_order_number,  # UNIQUE order number per SKU
@@ -1891,13 +1891,21 @@ def api_upload_orders_to_shipstation():
                 'skipped': skipped_count
             })
         
-        # Upload to ShipStation (single batch API call - efficient)
-        upload_results = send_all_orders_to_shipstation(
-            new_orders,
-            api_key,
-            api_secret,
-            settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT
-        )
+        # Upload to ShipStation in batches of 100 (API limit)
+        BATCH_SIZE = 100
+        upload_results = []
+        
+        for batch_start in range(0, len(new_orders), BATCH_SIZE):
+            batch_end = min(batch_start + BATCH_SIZE, len(new_orders))
+            batch_orders = new_orders[batch_start:batch_end]
+            
+            batch_results = send_all_orders_to_shipstation(
+                batch_orders,
+                api_key,
+                api_secret,
+                settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT
+            )
+            upload_results.extend(batch_results)
         
         # Update database with results
         uploaded_count = 0
