@@ -163,8 +163,11 @@ def generate_monthly_charge_report(
         report_df['Packages Charge'] = report_df['Num_Packages'] * rates.get('PackageCharge', 0)
         
         # Calculate daily space rental charge
+        # Normalize pallet_counts keys to strings to match SKU column type
+        pallet_counts_str = {str(k): v for k, v in pallet_counts.items()}
+        
         daily_inventory_df['PalletsUsed'] = daily_inventory_df.apply(\
-            lambda row: math.ceil(row['EOD_Inventory'] / pallet_counts.get(row['SKU'], 1)) if pallet_counts.get(row['SKU']) else 0,\
+            lambda row: math.ceil(row['EOD_Inventory'] / pallet_counts_str.get(str(row['SKU']), 1)) if pallet_counts_str.get(str(row['SKU'])) else 0,\
             axis=1\
         )
 
