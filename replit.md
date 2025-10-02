@@ -19,18 +19,19 @@ The ORA Automation Project aims to replace Google Sheets with a SQLite database 
     - Transaction handling with BEGIN IMMEDIATE
 
 ## System Architecture
-The system is built around a SQLite database (`ora.db`) with WAL mode, replacing all Google Sheets functionality across 12 tables. The UI is an **enterprise-grade web dashboard** (`index.html`) with left sidebar navigation, professional design system (Inter font, neutral colors, 8px grid), and fully responsive mobile support. It features real-time KPI cards, workflow status, inventory alerts, dark mode, and directly queries the SQLite database via Flask API endpoints.
+The system is built around a SQLite database (`ora.db`) with WAL mode, replacing all Google Sheets functionality across 14 tables. The UI is an **enterprise-grade web dashboard** (`index.html`) with left sidebar navigation, professional design system (Inter font, neutral colors, 8px grid), and fully responsive mobile support. It features real-time KPI cards, workflow status, inventory alerts, dark mode, and directly queries the SQLite database via Flask API endpoints.
 
 **Core Services & Entry Points:**
-- **Database Layer:** SQLite with WAL mode for zero cost and performance. Schema is documented in `docs/DATABASE_SCHEMA.md`. Tables include `workflows`, `inventory_current`, `shipped_orders`, `orders_inbox`, and `system_kpis`.
+- **Database Layer:** SQLite with WAL mode for zero cost and performance. Schema is documented in `docs/DATABASE_SCHEMA.md`. Tables include `workflows`, `inventory_current`, `shipped_orders`, `orders_inbox`, `system_kpis`, `bundle_skus`, and `bundle_components`.
 - **Backend Automation:** Python scripts handle core logic:
     - `src/weekly_reporter.py`: Calculates inventory and weekly averages.
     - `src/daily_shipment_processor.py`: Fetches ShipStation data.
     - `src/shipstation_order_uploader.py`: Uploads orders to ShipStation.
     - `src/shipstation_reporter.py`: Generates monthly charge and weekly inventory reports.
     - `src/main_order_import_daily_reporter.py`: Daily import summary.
-    - **XML Polling Service:** Continuously monitors Google Drive for new orders from XML files every 5 minutes.
-- **Frontend:** `index.html` provides the dashboard UI with a complete enterprise layout, including a two-tier navigation system (Dashboard, Orders Inbox, Weekly Reports, Inventory Monitor, etc.), a neutral color palette, card-based components, and responsive design. It includes features like auto-refresh, manual refresh, skeleton loaders, and error handling.
+    - **XML Polling Service:** Continuously monitors Google Drive for new orders from XML files every 5 minutes. Bundle SKUs are automatically expanded into component SKUs during import.
+- **Frontend:** `index.html` provides the dashboard UI with a complete enterprise layout, including a two-tier navigation system (Dashboard, Orders Inbox, Weekly Reports, Inventory Monitor, Bundle SKUs Management, etc.), a neutral color palette, card-based components, and responsive design. It includes features like auto-refresh, manual refresh, skeleton loaders, and error handling.
+- **Bundle SKU System:** Database-driven bundle management system (`bundle_skus.html`) with full CRUD capabilities. Bundles automatically expand to component SKUs during XML import (both scheduled and manual). REST API endpoints: GET/POST/PUT/DELETE `/api/bundles`, GET `/api/bundle_components/:id`. Supports single-component (e.g., 18225 → 40× 17612) and multi-component bundles (e.g., 18615 → 4 components).
 - **Key Services:** Database utilities (`db_utils.py`), ShipStation API integration, reporting logic, and Google Cloud Platform integrations.
 - **Deployment:** Configured as a VM deployment in Replit, serving the dashboard on port 5000, with scheduled workflows like `weekly-reporter` and `xml-import-scheduler`.
 
