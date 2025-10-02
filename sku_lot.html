@@ -295,6 +295,46 @@
         .table-container {
             overflow-x: auto;
             margin-top: calc(var(--spacing-unit) * 2);
+            max-height: calc(100vh - 280px);
+            overflow-y: auto;
+        }
+
+        .filter-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .filter-toggle:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .filter-toggle.active {
+            background-color: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         table {
@@ -311,6 +351,31 @@
             letter-spacing: 0.5px;
             color: var(--text-tertiary);
             border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-primary);
+            z-index: 10;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.3;
+        }
+
+        th.sort-asc::after {
+            content: ' ▲';
+            opacity: 1;
+        }
+
+        th.sort-desc::after {
+            content: ' ▼';
+            opacity: 1;
         }
 
         td {
@@ -581,14 +646,23 @@
 
             <div class="content-area">
                 <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            SKU-Lot Records (<span id="recordCount">0</span>)
+                        </div>
+                        <button class="filter-toggle active" id="filterToggle" onclick="toggleFilter()">
+                            <span>✓</span>
+                            <span id="filterLabel">Show Active Only</span>
+                        </button>
+                    </div>
                     <div class="table-container">
                         <table id="skuLotTable">
                             <thead>
                                 <tr>
-                                    <th>SKU</th>
-                                    <th>Lot</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
+                                    <th class="sortable" onclick="sortTable('sku')">SKU</th>
+                                    <th class="sortable" onclick="sortTable('lot')">Lot</th>
+                                    <th class="sortable" onclick="sortTable('active')">Status</th>
+                                    <th class="sortable" onclick="sortTable('created_at')">Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -636,6 +710,9 @@
         // Global state
         let darkMode = localStorage.getItem('darkMode') === 'true';
         let skuLots = [];
+        let filteredSkuLots = [];
+        let showActiveOnly = true;
+        let currentSort = { column: null, direction: 'asc' };
 
         // Initialize dark mode
         if (darkMode) {
@@ -700,6 +777,103 @@
                 }
             });
         });
+
+        // Toggle filter between active only and all
+        function toggleFilter() {
+            showActiveOnly = !showActiveOnly;
+            const toggle = document.getElementById('filterToggle');
+            const label = document.getElementById('filterLabel');
+            
+            if (showActiveOnly) {
+                toggle.classList.add('active');
+                label.textContent = 'Show Active Only';
+            } else {
+                toggle.classList.remove('active');
+                label.textContent = 'Show All';
+            }
+            
+            renderTable();
+        }
+
+        // Sort table by column
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            
+            // Update header styles
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            const header = event.target;
+            header.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            // Sort the data
+            filteredSkuLots.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+                
+                // Handle boolean for active status
+                if (column === 'active') {
+                    aVal = a[column] ? 1 : 0;
+                    bVal = b[column] ? 1 : 0;
+                }
+                
+                // Handle string comparison
+                if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+                
+                if (currentSort.direction === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            renderTable();
+        }
+
+        // Render table with current filter and sort
+        function renderTable() {
+            const tbody = document.getElementById('skuLotTableBody');
+            const recordCount = document.getElementById('recordCount');
+            
+            // Filter data
+            filteredSkuLots = showActiveOnly 
+                ? skuLots.filter(item => item.active)
+                : [...skuLots];
+            
+            // Update count
+            recordCount.textContent = filteredSkuLots.length;
+            
+            if (filteredSkuLots.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No SKU-Lot records found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filteredSkuLots.map(item => `
+                <tr>
+                    <td><strong>${item.sku}</strong></td>
+                    <td>${item.lot}</td>
+                    <td>
+                        <span class="badge ${item.active ? 'badge-success' : 'badge-inactive'}">
+                            ${item.active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>${formatTimezone(item.created_at)}</td>
+                    <td>
+                        <button class="action-btn" onclick="editSkuLot(${item.id})">Edit</button>
+                        <button class="action-btn delete" onclick="deleteSkuLot(${item.id})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
         // Load SKU Lots
         async function loadSkuLots() {
