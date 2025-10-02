@@ -571,6 +571,136 @@
                 display: none;
             }
         }
+
+        /* Mobile-specific table optimizations */
+        @media (max-width: 768px) {
+            /* Increase base font size for readability */
+            table {
+                font-size: 14px;
+            }
+
+            table th,
+            table td {
+                padding: 12px 8px;
+                white-space: nowrap;
+            }
+
+            /* Make SKU column narrower */
+            table th:first-child,
+            table td:first-child {
+                width: 60px;
+                padding-left: 12px;
+            }
+
+            /* Hide Product Name column on very small screens */
+            table th:nth-child(2),
+            table td:nth-child(2) {
+                display: none;
+            }
+
+            /* Optimize number columns */
+            table th:nth-child(3),
+            table td:nth-child(3),
+            table th:nth-child(4),
+            table td:nth-child(4) {
+                font-size: 15px;
+                font-weight: 600;
+            }
+
+            /* Days Left column - make it prominent */
+            table th:nth-child(5),
+            table td:nth-child(5) {
+                font-size: 14px;
+            }
+
+            /* Make badges more compact */
+            .badge {
+                padding: 6px 10px;
+                font-size: 12px;
+                gap: 4px;
+            }
+
+            /* Card header improvements */
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .card-title {
+                font-size: 16px;
+            }
+
+            /* Button group in card header */
+            .card-header > div:last-child {
+                width: 100%;
+                display: flex;
+                gap: 8px;
+            }
+
+            .card-header .btn {
+                flex: 1;
+                font-size: 12px;
+                padding: 10px;
+            }
+
+            /* Stats cards - stack on mobile */
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            /* Reduce section spacing */
+            section {
+                margin-bottom: 24px;
+            }
+
+            /* Alert cards */
+            .alert-card {
+                padding: 14px;
+            }
+
+            .alert-card h3 {
+                font-size: 14px;
+            }
+
+            .alert-card p {
+                font-size: 13px;
+            }
+        }
+
+        /* Extra small screens - further optimizations */
+        @media (max-width: 480px) {
+            table {
+                font-size: 13px;
+            }
+
+            table th,
+            table td {
+                padding: 10px 6px;
+            }
+
+            /* More compact layout */
+            .content-area {
+                padding: 12px;
+            }
+
+            .card {
+                margin-bottom: 16px;
+            }
+
+            .top-bar {
+                padding: 12px 16px;
+            }
+
+            .page-title {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
