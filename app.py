@@ -31,6 +31,12 @@ def index():
     """Serve the main dashboard"""
     return send_from_directory(project_root, 'index.html')
 
+@app.route('/favicon.ico')
+def favicon():
+    """Return empty favicon to prevent 404 errors"""
+    from flask import Response
+    return Response(status=204)
+
 @app.route('/<path:filename>')
 def serve_page(filename):
     """Serve HTML pages only (security: whitelist approach)"""
