@@ -198,6 +198,39 @@
         .export-btn:hover {
             background: #059669;
         }
+
+        .selector-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .selector-group label {
+            color: #667eea;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:hover {
+            border-color: #667eea;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -216,7 +249,26 @@
 
         <div class="controls">
             <div>
-                <div class="info-text" id="dateRangeInfo">Current month shipment charges</div>
+                <div class="selector-group">
+                    <label for="monthSelect">Month:</label>
+                    <select id="monthSelect" onchange="onDateChange()">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <label for="yearSelect">Year:</label>
+                    <select id="yearSelect" onchange="onDateChange()">
+                    </select>
+                </div>
                 <div class="info-text">Orders: $4.25 ea | Packages: $3.40 ea | Space: $18.00/day</div>
             </div>
             <div style="display: flex; gap: 12px;">
@@ -255,9 +307,32 @@
         let reportData = [];
         let totalsRow = null;
 
+        // Initialize month/year selectors
+        function initializeSelectors() {
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+            
+            // Populate year selector (current year and 2 years back)
+            const yearSelect = document.getElementById('yearSelect');
+            for (let year = currentYear; year >= currentYear - 2; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+            
+            // Set current month and year as default
+            document.getElementById('monthSelect').value = currentMonth;
+            document.getElementById('yearSelect').value = currentYear;
+        }
+
         async function fetchReport() {
+            const month = document.getElementById('monthSelect').value;
+            const year = document.getElementById('yearSelect').value;
+            
             try {
-                const response = await fetch('/api/charge_report');
+                const response = await fetch(`/api/charge_report?month=${month}&year=${year}`);
                 const result = await response.json();
                 
                 if (result.success) {
@@ -270,6 +345,10 @@
             } catch (error) {
                 showError('Error fetching data: ' + error.message);
             }
+        }
+
+        function onDateChange() {
+            refreshData();
         }
 
         function formatCurrency(amount) {
@@ -367,6 +446,8 @@
             fetchReport();
         }
 
+        // Initialize on page load
+        initializeSelectors();
         fetchReport();
     </script>
 </body>
