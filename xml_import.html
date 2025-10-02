@@ -1302,15 +1302,15 @@
 
         // CSV Export function
         function exportToCSV() {
-            if (allOrders.length === 0) {
+            if (!currentOrders || currentOrders.length === 0) {
                 showAlert('No orders to export', 'warning');
                 return;
             }
 
             // Determine which orders to export based on current filter
             const ordersToExport = showPendingOnly 
-                ? allOrders.filter(order => order.status === 'pending')
-                : allOrders;
+                ? currentOrders.filter(order => order.status === 'pending')
+                : currentOrders;
 
             if (ordersToExport.length === 0) {
                 showAlert('No orders to export with current filter', 'warning');
