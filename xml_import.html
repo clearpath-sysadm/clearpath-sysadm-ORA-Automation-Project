@@ -287,61 +287,19 @@
     </div>
 
     <div class="container">
-        <!-- Google Drive Section -->
+        <!-- Import Section -->
         <div class="section">
-            <div class="section-title">☁️ Google Drive XML Files</div>
-            
-            <div id="drive-alert-container"></div>
-
-            <div id="drive-loading" class="loading">
-                <div class="spinner"></div>
-                <p style="margin-top: 1rem; color: #6b7280;">Loading files from Google Drive...</p>
-            </div>
-
-            <div id="drive-files-container" style="display: none;">
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>File Name</th>
-                                <th>Modified Date</th>
-                                <th>Size</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="drive-files-tbody">
-                            <tr>
-                                <td colspan="4" style="text-align: center; color: #6b7280; padding: 2rem;">No files found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Upload Section -->
-        <div class="section">
-            <div class="section-title">📤 Upload X-Cart XML (Manual)</div>
+            <div class="section-title">☁️ Import Orders from Google Drive</div>
             
             <div id="alert-container"></div>
 
-            <div class="upload-area" id="upload-area">
-                <div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <p style="margin-top: 1rem; font-size: 1.125rem; color: #6b7280;">Drag and drop XML file here or</p>
-                    <label for="file-input" class="upload-btn" style="margin-top: 1rem;">Browse Files</label>
-                    <input type="file" id="file-input" accept=".xml">
-                </div>
-            </div>
-
-            <div id="file-info" class="file-info">
-                <strong>Selected File:</strong> <span id="file-name"></span><br>
-                <strong>Size:</strong> <span id="file-size"></span>
-                <button class="btn-process" id="btn-process">Process XML</button>
+            <div style="text-align: center; padding: 2rem;">
+                <p style="margin-bottom: 1.5rem; color: #6b7280; font-size: 1.125rem;">
+                    Import orders from <strong>orders.xml</strong> in Google Drive
+                </p>
+                <button class="btn-process" id="btn-import-drive" style="font-size: 1.125rem; padding: 1rem 3rem;">
+                    📥 Import from Google Drive
+                </button>
             </div>
         </div>
 
@@ -393,93 +351,47 @@
     </div>
 
     <script>
-        let selectedFile = null;
-
-        // File upload handling
-        const uploadArea = document.getElementById('upload-area');
-        const fileInput = document.getElementById('file-input');
-        const fileInfo = document.getElementById('file-info');
-        const fileName = document.getElementById('file-name');
-        const fileSize = document.getElementById('file-size');
-        const btnProcess = document.getElementById('btn-process');
         const alertContainer = document.getElementById('alert-container');
+        const btnImportDrive = document.getElementById('btn-import-drive');
 
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                handleFileSelect(e.dataTransfer.files[0]);
-            }
-        });
-
-        // File input change
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                handleFileSelect(e.target.files[0]);
-            }
-        });
-
-        function handleFileSelect(file) {
-            if (!file.name.endsWith('.xml')) {
-                showAlert('Please select a valid XML file', 'error');
-                return;
-            }
-
-            selectedFile = file;
-            fileName.textContent = file.name;
-            fileSize.textContent = formatFileSize(file.size);
-            fileInfo.classList.add('show');
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-        }
-
-        // Process XML
-        btnProcess.addEventListener('click', async () => {
-            if (!selectedFile) return;
-
-            btnProcess.disabled = true;
-            btnProcess.textContent = 'Processing...';
-
-            const formData = new FormData();
-            formData.append('xml_file', selectedFile);
+        // Import from Google Drive
+        btnImportDrive.addEventListener('click', async () => {
+            btnImportDrive.disabled = true;
+            btnImportDrive.textContent = '⏳ Importing...';
 
             try {
-                const response = await fetch('/api/xml_import', {
-                    method: 'POST',
-                    body: formData
+                // First, find orders.xml file
+                const listResponse = await fetch('/api/google_drive/list_files');
+                const listResult = await listResponse.json();
+
+                if (!listResult.success) {
+                    throw new Error(listResult.error || 'Failed to list files');
+                }
+
+                // Find orders.xml
+                const ordersFile = listResult.data.find(f => f.name === 'orders.xml');
+                
+                if (!ordersFile) {
+                    throw new Error('orders.xml not found in Google Drive');
+                }
+
+                // Import the file
+                const importResponse = await fetch(`/api/google_drive/import_file/${ordersFile.id}`, {
+                    method: 'POST'
                 });
+                const importResult = await importResponse.json();
 
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert(`Successfully processed ${result.orders_count} orders!`, 'success');
-                    fileInfo.classList.remove('show');
-                    fileInput.value = '';
-                    selectedFile = null;
+                if (importResult.success) {
+                    showAlert(`✅ ${importResult.message}`, 'success');
                     loadOrdersInbox();
                 } else {
-                    showAlert('Error: ' + result.error, 'error');
+                    showAlert('❌ Import failed: ' + importResult.error, 'error');
                 }
             } catch (error) {
-                showAlert('Error processing XML: ' + error.message, 'error');
+                showAlert('❌ Error: ' + error.message, 'error');
             } finally {
-                btnProcess.disabled = false;
-                btnProcess.textContent = 'Process XML';
+                btnImportDrive.disabled = false;
+                btnImportDrive.textContent = '📥 Import from Google Drive';
             }
         });
 
@@ -550,109 +462,11 @@
             }, 5000);
         }
 
-        function showDriveAlert(message, type) {
-            const driveAlertContainer = document.getElementById('drive-alert-container');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.textContent = message;
-            driveAlertContainer.innerHTML = '';
-            driveAlertContainer.appendChild(alert);
-
-            setTimeout(() => {
-                alert.remove();
-            }, 5000);
-        }
-
-        // Load Google Drive files
-        async function loadGoogleDriveFiles() {
-            const driveLoading = document.getElementById('drive-loading');
-            const driveFilesContainer = document.getElementById('drive-files-container');
-
-            driveLoading.style.display = 'block';
-            driveFilesContainer.style.display = 'none';
-
-            try {
-                const response = await fetch('/api/google_drive/list_files');
-                const result = await response.json();
-
-                if (result.success) {
-                    renderDriveFiles(result.data);
-                    driveFilesContainer.style.display = 'block';
-                } else {
-                    showDriveAlert('Error loading Google Drive files: ' + result.error, 'error');
-                }
-            } catch (error) {
-                showDriveAlert('Error connecting to Google Drive: ' + error.message, 'error');
-            } finally {
-                driveLoading.style.display = 'none';
-            }
-        }
-
-        function renderDriveFiles(files) {
-            const tbody = document.getElementById('drive-files-tbody');
-
-            if (files.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #6b7280; padding: 2rem;">No XML files found in Google Drive</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = files.map(file => {
-                const modifiedDate = new Date(file.modifiedTime).toLocaleString();
-                const size = file.size ? `${(file.size / 1024).toFixed(2)} KB` : 'N/A';
-                
-                return `
-                    <tr>
-                        <td><strong>${file.name}</strong></td>
-                        <td>${modifiedDate}</td>
-                        <td>${size}</td>
-                        <td>
-                            <button 
-                                class="upload-btn" 
-                                onclick="importDriveFile('${file.id}', '${file.name}')"
-                                style="padding: 0.5rem 1.5rem; font-size: 0.875rem;"
-                            >
-                                Import
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        async function importDriveFile(fileId, fileName) {
-            const btn = event.target;
-            const originalText = btn.textContent;
-            
-            btn.disabled = true;
-            btn.textContent = 'Importing...';
-
-            try {
-                const response = await fetch(`/api/google_drive/import_file/${fileId}`, {
-                    method: 'POST'
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    showDriveAlert(`✅ ${result.message}`, 'success');
-                    loadOrdersInbox();
-                } else {
-                    showDriveAlert('❌ Import failed: ' + result.error, 'error');
-                }
-            } catch (error) {
-                showDriveAlert('❌ Error importing file: ' + error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        }
-
         // Load orders on page load
         loadOrdersInbox();
-        loadGoogleDriveFiles();
 
         // Auto-refresh every 30 seconds
         setInterval(loadOrdersInbox, 30000);
-        setInterval(loadGoogleDriveFiles, 60000);
     </script>
 </body>
 </html>
