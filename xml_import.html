@@ -795,6 +795,9 @@
                             <button class="btn-manual-import" id="btn-manual-import">
                                 ↻ Manual Import
                             </button>
+                            <button class="btn" id="btn-export-csv" style="background-color: var(--success-green); border-color: var(--success-green); color: white;">
+                                📊 Export to CSV
+                            </button>
                         </div>
                     </div>
                     
@@ -1296,6 +1299,69 @@
 
         // Retry button handler
         document.getElementById('btn-retry-failed').addEventListener('click', retryFailedOrders);
+
+        // CSV Export function
+        function exportToCSV() {
+            if (allOrders.length === 0) {
+                showAlert('No orders to export', 'warning');
+                return;
+            }
+
+            // Determine which orders to export based on current filter
+            const ordersToExport = showPendingOnly 
+                ? allOrders.filter(order => order.status === 'pending')
+                : allOrders;
+
+            if (ordersToExport.length === 0) {
+                showAlert('No orders to export with current filter', 'warning');
+                return;
+            }
+
+            // CSV Headers
+            const headers = ['Order #', 'Order Date', 'Customer Email', 'SKU - Lot', 'Quantity', 'Status', 'ShipStation ID', 'Created At'];
+            
+            // Build CSV rows
+            const rows = ordersToExport.map(order => {
+                const orderDate = formatDate(order.order_date);
+                const createdAt = formatDate(order.created_at);
+                const skuLot = order.sku_lot_display || `${order.sku} - N/A`;
+                const shipstationId = order.shipstation_order_id || '';
+                
+                return [
+                    order.order_number,
+                    orderDate,
+                    order.customer_email || '',
+                    skuLot,
+                    order.quantity,
+                    order.status,
+                    shipstationId,
+                    createdAt
+                ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
+            });
+
+            // Combine headers and rows
+            const csv = [headers.join(','), ...rows].join('\n');
+
+            // Create and download file
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            
+            const filterText = showPendingOnly ? '_pending' : '_all';
+            const timestamp = new Date().toISOString().split('T')[0];
+            link.download = `orders_inbox${filterText}_${timestamp}.csv`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            showAlert(`✅ Exported ${ordersToExport.length} orders to CSV`, 'success');
+        }
+
+        // CSV Export button handler
+        document.getElementById('btn-export-csv').addEventListener('click', exportToCSV);
 
         // Load orders on page load
         loadOrdersInbox();
