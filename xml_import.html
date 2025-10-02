@@ -578,6 +578,72 @@
                 font-size: 13px;
             }
         }
+
+        /* Expandable Order Items */
+        .expand-icon {
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-tertiary);
+            transition: transform 0.2s;
+            user-select: none;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .order-items-row {
+            display: none;
+            background-color: var(--bg-tertiary);
+        }
+
+        .order-items-row.visible {
+            display: table-row;
+        }
+
+        .order-items-cell {
+            padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 6) !important;
+        }
+
+        .items-list {
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            padding: calc(var(--spacing-unit) * 2);
+        }
+
+        .items-header {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            margin-bottom: calc(var(--spacing-unit) * 1);
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: calc(var(--spacing-unit) * 2);
+            padding: calc(var(--spacing-unit) * 1.5) 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        .item-sku {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .item-quantity {
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -713,11 +779,12 @@
                         <table id="orders-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;"></th>
                                     <th style="width: 40px;"><input type="checkbox" id="select-all" title="Select all pending orders"></th>
                                     <th>Order #</th>
                                     <th>Order Date</th>
                                     <th>Customer Email</th>
-                                    <th>Total Items</th>
+                                    <th>Items</th>
                                     <th>Total Amount</th>
                                     <th>Status</th>
                                     <th>Created At</th>
@@ -725,7 +792,7 @@
                             </thead>
                             <tbody id="orders-tbody">
                                 <tr>
-                                    <td colspan="8" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td>
+                                    <td colspan="9" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -882,7 +949,7 @@
             const uploadBtn = document.getElementById('btn-upload-selected');
 
             if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td></tr>';
                 uploadBtn.style.display = 'none';
                 return;
             }
@@ -891,7 +958,10 @@
             uploadBtn.style.display = hasPending ? 'block' : 'none';
 
             tbody.innerHTML = orders.map(order => `
-                <tr data-order-id="${order.id}">
+                <tr data-order-id="${order.id}" class="order-row">
+                    <td>
+                        <span class="expand-icon" onclick="toggleOrderItems(${order.id}, event)">▶</span>
+                    </td>
                     <td>
                         ${order.status === 'pending' ? `<input type="checkbox" class="order-checkbox" data-order-id="${order.id}">` : ''}
                     </td>
@@ -903,10 +973,63 @@
                     <td><span class="badge badge-${order.status}">${order.status.toUpperCase()}</span></td>
                     <td>${new Date(order.created_at).toLocaleString()}</td>
                 </tr>
+                <tr class="order-items-row" id="items-row-${order.id}">
+                    <td colspan="9" class="order-items-cell">
+                        <div class="items-list" id="items-list-${order.id}">
+                            <div style="text-align: center; color: var(--text-tertiary); padding: 1rem;">Loading items...</div>
+                        </div>
+                    </td>
+                </tr>
             `).join('');
             
             // Update select-all checkbox
             updateSelectAll();
+        }
+
+        // Toggle order items display
+        async function toggleOrderItems(orderId, event) {
+            const icon = event.target;
+            const itemsRow = document.getElementById(`items-row-${orderId}`);
+            const itemsList = document.getElementById(`items-list-${orderId}`);
+
+            // Toggle expansion
+            if (itemsRow.classList.contains('visible')) {
+                itemsRow.classList.remove('visible');
+                icon.classList.remove('expanded');
+                return;
+            }
+
+            // Expand and fetch items
+            itemsRow.classList.add('visible');
+            icon.classList.add('expanded');
+
+            // Fetch order items if not already loaded
+            if (!itemsList.dataset.loaded) {
+                try {
+                    const response = await fetch(`/api/order_items/${orderId}`);
+                    const result = await response.json();
+
+                    if (result.success && result.data.length > 0) {
+                        itemsList.innerHTML = `
+                            <div class="items-header">
+                                <div>SKU - Lot (for ShipStation)</div>
+                                <div>Quantity</div>
+                            </div>
+                            ${result.data.map(item => `
+                                <div class="item-row">
+                                    <div class="item-sku">${item.sku_lot_display}</div>
+                                    <div class="item-quantity">${item.quantity}</div>
+                                </div>
+                            `).join('')}
+                        `;
+                        itemsList.dataset.loaded = 'true';
+                    } else {
+                        itemsList.innerHTML = '<div style="text-align: center; color: var(--text-tertiary); padding: 1rem;">No items found</div>';
+                    }
+                } catch (error) {
+                    itemsList.innerHTML = '<div style="text-align: center; color: var(--error-red); padding: 1rem;">Error loading items</div>';
+                }
+            }
         }
 
         function showAlert(message, type) {
