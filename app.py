@@ -1197,7 +1197,15 @@ def api_xml_import():
                     'multiplier': multiplier
                 })
             
+            # Load Key Products (SKUs we actually process for this client)
+            cursor.execute("""
+                SELECT sku FROM configuration_params
+                WHERE category = 'Key Products'
+            """)
+            key_products = {row[0] for row in cursor.fetchall()}
+            
             orders_imported = 0
+            orders_skipped = 0
             
             # Process each order
             for order_elem in root.findall('order'):
@@ -1238,6 +1246,14 @@ def api_xml_import():
                             # Regular SKU - pass through
                             expanded_items.append(item)
                     
+                    # CRITICAL: Filter by Key Products - skip if no Key Products in order
+                    final_skus = {item['sku'] for item in expanded_items}
+                    has_key_product = bool(final_skus & key_products)
+                    
+                    if not has_key_product:
+                        orders_skipped += 1
+                        continue
+                    
                     # Calculate total quantity from expanded items
                     total_quantity = sum(item['quantity'] for item in expanded_items)
                     
@@ -1269,10 +1285,15 @@ def api_xml_import():
             # Clean up temp file
             os.unlink(temp_path)
             
+            message = f'Successfully imported {orders_imported} orders'
+            if orders_skipped > 0:
+                message += f' ({orders_skipped} skipped - no Key Products)'
+            
             return jsonify({
                 'success': True,
-                'message': f'Successfully imported {orders_imported} orders',
-                'orders_count': orders_imported
+                'message': message,
+                'orders_count': orders_imported,
+                'orders_skipped': orders_skipped
             })
             
         except ET.ParseError as e:
