@@ -158,8 +158,10 @@ def has_key_product_skus(order: Dict[Any, Any]) -> bool:
     items = order.get('items', [])
     for item in items:
         sku = str(item.get('sku', '')).strip()
-        if sku in KEY_PRODUCT_SKUS:
-            return True
+        # Check if SKU starts with any key product SKU (handles format like "17612 - 250237")
+        for key_sku in KEY_PRODUCT_SKUS:
+            if sku.startswith(key_sku):
+                return True
     return False
 
 
@@ -195,31 +197,40 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
         total_amount_cents = int(float(total_amount) * 100) if total_amount else 0
         
         with transaction() as conn:
-            # Insert into orders_inbox with status='synced_manual' (only using columns that exist)
-            conn.execute("""
-                INSERT INTO orders_inbox (
-                    order_number, order_date, customer_email, status, shipstation_order_id,
-                    total_items, total_amount_cents, source_system
-                )
-                VALUES (?, ?, ?, 'synced_manual', ?, ?, ?, 'ShipStation Manual')
-                ON CONFLICT(order_number) DO UPDATE SET
-                    status = 'synced_manual',
-                    shipstation_order_id = excluded.shipstation_order_id,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (
-                order_number, order_date, customer_email, str(order_id), total_items, total_amount_cents
-            ))
-            
-            # Get the order_inbox_id
-            order_inbox_rows = conn.execute("""
+            # Check if order already exists
+            existing = conn.execute("""
                 SELECT id FROM orders_inbox WHERE order_number = ?
-            """, (order_number,)).fetchall()
+            """, (order_number,)).fetchone()
             
-            if not order_inbox_rows:
-                logger.error(f"Failed to retrieve order_inbox_id for order {order_number}")
-                return False
+            if existing:
+                # Update existing order
+                conn.execute("""
+                    UPDATE orders_inbox
+                    SET status = 'synced_manual',
+                        shipstation_order_id = ?,
+                        customer_email = ?,
+                        total_items = ?,
+                        total_amount_cents = ?,
+                        source_system = 'ShipStation Manual',
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE order_number = ?
+                """, (str(order_id), customer_email, total_items, total_amount_cents, order_number))
+                order_inbox_id = existing[0]
+            else:
+                # Insert new order
+                cursor = conn.execute("""
+                    INSERT INTO orders_inbox (
+                        order_number, order_date, customer_email, status, shipstation_order_id,
+                        total_items, total_amount_cents, source_system
+                    )
+                    VALUES (?, ?, ?, 'synced_manual', ?, ?, ?, 'ShipStation Manual')
+                """, (
+                    order_number, order_date, customer_email, str(order_id), total_items, total_amount_cents
+                ))
+                order_inbox_id = cursor.lastrowid
             
-            order_inbox_id = order_inbox_rows[0][0]
+            # Delete existing items and re-insert (simpler than UPSERT without unique constraint)
+            conn.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = ?", (order_inbox_id,))
             
             # Insert items into order_items_inbox
             for item in items:
@@ -234,9 +245,6 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                             order_inbox_id, sku, quantity, unit_price_cents
                         )
                         VALUES (?, ?, ?, ?)
-                        ON CONFLICT(order_inbox_id, sku) DO UPDATE SET
-                            quantity = excluded.quantity,
-                            unit_price_cents = excluded.unit_price_cents
                     """, (order_inbox_id, sku, quantity, unit_price_cents))
             
             # If order is shipped, also create entries in shipped_orders and shipped_items
@@ -247,14 +255,25 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                 except:
                     ship_date = order_date
                 
-                # Insert into shipped_orders
-                conn.execute("""
-                    INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
-                    VALUES (?, ?, ?)
-                    ON CONFLICT(order_number) DO UPDATE SET
-                        ship_date = excluded.ship_date,
-                        shipstation_order_id = excluded.shipstation_order_id
-                """, (ship_date, order_number, str(order_id)))
+                # Check if shipped order exists
+                shipped_exists = conn.execute("""
+                    SELECT 1 FROM shipped_orders WHERE order_number = ?
+                """, (order_number,)).fetchone()
+                
+                if shipped_exists:
+                    conn.execute("""
+                        UPDATE shipped_orders
+                        SET ship_date = ?, shipstation_order_id = ?
+                        WHERE order_number = ?
+                    """, (ship_date, str(order_id), order_number))
+                else:
+                    conn.execute("""
+                        INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id, source_system)
+                        VALUES (?, ?, ?, 'ShipStation Manual')
+                    """, (ship_date, order_number, str(order_id)))
+                
+                # Delete existing shipped items and re-insert
+                conn.execute("DELETE FROM shipped_items WHERE order_number = ?", (order_number,))
                 
                 # Insert into shipped_items
                 for item in items:
@@ -262,15 +281,22 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                     quantity = item.get('quantity', 0)
                     
                     if sku and quantity > 0:
+                        # Parse SKU - LOT format (e.g., "17612 - 250237")
+                        if ' - ' in sku:
+                            sku_parts = sku.split(' - ')
+                            base_sku = sku_parts[0].strip()
+                            lot = sku_parts[1].strip()
+                            sku_lot = f"{base_sku}-{lot}"
+                        else:
+                            base_sku = sku
+                            sku_lot = sku
+                        
                         conn.execute("""
                             INSERT INTO shipped_items (
                                 ship_date, sku_lot, base_sku, quantity_shipped, order_number
                             )
-                            VALUES (?, '', ?, ?, ?)
-                            ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
-                                ship_date = excluded.ship_date,
-                                quantity_shipped = excluded.quantity_shipped
-                        """, (ship_date, sku, quantity, order_number))
+                            VALUES (?, ?, ?, ?, ?)
+                        """, (ship_date, sku_lot, base_sku, quantity, order_number))
                 
                 logger.info(f"Imported shipped order {order_number} (ShipStation ID: {order_id})")
             else:

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-Manual Orders Backfill Script
+Manual Orders Backfill Utility
 
-One-time script to backfill manual ShipStation orders from a specific date.
-Use this to import historical manual orders that were created before the sync started.
+Utility script to backfill manual ShipStation orders from a specific date.
+Use this to import historical manual orders or recover from sync gaps.
+
+Usage:
+    python utils/backfill_manual_orders.py --start-date 2025-09-19
 """
 
 import sys
