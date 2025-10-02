@@ -187,7 +187,7 @@
         }
 
         .admin-items.expanded {
-            max-height: 500px;
+            max-height: 300px;
         }
 
         .main-content {
@@ -232,6 +232,31 @@
             font-size: 20px;
             padding: calc(var(--spacing-unit) * 1);
             color: var(--text-secondary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: calc(var(--spacing-unit) * 1);
+            color: var(--text-primary);
+            margin-right: calc(var(--spacing-unit) * 2);
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+        }
+
+        .mobile-overlay.active {
+            display: block;
         }
 
         .content-area {
@@ -501,7 +526,7 @@
             color: var(--text-primary);
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             .sidebar {
                 position: fixed;
                 left: 0;
@@ -511,7 +536,7 @@
                 transform: translateX(-100%);
             }
 
-            .sidebar.active {
+            .sidebar.mobile-open {
                 transform: translateX(0);
             }
 
@@ -519,17 +544,16 @@
                 display: block;
             }
 
-            .mobile-overlay {
-                display: none;
-            }
-
-            .mobile-overlay.active {
-                display: block;
+            .content-area {
+                padding: calc(var(--spacing-unit) * 2);
             }
         }
     </style>
 </head>
 <body>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar" id="sidebar">
@@ -539,69 +563,63 @@
             </div>
             
             <nav class="sidebar-nav">
-                <!-- Overview Section -->
+                <!-- Primary Navigation -->
                 <div class="nav-section">
-                    <div class="nav-section-title">Overview</div>
+                    <div class="nav-section-title">Operations</div>
                     <a href="/" class="nav-item">
                         <span class="nav-item-icon">📊</span>
-                        <span>Dashboard</span>
+                        Dashboard
                     </a>
                     <a href="/xml_import.html" class="nav-item">
                         <span class="nav-item-icon">📥</span>
-                        <span>Orders Inbox</span>
+                        Orders Inbox
                     </a>
-                </div>
-
-                <!-- Reports Section -->
-                <div class="nav-section">
-                    <div class="nav-section-title">Reports</div>
-                    <a href="/weekly_shipped_history.html" class="nav-item">
-                        <span class="nav-item-icon">📈</span>
-                        <span>Weekly Reports</span>
-                    </a>
-                    <a href="/shipped_orders.html" class="nav-item">
-                        <span class="nav-item-icon">📦</span>
-                        <span>Shipped Orders</span>
-                    </a>
-                    <a href="/shipped_items.html" class="nav-item">
-                        <span class="nav-item-icon">📋</span>
-                        <span>Shipped Items</span>
-                    </a>
-                </div>
-
-                <!-- Operations Section -->
-                <div class="nav-section">
-                    <div class="nav-section-title">Operations</div>
                     <a href="/inventory_transactions.html" class="nav-item">
-                        <span class="nav-item-icon">🔄</span>
-                        <span>Inventory Monitor</span>
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
                     </a>
                     <a href="/charge_report.html" class="nav-item">
                         <span class="nav-item-icon">💰</span>
-                        <span>Charge Report</span>
+                        Charge Report
                     </a>
                 </div>
 
                 <!-- Admin Section -->
-                <div class="admin-section">
-                    <div class="admin-toggle" id="adminToggle">
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
                         <span>Admin & Data</span>
                         <span class="admin-toggle-icon">▶</span>
                     </div>
-                    <div class="admin-items" id="adminItems">
+                    <div class="admin-items" id="admin-items">
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
                         <a href="/bundle_skus.html" class="nav-item active">
                             <span class="nav-item-icon">📦</span>
-                            <span>Bundle SKUs</span>
+                            Bundle SKUs
                         </a>
                         <a href="/sku_lot.html" class="nav-item">
                             <span class="nav-item-icon">🏷️</span>
-                            <span>SKU Lot Management</span>
-                        </a>
-                        <a href="/settings.html" class="nav-item">
-                            <span class="nav-item-icon">⚙️</span>
-                            <span>Settings</span>
+                            SKU Lot Management
                         </a>
                     </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
                 </div>
             </nav>
         </aside>
@@ -611,11 +629,15 @@
             <!-- Top Bar -->
             <div class="top-bar">
                 <div class="top-bar-left">
-                    <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
                     <h1 class="page-title">Bundle SKU Management</h1>
                 </div>
                 <div class="top-bar-actions">
-                    <button class="dark-mode-toggle" id="darkModeToggle">🌙</button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
                 </div>
             </div>
 
@@ -702,58 +724,76 @@
         </div>
     </div>
 
-    <!-- Mobile Overlay -->
-    <div class="mobile-overlay" id="mobileOverlay"></div>
-
     <script>
         // Global state
+        let darkMode = localStorage.getItem('darkMode') === 'true';
         let bundles = [];
         let editingBundleId = null;
         let components = [];
 
-        // Dark mode
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const prefersDark = localStorage.getItem('darkMode') === 'true';
-        
-        if (prefersDark) {
+        // Initialize dark mode
+        if (darkMode) {
             document.body.classList.add('dark-mode');
-            darkModeToggle.textContent = '☀️';
+            document.querySelector('.dark-mode-toggle').textContent = '☀️';
         }
 
-        darkModeToggle.addEventListener('click', () => {
+        // Toggle dark mode
+        function toggleDarkMode() {
+            darkMode = !darkMode;
             document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark);
-            darkModeToggle.textContent = isDark ? '☀️' : '🌙';
+            document.querySelector('.dark-mode-toggle').textContent = darkMode ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        // Toggle admin section
+        function toggleAdmin() {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            toggle.classList.toggle('expanded');
+            items.classList.toggle('expanded');
+        }
+
+        // Auto-expand admin section since we're on admin page
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            if (toggle && items) {
+                toggle.classList.add('expanded');
+                items.classList.add('expanded');
+            }
         });
 
-        // Mobile menu
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const mobileOverlay = document.getElementById('mobileOverlay');
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
 
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-            mobileOverlay.classList.toggle('active');
+        // Close mobile menu
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+
+        // Close mobile menu on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMobileMenu();
+            }
         });
 
-        mobileOverlay.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            mobileOverlay.classList.remove('active');
+        // Close mobile menu when clicking nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    closeMobileMenu();
+                }
+            });
         });
-
-        // Admin section toggle
-        const adminToggle = document.getElementById('adminToggle');
-        const adminItems = document.getElementById('adminItems');
-
-        adminToggle.addEventListener('click', () => {
-            adminToggle.classList.toggle('expanded');
-            adminItems.classList.toggle('expanded');
-        });
-
-        // Auto-expand admin section if on admin page
-        adminToggle.classList.add('expanded');
-        adminItems.classList.add('expanded');
 
         // Modal controls
         const bundleModal = document.getElementById('bundleModal');

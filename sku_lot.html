@@ -137,12 +137,55 @@
             color: white;
         }
 
-        .nav-icon {
-            width: 18px;
-            height: 18px;
+        .nav-item-icon {
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .admin-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: calc(var(--spacing-unit) * 2);
+        }
+
+        .admin-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-toggle:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .admin-toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .admin-toggle.expanded .admin-toggle-icon {
+            transform: rotate(90deg);
+        }
+
+        .admin-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+        .admin-items.expanded {
+            max-height: 300px;
         }
 
         .main-content {
@@ -156,10 +199,16 @@
             height: var(--header-height);
             background-color: var(--bg-primary);
             border-bottom: 1px solid var(--border-color);
-            padding: 0 calc(var(--spacing-unit) * 4);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 0 calc(var(--spacing-unit) * 3);
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
         }
 
         .page-title {
@@ -204,6 +253,30 @@
 
         .btn-secondary:hover {
             background-color: var(--bg-tertiary);
+        }
+
+        .dark-mode-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: calc(var(--spacing-unit) * 1);
+            color: var(--text-secondary);
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+        }
+
+        .mobile-overlay.active {
+            display: block;
         }
 
         .content-area {
@@ -377,19 +450,19 @@
             display: none;
             background: none;
             border: none;
-            color: var(--text-primary);
-            font-size: 24px;
             cursor: pointer;
-            padding: 8px;
+            padding: calc(var(--spacing-unit) * 1);
+            color: var(--text-primary);
+            margin-right: calc(var(--spacing-unit) * 2);
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             .sidebar {
                 position: fixed;
                 top: 0;
                 left: 0;
                 height: 100vh;
-                z-index: 999;
+                z-index: 100;
                 transform: translateX(-100%);
             }
 
@@ -412,6 +485,9 @@
     </style>
 </head>
 <body>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -419,57 +495,64 @@
                 <div class="sidebar-logo">O</div>
                 <div class="sidebar-title">ORA Business</div>
             </div>
+            
             <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
                 <div class="nav-section">
-                    <div class="nav-section-title">Main</div>
+                    <div class="nav-section-title">Operations</div>
                     <a href="/" class="nav-item">
-                        <span class="nav-icon">📊</span>
-                        <span>Dashboard</span>
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
                     </a>
                     <a href="/xml_import.html" class="nav-item">
-                        <span class="nav-icon">📥</span>
-                        <span>Orders Inbox</span>
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
                     </a>
-                </div>
-                <div class="nav-section">
-                    <div class="nav-section-title">Reports</div>
-                    <a href="/charge_report.html" class="nav-item">
-                        <span class="nav-icon">💰</span>
-                        <span>Monthly Charges</span>
-                    </a>
-                    <a href="/weekly_shipped_history.html" class="nav-item">
-                        <span class="nav-icon">📈</span>
-                        <span>Weekly Shipped</span>
-                    </a>
-                    <a href="/shipped_orders.html" class="nav-item">
-                        <span class="nav-icon">📦</span>
-                        <span>Shipped Orders</span>
-                    </a>
-                    <a href="/shipped_items.html" class="nav-item">
-                        <span class="nav-icon">📋</span>
-                        <span>Shipped Items</span>
-                    </a>
-                </div>
-                <div class="nav-section">
-                    <div class="nav-section-title">Inventory</div>
                     <a href="/inventory_transactions.html" class="nav-item">
-                        <span class="nav-icon">🔄</span>
-                        <span>Transactions</span>
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
                     </a>
                 </div>
-                <div class="nav-section">
-                    <div class="nav-section-title">Admin</div>
-                    <a href="/bundle_skus.html" class="nav-item">
-                        <span class="nav-icon">📦</span>
-                        <span>Bundle SKUs</span>
-                    </a>
-                    <a href="/sku_lot.html" class="nav-item active">
-                        <span class="nav-icon">🏷️</span>
-                        <span>SKU Lot Management</span>
-                    </a>
+
+                <!-- Admin Section -->
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item active">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
                     <a href="/settings.html" class="nav-item">
-                        <span class="nav-icon">⚙️</span>
-                        <span>Settings</span>
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
                     </a>
                 </div>
             </nav>
@@ -477,14 +560,22 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Top Bar -->
             <div class="top-bar">
-                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
-                <h1 class="page-title">SKU Lot Management</h1>
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">SKU Lot Management</h1>
+                </div>
                 <div class="top-bar-actions">
                     <button class="btn btn-primary" onclick="openAddModal()">
                         <span>➕</span>
                         <span>Add SKU-Lot</span>
                     </button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
                 </div>
             </div>
 
@@ -542,7 +633,73 @@
     </div>
 
     <script>
+        // Global state
+        let darkMode = localStorage.getItem('darkMode') === 'true';
         let skuLots = [];
+
+        // Initialize dark mode
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = '☀️';
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = darkMode ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        // Toggle admin section
+        function toggleAdmin() {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            toggle.classList.toggle('expanded');
+            items.classList.toggle('expanded');
+        }
+
+        // Auto-expand admin section since we're on admin page
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            if (toggle && items) {
+                toggle.classList.add('expanded');
+                items.classList.add('expanded');
+            }
+        });
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        // Close mobile menu
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+
+        // Close mobile menu on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMobileMenu();
+            }
+        });
+
+        // Close mobile menu when clicking nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    closeMobileMenu();
+                }
+            });
+        });
 
         // Load SKU Lots
         async function loadSkuLots() {
@@ -683,10 +840,6 @@
         function showError(message) {
             const tbody = document.getElementById('skuLotTableBody');
             tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color: var(--error-red);">${message}</td></tr>`;
-        }
-
-        function toggleMobileMenu() {
-            document.getElementById('sidebar').classList.toggle('mobile-open');
         }
 
         // Close modal when clicking outside
