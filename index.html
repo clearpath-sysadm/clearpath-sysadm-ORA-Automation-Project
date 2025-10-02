@@ -970,7 +970,6 @@
                         <div class="skeleton skeleton-card" id="stat-skeleton-3"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-4"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-5"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-6"></div>
 
                         <!-- Actual Stats -->
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
@@ -987,11 +986,6 @@
                                 <div class="stat-change">Click to upload →</div>
                             </div>
                         </a>
-                        <div class="stat-card hidden" data-stat-card>
-                            <div class="stat-value">0</div>
-                            <div class="stat-label">Shipments Sent</div>
-                            <div class="stat-change">Last 7 days</div>
-                        </div>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 <div class="stat-value">0</div>
@@ -1364,13 +1358,12 @@
                     const statCards = document.querySelectorAll('[data-stat-card]');
                     if (statCards[0]) statCards[0].querySelector('.stat-value').textContent = stats.data.units_to_ship || 0;
                     if (statCards[1]) statCards[1].querySelector('.stat-value').textContent = stats.data.pending_uploads || 0;
-                    if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = stats.data.recent_shipments || 0;
-                    if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.data.benco_orders || 0;
-                    if (statCards[4]) statCards[4].querySelector('.stat-value').textContent = stats.data.hawaiian_orders || 0;
-                    if (statCards[5]) {
+                    if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = stats.data.benco_orders || 0;
+                    if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.data.hawaiian_orders || 0;
+                    if (statCards[4]) {
                         const statusText = stats.data.system_status === 'operational' ? 'Online' : 'Warning';
                         const statusClass = stats.data.system_status === 'operational' ? 'status-green' : 'status-yellow';
-                        statCards[5].querySelector('.stat-value').innerHTML = `<span class="status-indicator ${statusClass}"></span> ${statusText}`;
+                        statCards[4].querySelector('.stat-value').innerHTML = `<span class="status-indicator ${statusClass}"></span> ${statusText}`;
                     }
                     
                     const fedexAlert = document.getElementById('fedex-alert');
