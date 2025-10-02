@@ -1327,6 +1327,51 @@ def api_google_drive_import_file(file_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/retry_failed_orders', methods=['POST'])
+def api_retry_failed_orders():
+    """Reset failed orders back to pending status for retry"""
+    try:
+        data = request.get_json() or {}
+        order_ids = data.get('order_ids', [])
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        if order_ids:
+            # Reset specific failed orders to pending
+            placeholders = ','.join('?' * len(order_ids))
+            cursor.execute(f"""
+                UPDATE orders_inbox
+                SET status = 'pending',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id IN ({placeholders})
+                AND status = 'failed'
+            """, order_ids)
+            affected = cursor.rowcount
+        else:
+            # Reset all failed orders to pending
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET status = 'pending',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE status = 'failed'
+            """)
+            affected = cursor.rowcount
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Reset {affected} failed orders to pending status',
+            'count': affected
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/upload_orders_to_shipstation', methods=['POST'])
 def api_upload_orders_to_shipstation():
     """Upload pending orders from inbox to ShipStation with SKU-Lot mapping"""

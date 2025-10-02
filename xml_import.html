@@ -784,6 +784,9 @@
                             <button class="btn-upload" id="btn-upload-selected" style="display: none;">
                                 🚀 Upload Selected to ShipStation
                             </button>
+                            <button class="btn" id="btn-retry-failed" style="display: none; background-color: #f59e0b; border-color: #f59e0b; color: white;">
+                                🔄 Retry Failed Orders
+                            </button>
                             <button class="btn-manual-import" id="btn-manual-import">
                                 ↻ Manual Import
                             </button>
@@ -982,6 +985,10 @@
             document.getElementById('stat-pending').textContent = pending;
             document.getElementById('stat-uploaded').textContent = uploaded;
             document.getElementById('stat-failed').textContent = failed;
+            
+            // Show retry button if there are failed orders
+            const retryBtn = document.getElementById('btn-retry-failed');
+            retryBtn.style.display = failed > 0 ? 'block' : 'none';
         }
 
         function renderOrdersTable(orders) {
@@ -1211,6 +1218,42 @@
 
         // Upload button handler
         document.getElementById('btn-upload-selected').addEventListener('click', uploadSelectedOrders);
+
+        // Retry failed orders
+        async function retryFailedOrders() {
+            const retryBtn = document.getElementById('btn-retry-failed');
+            const originalText = retryBtn.textContent;
+            
+            retryBtn.disabled = true;
+            retryBtn.textContent = '⏳ Retrying...';
+
+            try {
+                const response = await fetch('/api/retry_failed_orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(`✅ ${result.message}. You can now upload them again.`, 'success');
+                    loadOrdersInbox();
+                } else {
+                    showAlert('❌ Retry failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Error retrying orders: ' + error.message, 'error');
+            } finally {
+                retryBtn.disabled = false;
+                retryBtn.textContent = originalText;
+            }
+        }
+
+        // Retry button handler
+        document.getElementById('btn-retry-failed').addEventListener('click', retryFailedOrders);
 
         // Load orders on page load
         loadOrdersInbox();
