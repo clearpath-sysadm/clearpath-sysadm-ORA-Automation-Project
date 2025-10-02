@@ -68,6 +68,7 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 ## External Dependencies & Integrations
 
 **Available Replit Integrations:**
+- ✅ Google Drive connector (OAuth2 for XML file import from folder)
 - Google Sheets connector (for one-time migration ETL)
 - SendGrid connector (for email notifications)
 
@@ -123,6 +124,17 @@ Business automation dashboard for ORA (Oracare) that monitors inventory, shipmen
 - ✅ API endpoint `/api/sync_shipstation` triggers ShipStation data refresh
 - ✅ Green "Sync ShipStation" button on Shipped Items and Shipped Orders pages
 - ✅ Background thread processing with 120-second timeout
+
+**Google Drive XML Import Integration (October 2025):**
+- ✅ Integrated Replit Google Drive connector with OAuth2 authentication
+- ✅ Created `src/services/google_drive/api_client.py` with Replit connection functions
+- ✅ New API endpoints: `/api/google_drive/list_files` and `/api/google_drive/import_file/<file_id>`
+- ✅ XML Import page displays Google Drive files with real-time import buttons
+- ✅ Auto-refresh every 60 seconds to detect new files
+- ✅ Fixed download bug: added null check for status.progress() in MediaIoBaseDownload
+- ✅ Fixed dark mode toggle null pointer error in index.html
+- ✅ **Tested successfully:** Imported 96 orders from orders.xml to orders_inbox
+- ✅ Google Drive folder ID: `1rNudeesa_c6q--KIKUAOLwXta_gyRqAE`
 - ✅ Button states: ⏳ Syncing → ✅ Synced! → auto-refresh data
 - ✅ Error handling with ❌ Sync Failed state
 - ⏳ Scheduled daily sync (requires Replit Scheduled Deployments configuration)
