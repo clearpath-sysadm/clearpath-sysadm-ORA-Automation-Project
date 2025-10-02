@@ -3,17 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Settings - ORA Business</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-blue: #4F46E5;
-            --primary-blue-hover: #4338CA;
-            --text-primary: #111827;
-            --text-secondary: #6B7280;
-            --background: #FFFFFF;
-            --border-color: #E5E7EB;
-            --surface: #F9FAFB;
+            --primary-blue: #2563eb;
+            --primary-blue-hover: #1d4ed8;
+            --secondary-purple: #7c3aed;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --sidebar-width: 260px;
+            --header-height: 64px;
+            --success-green: #10b981;
+            --warning-yellow: #f59e0b;
+            --error-red: #ef4444;
             --spacing-unit: 8px;
+        }
+
+        body.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #64748b;
+            --border-color: #334155;
         }
 
         * {
@@ -23,56 +45,238 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--surface);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-secondary);
             color: var(--text-primary);
-            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: calc(var(--spacing-unit) * 4);
+        /* Layout Structure */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .header {
-            background: var(--background);
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s;
+        }
+
+        .sidebar-header {
+            padding: calc(var(--spacing-unit) * 3);
             border-bottom: 1px solid var(--border-color);
-            padding: calc(var(--spacing-unit) * 3) calc(var(--spacing-unit) * 4);
-            margin: calc(var(--spacing-unit) * -4) calc(var(--spacing-unit) * -4) calc(var(--spacing-unit) * 4);
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
             display: flex;
             align-items: center;
             gap: calc(var(--spacing-unit) * 2);
         }
 
-        .back-link {
-            color: var(--text-secondary);
-            text-decoration: none;
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            border-radius: 8px;
             display: flex;
             align-items: center;
-            gap: calc(var(--spacing-unit) * 1);
-            padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 2);
-            border-radius: 6px;
-            transition: background 0.2s;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
         }
 
-        .back-link:hover {
-            background: var(--surface);
-        }
-
-        h1 {
-            font-size: 24px;
-            color: var(--text-primary);
+        .sidebar-title {
+            font-size: 16px;
             font-weight: 600;
+            color: var(--text-primary);
         }
 
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: calc(var(--spacing-unit) * 2);
+        }
+
+        .nav-section {
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 1);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: calc(var(--spacing-unit) * 0.5);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        .nav-item-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: calc(var(--spacing-unit) * 2);
+        }
+
+        .admin-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-toggle:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .admin-toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .admin-toggle.expanded .admin-toggle-icon {
+            transform: rotate(90deg);
+        }
+
+        .admin-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+        .admin-items.expanded {
+            max-height: 300px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: var(--header-height);
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 calc(var(--spacing-unit) * 3);
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .dark-mode-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: calc(var(--spacing-unit) * 1);
+            color: var(--text-secondary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: calc(var(--spacing-unit) * 1);
+            color: var(--text-primary);
+            margin-right: calc(var(--spacing-unit) * 2);
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+        }
+
+        .mobile-overlay.active {
+            display: block;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: calc(var(--spacing-unit) * 3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Cards */
         .card {
-            background: var(--background);
+            background-color: var(--bg-primary);
             border-radius: 12px;
             padding: calc(var(--spacing-unit) * 3);
             margin-bottom: calc(var(--spacing-unit) * 3);
@@ -92,6 +296,7 @@
             margin-bottom: calc(var(--spacing-unit) * 3);
         }
 
+        /* Form Styles */
         .form-group {
             margin-bottom: calc(var(--spacing-unit) * 3);
         }
@@ -112,7 +317,7 @@
             border-radius: 8px;
             font-size: 14px;
             color: var(--text-primary);
-            background: var(--background);
+            background: var(--bg-primary);
             cursor: pointer;
             transition: border-color 0.2s;
         }
@@ -120,7 +325,7 @@
         .form-select:focus {
             outline: none;
             border-color: var(--primary-blue);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .form-help {
@@ -130,6 +335,9 @@
         }
 
         .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 1);
             padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
             border: none;
             border-radius: 8px;
@@ -140,22 +348,22 @@
         }
 
         .btn-primary {
-            background: var(--primary-blue);
+            background-color: var(--primary-blue);
             color: white;
         }
 
         .btn-primary:hover {
-            background: var(--primary-blue-hover);
+            background-color: var(--primary-blue-hover);
         }
 
         .btn-secondary {
-            background: var(--surface);
+            background-color: var(--bg-tertiary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
         }
 
         .btn-secondary:hover {
-            background: var(--border-color);
+            background-color: var(--border-color);
         }
 
         .button-group {
@@ -165,7 +373,7 @@
         }
 
         .current-time {
-            background: var(--surface);
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: calc(var(--spacing-unit) * 2);
@@ -195,85 +403,257 @@
             display: none;
         }
 
+        body.dark-mode .success-message {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+
         .success-message.show {
             display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 100;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .top-bar-actions {
+                gap: calc(var(--spacing-unit) * 1);
+            }
+
+            .btn {
+                padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 1.5);
+                font-size: 13px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <a href="/" class="back-link">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Back to Dashboard
-            </a>
-            <h1>⚙️ Settings</h1>
-        </div>
-    </div>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
-    <div class="container">
-        <div id="successMessage" class="success-message">
-            Settings saved successfully!
-        </div>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">O</div>
+                <div class="sidebar-title">ORA Business</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                </div>
 
-        <div class="card">
-            <h2 class="card-title">Timezone Settings</h2>
-            <p class="card-description">
-                Set your preferred timezone for all dates and timestamps across the dashboard. 
-                This ensures you see accurate times regardless of server location.
-            </p>
+                <!-- Admin Section -->
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/charge_report.html" class="nav-item">
+                            <span class="nav-item-icon">💰</span>
+                            Charge Report
+                        </a>
+                    </div>
+                </div>
 
-            <div class="form-group">
-                <label for="timezoneSelect" class="form-label">Timezone</label>
-                <select id="timezoneSelect" class="form-select">
-                    <optgroup label="US Timezones">
-                        <option value="America/New_York">Eastern Time (ET)</option>
-                        <option value="America/Chicago">Central Time (CT)</option>
-                        <option value="America/Denver">Mountain Time (MT)</option>
-                        <option value="America/Phoenix">Arizona (MST)</option>
-                        <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                        <option value="America/Anchorage">Alaska (AKT)</option>
-                        <option value="Pacific/Honolulu">Hawaii (HST)</option>
-                    </optgroup>
-                    <optgroup label="Other Common Timezones">
-                        <option value="UTC">UTC (Coordinated Universal Time)</option>
-                        <option value="Europe/London">London (GMT/BST)</option>
-                        <option value="Europe/Paris">Paris (CET/CEST)</option>
-                        <option value="Asia/Dubai">Dubai (GST)</option>
-                        <option value="Asia/Kolkata">India (IST)</option>
-                        <option value="Asia/Singapore">Singapore (SGT)</option>
-                        <option value="Asia/Tokyo">Tokyo (JST)</option>
-                        <option value="Australia/Sydney">Sydney (AEDT/AEST)</option>
-                    </optgroup>
-                </select>
-                <p class="form-help">
-                    Current server time may differ from your selected timezone. All dates will be converted to your chosen timezone.
-                </p>
+                <!-- Settings Section -->
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/settings.html" class="nav-item active">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">⚙️ Settings</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
             </div>
 
-            <div class="current-time">
-                <div class="current-time-label">Current time in selected timezone:</div>
-                <div class="current-time-value" id="currentTime">--</div>
-            </div>
+            <!-- Content Area -->
+            <div class="content-area">
+                <div class="container">
+                    <div id="successMessage" class="success-message">
+                        Settings saved successfully!
+                    </div>
 
-            <div class="button-group">
-                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
-                <button class="btn btn-secondary" onclick="resetSettings()">Reset to Default</button>
-            </div>
-        </div>
+                    <div class="card">
+                        <h2 class="card-title">Timezone Settings</h2>
+                        <p class="card-description">
+                            Set your preferred timezone for all dates and timestamps across the dashboard. 
+                            This ensures you see accurate times regardless of server location.
+                        </p>
 
-        <div class="card">
-            <h2 class="card-title">About</h2>
-            <p class="card-description">
-                ORA Business Dashboard v1.0<br>
-                Timezone-aware reporting and inventory management system
-            </p>
-        </div>
+                        <div class="form-group">
+                            <label for="timezoneSelect" class="form-label">Timezone</label>
+                            <select id="timezoneSelect" class="form-select">
+                                <optgroup label="US Timezones">
+                                    <option value="America/New_York">Eastern Time (ET)</option>
+                                    <option value="America/Chicago">Central Time (CT)</option>
+                                    <option value="America/Denver">Mountain Time (MT)</option>
+                                    <option value="America/Phoenix">Arizona (MST)</option>
+                                    <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                    <option value="America/Anchorage">Alaska (AKT)</option>
+                                    <option value="Pacific/Honolulu">Hawaii (HST)</option>
+                                </optgroup>
+                                <optgroup label="Other Common Timezones">
+                                    <option value="UTC">UTC (Coordinated Universal Time)</option>
+                                    <option value="Europe/London">London (GMT/BST)</option>
+                                    <option value="Europe/Paris">Paris (CET/CEST)</option>
+                                    <option value="Asia/Dubai">Dubai (GST)</option>
+                                    <option value="Asia/Kolkata">India (IST)</option>
+                                    <option value="Asia/Singapore">Singapore (SGT)</option>
+                                    <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                    <option value="Australia/Sydney">Sydney (AEDT/AEST)</option>
+                                </optgroup>
+                            </select>
+                            <p class="form-help">
+                                Current server time may differ from your selected timezone. All dates will be converted to your chosen timezone.
+                            </p>
+                        </div>
+
+                        <div class="current-time">
+                            <div class="current-time-label">Current time in selected timezone:</div>
+                            <div class="current-time-value" id="currentTime">--</div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                            <button class="btn btn-secondary" onclick="resetSettings()">Reset to Default</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">About</h2>
+                        <p class="card-description">
+                            ORA Business Dashboard v1.0<br>
+                            Timezone-aware reporting and inventory management system
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
+        // Dark mode state
+        let darkMode = localStorage.getItem('darkMode') === 'true';
+
+        // Initialize dark mode
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = '☀️';
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = darkMode ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        // Toggle admin section
+        function toggleAdmin() {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            toggle.classList.toggle('expanded');
+            items.classList.toggle('expanded');
+        }
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        // Close mobile menu
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+
+        // Close mobile menu on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMobileMenu();
+            }
+        });
+
+        // Close mobile menu when clicking nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    closeMobileMenu();
+                }
+            });
+        });
+
+        // Timezone Settings Functions
         // Load saved timezone or use default
         function loadSettings() {
             const savedTimezone = localStorage.getItem('userTimezone') || 'America/New_York';
@@ -303,7 +683,6 @@
             const timezone = document.getElementById('timezoneSelect').value;
             localStorage.setItem('userTimezone', timezone);
             
-            // Show success message
             const successMsg = document.getElementById('successMessage');
             successMsg.classList.add('show');
             setTimeout(() => {
