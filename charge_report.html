@@ -382,7 +382,7 @@
             
             let html = reportData.map(row => `
                 <tr>
-                    <td class="date-cell">${formatDate(row.date)}</td>
+                    <td class="date-cell">${formatChargeReportDate(row.date)}</td>
                     <td class="stat-highlight">${row.order_count}</td>
                     <td>${row.sku_17612 || '-'}</td>
                     <td>${row.sku_17904 || '-'}</td>
@@ -451,7 +451,7 @@
             doc.text('Orders: $4.25 ea | Packages: $3.40 ea | Space: $18.00/day', 148, 28, { align: 'center' });
 
             const tableData = reportData.map(row => [
-                formatDate(row.date),
+                formatChargeReportDate(row.date),
                 row.order_count,
                 row.sku_17612 || '-',
                 row.sku_17904 || '-',

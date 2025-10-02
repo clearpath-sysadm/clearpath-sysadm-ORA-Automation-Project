@@ -33,7 +33,9 @@ function formatDateWithTimezone(dateInput, options = {}) {
 }
 
 /**
- * Format a date for display (short format: M/D/YYYY)
+ * Format a date for display with timezone conversion (M/D/YYYY)
+ * USE THIS FOR: Timestamps/datetimes that should reflect user's timezone
+ * DON'T USE FOR: Calendar dates that should stay fixed (use formatChargeReportDate)
  * @param {string|Date} dateInput - The date to format
  * @returns {string} Formatted date string
  */
@@ -139,14 +141,20 @@ function toISOWithTimezone(dateInput) {
 }
 
 /**
- * Format date for display in charge report (matches existing format)
+ * Format date for display in charge report (date-only, no timezone conversion)
+ * Use this for calendar dates that should NOT shift based on timezone
  * @param {string} dateStr - Date string from API (YYYY-MM-DD)
- * @returns {string} Formatted date
+ * @returns {string} Formatted date (M/D/YYYY)
  */
 function formatChargeReportDate(dateStr) {
-    // Parse as local date (no timezone conversion for date-only fields)
-    const date = new Date(dateStr + 'T12:00:00'); // Use noon to avoid timezone issues
-    return formatDate(date);
+    // For date-only fields, parse and format WITHOUT timezone conversion
+    // This ensures Sept 30 stays Sept 30 regardless of user's timezone
+    const parts = dateStr.split('-');
+    const year = parts[0];
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    
+    return `${month}/${day}/${year}`;
 }
 
 /**
