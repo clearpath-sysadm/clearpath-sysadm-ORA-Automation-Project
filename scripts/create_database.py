@@ -189,6 +189,42 @@ def create_configuration_params_table(conn):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_config_sku ON configuration_params(sku)")
     print("✅ configuration_params table created")
 
+def create_bundle_skus_table(conn):
+    """Create bundle_skus table for bundle product definitions"""
+    print("Creating bundle_skus table...")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS bundle_skus (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bundle_sku TEXT NOT NULL UNIQUE,
+            description TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        ) STRICT
+    """)
+    
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_bundle_skus_active ON bundle_skus(active)")
+    print("✅ bundle_skus table created")
+
+def create_bundle_components_table(conn):
+    """Create bundle_components table for bundle component relationships"""
+    print("Creating bundle_components table...")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS bundle_components (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bundle_sku_id INTEGER NOT NULL,
+            component_sku TEXT NOT NULL,
+            multiplier INTEGER NOT NULL CHECK (multiplier > 0),
+            sequence INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (bundle_sku_id) REFERENCES bundle_skus(id) ON DELETE CASCADE
+        ) STRICT
+    """)
+    
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_bundle_components_bundle ON bundle_components(bundle_sku_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_bundle_components_sku ON bundle_components(component_sku)")
+    print("✅ bundle_components table created")
+
 def verify_tables(conn):
     """Verify all tables were created"""
     print("\nVerifying tables...")
@@ -203,7 +239,9 @@ def verify_tables(conn):
         'shipped_items',
         'weekly_shipped_history',
         'system_kpis',
-        'configuration_params'
+        'configuration_params',
+        'bundle_skus',
+        'bundle_components'
     ]
     
     for table in expected_tables:
@@ -252,6 +290,8 @@ def main():
         create_weekly_shipped_history_table(conn)
         create_system_kpis_table(conn)
         create_configuration_params_table(conn)
+        create_bundle_skus_table(conn)  # Must be before bundle_components
+        create_bundle_components_table(conn)
         
         # Commit changes
         conn.commit()
@@ -261,7 +301,7 @@ def main():
             print("\n" + "=" * 60)
             print("✅ DATABASE CREATED SUCCESSFULLY")
             print("=" * 60)
-            print(f"\n8 tables created with STRICT typing")
+            print(f"\n10 tables created with STRICT typing")
             print(f"All indexes created")
             print(f"Foreign keys enabled")
             print(f"Database ready for seeding")
