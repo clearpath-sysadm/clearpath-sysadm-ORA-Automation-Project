@@ -54,15 +54,14 @@ def api_dashboard_stats():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Units to be shipped (from pending orders)
+        # Units to be shipped (from ShipStation awaiting shipment)
         cursor.execute("""
-            SELECT COALESCE(SUM(quantity), 0)
-            FROM order_items_inbox
-            WHERE order_inbox_id IN (
-                SELECT id FROM orders_inbox WHERE status = 'pending'
-            )
+            SELECT metric_value
+            FROM shipstation_metrics
+            WHERE metric_name = 'units_to_ship'
         """)
-        units_to_ship = cursor.fetchone()[0] or 0
+        result = cursor.fetchone()
+        units_to_ship = result[0] if result else 0
         
         # Check if FedEx pickup is needed (>= 185 units)
         fedex_pickup_needed = units_to_ship >= 185
