@@ -1037,12 +1037,12 @@
                 <section>
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Orders Pipeline</h2>
                     
-                    <div class="card">
+                    <div class="card" onclick="window.location.href='/xml_import.html'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
                         <div class="card-header">
                             <div class="card-title">
                                 <span>📥</span> Orders Inbox Status
                             </div>
-                            <a href="/xml_import.html" class="btn btn-primary">View All Orders →</a>
+                            <a href="/xml_import.html" class="btn btn-primary" onclick="event.stopPropagation()">View All Orders →</a>
                         </div>
                         <div style="color: var(--text-secondary); font-size: 14px;">
                             <p>Orders are automatically imported from Google Drive every 5 minutes.</p>
