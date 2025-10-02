@@ -1499,10 +1499,10 @@ def api_upload_orders_to_shipstation():
             # Create SEPARATE ShipStation order for EACH SKU
             for sku, qty, unit_price_cents in items:
                 lot_number = sku_lot_map.get(sku, '')
-                sku_with_lot = f"{sku}-{lot_number}" if lot_number else sku
+                sku_with_lot = f"{sku} - {lot_number}" if lot_number else sku
                 
-                # Single-item order for this SKU with UNIQUE order number
-                unique_order_number = f"{order_number}-{sku}"
+                # Use original order number (no SKU appended)
+                unique_order_number = order_number
                 
                 shipstation_order = {
                     'orderNumber': unique_order_number,  # UNIQUE order number per SKU
