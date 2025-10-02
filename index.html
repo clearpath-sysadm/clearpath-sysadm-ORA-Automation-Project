@@ -745,7 +745,7 @@
                                         <th>Product Name</th>
                                         <th style="text-align: right;">Current Qty</th>
                                         <th style="text-align: right;">52-Week Avg</th>
-                                        <th style="text-align: center;">Status</th>
+                                        <th style="text-align: center;">Days Left</th>
                                     </tr>
                                 </thead>
                                 <tbody id="weeklyReportBody"></tbody>
@@ -928,12 +928,12 @@
                 }
                 
                 tbody.innerHTML = result.data.map(item => {
-                    const statusClass = item.alert_level === 'critical' ? 'critical' : 
-                                       item.alert_level === 'low' ? 'warning' : 'success';
-                    const statusIcon = item.alert_level === 'critical' ? '🔴' : 
-                                      item.alert_level === 'low' ? '🟡' : '🟢';
-                    const statusText = item.alert_level === 'critical' ? 'Critical' : 
-                                      item.alert_level === 'low' ? 'Low' : 'Normal';
+                    const daysLeft = item.days_left || 0;
+                    const statusClass = daysLeft < 14 ? 'critical' : 
+                                       daysLeft < 30 ? 'warning' : 'success';
+                    const statusIcon = daysLeft < 14 ? '🔴' : 
+                                      daysLeft < 30 ? '🟡' : '🟢';
+                    const daysText = daysLeft >= 999 ? '∞' : daysLeft;
                     
                     return `
                         <tr>
@@ -944,7 +944,7 @@
                             <td style="text-align: center;">
                                 <span class="badge badge-${statusClass}">
                                     <span class="status-indicator status-${statusClass === 'critical' ? 'red' : statusClass === 'warning' ? 'yellow' : 'green'}"></span>
-                                    ${statusText}
+                                    ${daysText} days
                                 </span>
                             </td>
                         </tr>

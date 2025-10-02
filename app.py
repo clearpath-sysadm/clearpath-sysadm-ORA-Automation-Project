@@ -840,13 +840,25 @@ def api_weekly_inventory_report():
         
         report = []
         for row in results:
-            weekly_avg = round((row[3] or 0) / 100.0, 2) if row[3] else 0.0
+            current_qty = row[2] or 0
+            weekly_avg_cents = row[3] or 0
+            
+            # Calculate rolling average in units (convert from cents)
+            weekly_avg = round(weekly_avg_cents / 100.0, 2) if weekly_avg_cents else 0.0
+            
+            # Calculate estimated days left
+            if weekly_avg > 0:
+                daily_consumption = weekly_avg / 7.0  # Convert weekly to daily
+                days_left = round(current_qty / daily_consumption) if daily_consumption > 0 else 999
+            else:
+                days_left = 999  # Infinite/unknown if no consumption history
+            
             report.append({
                 'sku': row[0],
                 'product_name': row[1],
-                'current_quantity': row[2] or 0,
+                'current_quantity': current_qty,
                 'rolling_avg_52_weeks': weekly_avg,
-                'alert_level': row[4] or 'normal',
+                'days_left': days_left,
                 'reorder_point': row[5] or 0,
                 'last_updated': row[6]
             })
