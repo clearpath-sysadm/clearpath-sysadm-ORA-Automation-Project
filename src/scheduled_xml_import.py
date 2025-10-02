@@ -190,17 +190,18 @@ def import_orders_from_drive():
                 # Expand bundles into component SKUs
                 expanded_items = expand_bundle_items(line_items, bundle_config)
                 
-                # CRITICAL: Filter by Key Products - skip if no Key Products in order
-                final_skus = {item['sku'] for item in expanded_items}
-                has_key_product = bool(final_skus & key_products)
+                # CRITICAL: Filter expanded items to ONLY include Key Products
+                filtered_items = [item for item in expanded_items if item['sku'] in key_products]
                 
-                if not has_key_product:
+                # Skip order if no Key Products remain after filtering
+                if not filtered_items:
                     orders_skipped += 1
-                    logger.info(f"SKIPPED Order {order_number}: No Key Products found. SKUs: {', '.join(final_skus)}")
+                    skipped_skus = {item['sku'] for item in expanded_items}
+                    logger.info(f"SKIPPED Order {order_number}: No Key Products found. SKUs: {', '.join(skipped_skus)}")
                     continue
                 
-                # Calculate total quantity from expanded items
-                total_quantity = sum(item['quantity'] for item in expanded_items)
+                # Calculate total quantity from filtered items (only Key Products)
+                total_quantity = sum(item['quantity'] for item in filtered_items)
                 
                 cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
                 existing = cursor.fetchone()
@@ -221,8 +222,8 @@ def import_orders_from_drive():
                     
                     order_inbox_id = cursor.lastrowid
                     
-                    # Insert expanded line items
-                    for item in expanded_items:
+                    # Insert filtered line items (only Key Products)
+                    for item in filtered_items:
                         cursor.execute("""
                             INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
                             VALUES (?, ?, ?)
