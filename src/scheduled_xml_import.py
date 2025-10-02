@@ -87,8 +87,19 @@ def import_orders_from_drive():
                 order_date_str = order_date.text.strip() if order_date is not None and order_date.text else datetime.now().strftime('%Y-%m-%d')
                 customer_email = email.text.strip() if email is not None and email.text else None
                 
-                items = order_elem.findall('.//product')
-                total_items = len(items)
+                # Parse line items from order_detail elements
+                line_items = []
+                total_quantity = 0
+                
+                for detail_elem in order_elem.findall('order_detail'):
+                    product_code = detail_elem.find('productid')
+                    quantity_elem = detail_elem.find('amount')
+                    
+                    if product_code is not None and product_code.text:
+                        sku = product_code.text.strip()
+                        qty = int(quantity_elem.text.strip()) if quantity_elem is not None and quantity_elem.text else 1
+                        line_items.append({'sku': sku, 'quantity': qty})
+                        total_quantity += qty
                 
                 cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
                 existing = cursor.fetchone()
@@ -97,22 +108,16 @@ def import_orders_from_drive():
                     cursor.execute("""
                         INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
                         VALUES (?, ?, ?, 'pending', ?, 'X-Cart')
-                    """, (order_number, order_date_str, customer_email, total_items))
+                    """, (order_number, order_date_str, customer_email, total_quantity))
                     
                     order_inbox_id = cursor.lastrowid
                     
-                    for product in items:
-                        product_code = product.find('productcode')
-                        quantity = product.find('amount')
-                        
-                        if product_code is not None and product_code.text:
-                            sku = product_code.text.strip()
-                            qty = int(quantity.text.strip()) if quantity is not None and quantity.text else 1
-                            
-                            cursor.execute("""
-                                INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                                VALUES (?, ?, ?)
-                            """, (order_inbox_id, sku, qty))
+                    # Insert line items
+                    for item in line_items:
+                        cursor.execute("""
+                            INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                            VALUES (?, ?, ?)
+                        """, (order_inbox_id, item['sku'], item['quantity']))
                     
                     orders_imported += 1
         

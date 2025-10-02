@@ -1027,22 +1027,26 @@ def api_xml_import():
 
 @app.route('/api/orders_inbox')
 def api_orders_inbox():
-    """Get all orders from inbox"""
+    """Get all orders from inbox with calculated total_items"""
     try:
         query = """
             SELECT 
-                id,
-                order_number,
-                order_date,
-                customer_email,
-                status,
-                total_items,
-                total_amount_cents,
-                shipstation_order_id,
-                created_at,
-                updated_at
-            FROM orders_inbox
-            ORDER BY created_at DESC
+                o.id,
+                o.order_number,
+                o.order_date,
+                o.customer_email,
+                o.status,
+                COALESCE(SUM(oi.quantity), o.total_items, 0) as total_items,
+                o.total_amount_cents,
+                o.shipstation_order_id,
+                o.created_at,
+                o.updated_at
+            FROM orders_inbox o
+            LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, 
+                     o.status, o.total_items, o.total_amount_cents, 
+                     o.shipstation_order_id, o.created_at, o.updated_at
+            ORDER BY o.created_at DESC
             LIMIT 500
         """
         results = execute_query(query)
@@ -1055,7 +1059,7 @@ def api_orders_inbox():
                 'order_date': row[2],
                 'customer_email': row[3] or '',
                 'status': row[4],
-                'total_items': row[5] or 0,
+                'total_items': int(row[5]) if row[5] else 0,
                 'total_amount_cents': row[6] or 0,
                 'shipstation_order_id': row[7] or '',
                 'created_at': row[8],
@@ -1122,9 +1126,19 @@ def api_google_drive_import_file(file_id):
                 order_date_str = order_date.text.strip() if order_date is not None and order_date.text else datetime.now().strftime('%Y-%m-%d')
                 customer_email = email.text.strip() if email is not None and email.text else None
                 
-                # Count items
-                items = order_elem.findall('.//product')
-                total_items = len(items)
+                # Parse line items from order_detail elements
+                line_items = []
+                total_quantity = 0
+                
+                for detail_elem in order_elem.findall('order_detail'):
+                    product_code = detail_elem.find('productid')
+                    quantity_elem = detail_elem.find('amount')
+                    
+                    if product_code is not None and product_code.text:
+                        sku = product_code.text.strip()
+                        qty = int(quantity_elem.text.strip()) if quantity_elem is not None and quantity_elem.text else 1
+                        line_items.append({'sku': sku, 'quantity': qty})
+                        total_quantity += qty
                 
                 # Check if order already exists
                 cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
@@ -1135,23 +1149,16 @@ def api_google_drive_import_file(file_id):
                     cursor.execute("""
                         INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
                         VALUES (?, ?, ?, 'pending', ?, 'X-Cart')
-                    """, (order_number, order_date_str, customer_email, total_items))
+                    """, (order_number, order_date_str, customer_email, total_quantity))
                     
                     order_inbox_id = cursor.lastrowid
                     
-                    # Insert order items
-                    for product in items:
-                        product_code = product.find('productcode')
-                        quantity = product.find('amount')
-                        
-                        if product_code is not None and product_code.text:
-                            sku = product_code.text.strip()
-                            qty = int(quantity.text.strip()) if quantity is not None and quantity.text else 1
-                            
-                            cursor.execute("""
-                                INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                                VALUES (?, ?, ?)
-                            """, (order_inbox_id, sku, qty))
+                    # Insert line items
+                    for item in line_items:
+                        cursor.execute("""
+                            INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                            VALUES (?, ?, ?)
+                        """, (order_inbox_id, item['sku'], item['quantity']))
                     
                     orders_imported += 1
         
