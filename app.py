@@ -916,7 +916,7 @@ def api_xml_import():
         
         file = request.files['xml_file']
         
-        if file.filename == '':
+        if not file.filename or file.filename == '':
             return jsonify({
                 'success': False,
                 'error': 'No file selected'
