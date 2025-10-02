@@ -523,6 +523,28 @@
             cursor: not-allowed;
         }
 
+        /* Upload Button */
+        .btn-upload {
+            background: var(--primary-blue);
+            color: white;
+            padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn-upload:hover {
+            background: var(--primary-blue-hover);
+        }
+
+        .btn-upload:disabled {
+            background: var(--text-tertiary);
+            cursor: not-allowed;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .mobile-menu-btn {
@@ -649,9 +671,14 @@
                 <div class="card">
                     <div class="section-header">
                         <div class="section-title">📥 Orders Inbox</div>
-                        <button class="btn-manual-import" id="btn-manual-import">
-                            ↻ Manual Import
-                        </button>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn-upload" id="btn-upload-selected" style="display: none;">
+                                🚀 Upload Selected to ShipStation
+                            </button>
+                            <button class="btn-manual-import" id="btn-manual-import">
+                                ↻ Manual Import
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="stats-grid">
@@ -678,6 +705,7 @@
                         <table id="orders-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="select-all" title="Select all pending orders"></th>
                                     <th>Order #</th>
                                     <th>Order Date</th>
                                     <th>Customer Email</th>
@@ -689,7 +717,7 @@
                             </thead>
                             <tbody id="orders-tbody">
                                 <tr>
-                                    <td colspan="7" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td>
+                                    <td colspan="8" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -843,14 +871,22 @@
 
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('orders-tbody');
+            const uploadBtn = document.getElementById('btn-upload-selected');
 
             if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No orders in inbox</td></tr>';
+                uploadBtn.style.display = 'none';
                 return;
             }
 
+            const hasPending = orders.some(o => o.status === 'pending');
+            uploadBtn.style.display = hasPending ? 'block' : 'none';
+
             tbody.innerHTML = orders.map(order => `
-                <tr>
+                <tr data-order-id="${order.id}">
+                    <td>
+                        ${order.status === 'pending' ? `<input type="checkbox" class="order-checkbox" data-order-id="${order.id}">` : ''}
+                    </td>
                     <td><strong>${order.order_number}</strong></td>
                     <td>${order.order_date}</td>
                     <td>${order.customer_email || '-'}</td>
@@ -860,6 +896,9 @@
                     <td>${new Date(order.created_at).toLocaleString()}</td>
                 </tr>
             `).join('');
+            
+            // Update select-all checkbox
+            updateSelectAll();
         }
 
         function showAlert(message, type) {
@@ -873,6 +912,86 @@
                 alert.remove();
             }, 5000);
         }
+
+        // Select all checkbox toggle
+        function updateSelectAll() {
+            const selectAll = document.getElementById('select-all');
+            const checkboxes = document.querySelectorAll('.order-checkbox');
+            const checkedBoxes = document.querySelectorAll('.order-checkbox:checked');
+            
+            if (checkboxes.length === 0) {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+            } else if (checkedBoxes.length === checkboxes.length) {
+                selectAll.checked = true;
+                selectAll.indeterminate = false;
+            } else if (checkedBoxes.length > 0) {
+                selectAll.checked = false;
+                selectAll.indeterminate = true;
+            } else {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+            }
+        }
+
+        // Select all handler
+        document.getElementById('select-all').addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.order-checkbox');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+        });
+
+        // Update select-all when individual checkboxes change
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('order-checkbox')) {
+                updateSelectAll();
+            }
+        });
+
+        // Upload selected orders to ShipStation
+        async function uploadSelectedOrders() {
+            const checkboxes = document.querySelectorAll('.order-checkbox:checked');
+            
+            if (checkboxes.length === 0) {
+                showAlert('⚠️ Please select at least one order to upload', 'warning');
+                return;
+            }
+
+            const orderIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.orderId));
+            const uploadBtn = document.getElementById('btn-upload-selected');
+            const originalText = uploadBtn.textContent;
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '⏳ Uploading to ShipStation...';
+
+            try {
+                const response = await fetch('/api/upload_orders_to_shipstation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ order_ids: orderIds })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(`✅ ${result.message} (Uploaded: ${result.uploaded}, Skipped: ${result.skipped || 0}, Failed: ${result.failed || 0})`, 'success');
+                    loadOrdersInbox();
+                } else {
+                    showAlert('❌ Upload failed: ' + result.error, 'error');
+                    console.error('Upload error:', result);
+                }
+            } catch (error) {
+                showAlert('❌ Error uploading orders: ' + error.message, 'error');
+                console.error('Upload error:', error);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = originalText;
+            }
+        }
+
+        // Upload button handler
+        document.getElementById('btn-upload-selected').addEventListener('click', uploadSelectedOrders);
 
         // Load orders on page load
         loadOrdersInbox();

@@ -689,11 +689,13 @@
                             <div class="stat-label">Units to Ship</div>
                             <div class="stat-change">Pending orders</div>
                         </div>
-                        <div class="stat-card hidden" data-stat-card>
-                            <div class="stat-value">0</div>
-                            <div class="stat-label">Pending Uploads</div>
-                            <div class="stat-change">3 new since last hour</div>
-                        </div>
+                        <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
+                            <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Pending Uploads</div>
+                                <div class="stat-change">Click to upload →</div>
+                            </div>
+                        </a>
                         <div class="stat-card hidden" data-stat-card>
                             <div class="stat-value">0</div>
                             <div class="stat-label">Shipments Sent</div>

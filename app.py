@@ -1170,6 +1170,218 @@ def api_google_drive_import_file(file_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/upload_orders_to_shipstation', methods=['POST'])
+def api_upload_orders_to_shipstation():
+    """Upload pending orders from inbox to ShipStation with SKU-Lot mapping"""
+    try:
+        from flask import request
+        from src.services.shipstation.api_client import (
+            get_shipstation_credentials,
+            send_all_orders_to_shipstation,
+            fetch_shipstation_existing_orders_by_date_range
+        )
+        from config.settings import settings
+        from dateutil import parser as date_parser
+        
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation API credentials not found'
+            }), 500
+        
+        # Get order IDs from request (optional - if not provided, upload all pending)
+        data = request.get_json() or {}
+        order_ids = data.get('order_ids', [])
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Fetch SKU-Lot mappings from configuration_params
+        cursor.execute("""
+            SELECT parameter_name, value 
+            FROM configuration_params 
+            WHERE category = 'SKU_Lot'
+        """)
+        sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        # Build query for pending orders
+        if order_ids:
+            placeholders = ','.join('?' * len(order_ids))
+            order_query = f"""
+                SELECT id, order_number, order_date, customer_email, total_amount_cents
+                FROM orders_inbox 
+                WHERE status = 'pending' AND id IN ({placeholders})
+            """
+            cursor.execute(order_query, order_ids)
+        else:
+            cursor.execute("""
+                SELECT id, order_number, order_date, customer_email, total_amount_cents
+                FROM orders_inbox 
+                WHERE status = 'pending'
+            """)
+        
+        pending_orders = cursor.fetchall()
+        
+        if not pending_orders:
+            return jsonify({
+                'success': True,
+                'message': 'No pending orders to upload',
+                'uploaded': 0
+            })
+        
+        # Build ShipStation order payloads
+        shipstation_orders = []
+        order_map = {}  # Map order_number to order_id for later update
+        
+        for order_row in pending_orders:
+            order_id, order_number, order_date, customer_email, total_amount_cents = order_row
+            order_map[order_number] = order_id
+            
+            # Get order items
+            cursor.execute("""
+                SELECT sku, quantity, unit_price_cents
+                FROM order_items_inbox
+                WHERE order_inbox_id = ?
+            """, (order_id,))
+            items = cursor.fetchall()
+            
+            # Build items with SKU-Lot mapping
+            shipstation_items = []
+            for sku, qty, unit_price_cents in items:
+                lot_number = sku_lot_map.get(sku, '')
+                sku_with_lot = f"{sku}-{lot_number}" if lot_number else sku
+                
+                shipstation_items.append({
+                    'sku': sku_with_lot,
+                    'name': f'Product {sku}',
+                    'quantity': qty,
+                    'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
+                })
+            
+            # Build ShipStation order payload
+            shipstation_order = {
+                'orderNumber': order_number,
+                'orderDate': order_date,
+                'orderStatus': 'awaiting_shipment',
+                'customerEmail': customer_email or '',
+                'billTo': {
+                    'name': 'Customer',
+                    'street1': '',
+                    'city': '',
+                    'state': '',
+                    'postalCode': '',
+                    'country': 'US'
+                },
+                'shipTo': {
+                    'name': 'Customer',
+                    'street1': '',
+                    'city': '',
+                    'state': '',
+                    'postalCode': '',
+                    'country': 'US'
+                },
+                'items': shipstation_items,
+                'amountPaid': (total_amount_cents / 100) if total_amount_cents else 0,
+                'taxAmount': 0,
+                'shippingAmount': 0
+            }
+            
+            shipstation_orders.append(shipstation_order)
+        
+        # Check for duplicates in ShipStation
+        earliest_date = min([date_parser.parse(o['orderDate']) for o in shipstation_orders])
+        create_date_start = earliest_date.strftime('%Y-%m-%dT00:00:00Z')
+        create_date_end = datetime.now().strftime('%Y-%m-%dT23:59:59Z')
+        
+        existing_orders = fetch_shipstation_existing_orders_by_date_range(
+            api_key,
+            api_secret,
+            settings.SHIPSTATION_ORDERS_ENDPOINT,
+            create_date_start,
+            create_date_end
+        )
+        
+        existing_order_numbers = {o.get('orderNumber', '').strip().upper() for o in existing_orders}
+        
+        # Filter out duplicates
+        new_orders = []
+        skipped_count = 0
+        for order in shipstation_orders:
+            if order['orderNumber'].strip().upper() in existing_order_numbers:
+                skipped_count += 1
+                # Mark as uploaded in database anyway
+                cursor.execute("""
+                    UPDATE orders_inbox 
+                    SET status = 'uploaded', updated_at = CURRENT_TIMESTAMP
+                    WHERE order_number = ?
+                """, (order['orderNumber'],))
+            else:
+                new_orders.append(order)
+        
+        if not new_orders:
+            conn.commit()
+            conn.close()
+            return jsonify({
+                'success': True,
+                'message': f'All {len(shipstation_orders)} orders already exist in ShipStation',
+                'uploaded': 0,
+                'skipped': skipped_count
+            })
+        
+        # Upload to ShipStation
+        upload_results = send_all_orders_to_shipstation(
+            new_orders,
+            api_key,
+            api_secret,
+            settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT
+        )
+        
+        # Update database with results
+        uploaded_count = 0
+        failed_count = 0
+        
+        for result in upload_results:
+            order_key = result.get('orderKey')
+            success = result.get('success', False)
+            error_msg = result.get('errorMessage')
+            
+            if success and order_key:
+                # Find matching order number from shipstation_orders
+                matching_order = next((o for o in new_orders if o.get('orderKey') == order_key or o.get('orderNumber') == order_key), None)
+                if matching_order:
+                    order_number = matching_order['orderNumber']
+                    cursor.execute("""
+                        UPDATE orders_inbox 
+                        SET status = 'uploaded',
+                            shipstation_order_id = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE order_number = ?
+                    """, (order_key, order_number))
+                    uploaded_count += 1
+            else:
+                failed_count += 1
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Uploaded {uploaded_count} orders to ShipStation',
+            'uploaded': uploaded_count,
+            'failed': failed_count,
+            'skipped': skipped_count
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'trace': traceback.format_exc()
+        }), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
