@@ -925,19 +925,11 @@
             const year = document.getElementById('yearSelect').value;
             const monthName = month.options[month.selectedIndex].text;
 
-            const primaryBlue = [79, 70, 229];
-            const neutralGray = [107, 114, 128];
-            const lightGray = [243, 244, 246];
-            const darkText = [17, 24, 39];
-
-            doc.setFontSize(20);
-            doc.setTextColor(...primaryBlue);
-            doc.text('ORA Business - Monthly Charge Report', 148, 15, { align: 'center' });
-
-            doc.setFontSize(11);
-            doc.setTextColor(...neutralGray);
-            doc.text(`${monthName} ${year}`, 148, 22, { align: 'center' });
-            doc.text('Orders: $4.25 ea | Packages: $3.40 ea | Space: $18.00/day', 148, 28, { align: 'center' });
+            // Color scheme matching user's screenshot
+            const purpleHeader = [186, 148, 255];      // Purple for Quantity Shipped
+            const greenHeader = [144, 238, 144];       // Green for Charges
+            const darkText = [0, 0, 0];
+            const lightGray = [245, 245, 245];
 
             const tableData = reportData.map(row => [
                 formatChargeReportDate(row.date),
@@ -970,61 +962,72 @@
             }
 
             doc.autoTable({
-                head: [['Date', '# Orders', '17612', '17904', '17914', '18675', '18795', 'Orders', 'Packages', 'Space', 'Total']],
+                head: [
+                    [
+                        {content: '', colSpan: 2}, 
+                        {content: 'Quantity Shipped', colSpan: 5, styles: {fillColor: purpleHeader, textColor: darkText}},
+                        {content: 'Charges', colSpan: 4, styles: {fillColor: greenHeader, textColor: darkText}}
+                    ],
+                    ['Date', '# Of\nOrders', '17612', '17904', '17914', '18675', '18795', 'Orders', 'Packages', 'Space Rental', 'Total']
+                ],
                 body: tableData,
-                startY: 35,
+                startY: 10,
                 theme: 'grid',
                 styles: {
-                    fontSize: 7,
-                    cellPadding: 2,
+                    fontSize: 6,
+                    cellPadding: 1.5,
                     textColor: darkText,
-                    lineColor: [209, 213, 219],
-                    lineWidth: 0.1
+                    lineColor: [200, 200, 200],
+                    lineWidth: 0.1,
+                    halign: 'center'
                 },
                 headStyles: {
-                    fillColor: primaryBlue,
-                    textColor: [255, 255, 255],
+                    fillColor: [255, 255, 255],
+                    textColor: darkText,
                     fontStyle: 'bold',
-                    fontSize: 8,
+                    fontSize: 7,
                     halign: 'center'
                 },
                 columnStyles: {
                     0: { cellWidth: 22, halign: 'left' },
-                    1: { cellWidth: 15, halign: 'center' },
-                    2: { cellWidth: 14, halign: 'center' },
-                    3: { cellWidth: 14, halign: 'center' },
-                    4: { cellWidth: 14, halign: 'center' },
-                    5: { cellWidth: 14, halign: 'center' },
-                    6: { cellWidth: 14, halign: 'center' },
-                    7: { cellWidth: 20, halign: 'right' },
-                    8: { cellWidth: 22, halign: 'right' },
-                    9: { cellWidth: 23, halign: 'right' },
-                    10: { cellWidth: 22, halign: 'right', fontStyle: 'bold' }
+                    1: { cellWidth: 12, halign: 'center' },
+                    2: { cellWidth: 12, halign: 'center' },
+                    3: { cellWidth: 12, halign: 'center' },
+                    4: { cellWidth: 12, halign: 'center' },
+                    5: { cellWidth: 12, halign: 'center' },
+                    6: { cellWidth: 12, halign: 'center' },
+                    7: { cellWidth: 18, halign: 'right' },
+                    8: { cellWidth: 18, halign: 'right' },
+                    9: { cellWidth: 22, halign: 'right' },
+                    10: { cellWidth: 18, halign: 'right', fontStyle: 'bold' }
                 },
                 alternateRowStyles: {
                     fillColor: lightGray
                 },
                 didParseCell: function(data) {
-                    if (data.row.index === tableData.length - 1 && totalsRow) {
-                        data.cell.styles.fillColor = [229, 231, 235];
+                    // Style section headers (first row)
+                    if (data.row.section === 'head' && data.row.index === 0) {
                         data.cell.styles.fontStyle = 'bold';
-                        data.cell.styles.textColor = darkText;
+                        data.cell.styles.fontSize = 8;
+                    }
+                    // Style column headers (second row)
+                    if (data.row.section === 'head' && data.row.index === 1) {
+                        if (data.column.index <= 1) {
+                            data.cell.styles.fillColor = [255, 255, 255];
+                        } else if (data.column.index <= 6) {
+                            data.cell.styles.fillColor = purpleHeader;
+                        } else {
+                            data.cell.styles.fillColor = greenHeader;
+                        }
+                    }
+                    // Style TOTAL row
+                    if (data.row.index === tableData.length - 1 && totalsRow) {
+                        data.cell.styles.fillColor = [240, 240, 240];
+                        data.cell.styles.fontStyle = 'bold';
                     }
                 },
-                margin: { left: 10, right: 10 }
+                margin: { left: 8, right: 8, top: 10, bottom: 10 }
             });
-
-            const pageCount = doc.internal.getNumberOfPages();
-            const pageHeight = doc.internal.pageSize.height;
-            
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(...neutralGray);
-                const genDate = formatDate(new Date());
-                const tzIndicator = showTimezoneIndicator();
-                doc.text(`Generated: ${genDate} (${tzIndicator}) | Page ${i} of ${pageCount}`, 148, pageHeight - 10, { align: 'center' });
-            }
 
             doc.save(`charge_report_${monthName}_${year}.pdf`);
         }
