@@ -291,12 +291,21 @@ def api_charge_report():
     - Packages charge ($3.40 per package)
     - Space Rental ($18-$23.40 daily)
     - Total
+    
+    Query Parameters:
+    - month: Month number (1-12), defaults to current month
+    - year: Year (e.g., 2025), defaults to current year
     """
     try:
-        # Calculate current calendar month (first day to last day)
+        # Get month and year from query parameters, default to current month
+        from flask import request
         today = datetime.now().date()
-        start_date = today.replace(day=1)
-        # Calculate last day of current month
+        month = request.args.get('month', type=int, default=today.month)
+        year = request.args.get('year', type=int, default=today.year)
+        
+        # Calculate calendar month date range (first day to last day)
+        start_date = datetime(year, month, 1).date()
+        # Calculate last day of the specified month
         next_month = start_date.replace(day=28) + timedelta(days=4)
         end_date = (next_month.replace(day=1) - timedelta(days=1))
         
