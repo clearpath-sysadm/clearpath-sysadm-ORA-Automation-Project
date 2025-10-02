@@ -971,11 +971,13 @@
                         <div class="skeleton skeleton-card" id="stat-skeleton-4"></div>
 
                         <!-- Actual Stats -->
-                        <div class="stat-card hidden" data-stat-card>
-                            <div class="stat-value">0</div>
-                            <div class="stat-label">Units to Ship</div>
-                            <div class="stat-change">Pending orders</div>
-                        </div>
+                        <a href="/shipped_orders.html" style="text-decoration: none; color: inherit;">
+                            <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Units to Ship</div>
+                                <div class="stat-change">View shipments →</div>
+                            </div>
+                        </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 <div class="stat-value">0</div>
