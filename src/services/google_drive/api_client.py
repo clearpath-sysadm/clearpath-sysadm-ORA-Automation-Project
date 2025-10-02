@@ -44,10 +44,18 @@ def get_replit_google_drive_access_token():
     data = response.json()
     connection_settings = data.get('items', [{}])[0]
     
-    access_token = connection_settings.get('settings', {}).get('access_token')
+    # Try multiple paths for access token (connector API can return it in different places)
+    settings = connection_settings.get('settings', {})
+    access_token = settings.get('access_token')
+    
+    if not access_token:
+        # Try OAuth credentials path
+        access_token = settings.get('oauth', {}).get('credentials', {}).get('access_token')
+    
     if not access_token:
         raise Exception('Google Drive not connected')
     
+    logger.info("Successfully retrieved Google Drive access token from Replit connector")
     return access_token
 
 def list_xml_files_from_folder(folder_id: str):
