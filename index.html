@@ -6,8 +6,38 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>ORA Automation Dashboard</title>
+    <title>ORA Business Automation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-blue: #2563eb;
+            --primary-blue-hover: #1d4ed8;
+            --secondary-purple: #7c3aed;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --sidebar-width: 260px;
+            --header-height: 64px;
+            --success-green: #10b981;
+            --warning-yellow: #f59e0b;
+            --error-red: #ef4444;
+            --spacing-unit: 8px;
+        }
+
+        body.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #64748b;
+            --border-color: #334155;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,84 +45,459 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f7fa;
-            color: #333;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: background-color 0.2s, color 0.2s;
         }
 
-        body.dark-mode {
-            background-color: #15202b;
-            color: #e7e9ea;
+        /* Layout Structure */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s;
+        }
+
+        .sidebar-header {
+            padding: calc(var(--spacing-unit) * 3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-weight: 700;
+            font-size: 18px;
         }
 
-        .header-center {
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: calc(var(--spacing-unit) * 2);
+        }
+
+        .nav-section {
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 1);
+        }
+
+        .nav-item {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: calc(var(--spacing-unit) * 2);
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: calc(var(--spacing-unit) * 0.5);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        .nav-item-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: calc(var(--spacing-unit) * 2);
+        }
+
+        .admin-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-toggle:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .admin-toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .admin-toggle.expanded .admin-toggle-icon {
+            transform: rotate(90deg);
+        }
+
+        .admin-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+        .admin-items.expanded {
+            max-height: 300px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: var(--header-height);
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 calc(var(--spacing-unit) * 3);
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
         }
 
         .last-updated {
-            font-size: 0.875rem;
-            opacity: 0.9;
+            font-size: 13px;
+            color: var(--text-tertiary);
         }
 
-        .btn-refresh {
-            display: flex;
+        .btn {
+            display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
+            gap: calc(var(--spacing-unit) * 1);
+            padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2);
             border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            font-size: 0.875rem;
             transition: all 0.2s;
         }
 
-        .btn-refresh:hover {
-            background: rgba(255,255,255,0.3);
+        .btn:hover {
+            background-color: var(--bg-tertiary);
         }
 
-        .btn-refresh:active {
-            transform: scale(0.95);
+        .btn-primary {
+            background-color: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
         }
 
-        .btn-refresh svg {
-            transition: transform 0.6s ease;
+        .btn-primary:hover {
+            background-color: var(--primary-blue-hover);
         }
 
-        .btn-refresh.refreshing svg {
-            animation: spin 1s linear infinite;
+        .dark-mode-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: calc(var(--spacing-unit) * 1);
+            color: var(--text-secondary);
         }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: calc(var(--spacing-unit) * 1);
+            color: var(--text-primary);
+            margin-right: calc(var(--spacing-unit) * 2);
         }
 
-        /* Skeleton Loaders */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+        }
+
+        .mobile-overlay.active {
+            display: block;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: calc(var(--spacing-unit) * 3);
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-primary);
+            border-radius: 12px;
+            padding: calc(var(--spacing-unit) * 3);
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 1.5);
+        }
+
+        /* KPI Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-purple) 100%);
+            color: white;
+            padding: calc(var(--spacing-unit) * 3);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: calc(var(--spacing-unit) * 1);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: calc(var(--spacing-unit) * 0.5);
+        }
+
+        .stat-change {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            margin-bottom: calc(var(--spacing-unit) * 2);
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+            border-left: 4px solid;
+        }
+
+        .alert-warning {
+            background-color: #fef3c7;
+            border-color: var(--warning-yellow);
+            color: #92400e;
+        }
+
+        body.dark-mode .alert-warning {
+            background-color: #451a03;
+            color: #fbbf24;
+        }
+
+        .alert-critical {
+            background-color: #fee2e2;
+            border-color: var(--error-red);
+            color: #991b1b;
+        }
+
+        body.dark-mode .alert-critical {
+            background-color: #450a0a;
+            color: #fca5a5;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: var(--bg-tertiary);
+            padding: calc(var(--spacing-unit) * 1.5);
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: calc(var(--spacing-unit) * 1.5);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        /* Status Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 1);
+            padding: calc(var(--spacing-unit) * 0.5) calc(var(--spacing-unit) * 1.5);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-critical {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        body.dark-mode .badge-success {
+            background-color: #064e3b;
+            color: #6ee7b7;
+        }
+
+        body.dark-mode .badge-warning {
+            background-color: #451a03;
+            color: #fbbf24;
+        }
+
+        body.dark-mode .badge-critical {
+            background-color: #450a0a;
+            color: #fca5a5;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-green {
+            background-color: var(--success-green);
+        }
+
+        .status-yellow {
+            background-color: var(--warning-yellow);
+        }
+
+        .status-red {
+            background-color: var(--error-red);
+        }
+
+        /* Loading States */
         .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
             background-size: 200% 100%;
             animation: skeleton-loading 1.5s ease-in-out infinite;
             border-radius: 4px;
-        }
-
-        body.dark-mode .skeleton {
-            background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
-            background-size: 200% 100%;
         }
 
         @keyframes skeleton-loading {
@@ -100,828 +505,287 @@
             100% { background-position: -200% 0; }
         }
 
-        .skeleton-text {
-            height: 1rem;
-            margin: 0.5rem 0;
-        }
-
-        .skeleton-title {
-            height: 2rem;
-            width: 60%;
-        }
-
         .skeleton-card {
             height: 120px;
             border-radius: 12px;
-        }
-
-        .skeleton-alert {
-            height: 60px;
-            border-radius: 8px;
-            margin-bottom: 1rem;
         }
 
         .hidden {
             display: none !important;
         }
 
-        /* Error Banners */
-        .error-banner {
-            background: #fee;
-            border: 1px solid #fcc;
-            border-left: 4px solid #f44;
-            color: #c33;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            animation: slideDown 0.3s ease;
-        }
-
-        body.dark-mode .error-banner {
-            background: #3a1a1a;
-            border-color: #6a2a2a;
-            border-left-color: #f44;
-            color: #faa;
-        }
-
-        .error-banner svg {
-            flex-shrink: 0;
-        }
-
-        .error-banner-content {
-            flex: 1;
-        }
-
-        .error-banner-title {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .error-banner-message {
-            font-size: 0.875rem;
-            opacity: 0.9;
-        }
-
-        .error-banner-close {
-            background: none;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            padding: 0.25rem;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-
-        .error-banner-close:hover {
-            opacity: 1;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: fadeIn 0.2s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal {
-            background: white;
+        /* Fedex Alert */
+        #fedex-alert {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #78350f;
+            padding: calc(var(--spacing-unit) * 2);
             border-radius: 12px;
-            padding: 2rem;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: slideUp 0.3s ease;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            display: none;
         }
 
-        body.dark-mode .modal {
-            background: #15202b;
-            color: #e7e9ea;
+        #fedex-alert a {
+            color: #78350f;
+            font-weight: 600;
+            text-decoration: underline;
         }
 
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .mobile-menu-btn {
+                display: block;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 100;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 8px rgba(0,0,0,0.1);
             }
-        }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e1e8ed;
-        }
-
-        body.dark-mode .modal-header {
-            border-bottom-color: #38444d;
-        }
-
-        .modal-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #536471;
-            padding: 0.25rem;
-            transition: color 0.2s;
-        }
-
-        .modal-close:hover {
-            color: #1d1f23;
-        }
-
-        body.dark-mode .modal-close:hover {
-            color: #e7e9ea;
-        }
-
-        .command-box {
-            background: #f7f9fa;
-            border: 1px solid #e1e8ed;
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 0.875rem;
-            margin: 1rem 0;
-            position: relative;
-        }
-
-        body.dark-mode .command-box {
-            background: #1e2732;
-            border-color: #38444d;
-            color: #8ecf4d;
-        }
-
-        .copy-button {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: #1d9bf0;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-        }
-
-        .copy-button:hover {
-            background: #1a8cd8;
-        }
-
-        .copy-button.copied {
-            background: #00ba7c;
-        }
-
-        .modal-footer {
-            margin-top: 1.5rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e1e8ed;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        body.dark-mode .modal-footer {
-            border-top-color: #38444d;
-        }
-
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .header-icon {
-            width: 24px;
-            height: 24px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .header-icon:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .header-nav-link {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: background 0.2s;
-            font-size: 0.9rem;
-        }
-
-        .header-nav-link:hover {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .header-nav-link.active {
-            background: rgba(255,255,255,0.3);
-            font-weight: 600;
-        }
-
-        .container {
-            display: flex;
-            min-height: calc(100vh - 80px);
-        }
-
-        .sidebar {
-            width: 240px;
-            background: white;
-            border-right: 1px solid #e1e8ed;
-            padding: 1.5rem 0;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        body.dark-mode .sidebar {
-            background: #192734;
-            border-right-color: #38444d;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
-            color: #536471;
-            text-decoration: none;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
-        }
-
-        body.dark-mode .nav-item {
-            color: #8b98a5;
-        }
-
-        .nav-item:hover {
-            background: #f7f9fc;
-            color: #1d1f23;
-        }
-
-        body.dark-mode .nav-item:hover {
-            background: #1c2938;
-            color: #e7e9ea;
-        }
-
-        .nav-item.active {
-            background: #e8f4fd;
-            color: #1d9bf0;
-            border-left-color: #1d9bf0;
-            font-weight: 500;
-        }
-
-        body.dark-mode .nav-item.active {
-            background: #1e3a52;
-            color: #1d9bf0;
-        }
-
-        .nav-item span {
-            margin-left: 0.75rem;
-        }
-
-        .badge {
-            display: inline-block;
-            background: #f91880;
-            color: white;
-            font-size: 0.7rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 12px;
-            margin-left: 0.5rem;
-            font-weight: 600;
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 2rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border: 1px solid #e1e8ed;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        body.dark-mode .stat-card {
-            background: #192734;
-            border-color: #38444d;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1d1f23;
-            margin-bottom: 0.25rem;
-            transition: color 0.3s ease;
-        }
-
-        body.dark-mode .stat-value {
-            color: #e7e9ea;
-        }
-
-        .stat-label {
-            color: #536471;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            transition: color 0.3s ease;
-        }
-
-        body.dark-mode .stat-label {
-            color: #8b98a5;
-        }
-
-        .stat-change {
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .stat-change.positive {
-            color: #00ba7c;
-        }
-
-        .stat-change.negative {
-            color: #f91880;
-        }
-
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 0.5rem;
-        }
-
-        .status-green { background: #00ba7c; }
-        .status-yellow { background: #ffad1f; }
-        .status-red { background: #f91880; }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border: 1px solid #e1e8ed;
-            margin-bottom: 1.5rem;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        body.dark-mode .card {
-            background: #192734;
-            border-color: #38444d;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-
-        .card-header {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #1d1f23;
-            transition: color 0.3s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        body.dark-mode .card-header {
-            color: #e7e9ea;
-        }
-
-        .btn-create-po {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: #1d9bf0;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-        }
-
-        .btn-create-po:hover {
-            background: #1a8cd8;
-            transform: translateY(-1px);
-        }
-
-        .btn-create-po:active {
-            transform: translateY(0);
-        }
-
-        .alert-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border-radius: 8px;
-            background: #fff8e1;
-            border-left: 4px solid #ffad1f;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .alert-link {
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .alert-link:hover {
-            transform: translateX(4px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .alert-item.critical {
-            background: #ffeef0;
-            border-left-color: #f91880;
-        }
-
-        .alert-item.normal {
-            background: #e8f5e8;
-            border-left-color: #00ba7c;
-        }
-
-        .automation-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border: 1px solid #e1e8ed;
-            border-radius: 8px;
-            margin-bottom: 0.75rem;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        body.dark-mode .automation-item {
-            border-color: #38444d;
-        }
-
-        .automation-info h4 {
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-            transition: color 0.3s ease;
-        }
-
-        body.dark-mode .automation-info h4 {
-            color: #e7e9ea;
-        }
-
-        .automation-info p {
-            color: #536471;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
-        }
-
-        body.dark-mode .automation-info p {
-            color: #8b98a5;
-        }
-
-        .automation-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary {
-            background: #1d9bf0;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #1a8cd8;
-        }
-
-        .btn-secondary {
-            background: #e1e8ed;
-            color: #536471;
-        }
-
-        .btn-secondary:hover {
-            background: #cfd9de;
-        }
-
-        .progress-bar {
-            width: 100px;
-            height: 6px;
-            background: #e1e8ed;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #1d9bf0;
-            transition: width 0.3s ease;
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .top-bar-actions {
+                gap: calc(var(--spacing-unit) * 1);
+            }
+
+            .btn {
+                padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 1.5);
+                font-size: 13px;
+            }
+
+            .last-updated {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <h1>🧪 ORA Business Automation Dashboard</h1>
-        <div class="header-center">
-            <span id="last-updated" class="last-updated">Last updated: Just now</span>
-            <button id="refresh-button" class="btn-refresh" title="Refresh data">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13.65 2.35C12.2 0.9 10.21 0 8 0C3.58 0 0.01 3.58 0.01 8C0.01 12.42 3.58 16 8 16C11.73 16 14.84 13.45 15.73 10H13.65C12.83 12.33 10.61 14 8 14C4.69 14 2 11.31 2 8C2 4.69 4.69 2 8 2C9.66 2 11.14 2.69 12.22 3.78L9 7H16V0L13.65 2.35Z" fill="currentColor"/>
-                </svg>
-                Refresh
-            </button>
-        </div>
-        <div class="header-actions">
-            <a href="/" class="header-nav-link active">Dashboard</a>
-            <a href="/shipped_orders.html" class="header-nav-link">Shipped Orders</a>
-            <a href="/shipped_items.html" class="header-nav-link">Shipped Items</a>
-            <a href="/charge_report.html" class="header-nav-link">Charge Report</a>
-            <a href="/inventory_transactions.html" class="header-nav-link">Inventory</a>
-            <a href="/weekly_shipped_history.html" class="header-nav-link">Weekly History</a>
-            <a href="/xml_import.html" class="header-nav-link">XML Import</a>
-        </div>
-    </header>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
-    <div class="container">
-        <nav class="sidebar">
-            <a href="/" class="nav-item active">
-                🏠 <span>Overview</span>
-            </a>
-            <a href="/shipped_orders.html" class="nav-item">
-                📦 <span>Shipped Orders</span>
-            </a>
-            <a href="/shipped_items.html" class="nav-item">
-                📊 <span>Shipped Items</span>
-            </a>
-            <a href="/charge_report.html" class="nav-item">
-                💵 <span>Charge Report</span>
-            </a>
-            <a href="/inventory_transactions.html" class="nav-item">
-                📦 <span>Inventory Transactions</span>
-            </a>
-            <a href="/weekly_shipped_history.html" class="nav-item">
-                📈 <span>Weekly Shipped History</span>
-            </a>
-            <a href="#" class="nav-item">
-                ⚙️ <span>Automation</span>
-            </a>
-            <a href="#" class="nav-item">
-                🔧 <span>Settings</span>
-            </a>
-        </nav>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">O</div>
+                <div class="sidebar-title">ORA Business</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item active">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/weekly_shipped_history.html" class="nav-item">
+                        <span class="nav-item-icon">📈</span>
+                        Weekly Reports
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                </div>
 
+                <!-- Admin Section -->
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/charge_report.html" class="nav-item">
+                            <span class="nav-item-icon">💰</span>
+                            Charge Report
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
         <main class="main-content">
-            <!-- Error Banner Container -->
-            <div id="error-banner-container"></div>
-
-            <!-- FedEx Pickup Alert -->
-            <div id="fedex-alert" style="display: none; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="font-size: 2rem;">📦</div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; font-size: 1.25rem; color: #92400e; margin-bottom: 0.5rem;">
-                            FedEx Trailer Pickup Needed
-                        </div>
-                        <div style="color: #78350f;">
-                            <strong>185+ units ready for shipment.</strong> Call FedEx depot to schedule trailer pickup:
-                            <a href="tel:651-846-0590" style="color: #1d4ed8; font-weight: 600; text-decoration: underline; margin-left: 0.5rem;">
-                                651-846-0590
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stats-grid" id="stats-section">
-                <!-- Skeleton Loaders -->
-                <div class="skeleton-card skeleton" id="stat-skeleton-1"></div>
-                <div class="skeleton-card skeleton" id="stat-skeleton-2"></div>
-                <div class="skeleton-card skeleton" id="stat-skeleton-3"></div>
-                <div class="skeleton-card skeleton" id="stat-skeleton-4"></div>
-                
-                <!-- Actual Stat Cards -->
-                <div class="stat-card hidden" data-stat-card>
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">Units to Ship</div>
-                    <div class="stat-change">Pending orders</div>
-                </div>
-                <div class="stat-card hidden" data-stat-card>
-                    <div class="stat-value">12</div>
-                    <div class="stat-label">Pending Uploads</div>
-                    <div class="stat-change">3 new since last hour</div>
-                </div>
-                <div class="stat-card hidden" data-stat-card>
-                    <div class="stat-value">35</div>
-                    <div class="stat-label">Shipments Sent</div>
-                    <div class="stat-change positive">+15% this week</div>
-                </div>
-                <div class="stat-card hidden" data-stat-card>
-                    <div class="stat-value"><span class="status-indicator status-green"></span>Online</div>
-                    <div class="stat-label">System Status</div>
-                    <div class="stat-change">All services operational</div>
-                </div>
-            </div>
-
-            <div class="card" id="weekly-report-section">
-                <div class="card-header">
-                    📊 Weekly Inventory Report
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn btn-primary" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
-                            📋 Copy to Clipboard
-                        </button>
-                        <button class="btn btn-primary" onclick="refreshWeeklyReport()" id="weeklyReportRefreshBtn">
-                            🔄 Refresh
-                        </button>
-                    </div>
-                </div>
-                <div id="weeklyReportLoading" class="loading" style="padding: 20px;">Loading weekly report...</div>
-                <div id="weeklyReportError"></div>
-                <div id="weeklyReportTable" style="display: none;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead style="background: #f9fafb;">
-                            <tr>
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">SKU</th>
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Product Name</th>
-                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Current Qty</th>
-                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">52-Week Avg</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="weeklyReportBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card" id="alerts-section">
-                <div class="card-header">
-                    📦 Inventory Alerts
-                    <button class="btn-create-po" onclick="createPurchaseOrder()" title="Create Purchase Order">
-                        📧 Create PO
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                     </button>
+                    <h1 class="page-title">Dashboard</h1>
                 </div>
-                <!-- Skeleton Loaders -->
-                <div class="skeleton-alert skeleton" id="alert-skeleton-1"></div>
-                <div class="skeleton-alert skeleton" id="alert-skeleton-2"></div>
-                <div class="skeleton-alert skeleton" id="alert-skeleton-3"></div>
-                
-                <!-- Actual Alerts (sorted by severity: critical → warning → normal) -->
-                <a href="#inventory?productId=17612" class="alert-item critical hidden alert-link" data-alert-item data-product-id="17612" data-severity="critical">
-                    <strong>⚠️ ORA Clarity Complete (17612)</strong> - Low Stock: 45 units remaining
-                </a>
-                <a href="#inventory?productId=17975" class="alert-item hidden alert-link" data-alert-item data-product-id="17975" data-severity="warning">
-                    <strong>⚠️ ORA Travel Pack (17975)</strong> - Reorder Point: 28 units remaining
-                </a>
-                <a href="#inventory?productId=17904" class="alert-item normal hidden alert-link" data-alert-item data-product-id="17904" data-severity="normal">
-                    <strong>✅ ORA Essential Kit (17904)</strong> - Normal Stock: 420 units available
-                </a>
+                <div class="top-bar-actions">
+                    <span class="last-updated" id="last-updated">Last updated: Just now</span>
+                    <button class="btn btn-primary" id="refresh-btn" onclick="refreshDashboard()">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2C9.84843 2 11.5098 2.85733 12.5962 4.20803" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M12 2V4.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Refresh
+                    </button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
             </div>
 
-            <div class="card" id="automation-section">
-                <div class="card-header">⚙️ Automation Status</div>
-                <!-- Skeleton Loaders -->
-                <div class="skeleton-alert skeleton" id="auto-skeleton-1"></div>
-                <div class="skeleton-alert skeleton" id="auto-skeleton-2"></div>
-                
-                <!-- Actual Automation Items -->
-                <div class="automation-item hidden" data-automation-item>
-                    <div class="automation-info">
-                        <h4>📊 Weekly Reporter</h4>
-                        <p>Last run: 2 minutes ago • Duration: 45s</p>
-                    </div>
-                    <div class="automation-status">
-                        <span class="status-indicator status-green"></span>
-                        <span>Completed</span>
-                        <button class="btn btn-secondary" onclick="showAutomationModal('weekly-reporter', 'Weekly Reporter', 'python src/weekly_reporter.py')">View Logs</button>
-                    </div>
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- FedEx Alert -->
+                <div id="fedex-alert">
+                    <strong>🚚 FedEx Trailer Pickup Needed</strong><br>
+                    185+ units ready for shipment. Call FedEx depot to schedule trailer pickup: <a href="tel:651-846-0590">651-846-0590</a>
                 </div>
-                
-                <div class="automation-item hidden" data-automation-item>
-                    <div class="automation-info">
-                        <h4>📦 Daily Order Uploader</h4>
-                        <p>Last run: 1 hour ago • 127 orders processed</p>
-                    </div>
-                    <div class="automation-status">
-                        <span class="status-indicator status-green"></span>
-                        <span>Completed</span>
-                        <button class="btn btn-primary" onclick="showAutomationModal('order-uploader', 'Daily Order Uploader', 'python src/shipstation_order_uploader.py')">Run Now</button>
-                    </div>
-                </div>
-                
-                <div class="automation-item hidden" data-automation-item>
-                    <div class="automation-info">
-                        <h4>🚢 ShipStation Sync</h4>
-                        <p>Running for 5 minutes • Syncing shipment data</p>
-                    </div>
-                    <div class="automation-status">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 67%"></div>
+
+                <!-- Operational Pulse Section -->
+                <section>
+                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Operational Pulse</h2>
+                    
+                    <div class="stats-grid">
+                        <!-- Skeleton Loaders -->
+                        <div class="skeleton skeleton-card" id="stat-skeleton-1"></div>
+                        <div class="skeleton skeleton-card" id="stat-skeleton-2"></div>
+                        <div class="skeleton skeleton-card" id="stat-skeleton-3"></div>
+                        <div class="skeleton skeleton-card" id="stat-skeleton-4"></div>
+
+                        <!-- Actual Stats -->
+                        <div class="stat-card hidden" data-stat-card>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Units to Ship</div>
+                            <div class="stat-change">Pending orders</div>
                         </div>
-                        <span>67%</span>
-                        <a href="#" class="btn btn-secondary">⏸️ Pause</a>
+                        <div class="stat-card hidden" data-stat-card>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Pending Uploads</div>
+                            <div class="stat-change">3 new since last hour</div>
+                        </div>
+                        <div class="stat-card hidden" data-stat-card>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Shipments Sent</div>
+                            <div class="stat-change">+15% this week</div>
+                        </div>
+                        <div class="stat-card hidden" data-stat-card>
+                            <div class="stat-value"><span class="status-indicator status-green"></span> Online</div>
+                            <div class="stat-label">System Status</div>
+                            <div class="stat-change">All services operational</div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="automation-item hidden" data-automation-item>
-                    <div class="automation-info">
-                        <h4>📈 Monthly Report</h4>
-                        <p>Next scheduled: January 31, 2025 at 6:00 AM</p>
-                    </div>
-                    <div class="automation-status">
-                        <span class="status-indicator status-yellow"></span>
-                        <span>Scheduled</span>
-                        <a href="#" class="btn btn-primary">▶️ Run Now</a>
-                    </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="card">
-                <div class="card-header">📊 Quick Analytics</div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <div>
-                        <strong>Total Orders This Month</strong><br>
-                        <span style="font-size: 1.2rem; color: #1d9bf0;">1,247</span>
+                <!-- Inventory Risk Section -->
+                <section>
+                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Inventory Risk</h2>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span>📊</span> Weekly Inventory Report
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
+                                    📋 Copy to Clipboard
+                                </button>
+                                <button class="btn" onclick="refreshWeeklyReport()" id="weeklyReportRefreshBtn">
+                                    🔄 Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div id="weeklyReportLoading" style="padding: 20px; text-align: center; color: var(--text-tertiary);">Loading weekly report...</div>
+                        <div id="weeklyReportError"></div>
+                        <div id="weeklyReportTable" style="display: none;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product Name</th>
+                                        <th style="text-align: right;">Current Qty</th>
+                                        <th style="text-align: right;">52-Week Avg</th>
+                                        <th style="text-align: center;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="weeklyReportBody"></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div>
-                        <strong>Average Daily Shipments</strong><br>
-                        <span style="font-size: 1.2rem; color: #1d9bf0;">42</span>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span>⚠️</span> Stock Alerts
+                            </div>
+                        </div>
+                        <div id="alerts-section">
+                            <!-- Skeleton Loaders -->
+                            <div class="skeleton" style="height: 60px; border-radius: 8px; margin-bottom: 16px;" id="alert-skeleton-1"></div>
+                            <div class="skeleton" style="height: 60px; border-radius: 8px; margin-bottom: 16px;" id="alert-skeleton-2"></div>
+                            <div class="skeleton" style="height: 60px; border-radius: 8px;" id="alert-skeleton-3"></div>
+                            
+                            <!-- Actual Alerts -->
+                            <div id="alerts-list"></div>
+                        </div>
                     </div>
-                    <div>
-                        <strong>Top Product</strong><br>
-                        <span style="font-size: 1.2rem; color: #1d9bf0;">ORA Clarity Complete</span>
+                </section>
+
+                <!-- Orders Pipeline Section -->
+                <section>
+                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Orders Pipeline</h2>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span>📥</span> Orders Inbox Status
+                            </div>
+                            <a href="/xml_import.html" class="btn btn-primary">View All Orders →</a>
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 14px;">
+                            <p>Orders are automatically imported from Google Drive every 5 minutes.</p>
+                            <p style="margin-top: 8px;">Pending orders are ready for upload to ShipStation.</p>
+                        </div>
                     </div>
-                    <div>
-                        <strong>Inventory Turnover</strong><br>
-                        <span style="font-size: 1.2rem; color: #1d9bf0;">2.3x monthly</span>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span>⚙️</span> Automation Status
+                            </div>
+                        </div>
+                        <div id="automation-section">
+                            <!-- Skeleton Loaders -->
+                            <div class="skeleton" style="height: 60px; border-radius: 8px; margin-bottom: 16px;" id="auto-skeleton-1"></div>
+                            <div class="skeleton" style="height: 60px; border-radius: 8px;" id="auto-skeleton-2"></div>
+                            
+                            <!-- Actual Automation Status -->
+                            <div id="automation-list"></div>
+                        </div>
                     </div>
-                </div>
+                </section>
             </div>
         </main>
     </div>
@@ -930,6 +794,45 @@
         // Global state
         let lastUpdateTime = Date.now();
         let isRefreshing = false;
+        let darkMode = localStorage.getItem('darkMode') === 'true';
+
+        // Initialize dark mode
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = '☀️';
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = darkMode ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        // Toggle admin section
+        function toggleAdmin() {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            toggle.classList.toggle('expanded');
+            items.classList.toggle('expanded');
+        }
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        // Close mobile menu
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
 
         // Update timestamp display
         function updateTimestamp() {
@@ -948,100 +851,42 @@
             }
         }
 
-        // Show/hide skeletons and content
+        // Show/hide skeletons
         function showSkeletons() {
-            // Stats
             for (let i = 1; i <= 4; i++) {
                 document.getElementById(`stat-skeleton-${i}`).classList.remove('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.add('hidden'));
             
-            // Alerts
             for (let i = 1; i <= 3; i++) {
                 document.getElementById(`alert-skeleton-${i}`).classList.remove('hidden');
             }
-            document.querySelectorAll('[data-alert-item]').forEach(el => el.classList.add('hidden'));
             
-            // Automation
             for (let i = 1; i <= 2; i++) {
                 document.getElementById(`auto-skeleton-${i}`).classList.remove('hidden');
             }
-            document.querySelectorAll('[data-automation-item]').forEach(el => el.classList.add('hidden'));
         }
 
         function hideSkeletons() {
-            // Stats
             for (let i = 1; i <= 4; i++) {
                 document.getElementById(`stat-skeleton-${i}`).classList.add('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.remove('hidden'));
             
-            // Alerts
             for (let i = 1; i <= 3; i++) {
                 document.getElementById(`alert-skeleton-${i}`).classList.add('hidden');
             }
-            document.querySelectorAll('[data-alert-item]').forEach(el => el.classList.remove('hidden'));
             
-            // Automation
             for (let i = 1; i <= 2; i++) {
                 document.getElementById(`auto-skeleton-${i}`).classList.add('hidden');
             }
-            document.querySelectorAll('[data-automation-item]').forEach(el => el.classList.remove('hidden'));
-            
-            // Update inventory badge count (critical + warning alerts)
-            updateInventoryBadge();
         }
 
-        function updateInventoryBadge() {
-            const criticalWarningAlerts = document.querySelectorAll('[data-severity="critical"], [data-severity="warning"]');
-            const count = criticalWarningAlerts.length;
-            const badge = document.getElementById('inventory-badge');
-            
-            // Check if badge element exists
-            if (badge) {
-                if (count > 0) {
-                    badge.textContent = count;
-                    badge.style.display = 'inline-block';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        }
-
-        // Error banner functions
-        function showErrorBanner(title, message) {
-            const container = document.getElementById('error-banner-container');
-            const bannerId = 'error-' + Date.now();
-            
-            const banner = document.createElement('div');
-            banner.className = 'error-banner';
-            banner.id = bannerId;
-            banner.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z" fill="currentColor"/>
-                </svg>
-                <div class="error-banner-content">
-                    <div class="error-banner-title">${title}</div>
-                    <div class="error-banner-message">${message}</div>
-                </div>
-                <button class="error-banner-close" onclick="document.getElementById('${bannerId}').remove()">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12.5 3.5L3.5 12.5M3.5 3.5L12.5 12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </button>
-            `;
-            
-            container.appendChild(banner);
-            
-            // Auto-dismiss after 10 seconds
-            setTimeout(() => {
-                const el = document.getElementById(bannerId);
-                if (el) el.remove();
-            }, 10000);
-        }
-
-        function clearErrorBanners() {
-            document.getElementById('error-banner-container').innerHTML = '';
+        // HTML escape helper
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Load weekly inventory report
@@ -1063,24 +908,24 @@
                     throw new Error(result.error || 'Failed to load weekly report');
                 }
                 
-                // Render table rows
                 tbody.innerHTML = result.data.map(item => {
                     const statusClass = item.alert_level === 'critical' ? 'critical' : 
-                                       item.alert_level === 'low' ? 'warning' : 'normal';
+                                       item.alert_level === 'low' ? 'warning' : 'success';
                     const statusIcon = item.alert_level === 'critical' ? '🔴' : 
                                       item.alert_level === 'low' ? '🟡' : '🟢';
                     const statusText = item.alert_level === 'critical' ? 'Critical' : 
                                       item.alert_level === 'low' ? 'Low' : 'Normal';
                     
                     return `
-                        <tr style="border-bottom: 1px solid #f3f4f6;">
-                            <td style="padding: 12px;"><strong>${item.sku}</strong></td>
-                            <td style="padding: 12px;">${item.product_name}</td>
-                            <td style="padding: 12px; text-align: right;">${item.current_quantity}</td>
-                            <td style="padding: 12px; text-align: right;">${item.rolling_avg_52_weeks}</td>
-                            <td style="padding: 12px; text-align: center;">
-                                <span style="display: inline-flex; align-items: center; gap: 4px;">
-                                    ${statusIcon} ${statusText}
+                        <tr>
+                            <td><strong>${item.sku}</strong></td>
+                            <td>${item.product_name}</td>
+                            <td style="text-align: right;"><strong>${item.current_quantity}</strong></td>
+                            <td style="text-align: right;">${item.rolling_avg_52_weeks}</td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-${statusClass}">
+                                    <span class="status-indicator status-${statusClass === 'critical' ? 'red' : statusClass === 'warning' ? 'yellow' : 'green'}"></span>
+                                    ${statusText}
                                 </span>
                             </td>
                         </tr>
@@ -1090,9 +935,8 @@
                 loadingDiv.style.display = 'none';
                 tableDiv.style.display = 'block';
             } catch (error) {
-                console.error('Failed to load weekly report:', error);
                 loadingDiv.style.display = 'none';
-                errorDiv.innerHTML = `<div class="error" style="margin: 20px; padding: 16px; background: #fee2e2; color: #991b1b; border-radius: 8px;">Failed to load weekly report: ${error.message}</div>`;
+                errorDiv.innerHTML = `<div style="padding: 20px; background: var(--bg-tertiary); color: var(--error-red); border-radius: 8px;">Failed to load weekly report: ${error.message}</div>`;
             }
         }
 
@@ -1118,13 +962,6 @@
             }
         }
 
-        // HTML escape helper to prevent injection
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         // Copy weekly inventory to clipboard
         async function copyWeeklyInventoryToClipboard() {
             const btn = document.getElementById('copyInventoryBtn');
@@ -1134,7 +971,6 @@
                 btn.disabled = true;
                 btn.textContent = '⏳ Copying...';
                 
-                // Fetch the latest data
                 const response = await fetch('/api/weekly_inventory_report');
                 const result = await response.json();
                 
@@ -1142,7 +978,6 @@
                     throw new Error(result.error || 'Failed to load weekly report');
                 }
                 
-                // Build HTML table with inline styles for email compatibility
                 const htmlRows = result.data.map(item => `
                     <tr>
                         <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(String(item.sku))}</td>
@@ -1168,7 +1003,6 @@
                     </table>
                 `;
                 
-                // Build plain text fallback
                 const plainHeader = 'SKU | Product | Current Inventory | 12-Month Rolling Average';
                 const plainSeparator = '-'.repeat(75);
                 const plainRows = result.data.map(item => {
@@ -1180,7 +1014,6 @@
                 }).join('\n');
                 const plainText = `${plainHeader}\n${plainSeparator}\n${plainRows}`;
                 
-                // Try to copy with HTML format (for email compatibility)
                 try {
                     const htmlBlob = new Blob([htmlTable], { type: 'text/html' });
                     const plainBlob = new Blob([plainText], { type: 'text/plain' });
@@ -1190,7 +1023,6 @@
                     });
                     await navigator.clipboard.write([clipboardItem]);
                 } catch (htmlError) {
-                    // Fallback to plain text if HTML clipboard not supported
                     console.warn('HTML clipboard not supported, falling back to plain text:', htmlError);
                     await navigator.clipboard.writeText(plainText);
                 }
@@ -1213,10 +1045,6 @@
         // Load dashboard data
         async function loadDashboardData() {
             try {
-                // Clear any existing error banners
-                clearErrorBanners();
-                
-                // Fetch all data in parallel
                 const [statsRes, alertsRes, automationRes] = await Promise.all([
                     fetch('/api/dashboard_stats'),
                     fetch('/api/inventory_alerts'),
@@ -1236,10 +1064,9 @@
                     if (statCards[3]) {
                         const statusText = stats.data.system_status === 'operational' ? 'Online' : 'Warning';
                         const statusClass = stats.data.system_status === 'operational' ? 'status-green' : 'status-yellow';
-                        statCards[3].querySelector('.stat-value').innerHTML = `<span class="status-indicator ${statusClass}"></span>${statusText}`;
+                        statCards[3].querySelector('.stat-value').innerHTML = `<span class="status-indicator ${statusClass}"></span> ${statusText}`;
                     }
                     
-                    // Show/hide FedEx pickup alert
                     const fedexAlert = document.getElementById('fedex-alert');
                     if (stats.data.fedex_pickup_needed) {
                         fedexAlert.style.display = 'block';
@@ -1250,214 +1077,108 @@
                 
                 // Update inventory alerts
                 if (alerts.success && alerts.data.length > 0) {
-                    const alertsContainer = document.getElementById('alerts-section');
-                    const existingAlerts = alertsContainer.querySelectorAll('[data-alert-item]');
-                    existingAlerts.forEach(el => el.remove());
-                    
-                    alerts.data.forEach(alert => {
-                        const alertEl = document.createElement('a');
-                        alertEl.href = `#inventory?productId=${alert.base_sku}`;
-                        alertEl.className = `alert-item ${alert.severity} alert-link`;
-                        alertEl.setAttribute('data-alert-item', '');
-                        alertEl.setAttribute('data-product-id', alert.base_sku);
-                        alertEl.setAttribute('data-severity', alert.severity);
-                        
-                        const icon = alert.severity === 'critical' ? '⚠️' : 
-                                     alert.severity === 'warning' ? '⚠️' : '✅';
-                        alertEl.innerHTML = `<strong>${icon} ${alert.product_name} (${alert.base_sku})</strong> - ${alert.message}`;
-                        alertsContainer.appendChild(alertEl);
-                    });
+                    const alertsList = document.getElementById('alerts-list');
+                    alertsList.innerHTML = alerts.data.slice(0, 5).map(alert => {
+                        const alertClass = alert.severity === 'critical' ? 'alert-critical' : 'alert-warning';
+                        const icon = alert.severity === 'critical' ? '🔴' : '🟡';
+                        return `
+                            <div class="alert ${alertClass}">
+                                <span>${icon}</span>
+                                <div>
+                                    <strong>${alert.product_name} (SKU: ${alert.sku})</strong><br>
+                                    <span style="font-size: 13px;">${alert.message}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    document.getElementById('alerts-list').innerHTML = '<p style="color: var(--text-tertiary); text-align: center; padding: 20px;">No inventory alerts</p>';
                 }
                 
-                // Hide skeletons and show actual content
-                hideSkeletons();
+                // Update automation status
+                if (automation.success && automation.data.length > 0) {
+                    const autoList = document.getElementById('automation-list');
+                    autoList.innerHTML = automation.data.map(item => {
+                        const statusClass = item.status === 'success' ? 'success' : item.status === 'running' ? 'warning' : 'critical';
+                        const icon = item.status === 'success' ? '✅' : item.status === 'running' ? '⏳' : '❌';
+                        return `
+                            <div style="padding: 16px; border-radius: 8px; background: var(--bg-tertiary); margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <strong>${item.name}</strong><br>
+                                        <span style="font-size: 13px; color: var(--text-secondary);">Last run: ${item.last_run || 'Never'}</span>
+                                    </div>
+                                    <span class="badge badge-${statusClass}">
+                                        <span>${icon}</span>
+                                        ${item.status}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    document.getElementById('automation-list').innerHTML = '<p style="color: var(--text-tertiary); text-align: center; padding: 20px;">No automation data</p>';
+                }
                 
-                console.log('Dashboard data loaded');
+                hideSkeletons();
+                lastUpdateTime = Date.now();
+                updateTimestamp();
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
-                
-                // Show error banner
-                showErrorBanner(
-                    'Failed to load data',
-                    'Unable to fetch latest dashboard data. Click Refresh to retry.'
-                );
-                
-                // Still hide skeletons to show stale data
-                hideSkeletons();
             }
         }
 
-        // Manual refresh handler
-        document.getElementById('refresh-button').addEventListener('click', async function() {
+        // Refresh dashboard
+        async function refreshDashboard() {
             if (isRefreshing) return;
-            
             isRefreshing = true;
-            this.classList.add('refreshing');
+            
+            const btn = document.getElementById('refresh-btn');
+            btn.disabled = true;
+            
             showSkeletons();
             
             try {
-                await loadDashboardData();
-                lastUpdateTime = Date.now();
-                updateTimestamp();
-                console.log('Dashboard refreshed');
-            } catch (error) {
-                console.error('Refresh failed:', error);
+                await Promise.all([
+                    loadDashboardData(),
+                    loadWeeklyReport()
+                ]);
             } finally {
                 isRefreshing = false;
-                this.classList.remove('refreshing');
+                btn.disabled = false;
             }
-        });
+        }
+
+        // Auto-refresh every 60 seconds
+        setInterval(() => {
+            if (!document.hidden) {
+                loadDashboardData();
+            }
+        }, 60000);
 
         // Update timestamp every 10 seconds
         setInterval(updateTimestamp, 10000);
 
-        // Auto-refresh with Page Visibility API
-        let autoRefreshInterval = null;
-        let refreshIntervalMs = 60000; // 60 seconds
-
-        function startAutoRefresh() {
-            if (autoRefreshInterval) return; // Already running
-            
-            autoRefreshInterval = setInterval(async () => {
-                if (!document.hidden) {
-                    console.log('Auto-refreshing dashboard...');
-                    const refreshBtn = document.getElementById('refresh-button');
-                    
-                    if (!isRefreshing) {
-                        isRefreshing = true;
-                        refreshBtn.classList.add('refreshing');
-                        
-                        try {
-                            showSkeletons();
-                            await loadDashboardData();
-                            lastUpdateTime = Date.now();
-                            updateTimestamp();
-                            console.log('Auto-refresh completed');
-                        } catch (error) {
-                            console.error('Auto-refresh failed:', error);
-                        } finally {
-                            isRefreshing = false;
-                            refreshBtn.classList.remove('refreshing');
-                        }
-                    }
-                }
-            }, refreshIntervalMs);
-            
-            console.log('Auto-refresh started (60s interval)');
-        }
-
-        function stopAutoRefresh() {
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-                console.log('Auto-refresh stopped');
-            }
-        }
-
-        // Handle page visibility changes
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                stopAutoRefresh();
-                console.log('Tab hidden - auto-refresh paused');
-            } else {
-                startAutoRefresh();
-                console.log('Tab visible - auto-refresh resumed');
+        // Close mobile menu on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMobileMenu();
             }
         });
 
-        // Start auto-refresh on page load
-        startAutoRefresh();
-
-        // Initial data load
-        loadDashboardData();
-        loadWeeklyReport();
-
-        // Create Purchase Order functionality
-        function createPurchaseOrder() {
-            const alerts = document.querySelectorAll('.alert-item.critical, .alert-item:not(.normal):not(.critical)');
-            const lowStockProducts = [];
-            
-            alerts.forEach(alert => {
-                const productId = alert.getAttribute('data-product-id');
-                const text = alert.textContent;
-                const match = text.match(/(.*?)\s*\((\d+)\)/);
-                if (match) {
-                    const productName = match[1].replace(/⚠️|✅/g, '').trim();
-                    lowStockProducts.push(`${productName} (ID: ${productId})`);
-                }
-            });
-            
-            const subject = encodeURIComponent('Purchase Order Request - Low Stock Items');
-            const body = encodeURIComponent(
-                `Hi Team,\n\n` +
-                `The following products are running low on inventory and need to be reordered:\n\n` +
-                lowStockProducts.map((p, i) => `${i + 1}. ${p}`).join('\n') +
-                `\n\nPlease process a purchase order for these items at your earliest convenience.\n\n` +
-                `Best regards,\n` +
-                `ORA Automation System`
-            );
-            
-            window.location.href = `mailto:purchasing@example.com?subject=${subject}&body=${body}`;
-        }
-
-        // Simple automation command display (MVP)
-        function showAutomationModal(id, name, command) {
-            const message = `${name}\n\nCommand:\n${command}\n\nCopy this command to run manually in the terminal.`;
-            prompt('Copy this command:', command);
-        }
-
-        // Dark mode toggle functionality
-        const darkModeToggle = document.getElementById('dark-mode-toggle');
-        const body = document.body;
-        
-        if (darkModeToggle) {
-            // Check for saved dark mode preference
-            const savedDarkMode = localStorage.getItem('darkMode');
-            if (savedDarkMode === 'enabled') {
-                body.classList.add('dark-mode');
-                darkModeToggle.textContent = '☀️';
-            }
-            
-            darkModeToggle.addEventListener('click', () => {
-                body.classList.toggle('dark-mode');
-                
-                if (body.classList.contains('dark-mode')) {
-                    darkModeToggle.textContent = '☀️';
-                    localStorage.setItem('darkMode', 'enabled');
-                } else {
-                    darkModeToggle.textContent = '🌙';
-                    localStorage.setItem('darkMode', 'disabled');
-                }
-            });
-        }
-
-        // Add some basic interactivity
+        // Close mobile menu when clicking nav items
         document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-                this.classList.add('active');
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    closeMobileMenu();
+                }
             });
         });
 
-        // Simulate progress updates
-        setInterval(() => {
-            const progressBar = document.querySelector('.progress-fill');
-            if (progressBar) {
-                let currentWidth = parseInt(progressBar.style.width) || 67;
-                if (currentWidth < 100) {
-                    progressBar.style.width = (currentWidth + 1) + '%';
-                    progressBar.parentElement.nextElementSibling.textContent = (currentWidth + 1) + '%';
-                }
-            }
-        }, 2000);
-
-        // Add click handlers for buttons
-        document.querySelectorAll('.btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                alert('Feature coming soon: ' + this.textContent.trim());
-            });
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+            loadWeeklyReport();
         });
     </script>
 </body>
