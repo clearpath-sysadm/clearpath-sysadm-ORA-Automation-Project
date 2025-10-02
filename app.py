@@ -2049,6 +2049,122 @@ def api_delete_sku_lot(sku_lot_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/shipstation/units_to_ship', methods=['GET'])
+def api_get_units_to_ship():
+    """Get cached units to ship count"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT metric_value, last_updated
+            FROM shipstation_metrics
+            WHERE metric_name = 'units_to_ship'
+        """)
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            units, last_updated = result
+            return jsonify({
+                'success': True,
+                'units_to_ship': units,
+                'last_updated': last_updated
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'units_to_ship': 0,
+                'last_updated': None
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/shipstation/refresh_units_to_ship', methods=['POST'])
+def api_refresh_units_to_ship():
+    """Fetch real-time units to ship from ShipStation and update cache"""
+    try:
+        import requests
+        from requests.auth import HTTPBasicAuth
+        from config.settings import settings
+        from src.services.shipstation.api_client import get_shipstation_credentials
+        
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation API credentials not found'
+            }), 500
+        
+        # Fetch orders with status awaiting_shipment (excluding on_hold and cancelled)
+        url = settings.SHIPSTATION_ORDERS_ENDPOINT
+        params = {
+            'orderStatus': 'awaiting_shipment',
+            'pageSize': 500
+        }
+        
+        response = requests.get(
+            url,
+            auth=HTTPBasicAuth(api_key, api_secret),
+            params=params
+        )
+        
+        if response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'error': f'ShipStation API error: {response.status_code}'
+            }), 500
+        
+        data = response.json()
+        orders = data.get('orders', [])
+        
+        # Count total units across all items in all orders
+        total_units = sum(
+            item.get('quantity', 0)
+            for order in orders
+            for item in order.get('items', [])
+        )
+        
+        # Update cache in database
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE shipstation_metrics
+            SET metric_value = ?,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE metric_name = 'units_to_ship'
+        """, (total_units,))
+        
+        conn.commit()
+        
+        # Get updated timestamp
+        cursor.execute("""
+            SELECT last_updated
+            FROM shipstation_metrics
+            WHERE metric_name = 'units_to_ship'
+        """)
+        
+        last_updated = cursor.fetchone()[0]
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'units_to_ship': total_units,
+            'last_updated': last_updated,
+            'orders_count': len(orders)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
