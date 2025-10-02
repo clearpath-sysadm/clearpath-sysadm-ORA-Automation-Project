@@ -1343,11 +1343,11 @@ def api_upload_orders_to_shipstation():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Fetch SKU-Lot mappings from configuration_params
+        # Fetch SKU-Lot mappings from sku_lot table (new source of truth)
         cursor.execute("""
-            SELECT parameter_name, value 
-            FROM configuration_params 
-            WHERE category = 'SKU_Lot'
+            SELECT sku, lot
+            FROM sku_lot 
+            WHERE active = 1
         """)
         sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
         
