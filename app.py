@@ -1596,6 +1596,14 @@ def api_upload_orders_to_shipstation():
                         VALUES (?, ?, ?)
                     """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
                     
+                    # Mark order as uploaded since it was found in ShipStation
+                    cursor.execute("""
+                        UPDATE orders_inbox
+                        SET status = 'uploaded',
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (order_sku_info['order_inbox_id'],))
+                    
                     duplicate_found = True
                     break
             
