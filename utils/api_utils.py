@@ -39,19 +39,27 @@ from tenacity import (
     retry,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type
+    retry_if_exception_type,
+    retry_if_exception
 )
+import time
 
-RETRY_STRATEGY = retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type((
+def is_retryable_error(exception):
+    """Check if exception is retryable (including 429 rate limit)"""
+    if isinstance(exception, requests.exceptions.HTTPError):
+        return exception.response.status_code == 429
+    return isinstance(exception, (
         requests.exceptions.ConnectionError,
         requests.exceptions.Timeout,
         requests.exceptions.TooManyRedirects,
         requests.exceptions.RequestException
-    )),
-    reraise=True # Re-raise the exception after all retries are exhausted
+    ))
+
+RETRY_STRATEGY = retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    retry=retry_if_exception(is_retryable_error),
+    reraise=True
 )
 
 @RETRY_STRATEGY
@@ -102,8 +110,19 @@ def make_api_request(url: str, method: str = 'GET', data: dict = None, headers: 
 
     except requests.exceptions.HTTPError as e:
         status_code = e.response.status_code
-        logger.error(f"HTTP Error {status_code} for {url}: {e.response.text}")
-        raise # Re-raise the exception for tenacity or the caller to handle
+        
+        if status_code == 429:
+            retry_after = e.response.headers.get('Retry-After', '60')
+            try:
+                wait_seconds = int(retry_after)
+            except ValueError:
+                wait_seconds = 60
+            
+            logger.warning(f"Rate limit (429) hit for {url}. Retry-After: {wait_seconds}s. Will retry with exponential backoff.")
+        else:
+            logger.error(f"HTTP Error {status_code} for {url}: {e.response.text}")
+        
+        raise
 
     except requests.exceptions.RequestException as e:
         # Catch broader requests exceptions (connection errors, timeouts, etc.)
