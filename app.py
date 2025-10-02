@@ -293,10 +293,12 @@ def api_charge_report():
     - Total
     """
     try:
-        # Get date range from query params, default to last 31 days
-        # For now, we'll use the last 31 days of data
-        end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=31)
+        # Calculate current calendar month (first day to last day)
+        today = datetime.now().date()
+        start_date = today.replace(day=1)
+        # Calculate last day of current month
+        next_month = start_date.replace(day=28) + timedelta(days=4)
+        end_date = (next_month.replace(day=1) - timedelta(days=1))
         
         # Get daily order counts
         orders_query = """
