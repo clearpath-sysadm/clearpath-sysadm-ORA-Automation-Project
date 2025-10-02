@@ -918,7 +918,7 @@
             const doc = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
-                format: 'a4'
+                format: 'letter'
             });
 
             const month = document.getElementById('monthSelect');
@@ -928,6 +928,8 @@
             // Color scheme matching user's screenshot
             const purpleHeader = [186, 148, 255];      // Purple for Quantity Shipped
             const greenHeader = [144, 238, 144];       // Green for Charges
+            const lightPurple = [235, 225, 255];       // Light purple for quantity columns
+            const lightGreen = [235, 250, 235];        // Light green for charge columns
             const darkText = [0, 0, 0];
             const lightGray = [245, 245, 245];
 
@@ -989,20 +991,17 @@
                     halign: 'center'
                 },
                 columnStyles: {
-                    0: { cellWidth: 22, halign: 'left' },
-                    1: { cellWidth: 12, halign: 'center' },
-                    2: { cellWidth: 12, halign: 'center' },
-                    3: { cellWidth: 12, halign: 'center' },
-                    4: { cellWidth: 12, halign: 'center' },
-                    5: { cellWidth: 12, halign: 'center' },
-                    6: { cellWidth: 12, halign: 'center' },
-                    7: { cellWidth: 18, halign: 'right' },
-                    8: { cellWidth: 18, halign: 'right' },
-                    9: { cellWidth: 22, halign: 'right' },
-                    10: { cellWidth: 18, halign: 'right', fontStyle: 'bold' }
-                },
-                alternateRowStyles: {
-                    fillColor: lightGray
+                    0: { cellWidth: 24, halign: 'left' },
+                    1: { cellWidth: 14, halign: 'center' },
+                    2: { cellWidth: 14, halign: 'center' },
+                    3: { cellWidth: 14, halign: 'center' },
+                    4: { cellWidth: 14, halign: 'center' },
+                    5: { cellWidth: 14, halign: 'center' },
+                    6: { cellWidth: 14, halign: 'center' },
+                    7: { cellWidth: 20, halign: 'right' },
+                    8: { cellWidth: 20, halign: 'right' },
+                    9: { cellWidth: 24, halign: 'right' },
+                    10: { cellWidth: 24, halign: 'right', fontStyle: 'bold' }
                 },
                 didParseCell: function(data) {
                     // Style section headers (first row)
@@ -1020,13 +1019,24 @@
                             data.cell.styles.fillColor = greenHeader;
                         }
                     }
+                    // Style body cells with light colors
+                    if (data.row.section === 'body') {
+                        // Apply light purple to quantity columns (2-6)
+                        if (data.column.index >= 2 && data.column.index <= 6) {
+                            data.cell.styles.fillColor = lightPurple;
+                        }
+                        // Apply light green to charge columns (7-10)
+                        else if (data.column.index >= 7 && data.column.index <= 10) {
+                            data.cell.styles.fillColor = lightGreen;
+                        }
+                    }
                     // Style TOTAL row
                     if (data.row.index === tableData.length - 1 && totalsRow) {
                         data.cell.styles.fillColor = [240, 240, 240];
                         data.cell.styles.fontStyle = 'bold';
                     }
                 },
-                margin: { left: 8, right: 8, top: 10, bottom: 10 }
+                margin: { left: 10, right: 10, top: 10, bottom: 10 }
             });
 
             doc.save(`charge_report_${monthName}_${year}.pdf`);
