@@ -76,6 +76,22 @@ def api_dashboard_stats():
         cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= ?", (week_ago,))
         recent_shipments = cursor.fetchone()[0] or 0
         
+        # Benco orders (orders with "BENCO" in company name)
+        cursor.execute("""
+            SELECT COUNT(*) FROM orders_inbox 
+            WHERE status = 'pending' 
+            AND (ship_company LIKE '%BENCO%' OR ship_company LIKE '%Benco%')
+        """)
+        benco_orders = cursor.fetchone()[0] or 0
+        
+        # Hawaiian orders (ship to Hawaii)
+        cursor.execute("""
+            SELECT COUNT(*) FROM orders_inbox 
+            WHERE status = 'pending' 
+            AND ship_state = 'HI'
+        """)
+        hawaiian_orders = cursor.fetchone()[0] or 0
+        
         # System status (check if we have any recent workflows)
         cursor.execute("""
             SELECT COUNT(*) FROM workflows 
@@ -95,6 +111,8 @@ def api_dashboard_stats():
                 'fedex_phone': fedex_phone,
                 'pending_uploads': pending_uploads,
                 'recent_shipments': recent_shipments,
+                'benco_orders': benco_orders,
+                'hawaiian_orders': hawaiian_orders,
                 'system_status': system_status
             }
         })
