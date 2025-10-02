@@ -352,9 +352,17 @@
         }
 
         /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 calc(var(--spacing-unit) * -3);
+            padding: 0 calc(var(--spacing-unit) * 3);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 900px;
         }
 
         th {
