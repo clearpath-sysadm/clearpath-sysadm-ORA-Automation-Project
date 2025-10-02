@@ -918,8 +918,19 @@ def api_weekly_inventory_report():
         """
         results = execute_query(query)
         
+        # Get pallet configuration
+        pallet_query = """
+            SELECT sku, CAST(value AS INTEGER) as units_per_pallet
+            FROM configuration_params
+            WHERE category = 'PalletConfig' AND parameter_name = 'PalletCount'
+            AND sku IN ('17612', '17904', '17914', '18675', '18795')
+        """
+        pallet_results = execute_query(pallet_query)
+        pallet_config = {str(row[0]): row[1] for row in pallet_results}
+        
         report = []
         for row in results:
+            sku = str(row[0])
             current_qty = row[2] or 0
             weekly_avg_cents = row[3] or 0
             
@@ -933,14 +944,26 @@ def api_weekly_inventory_report():
             else:
                 days_left = 999  # Infinite/unknown if no consumption history
             
+            # Calculate pallet breakdown for physical inventory verification
+            units_per_pallet = pallet_config.get(sku, 0)
+            if units_per_pallet > 0:
+                full_pallets = current_qty // units_per_pallet
+                partial_units = current_qty % units_per_pallet
+            else:
+                full_pallets = 0
+                partial_units = current_qty
+            
             report.append({
-                'sku': row[0],
+                'sku': sku,
                 'product_name': row[1],
                 'current_quantity': current_qty,
                 'rolling_avg_52_weeks': weekly_avg,
                 'days_left': days_left,
                 'reorder_point': row[5] or 0,
-                'last_updated': row[6]
+                'last_updated': row[6],
+                'full_pallets': full_pallets,
+                'partial_units': partial_units,
+                'units_per_pallet': units_per_pallet
             })
         
         return jsonify({
