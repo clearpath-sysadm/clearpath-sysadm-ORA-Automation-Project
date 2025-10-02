@@ -1062,6 +1062,103 @@ def api_orders_inbox():
             'error': str(e)
         }), 500
 
+@app.route('/api/google_drive/list_files')
+def api_google_drive_list_files():
+    """List XML files from Google Drive folder"""
+    try:
+        from src.services.google_drive.api_client import list_xml_files_from_folder
+        
+        folder_id = '1rNudeesa_c6q--KIKUAOLwXta_gyRqAE'
+        files = list_xml_files_from_folder(folder_id)
+        
+        return jsonify({
+            'success': True,
+            'data': files,
+            'count': len(files)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/google_drive/import_file/<file_id>', methods=['POST'])
+def api_google_drive_import_file(file_id):
+    """Import XML file from Google Drive into orders inbox"""
+    try:
+        from src.services.google_drive.api_client import fetch_xml_from_drive_by_file_id
+        import xml.etree.ElementTree as ET
+        from io import StringIO
+        
+        # Fetch XML content from Google Drive
+        xml_content = fetch_xml_from_drive_by_file_id(file_id)
+        
+        # Parse XML
+        root = ET.fromstring(xml_content)
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        orders_imported = 0
+        
+        # Process each order
+        for order_elem in root.findall('order'):
+            order_id = order_elem.find('orderid')
+            order_date = order_elem.find('date2')
+            email = order_elem.find('email')
+            
+            if order_id is not None and order_id.text:
+                order_number = order_id.text.strip()
+                order_date_str = order_date.text.strip() if order_date is not None and order_date.text else datetime.now().strftime('%Y-%m-%d')
+                customer_email = email.text.strip() if email is not None and email.text else None
+                
+                # Count items
+                items = order_elem.findall('.//product')
+                total_items = len(items)
+                
+                # Check if order already exists
+                cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
+                existing = cursor.fetchone()
+                
+                if not existing:
+                    # Insert order into inbox
+                    cursor.execute("""
+                        INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
+                        VALUES (?, ?, ?, 'pending', ?, 'X-Cart')
+                    """, (order_number, order_date_str, customer_email, total_items))
+                    
+                    order_inbox_id = cursor.lastrowid
+                    
+                    # Insert order items
+                    for product in items:
+                        product_code = product.find('productcode')
+                        quantity = product.find('amount')
+                        
+                        if product_code is not None and product_code.text:
+                            sku = product_code.text.strip()
+                            qty = int(quantity.text.strip()) if quantity is not None and quantity.text else 1
+                            
+                            cursor.execute("""
+                                INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                                VALUES (?, ?, ?)
+                            """, (order_inbox_id, sku, qty))
+                    
+                    orders_imported += 1
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully imported {orders_imported} orders from Google Drive',
+            'orders_count': orders_imported
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
