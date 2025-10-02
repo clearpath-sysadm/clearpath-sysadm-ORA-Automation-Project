@@ -238,6 +238,8 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -279,6 +281,7 @@
                 <div class="info-text">Orders: $4.25 ea | Packages: $3.40 ea | Space: $18.00/day</div>
             </div>
             <div style="display: flex; gap: 12px;">
+                <button class="btn export-btn" onclick="exportToPDF()">📄 Export PDF</button>
                 <button class="btn export-btn" onclick="exportToCSV()">📥 Export CSV</button>
                 <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
             </div>
@@ -416,6 +419,125 @@
             tbody.innerHTML = html;
             loading.style.display = 'none';
             table.style.display = 'table';
+        }
+
+        function exportToPDF() {
+            if (reportData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const month = document.getElementById('monthSelect');
+            const year = document.getElementById('yearSelect').value;
+            const monthName = month.options[month.selectedIndex].text;
+
+            const primaryBlue = [79, 70, 229];
+            const neutralGray = [107, 114, 128];
+            const lightGray = [243, 244, 246];
+            const darkText = [17, 24, 39];
+
+            doc.setFontSize(20);
+            doc.setTextColor(...primaryBlue);
+            doc.text('ORA Business - Monthly Charge Report', 148, 15, { align: 'center' });
+
+            doc.setFontSize(11);
+            doc.setTextColor(...neutralGray);
+            doc.text(`${monthName} ${year}`, 148, 22, { align: 'center' });
+            doc.text('Orders: $4.25 ea | Packages: $3.40 ea | Space: $18.00/day', 148, 28, { align: 'center' });
+
+            const tableData = reportData.map(row => [
+                formatDate(row.date),
+                row.order_count,
+                row.sku_17612 || '-',
+                row.sku_17904 || '-',
+                row.sku_17914 || '-',
+                row.sku_18675 || '-',
+                row.sku_18795 || '-',
+                formatCurrency(row.orders_charge),
+                formatCurrency(row.packages_charge),
+                formatCurrency(row.space_rental),
+                formatCurrency(row.total)
+            ]);
+
+            if (totalsRow) {
+                tableData.push([
+                    'TOTAL',
+                    totalsRow.order_count,
+                    totalsRow.sku_17612,
+                    totalsRow.sku_17904,
+                    totalsRow.sku_17914,
+                    totalsRow.sku_18675,
+                    totalsRow.sku_18795,
+                    formatCurrency(totalsRow.orders_charge),
+                    formatCurrency(totalsRow.packages_charge),
+                    formatCurrency(totalsRow.space_rental),
+                    formatCurrency(totalsRow.total)
+                ]);
+            }
+
+            doc.autoTable({
+                head: [['Date', '# Orders', '17612', '17904', '17914', '18675', '18795', 'Orders', 'Packages', 'Space', 'Total']],
+                body: tableData,
+                startY: 35,
+                theme: 'grid',
+                styles: {
+                    fontSize: 7,
+                    cellPadding: 2,
+                    textColor: darkText,
+                    lineColor: [209, 213, 219],
+                    lineWidth: 0.1
+                },
+                headStyles: {
+                    fillColor: primaryBlue,
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 8,
+                    halign: 'center'
+                },
+                columnStyles: {
+                    0: { cellWidth: 22, halign: 'left' },
+                    1: { cellWidth: 15, halign: 'center' },
+                    2: { cellWidth: 14, halign: 'center' },
+                    3: { cellWidth: 14, halign: 'center' },
+                    4: { cellWidth: 14, halign: 'center' },
+                    5: { cellWidth: 14, halign: 'center' },
+                    6: { cellWidth: 14, halign: 'center' },
+                    7: { cellWidth: 20, halign: 'right' },
+                    8: { cellWidth: 22, halign: 'right' },
+                    9: { cellWidth: 23, halign: 'right' },
+                    10: { cellWidth: 22, halign: 'right', fontStyle: 'bold' }
+                },
+                alternateRowStyles: {
+                    fillColor: lightGray
+                },
+                didParseCell: function(data) {
+                    if (data.row.index === tableData.length - 1 && totalsRow) {
+                        data.cell.styles.fillColor = [229, 231, 235];
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.textColor = darkText;
+                    }
+                },
+                margin: { left: 10, right: 10 }
+            });
+
+            const pageCount = doc.internal.getNumberOfPages();
+            const pageHeight = doc.internal.pageSize.height;
+            
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(...neutralGray);
+                doc.text(`Generated: ${new Date().toLocaleDateString('en-US')} | Page ${i} of ${pageCount}`, 148, pageHeight - 10, { align: 'center' });
+            }
+
+            doc.save(`charge_report_${monthName}_${year}.pdf`);
         }
 
         function exportToCSV() {
