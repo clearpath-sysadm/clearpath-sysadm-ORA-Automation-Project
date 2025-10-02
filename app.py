@@ -725,6 +725,85 @@ def api_sync_shipstation():
             'error': str(e)
         }), 500
 
+@app.route('/api/sync_manual_orders', methods=['POST'])
+def api_sync_manual_orders():
+    """Trigger manual ShipStation order sync (ignores watermark, fetches last 7 days)"""
+    try:
+        from src.manual_shipstation_sync import (
+            get_shipstation_credentials,
+            fetch_shipstation_orders_since_watermark,
+            is_order_from_local_system,
+            has_key_product_skus,
+            import_manual_order
+        )
+        from datetime import datetime, timedelta
+        import threading
+        
+        def run_manual_sync():
+            """Run manual order sync in background thread"""
+            try:
+                print("Starting manual order sync...")
+                
+                # Get credentials
+                api_key, api_secret = get_shipstation_credentials()
+                if not api_key or not api_secret:
+                    print("ERROR: Failed to get ShipStation credentials")
+                    return
+                
+                # Fetch orders from last 7 days (ignoring watermark)
+                seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%dT00:00:00Z')
+                orders = fetch_shipstation_orders_since_watermark(api_key, api_secret, seven_days_ago)
+                
+                print(f"Fetched {len(orders)} orders from ShipStation (last 7 days)")
+                
+                # Filter to manual orders
+                manual_orders = []
+                for order in orders:
+                    order_id = order.get('orderId') or order.get('orderKey')
+                    order_number = order.get('orderNumber', 'UNKNOWN')
+                    
+                    if is_order_from_local_system(str(order_id)):
+                        continue
+                    
+                    if not has_key_product_skus(order):
+                        continue
+                    
+                    manual_orders.append(order)
+                
+                print(f"Found {len(manual_orders)} manual orders to sync")
+                
+                # Import manual orders
+                imported = 0
+                for order in manual_orders:
+                    order_number = order.get('orderNumber', 'UNKNOWN')
+                    try:
+                        if import_manual_order(order):
+                            imported += 1
+                            print(f"Imported manual order: {order_number}")
+                    except Exception as e:
+                        print(f"Failed to import order {order_number}: {e}")
+                
+                print(f"Manual sync complete: {imported} orders imported")
+                
+            except Exception as e:
+                print(f"Manual sync error: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # Start sync in background thread
+        thread = threading.Thread(target=run_manual_sync, daemon=True)
+        thread.start()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Manual order sync started (checking last 7 days)'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/inventory_transactions', methods=['GET'])
 def api_get_inventory_transactions():
     """Get inventory transactions with optional filters"""

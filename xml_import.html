@@ -1085,6 +1085,9 @@
                             <button class="btn-manual-import" id="btn-manual-import">
                                 ↻ Manual Import
                             </button>
+                            <button class="btn" id="btn-sync-manual-orders" style="background-color: var(--secondary-purple); border-color: var(--secondary-purple); color: white;">
+                                🔄 Sync Manual Orders
+                            </button>
                             <button class="btn" id="btn-export-csv" style="background-color: var(--success-green); border-color: var(--success-green); color: white;">
                                 📊 Export to CSV
                             </button>
@@ -1277,6 +1280,39 @@
 
         // Import from Google Drive - Manual button
         btnManualImport.addEventListener('click', () => importFromDrive(btnManualImport));
+
+        // Sync Manual Orders button
+        const btnSyncManualOrders = document.getElementById('btn-sync-manual-orders');
+        btnSyncManualOrders.addEventListener('click', async () => {
+            const btn = btnSyncManualOrders;
+            const originalText = btn.textContent;
+            
+            try {
+                btn.disabled = true;
+                btn.textContent = '🔄 Syncing...';
+                
+                const response = await fetch('/api/sync_manual_orders', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('✅ Manual order sync started! Checking last 7 days for manual orders...', 'success');
+                    // Reload orders after a brief delay to allow sync to complete
+                    setTimeout(() => {
+                        loadOrdersInbox();
+                    }, 3000);
+                } else {
+                    showAlert('❌ Sync failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
 
         // Search functionality
         const searchInput = document.getElementById('search-input');
