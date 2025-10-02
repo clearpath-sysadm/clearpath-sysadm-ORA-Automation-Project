@@ -1449,18 +1449,22 @@ def api_upload_orders_to_shipstation():
         """)
         sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
         
-        # Build query for pending orders
+        # Build query for pending orders with address data
         if order_ids:
             placeholders = ','.join('?' * len(order_ids))
             order_query = f"""
-                SELECT id, order_number, order_date, customer_email, total_amount_cents
+                SELECT id, order_number, order_date, customer_email, total_amount_cents,
+                       ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                       bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                 FROM orders_inbox 
                 WHERE status = 'pending' AND id IN ({placeholders})
             """
             cursor.execute(order_query, order_ids)
         else:
             cursor.execute("""
-                SELECT id, order_number, order_date, customer_email, total_amount_cents
+                SELECT id, order_number, order_date, customer_email, total_amount_cents,
+                       ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                       bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                 FROM orders_inbox 
                 WHERE status = 'pending'
             """)
@@ -1479,7 +1483,10 @@ def api_upload_orders_to_shipstation():
         order_sku_map = []  # Track (order_inbox_id, sku, order_number) for later updates
         
         for order_row in pending_orders:
-            order_id, order_number, order_date, customer_email, total_amount_cents = order_row
+            # Unpack order data including address fields
+            (order_id, order_number, order_date, customer_email, total_amount_cents,
+             ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+             bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone) = order_row
             
             # Get order items
             cursor.execute("""
@@ -1503,20 +1510,24 @@ def api_upload_orders_to_shipstation():
                     'orderStatus': 'awaiting_shipment',
                     'customerEmail': customer_email or '',
                     'billTo': {
-                        'name': 'Customer',
-                        'street1': '',
-                        'city': '',
-                        'state': '',
-                        'postalCode': '',
-                        'country': 'US'
+                        'name': bill_name or '',
+                        'company': bill_company or '',
+                        'street1': bill_street1 or '',
+                        'city': bill_city or '',
+                        'state': bill_state or '',
+                        'postalCode': bill_postal_code or '',
+                        'country': bill_country or 'US',
+                        'phone': bill_phone or ''
                     },
                     'shipTo': {
-                        'name': 'Customer',
-                        'street1': '',
-                        'city': '',
-                        'state': '',
-                        'postalCode': '',
-                        'country': 'US'
+                        'name': ship_name or '',
+                        'company': ship_company or '',
+                        'street1': ship_street1 or '',
+                        'city': ship_city or '',
+                        'state': ship_state or '',
+                        'postalCode': ship_postal_code or '',
+                        'country': ship_country or 'US',
+                        'phone': ship_phone or ''
                     },
                     'items': [{
                         'sku': sku_with_lot,

@@ -125,6 +125,11 @@ def import_orders_from_drive():
         bundle_config = load_bundle_config(cursor)
         logger.info(f"Loaded {len(bundle_config)} bundle configurations")
         
+        # Helper function to safely extract text
+        def get_text(elem, tag, default=''):
+            child = elem.find(tag)
+            return child.text.strip() if child is not None and child.text else default
+        
         orders_imported = 0
         
         for order_elem in root.findall('order'):
@@ -136,6 +141,30 @@ def import_orders_from_drive():
                 order_number = order_id.text.strip()
                 order_date_str = order_date.text.strip() if order_date is not None and order_date.text else datetime.now().strftime('%Y-%m-%d')
                 customer_email = email.text.strip() if email is not None and email.text else None
+                
+                # Parse shipping address (prefix 's_')
+                ship_firstname = get_text(order_elem, 's_firstname')
+                ship_lastname = get_text(order_elem, 's_lastname')
+                ship_name = f"{ship_firstname} {ship_lastname}".strip()
+                ship_company = get_text(order_elem, 's_company')
+                ship_street1 = get_text(order_elem, 's_address')
+                ship_city = get_text(order_elem, 's_city')
+                ship_state = get_text(order_elem, 's_state')
+                ship_postal_code = get_text(order_elem, 's_zipcode')
+                ship_country = get_text(order_elem, 's_country', 'US')
+                ship_phone = get_text(order_elem, 's_phone')
+                
+                # Parse billing address (prefix 'b_')
+                bill_firstname = get_text(order_elem, 'b_firstname')
+                bill_lastname = get_text(order_elem, 'b_lastname')
+                bill_name = f"{bill_firstname} {bill_lastname}".strip()
+                bill_company = get_text(order_elem, 'b_company')
+                bill_street1 = get_text(order_elem, 'b_address')
+                bill_city = get_text(order_elem, 'b_city')
+                bill_state = get_text(order_elem, 'b_state')
+                bill_postal_code = get_text(order_elem, 'b_zipcode')
+                bill_country = get_text(order_elem, 'b_country', 'US')
+                bill_phone = get_text(order_elem, 'b_phone')
                 
                 # Parse line items from order_detail elements
                 line_items = []
@@ -160,9 +189,17 @@ def import_orders_from_drive():
                 
                 if not existing:
                     cursor.execute("""
-                        INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
-                        VALUES (?, ?, ?, 'pending', ?, 'X-Cart')
-                    """, (order_number, order_date_str, customer_email, total_quantity))
+                        INSERT INTO orders_inbox (
+                            order_number, order_date, customer_email, status, total_items, source_system,
+                            ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                            bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
+                        )
+                        VALUES (?, ?, ?, 'pending', ?, 'X-Cart', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        order_number, order_date_str, customer_email, total_quantity,
+                        ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                        bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
+                    ))
                     
                     order_inbox_id = cursor.lastrowid
                     
