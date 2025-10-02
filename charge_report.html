@@ -191,6 +191,10 @@
             font-weight: 600;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         .info-text {
             color: #9ca3af;
             font-size: 13px;
@@ -381,7 +385,7 @@
 
         <div class="table-container">
             <div id="loading" class="loading">Loading charge report...</div>
-            <table id="reportTable" style="display: none;">
+            <table id="reportTable" class="hidden">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -464,7 +468,7 @@
             
             if (reportData.length === 0) {
                 loading.textContent = 'No data available for the selected period';
-                table.style.display = 'none';
+                table.classList.add('hidden');
                 loading.style.display = 'block';
                 return;
             }
@@ -505,7 +509,7 @@
             
             tbody.innerHTML = html;
             loading.style.display = 'none';
-            table.style.display = 'table';
+            table.classList.remove('hidden');
         }
 
         function exportToPDF() {
@@ -659,7 +663,7 @@
 
         function refreshData() {
             document.getElementById('loading').style.display = 'block';
-            document.getElementById('reportTable').style.display = 'none';
+            document.getElementById('reportTable').classList.add('hidden');
             document.getElementById('errorMessage').innerHTML = '';
             fetchReport();
         }
