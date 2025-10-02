@@ -1260,7 +1260,7 @@ def api_xml_import():
     try:
         from flask import request
         import tempfile
-        import xml.etree.ElementTree as ET
+        import defusedxml.ElementTree as ET
         
         if 'xml_file' not in request.files:
             return jsonify({
@@ -1627,7 +1627,7 @@ def api_google_drive_import_file(file_id):
     """Import XML file from Google Drive into orders inbox with bundle expansion"""
     try:
         from src.services.google_drive.api_client import fetch_xml_from_drive_by_file_id
-        import xml.etree.ElementTree as ET
+        import defusedxml.ElementTree as ET
         from io import StringIO
         
         # Fetch XML content from Google Drive
