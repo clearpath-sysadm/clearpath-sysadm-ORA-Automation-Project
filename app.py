@@ -1293,7 +1293,7 @@ def api_xml_import():
 
 @app.route('/api/orders_inbox')
 def api_orders_inbox():
-    """Get all orders from inbox - one row per SKU-Lot combination"""
+    """Get all orders from inbox - one row per SKU-Lot combination (consolidated quantities)"""
     try:
         query = """
             SELECT 
@@ -1303,7 +1303,7 @@ def api_orders_inbox():
                 o.customer_email,
                 o.status,
                 oi.sku,
-                oi.quantity,
+                SUM(oi.quantity) as total_quantity,
                 sl.lot,
                 ssli.shipstation_order_id,
                 o.created_at,
@@ -1312,6 +1312,7 @@ def api_orders_inbox():
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
             LEFT JOIN shipstation_order_line_items ssli ON oi.order_inbox_id = ssli.order_inbox_id AND oi.sku = ssli.sku
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, ssli.shipstation_order_id, o.created_at, o.failure_reason
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
