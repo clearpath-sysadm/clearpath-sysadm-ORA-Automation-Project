@@ -32,10 +32,6 @@ args = "xml-import-scheduler"
 task = "workflow.run"
 args = "shipstation-units-refresh"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "manual-order-sync"
-
 [[workflows.workflow]]
 name = "weekly-reporter"
 author = "agent"
@@ -77,17 +73,6 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/shipstation_units_refresher.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "manual-order-sync"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python src/scheduled_manual_sync.py"
 
 [workflows.workflow.metadata]
 outputType = "console"

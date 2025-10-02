@@ -317,6 +317,10 @@ def run_manual_order_sync():
         if not orders:
             logger.info("No orders found since last sync")
             
+            # Advance watermark to avoid reprocessing same empty window
+            new_watermark = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+            update_sync_watermark(new_watermark)
+            
             # Update workflow status
             with transaction() as conn:
                 conn.execute("""
