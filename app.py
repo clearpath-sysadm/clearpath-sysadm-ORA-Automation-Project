@@ -92,6 +92,23 @@ def api_dashboard_stats():
         """)
         hawaiian_orders = cursor.fetchone()[0] or 0
         
+        # Canadian orders (ship to Canada)
+        cursor.execute("""
+            SELECT COUNT(*) FROM orders_inbox 
+            WHERE status = 'pending' 
+            AND (ship_country = 'CA' OR ship_country = 'Canada')
+        """)
+        canadian_orders = cursor.fetchone()[0] or 0
+        
+        # Other international orders (not US or Canada)
+        cursor.execute("""
+            SELECT COUNT(*) FROM orders_inbox 
+            WHERE status = 'pending' 
+            AND ship_country IS NOT NULL
+            AND ship_country NOT IN ('US', 'USA', 'United States', 'CA', 'Canada')
+        """)
+        other_international_orders = cursor.fetchone()[0] or 0
+        
         # System status (check if we have any recent workflows)
         cursor.execute("""
             SELECT COUNT(*) FROM workflows 
@@ -113,6 +130,8 @@ def api_dashboard_stats():
                 'recent_shipments': recent_shipments,
                 'benco_orders': benco_orders,
                 'hawaiian_orders': hawaiian_orders,
+                'canadian_orders': canadian_orders,
+                'other_international_orders': other_international_orders,
                 'system_status': system_status
             }
         })
