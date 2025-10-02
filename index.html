@@ -775,9 +775,14 @@
             <div class="card" id="weekly-report-section">
                 <div class="card-header">
                     📊 Weekly Inventory Report
-                    <button class="btn btn-primary" onclick="refreshWeeklyReport()" id="weeklyReportRefreshBtn">
-                        🔄 Refresh
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-primary" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
+                            📋 Copy to Clipboard
+                        </button>
+                        <button class="btn btn-primary" onclick="refreshWeeklyReport()" id="weeklyReportRefreshBtn">
+                            🔄 Refresh
+                        </button>
+                    </div>
                 </div>
                 <div id="weeklyReportLoading" class="loading" style="padding: 20px;">Loading weekly report...</div>
                 <div id="weeklyReportError"></div>
@@ -1090,6 +1095,57 @@
                 btn.textContent = '❌ Failed';
                 setTimeout(() => {
                     btn.textContent = '🔄 Refresh';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        }
+
+        // Copy weekly inventory to clipboard
+        async function copyWeeklyInventoryToClipboard() {
+            const btn = document.getElementById('copyInventoryBtn');
+            const originalText = btn.textContent;
+            
+            try {
+                btn.disabled = true;
+                btn.textContent = '⏳ Copying...';
+                
+                // Fetch the latest data
+                const response = await fetch('/api/weekly_inventory_report');
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to load weekly report');
+                }
+                
+                // Create table header
+                const header = 'SKU | Product | Current Inventory | 12-Month Rolling Average';
+                const separator = '-'.repeat(75);
+                
+                // Create table rows
+                const rows = result.data.map(item => {
+                    const sku = String(item.sku).padEnd(6);
+                    const product = String(item.product_name).padEnd(25);
+                    const current = String(item.current_quantity).padStart(17);
+                    const avg = String(item.rolling_avg_52_weeks).padStart(28);
+                    return `${sku}| ${product}| ${current} | ${avg}`;
+                }).join('\n');
+                
+                // Combine into formatted text
+                const formattedText = `${header}\n${separator}\n${rows}`;
+                
+                // Copy to clipboard
+                await navigator.clipboard.writeText(formattedText);
+                
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to copy to clipboard:', error);
+                btn.textContent = '❌ Failed';
+                setTimeout(() => {
+                    btn.textContent = originalText;
                     btn.disabled = false;
                 }, 2000);
             }
