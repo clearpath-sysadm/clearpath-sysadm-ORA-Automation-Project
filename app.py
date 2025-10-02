@@ -101,7 +101,7 @@ def api_get_inventory_alerts():
                 reorder_point,
                 last_updated
             FROM inventory_current
-            WHERE sku IN ('17612', '17904', '17914', '17975', '18675', '18795')
+            WHERE sku IN ('17612', '17904', '17914', '18675', '18795')
             ORDER BY 
                 CASE alert_level 
                     WHEN 'critical' THEN 1
@@ -817,7 +817,7 @@ def api_weekly_inventory_report():
                 reorder_point,
                 last_updated
             FROM inventory_current
-            WHERE sku IN ('17612', '17904', '17914', '17975', '18675')
+            WHERE sku IN ('17612', '17904', '17914', '18675', '18795')
             ORDER BY sku
         """
         results = execute_query(query)
