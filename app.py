@@ -386,24 +386,104 @@ def api_charge_report():
             if date in daily_data and sku in daily_data[date]['skus']:
                 daily_data[date]['skus'][sku] = qty
         
-        # Calculate charges
-        ORDER_CHARGE = 4.25  # $ per order
-        PACKAGE_CHARGE = 3.40  # $ per package (assumed 1 package per order)
-        SPACE_RENTAL_BASE = 18.00  # $ per day base rate
-        SPACE_RENTAL_INCREMENT = 0.18  # $ increment per order above base
+        # Get configuration for charges and pallets
+        config_query = """
+            SELECT category, parameter_name, sku, value
+            FROM configuration_params
+            WHERE category IN ('Rates', 'PalletConfig', 'Inventory')
+        """
+        config_results = execute_query(config_query)
+        
+        # Parse configuration
+        order_charge = 4.25
+        package_charge = 0.75
+        space_rental_rate = 0.45
+        pallet_config = {}
+        bom_inventory = {}
+        
+        for row in config_results:
+            category, param, sku, value = row
+            if category == 'Rates':
+                if param == 'OrderCharge':
+                    order_charge = float(value)
+                elif param == 'PackageCharge':
+                    package_charge = float(value)
+                elif param == 'SpaceRentalRate':
+                    space_rental_rate = float(value)
+            elif category == 'PalletConfig' and param == 'PalletCount' and sku:
+                pallet_config[str(sku)] = int(value)
+            elif category == 'Inventory' and param == 'EomPreviousMonth' and sku:
+                bom_inventory[str(sku)] = int(value)
+        
+        # Get all inventory transactions and shipments for the month
+        transactions_query = """
+            SELECT date, sku, transaction_type, quantity
+            FROM inventory_transactions
+            WHERE date >= ? AND date <= ?
+        """
+        transactions = execute_query(transactions_query, (str(start_date), str(end_date)))
+        
+        shipments_query = """
+            SELECT ship_date, base_sku, SUM(quantity_shipped)
+            FROM shipped_items
+            WHERE ship_date >= ? AND ship_date <= ?
+            GROUP BY ship_date, base_sku
+        """
+        shipments = execute_query(shipments_query, (str(start_date), str(end_date)))
+        
+        # Calculate daily inventory (EOD) for space rental calculation
+        daily_inventory = {}
+        current_inv = bom_inventory.copy()
+        
+        # Initialize all dates with BOM inventory
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = str(current_date)
+            daily_inventory[date_str] = current_inv.copy()
+            current_date += timedelta(days=1)
+        
+        # Apply receives/adjustments
+        for trans_date, sku, trans_type, qty in transactions:
+            if trans_date in daily_inventory and str(sku) in daily_inventory[trans_date]:
+                if trans_type == 'Receive':
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date:
+                            daily_inventory[date_str][str(sku)] += qty
+                elif trans_type == 'Repack':
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date:
+                            daily_inventory[date_str][str(sku)] += qty
+        
+        # Apply shipments (at EOD)
+        for ship_date, sku, qty in shipments:
+            if ship_date in daily_inventory and str(sku) in daily_inventory[ship_date]:
+                for date_str in daily_inventory:
+                    if date_str >= ship_date:
+                        daily_inventory[date_str][str(sku)] -= qty
+        
+        # Calculate space rental charges
+        import math
         
         report_data = []
         for date, data in sorted(daily_data.items()):
             order_count = data['order_count']
             
-            # Calculate charges
-            orders_charge = order_count * ORDER_CHARGE
-            packages_charge = order_count * PACKAGE_CHARGE  # Assume 1 package per order
+            # Calculate package count (sum of all SKU quantities)
+            package_count = sum(data['skus'].values())
             
-            # Space rental: $18 base + variable based on volume (up to $23.40)
-            # Linear scaling: adds $0.18 per order, capped at $23.40
-            space_rental = SPACE_RENTAL_BASE + min(order_count * SPACE_RENTAL_INCREMENT, 5.40)
-            space_rental = min(space_rental, 23.40)  # Hard cap at $23.40
+            # Calculate charges
+            orders_charge = order_count * order_charge
+            packages_charge = package_count * package_charge
+            
+            # Calculate space rental based on EOD inventory pallets
+            total_pallets = 0
+            if date in daily_inventory:
+                for sku, inventory_qty in daily_inventory[date].items():
+                    if sku in pallet_config and inventory_qty > 0:
+                        pallets = math.ceil(inventory_qty / pallet_config[sku])
+                        total_pallets += pallets
+            
+            space_rental = total_pallets * space_rental_rate
             
             total_charge = orders_charge + packages_charge + space_rental
             
