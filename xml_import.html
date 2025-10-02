@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>XML Import | ORA Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .nav-links a.active {
+            background: rgba(255,255,255,0.3);
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            background: #f9fafb;
+            transition: all 0.3s;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .upload-btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-process {
+            background: #10b981;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+
+        .btn-process:hover {
+            background: #059669;
+        }
+
+        .btn-process:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f0f4ff;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-uploaded {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📁 XML Import</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/shipped_orders.html">Shipped Orders</a>
+            <a href="/shipped_items.html">Shipped Items</a>
+            <a href="/charge_report.html">Charge Report</a>
+            <a href="/inventory_transactions.html">Inventory</a>
+            <a href="/weekly_shipped_history.html">Weekly History</a>
+            <a href="/xml_import.html" class="active">XML Import</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="section">
+            <div class="section-title">📤 Upload X-Cart XML</div>
+            
+            <div id="alert-container"></div>
+
+            <div class="upload-area" id="upload-area">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p style="margin-top: 1rem; font-size: 1.125rem; color: #6b7280;">Drag and drop XML file here or</p>
+                    <label for="file-input" class="upload-btn" style="margin-top: 1rem;">Browse Files</label>
+                    <input type="file" id="file-input" accept=".xml">
+                </div>
+            </div>
+
+            <div id="file-info" class="file-info">
+                <strong>Selected File:</strong> <span id="file-name"></span><br>
+                <strong>Size:</strong> <span id="file-size"></span>
+                <button class="btn-process" id="btn-process">Process XML</button>
+            </div>
+        </div>
+
+        <!-- Orders Inbox Section -->
+        <div class="section">
+            <div class="section-title">📥 Orders Inbox</div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-pending">0</div>
+                    <div class="stat-label">Pending Upload</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-uploaded">0</div>
+                    <div class="stat-label">Uploaded</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-failed">0</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+            </div>
+
+            <div id="orders-loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p style="margin-top: 1rem; color: #6b7280;">Loading orders...</p>
+            </div>
+
+            <div class="table-container" id="orders-table-container">
+                <table id="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Order Date</th>
+                            <th>Customer Email</th>
+                            <th>Total Items</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #6b7280; padding: 2rem;">No orders in inbox</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        // File upload handling
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+        const btnProcess = document.getElementById('btn-process');
+        const alertContainer = document.getElementById('alert-container');
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.name.endsWith('.xml')) {
+                showAlert('Please select a valid XML file', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.add('show');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Process XML
+        btnProcess.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            btnProcess.disabled = true;
+            btnProcess.textContent = 'Processing...';
+
+            const formData = new FormData();
+            formData.append('xml_file', selectedFile);
+
+            try {
+                const response = await fetch('/api/xml_import', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(`Successfully processed ${result.orders_count} orders!`, 'success');
+                    fileInfo.classList.remove('show');
+                    fileInput.value = '';
+                    selectedFile = null;
+                    loadOrdersInbox();
+                } else {
+                    showAlert('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error processing XML: ' + error.message, 'error');
+            } finally {
+                btnProcess.disabled = false;
+                btnProcess.textContent = 'Process XML';
+            }
+        });
+
+        // Load orders inbox
+        async function loadOrdersInbox() {
+            const loading = document.getElementById('orders-loading');
+            const tbody = document.getElementById('orders-tbody');
+
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/orders_inbox');
+                const result = await response.json();
+
+                if (result.success) {
+                    updateStats(result.data);
+                    renderOrdersTable(result.data);
+                } else {
+                    showAlert('Error loading orders: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading orders: ' + error.message, 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function updateStats(orders) {
+            const pending = orders.filter(o => o.status === 'pending').length;
+            const uploaded = orders.filter(o => o.status === 'uploaded').length;
+            const failed = orders.filter(o => o.status === 'failed').length;
+
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-uploaded').textContent = uploaded;
+            document.getElementById('stat-failed').textContent = failed;
+        }
+
+        function renderOrdersTable(orders) {
+            const tbody = document.getElementById('orders-tbody');
+
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #6b7280; padding: 2rem;">No orders in inbox</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td><strong>${order.order_number}</strong></td>
+                    <td>${order.order_date}</td>
+                    <td>${order.customer_email || '-'}</td>
+                    <td>${order.total_items || 0}</td>
+                    <td>$${((order.total_amount_cents || 0) / 100).toFixed(2)}</td>
+                    <td><span class="badge badge-${order.status}">${order.status.toUpperCase()}</span></td>
+                    <td>${new Date(order.created_at).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Load orders on page load
+        loadOrdersInbox();
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadOrdersInbox, 30000);
+    </script>
+</body>
+</html>

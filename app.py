@@ -24,7 +24,7 @@ app.config['JSON_SORT_KEYS'] = False
 DB_PATH = os.path.join(project_root, 'ora.db')
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html']
 
 @app.route('/')
 def index():
@@ -53,8 +53,9 @@ def api_dashboard_stats():
         cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date = ?", (today,))
         todays_orders = cursor.fetchone()[0] or 0
         
-        # Pending uploads (use 0 for now - orders_inbox table doesn't exist yet)
-        pending_uploads = 0
+        # Pending uploads from orders_inbox
+        cursor.execute("SELECT COUNT(*) FROM orders_inbox WHERE status = 'pending'")
+        pending_uploads = cursor.fetchone()[0] or 0
         
         # Recent shipments (last 7 days)
         week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
@@ -892,6 +893,168 @@ def api_weekly_shipped_history():
             'success': True,
             'data': history,
             'count': len(history)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/xml_import', methods=['POST'])
+def api_xml_import():
+    """Process uploaded XML file and import orders into inbox"""
+    try:
+        from flask import request
+        import tempfile
+        import xml.etree.ElementTree as ET
+        
+        if 'xml_file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No XML file provided'
+            }), 400
+        
+        file = request.files['xml_file']
+        
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected'
+            }), 400
+        
+        if not file.filename.endswith('.xml'):
+            return jsonify({
+                'success': False,
+                'error': 'File must be an XML file'
+            }), 400
+        
+        # Save to temporary file and parse
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as temp_file:
+            file.save(temp_file.name)
+            temp_path = temp_file.name
+        
+        try:
+            # Parse XML
+            tree = ET.parse(temp_path)
+            root = tree.getroot()
+            
+            conn = get_connection()
+            cursor = conn.cursor()
+            orders_imported = 0
+            
+            # Process each order
+            for order_elem in root.findall('order'):
+                order_id = order_elem.find('orderid')
+                order_date = order_elem.find('date2')
+                email = order_elem.find('email')
+                
+                if order_id is not None and order_id.text:
+                    order_number = order_id.text.strip()
+                    order_date_str = order_date.text.strip() if order_date is not None and order_date.text else datetime.now().strftime('%Y-%m-%d')
+                    customer_email = email.text.strip() if email is not None and email.text else None
+                    
+                    # Count items
+                    items = order_elem.findall('.//product')
+                    total_items = len(items)
+                    
+                    # Check if order already exists
+                    cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
+                    existing = cursor.fetchone()
+                    
+                    if not existing:
+                        # Insert order into inbox
+                        cursor.execute("""
+                            INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
+                            VALUES (?, ?, ?, 'pending', ?, 'X-Cart')
+                        """, (order_number, order_date_str, customer_email, total_items))
+                        
+                        order_inbox_id = cursor.lastrowid
+                        
+                        # Insert order items
+                        for product in items:
+                            product_code = product.find('productcode')
+                            quantity = product.find('amount')
+                            
+                            if product_code is not None and product_code.text:
+                                sku = product_code.text.strip()
+                                qty = int(quantity.text.strip()) if quantity is not None and quantity.text else 1
+                                
+                                cursor.execute("""
+                                    INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                                    VALUES (?, ?, ?)
+                                """, (order_inbox_id, sku, qty))
+                        
+                        orders_imported += 1
+            
+            conn.commit()
+            conn.close()
+            
+            # Clean up temp file
+            os.unlink(temp_path)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Successfully imported {orders_imported} orders',
+                'orders_count': orders_imported
+            })
+            
+        except ET.ParseError as e:
+            os.unlink(temp_path)
+            return jsonify({
+                'success': False,
+                'error': f'XML parsing error: {str(e)}'
+            }), 400
+        except Exception as e:
+            os.unlink(temp_path)
+            raise e
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/orders_inbox')
+def api_orders_inbox():
+    """Get all orders from inbox"""
+    try:
+        query = """
+            SELECT 
+                id,
+                order_number,
+                order_date,
+                customer_email,
+                status,
+                total_items,
+                total_amount_cents,
+                shipstation_order_id,
+                created_at,
+                updated_at
+            FROM orders_inbox
+            ORDER BY created_at DESC
+            LIMIT 500
+        """
+        results = execute_query(query)
+        
+        orders = []
+        for row in results:
+            orders.append({
+                'id': row[0],
+                'order_number': row[1],
+                'order_date': row[2],
+                'customer_email': row[3] or '',
+                'status': row[4],
+                'total_items': row[5] or 0,
+                'total_amount_cents': row[6] or 0,
+                'shipstation_order_id': row[7] or '',
+                'created_at': row[8],
+                'updated_at': row[9]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': orders,
+            'count': len(orders)
         })
     except Exception as e:
         return jsonify({
