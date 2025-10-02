@@ -1346,26 +1346,6 @@
                     }
                 }
                 
-                // Update inventory alerts
-                if (alerts.success && alerts.data.length > 0) {
-                    const alertsList = document.getElementById('alerts-list');
-                    alertsList.innerHTML = alerts.data.slice(0, 5).map(alert => {
-                        const alertClass = alert.severity === 'critical' ? 'alert-critical' : 'alert-warning';
-                        const icon = alert.severity === 'critical' ? '🔴' : '🟡';
-                        return `
-                            <div class="alert ${alertClass}">
-                                <span>${icon}</span>
-                                <div>
-                                    <strong>${alert.product_name} (SKU: ${alert.sku})</strong><br>
-                                    <span style="font-size: 13px;">${alert.message}</span>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                } else {
-                    document.getElementById('alerts-list').innerHTML = '<p style="color: var(--text-tertiary); text-align: center; padding: 20px;">No inventory alerts</p>';
-                }
-                
                 // Update automation status
                 if (automation.success && automation.data.length > 0) {
                     const autoList = document.getElementById('automation-list');
