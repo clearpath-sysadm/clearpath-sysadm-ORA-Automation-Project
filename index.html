@@ -542,6 +542,48 @@
             animation: pulse 2s ease-in-out infinite;
         }
 
+        /* Mobile Quick Action Dock */
+        .mobile-quick-actions {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg-primary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 12px;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 8px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            min-height: 72px;
+            transition: all 0.2s;
+        }
+
+        .quick-action-btn:active {
+            transform: scale(0.95);
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .quick-action-icon {
+            font-size: 24px;
+        }
+
         #autoship-alert.weekend-notice {
             background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
         }
@@ -609,6 +651,28 @@
 
         /* Mobile-specific table optimizations */
         @media (max-width: 768px) {
+            .mobile-quick-actions {
+                display: flex;
+            }
+
+            #autoship-alert {
+                position: sticky;
+                top: 96px;
+                z-index: 9;
+                margin-top: 0;
+                margin-bottom: 16px;
+                border-radius: 8px;
+            }
+
+            #autoship-alert h3 {
+                font-size: 16px;
+                font-weight: 700;
+            }
+
+            #autoship-alert p {
+                font-size: 14px;
+                margin-top: 8px;
+            }
             /* Increase base font size for readability */
             table {
                 font-size: 14px;
@@ -616,7 +680,7 @@
 
             table th,
             table td {
-                padding: 12px 8px;
+                padding: 14px 10px;
                 white-space: nowrap;
             }
 
@@ -625,12 +689,16 @@
             table td:first-child {
                 width: 60px;
                 padding-left: 12px;
+                font-size: 13px;
             }
 
-            /* Hide Product Name column on very small screens */
+            /* Keep Product Name visible but compact on mobile */
             table th:nth-child(2),
             table td:nth-child(2) {
-                display: none;
+                font-size: 13px;
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
             /* Optimize number columns */
@@ -638,7 +706,7 @@
             table td:nth-child(3),
             table th:nth-child(4),
             table td:nth-child(4) {
-                font-size: 15px;
+                font-size: 14px;
                 font-weight: 600;
             }
 
@@ -675,8 +743,9 @@
 
             .card-header .btn {
                 flex: 1;
-                font-size: 12px;
-                padding: 10px;
+                font-size: 13px;
+                padding: 14px 12px;
+                min-height: 44px;
             }
 
             /* Stats cards - stack on mobile */
@@ -839,6 +908,26 @@
 
             <!-- Content Area -->
             <div class="content-area">
+                <!-- Mobile Quick Actions Dock -->
+                <div class="mobile-quick-actions">
+                    <a href="/xml_import.html" class="quick-action-btn">
+                        <div class="quick-action-icon">📥</div>
+                        <div>Orders<br>Inbox</div>
+                    </a>
+                    <a href="/shipped_orders.html" class="quick-action-btn">
+                        <div class="quick-action-icon">📦</div>
+                        <div>Shipments</div>
+                    </a>
+                    <a href="/inventory_transactions.html" class="quick-action-btn">
+                        <div class="quick-action-icon">📊</div>
+                        <div>Inventory</div>
+                    </a>
+                    <a href="/" class="quick-action-btn" onclick="refreshDashboard(); return false;">
+                        <div class="quick-action-icon">🔄</div>
+                        <div>Refresh</div>
+                    </a>
+                </div>
+
                 <!-- Auto-Ship Day Alert (conditional) -->
                 <div id="autoship-alert">
                     <h3><span>🚨</span> <span id="autoship-title">Auto-Ship Day</span></h3>
@@ -922,23 +1011,6 @@
                                 </thead>
                                 <tbody id="weeklyReportBody"></tbody>
                             </table>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <span>⚠️</span> Stock Alerts
-                            </div>
-                        </div>
-                        <div id="alerts-section">
-                            <!-- Skeleton Loaders -->
-                            <div class="skeleton" style="height: 60px; border-radius: 8px; margin-bottom: 16px;" id="alert-skeleton-1"></div>
-                            <div class="skeleton" style="height: 60px; border-radius: 8px; margin-bottom: 16px;" id="alert-skeleton-2"></div>
-                            <div class="skeleton" style="height: 60px; border-radius: 8px;" id="alert-skeleton-3"></div>
-                            
-                            <!-- Actual Alerts -->
-                            <div id="alerts-list"></div>
                         </div>
                     </div>
                 </section>
@@ -1049,10 +1121,6 @@
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.add('hidden'));
             
-            for (let i = 1; i <= 3; i++) {
-                document.getElementById(`alert-skeleton-${i}`).classList.remove('hidden');
-            }
-            
             for (let i = 1; i <= 2; i++) {
                 document.getElementById(`auto-skeleton-${i}`).classList.remove('hidden');
             }
@@ -1063,10 +1131,6 @@
                 document.getElementById(`stat-skeleton-${i}`).classList.add('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.remove('hidden'));
-            
-            for (let i = 1; i <= 3; i++) {
-                document.getElementById(`alert-skeleton-${i}`).classList.add('hidden');
-            }
             
             for (let i = 1; i <= 2; i++) {
                 document.getElementById(`auto-skeleton-${i}`).classList.add('hidden');
