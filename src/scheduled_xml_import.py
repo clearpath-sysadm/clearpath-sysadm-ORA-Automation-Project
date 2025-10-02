@@ -125,12 +125,21 @@ def import_orders_from_drive():
         bundle_config = load_bundle_config(cursor)
         logger.info(f"Loaded {len(bundle_config)} bundle configurations")
         
+        # Load Key Products (SKUs we actually process for this client)
+        cursor.execute("""
+            SELECT sku FROM configuration_params
+            WHERE category = 'Key Products'
+        """)
+        key_products = {row[0] for row in cursor.fetchall()}
+        logger.info(f"Loaded {len(key_products)} Key Products for filtering")
+        
         # Helper function to safely extract text
         def get_text(elem, tag, default=''):
             child = elem.find(tag)
             return child.text.strip() if child is not None and child.text else default
         
         orders_imported = 0
+        orders_skipped = 0
         
         for order_elem in root.findall('order'):
             order_id = order_elem.find('orderid')
@@ -181,6 +190,15 @@ def import_orders_from_drive():
                 # Expand bundles into component SKUs
                 expanded_items = expand_bundle_items(line_items, bundle_config)
                 
+                # CRITICAL: Filter by Key Products - skip if no Key Products in order
+                final_skus = {item['sku'] for item in expanded_items}
+                has_key_product = bool(final_skus & key_products)
+                
+                if not has_key_product:
+                    orders_skipped += 1
+                    logger.info(f"SKIPPED Order {order_number}: No Key Products found. SKUs: {', '.join(final_skus)}")
+                    continue
+                
                 # Calculate total quantity from expanded items
                 total_quantity = sum(item['quantity'] for item in expanded_items)
                 
@@ -215,7 +233,7 @@ def import_orders_from_drive():
         conn.commit()
         conn.close()
         
-        logger.info(f"Successfully imported {orders_imported} new orders from Google Drive")
+        logger.info(f"Successfully imported {orders_imported} new orders from Google Drive ({orders_skipped} skipped - no Key Products)")
         return orders_imported
         
     except Exception as e:

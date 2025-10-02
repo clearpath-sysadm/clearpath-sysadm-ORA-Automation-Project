@@ -1261,7 +1261,15 @@ def api_google_drive_import_file(file_id):
         # Load bundle configurations
         bundle_config = load_bundle_config_from_db(cursor)
         
+        # Load Key Products (SKUs we actually process for this client)
+        cursor.execute("""
+            SELECT sku FROM configuration_params
+            WHERE category = 'Key Products'
+        """)
+        key_products = {row[0] for row in cursor.fetchall()}
+        
         orders_imported = 0
+        orders_skipped = 0
         
         # Helper function to safely extract text
         def get_text(elem, tag, default=''):
@@ -1318,6 +1326,15 @@ def api_google_drive_import_file(file_id):
                 # Expand bundles into component SKUs
                 expanded_items = expand_bundles(line_items, bundle_config)
                 
+                # CRITICAL: Filter by Key Products - skip if no Key Products in order
+                final_skus = {item['sku'] for item in expanded_items}
+                has_key_product = bool(final_skus & key_products)
+                
+                if not has_key_product:
+                    orders_skipped += 1
+                    print(f"SKIPPED Order {order_number}: No Key Products found. SKUs: {', '.join(final_skus)}")
+                    continue
+                
                 # Calculate total quantity from expanded items
                 total_quantity = sum(item['quantity'] for item in expanded_items)
                 
@@ -1356,8 +1373,9 @@ def api_google_drive_import_file(file_id):
         
         return jsonify({
             'success': True,
-            'message': f'Successfully imported {orders_imported} orders from Google Drive',
-            'orders_count': orders_imported
+            'message': f'Successfully imported {orders_imported} orders from Google Drive ({orders_skipped} skipped - no Key Products)',
+            'orders_count': orders_imported,
+            'skipped_count': orders_skipped
         })
         
     except Exception as e:
