@@ -155,3 +155,107 @@ def fetch_shipstation_shipments(
             
     logger.info(f"Finished fetching ShipStation shipments. Total retrieved: {len(all_shipments)}")
     return all_shipments
+
+def send_all_orders_to_shipstation(orders_payload: list, api_key: str, api_secret: str, create_orders_endpoint: str) -> list:
+    """
+    Sends a list of orders to ShipStation's createorders endpoint.
+    
+    Args:
+        orders_payload: List of order dictionaries formatted for ShipStation API
+        api_key: ShipStation API Key
+        api_secret: ShipStation API Secret
+        create_orders_endpoint: Full URL for ShipStation createorders API endpoint
+    
+    Returns:
+        list: Results from the API including orderKey, success status, and error messages
+    """
+    headers = get_shipstation_headers(api_key, api_secret)
+    headers["Content-Type"] = "application/json"
+    
+    try:
+        logger.debug(f"Sending {len(orders_payload)} orders to ShipStation...")
+        
+        response = make_api_request(
+            url=create_orders_endpoint,
+            method='POST',
+            data=orders_payload,
+            headers=headers,
+            timeout=120
+        )
+        
+        if response and response.status_code == 200:
+            response_data = response.json()
+            logger.info(f"Successfully sent orders to ShipStation")
+            return response_data.get('results', [])
+        else:
+            logger.error(f"Failed to send orders. Status: {response.status_code if response else 'N/A'}")
+            return []
+            
+    except Exception as e:
+        logger.error(f"Error sending orders to ShipStation: {e}", exc_info=True)
+        return []
+
+def fetch_shipstation_existing_orders_by_date_range(
+    api_key: str,
+    api_secret: str,
+    orders_endpoint: str,
+    create_date_start: str,
+    create_date_end: str
+) -> list:
+    """
+    Fetches existing orders from ShipStation within a date range to check for duplicates.
+    
+    Args:
+        api_key: ShipStation API Key
+        api_secret: ShipStation API Secret  
+        orders_endpoint: ShipStation orders API endpoint URL
+        create_date_start: Start date in ISO format
+        create_date_end: End date in ISO format
+    
+    Returns:
+        list: List of existing orders from ShipStation
+    """
+    headers = get_shipstation_headers(api_key, api_secret)
+    all_orders = []
+    
+    params = {
+        'createDateStart': create_date_start,
+        'createDateEnd': create_date_end,
+        'page': 1,
+        'pageSize': 500
+    }
+    
+    try:
+        while True:
+            response = make_api_request(
+                url=orders_endpoint,
+                method='GET',
+                headers=headers,
+                params=params,
+                timeout=30
+            )
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                orders_on_page = data.get('orders', [])
+                all_orders.extend(orders_on_page)
+                
+                total_pages = data.get('pages', 1)
+                current_page = data.get('page', 1)
+                
+                logger.info(f"Fetched page {current_page} of {total_pages} for duplicate check")
+                
+                if current_page >= total_pages:
+                    break
+                else:
+                    params['page'] += 1
+            else:
+                logger.error(f"Failed to fetch existing orders. Status: {response.status_code if response else 'N/A'}")
+                break
+                
+        logger.info(f"Retrieved {len(all_orders)} existing orders for duplicate checking")
+        return all_orders
+        
+    except Exception as e:
+        logger.error(f"Error fetching existing orders: {e}", exc_info=True)
+        return []
