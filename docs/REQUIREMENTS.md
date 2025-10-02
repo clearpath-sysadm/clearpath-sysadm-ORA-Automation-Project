@@ -214,3 +214,55 @@
 - Real-time data visibility for operations team
 - Manual control capabilities for ad-hoc workflow execution
 - Robust error handling and system status monitoring
+
+## 🔄 ShipStation Integration Requirements
+
+### Bidirectional Sync (CRITICAL)
+- **Required**: Sync manual ShipStation orders back to local system
+- **Rationale**: Manual orders created in ShipStation impact inventory tracking
+- **Requirement**: Maintain continuity between both systems for accurate inventory counts
+- **Implementation**: Periodic sync of ShipStation orders to local database to capture manual entries
+
+### Duplicate Prevention (CRITICAL)
+- **Required**: Robust duplicate detection to prevent re-uploading orders to ShipStation
+- **Implementation Components**:
+  1. Query ShipStation by exact order numbers (not date ranges) to eliminate blind spots
+  2. Transaction-safe shipped_orders re-check before upload to prevent race conditions
+  3. Unique database constraint on shipstation_order_line_items(order_inbox_id, sku)
+- **Grade Target**: B or higher from architect review
+- **Validation**: All uploaded orders must have verified ShipStation IDs
+
+### Rate Limiting (CRITICAL)
+- **Required**: Respect ShipStation API rate limits (40 requests/minute for V1 API)
+- **Implementation**:
+  1. Detect HTTP 429 (Too Many Requests) responses
+  2. Honor Retry-After header from ShipStation
+  3. Implement exponential backoff retry strategy (4-10 seconds)
+  4. Maximum 5 retry attempts before failure
+- **Efficiency**: Use bulk date-range queries with local filtering instead of per-order queries
+- **Performance**: Optimize to minimize API calls (e.g., 93 orders should be 1-3 API calls, not 93)
+
+### Data Integrity (CRITICAL)
+- **Required**: Orders marked as "uploaded" MUST have verified ShipStation IDs
+- **Validation**: shipstation_order_line_items table must contain tracking records for all uploaded orders
+- **Enforcement**: Database constraint ensures (order_inbox_id, sku) uniqueness
+- **Backfill**: Historical orders without tracking must be validated against ShipStation
+- **Status Transitions**: 
+  - pending → uploaded (only with ShipStation ID verification)
+  - failed → uploaded (only if already shipped and has ShipStation ID)
+  - uploaded (requires tracking record in shipstation_order_line_items table)
+
+### Order Status Management
+- **Required**: Clear status lifecycle for orders in orders_inbox
+- **States**:
+  - `pending`: New orders awaiting upload
+  - `uploaded`: Successfully uploaded with verified ShipStation ID
+  - `failed`: Upload attempted but failed (with failure_reason)
+- **Failed Order Handling**:
+  - Investigate failure reasons before retry
+  - Auto-fix orders that are already shipped but marked as failed
+  - Verify against shipped_orders table before reprocessing
+- **Tracking Requirements**:
+  - All uploaded orders must have entries in shipstation_order_line_items
+  - ShipStation ID must be populated (orderId or orderKey)
+  - SKU must be tracked for multi-SKU order support
