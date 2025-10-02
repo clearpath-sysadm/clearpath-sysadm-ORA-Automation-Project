@@ -24,7 +24,7 @@ app.config['JSON_SORT_KEYS'] = False
 DB_PATH = os.path.join(project_root, 'ora.db')
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html']
 
 @app.route('/')
 def index():
@@ -1672,6 +1672,150 @@ def api_delete_bundle(bundle_id):
         return jsonify({
             'success': True,
             'message': 'Bundle deleted successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# SKU Lot Management Endpoints
+@app.route('/api/sku_lots', methods=['GET'])
+def api_get_sku_lots():
+    """Get all SKU-Lot combinations"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, sku, lot, active, created_at, updated_at 
+            FROM sku_lot 
+            ORDER BY sku, lot
+        """)
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        sku_lots = []
+        for row in rows:
+            sku_lots.append({
+                'id': row[0],
+                'sku': row[1],
+                'lot': row[2],
+                'active': row[3],
+                'created_at': row[4],
+                'updated_at': row[5]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': sku_lots,
+            'count': len(sku_lots)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/sku_lots', methods=['POST'])
+def api_create_sku_lot():
+    """Create a new SKU-Lot combination"""
+    try:
+        data = request.json
+        
+        # Validate required fields
+        if not data.get('sku') or not data.get('lot'):
+            return jsonify({
+                'success': False,
+                'error': 'SKU and Lot are required'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Insert new SKU-Lot
+        cursor.execute("""
+            INSERT INTO sku_lot (sku, lot, active)
+            VALUES (?, ?, ?)
+        """, (data['sku'], data['lot'], data.get('active', 1)))
+        
+        sku_lot_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'sku_lot_id': sku_lot_id,
+            'message': 'SKU-Lot created successfully'
+        })
+    except sqlite3.IntegrityError:
+        return jsonify({
+            'success': False,
+            'error': 'This SKU-Lot combination already exists'
+        }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/sku_lots/<int:sku_lot_id>', methods=['PUT'])
+def api_update_sku_lot(sku_lot_id):
+    """Update a SKU-Lot combination"""
+    try:
+        data = request.json
+        
+        # Validate required fields
+        if not data.get('sku') or not data.get('lot'):
+            return jsonify({
+                'success': False,
+                'error': 'SKU and Lot are required'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Update SKU-Lot
+        cursor.execute("""
+            UPDATE sku_lot 
+            SET sku = ?, lot = ?, active = ?, updated_at = datetime('now')
+            WHERE id = ?
+        """, (data['sku'], data['lot'], data.get('active', 1), sku_lot_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'SKU-Lot updated successfully'
+        })
+    except sqlite3.IntegrityError:
+        return jsonify({
+            'success': False,
+            'error': 'This SKU-Lot combination already exists'
+        }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/sku_lots/<int:sku_lot_id>', methods=['DELETE'])
+def api_delete_sku_lot(sku_lot_id):
+    """Delete a SKU-Lot combination"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM sku_lot WHERE id = ?", (sku_lot_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'SKU-Lot deleted successfully'
         })
     except Exception as e:
         return jsonify({
