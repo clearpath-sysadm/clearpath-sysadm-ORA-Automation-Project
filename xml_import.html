@@ -1457,7 +1457,19 @@
             if (filteredOrders.length === 0) {
                 const message = showPendingOnly ? 'No pending orders' : 'No orders in inbox';
                 tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</td></tr>`;
-                mobileCards.innerHTML = `<p style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</p>`;
+                
+                // Update mobile cards list (not the entire container)
+                const mobileCardsList = document.getElementById('mobile-cards-list');
+                if (mobileCardsList) {
+                    mobileCardsList.innerHTML = `<p style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</p>`;
+                }
+                
+                // Hide mobile select-all container
+                const mobileSelectAllContainer = document.getElementById('mobile-select-all-container');
+                if (mobileSelectAllContainer) {
+                    mobileSelectAllContainer.style.display = 'none';
+                }
+                
                 uploadBtn.style.display = 'none';
                 return;
             }
