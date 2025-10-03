@@ -850,6 +850,85 @@
             cursor: not-allowed;
         }
 
+        /* Actions Dropdown for Mobile */
+        .actions-dropdown {
+            position: relative;
+            display: none;
+        }
+
+        .dropdown-toggle {
+            background: var(--primary-blue);
+            color: white;
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2.5);
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 250px;
+            z-index: 1000;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-menu button {
+            width: 100%;
+            text-align: left;
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border: none;
+            background: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 48px;
+        }
+
+        .dropdown-menu button:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .dropdown-menu button:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .dropdown-menu button:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .dropdown-menu button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .desktop-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .mobile-menu-btn {
@@ -881,6 +960,14 @@
             .btn {
                 padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 1.5);
                 font-size: 13px;
+            }
+
+            .desktop-actions {
+                display: none !important;
+            }
+
+            .actions-dropdown {
+                display: block;
             }
         }
 
@@ -1102,28 +1189,61 @@
                 <div class="card">
                     <div class="section-header">
                         <div class="section-title">📥 Orders Inbox</div>
-                        <div style="display: flex; gap: 12px; align-items: center;">
+                        
+                        <!-- Desktop Actions -->
+                        <div class="desktop-actions">
                             <button class="btn" id="btn-toggle-filter" style="background-color: var(--primary-blue); color: white; border-color: var(--primary-blue);">
                                 Show Pending Only
                             </button>
                             <button class="btn-upload" id="btn-upload-selected" style="display: none;">
-                                🚀 Upload Selected to ShipStation
+                                🚀 Upload Selected
                             </button>
                             <button class="btn" id="btn-retry-failed" style="display: none; background-color: #f59e0b; border-color: #f59e0b; color: white;">
-                                🔄 Retry Failed Orders
+                                🔄 Retry Failed
                             </button>
                             <button class="btn" id="btn-validate-orders" style="background-color: #8b5cf6; border-color: #8b5cf6; color: white;">
-                                ✓ Validate & Fix Orders
+                                ✓ Validate
                             </button>
                             <button class="btn-manual-import" id="btn-manual-import">
                                 ↻ Manual Import
                             </button>
                             <button class="btn" id="btn-sync-manual-orders" style="background-color: var(--secondary-purple); border-color: var(--secondary-purple); color: white;">
-                                🔄 Sync Manual Orders
+                                🔄 Sync Manual
                             </button>
                             <button class="btn" id="btn-export-csv" style="background-color: var(--success-green); border-color: var(--success-green); color: white;">
-                                📊 Export to CSV
+                                📊 Export CSV
                             </button>
+                        </div>
+
+                        <!-- Mobile Dropdown -->
+                        <div class="actions-dropdown">
+                            <button class="dropdown-toggle" onclick="toggleActionsDropdown()">
+                                Actions
+                                <span id="dropdown-arrow">▼</span>
+                            </button>
+                            <div class="dropdown-menu" id="actions-dropdown-menu">
+                                <button id="mobile-btn-toggle-filter" onclick="document.getElementById('btn-toggle-filter').click(); toggleActionsDropdown();">
+                                    Show Pending Only
+                                </button>
+                                <button id="mobile-btn-upload-selected" style="display: none;" onclick="document.getElementById('btn-upload-selected').click(); toggleActionsDropdown();">
+                                    🚀 Upload Selected
+                                </button>
+                                <button id="mobile-btn-retry-failed" style="display: none;" onclick="document.getElementById('btn-retry-failed').click(); toggleActionsDropdown();">
+                                    🔄 Retry Failed
+                                </button>
+                                <button onclick="document.getElementById('btn-validate-orders').click(); toggleActionsDropdown();">
+                                    ✓ Validate Orders
+                                </button>
+                                <button onclick="document.getElementById('btn-manual-import').click(); toggleActionsDropdown();">
+                                    ↻ Manual Import
+                                </button>
+                                <button onclick="document.getElementById('btn-sync-manual-orders').click(); toggleActionsDropdown();">
+                                    🔄 Sync Manual Orders
+                                </button>
+                                <button onclick="document.getElementById('btn-export-csv').click(); toggleActionsDropdown();">
+                                    📊 Export to CSV
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
@@ -1232,6 +1352,24 @@
             sidebar.classList.toggle('mobile-open');
             overlay.classList.toggle('active');
         }
+
+        function toggleActionsDropdown() {
+            const menu = document.getElementById('actions-dropdown-menu');
+            const arrow = document.getElementById('dropdown-arrow');
+            menu.classList.toggle('show');
+            arrow.textContent = menu.classList.contains('show') ? '▲' : '▼';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.actions-dropdown');
+            const menu = document.getElementById('actions-dropdown-menu');
+            if (dropdown && !dropdown.contains(event.target) && menu) {
+                menu.classList.remove('show');
+                const arrow = document.getElementById('dropdown-arrow');
+                if (arrow) arrow.textContent = '▼';
+            }
+        });
 
         // Close mobile menu
         function closeMobileMenu() {
@@ -1366,16 +1504,22 @@
                 btnToggleFilter.textContent = 'Show Awaiting Shipment';
                 btnToggleFilter.style.backgroundColor = '#7c3aed';
                 btnToggleFilter.style.borderColor = '#7c3aed';
+                const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
+                if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show Awaiting Shipment';
             } else if (filterMode === 'awaiting_shipment') {
                 filterMode = 'all';
                 btnToggleFilter.textContent = 'Show All Orders';
                 btnToggleFilter.style.backgroundColor = 'var(--text-secondary)';
                 btnToggleFilter.style.borderColor = 'var(--text-secondary)';
+                const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
+                if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show All Orders';
             } else {
                 filterMode = 'pending';
                 btnToggleFilter.textContent = 'Show Pending Only';
                 btnToggleFilter.style.backgroundColor = 'var(--primary-blue)';
                 btnToggleFilter.style.borderColor = 'var(--primary-blue)';
+                const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
+                if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show Pending Only';
             }
             
             // Re-render table with current orders
@@ -1422,7 +1566,9 @@
             
             // Show retry button if there are failed orders
             const retryBtn = document.getElementById('btn-retry-failed');
+            const mobileRetryBtn = document.getElementById('mobile-btn-retry-failed');
             retryBtn.style.display = failed > 0 ? 'block' : 'none';
+            if (mobileRetryBtn) mobileRetryBtn.style.display = failed > 0 ? 'block' : 'none';
         }
 
         // Helper: Format relative date
@@ -1558,11 +1704,15 @@
                 }
                 
                 uploadBtn.style.display = 'none';
+                const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
+                if (mobileUploadBtn) mobileUploadBtn.style.display = 'none';
                 return;
             }
 
             const hasPending = filteredOrders.some(o => o.status === 'pending');
             uploadBtn.style.display = hasPending ? 'block' : 'none';
+            const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
+            if (mobileUploadBtn) mobileUploadBtn.style.display = hasPending ? 'block' : 'none';
 
             // Render desktop table rows
             tbody.innerHTML = filteredOrders.map(order => {
