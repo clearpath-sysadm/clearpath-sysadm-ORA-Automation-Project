@@ -109,14 +109,35 @@ def api_dashboard_stats():
         """)
         other_international_orders = cursor.fetchone()[0] or 0
         
-        # System status (check if we have any recent workflows)
+        # System status (check recent workflow health)
+        # Check if critical workflows ran recently (within last 2 hours)
+        two_hours_ago = (datetime.now() - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute("""
-            SELECT COUNT(*) FROM workflows 
-            WHERE status = 'completed' 
-            LIMIT 1
-        """)
-        completed_count = cursor.fetchone()[0] or 0
-        system_status = 'operational' if completed_count > 0 else 'warning'
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = 'failed' OR status = 'error' THEN 1 ELSE 0 END) as failed,
+                MAX(last_run_at) as last_activity
+            FROM workflows 
+            WHERE last_run_at >= ?
+        """, (two_hours_ago,))
+        workflow_health = cursor.fetchone()
+        
+        total_recent = workflow_health[0] or 0
+        completed_recent = workflow_health[1] or 0
+        failed_recent = workflow_health[2] or 0
+        last_activity = workflow_health[3]
+        
+        # Determine system status
+        if failed_recent > 0:
+            system_status = 'error'
+            system_message = f'{failed_recent} workflow(s) failed'
+        elif total_recent == 0:
+            system_status = 'warning'
+            system_message = 'No recent activity'
+        else:
+            system_status = 'operational'
+            system_message = f'{completed_recent} workflows active'
         
         conn.close()
         
@@ -132,7 +153,11 @@ def api_dashboard_stats():
                 'hawaiian_orders': hawaiian_orders,
                 'canadian_orders': canadian_orders,
                 'other_international_orders': other_international_orders,
-                'system_status': system_status
+                'system_status': system_status,
+                'system_message': system_message,
+                'last_activity': last_activity,
+                'workflows_completed': completed_recent,
+                'workflows_failed': failed_recent
             }
         })
     except Exception as e:

@@ -1637,9 +1637,25 @@
                     if (statCards[4]) statCards[4].querySelector('.stat-value').textContent = stats.data.canadian_orders || 0;
                     if (statCards[5]) statCards[5].querySelector('.stat-value').textContent = stats.data.other_international_orders || 0;
                     if (statCards[6]) {
-                        const statusText = stats.data.system_status === 'operational' ? 'Online' : 'Warning';
-                        const statusClass = stats.data.system_status === 'operational' ? 'status-green' : 'status-yellow';
+                        // Enhanced system status with real-time workflow health
+                        let statusText, statusClass, statusMessage;
+                        
+                        if (stats.data.system_status === 'operational') {
+                            statusText = 'Online';
+                            statusClass = 'status-green';
+                            statusMessage = stats.data.system_message || 'All services operational';
+                        } else if (stats.data.system_status === 'error') {
+                            statusText = 'Error';
+                            statusClass = 'status-red';
+                            statusMessage = stats.data.system_message || 'System errors detected';
+                        } else {
+                            statusText = 'Warning';
+                            statusClass = 'status-yellow';
+                            statusMessage = stats.data.system_message || 'No recent activity';
+                        }
+                        
                         statCards[6].querySelector('.stat-value').innerHTML = `<span class="status-indicator ${statusClass}"></span> ${statusText}`;
+                        statCards[6].querySelector('.stat-change').textContent = statusMessage;
                     }
                     
                     const fedexAlert = document.getElementById('fedex-alert');
