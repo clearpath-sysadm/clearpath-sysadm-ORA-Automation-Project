@@ -76,34 +76,34 @@ def api_dashboard_stats():
         cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= ?", (week_ago,))
         recent_shipments = cursor.fetchone()[0] or 0
         
-        # Benco orders (orders with "BENCO" in company name)
+        # Benco orders (orders with "BENCO" in company name) - awaiting shipment
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status = 'pending' 
+            WHERE status IN ('pending', 'uploaded', 'awaiting_shipment')
             AND (ship_company LIKE '%BENCO%' OR ship_company LIKE '%Benco%')
         """)
         benco_orders = cursor.fetchone()[0] or 0
         
-        # Hawaiian orders (ship to Hawaii)
+        # Hawaiian orders (ship to Hawaii) - awaiting shipment
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status = 'pending' 
+            WHERE status IN ('pending', 'uploaded', 'awaiting_shipment')
             AND ship_state = 'HI'
         """)
         hawaiian_orders = cursor.fetchone()[0] or 0
         
-        # Canadian orders (ship to Canada)
+        # Canadian orders (ship to Canada) - awaiting shipment
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status = 'pending' 
+            WHERE status IN ('pending', 'uploaded', 'awaiting_shipment')
             AND (ship_country = 'CA' OR ship_country = 'Canada')
         """)
         canadian_orders = cursor.fetchone()[0] or 0
         
-        # Other international orders (not US or Canada)
+        # Other international orders (not US or Canada) - awaiting shipment
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status = 'pending' 
+            WHERE status IN ('pending', 'uploaded', 'awaiting_shipment')
             AND ship_country IS NOT NULL
             AND ship_country NOT IN ('US', 'USA', 'United States', 'CA', 'Canada')
         """)
@@ -2019,10 +2019,10 @@ def api_upload_orders_to_shipstation():
                     VALUES (?, ?, ?)
                 """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                 
-                # Mark order as uploaded and store ShipStation ID
+                # Mark order as awaiting_shipment and store ShipStation ID
                 cursor.execute("""
                     UPDATE orders_inbox
-                    SET status = 'uploaded',
+                    SET status = 'awaiting_shipment',
                         shipstation_order_id = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
@@ -2075,7 +2075,7 @@ def api_upload_orders_to_shipstation():
                     skipped_count += 1
                     cursor.execute("""
                         UPDATE orders_inbox
-                        SET status = 'uploaded',
+                        SET status = 'awaiting_shipment',
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
                     """, (sku_info['order_inbox_id'],))
@@ -2143,11 +2143,11 @@ def api_upload_orders_to_shipstation():
                         WHERE id = ?
                     """, (error_details, order_sku_info['order_inbox_id']))
         
-        # Update all successfully uploaded orders to 'uploaded' status
+        # Update all successfully uploaded orders to 'awaiting_shipment' status
         # (Only if ALL SKUs for that order were uploaded successfully)
         cursor.execute("""
             UPDATE orders_inbox
-            SET status = 'uploaded',
+            SET status = 'awaiting_shipment',
                 updated_at = CURRENT_TIMESTAMP
             WHERE id IN (
                 SELECT DISTINCT order_inbox_id 

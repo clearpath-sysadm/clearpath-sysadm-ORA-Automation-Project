@@ -187,7 +187,7 @@ def upload_pending_orders():
             key = f"{order_num_upper}_{sku}"
             
             if key in existing_order_map:
-                # Already exists - mark as uploaded
+                # Already exists - mark as awaiting_shipment
                 existing = existing_order_map[key]
                 skipped_count += 1
                 shipstation_id = existing['orderId'] or existing['orderKey']
@@ -199,7 +199,7 @@ def upload_pending_orders():
                 
                 cursor.execute("""
                     UPDATE orders_inbox
-                    SET status = 'uploaded',
+                    SET status = 'awaiting_shipment',
                         shipstation_order_id = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
@@ -269,7 +269,7 @@ def upload_pending_orders():
         # Update successfully uploaded orders
         cursor.execute("""
             UPDATE orders_inbox
-            SET status = 'uploaded',
+            SET status = 'awaiting_shipment',
                 updated_at = CURRENT_TIMESTAMP
             WHERE id IN (
                 SELECT DISTINCT order_inbox_id 

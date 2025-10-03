@@ -3,10 +3,10 @@
 ShipStation Status Sync Service
 
 Syncs status updates for orders that were uploaded to ShipStation from the local system.
-Checks uploaded orders for status changes (shipped, cancelled, etc.) and updates local database.
+Checks orders awaiting shipment for status changes (shipped, cancelled, etc.) and updates local database.
 
 Key Features:
-- Queries orders with status='uploaded' that have shipstation_order_id
+- Queries orders with status='awaiting_shipment' that have shipstation_order_id
 - Fetches current status from ShipStation by order ID
 - Updates local status and moves shipped orders to shipped_orders/shipped_items tables
 - Handles cancelled, on_hold, and other status transitions
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 def get_orders_needing_status_check() -> List[Dict[str, Any]]:
     """
     Get all orders from local DB that need status checking.
-    Returns orders with shipstation_order_id that are in 'uploaded' status.
+    Returns orders with shipstation_order_id that are in 'awaiting_shipment' status.
     """
     try:
         rows = execute_query("""
@@ -54,7 +54,7 @@ def get_orders_needing_status_check() -> List[Dict[str, Any]]:
             FROM orders_inbox
             WHERE shipstation_order_id IS NOT NULL
               AND shipstation_order_id != ''
-              AND status IN ('uploaded', 'pending')
+              AND status IN ('awaiting_shipment', 'pending')
             ORDER BY order_date DESC
         """)
         
@@ -187,10 +187,10 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                 logger.info(f"✅ Marked order {order_number} as cancelled")
                 
             elif ss_status == 'awaiting_shipment':
-                # Still waiting to ship - keep as uploaded
+                # Still waiting to ship - keep as awaiting_shipment
                 conn.execute("""
                     UPDATE orders_inbox
-                    SET status = 'uploaded',
+                    SET status = 'awaiting_shipment',
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 """, (order_id,))

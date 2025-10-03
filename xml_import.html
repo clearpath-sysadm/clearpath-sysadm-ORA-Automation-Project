@@ -408,7 +408,7 @@
             color: #92400e;
         }
 
-        .badge-uploaded {
+        .badge-awaiting_shipment {
             background-color: #d1fae5;
             color: #065f46;
         }
@@ -448,7 +448,7 @@
             color: #fbbf24;
         }
 
-        body.dark-mode .badge-uploaded {
+        body.dark-mode .badge-awaiting_shipment {
             background-color: #064e3b;
             color: #6ee7b7;
         }
@@ -1101,7 +1101,7 @@
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="stat-uploaded">0</div>
-                            <div class="stat-label">Uploaded</div>
+                            <div class="stat-label">Awaiting Shipment</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="stat-failed">0</div>
@@ -1373,11 +1373,11 @@
 
         function updateStats(orders) {
             const pending = orders.filter(o => o.status === 'pending').length;
-            const uploaded = orders.filter(o => o.status === 'uploaded').length;
+            const awaitingShipment = orders.filter(o => o.status === 'awaiting_shipment').length;
             const failed = orders.filter(o => o.status === 'failed').length;
 
             document.getElementById('stat-pending').textContent = pending;
-            document.getElementById('stat-uploaded').textContent = uploaded;
+            document.getElementById('stat-uploaded').textContent = awaitingShipment;
             document.getElementById('stat-failed').textContent = failed;
             
             // Show retry button if there are failed orders
@@ -1403,7 +1403,7 @@
         function getStatusBadge(status, failureReason = '') {
             const icons = {
                 'pending': '⏳',
-                'uploaded': '📤',
+                'awaiting_shipment': '📤',
                 'shipped': '✅',
                 'failed': '❌',
                 'cancelled': '🚫',
