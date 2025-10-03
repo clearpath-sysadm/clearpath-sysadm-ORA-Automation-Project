@@ -1859,7 +1859,7 @@
                     
                     if (stats.corrections_made > 0) {
                         // Reload orders to show updated data
-                        await loadOrders();
+                        await loadOrdersInbox();
                     }
                 } else {
                     throw new Error(data.error || 'Validation failed');
