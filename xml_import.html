@@ -1489,7 +1489,9 @@
 
             // Show/hide mobile select-all based on pending orders
             const mobileSelectAllContainer = document.getElementById('mobile-select-all-container');
-            mobileSelectAllContainer.style.display = hasPending ? 'block' : 'none';
+            if (mobileSelectAllContainer) {
+                mobileSelectAllContainer.style.display = hasPending ? 'block' : 'none';
+            }
 
             // Render mobile cards
             const mobileCardsList = document.getElementById('mobile-cards-list');
