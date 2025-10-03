@@ -169,6 +169,7 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
     """
     Import a manual ShipStation order into the local database.
     Creates entries in orders_inbox, order_items_inbox, and potentially shipped_orders/shipped_items.
+    Also captures carrier/service information for shipping validation.
     Returns True if successfully imported, False otherwise.
     """
     try:
@@ -176,6 +177,32 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
         order_number = order.get('orderNumber', '').strip()
         order_status = order.get('orderStatus', '').lower()
         customer_email = order.get('customerEmail', '')
+        
+        # Extract carrier and service information for validation
+        carrier_code = order.get('carrierCode')
+        service_code = order.get('serviceCode')
+        
+        # Try multiple locations for carrier_id (ShipStation structure varies)
+        carrier_id = None
+        advanced_options = order.get('advancedOptions', {})
+        if advanced_options and isinstance(advanced_options, dict):
+            carrier_id = advanced_options.get('carrierId')
+        if not carrier_id:
+            carrier_id = order.get('carrierId')
+        
+        # Get human-readable service name if available
+        service_name = None
+        if service_code:
+            # Map common service codes to names
+            service_name_map = {
+                'fedex_2day': 'FedEx 2Day',
+                'fedex_international_ground': 'FedEx International Ground',
+                'fedex_ground': 'FedEx Ground',
+                'fedex_home_delivery': 'FedEx Home Delivery',
+                'fedex_express_saver': 'FedEx Express Saver',
+                'fedex_standard_overnight': 'FedEx Standard Overnight'
+            }
+            service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
         
         if not order_number:
             logger.warning(f"Skipping order without order_number: {order_id}")
@@ -236,7 +263,7 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
             """, (order_number,)).fetchone()
             
             if existing:
-                # Update existing order
+                # Update existing order (including carrier/service information)
                 conn.execute("""
                     UPDATE orders_inbox
                     SET status = ?,
@@ -260,29 +287,36 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                         bill_postal_code = ?,
                         bill_country = ?,
                         bill_phone = ?,
+                        shipping_carrier_code = ?,
+                        shipping_carrier_id = ?,
+                        shipping_service_code = ?,
+                        shipping_service_name = ?,
                         source_system = 'ShipStation Manual',
                         updated_at = CURRENT_TIMESTAMP
                     WHERE order_number = ?
                 """, (db_status, str(order_id), customer_email, total_items, total_amount_cents,
                       ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                       bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
+                      carrier_code, carrier_id, service_code, service_name,
                       order_number))
                 order_inbox_id = existing[0]
             else:
-                # Insert new order
+                # Insert new order (including carrier/service information)
                 cursor = conn.execute("""
                     INSERT INTO orders_inbox (
                         order_number, order_date, customer_email, status, shipstation_order_id,
                         total_items, total_amount_cents,
                         ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                         bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
+                        shipping_carrier_code, shipping_carrier_id, shipping_service_code, shipping_service_name,
                         source_system
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ShipStation Manual')
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ShipStation Manual')
                 """, (
                     order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents,
                     ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
-                    bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
+                    bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
+                    carrier_code, carrier_id, service_code, service_name
                 ))
                 order_inbox_id = cursor.lastrowid
             
