@@ -320,37 +320,43 @@ All orders imported from XML files must follow this complete sync workflow:
 The system MUST validate and enforce shipping requirements based on order characteristics. Violations must trigger prominent alerts visible on ALL pages.
 
 #### 1. Hawaiian Orders (CRITICAL)
-- **Requirement**: Orders shipping to Hawaii (state = 'HI') must use [SPECIFIC SHIPPING SERVICE - REQUIRES CLARIFICATION]
-- **Validation**: Check ship_state field against shipping service/carrier selection
-- **Alert Trigger**: If Hawaiian order detected with incorrect shipping service
+- **Requirement**: Orders shipping to Hawaii (state = 'HI') MUST use **FedEx 2Day** shipping service
+- **Validation**: Check ship_state = 'HI' against shipping_service field
+- **Alert Trigger**: If Hawaiian order detected without FedEx 2Day service
 - **Severity**: HIGH - Incorrect shipping to Hawaii may result in delivery failures or excessive costs
+- **Service Code**: "fedex_2day" or equivalent ShipStation service identifier
 
 #### 2. Benco Orders (CRITICAL)
-- **Requirement**: Orders identified as Benco (ship_company contains "BENCO" or "Benco") MUST use the Benco ShipStation account
-- **Validation**: Verify Benco orders are routed to correct ShipStation account/store
-- **Alert Trigger**: If Benco order detected without proper account assignment
-- **Severity**: HIGH - Using wrong account may cause billing issues and customer confusion
-- **Implementation Note**: May require multiple ShipStation account configuration or specific account ID validation
+- **Requirement**: Orders identified as Benco (ship_company contains "BENCO" or "Benco") MUST use the **Benco FedEx Account**
+- **Context**: ShipStation account contains TWO FedEx carrier accounts:
+  - **Benco FedEx Account**: For Benco orders only
+  - **Oracare FedEx Account**: For all other orders (default)
+- **Validation**: Verify Benco orders use Benco FedEx carrier account via ShipStation carrier ID
+- **Alert Trigger**: If Benco order detected using Oracare FedEx account (or vice versa)
+- **Severity**: HIGH - Using wrong account causes billing issues, customer confusion, and account reconciliation problems
+- **Implementation**: System must capture and store ShipStation carrier account ID for each order
 
 #### 3. Canadian Orders (CRITICAL)
-- **Requirement**: Orders shipping to Canada (ship_country = 'CA' or 'Canada') MUST use International Ground shipping service
-- **Validation**: Check ship_country field against shipping service selection
+- **Requirement**: Orders shipping to Canada (ship_country = 'CA' or 'Canada') MUST use **International Ground** shipping service
+- **Validation**: Check ship_country in ('CA', 'Canada') against shipping_service field
 - **Alert Trigger**: If Canadian order detected with non-International Ground service
 - **Severity**: HIGH - Incorrect shipping service may cause customs issues or delivery delays
-- **Service Requirement**: Must specifically select "International Ground" shipping option in ShipStation
+- **Service Code**: "fedex_international_ground" or equivalent ShipStation service identifier
 
 ### Alert System Requirements (CRITICAL)
-- **Visibility**: Alerts MUST be prominently displayed at the top of EVERY page
+- **Visibility**: Alerts MUST be prominently displayed via **sticky bar at the very top** of EVERY page
 - **Persistence**: Alerts remain visible until violations are resolved
 - **Priority**: Shipping validation alerts take precedence over other notifications
 - **Design Requirements**:
-  - High contrast colors (red/orange for critical violations)
-  - Fixed/sticky positioning at top of viewport
-  - Clear, actionable messaging with order numbers
-  - Direct link to problematic orders
-  - Dismissible only after resolution
+  - **Sticky positioning**: Fixed bar at absolute top of viewport (above all navigation)
+  - High contrast colors (red/orange background for critical violations)
+  - Clear, actionable messaging with order numbers and violation details
+  - Direct link/button to view problematic orders
+  - Count of total violations displayed prominently
+  - Dismissible only after resolution (not manually dismissible)
 - **Real-time Updates**: Alert system checks for violations on every page load and auto-refresh
-- **Multi-page Support**: Alert banner component included in all HTML pages (index.html, xml_import.html, etc.)
+- **Multi-page Support**: Shared sticky bar component included in ALL HTML pages (index.html, xml_import.html, bundle_skus.html, sku_lot.html, etc.)
+- **User Experience**: Clicking alert bar navigates to Orders Inbox filtered to show only violating orders
 
 ### Validation Timing
 - **Pre-Upload Validation**: Check shipping rules BEFORE uploading to ShipStation
@@ -359,6 +365,8 @@ The system MUST validate and enforce shipping requirements based on order charac
 - **Batch Validation**: Provide admin tool to scan all awaiting_shipment orders for violations
 
 ### Error Handling
-- **Blocking vs Non-Blocking**: Determine if violations should block upload or only trigger alerts
-- **Override Capability**: Consider admin override mechanism for exceptional cases
-- **Audit Trail**: Log all validation checks, violations, and resolutions
+- **Non-Blocking**: Violations **DO NOT** block ShipStation uploads - orders are uploaded even with violations
+- **Alert-Based Approach**: System displays prominent sticky alerts for violations but allows operations to proceed
+- **Purpose**: Provide visibility and warnings while allowing business operations to continue
+- **Audit Trail**: Log all validation checks, violations detected, and when violations are resolved
+- **Resolution Tracking**: System automatically clears alerts when violations are fixed in ShipStation
