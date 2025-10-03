@@ -1448,11 +1448,13 @@ def api_orders_inbox():
                 o.ship_company,
                 o.ship_state,
                 o.ship_country,
-                o.source_system
+                o.source_system,
+                o.shipping_service_name,
+                o.shipping_carrier_id
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
@@ -1468,6 +1470,8 @@ def api_orders_inbox():
             ship_state = (row[12] or '').strip().upper()
             ship_country = (row[13] or 'US').strip().upper()
             source_system = row[14] or 'X-Cart'
+            shipping_service_name = row[15] or ''
+            shipping_carrier_id = row[16]
             
             # Determine order type flags
             is_hawaiian = ship_state == 'HI'
@@ -1493,7 +1497,9 @@ def api_orders_inbox():
                 'is_canadian': is_canadian,
                 'is_benco': is_benco,
                 'is_international': is_international,
-                'is_manual': is_manual
+                'is_manual': is_manual,
+                'shipping_service_name': shipping_service_name,
+                'shipping_carrier_id': shipping_carrier_id
             })
         
         return jsonify({
