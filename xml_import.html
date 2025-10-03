@@ -1230,8 +1230,8 @@
         const btnManualImport = document.getElementById('btn-manual-import');
         const btnToggleFilter = document.getElementById('btn-toggle-filter');
         
-        // Filter state - default to showing pending only
-        let showPendingOnly = true;
+        // Filter state - cycles through: all → pending → awaiting_shipment
+        let filterMode = 'pending'; // 'all', 'pending', 'awaiting_shipment'
         let searchTerm = '';
         
         // Sorting state
@@ -1326,19 +1326,24 @@
             }
         });
 
-        // Toggle filter button
+        // Toggle filter button - cycles through 3 states
         btnToggleFilter.addEventListener('click', () => {
-            showPendingOnly = !showPendingOnly;
-            
-            // Update button text and style
-            if (showPendingOnly) {
-                btnToggleFilter.textContent = 'Show Pending Only';
-                btnToggleFilter.style.backgroundColor = 'var(--primary-blue)';
-                btnToggleFilter.style.borderColor = 'var(--primary-blue)';
-            } else {
+            // Cycle through: pending → awaiting_shipment → all → pending
+            if (filterMode === 'pending') {
+                filterMode = 'awaiting_shipment';
+                btnToggleFilter.textContent = 'Show Awaiting Shipment';
+                btnToggleFilter.style.backgroundColor = '#7c3aed';
+                btnToggleFilter.style.borderColor = '#7c3aed';
+            } else if (filterMode === 'awaiting_shipment') {
+                filterMode = 'all';
                 btnToggleFilter.textContent = 'Show All Orders';
                 btnToggleFilter.style.backgroundColor = 'var(--text-secondary)';
                 btnToggleFilter.style.borderColor = 'var(--text-secondary)';
+            } else {
+                filterMode = 'pending';
+                btnToggleFilter.textContent = 'Show Pending Only';
+                btnToggleFilter.style.backgroundColor = 'var(--primary-blue)';
+                btnToggleFilter.style.borderColor = 'var(--primary-blue)';
             }
             
             // Re-render table with current orders
@@ -1454,9 +1459,13 @@
             currentOrders = orders;
 
             // Filter based on toggle state and search term
-            let filteredOrders = showPendingOnly 
-                ? orders.filter(o => o.status === 'pending')
-                : orders;
+            let filteredOrders = orders;
+            if (filterMode === 'pending') {
+                filteredOrders = orders.filter(o => o.status === 'pending');
+            } else if (filterMode === 'awaiting_shipment') {
+                filteredOrders = orders.filter(o => o.status === 'uploaded' || o.status === 'awaiting_shipment');
+            }
+            // filterMode === 'all' shows all orders (no filtering)
             
             // Apply search filter if search term exists
             if (searchTerm.trim()) {
@@ -1470,7 +1479,9 @@
             }
 
             if (filteredOrders.length === 0) {
-                const message = showPendingOnly ? 'No pending orders' : 'No orders in inbox';
+                const message = filterMode === 'pending' ? 'No pending orders' : 
+                               filterMode === 'awaiting_shipment' ? 'No orders awaiting shipment' :
+                               'No orders in inbox';
                 tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</td></tr>`;
                 
                 // Update mobile cards list (not the entire container)
@@ -1883,9 +1894,12 @@
             }
 
             // Determine which orders to export based on current filter
-            const ordersToExport = showPendingOnly 
-                ? currentOrders.filter(order => order.status === 'pending')
-                : currentOrders;
+            let ordersToExport = currentOrders;
+            if (filterMode === 'pending') {
+                ordersToExport = currentOrders.filter(order => order.status === 'pending');
+            } else if (filterMode === 'awaiting_shipment') {
+                ordersToExport = currentOrders.filter(order => order.status === 'uploaded' || order.status === 'awaiting_shipment');
+            }
 
             if (ordersToExport.length === 0) {
                 showAlert('No orders to export with current filter', 'warning');
@@ -1923,7 +1937,8 @@
             const link = document.createElement('a');
             link.href = url;
             
-            const filterText = showPendingOnly ? '_pending' : '_all';
+            const filterText = filterMode === 'pending' ? '_pending' : 
+                              filterMode === 'awaiting_shipment' ? '_awaiting_shipment' : '_all';
             const timestamp = new Date().toISOString().split('T')[0];
             link.download = `orders_inbox${filterText}_${timestamp}.csv`;
             
