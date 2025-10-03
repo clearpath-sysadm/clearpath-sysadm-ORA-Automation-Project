@@ -1812,6 +1812,166 @@ def api_retry_failed_orders():
             'error': str(e)
         }), 500
 
+@app.route('/api/validate_orders', methods=['POST'])
+def api_validate_orders():
+    """Validate and correct orders against ShipStation requirements"""
+    try:
+        from src.services.shipstation import api_client as shipstation_api
+        from config.settings import settings
+        
+        # Get ShipStation credentials
+        api_key, api_secret = shipstation_api.get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation API credentials not found'
+            }), 500
+        
+        conn = get_connection()
+        conn.row_factory = sqlite3.Row
+        
+        stats = {
+            'total_checked': 0,
+            'missing_ss_id': 0,
+            'wrong_status': 0,
+            'missing_addresses': 0,
+            'corrections_made': 0,
+            'errors': 0
+        }
+        
+        try:
+            # Get all orders that are not in 'pending' status
+            cursor = conn.execute("""
+                SELECT id, order_number, status, shipstation_order_id, customer_email,
+                       ship_name, ship_company, ship_street1, ship_city, ship_state,
+                       ship_postal_code, ship_country, ship_phone,
+                       bill_name, bill_company, bill_street1, bill_city, bill_state,
+                       bill_postal_code, bill_country, bill_phone,
+                       source_system
+                FROM orders_inbox
+                WHERE status != 'pending'
+                ORDER BY id
+            """)
+            orders = cursor.fetchall()
+            
+            for order in orders:
+                stats['total_checked'] += 1
+                order_number = order['order_number']
+                order_id = order['id']
+                
+                try:
+                    # Query ShipStation for this order
+                    ss_orders = shipstation_api.fetch_shipstation_orders_by_order_numbers(
+                        api_key,
+                        api_secret,
+                        settings.SHIPSTATION_ORDERS_ENDPOINT,
+                        [order_number]
+                    )
+                    
+                    if not ss_orders or len(ss_orders) == 0:
+                        continue
+                    
+                    ss_order = ss_orders[0]
+                    ss_order_id = str(ss_order.get('orderId'))
+                    ss_status = ss_order.get('orderStatus', 'unknown')
+                    
+                    # Check and fix missing ShipStation ID
+                    if not order['shipstation_order_id']:
+                        stats['missing_ss_id'] += 1
+                        stats['corrections_made'] += 1
+                        conn.execute(
+                            "UPDATE orders_inbox SET shipstation_order_id = ? WHERE id = ?",
+                            (ss_order_id, order_id)
+                        )
+                    
+                    # Check and fix wrong ShipStation ID
+                    elif order['shipstation_order_id'] != ss_order_id:
+                        stats['corrections_made'] += 1
+                        conn.execute(
+                            "UPDATE orders_inbox SET shipstation_order_id = ? WHERE id = ?",
+                            (ss_order_id, order_id)
+                        )
+                    
+                    # Validate and fix status
+                    status_map = {
+                        'awaiting_payment': 'awaiting_payment',
+                        'awaiting_shipment': 'uploaded',
+                        'shipped': 'shipped',
+                        'on_hold': 'on_hold',
+                        'cancelled': 'cancelled'
+                    }
+                    
+                    expected_status = status_map.get(ss_status, order['status'])
+                    if order['status'] != expected_status:
+                        stats['wrong_status'] += 1
+                        stats['corrections_made'] += 1
+                        conn.execute(
+                            "UPDATE orders_inbox SET status = ? WHERE id = ?",
+                            (expected_status, order_id)
+                        )
+                    
+                    # Check and fix missing addresses
+                    ship_to = ss_order.get('shipTo', {})
+                    bill_to = ss_order.get('billTo', {})
+                    
+                    updates = {}
+                    ship_fields = {
+                        'ship_name': ship_to.get('name'),
+                        'ship_company': ship_to.get('company'),
+                        'ship_street1': ship_to.get('street1'),
+                        'ship_city': ship_to.get('city'),
+                        'ship_state': ship_to.get('state'),
+                        'ship_postal_code': ship_to.get('postalCode'),
+                        'ship_country': ship_to.get('country'),
+                        'ship_phone': ship_to.get('phone')
+                    }
+                    
+                    bill_fields = {
+                        'bill_name': bill_to.get('name'),
+                        'bill_company': bill_to.get('company'),
+                        'bill_street1': bill_to.get('street1'),
+                        'bill_city': bill_to.get('city'),
+                        'bill_state': bill_to.get('state'),
+                        'bill_postal_code': bill_to.get('postalCode'),
+                        'bill_country': bill_to.get('country'),
+                        'bill_phone': bill_to.get('phone')
+                    }
+                    
+                    for field, ss_value in {**ship_fields, **bill_fields}.items():
+                        if ss_value and not order[field]:
+                            updates[field] = ss_value.strip() if isinstance(ss_value, str) else ss_value
+                    
+                    if updates:
+                        stats['missing_addresses'] += 1
+                        stats['corrections_made'] += 1
+                        set_clause = ', '.join([f"{field} = ?" for field in updates.keys()])
+                        values = list(updates.values()) + [order_id]
+                        conn.execute(
+                            f"UPDATE orders_inbox SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                            values
+                        )
+                
+                except Exception as e:
+                    stats['errors'] += 1
+                    continue
+            
+            conn.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Validation complete: {stats["corrections_made"]} corrections made',
+                'stats': stats
+            })
+        
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/upload_orders_to_shipstation', methods=['POST'])
 def api_upload_orders_to_shipstation():
     """Upload pending orders from inbox to ShipStation with SKU-Lot mapping"""

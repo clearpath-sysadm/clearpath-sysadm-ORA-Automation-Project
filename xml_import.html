@@ -1082,6 +1082,9 @@
                             <button class="btn" id="btn-retry-failed" style="display: none; background-color: #f59e0b; border-color: #f59e0b; color: white;">
                                 🔄 Retry Failed Orders
                             </button>
+                            <button class="btn" id="btn-validate-orders" style="background-color: #8b5cf6; border-color: #8b5cf6; color: white;">
+                                ✓ Validate & Fix Orders
+                            </button>
                             <button class="btn-manual-import" id="btn-manual-import">
                                 ↻ Manual Import
                             </button>
@@ -1791,6 +1794,57 @@
 
         // Retry button handler
         document.getElementById('btn-retry-failed').addEventListener('click', retryFailedOrders);
+
+        // Validate & Fix Orders
+        async function validateOrders() {
+            const validateBtn = document.getElementById('btn-validate-orders');
+            const originalText = validateBtn.textContent;
+            
+            if (!confirm('This will query ShipStation for all orders and fix any missing or incorrect data. This may take a few minutes. Continue?')) {
+                return;
+            }
+            
+            try {
+                validateBtn.disabled = true;
+                validateBtn.textContent = '⏳ Validating...';
+                
+                const response = await fetch('/api/validate_orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    const message = `✅ Validation Complete!\n\n` +
+                        `Orders checked: ${stats.total_checked}\n` +
+                        `Corrections made: ${stats.corrections_made}\n\n` +
+                        `Details:\n` +
+                        `• Missing ShipStation IDs fixed: ${stats.missing_ss_id}\n` +
+                        `• Wrong status fixed: ${stats.wrong_status}\n` +
+                        `• Missing addresses filled: ${stats.missing_addresses}\n` +
+                        `• Errors encountered: ${stats.errors}`;
+                    
+                    alert(message);
+                    
+                    if (stats.corrections_made > 0) {
+                        // Reload orders to show updated data
+                        await loadOrders();
+                    }
+                } else {
+                    throw new Error(data.error || 'Validation failed');
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+                showAlert(`Validation failed: ${error.message}`, 'error');
+            } finally {
+                validateBtn.disabled = false;
+                validateBtn.textContent = originalText;
+            }
+        }
+        
+        document.getElementById('btn-validate-orders').addEventListener('click', validateOrders);
 
         // CSV Export function
         function exportToCSV() {
