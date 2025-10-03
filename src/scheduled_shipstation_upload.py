@@ -29,53 +29,6 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_INTERVAL_SECONDS = 300  # 5 minutes
 
-def determine_carrier_and_service(ship_state, ship_country, ship_company):
-    """
-    Determine the correct carrier and service codes based on shipping validation rules.
-    
-    Rules:
-    1. Hawaiian orders (HI) → FedEx 2Day
-    2. Canadian orders (CA) → FedEx International Ground
-    3. Benco orders → FedEx (will be validated for correct account later)
-    4. Default → FedEx Ground or no specification (use ShipStation defaults)
-    
-    Returns:
-        tuple: (carrier_code, service_code, service_name)
-    """
-    carrier_code = "fedex"  # Default to FedEx for all
-    service_code = None
-    service_name = None
-    
-    # Normalize inputs (strip whitespace and convert to uppercase for comparison)
-    ship_state_normalized = ship_state.strip().upper() if ship_state else ''
-    ship_country_normalized = ship_country.strip().upper() if ship_country else ''
-    ship_company_normalized = ship_company.strip().upper() if ship_company else ''
-    
-    # Rule 1: Hawaiian orders MUST use FedEx 2Day
-    if ship_state_normalized == 'HI':
-        service_code = "fedex_2day"
-        service_name = "FedEx 2Day"
-        logger.info(f"Hawaiian order detected (state='{ship_state}') - setting service to FedEx 2Day")
-        return carrier_code, service_code, service_name
-    
-    # Rule 2: Canadian orders MUST use International Ground
-    if ship_country_normalized in ['CA', 'CANADA']:
-        service_code = "fedex_international_ground"
-        service_name = "FedEx International Ground"
-        logger.info(f"Canadian order detected (country='{ship_country}') - setting service to FedEx International Ground")
-        return carrier_code, service_code, service_name
-    
-    # Rule 3: Benco orders - use FedEx but will be validated for correct account
-    # Note: We can't specify carrier_id in V1 API, so we rely on ShipStation automation rules
-    # or post-upload validation to ensure correct Benco account is used
-    if 'BENCO' in ship_company_normalized:
-        logger.info(f"Benco order detected (company='{ship_company}') - will require account validation")
-        # For now, don't specify service to allow ShipStation automation rules
-        return carrier_code, None, None
-    
-    # Default: Let ShipStation use its default settings
-    return carrier_code, None, None
-
 def upload_pending_orders():
     """
     Upload pending orders from orders_inbox to ShipStation
@@ -142,11 +95,6 @@ def upload_pending_orders():
             """, (order_id,))
             items = cursor.fetchall()
             
-            # Determine carrier and service codes based on shipping rules
-            carrier_code, service_code, service_name = determine_carrier_and_service(
-                ship_state, ship_country, ship_company
-            )
-            
             # Create SEPARATE ShipStation order for EACH SKU
             for sku, qty, unit_price_cents in items:
                 lot_number = sku_lot_map.get(sku, '')
@@ -189,21 +137,12 @@ def upload_pending_orders():
                     'shippingAmount': 0
                 }
                 
-                # Add carrier and service codes if determined
-                if carrier_code:
-                    shipstation_order['carrierCode'] = carrier_code
-                if service_code:
-                    shipstation_order['serviceCode'] = service_code
-                
                 shipstation_orders.append(shipstation_order)
                 order_sku_map.append({
                     'order_inbox_id': order_id,
                     'sku': sku,
                     'order_number': order_number,
-                    'sku_with_lot': sku_with_lot,
-                    'carrier_code': carrier_code,
-                    'service_code': service_code,
-                    'service_name': service_name
+                    'sku_with_lot': sku_with_lot
                 })
         
         # Check for duplicates in ShipStation
@@ -262,16 +201,9 @@ def upload_pending_orders():
                     UPDATE orders_inbox
                     SET status = 'awaiting_shipment',
                         shipstation_order_id = ?,
-                        shipping_carrier_code = ?,
-                        shipping_service_code = ?,
-                        shipping_service_name = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                """, (shipstation_id, 
-                      order_sku_info.get('carrier_code'),
-                      order_sku_info.get('service_code'),
-                      order_sku_info.get('service_name'),
-                      order_sku_info['order_inbox_id']))
+                """, (shipstation_id, order_sku_info['order_inbox_id']))
             else:
                 # New order - needs upload
                 new_orders.append(order)
@@ -316,16 +248,9 @@ def upload_pending_orders():
                     
                     cursor.execute("""
                         UPDATE orders_inbox
-                        SET shipstation_order_id = ?,
-                            shipping_carrier_code = ?,
-                            shipping_service_code = ?,
-                            shipping_service_name = ?
+                        SET shipstation_order_id = ?
                         WHERE id = ? AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
-                    """, (shipstation_id,
-                          order_sku_info.get('carrier_code'),
-                          order_sku_info.get('service_code'),
-                          order_sku_info.get('service_name'),
-                          order_sku_info['order_inbox_id']))
+                    """, (shipstation_id, order_sku_info['order_inbox_id']))
                     
                     uploaded_count += 1
                 else:
@@ -353,58 +278,6 @@ def upload_pending_orders():
         """)
         
         conn.commit()
-        
-        # Fetch carrier details for newly uploaded orders to capture carrier_id
-        if uploaded_count > 0:
-            logger.info(f"Fetching carrier details for {uploaded_count} newly uploaded orders...")
-            try:
-                # Get unique order numbers that were just uploaded
-                uploaded_order_numbers = list(set([info['order_number'] for info in new_order_sku_map[:uploaded_count]]))
-                
-                # Fetch full order details from ShipStation
-                uploaded_orders_details = fetch_shipstation_orders_by_order_numbers(
-                    api_key,
-                    api_secret,
-                    settings.SHIPSTATION_ORDERS_ENDPOINT,
-                    uploaded_order_numbers
-                )
-                
-                # Extract and update carrier information
-                for order_detail in uploaded_orders_details:
-                    order_num = order_detail.get('orderNumber', '').strip().upper()
-                    carrier_code = order_detail.get('carrierCode')
-                    service_code = order_detail.get('serviceCode')
-                    
-                    # ShipStation may return carrierId in advancedOptions or other fields
-                    # Check multiple possible locations
-                    carrier_id = None
-                    advanced_options = order_detail.get('advancedOptions', {})
-                    if advanced_options:
-                        carrier_id = advanced_options.get('carrierId')
-                    
-                    # If still no carrier_id, try other fields
-                    if not carrier_id:
-                        carrier_id = order_detail.get('carrierId')
-                    
-                    # Update database with carrier information
-                    if carrier_code or service_code or carrier_id:
-                        cursor.execute("""
-                            UPDATE orders_inbox
-                            SET shipping_carrier_id = ?,
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE order_number = ?
-                        """, (carrier_id, order_num))
-                        
-                        if carrier_id:
-                            logger.debug(f"Captured carrier_id '{carrier_id}' for order {order_num}")
-                
-                conn.commit()
-                logger.info(f"Carrier details updated for uploaded orders")
-                
-            except Exception as e:
-                logger.error(f"Error fetching carrier details: {e}", exc_info=True)
-                # Don't fail the whole upload if carrier fetch fails
-        
         conn.close()
         
         logger.info(f'Upload complete: {uploaded_count} uploaded, {failed_count} failed, {skipped_count} skipped')
