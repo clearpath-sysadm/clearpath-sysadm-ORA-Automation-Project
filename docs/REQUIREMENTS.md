@@ -313,3 +313,52 @@ All orders imported from XML files must follow this complete sync workflow:
 - **ID Tracking**: Every order in app database with ShipStation interaction must have valid `shipstation_order_id`
 - **Status Accuracy**: Order status in app database must reflect current ShipStation status
 - **Complete Data**: Manual orders must capture all available ShipStation fields
+
+## 🚨 Shipping Validation Rules (CRITICAL)
+
+### Order-Specific Shipping Requirements
+The system MUST validate and enforce shipping requirements based on order characteristics. Violations must trigger prominent alerts visible on ALL pages.
+
+#### 1. Hawaiian Orders (CRITICAL)
+- **Requirement**: Orders shipping to Hawaii (state = 'HI') must use [SPECIFIC SHIPPING SERVICE - REQUIRES CLARIFICATION]
+- **Validation**: Check ship_state field against shipping service/carrier selection
+- **Alert Trigger**: If Hawaiian order detected with incorrect shipping service
+- **Severity**: HIGH - Incorrect shipping to Hawaii may result in delivery failures or excessive costs
+
+#### 2. Benco Orders (CRITICAL)
+- **Requirement**: Orders identified as Benco (ship_company contains "BENCO" or "Benco") MUST use the Benco ShipStation account
+- **Validation**: Verify Benco orders are routed to correct ShipStation account/store
+- **Alert Trigger**: If Benco order detected without proper account assignment
+- **Severity**: HIGH - Using wrong account may cause billing issues and customer confusion
+- **Implementation Note**: May require multiple ShipStation account configuration or specific account ID validation
+
+#### 3. Canadian Orders (CRITICAL)
+- **Requirement**: Orders shipping to Canada (ship_country = 'CA' or 'Canada') MUST use International Ground shipping service
+- **Validation**: Check ship_country field against shipping service selection
+- **Alert Trigger**: If Canadian order detected with non-International Ground service
+- **Severity**: HIGH - Incorrect shipping service may cause customs issues or delivery delays
+- **Service Requirement**: Must specifically select "International Ground" shipping option in ShipStation
+
+### Alert System Requirements (CRITICAL)
+- **Visibility**: Alerts MUST be prominently displayed at the top of EVERY page
+- **Persistence**: Alerts remain visible until violations are resolved
+- **Priority**: Shipping validation alerts take precedence over other notifications
+- **Design Requirements**:
+  - High contrast colors (red/orange for critical violations)
+  - Fixed/sticky positioning at top of viewport
+  - Clear, actionable messaging with order numbers
+  - Direct link to problematic orders
+  - Dismissible only after resolution
+- **Real-time Updates**: Alert system checks for violations on every page load and auto-refresh
+- **Multi-page Support**: Alert banner component included in all HTML pages (index.html, xml_import.html, etc.)
+
+### Validation Timing
+- **Pre-Upload Validation**: Check shipping rules BEFORE uploading to ShipStation
+- **Post-Upload Monitoring**: Continuously monitor uploaded orders for rule compliance
+- **Manual Order Sync**: Validate manually-created ShipStation orders against rules
+- **Batch Validation**: Provide admin tool to scan all awaiting_shipment orders for violations
+
+### Error Handling
+- **Blocking vs Non-Blocking**: Determine if violations should block upload or only trigger alerts
+- **Override Capability**: Consider admin override mechanism for exceptional cases
+- **Audit Trail**: Log all validation checks, violations, and resolutions
