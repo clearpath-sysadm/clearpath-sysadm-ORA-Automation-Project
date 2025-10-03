@@ -850,30 +850,6 @@
                 event.target.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
             }
             
-            // Sort the data
-            filteredSkuLots.sort((a, b) => {
-                let aVal = a[column];
-                let bVal = b[column];
-                
-                // Handle boolean for active status
-                if (column === 'active') {
-                    aVal = a[column] ? 1 : 0;
-                    bVal = b[column] ? 1 : 0;
-                }
-                
-                // Handle string comparison
-                if (typeof aVal === 'string') {
-                    aVal = aVal.toLowerCase();
-                    bVal = bVal.toLowerCase();
-                }
-                
-                if (currentSort.direction === 'asc') {
-                    return aVal > bVal ? 1 : -1;
-                } else {
-                    return aVal < bVal ? 1 : -1;
-                }
-            });
-            
             renderTable();
         }
 
@@ -886,6 +862,32 @@
             filteredSkuLots = showActiveOnly 
                 ? skuLots.filter(item => item.active)
                 : [...skuLots];
+            
+            // Apply sorting if active
+            if (currentSort.column) {
+                filteredSkuLots.sort((a, b) => {
+                    let aVal = a[currentSort.column];
+                    let bVal = b[currentSort.column];
+                    
+                    // Handle boolean for active status
+                    if (currentSort.column === 'active') {
+                        aVal = a[currentSort.column] ? 1 : 0;
+                        bVal = b[currentSort.column] ? 1 : 0;
+                    }
+                    
+                    // Handle string comparison
+                    if (typeof aVal === 'string') {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                    }
+                    
+                    if (currentSort.direction === 'asc') {
+                        return aVal > bVal ? 1 : -1;
+                    } else {
+                        return aVal < bVal ? 1 : -1;
+                    }
+                });
+            }
             
             // Update count
             recordCount.textContent = filteredSkuLots.length;
