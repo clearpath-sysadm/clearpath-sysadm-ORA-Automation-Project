@@ -1452,6 +1452,19 @@
             return icons ? `<span class="order-type-icons">${icons}</span>` : '';
         }
 
+        // Helper: Get carrier account badge (Benco or Oracare)
+        function getCarrierAccountBadge(order) {
+            if (!order.shipping_carrier_id) return '-';
+            
+            // Determine if this is a Benco or Oracare account based on order type
+            const isBenco = order.is_benco;
+            const accountName = isBenco ? 'Benco' : 'Oracare';
+            const badgeColor = isBenco ? '#FF8C42' : '#4A90E2'; // Orange for Benco, Blue for Oracare
+            const bgColor = isBenco ? '#FFF4ED' : '#EBF5FF';
+            
+            return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: ${badgeColor}; background-color: ${bgColor}; border: 1px solid ${badgeColor};">${accountName}</span>`;
+        }
+
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('orders-tbody');
             const mobileCards = document.getElementById('orders-mobile-cards');
@@ -1512,7 +1525,7 @@
                 
                 // Format service and carrier info
                 const serviceName = order.shipping_service_name || '-';
-                const carrierAcct = order.shipping_carrier_id ? `#${order.shipping_carrier_id}` : '-';
+                const carrierAcctBadge = getCarrierAccountBadge(order);
                 
                 return `
                 <tr data-order-id="${order.id}" class="order-row">
@@ -1526,7 +1539,7 @@
                     <td>${order.quantity}</td>
                     <td>${statusBadge}</td>
                     <td><span style="font-size: 0.85em; color: var(--text-secondary);">${serviceName}</span></td>
-                    <td><span style="font-size: 0.85em; color: var(--text-secondary);">${carrierAcct}</span></td>
+                    <td>${carrierAcctBadge}</td>
                     <td>${order.shipstation_order_id || '-'}</td>
                     <td>${formatRelativeDate(order.created_at)}</td>
                 </tr>
@@ -1583,7 +1596,7 @@
                         ${order.shipping_carrier_id ? `
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Carrier Acct:</span>
-                            <span class="order-card-detail-value">#${order.shipping_carrier_id}</span>
+                            <span class="order-card-detail-value">${getCarrierAccountBadge(order)}</span>
                         </div>
                         ` : ''}
                         ${order.shipstation_order_id ? `
@@ -1884,6 +1897,7 @@
                         `• Missing ShipStation IDs fixed: ${stats.missing_ss_id}\n` +
                         `• Wrong status fixed: ${stats.wrong_status}\n` +
                         `• Missing addresses filled: ${stats.missing_addresses}\n` +
+                        `• Carrier/Service info updated: ${stats.missing_carrier_info || 0}\n` +
                         `• Errors encountered: ${stats.errors}`;
                     
                     alert(message);

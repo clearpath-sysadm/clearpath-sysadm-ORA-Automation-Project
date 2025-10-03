@@ -1840,6 +1840,7 @@ def api_validate_orders():
             'missing_ss_id': 0,
             'wrong_status': 0,
             'missing_addresses': 0,
+            'missing_carrier_info': 0,
             'corrections_made': 0,
             'errors': 0
         }
@@ -1852,7 +1853,8 @@ def api_validate_orders():
                        ship_postal_code, ship_country, ship_phone,
                        bill_name, bill_company, bill_street1, bill_city, bill_state,
                        bill_postal_code, bill_country, bill_phone,
-                       source_system
+                       source_system,
+                       shipping_service_name, shipping_carrier_id
                 FROM orders_inbox
                 WHERE status != 'pending'
                 ORDER BY id
@@ -1973,6 +1975,43 @@ def api_validate_orders():
                         conn.execute(
                             f"UPDATE orders_inbox SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                             values
+                        )
+                    
+                    # Check and update carrier/service information
+                    carrier_code = ss_order.get('carrierCode', '')
+                    service_code = ss_order.get('serviceCode', '')
+                    carrier_id = None
+                    advanced_options = ss_order.get('advancedOptions', {})
+                    if advanced_options and isinstance(advanced_options, dict):
+                        carrier_id = advanced_options.get('carrierId')
+                    if not carrier_id:
+                        carrier_id = ss_order.get('carrierId')
+                    
+                    # Map service codes to friendly names
+                    service_name_map = {
+                        'fedex_2day': 'FedEx 2Day',
+                        'fedex_international_ground': 'FedEx International Ground',
+                        'fedex_ground': 'FedEx Ground',
+                        'fedex_home_delivery': 'FedEx Home Delivery',
+                        'fedex_express_saver': 'FedEx Express Saver',
+                        'fedex_standard_overnight': 'FedEx Standard Overnight'
+                    }
+                    service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title() if service_code else '')
+                    
+                    # Update if missing or different
+                    if (not order['shipping_service_name'] and service_name) or \
+                       (not order['shipping_carrier_id'] and carrier_id):
+                        stats['missing_carrier_info'] += 1
+                        stats['corrections_made'] += 1
+                        conn.execute(
+                            """UPDATE orders_inbox 
+                               SET shipping_carrier_code = ?, 
+                                   shipping_carrier_id = ?, 
+                                   shipping_service_code = ?,
+                                   shipping_service_name = ?,
+                                   updated_at = CURRENT_TIMESTAMP 
+                               WHERE id = ?""",
+                            (carrier_code, carrier_id, service_code, service_name, order_id)
                         )
                 
                 except Exception as e:
