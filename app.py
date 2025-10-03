@@ -1854,24 +1854,43 @@ def api_validate_orders():
             """)
             orders = cursor.fetchall()
             
+            # BATCH QUERY: Collect all order numbers and query ShipStation once
+            order_numbers = [order['order_number'] for order in orders]
+            
+            if not order_numbers:
+                return jsonify({
+                    'success': True,
+                    'message': 'No orders to validate',
+                    'stats': stats
+                })
+            
+            # Single batch call to ShipStation for ALL orders
+            ss_orders_list = shipstation_api.fetch_shipstation_orders_by_order_numbers(
+                api_key,
+                api_secret,
+                settings.SHIPSTATION_ORDERS_ENDPOINT,
+                order_numbers
+            )
+            
+            # Create lookup map: order_number -> ShipStation order data
+            ss_orders_map = {}
+            for ss_order in ss_orders_list:
+                order_num = ss_order.get('orderNumber', '').strip().upper()
+                if order_num:
+                    ss_orders_map[order_num] = ss_order
+            
+            # Now validate each local order against ShipStation data
             for order in orders:
                 stats['total_checked'] += 1
                 order_number = order['order_number']
                 order_id = order['id']
                 
                 try:
-                    # Query ShipStation for this order
-                    ss_orders = shipstation_api.fetch_shipstation_orders_by_order_numbers(
-                        api_key,
-                        api_secret,
-                        settings.SHIPSTATION_ORDERS_ENDPOINT,
-                        [order_number]
-                    )
+                    # Look up ShipStation order from batch results
+                    ss_order = ss_orders_map.get(order_number.strip().upper())
                     
-                    if not ss_orders or len(ss_orders) == 0:
+                    if not ss_order:
                         continue
-                    
-                    ss_order = ss_orders[0]
                     ss_order_id = str(ss_order.get('orderId'))
                     ss_status = ss_order.get('orderStatus', 'unknown')
                     
