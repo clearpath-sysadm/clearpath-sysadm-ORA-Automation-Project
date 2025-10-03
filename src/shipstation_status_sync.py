@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 def get_orders_needing_status_check() -> List[Dict[str, Any]]:
     """
     Get all orders from local DB that need status checking.
-    Returns orders with shipstation_order_id that are in 'awaiting_shipment' status.
+    Returns orders with shipstation_order_id that need sync (uploaded, awaiting_shipment, pending).
     """
     try:
         rows = execute_query("""
@@ -54,7 +54,7 @@ def get_orders_needing_status_check() -> List[Dict[str, Any]]:
             FROM orders_inbox
             WHERE shipstation_order_id IS NOT NULL
               AND shipstation_order_id != ''
-              AND status IN ('awaiting_shipment', 'pending')
+              AND status IN ('uploaded', 'awaiting_shipment', 'pending')
             ORDER BY order_date DESC
         """)
         
