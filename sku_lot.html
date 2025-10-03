@@ -689,10 +689,10 @@
                         <table id="skuLotTable">
                             <thead>
                                 <tr>
-                                    <th class="sortable" onclick="sortTable('sku')">SKU</th>
-                                    <th class="sortable" onclick="sortTable('lot')">Lot</th>
-                                    <th class="sortable" onclick="sortTable('active')">Status</th>
-                                    <th class="sortable" onclick="sortTable('created_at')">Created</th>
+                                    <th class="sortable" onclick="sortTable('sku', event)">SKU</th>
+                                    <th class="sortable" onclick="sortTable('lot', event)">Lot</th>
+                                    <th class="sortable" onclick="sortTable('active', event)">Status</th>
+                                    <th class="sortable" onclick="sortTable('created_at', event)">Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -833,7 +833,7 @@
         }
 
         // Sort table by column
-        function sortTable(column) {
+        function sortTable(column, event) {
             if (currentSort.column === column) {
                 currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
             } else {
@@ -846,8 +846,9 @@
                 th.classList.remove('sort-asc', 'sort-desc');
             });
             
-            const header = event.target;
-            header.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            if (event && event.target) {
+                event.target.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
             
             // Sort the data
             filteredSkuLots.sort((a, b) => {
@@ -903,9 +904,9 @@
                             ${item.active ? 'Active' : 'Inactive'}
                         </span>
                     </td>
-                    <td>${formatTimezone(item.created_at)}</td>
+                    <td>${formatDateTime(item.created_at)}</td>
                     <td>
-                        <button class="action-btn" onclick="editSkuLot(${item.id})">Edit</button>
+                        <button class="action-btn" onclick="openEditModal(${item.id})">Edit</button>
                         <button class="action-btn delete" onclick="deleteSkuLot(${item.id})">Delete</button>
                     </td>
                 </tr>
@@ -928,33 +929,6 @@
                 console.error('Error loading SKU-Lots:', error);
                 showError('Error loading data');
             }
-        }
-
-        // Render Table
-        function renderTable() {
-            const tbody = document.getElementById('skuLotTableBody');
-            
-            if (skuLots.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No SKU-Lot combinations found</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = skuLots.map(item => `
-                <tr>
-                    <td><strong>${item.sku}</strong></td>
-                    <td>${item.lot}</td>
-                    <td>
-                        <span class="badge ${item.active ? 'badge-success' : 'badge-inactive'}">
-                            ${item.active ? 'Active' : 'Inactive'}
-                        </span>
-                    </td>
-                    <td>${formatDateTime(item.created_at)}</td>
-                    <td>
-                        <button class="action-btn" onclick="openEditModal(${item.id})">Edit</button>
-                        <button class="action-btn delete" onclick="deleteSkuLot(${item.id})">Delete</button>
-                    </td>
-                </tr>
-            `).join('');
         }
 
         // Open Add Modal
