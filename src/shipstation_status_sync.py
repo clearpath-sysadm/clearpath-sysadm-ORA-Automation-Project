@@ -116,6 +116,7 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
     """
     Update local database with current status from ShipStation.
     Handles: shipped → move to shipped_orders, cancelled → update status, etc.
+    Also captures carrier/service information for validation.
     """
     try:
         order_id = local_order['id']
@@ -125,7 +126,33 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
         ss_status = shipstation_order.get('orderStatus', '').lower()
         ss_order_id = shipstation_order.get('orderId')
         
-        logger.info(f"Syncing order {order_number}: local='{local_status}' → ShipStation='{ss_status}'")
+        # Extract carrier and service information for validation
+        carrier_code = shipstation_order.get('carrierCode')
+        service_code = shipstation_order.get('serviceCode')
+        
+        # Try multiple locations for carrier_id (ShipStation structure varies)
+        carrier_id = None
+        advanced_options = shipstation_order.get('advancedOptions', {})
+        if advanced_options and isinstance(advanced_options, dict):
+            carrier_id = advanced_options.get('carrierId')
+        if not carrier_id:
+            carrier_id = shipstation_order.get('carrierId')
+        
+        # Get human-readable service name if available
+        service_name = None
+        if service_code:
+            # Map common service codes to names
+            service_name_map = {
+                'fedex_2day': 'FedEx 2Day',
+                'fedex_international_ground': 'FedEx International Ground',
+                'fedex_ground': 'FedEx Ground',
+                'fedex_home_delivery': 'FedEx Home Delivery',
+                'fedex_express_saver': 'FedEx Express Saver',
+                'fedex_standard_overnight': 'FedEx Standard Overnight'
+            }
+            service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
+        
+        logger.info(f"Syncing order {order_number}: local='{local_status}' → ShipStation='{ss_status}' (carrier: {carrier_code}, service: {service_code}, carrier_id: {carrier_id})")
         
         with transaction() as conn:
             if ss_status == 'shipped':
@@ -165,46 +192,62 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                                 quantity_shipped = excluded.quantity_shipped
                         """, (ship_date, sku, quantity, order_number))
                 
-                # Update orders_inbox status to 'shipped'
+                # Update orders_inbox with status and carrier/service information
                 conn.execute("""
                     UPDATE orders_inbox
                     SET status = 'shipped',
+                        shipping_carrier_code = ?,
+                        shipping_carrier_id = ?,
+                        shipping_service_code = ?,
+                        shipping_service_name = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                """, (order_id,))
+                """, (carrier_code, carrier_id, service_code, service_name, order_id))
                 
                 logger.info(f"✅ Moved order {order_number} to shipped_orders (ship_date: {ship_date})")
                 
             elif ss_status == 'cancelled':
-                # Order was cancelled
+                # Order was cancelled (also capture carrier info even though cancelled)
                 conn.execute("""
                     UPDATE orders_inbox
                     SET status = 'cancelled',
+                        shipping_carrier_code = ?,
+                        shipping_carrier_id = ?,
+                        shipping_service_code = ?,
+                        shipping_service_name = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                """, (order_id,))
+                """, (carrier_code, carrier_id, service_code, service_name, order_id))
                 
                 logger.info(f"✅ Marked order {order_number} as cancelled")
                 
             elif ss_status == 'awaiting_shipment':
-                # Still waiting to ship - keep as awaiting_shipment
+                # Still waiting to ship - capture carrier info for validation
                 conn.execute("""
                     UPDATE orders_inbox
                     SET status = 'awaiting_shipment',
+                        shipping_carrier_code = ?,
+                        shipping_carrier_id = ?,
+                        shipping_service_code = ?,
+                        shipping_service_name = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                """, (order_id,))
+                """, (carrier_code, carrier_id, service_code, service_name, order_id))
                 
                 logger.debug(f"Order {order_number} still awaiting shipment")
                 
             elif ss_status in ('on_hold', 'awaiting_payment'):
-                # Order is on hold or awaiting payment
+                # Order is on hold or awaiting payment (also capture carrier info)
                 conn.execute("""
                     UPDATE orders_inbox
                     SET status = ?,
+                        shipping_carrier_code = ?,
+                        shipping_carrier_id = ?,
+                        shipping_service_code = ?,
+                        shipping_service_name = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                """, (ss_status, order_id))
+                """, (ss_status, carrier_code, carrier_id, service_code, service_name, order_id))
                 
                 logger.info(f"✅ Updated order {order_number} to status '{ss_status}'")
             
