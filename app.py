@@ -76,34 +76,34 @@ def api_dashboard_stats():
         cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= ?", (week_ago,))
         recent_shipments = cursor.fetchone()[0] or 0
         
-        # Benco orders (orders with "BENCO" in company name) - awaiting shipment
+        # Benco orders (orders with "BENCO" in company name) - awaiting shipment only
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status IN ('pending', 'uploaded', 'awaiting_shipment')
+            WHERE status = 'awaiting_shipment'
             AND (ship_company LIKE '%BENCO%' OR ship_company LIKE '%Benco%')
         """)
         benco_orders = cursor.fetchone()[0] or 0
         
-        # Hawaiian orders (ship to Hawaii) - awaiting shipment
+        # Hawaiian orders (ship to Hawaii) - awaiting shipment only
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status IN ('pending', 'uploaded', 'awaiting_shipment')
+            WHERE status = 'awaiting_shipment'
             AND ship_state = 'HI'
         """)
         hawaiian_orders = cursor.fetchone()[0] or 0
         
-        # Canadian orders (ship to Canada) - awaiting shipment
+        # Canadian orders (ship to Canada) - awaiting shipment only
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status IN ('pending', 'uploaded', 'awaiting_shipment')
+            WHERE status = 'awaiting_shipment'
             AND (ship_country = 'CA' OR ship_country = 'Canada')
         """)
         canadian_orders = cursor.fetchone()[0] or 0
         
-        # Other international orders (not US or Canada) - awaiting shipment
+        # Other international orders (not US or Canada) - awaiting shipment only
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status IN ('pending', 'uploaded', 'awaiting_shipment')
+            WHERE status = 'awaiting_shipment'
             AND ship_country IS NOT NULL
             AND ship_country NOT IN ('US', 'USA', 'United States', 'CA', 'Canada')
         """)
