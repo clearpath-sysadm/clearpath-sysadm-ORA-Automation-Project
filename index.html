@@ -51,6 +51,236 @@
             transition: background-color 0.2s, color 0.2s;
         }
 
+        /* Shipping Violations Alert Banner */
+        .violations-alert {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background-color: #fef3c7;
+            border-bottom: 2px solid #f59e0b;
+            padding: 12px 24px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .violations-alert.show {
+            display: flex;
+        }
+
+        .violations-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .violations-icon {
+            font-size: 24px;
+        }
+
+        .violations-text {
+            flex: 1;
+        }
+
+        .violations-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 4px;
+        }
+
+        .violations-details {
+            font-size: 13px;
+            color: #78350f;
+        }
+
+        .violations-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-view-violations {
+            background-color: #f59e0b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-view-violations:hover {
+            background-color: #d97706;
+        }
+
+        .btn-dismiss-alert {
+            background: none;
+            border: none;
+            color: #92400e;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .btn-dismiss-alert:hover {
+            opacity: 1;
+        }
+
+        /* Violations Modal */
+        .violations-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .violations-modal.show {
+            display: flex;
+        }
+
+        .violations-modal-content {
+            background-color: var(--bg-primary);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .violations-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .violations-modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn-close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 4px;
+        }
+
+        .btn-close-modal:hover {
+            color: var(--text-primary);
+        }
+
+        .violation-item {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--warning-yellow);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .violation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .violation-order {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .violation-type-badge {
+            background-color: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .violation-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .violation-detail {
+            font-size: 13px;
+        }
+
+        .violation-detail-label {
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+
+        .violation-detail-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .violation-issue {
+            background-color: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .violation-issue-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+
+        .violation-issue-text {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .btn-resolve-violation {
+            background-color: var(--success-green);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-resolve-violation:hover {
+            background-color: #059669;
+        }
+
+        .btn-resolve-violation:disabled {
+            background-color: var(--text-tertiary);
+            cursor: not-allowed;
+        }
+
         /* Layout Structure */
         .app-container {
             display: flex;
@@ -827,6 +1057,34 @@
     </style>
 </head>
 <body>
+    <!-- Shipping Violations Alert Banner -->
+    <div class="violations-alert" id="violations-alert">
+        <div class="violations-content">
+            <span class="violations-icon">⚠️</span>
+            <div class="violations-text">
+                <div class="violations-title">Shipping Configuration Alerts</div>
+                <div class="violations-details" id="violations-summary">Loading...</div>
+            </div>
+        </div>
+        <div class="violations-actions">
+            <button class="btn-view-violations" onclick="openViolationsModal()">View Details</button>
+            <button class="btn-dismiss-alert" onclick="dismissAlert()" title="Dismiss">×</button>
+        </div>
+    </div>
+
+    <!-- Violations Modal -->
+    <div class="violations-modal" id="violations-modal" onclick="closeModalOnBackdrop(event)">
+        <div class="violations-modal-content">
+            <div class="violations-modal-header">
+                <h2 class="violations-modal-title">Shipping Configuration Alerts</h2>
+                <button class="btn-close-modal" onclick="closeViolationsModal()">×</button>
+            </div>
+            <div id="violations-list">
+                <p style="text-align: center; color: var(--text-tertiary);">Loading violations...</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
@@ -1520,11 +1778,163 @@
             return days[dayOfWeek];
         }
 
+        // Shipping Violations Management
+        let violationsData = [];
+
+        async function loadShippingViolations() {
+            try {
+                const response = await fetch('/api/shipping_violations');
+                const result = await response.json();
+                
+                if (result.success) {
+                    violationsData = result.violations;
+                    updateViolationsAlert(result.count);
+                }
+            } catch (error) {
+                console.error('Failed to load violations:', error);
+            }
+        }
+
+        function updateViolationsAlert(count) {
+            const alert = document.getElementById('violations-alert');
+            const summary = document.getElementById('violations-summary');
+            
+            if (count > 0) {
+                const violationTypes = {};
+                violationsData.forEach(v => {
+                    violationTypes[v.violation_type] = (violationTypes[v.violation_type] || 0) + 1;
+                });
+                
+                const typeSummary = Object.entries(violationTypes)
+                    .map(([type, count]) => {
+                        const displayName = type === 'hawaiian_service' ? 'Hawaiian' : 
+                                          type === 'canadian_service' ? 'Canadian' : 'Benco';
+                        return `${count} ${displayName}`;
+                    })
+                    .join(', ');
+                
+                summary.textContent = `${count} order${count > 1 ? 's' : ''} detected with incorrect shipping configuration (${typeSummary})`;
+                alert.classList.add('show');
+            } else {
+                alert.classList.remove('show');
+            }
+        }
+
+        function dismissAlert() {
+            const alert = document.getElementById('violations-alert');
+            alert.classList.remove('show');
+        }
+
+        function openViolationsModal() {
+            const modal = document.getElementById('violations-modal');
+            modal.classList.add('show');
+            renderViolationsList();
+        }
+
+        function closeViolationsModal() {
+            const modal = document.getElementById('violations-modal');
+            modal.classList.remove('show');
+        }
+
+        function closeModalOnBackdrop(event) {
+            if (event.target.id === 'violations-modal') {
+                closeViolationsModal();
+            }
+        }
+
+        function renderViolationsList() {
+            const listContainer = document.getElementById('violations-list');
+            
+            if (violationsData.length === 0) {
+                listContainer.innerHTML = '<p style="text-align: center; color: var(--text-tertiary);">No violations found</p>';
+                return;
+            }
+            
+            listContainer.innerHTML = violationsData.map(v => {
+                const typeLabel = v.violation_type === 'hawaiian_service' ? 'Hawaiian Shipping' : 
+                                v.violation_type === 'canadian_service' ? 'Canadian Shipping' : 'Benco Account';
+                
+                return `
+                    <div class="violation-item">
+                        <div class="violation-header">
+                            <div class="violation-order">Order #${v.order_number}</div>
+                            <div class="violation-type-badge">${typeLabel}</div>
+                        </div>
+                        
+                        <div class="violation-details-grid">
+                            <div class="violation-detail">
+                                <div class="violation-detail-label">Ship To Location</div>
+                                <div class="violation-detail-value">
+                                    ${v.ship_state ? v.ship_state + ', ' : ''}${v.ship_country || 'US'}
+                                </div>
+                            </div>
+                            <div class="violation-detail">
+                                <div class="violation-detail-label">Company</div>
+                                <div class="violation-detail-value">${v.ship_company || 'N/A'}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="violation-issue">
+                            <div class="violation-issue-label">Issue Detected</div>
+                            <div class="violation-issue-text">
+                                Expected: <strong>${v.expected_value}</strong><br>
+                                Actual: <strong>${v.actual_value}</strong>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-resolve-violation" onclick="resolveViolation(${v.id})" id="resolve-btn-${v.id}">
+                            Mark as Resolved
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function resolveViolation(violationId) {
+            const btn = document.getElementById(`resolve-btn-${violationId}`);
+            const originalText = btn.textContent;
+            
+            try {
+                btn.disabled = true;
+                btn.textContent = 'Resolving...';
+                
+                const response = await fetch(`/api/shipping_violations/${violationId}/resolve`, {
+                    method: 'PUT'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    btn.textContent = '✓ Resolved';
+                    btn.style.backgroundColor = 'var(--text-tertiary)';
+                    
+                    // Remove from local data
+                    violationsData = violationsData.filter(v => v.id !== violationId);
+                    
+                    // Update alert and re-render
+                    setTimeout(() => {
+                        updateViolationsAlert(violationsData.length);
+                        renderViolationsList();
+                    }, 1000);
+                } else {
+                    throw new Error(result.error || 'Failed to resolve violation');
+                }
+            } catch (error) {
+                console.error('Failed to resolve violation:', error);
+                btn.textContent = '❌ Failed';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             checkAutoShipDay();
             loadDashboardData();
             loadWeeklyReport();
+            loadShippingViolations();
         });
     </script>
 </body>

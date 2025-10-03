@@ -2814,6 +2814,93 @@ def api_refresh_units_to_ship():
             'error': str(e)
         }), 500
 
+@app.route('/api/shipping_violations', methods=['GET'])
+def api_get_shipping_violations():
+    """Get all unresolved shipping violations"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                v.id,
+                v.order_number,
+                v.violation_type,
+                v.expected_value,
+                v.actual_value,
+                v.detected_at,
+                v.is_resolved,
+                o.ship_state,
+                o.ship_country,
+                o.ship_company
+            FROM shipping_violations v
+            LEFT JOIN orders_inbox o ON v.order_number = o.order_number
+            WHERE v.is_resolved = 0
+            ORDER BY v.detected_at DESC
+        """)
+        
+        violations = []
+        for row in cursor.fetchall():
+            violations.append({
+                'id': row[0],
+                'order_number': row[1],
+                'violation_type': row[2],
+                'expected_value': row[3],
+                'actual_value': row[4],
+                'detected_at': row[5],
+                'is_resolved': row[6],
+                'ship_state': row[7],
+                'ship_country': row[8],
+                'ship_company': row[9]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'violations': violations,
+            'count': len(violations)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/shipping_violations/<int:violation_id>/resolve', methods=['PUT'])
+def api_resolve_violation(violation_id):
+    """Mark a shipping violation as resolved"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE shipping_violations
+            SET is_resolved = 1,
+                resolved_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (violation_id,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Violation not found'
+            }), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Violation marked as resolved'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
