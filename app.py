@@ -1200,6 +1200,45 @@ def api_weekly_inventory_report():
             'error': str(e)
         }), 500
 
+@app.route('/api/run_weekly_report', methods=['POST'])
+def api_run_weekly_report():
+    """Manually trigger the weekly reporter to recalculate inventory and rolling averages"""
+    try:
+        import subprocess
+        
+        # Run the weekly reporter script
+        result = subprocess.run(
+            ['python', 'src/weekly_reporter.py'],
+            cwd=project_root,
+            env={**os.environ, 'DEV_MODE': '1'},
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        
+        if result.returncode == 0:
+            return jsonify({
+                'success': True,
+                'message': 'Weekly report generated successfully',
+                'output': result.stdout
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Report generation failed: {result.stderr}'
+            }), 500
+            
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            'success': False,
+            'error': 'Report generation timed out (>60s)'
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/weekly_shipped_history', methods=['GET'])
 def api_weekly_shipped_history():
     """Get 52 weeks of weekly shipped history for all SKUs"""

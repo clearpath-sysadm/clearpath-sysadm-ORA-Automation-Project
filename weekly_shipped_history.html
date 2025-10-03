@@ -605,9 +605,20 @@
                             <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                     </button>
-                    <h1 class="page-title">Weekly Reports</h1>
+                    <div>
+                        <h1 class="page-title">Weekly Reports</h1>
+                        <div id="lastUpdated" style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">
+                            Last updated: <span id="lastUpdatedTime">Loading...</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="top-bar-actions">
+                    <button class="btn btn-primary" onclick="runWeeklyReport()" id="runReportBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        </svg>
+                        Run Report
+                    </button>
                     <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
                 </div>
             </div>
@@ -815,8 +826,83 @@
             loadHistory();
         }
 
+        // Fetch and display last updated timestamp
+        async function fetchLastUpdated() {
+            try {
+                const response = await fetch('/api/weekly_inventory_report');
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const lastUpdated = result.data[0].last_updated;
+                    if (lastUpdated) {
+                        const date = new Date(lastUpdated);
+                        const options = { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                        };
+                        document.getElementById('lastUpdatedTime').textContent = 
+                            date.toLocaleString('en-US', options);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching last updated:', error);
+                document.getElementById('lastUpdatedTime').textContent = 'Unknown';
+            }
+        }
+
+        // Run weekly report manually
+        async function runWeeklyReport() {
+            const btn = document.getElementById('runReportBtn');
+            const originalText = btn.innerHTML;
+            
+            // Disable button and show loading state
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; animation: spin 1s linear infinite;">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                </svg>
+                Running...
+            `;
+            
+            try {
+                const response = await fetch('/api/run_weekly_report', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Refresh the page data and timestamp
+                    await fetchLastUpdated();
+                    await loadHistory(currentFilter);
+                    
+                    // Show success message
+                    alert('Weekly report generated successfully!');
+                } else {
+                    throw new Error(result.error || 'Failed to run report');
+                }
+            } catch (error) {
+                console.error('Error running weekly report:', error);
+                alert('Error running report: ' + error.message);
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Load initial data
         loadHistory();
+        fetchLastUpdated();
     </script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
     <script src="/static/shipping-violations-alert.js"></script>
 </body>
 </html>
