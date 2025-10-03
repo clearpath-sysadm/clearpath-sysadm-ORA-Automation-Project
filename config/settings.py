@@ -102,23 +102,42 @@ SHIPSTATION_ORDERS_ENDPOINT = f"{SHIPSTATION_BASE_URL}/orders"
 
 
 # --- Google Sheets & Drive API Configuration ---
-GOOGLE_SHEET_ID = "1SMewCScZp0U4QtdXMp8ZhT3oxefzKHu-Hq2BAXtCeoo"
-# GOOGLE_SHEETS_SA_KEY_SECRET_ID:
-# The Secret Manager ID for your Google Sheets service account JSON key.
-# This secret should contain the *content* of the JSON key, not its path.
-# Used for both local (via secret_manager.access_secret_version) and cloud environments
-# to authenticate with Google Sheets and Google Drive APIs.
-GOOGLE_SHEETS_SA_KEY_SECRET_ID = "google-sheets-service-account-key"
+# ⚠️ DEPRECATED: Google Sheets are NO LONGER USED in this system ⚠️
+# The system is 100% database-driven (SQLite only)
+# These settings are preserved for reference only and will raise errors if accessed
+GOOGLE_SHEET_ID = "DEPRECATED_DO_NOT_USE"
+GOOGLE_SHEETS_SA_KEY_SECRET_ID = "DEPRECATED_DO_NOT_USE"
+GS_AUTH_MODE = "DISABLED"
+CONNECTORS_GOOGLE_SHEET_CONNECTION_ID = None
 
-# Google Sheets Authentication Mode
-# Options: 'auto' (default), 'connector', 'service_account'
-# - 'auto': Prefer Replit Connector if available, fallback to service account
-# - 'connector': Use Replit Connector only
-# - 'service_account': Use service account credentials only
-GS_AUTH_MODE = os.environ.get('GS_AUTH_MODE', 'auto')
+# Runtime guard: Raise error if Google Sheets is attempted to be used
+def _raise_google_sheets_deprecated_error():
+    """Raises an error if Google Sheets integration is attempted."""
+    raise RuntimeError(
+        "CRITICAL ERROR: Google Sheets are COMPLETELY DEPRECATED and must NOT be used. "
+        "The system is 100% database-driven (SQLite only). "
+        "Migration scripts have been disabled. "
+        "InitialInventory baseline is protected at database level (Sep 19, 2025). "
+        "Contact system administrator if you need to access historical data."
+    )
 
-# Optional: Specific Replit Connector connection ID (if multiple exist)
-CONNECTORS_GOOGLE_SHEET_CONNECTION_ID = os.environ.get('CONNECTORS_GOOGLE_SHEET_CONNECTION_ID', None)
+# Guard property that raises error on access
+class _DeprecatedGoogleSheetsGuard:
+    def __getattribute__(self, name):
+        if name not in ['__class__', '__dict__']:
+            _raise_google_sheets_deprecated_error()
+        return super().__getattribute__(name)
+
+# Replace GOOGLE_SHEET_ID with guarded property when accessed via module import
+# This prevents accidental use while preserving the variable for reference
+if GOOGLE_SHEET_ID == "DEPRECATED_DO_NOT_USE":
+    # Log warning that Google Sheets is deprecated
+    import warnings
+    warnings.warn(
+        "Google Sheets integration is DEPRECATED. Using SQLite database only.",
+        DeprecationWarning,
+        stacklevel=2
+    )
 
 ORA_PROCESSING_STATE_TAB_NAME = 'ORA_Processing_State'
 MONTHLY_CHARGE_REPORT_OUTPUT_TAB_NAME = 'Monthly Charge Report'

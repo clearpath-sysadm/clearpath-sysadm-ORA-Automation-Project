@@ -45,6 +45,12 @@ The system is built around a SQLite database (`ora.db`) with WAL mode, replacing
 ## External Dependencies
 - **ShipStation API:** For order uploading and shipment tracking.
 - **Google Drive:** Integrated via Replit connector for XML file import.
-- **Google Sheets API:** Used for one-time migration ETL (will be deprecated).
 - **SendGrid:** (Optional) For email notifications.
 - **Google Cloud Secret Manager:** For managing production credentials.
+
+## CRITICAL: Google Sheets Deprecation
+**Google Sheets are COMPLETELY DEPRECATED.** The system is 100% database-driven (SQLite only).
+- ❌ **Migration scripts DISABLED:** `scripts/migrate_historical_data.py` has been renamed to `.DISABLED`
+- 🔒 **InitialInventory LOCKED:** Database trigger prevents any modifications to baseline values (Sep 19, 2025)
+- ✅ **Google Drive XML import:** Still active for order imports (uses separate credential scope)
+- ⚠️ **Any code referencing Google Sheets API is deprecated and should NOT be used**
