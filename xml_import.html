@@ -1465,6 +1465,22 @@
             return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: ${badgeColor}; background-color: ${bgColor}; border: 1px solid ${badgeColor};">${accountName}</span>`;
         }
 
+        // Helper: Get service badge (yellow for non-FedEx-Ground services)
+        function getServiceBadge(serviceName) {
+            if (!serviceName) return '-';
+            
+            // FedEx Ground displays as plain text (no badge)
+            if (serviceName === 'FedEx Ground') {
+                return `<span style="font-size: 0.85em; color: var(--text-secondary);">${serviceName}</span>`;
+            }
+            
+            // All other services get a yellow badge
+            const badgeColor = '#F59E0B'; // Yellow/amber
+            const bgColor = '#FEF3C7'; // Light yellow background
+            
+            return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: ${badgeColor}; background-color: ${bgColor}; border: 1px solid ${badgeColor};">${serviceName}</span>`;
+        }
+
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('orders-tbody');
             const mobileCards = document.getElementById('orders-mobile-cards');
@@ -1524,7 +1540,7 @@
                 const statusBadge = getStatusBadge(order.status, order.failure_reason);
                 
                 // Format service and carrier info
-                const serviceName = order.shipping_service_name || '-';
+                const serviceBadge = getServiceBadge(order.shipping_service_name);
                 const carrierAcctBadge = getCarrierAccountBadge(order);
                 
                 return `
@@ -1538,7 +1554,7 @@
                     <td><strong>${order.sku_lot_display}</strong></td>
                     <td>${order.quantity}</td>
                     <td>${statusBadge}</td>
-                    <td><span style="font-size: 0.85em; color: var(--text-secondary);">${serviceName}</span></td>
+                    <td>${serviceBadge}</td>
                     <td>${carrierAcctBadge}</td>
                     <td>${order.shipstation_order_id || '-'}</td>
                     <td>${formatRelativeDate(order.created_at)}</td>
@@ -1590,7 +1606,7 @@
                         ${order.shipping_service_name ? `
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Service:</span>
-                            <span class="order-card-detail-value">${order.shipping_service_name}</span>
+                            <span class="order-card-detail-value">${getServiceBadge(order.shipping_service_name)}</span>
                         </div>
                         ` : ''}
                         ${order.shipping_carrier_id ? `
