@@ -200,10 +200,10 @@ def clear_resolved_violations(order_inbox_id: int):
         with transaction() as conn:
             conn.execute("""
                 UPDATE shipping_violations
-                SET resolved = 1,
+                SET is_resolved = 1,
                     resolved_at = CURRENT_TIMESTAMP
-                WHERE order_inbox_id = ?
-                  AND resolved = 0
+                WHERE order_id = ?
+                  AND is_resolved = 0
             """, (order_inbox_id,))
     except Exception as e:
         logger.error(f"Error clearing resolved violations: {e}", exc_info=True)
@@ -212,64 +212,63 @@ def clear_resolved_violations(order_inbox_id: int):
 def create_or_update_violation(violation: Dict[str, Any]):
     """
     Create a new violation or update existing one if already exists.
+    Adapts to the simplified database schema: order_id, violation_type, expected_value, actual_value, is_resolved.
     """
     try:
+        # Map rule_type to database violation_type
+        rule_type_map = {
+            'hawaiian_fedex_2day': 'hawaiian_service',
+            'canadian_international_ground': 'canadian_service',
+            'benco_carrier_account': 'benco_carrier'
+        }
+        db_violation_type = rule_type_map.get(violation['rule_type'], violation['rule_type'])
+        
+        # Build expected/actual strings
+        expected_str = f"{violation['expected_service_name'] or violation['expected_service'] or 'Correct carrier'}"
+        actual_str = f"{violation['actual_service_name'] or violation['actual_service'] or violation['actual_carrier'] or 'Unknown'}"
+        
         with transaction() as conn:
             # Check if violation already exists
             existing = conn.execute("""
-                SELECT id, resolved FROM shipping_violations
-                WHERE order_inbox_id = ? AND rule_type = ?
-                ORDER BY created_at DESC
+                SELECT id, is_resolved FROM shipping_violations
+                WHERE order_id = ? AND violation_type = ?
+                ORDER BY detected_at DESC
                 LIMIT 1
-            """, (violation['order_inbox_id'], violation['rule_type'])).fetchone()
+            """, (violation['order_inbox_id'], db_violation_type)).fetchone()
             
             if existing:
-                violation_id, resolved = existing
-                if resolved == 0:
+                violation_id, is_resolved = existing
+                if is_resolved == 0:
                     # Update existing unresolved violation
                     conn.execute("""
                         UPDATE shipping_violations
-                        SET actual_carrier = ?,
-                            actual_service = ?,
-                            actual_service_name = ?,
-                            message = ?,
-                            updated_at = CURRENT_TIMESTAMP
+                        SET expected_value = ?,
+                            actual_value = ?
                         WHERE id = ?
-                    """, (violation['actual_carrier'], violation['actual_service'],
-                          violation['actual_service_name'], violation['message'], violation_id))
+                    """, (expected_str, actual_str, violation_id))
                     logger.info(f"Updated existing violation for order {violation['order_number']}")
                 else:
                     # Re-open resolved violation
                     conn.execute("""
                         UPDATE shipping_violations
-                        SET resolved = 0,
+                        SET is_resolved = 0,
                             resolved_at = NULL,
-                            actual_carrier = ?,
-                            actual_service = ?,
-                            actual_service_name = ?,
-                            message = ?,
-                            updated_at = CURRENT_TIMESTAMP
+                            expected_value = ?,
+                            actual_value = ?
                         WHERE id = ?
-                    """, (violation['actual_carrier'], violation['actual_service'],
-                          violation['actual_service_name'], violation['message'], violation_id))
+                    """, (expected_str, actual_str, violation_id))
                     logger.info(f"Re-opened resolved violation for order {violation['order_number']}")
             else:
                 # Create new violation
                 conn.execute("""
                     INSERT INTO shipping_violations (
-                        order_inbox_id, order_number, rule_type,
-                        expected_carrier, expected_service, expected_service_name,
-                        actual_carrier, actual_service, actual_service_name,
-                        ship_state, ship_country, ship_company,
-                        severity, message, resolved
+                        order_id, order_number, violation_type,
+                        expected_value, actual_value, is_resolved
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                    VALUES (?, ?, ?, ?, ?, 0)
                 """, (
-                    violation['order_inbox_id'], violation['order_number'], violation['rule_type'],
-                    violation['expected_carrier'], violation['expected_service'], violation['expected_service_name'],
-                    violation['actual_carrier'], violation['actual_service'], violation['actual_service_name'],
-                    violation['ship_state'], violation['ship_country'], violation['ship_company'],
-                    violation['severity'], violation['message']
+                    violation['order_inbox_id'], violation['order_number'], db_violation_type,
+                    expected_str, actual_str
                 ))
                 logger.info(f"Created new violation for order {violation['order_number']}: {violation['message']}")
     
