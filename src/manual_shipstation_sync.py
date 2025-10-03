@@ -181,9 +181,27 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
             logger.warning(f"Skipping order without order_number: {order_id}")
             return False
         
-        # Extract shipping company name from ShipStation
+        # Extract full shipping address from ShipStation
         ship_to = order.get('shipTo', {})
+        ship_name = ship_to.get('name', '').strip() or None
         ship_company = ship_to.get('company', '').strip() or None
+        ship_street1 = ship_to.get('street1', '').strip() or None
+        ship_city = ship_to.get('city', '').strip() or None
+        ship_state = ship_to.get('state', '').strip() or None
+        ship_postal_code = ship_to.get('postalCode', '').strip() or None
+        ship_country = ship_to.get('country', '').strip() or None
+        ship_phone = ship_to.get('phone', '').strip() or None
+        
+        # Extract full billing address from ShipStation
+        bill_to = order.get('billTo', {})
+        bill_name = bill_to.get('name', '').strip() or None
+        bill_company = bill_to.get('company', '').strip() or None
+        bill_street1 = bill_to.get('street1', '').strip() or None
+        bill_city = bill_to.get('city', '').strip() or None
+        bill_state = bill_to.get('state', '').strip() or None
+        bill_postal_code = bill_to.get('postalCode', '').strip() or None
+        bill_country = bill_to.get('country', '').strip() or None
+        bill_phone = bill_to.get('phone', '').strip() or None
         
         # Map ShipStation status to database status
         # ShipStation statuses: awaiting_payment, awaiting_shipment, shipped, on_hold, cancelled
@@ -226,22 +244,45 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                         customer_email = ?,
                         total_items = ?,
                         total_amount_cents = ?,
+                        ship_name = ?,
                         ship_company = ?,
+                        ship_street1 = ?,
+                        ship_city = ?,
+                        ship_state = ?,
+                        ship_postal_code = ?,
+                        ship_country = ?,
+                        ship_phone = ?,
+                        bill_name = ?,
+                        bill_company = ?,
+                        bill_street1 = ?,
+                        bill_city = ?,
+                        bill_state = ?,
+                        bill_postal_code = ?,
+                        bill_country = ?,
+                        bill_phone = ?,
                         source_system = 'ShipStation Manual',
                         updated_at = CURRENT_TIMESTAMP
                     WHERE order_number = ?
-                """, (db_status, str(order_id), customer_email, total_items, total_amount_cents, ship_company, order_number))
+                """, (db_status, str(order_id), customer_email, total_items, total_amount_cents,
+                      ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                      bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
+                      order_number))
                 order_inbox_id = existing[0]
             else:
                 # Insert new order
                 cursor = conn.execute("""
                     INSERT INTO orders_inbox (
                         order_number, order_date, customer_email, status, shipstation_order_id,
-                        total_items, total_amount_cents, ship_company, source_system
+                        total_items, total_amount_cents,
+                        ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                        bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
+                        source_system
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ShipStation Manual')
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ShipStation Manual')
                 """, (
-                    order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents, ship_company
+                    order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents,
+                    ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                    bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                 ))
                 order_inbox_id = cursor.lastrowid
             
