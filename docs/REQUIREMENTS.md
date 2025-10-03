@@ -266,3 +266,50 @@
   - All uploaded orders must have entries in shipstation_order_line_items
   - ShipStation ID must be populated (orderId or orderKey)
   - SKU must be tracked for multi-SKU order support
+
+## 📦 Orders Inbox Page - Functional Requirements
+
+### XML Order Import & ShipStation Sync Workflow
+All orders imported from XML files must follow this complete sync workflow:
+
+#### 1. ShipStation Existence Check (REQUIRED)
+- **Required**: Check if each imported order exists in ShipStation
+- **Implementation**: Query ShipStation API by order number to verify existence
+- **Purpose**: Prevent duplicate uploads and sync existing orders
+
+#### 2. Existing Order Sync (REQUIRED)
+- **Required**: If order exists in ShipStation, sync the unique order ID to app database
+- **Unique ID Definition**: Each order+SKU combination has a distinct identifier
+  - Example: Order #123 with SKU 17612 has different ID than Order #123 with SKU 17914
+- **Database Field**: Store unique ID in `shipstation_order_id` field
+- **Status Sync**: Record current ShipStation status in app's `status` field
+- **Supported Statuses**:
+  - `awaiting_shipment`: Order created and awaiting shipment
+  - `cancelled`: Order cancelled in ShipStation
+  - `on_hold`: Order placed on hold
+  - `shipped`: Order has been shipped
+
+#### 3. Manual Order Sync (REQUIRED)
+- **Required**: Sync manually-created ShipStation orders back to app database
+- **Detection**: Identify orders created directly in ShipStation (not uploaded from XML)
+- **Data Capture**: Import all available fields including:
+  - Company name
+  - Location/address details
+  - Items ordered (SKU, quantity)
+  - Order dates and status
+- **Purpose**: Maintain data integrity and inventory accuracy for all orders
+
+#### 4. New Order Upload (REQUIRED)
+- **Required**: If order doesn't exist in ShipStation, upload it
+- **Upload Process**:
+  1. Create order in ShipStation via API
+  2. Receive unique order ID from ShipStation response
+  3. Sync unique ID back to app database `shipstation_order_id` field
+  4. Set status to `awaiting_shipment` in app database
+- **Validation**: Verify successful upload before marking as complete
+
+### Data Integrity Requirements
+- **Bidirectional Sync**: All orders must be synchronized between app database and ShipStation
+- **ID Tracking**: Every order in app database with ShipStation interaction must have valid `shipstation_order_id`
+- **Status Accuracy**: Order status in app database must reflect current ShipStation status
+- **Complete Data**: Manual orders must capture all available ShipStation fields
