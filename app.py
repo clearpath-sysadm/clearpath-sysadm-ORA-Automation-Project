@@ -1442,7 +1442,7 @@ def api_orders_inbox():
                 oi.sku,
                 SUM(oi.quantity) as total_quantity,
                 sl.lot,
-                ssli.shipstation_order_id,
+                o.shipstation_order_id,
                 o.created_at,
                 o.failure_reason,
                 o.ship_company,
@@ -1452,8 +1452,7 @@ def api_orders_inbox():
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
-            LEFT JOIN shipstation_order_line_items ssli ON oi.order_inbox_id = ssli.order_inbox_id AND oi.sku = ssli.sku
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, ssli.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
