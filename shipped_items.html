@@ -749,6 +749,11 @@
             });
         }
 
+        function formatSkuLot(skuLot) {
+            if (!skuLot || skuLot === '-') return '-';
+            return skuLot.replace('-', ' - ');
+        }
+
         function renderItems(items) {
             const tbody = document.getElementById('itemsBody');
             const tableWrapper = document.getElementById('tableWrapper');
@@ -771,7 +776,7 @@
                 row.appendChild(dateCell);
                 
                 const lotCell = document.createElement('td');
-                lotCell.textContent = item.sku_lot || '-';
+                lotCell.textContent = formatSkuLot(item.sku_lot);
                 row.appendChild(lotCell);
                 
                 const qtyCell = document.createElement('td');
