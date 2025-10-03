@@ -24,7 +24,7 @@ The system is built around a SQLite database (`ora.db`) with WAL mode, replacing
 **Core Services & Entry Points:**
 - **Database Layer:** SQLite with WAL mode for zero cost and performance. Schema is documented in `docs/DATABASE_SCHEMA.md`. Tables include `workflows`, `inventory_current`, `shipped_orders`, `orders_inbox` (30 columns including ship/bill address fields), `system_kpis`, `bundle_skus`, `bundle_components`, and `sku_lot`. Configuration stored in `configuration_params` table (pallet counts, key products, initial inventory). **CRITICAL: InitialInventory baseline date is September 19, 2025. These values must NEVER be overwritten by migration scripts or manual processes.** Migrations stored in `migrations/` directory for schema changes.
 - **Backend Automation:** Python scripts handle core logic:
-    - `src/weekly_reporter.py`: Calculates inventory and weekly averages.
+    - **Weekly Reporter (`src/weekly_reporter.py`):** Captures 52-week shipped quantity window for rolling average calculations in inventory report. **CRITICAL TIMING:** Must run at END of business week AFTER shipping completes. Normal schedule: Friday after shipping. Edge cases: (1) Friday holiday→run Thursday after shipping, (2) Thanksgiving week (closed Thu+Fri)→run Wednesday after shipping, (3) Mid-week holiday→run Friday after shipping. Currently runs once at startup; weekly scheduling pending implementation.
     - `src/daily_shipment_processor.py`: Fetches ShipStation data.
     - `src/shipstation_order_uploader.py`: Uploads orders to ShipStation.
     - `src/shipstation_reporter.py`: Generates monthly charge and weekly inventory reports.
