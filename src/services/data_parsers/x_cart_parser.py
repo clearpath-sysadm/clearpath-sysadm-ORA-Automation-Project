@@ -1,5 +1,5 @@
 # filename: src/services/data_parsers/x_cart_parser.py
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 import datetime
 import pandas as pd
 import logging

@@ -15,7 +15,7 @@ sys.path.insert(0, str(project_root))
 
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
 from src.services.database.db_utils import get_connection
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 logging.basicConfig(
     level=logging.INFO,

@@ -1355,11 +1355,14 @@
                 const response = await fetch('/api/orders_inbox');
                 const result = await response.json();
 
-                if (result.success) {
+                if (result.data && Array.isArray(result.data)) {
+                    updateStats(result.data);
+                    renderOrdersTable(result.data);
+                } else if (result.success) {
                     updateStats(result.data);
                     renderOrdersTable(result.data);
                 } else {
-                    showAlert('Error loading orders: ' + result.error, 'error');
+                    showAlert('Error loading orders: ' + (result.error || 'No data returned'), 'error');
                 }
             } catch (error) {
                 showAlert('Error loading orders: ' + error.message, 'error');
