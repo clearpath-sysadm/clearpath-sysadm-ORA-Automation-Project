@@ -165,14 +165,22 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                 except:
                     ship_date = datetime.date.today()
                 
-                # Insert into shipped_orders
+                # Insert into shipped_orders with carrier/service info
                 conn.execute("""
-                    INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
-                    VALUES (?, ?, ?)
+                    INSERT INTO shipped_orders (
+                        ship_date, order_number, shipstation_order_id,
+                        shipping_carrier_code, shipping_carrier_id,
+                        shipping_service_code, shipping_service_name
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(order_number) DO UPDATE SET
                         ship_date = excluded.ship_date,
-                        shipstation_order_id = excluded.shipstation_order_id
-                """, (ship_date, order_number, str(ss_order_id)))
+                        shipstation_order_id = excluded.shipstation_order_id,
+                        shipping_carrier_code = excluded.shipping_carrier_code,
+                        shipping_carrier_id = excluded.shipping_carrier_id,
+                        shipping_service_code = excluded.shipping_service_code,
+                        shipping_service_name = excluded.shipping_service_name
+                """, (ship_date, order_number, str(ss_order_id), carrier_code, carrier_id, service_code, service_name))
                 
                 # Get order items from order_items_inbox
                 items_rows = conn.execute("""
