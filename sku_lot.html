@@ -459,6 +459,22 @@
             color: var(--text-primary);
         }
 
+        .modal-error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+            padding: calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            font-size: 14px;
+        }
+
+        body.dark-mode .modal-error {
+            background-color: #7f1d1d;
+            border-color: #991b1b;
+            color: #fca5a5;
+        }
+
         .form-group {
             margin-bottom: calc(var(--spacing-unit) * 3);
         }
@@ -712,6 +728,7 @@
     <div class="modal" id="skuLotModal">
         <div class="modal-content">
             <h2 class="modal-header" id="modalTitle">Add SKU-Lot</h2>
+            <div id="modalError" class="modal-error" style="display: none;"></div>
             <form id="skuLotForm">
                 <input type="hidden" id="skuLotId">
                 <div class="form-group">
@@ -935,6 +952,7 @@
 
         // Open Add Modal
         function openAddModal() {
+            hideModalError();
             document.getElementById('modalTitle').textContent = 'Add SKU-Lot';
             document.getElementById('skuLotForm').reset();
             document.getElementById('skuLotId').value = '';
@@ -944,6 +962,7 @@
 
         // Open Edit Modal
         function openEditModal(id) {
+            hideModalError();
             const skuLot = skuLots.find(item => item.id === id);
             if (!skuLot) return;
 
@@ -960,9 +979,24 @@
             document.getElementById('skuLotModal').classList.remove('active');
         }
 
+        // Show error in modal
+        function showModalError(message) {
+            const errorDiv = document.getElementById('modalError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Hide error in modal
+        function hideModalError() {
+            const errorDiv = document.getElementById('modalError');
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+        }
+
         // Submit Form
         document.getElementById('skuLotForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideModalError();
 
             const skuLotId = document.getElementById('skuLotId').value;
             const data = {
@@ -987,11 +1021,11 @@
                     closeModal();
                     loadSkuLots();
                 } else {
-                    alert('Error: ' + result.error);
+                    showModalError(result.error || 'An error occurred while saving');
                 }
             } catch (error) {
                 console.error('Error saving SKU-Lot:', error);
-                alert('Error saving data');
+                showModalError('Error saving data. Please try again.');
             }
         });
 
