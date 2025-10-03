@@ -10,6 +10,10 @@ echo "Starting XML import scheduler (polling every 5 min)..."
 python src/scheduled_xml_import.py &
 XML_PID=$!
 
+echo "Starting ShipStation upload (polling every 5 min)..."
+python src/scheduled_shipstation_upload.py &
+UPLOAD_PID=$!
+
 echo "Starting ShipStation status sync (hourly)..."
 python src/scheduled_status_sync.py &
 STATUS_PID=$!
@@ -36,6 +40,7 @@ sleep 2
 echo "================================================"
 echo "✅ Background automation workflows started"
 echo "   - XML Import: PID $XML_PID"
+echo "   - ShipStation Upload: PID $UPLOAD_PID"
 echo "   - Status Sync: PID $STATUS_PID"
 echo "   - Manual Orders: PID $MANUAL_PID"
 echo "   - Cleanup: PID $CLEANUP_PID"
@@ -51,4 +56,4 @@ python app.py
 
 # If Flask exits, kill background processes
 echo "⚠️  Dashboard stopped, shutting down background processes..."
-kill $XML_PID $STATUS_PID $MANUAL_PID $CLEANUP_PID $UNITS_PID $REPORTER_PID 2>/dev/null
+kill $XML_PID $UPLOAD_PID $STATUS_PID $MANUAL_PID $CLEANUP_PID $UNITS_PID $REPORTER_PID 2>/dev/null
