@@ -508,10 +508,32 @@
             gap: calc(var(--spacing-unit) * 1);
         }
 
+        .checkbox-option {
+            display: inline-flex;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 1.5);
+            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin: 0;
+            user-select: none;
+        }
+
+        .checkbox-option:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .checkbox-option:focus-within {
+            outline: 2px solid var(--primary-blue);
+            outline-offset: 2px;
+        }
+
         .form-checkbox {
             width: 18px;
             height: 18px;
             cursor: pointer;
+            margin: 0;
         }
 
         .modal-actions {
@@ -747,10 +769,10 @@
                     <input type="text" id="lot" class="form-input" required>
                 </div>
                 <div class="form-group">
-                    <div class="checkbox-group">
+                    <label class="checkbox-option" for="active">
                         <input type="checkbox" id="active" class="form-checkbox" checked>
-                        <label class="form-label" for="active" style="margin-bottom: 0;">Active</label>
-                    </div>
+                        <span>Active</span>
+                    </label>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
