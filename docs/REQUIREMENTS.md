@@ -327,14 +327,14 @@ The system MUST validate and enforce shipping requirements based on order charac
 - **Service Code**: "fedex_2day" or equivalent ShipStation service identifier
 
 #### 2. Benco Orders (CRITICAL)
-- **Requirement**: Orders identified as Benco (ship_company contains "BENCO" or "Benco") MUST use the **Benco FedEx Account**
-- **Context**: ShipStation account contains TWO FedEx carrier accounts:
-  - **Benco FedEx Account**: For Benco orders only
-  - **Oracare FedEx Account**: For all other orders (default)
-- **Validation**: Verify Benco orders use Benco FedEx carrier account via ShipStation carrier ID
-- **Alert Trigger**: If Benco order detected using Oracare FedEx account (or vice versa)
-- **Severity**: HIGH - Using wrong account causes billing issues, customer confusion, and account reconciliation problems
-- **Implementation**: System must capture and store ShipStation carrier account ID for each order
+- **Requirement**: Orders identified as Benco (ship_company contains "BENCO" or "Benco") MUST use the **Benco FedEx Carrier Account**
+- **Context**: **Single ShipStation account** with TWO FedEx carrier account integrations:
+  - **Benco FedEx Carrier Account**: For Benco orders only (separate FedEx billing account)
+  - **Oracare FedEx Carrier Account**: For all other orders (default, separate FedEx billing account)
+- **Validation**: Verify Benco orders use Benco FedEx carrier via ShipStation carrierCode/carrierId field
+- **Alert Trigger**: If Benco order detected using Oracare FedEx carrier (or vice versa)
+- **Severity**: HIGH - Using wrong carrier causes billing to wrong FedEx account, reconciliation problems, and customer confusion
+- **Implementation**: System must capture and store ShipStation carrier identifier (carrierId or carrierCode) for each order to track which FedEx account was used
 
 #### 3. Canadian Orders (CRITICAL)
 - **Requirement**: Orders shipping to Canada (ship_country = 'CA' or 'Canada') MUST use **International Ground** shipping service
