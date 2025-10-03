@@ -134,7 +134,9 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
         carrier_id = None
         advanced_options = shipstation_order.get('advancedOptions', {})
         if advanced_options and isinstance(advanced_options, dict):
-            carrier_id = advanced_options.get('carrierId')
+            # Try billToMyOtherAccount first (FedEx account ID), then carrierId
+            carrier_id = (advanced_options.get('billToMyOtherAccount') or 
+                         advanced_options.get('carrierId'))
         if not carrier_id:
             carrier_id = shipstation_order.get('carrierId')
         

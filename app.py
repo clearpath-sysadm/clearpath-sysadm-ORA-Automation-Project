@@ -1983,7 +1983,9 @@ def api_validate_orders():
                     carrier_id = None
                     advanced_options = ss_order.get('advancedOptions', {})
                     if advanced_options and isinstance(advanced_options, dict):
-                        carrier_id = advanced_options.get('carrierId')
+                        # Try multiple possible locations for carrier account ID
+                        carrier_id = (advanced_options.get('billToMyOtherAccount') or 
+                                     advanced_options.get('carrierId'))
                     if not carrier_id:
                         carrier_id = ss_order.get('carrierId')
                     
