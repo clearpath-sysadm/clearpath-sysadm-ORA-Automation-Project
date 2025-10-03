@@ -1,0 +1,91 @@
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+xml_import.html:1840 Fetch finished loading: POST "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/validate_orders".
+validateOrders @ xml_import.html:1840
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+xml_import.html:1851 Fetch finished loading: POST "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/validate_orders".
+validateOrders @ xml_import.html:1851
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+xml_import.html:1851 Fetch finished loading: POST "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/validate_orders".
+validateOrders @ xml_import.html:1851
+xml_import.html:1851 Fetch finished loading: POST "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/validate_orders".
+validateOrders @ xml_import.html:1851
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+(anonymous) @ xml_import.html:1957
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+(anonymous) @ xml_import.html:1957
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+(anonymous) @ xml_import.html:1957
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+setInterval
+(anonymous) @ xml_import.html:1960
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+setInterval
+(anonymous) @ xml_import.html:1960
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+(anonymous) @ xml_import.html:1957
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+setInterval
+(anonymous) @ xml_import.html:1960
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+(anonymous) @ xml_import.html:1957
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+setInterval
+(anonymous) @ xml_import.html:1960
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+setInterval
+(anonymous) @ xml_import.html:1960
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Navigated to https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/xml_import.html
+xml_import.html:1363 Fetch finished loading: GET "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/orders_inbox".
+loadOrdersInbox @ xml_import.html:1363
+(anonymous) @ xml_import.html:1957
+xml_import.html:1773   POST https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/upload_orders_to_shipstation 500 (Internal Server Error)
+uploadSelectedOrders @ xml_import.html:1773
+xml_import.html:1788  Upload error: {error: "CHECK constraint failed: status IN ('pending', 'up…ped', 'cancelled', 'on_hold', 'awaiting_payment')", success: false, trace: `Traceback (most recent call last):\n  File "/home/r…ed', 'cancelled', 'on_hold', 'awaiting_payment')\n`}
+uploadSelectedOrders @ xml_import.html:1788
+xml_import.html:1773 Fetch failed loading: POST "https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/upload_orders_to_shipstation".
+uploadSelectedOrders @ xml_import.html:1773
