@@ -594,8 +594,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="/static/timezone-utils.js"></script>
+    <link rel="stylesheet" href="/static/shipping-violations-alert.css">
 </head>
 <body>
+<!-- Shipping Violations Alert Banner -->
+<div class="violations-alert" id="violations-alert">
+    <div class="violations-content">
+        <span class="violations-icon">⚠️</span>
+        <div class="violations-text">
+            <div class="violations-title">Shipping Configuration Alerts</div>
+            <div class="violations-details" id="violations-summary">Loading...</div>
+        </div>
+    </div>
+    <div class="violations-actions">
+        <button class="btn-view-violations" onclick="openViolationsModal()">View Details</button>
+        <button class="btn-dismiss-alert" onclick="dismissAlert()" title="Dismiss">×</button>
+    </div>
+</div>
+
+<!-- Violations Modal -->
+<div class="violations-modal" id="violations-modal" onclick="closeModalOnBackdrop(event)">
+    <div class="violations-modal-content">
+        <div class="violations-modal-header">
+            <h2 class="violations-modal-title">Shipping Configuration Alerts</h2>
+            <button class="btn-close-modal" onclick="closeViolationsModal()">×</button>
+        </div>
+        <div id="violations-list">
+            <p style="text-align: center; color: var(--text-tertiary);">Loading violations...</p>
+        </div>
+    </div>
+</div>
+
+
     <!-- Mobile Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
@@ -1081,5 +1111,6 @@
         initializeSelectors();
         fetchReport();
     </script>
+    <script src="/static/shipping-violations-alert.js"></script>
 </body>
 </html>

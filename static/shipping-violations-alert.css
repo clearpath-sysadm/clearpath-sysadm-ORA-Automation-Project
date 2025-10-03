@@ -1,0 +1,230 @@
+/* Shipping Violations Alert Banner */
+.violations-alert {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: #fef3c7;
+    border-bottom: 2px solid #f59e0b;
+    padding: 12px 24px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.violations-alert.show {
+    display: flex;
+}
+
+.violations-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.violations-icon {
+    font-size: 24px;
+}
+
+.violations-text {
+    flex: 1;
+}
+
+.violations-title {
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 4px;
+}
+
+.violations-details {
+    font-size: 13px;
+    color: #78350f;
+}
+
+.violations-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-view-violations {
+    background-color: #f59e0b;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-view-violations:hover {
+    background-color: #d97706;
+}
+
+.btn-dismiss-alert {
+    background: none;
+    border: none;
+    color: #92400e;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.btn-dismiss-alert:hover {
+    opacity: 1;
+}
+
+/* Violations Modal */
+.violations-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.violations-modal.show {
+    display: flex;
+}
+
+.violations-modal-content {
+    background-color: var(--bg-primary);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.violations-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.violations-modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.btn-close-modal {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.btn-close-modal:hover {
+    color: var(--text-primary);
+}
+
+.violation-item {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.violation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.violation-order {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.violation-type-badge {
+    background-color: #f59e0b;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.violation-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.violation-detail-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+}
+
+.violation-detail-value {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.violation-issue {
+    background-color: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.violation-issue-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+}
+
+.violation-issue-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.btn-resolve-violation {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.btn-resolve-violation:hover {
+    background-color: var(--primary-blue-hover);
+}
+
+.btn-resolve-violation:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
