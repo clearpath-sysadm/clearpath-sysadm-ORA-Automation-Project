@@ -1412,11 +1412,26 @@
                 'cancelled': '🚫',
                 'on_hold': '⏸️',
                 'awaiting_payment': '💳',
-                'synced_manual': '🟣'
+                'synced_manual': '🟣',
+                'uploaded': '📤'  // Legacy status - treat same as awaiting_shipment
             };
+            
+            const displayLabels = {
+                'pending': 'Pending',
+                'awaiting_shipment': 'Awaiting Shipment',
+                'shipped': 'Shipped',
+                'failed': 'Failed',
+                'cancelled': 'Cancelled',
+                'on_hold': 'On Hold',
+                'awaiting_payment': 'Awaiting Payment',
+                'synced_manual': 'Synced Manual',
+                'uploaded': 'Awaiting Shipment'  // Legacy status - display as Awaiting Shipment
+            };
+            
             const icon = icons[status] || '';
+            const label = displayLabels[status] || status.toUpperCase();
             const tooltip = failureReason ? `title="${failureReason}" style="cursor: help;"` : '';
-            return `<span class="badge badge-${status}" ${tooltip}>${icon} ${status.toUpperCase()}</span>`;
+            return `<span class="badge badge-${status}" ${tooltip}>${icon} ${label}</span>`;
         }
 
         // Helper: Get order type icons HTML

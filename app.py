@@ -1911,10 +1911,10 @@ def api_validate_orders():
                             (ss_order_id, order_id)
                         )
                     
-                    # Validate and fix status
+                    # Validate and fix status - map ShipStation status to local status
                     status_map = {
                         'awaiting_payment': 'awaiting_payment',
-                        'awaiting_shipment': 'uploaded',
+                        'awaiting_shipment': 'awaiting_shipment',  # Fixed: was incorrectly mapped to 'uploaded'
                         'shipped': 'shipped',
                         'on_hold': 'on_hold',
                         'cancelled': 'cancelled'
