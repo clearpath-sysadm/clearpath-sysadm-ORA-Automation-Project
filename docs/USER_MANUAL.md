@@ -11,14 +11,18 @@
 1. [Getting Started](#getting-started)
 2. [Dashboard Overview](#dashboard-overview)
 3. [Orders Inbox](#orders-inbox)
-4. [Inventory Management](#inventory-management)
-5. [Weekly Reports](#weekly-reports)
-6. [Bundle SKUs](#bundle-skus)
-7. [SKU-Lot Tracking](#sku-lot-tracking)
-8. [Shipping Alerts](#shipping-alerts)
-9. [Manual Operations](#manual-operations)
-10. [Troubleshooting](#troubleshooting)
-11. [FAQ](#faq)
+4. [Shipped Orders](#shipped-orders)
+5. [Charge Report](#charge-report)
+6. [Inventory Management](#inventory-management)
+7. [Weekly Reports](#weekly-reports)
+8. [Bundle SKUs](#bundle-skus)
+9. [SKU-Lot Tracking](#sku-lot-tracking)
+10. [Shipping Alerts](#shipping-alerts)
+11. [Settings](#settings)
+12. [Manual Operations](#manual-operations)
+13. [Troubleshooting](#troubleshooting)
+14. [FAQ](#faq)
+15. [Quick Reference](#quick-reference)
 
 ---
 
@@ -132,11 +136,10 @@ Shows all background automation processes:
 
 **Action Required:** If any workflow shows "Stopped" or "Error", contact your system administrator.
 
-### Auto-Refresh
+### Manual Refresh
 
-The dashboard refreshes automatically every 30 seconds. You can also:
+The dashboard refreshes automatically every 60 seconds. You can also:
 - Click the **🔄 Manual Refresh** button to update immediately
-- Toggle **Auto-refresh** off if you need to review data without changes
 
 ---
 
@@ -247,6 +250,113 @@ Use the search box to find orders by:
 2. Review list of violations
 3. Fix in ShipStation if needed
 4. Mark as "Resolved"
+
+---
+
+## Shipped Orders
+
+**Purpose:** View historical shipped orders and track fulfillment history.
+
+### Accessing Shipped Orders
+
+Click **Shipped Orders** in the left sidebar (under ADMIN & DATA).
+
+### What You'll See
+
+A complete history of all orders that have been shipped to customers.
+
+**Order Table Columns:**
+
+| Column | Description |
+|--------|-------------|
+| **Order #** | Customer order number |
+| **Ship Date** | When order was shipped |
+| **Email** | Customer email address |
+| **Company** | Customer company name |
+| **SKU** | Product identifier |
+| **Quantity** | Number of units shipped |
+| **Carrier** | Shipping carrier (e.g., FedEx) |
+| **Service** | Shipping service level |
+| **Tracking** | Shipment tracking number |
+| **ShipStation ID** | ShipStation order reference |
+
+### Searching Orders
+
+Use the search box to find orders by:
+- Order number
+- Email address
+- Ship date (YYYY-MM-DD format)
+
+**Example:** Type "2024-10" to find all October 2024 shipments
+
+### Common Uses
+
+**Task: Verify an order was shipped**
+1. Go to Shipped Orders
+2. Search by order number or customer email
+3. Check ship date and tracking number
+
+**Task: Review monthly shipments**
+1. Search by month (e.g., "2024-10")
+2. Review order list
+3. Total units are calculated automatically
+
+**Task: Find tracking number**
+1. Search by order number or customer name
+2. Locate the order in the table
+3. Copy tracking number from Tracking column
+
+**Note:** Orders appear in Shipped Orders only after they have shipped in ShipStation and the hourly sync has run.
+
+---
+
+## Charge Report
+
+**Purpose:** Review monthly ShipStation shipping charges and costs.
+
+### Accessing Charge Report
+
+Click **Charge Report** in the left sidebar (under OPERATIONS).
+
+### What You'll See
+
+Monthly summary of ShipStation shipping charges.
+
+**Report Sections:**
+
+1. **Monthly Totals**
+   - Total shipments for the month
+   - Total charges billed by ShipStation
+   - Average cost per shipment
+
+2. **Carrier Breakdown**
+   - Charges by carrier (FedEx, USPS, etc.)
+   - Service level costs
+   - Percentage of total
+
+3. **Daily Activity**
+   - Shipments per day
+   - Daily charge totals
+   - Trend analysis
+
+### How to Use
+
+**Task: Review current month charges**
+1. Go to Charge Report
+2. View monthly total at the top
+3. Review carrier breakdown for details
+
+**Task: Compare carrier costs**
+1. Scroll to Carrier Breakdown section
+2. Compare costs between FedEx, USPS, etc.
+3. Identify most cost-effective carriers
+
+**Task: Track daily shipping activity**
+1. Scroll to Daily Activity section
+2. Review shipments by date
+3. Identify peak shipping days
+
+**Note:** Charge data comes directly from ShipStation API and updates daily.
 
 ---
 
@@ -654,6 +764,88 @@ Reason: Benco orders must use Benco carrier account
 
 ---
 
+## Settings
+
+**Purpose:** Configure system parameters and preferences.
+
+### Accessing Settings
+
+Click **Settings** in the left sidebar (under ADMIN & DATA).
+
+### What You Can Configure
+
+The Settings page allows you to view and manage system configuration parameters.
+
+**Configuration Categories:**
+
+1. **Display Preferences**
+   - **Dark Mode** - Toggle between light and dark themes
+   - Interface preferences
+   - Display options
+
+2. **Inventory Configuration**
+   - **Low Stock Thresholds** - Set reorder points for each SKU
+   - **Initial Inventory** - View baseline values (locked at September 19, 2025)
+   - **Key Products** - Mark products for priority tracking
+
+3. **System Parameters**
+   - **Pallet Counts** - Configure units per pallet for shipping calculations
+   - **FedEx Pickup Threshold** - Set the unit count that triggers pickup alert (default: 185)
+   - **Benco Carrier IDs** - Configure Benco-specific carrier account identifiers
+
+4. **Database Information**
+   - View system version
+   - Database location
+   - Last update timestamps
+
+### Using Dark Mode
+
+**To enable dark mode:**
+1. Go to Settings
+2. Find "Dark Mode" toggle
+3. Click to switch between light and dark themes
+4. Setting saves automatically
+
+**Benefits:**
+- Easier viewing in low-light conditions
+- Reduces eye strain
+- Personal preference
+
+**Note:** Dark mode preference is saved in your browser and persists across sessions.
+
+### Configuration Best Practices
+
+**Don't Modify Unless Needed:**
+- Most settings are configured during initial setup
+- Changes to thresholds affect alerts and calculations
+- Contact administrator if unsure about changing values
+
+**Low Stock Thresholds:**
+- Set based on lead time from suppliers
+- Consider weekly average shipments
+- Leave safety margin for unexpected demand
+
+**Pallet Configuration:**
+- Used for warehouse planning
+- Should match actual physical pallet capacity
+- Updates affect packing calculations
+
+**Initial Inventory (Read-Only):**
+- Locked at September 19, 2025 baseline
+- Cannot be modified (database trigger prevents changes)
+- All inventory calculations use this as starting point
+
+### When to Contact Administrator
+
+Contact your system administrator before changing:
+- Any system parameters you're unfamiliar with
+- Benco carrier ID configuration
+- Database-related settings
+
+**Note:** Settings changes take effect immediately but may require browser refresh to fully display.
+
+---
+
 ## Manual Operations
 
 ### Manual XML Import
@@ -822,7 +1014,7 @@ See [Manual Report Generation](#manual-report-generation) in the Weekly Reports 
    - Click **Resolve** button
 3. Banner disappears when all resolved
 
-**Note:** Banner updates every 30 seconds with auto-refresh. If it persists after resolving all violations, manually refresh the page.
+**Note:** Banner updates automatically. If it persists after resolving all violations, manually refresh the page.
 
 ### Dashboard Not Updating
 
@@ -832,12 +1024,11 @@ See [Manual Report Generation](#manual-report-generation) in the Weekly Reports 
 
 **Fix:**
 
-1. **Check auto-refresh** - Ensure toggle is ON (top right)
-2. **Manual refresh** - Click 🔄 Manual Refresh button
-3. **Browser refresh** - Press F5 or Ctrl+R (Cmd+R on Mac)
-4. **Clear cache** - Hold Ctrl+Shift+R (Cmd+Shift+R on Mac)
+1. **Manual refresh** - Click 🔄 Manual Refresh button (top right)
+2. **Browser refresh** - Press F5 or Ctrl+R (Cmd+R on Mac)
+3. **Clear cache** - Hold Ctrl+Shift+R (Cmd+Shift+R on Mac)
 
-**Note:** Dashboard auto-refreshes every 30 seconds when toggle is enabled.
+**Note:** Dashboard auto-refreshes every 60 seconds automatically.
 
 ### Can't Add Bundle or SKU-Lot (Duplicate Error)
 
