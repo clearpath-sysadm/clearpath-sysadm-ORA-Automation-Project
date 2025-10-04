@@ -220,6 +220,83 @@
     }
 }
 
+/* Transaction Card Styles for Mobile */
+.transaction-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.transaction-card .card-content {
+    padding: 16px;
+    position: relative;
+    z-index: 1;
+    background: var(--bg-secondary);
+}
+
+.transaction-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.transaction-card .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.transaction-card .card-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.transaction-card .card-row:last-of-type {
+    border-bottom: none;
+}
+
+.transaction-card .label {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.transaction-card .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.transaction-card .card-actions .btn {
+    flex: 1;
+}
+
+/* Responsive Layout */
+@media (min-width: 1024px) {
+    .mobile-view {
+        display: none !important;
+    }
+    .desktop-view {
+        display: table !important;
+    }
+}
+
+@media (max-width: 1023px) {
+    .mobile-view {
+        display: block !important;
+    }
+    .desktop-view {
+        display: none !important;
+    }
+}
+
 /* Mobile optimizations */
 @media (max-width: 1024px) {
     .swipe-action-left,

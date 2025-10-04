@@ -3,82 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>SKU Lot Management - ORA Business Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="/static/timezone-utils.js"></script>
+    <title>SKU Lot Management - ORA Business Automation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/shipping-violations-alert.css">
+    <link rel="stylesheet" href="/static/swipe-gesture.css">
+    <script src="/static/swipe-gesture.js"></script>
     <style>
-        :root {
-            --primary-blue: #2563eb;
-            --primary-blue-hover: #1d4ed8;
-            --secondary-purple: #7c3aed;
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-tertiary: #f1f5f9;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-tertiary: #94a3b8;
-            --border-color: #e2e8f0;
-            --sidebar-width: 260px;
-            --header-height: 64px;
-            --success-green: #10b981;
-            --warning-yellow: #f59e0b;
-            --error-red: #ef4444;
-            --spacing-unit: 8px;
-        }
-
-        body.dark-mode {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-tertiary: #64748b;
-            --border-color: #334155;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-tertiary: #6c757d;
+            --border-color: #dee2e6;
+            --primary-blue: #4A90E2;
+            --success-green: #52c41a;
+            --error-red: #ff4d4f;
+            --warning-yellow: #faad14;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #404040;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --text-tertiary: #a0a0a0;
+            --border-color: #404040;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background-color: var(--bg-secondary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-secondary);
             color: var(--text-primary);
-            transition: background-color 0.2s, color 0.2s;
+            line-height: 1.6;
         }
 
         .app-container {
             display: flex;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
         }
 
+        /* Sidebar */
         .sidebar {
-            width: var(--sidebar-width);
-            background-color: var(--bg-primary);
+            width: 260px;
+            background: var(--bg-primary);
             border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 1000;
         }
 
         .sidebar-header {
-            padding: calc(var(--spacing-unit) * 3);
+            padding: 24px;
             border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: calc(var(--spacing-unit) * 2);
         }
 
-        .sidebar-logo {
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
             width: 32px;
             height: 32px;
-            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            background: var(--primary-blue);
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -88,253 +95,168 @@
             font-size: 18px;
         }
 
-        .sidebar-title {
+        .logo-text {
             font-size: 16px;
             font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .sidebar-nav {
-            flex: 1;
-            overflow-y: auto;
-            padding: calc(var(--spacing-unit) * 2);
         }
 
         .nav-section {
-            margin-bottom: calc(var(--spacing-unit) * 3);
+            padding: 24px 0;
         }
 
         .nav-section-title {
+            padding: 0 24px 12px;
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--text-tertiary);
-            padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 2);
-            margin-bottom: calc(var(--spacing-unit) * 1);
         }
 
         .nav-item {
+            padding: 10px 24px;
             display: flex;
             align-items: center;
-            gap: calc(var(--spacing-unit) * 2);
-            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
-            border-radius: 8px;
+            gap: 12px;
             color: var(--text-secondary);
             text-decoration: none;
             transition: all 0.2s;
-            font-size: 14px;
             cursor: pointer;
+            font-size: 14px;
         }
 
         .nav-item:hover {
-            background-color: var(--bg-tertiary);
+            background: var(--bg-secondary);
             color: var(--text-primary);
         }
 
         .nav-item.active {
-            background-color: var(--primary-blue);
+            background: var(--primary-blue);
             color: white;
+            font-weight: 500;
         }
 
         .nav-item-icon {
+            font-size: 18px;
             width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            text-align: center;
         }
 
-        .admin-section {
-            border-top: 1px solid var(--border-color);
-            padding-top: calc(var(--spacing-unit) * 2);
-        }
-
-        .admin-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
-            border-radius: 8px;
-            color: var(--text-tertiary);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .admin-toggle:hover {
-            background-color: var(--bg-tertiary);
-            color: var(--text-secondary);
-        }
-
-        .admin-toggle-icon {
-            transition: transform 0.3s;
-        }
-
-        .admin-toggle.expanded .admin-toggle-icon {
-            transform: rotate(90deg);
-        }
-
-        .admin-items {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s;
-        }
-
-        .admin-items.expanded {
-            max-height: 300px;
-        }
-
+        /* Main Content */
         .main-content {
+            margin-left: 260px;
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
         .top-bar {
-            height: var(--header-height);
-            background-color: var(--bg-primary);
+            background: var(--bg-primary);
             border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            padding: 0 calc(var(--spacing-unit) * 3);
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .top-bar-left {
             display: flex;
             align-items: center;
-            gap: calc(var(--spacing-unit) * 2);
+            gap: 16px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 8px;
         }
 
         .page-title {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 600;
             color: var(--text-primary);
         }
 
         .top-bar-actions {
             display: flex;
+            gap: 12px;
             align-items: center;
-            gap: calc(var(--spacing-unit) * 2);
-        }
-
-        .btn {
-            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: calc(var(--spacing-unit) * 1);
-        }
-
-        .btn-primary {
-            background-color: var(--primary-blue);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-blue-hover);
-        }
-
-        .btn-secondary {
-            background-color: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--bg-tertiary);
         }
 
         .dark-mode-toggle {
             background: none;
             border: none;
-            cursor: pointer;
             font-size: 20px;
-            padding: calc(var(--spacing-unit) * 1);
-            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
         }
 
-        .mobile-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 99;
-        }
-
-        .mobile-overlay.active {
-            display: block;
+        .dark-mode-toggle:hover {
+            background: var(--bg-secondary);
         }
 
         .content-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: calc(var(--spacing-unit) * 4);
+            padding: 32px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
         }
 
         .card {
-            background-color: var(--bg-primary);
+            background: var(--bg-primary);
             border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            padding: calc(var(--spacing-unit) * 3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .filter-toggle:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .filter-toggle.active {
+            background: var(--success-green);
+            color: white;
+            border-color: var(--success-green);
         }
 
         .table-container {
             overflow-x: auto;
-            margin-top: calc(var(--spacing-unit) * 2);
-            max-height: calc(100vh - 280px);
-            overflow-y: auto;
-        }
-
-        .filter-toggle {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background-color: var(--bg-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .filter-toggle:hover {
-            border-color: var(--primary-blue);
-            color: var(--primary-blue);
-        }
-
-        .filter-toggle.active {
-            background-color: var(--primary-blue);
-            color: white;
-            border-color: var(--primary-blue);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: calc(var(--spacing-unit) * 3);
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
         }
 
         table {
@@ -342,56 +264,57 @@
             border-collapse: collapse;
         }
 
+        thead {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-color);
+        }
+
         th {
+            padding: 12px 16px;
             text-align: left;
-            padding: calc(var(--spacing-unit) * 2);
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--text-tertiary);
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            background-color: var(--bg-primary);
-            z-index: 10;
+            white-space: nowrap;
+        }
+
+        th.sortable {
             cursor: pointer;
             user-select: none;
         }
 
-        th:hover {
-            background-color: var(--bg-secondary);
-        }
-
-        th.sortable::after {
-            content: ' ⇅';
-            opacity: 0.3;
+        th.sortable:hover {
+            background: var(--bg-tertiary);
         }
 
         th.sort-asc::after {
-            content: ' ▲';
-            opacity: 1;
+            content: ' ↑';
         }
 
         th.sort-desc::after {
-            content: ' ▼';
-            opacity: 1;
+            content: ' ↓';
         }
 
         td {
-            padding: calc(var(--spacing-unit) * 2);
+            padding: 16px;
             border-bottom: 1px solid var(--border-color);
             font-size: 14px;
-            color: var(--text-secondary);
         }
 
         tr:hover {
-            background-color: var(--bg-secondary);
+            background: var(--bg-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
         }
 
         .badge {
-            display: inline-flex;
-            align-items: center;
+            display: inline-block;
             padding: 4px 12px;
             border-radius: 12px;
             font-size: 12px;
@@ -399,34 +322,78 @@
         }
 
         .badge-success {
-            background-color: #d1fae5;
-            color: #065f46;
+            background: #d4edda;
+            color: #155724;
         }
 
         .badge-inactive {
-            background-color: #fee2e2;
-            color: #991b1b;
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        body.dark-mode .badge-success {
+            background: #155724;
+            color: #d4edda;
+        }
+
+        body.dark-mode .badge-inactive {
+            background: #721c24;
+            color: #f8d7da;
         }
 
         .action-btn {
-            background: none;
-            border: none;
-            color: var(--primary-blue);
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
             font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             transition: all 0.2s;
+            margin-right: 4px;
         }
 
         .action-btn:hover {
-            background-color: var(--bg-tertiary);
+            background: var(--bg-tertiary);
+            transform: translateY(-1px);
         }
 
         .action-btn.delete {
-            color: var(--error-red);
+            background: var(--error-red);
+            color: white;
+            border-color: var(--error-red);
         }
 
+        .action-btn.delete:hover {
+            background: #ff6b6b;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3a7bc8;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -434,8 +401,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
             align-items: center;
             justify-content: center;
         }
@@ -445,128 +412,93 @@
         }
 
         .modal-content {
-            background-color: var(--bg-primary);
+            background: var(--bg-primary);
             border-radius: 12px;
-            padding: calc(var(--spacing-unit) * 4);
-            max-width: 500px;
             width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-hover);
+            padding: 24px;
         }
 
         .modal-header {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 600;
-            margin-bottom: calc(var(--spacing-unit) * 3);
-            color: var(--text-primary);
-        }
-
-        .modal-error {
-            background-color: #fee2e2;
-            border: 1px solid #ef4444;
-            color: #991b1b;
-            padding: calc(var(--spacing-unit) * 2);
-            border-radius: 8px;
-            margin-bottom: calc(var(--spacing-unit) * 3);
-            font-size: 14px;
-        }
-
-        body.dark-mode .modal-error {
-            background-color: #7f1d1d;
-            border-color: #991b1b;
-            color: #fca5a5;
+            margin-bottom: 20px;
         }
 
         .form-group {
-            margin-bottom: calc(var(--spacing-unit) * 3);
+            margin-bottom: 20px;
         }
 
         .form-label {
             display: block;
             font-size: 14px;
             font-weight: 500;
+            margin-bottom: 8px;
             color: var(--text-primary);
-            margin-bottom: calc(var(--spacing-unit) * 1);
         }
 
-        .form-input {
+        .form-input,
+        .form-select {
             width: 100%;
-            padding: calc(var(--spacing-unit) * 1.5);
+            padding: 10px 12px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 14px;
-            background-color: var(--bg-secondary);
+            background: var(--bg-secondary);
             color: var(--text-primary);
+            transition: border-color 0.2s;
         }
 
-        .form-input:focus {
+        .form-input:focus,
+        .form-select:focus {
             outline: none;
             border-color: var(--primary-blue);
         }
 
-        .checkbox-group {
+        .checkbox-option {
             display: flex;
             align-items: center;
-            gap: calc(var(--spacing-unit) * 1);
-        }
-
-        .checkbox-option {
-            display: inline-flex;
-            align-items: center;
-            gap: calc(var(--spacing-unit) * 2);
-            padding: calc(var(--spacing-unit) * 2.5) calc(var(--spacing-unit) * 3);
-            border-radius: 8px;
+            gap: 8px;
             cursor: pointer;
-            transition: background-color 0.2s;
-            margin: 0;
-            user-select: none;
-            min-height: 44px;
-        }
-
-        .checkbox-option:hover {
-            background-color: var(--bg-tertiary);
-        }
-
-        .checkbox-option:focus-within {
-            outline: 2px solid var(--primary-blue);
-            outline-offset: 2px;
         }
 
         .form-checkbox {
             width: 18px;
             height: 18px;
             cursor: pointer;
-            margin: 0;
+        }
+
+        .modal-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
         }
 
         .modal-actions {
             display: flex;
-            gap: calc(var(--spacing-unit) * 2);
+            gap: 12px;
             justify-content: flex-end;
-            margin-top: calc(var(--spacing-unit) * 4);
+            margin-top: 24px;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: calc(var(--spacing-unit) * 8) calc(var(--spacing-unit) * 2);
-            color: var(--text-tertiary);
-        }
-
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: calc(var(--spacing-unit) * 1);
+        .btn-cancel {
+            background: var(--bg-secondary);
             color: var(--text-primary);
-            margin-right: calc(var(--spacing-unit) * 2);
         }
 
+        .btn-cancel:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* Mobile */
         @media (max-width: 1024px) {
             .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                z-index: 100;
                 transform: translateX(-100%);
             }
 
@@ -574,129 +506,94 @@
                 transform: translateX(0);
             }
 
+            .main-content {
+                margin-left: 0;
+            }
+
             .mobile-menu-btn {
                 display: block;
             }
 
             .content-area {
-                padding: calc(var(--spacing-unit) * 2);
+                padding: 16px;
             }
 
-            .table-container {
-                overflow-x: scroll;
+            .page-title {
+                font-size: 20px;
+            }
+
+            th, td {
+                padding: 8px 12px;
+                font-size: 13px;
             }
         }
     </style>
-    <link rel="stylesheet" href="/static/shipping-violations-alert.css">
-    <link rel="stylesheet" href="/static/swipe-gesture.css">
-    <script src="/static/swipe-gesture.js"></script>
 </head>
 <body>
-<!-- Shipping Violations Alert Banner -->
-<div class="violations-alert" id="violations-alert">
-    <div class="violations-content">
-        <span class="violations-icon">⚠️</span>
-        <div class="violations-text">
-            <div class="violations-title">Shipping Configuration Alerts</div>
-            <div class="violations-details" id="violations-summary">Loading...</div>
-        </div>
-    </div>
-    <div class="violations-actions">
-        <button class="btn-view-violations" onclick="openViolationsModal()">View Details</button>
-        <button class="btn-dismiss-alert" onclick="dismissAlert()" title="Dismiss">×</button>
-    </div>
-</div>
-
-<!-- Violations Modal -->
-<div class="violations-modal" id="violations-modal" onclick="closeModalOnBackdrop(event)">
-    <div class="violations-modal-content">
-        <div class="violations-modal-header">
-            <h2 class="violations-modal-title">Shipping Configuration Alerts</h2>
-            <button class="btn-close-modal" onclick="closeViolationsModal()">×</button>
-        </div>
-        <div id="violations-list">
-            <p style="text-align: center; color: var(--text-tertiary);">Loading violations...</p>
-        </div>
-    </div>
-</div>
-
-
-    <!-- Mobile Overlay -->
-    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
-
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-logo">O</div>
-                <div class="sidebar-title">ORA Business</div>
+                <a href="/" class="logo">
+                    <div class="logo-icon">O</div>
+                    <span class="logo-text">ORA Business</span>
+                </a>
             </div>
-            
-            <nav class="sidebar-nav">
-                <!-- Primary Navigation -->
-                <div class="nav-section">
-                    <div class="nav-section-title">Operations</div>
-                    <a href="/" class="nav-item">
-                        <span class="nav-item-icon">📊</span>
-                        Dashboard
-                    </a>
-                    <a href="/xml_import.html" class="nav-item">
-                        <span class="nav-item-icon">📥</span>
-                        Orders Inbox
-                    </a>
-                    <a href="/inventory_transactions.html" class="nav-item">
-                        <span class="nav-item-icon">📦</span>
-                        Inventory Monitor
-                    </a>
-                    <a href="/charge_report.html" class="nav-item">
-                        <span class="nav-item-icon">💰</span>
-                        Charge Report
-                    </a>
-                </div>
 
-                <!-- Admin Section -->
-                <div class="nav-section admin-section">
-                    <div class="admin-toggle" onclick="toggleAdmin()">
-                        <span>Admin & Data</span>
-                        <span class="admin-toggle-icon">▶</span>
-                    </div>
-                    <div class="admin-items" id="admin-items">
-                        <a href="/weekly_shipped_history.html" class="nav-item">
-                            <span class="nav-item-icon">📈</span>
-                            Weekly Reports
-                        </a>
-                        <a href="/shipped_orders.html" class="nav-item">
-                            <span class="nav-item-icon">📋</span>
-                            Shipped Orders
-                        </a>
-                        <a href="/shipped_items.html" class="nav-item">
-                            <span class="nav-item-icon">📊</span>
-                            Shipped Items
-                        </a>
-                        <a href="/bundle_skus.html" class="nav-item">
-                            <span class="nav-item-icon">📦</span>
-                            Bundle SKUs
-                        </a>
-                        <a href="/sku_lot.html" class="nav-item active">
-                            <span class="nav-item-icon">🏷️</span>
-                            SKU Lot Management
-                        </a>
-                    </div>
-                </div>
+            <nav class="nav-section">
+                <div class="nav-section-title">Operations</div>
+                <a href="/" class="nav-item">
+                    <span class="nav-item-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/orders_inbox.html" class="nav-item">
+                    <span class="nav-item-icon">📦</span>
+                    <span>Orders Inbox</span>
+                </a>
+                <a href="/inventory_transactions.html" class="nav-item">
+                    <span class="nav-item-icon">📦</span>
+                    <span>Inventory Monitor</span>
+                </a>
+                <a href="/charge_report.html" class="nav-item">
+                    <span class="nav-item-icon">💰</span>
+                    <span>Charge Report</span>
+                </a>
+            </nav>
 
-                <!-- Settings Section -->
-                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
-                    <a href="/settings.html" class="nav-item">
-                        <span class="nav-item-icon">⚙️</span>
-                        Settings
-                    </a>
-                </div>
+            <nav class="nav-section">
+                <div class="nav-section-title">Admin & Data</div>
+                <a href="/weekly_reports.html" class="nav-item">
+                    <span class="nav-item-icon">📈</span>
+                    <span>Weekly Reports</span>
+                </a>
+                <a href="/shipped_orders.html" class="nav-item">
+                    <span class="nav-item-icon">📋</span>
+                    <span>Shipped Orders</span>
+                </a>
+                <a href="/shipped_items.html" class="nav-item">
+                    <span class="nav-item-icon">📊</span>
+                    <span>Shipped Items</span>
+                </a>
+                <a href="/bundle_skus.html" class="nav-item">
+                    <span class="nav-item-icon">📦</span>
+                    <span>Bundle SKUs</span>
+                </a>
+                <a href="/sku_lot.html" class="nav-item active">
+                    <span class="nav-item-icon">🏷️</span>
+                    <span>SKU Lot Management</span>
+                </a>
+            </nav>
+
+            <nav class="nav-section">
+                <a href="/settings.html" class="nav-item">
+                    <span class="nav-item-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
             </nav>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Top Bar -->
             <div class="top-bar">
                 <div class="top-bar-left">
                     <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
@@ -727,7 +624,8 @@
                         </button>
                     </div>
                     <div class="table-container">
-                        <table id="skuLotTable">
+                        <!-- Desktop Table View -->
+                        <table id="skuLotTable" class="desktop-view">
                             <thead>
                                 <tr>
                                     <th class="sortable" onclick="sortTable('sku', event)">SKU</th>
@@ -743,6 +641,9 @@
                                 </tr>
                             </tbody>
                         </table>
+                        
+                        <!-- Mobile Card View -->
+                        <div id="skuLotCards" class="mobile-view" style="display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -778,86 +679,37 @@
                     </label>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <script src="/static/timezone-utils.js"></script>
     <script>
-        // Global state
-        let darkMode = localStorage.getItem('darkMode') === 'true';
         let skuLots = [];
         let filteredSkuLots = [];
         let showActiveOnly = true;
         let currentSort = { column: null, direction: 'asc' };
 
-        // Initialize dark mode
-        if (darkMode) {
-            document.body.classList.add('dark-mode');
-            document.querySelector('.dark-mode-toggle').textContent = '☀️';
-        }
-
-        // Toggle dark mode
-        function toggleDarkMode() {
-            darkMode = !darkMode;
-            document.body.classList.toggle('dark-mode');
-            document.querySelector('.dark-mode-toggle').textContent = darkMode ? '☀️' : '🌙';
-            localStorage.setItem('darkMode', darkMode);
-        }
-
-        // Toggle admin section
-        function toggleAdmin() {
-            const toggle = document.querySelector('.admin-toggle');
-            const items = document.getElementById('admin-items');
-            toggle.classList.toggle('expanded');
-            items.classList.toggle('expanded');
-        }
-
-        // Auto-expand admin section since we're on admin page
-        document.addEventListener('DOMContentLoaded', () => {
-            const toggle = document.querySelector('.admin-toggle');
-            const items = document.getElementById('admin-items');
-            if (toggle && items) {
-                toggle.classList.add('expanded');
-                items.classList.add('expanded');
-            }
-        });
-
-        // Toggle mobile menu
+        // Mobile menu toggle
         function toggleMobileMenu() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('active');
+            document.getElementById('sidebar').classList.toggle('mobile-open');
         }
 
-        // Close mobile menu
-        function closeMobileMenu() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('active');
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
         }
 
-        // Close mobile menu on ESC key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeMobileMenu();
-            }
-        });
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
 
-        // Close mobile menu when clicking nav items
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                if (window.innerWidth <= 1024) {
-                    closeMobileMenu();
-                }
-            });
-        });
-
-        // Toggle filter between active only and all
+        // Filter toggle
         function toggleFilter() {
             showActiveOnly = !showActiveOnly;
             const toggle = document.getElementById('filterToggle');
@@ -898,6 +750,7 @@
         // Render table with current filter and sort
         function renderTable() {
             const tbody = document.getElementById('skuLotTableBody');
+            const cardsContainer = document.getElementById('skuLotCards');
             const recordCount = document.getElementById('recordCount');
             
             // Filter data
@@ -936,23 +789,14 @@
             
             if (filteredSkuLots.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No SKU-Lot records found</td></tr>';
+                cardsContainer.innerHTML = '<div class="empty-state" style="padding: 40px;">No SKU-Lot records found</div>';
                 return;
             }
             
+            // Render desktop table view
             tbody.innerHTML = filteredSkuLots.map(item => `
-                <tr class="swipeable-row" data-lot-id="${item.id}" data-active="${item.active}">
-                    <td>
-                        <div class="swipe-action-right">
-                            <span class="swipe-action-icon">${item.active ? '🚫' : '✓'}</span>
-                            <span class="swipe-action-text">${item.active ? 'Deactivate' : 'Activate'}</span>
-                        </div>
-                        <div class="quick-action-buttons right">
-                            <button class="quick-action-btn toggle" onclick="toggleSkuLotStatus(${item.id}, ${item.active}, event)" title="${item.active ? 'Deactivate' : 'Activate'}">
-                                ${item.active ? '×' : '✓'}
-                            </button>
-                        </div>
-                        <strong>${item.sku}</strong>
-                    </td>
+                <tr data-lot-id="${item.id}">
+                    <td><strong>${item.sku}</strong></td>
                     <td>${item.lot}</td>
                     <td>
                         <span class="badge ${item.active ? 'badge-success' : 'badge-inactive'}">
@@ -966,6 +810,39 @@
                     </td>
                 </tr>
             `).join('');
+            
+            // Render mobile card view with swipe gestures
+            cardsContainer.innerHTML = filteredSkuLots.map(item => `
+                <div class="transaction-card swipeable-row" data-lot-id="${item.id}" data-active="${item.active}">
+                    <div class="swipe-action-right">
+                        <span class="swipe-action-icon">${item.active ? '🚫' : '✓'}</span>
+                        <span class="swipe-action-text">${item.active ? 'Deactivate' : 'Activate'}</span>
+                    </div>
+                    <div class="quick-action-buttons right">
+                        <button class="quick-action-btn toggle" onclick="toggleSkuLotStatus(${item.id}, ${item.active}, event)" title="${item.active ? 'Deactivate' : 'Activate'}">
+                            ${item.active ? '×' : '✓'}
+                        </button>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-title"><strong>${item.sku} - ${item.lot}</strong></span>
+                            <span class="badge ${item.active ? 'badge-success' : 'badge-inactive'}">
+                                ${item.active ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                        <div class="card-row">
+                            <span class="label">Created:</span>
+                            <span>${formatDateTime(item.created_at)}</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="action-btn" onclick="openEditModal(${item.id})">Edit</button>
+                            <button class="action-btn delete" onclick="deleteSkuLot(${item.id})">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            cardsContainer.style.display = 'block';
             
             initializeSwipeGestures();
         }
@@ -1000,15 +877,15 @@
 
         // Open Edit Modal
         function openEditModal(id) {
+            const item = skuLots.find(i => i.id === id);
+            if (!item) return;
+            
             hideModalError();
-            const skuLot = skuLots.find(item => item.id === id);
-            if (!skuLot) return;
-
             document.getElementById('modalTitle').textContent = 'Edit SKU-Lot';
-            document.getElementById('skuLotId').value = skuLot.id;
-            document.getElementById('sku').value = skuLot.sku;
-            document.getElementById('lot').value = skuLot.lot;
-            document.getElementById('active').checked = skuLot.active === 1;
+            document.getElementById('skuLotId').value = item.id;
+            document.getElementById('sku').value = item.sku;
+            document.getElementById('lot').value = item.lot;
+            document.getElementById('active').checked = item.active;
             document.getElementById('skuLotModal').classList.add('active');
         }
 
@@ -1017,67 +894,66 @@
             document.getElementById('skuLotModal').classList.remove('active');
         }
 
-        // Show error in modal
+        // Show/Hide Modal Error
         function showModalError(message) {
             const errorDiv = document.getElementById('modalError');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
 
-        // Hide error in modal
         function hideModalError() {
-            const errorDiv = document.getElementById('modalError');
-            errorDiv.style.display = 'none';
-            errorDiv.textContent = '';
+            document.getElementById('modalError').style.display = 'none';
         }
 
-        // Submit Form
+        // Form Submit
         document.getElementById('skuLotForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             hideModalError();
-
-            const skuLotId = document.getElementById('skuLotId').value;
+            
+            const id = document.getElementById('skuLotId').value;
             const data = {
                 sku: document.getElementById('sku').value,
-                lot: document.getElementById('lot').value,
+                lot: document.getElementById('lot').value.trim(),
                 active: document.getElementById('active').checked ? 1 : 0
             };
-
+            
             try {
-                const url = skuLotId ? `/api/sku_lots/${skuLotId}` : '/api/sku_lots';
-                const method = skuLotId ? 'PUT' : 'POST';
-
+                const url = id ? `/api/sku_lots/${id}` : '/api/sku_lots';
+                const method = id ? 'PUT' : 'POST';
+                
                 const response = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-
+                
                 const result = await response.json();
-
+                
                 if (result.success) {
                     closeModal();
                     loadSkuLots();
                 } else {
-                    showModalError(result.error || 'An error occurred while saving');
+                    showModalError(result.error || 'Failed to save SKU-Lot');
                 }
             } catch (error) {
                 console.error('Error saving SKU-Lot:', error);
-                showModalError('Error saving data. Please try again.');
+                showModalError('Error saving data');
             }
         });
 
         // Delete SKU Lot
         async function deleteSkuLot(id) {
-            if (!confirm('Are you sure you want to delete this SKU-Lot?')) return;
-
+            if (!confirm('Are you sure you want to delete this SKU-Lot record?')) {
+                return;
+            }
+            
             try {
                 const response = await fetch(`/api/sku_lots/${id}`, {
                     method: 'DELETE'
                 });
-
+                
                 const result = await response.json();
-
+                
                 if (result.success) {
                     loadSkuLots();
                 } else {
@@ -1128,9 +1004,9 @@
                 }
             });
             
-            const tbody = document.getElementById('skuLotTableBody');
-            if (tbody) {
-                swipeController.attachToElement(tbody, '.swipeable-row');
+            const cardsContainer = document.getElementById('skuLotCards');
+            if (cardsContainer) {
+                swipeController.attachToElement(cardsContainer, '.swipeable-row');
             }
         }
         

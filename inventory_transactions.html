@@ -778,7 +778,8 @@
 
                         <div id="errorMessage"></div>
 
-                        <table id="transactionsTable" style="display: none;">
+                        <!-- Desktop Table View -->
+                        <table id="transactionsTable" class="desktop-view" style="display: none;">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -791,6 +792,9 @@
                             </thead>
                             <tbody id="transactionsBody"></tbody>
                         </table>
+
+                        <!-- Mobile Card View -->
+                        <div id="transactionsCards" class="mobile-view" style="display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -922,31 +926,25 @@
         
         function renderTransactions(transactions) {
             const tbody = document.getElementById('transactionsBody');
+            const cardsContainer = document.getElementById('transactionsCards');
             const loading = document.getElementById('loading');
             const table = document.getElementById('transactionsTable');
             
             if (transactions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-tertiary);">No transactions found</td></tr>';
+                cardsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-tertiary);">No transactions found</div>';
                 loading.style.display = 'none';
                 table.style.display = 'table';
+                cardsContainer.style.display = 'block';
                 return;
             }
             
+            // Render desktop table view
             tbody.innerHTML = transactions.map(t => {
                 const badgeClass = `badge-${t.transaction_type.toLowerCase().replace(' ', '-')}`;
                 return `
-                    <tr class="swipeable-row" data-transaction-id="${t.id}" data-sku="${t.sku}">
-                        <td>
-                            <div class="swipe-action-left">
-                                <span class="swipe-action-icon">📊</span>
-                                <span class="swipe-action-text">Quick Adjust</span>
-                            </div>
-                            <div class="quick-action-buttons left">
-                                <button class="quick-action-btn increment" onclick="quickAdjust('${t.sku}', 10, event)" title="Add 10 units">+</button>
-                                <button class="quick-action-btn decrement" onclick="quickAdjust('${t.sku}', -10, event)" title="Remove 10 units">−</button>
-                            </div>
-                            ${t.date}
-                        </td>
+                    <tr data-transaction-id="${t.id}">
+                        <td>${t.date}</td>
                         <td><strong>${t.sku}</strong></td>
                         <td>${t.quantity}</td>
                         <td><span class="badge ${badgeClass}">${t.transaction_type}</span></td>
@@ -961,8 +959,48 @@
                 `;
             }).join('');
             
+            // Render mobile card view with swipe gestures
+            cardsContainer.innerHTML = transactions.map(t => {
+                const badgeClass = `badge-${t.transaction_type.toLowerCase().replace(' ', '-')}`;
+                return `
+                    <div class="transaction-card swipeable-row" data-transaction-id="${t.id}" data-sku="${t.sku}">
+                        <div class="swipe-action-left">
+                            <span class="swipe-action-icon">📊</span>
+                            <span class="swipe-action-text">Quick Adjust</span>
+                        </div>
+                        <div class="quick-action-buttons left">
+                            <button class="quick-action-btn increment" onclick="quickAdjust('${t.sku}', 10, event)" title="Add 10 units">+</button>
+                            <button class="quick-action-btn decrement" onclick="quickAdjust('${t.sku}', -10, event)" title="Remove 10 units">−</button>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-header">
+                                <span class="card-title"><strong>${t.sku}</strong></span>
+                                <span class="badge ${badgeClass}">${t.transaction_type}</span>
+                            </div>
+                            <div class="card-row">
+                                <span class="label">Date:</span>
+                                <span>${t.date}</span>
+                            </div>
+                            <div class="card-row">
+                                <span class="label">Quantity:</span>
+                                <span><strong>${t.quantity}</strong></span>
+                            </div>
+                            <div class="card-row">
+                                <span class="label">Notes:</span>
+                                <span>${t.notes || '-'}</span>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
+                                <button class="btn btn-danger btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
             loading.style.display = 'none';
             table.style.display = 'table';
+            cardsContainer.style.display = 'block';
             
             initializeSwipeGestures();
         }
@@ -1098,13 +1136,16 @@
                 deadZone: 20,
                 commitThreshold: 0.35,
                 onSwipeLeft: (row) => {
-                    row.classList.add('swiped');
+                    const sku = row.dataset.sku;
+                    if (sku) {
+                        quickAdjust(sku, -10, null);
+                    }
                 }
             });
             
-            const tbody = document.getElementById('transactionsBody');
-            if (tbody) {
-                swipeController.attachToElement(tbody, '.swipeable-row');
+            const cardsContainer = document.getElementById('transactionsCards');
+            if (cardsContainer) {
+                swipeController.attachToElement(cardsContainer, '.swipeable-row');
             }
         }
         
