@@ -1,0 +1,276 @@
+/* Swipe Gesture Styles */
+
+/* Swipeable row base styles */
+.swipeable-row {
+    position: relative;
+    touch-action: pan-y;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+.swipeable-row:active {
+    cursor: grabbing;
+}
+
+/* Swipe action indicators */
+.swipe-action-left,
+.swipe-action-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.swipe-action-left {
+    left: 0;
+    right: 50%;
+    background: linear-gradient(90deg, var(--error-red) 0%, transparent 100%);
+}
+
+.swipe-action-right {
+    right: 0;
+    left: 50%;
+    background: linear-gradient(90deg, transparent 0%, var(--success-green) 100%);
+}
+
+/* Show action indicators based on swipe progress */
+.swipeable-row[data-swipe-direction="left"] .swipe-action-left {
+    opacity: 0.9;
+}
+
+.swipeable-row[data-swipe-direction="right"] .swipe-action-right {
+    opacity: 0.9;
+}
+
+/* Icon styling */
+.swipe-action-icon {
+    font-size: 24px;
+    color: white;
+    transition: transform 0.15s;
+}
+
+.swipeable-row[data-swipe-progress="100"] .swipe-action-icon {
+    transform: scale(1.2);
+}
+
+/* Swipe action text */
+.swipe-action-text {
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    margin-left: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Undo toast */
+.swipe-undo-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: var(--text-primary);
+    color: var(--bg-primary);
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 300px;
+}
+
+.swipe-undo-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.swipe-undo-toast.hiding {
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+}
+
+.swipe-undo-message {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.swipe-undo-btn {
+    background: transparent;
+    border: 2px solid currentColor;
+    color: inherit;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.swipe-undo-btn:hover {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Quick action buttons (revealed on swipe) */
+.quick-action-buttons {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.swipeable-row[data-swipe-direction="left"] .quick-action-buttons.left {
+    left: 16px;
+    opacity: 1;
+    pointer-events: all;
+}
+
+.swipeable-row[data-swipe-direction="right"] .quick-action-buttons.right {
+    right: 16px;
+    opacity: 1;
+    pointer-events: all;
+}
+
+.quick-action-btn {
+    width: 40px;
+    height: 40px;
+    min-height: 44px;
+    min-width: 44px;
+    border-radius: 50%;
+    border: none;
+    background-color: white;
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-action-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.quick-action-btn:active {
+    transform: scale(0.95);
+}
+
+.quick-action-btn.increment {
+    background-color: var(--success-green);
+    color: white;
+}
+
+.quick-action-btn.decrement {
+    background-color: var(--error-red);
+    color: white;
+}
+
+.quick-action-btn.toggle {
+    background-color: var(--primary-blue);
+    color: white;
+}
+
+/* Status badge animation */
+.badge {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.badge.status-changing {
+    animation: pulse 0.6s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Mobile optimizations */
+@media (max-width: 1024px) {
+    .swipe-action-left,
+    .swipe-action-right {
+        padding: 0 16px;
+    }
+
+    .swipe-action-text {
+        display: none;
+    }
+
+    .swipe-action-icon {
+        font-size: 28px;
+    }
+
+    .quick-action-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .swipe-undo-toast {
+        left: 16px;
+        right: 16px;
+        transform: translateY(100px);
+        min-width: auto;
+        bottom: 16px;
+    }
+
+    .swipe-undo-toast.show {
+        transform: translateY(0);
+    }
+
+    .swipe-undo-toast.hiding {
+        transform: translateY(100px);
+    }
+}
+
+/* Dark mode adjustments */
+body.dark-mode .quick-action-btn {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+body.dark-mode .quick-action-btn.increment {
+    background-color: var(--success-green);
+    color: white;
+}
+
+body.dark-mode .quick-action-btn.decrement {
+    background-color: var(--error-red);
+    color: white;
+}
+
+body.dark-mode .quick-action-btn.toggle {
+    background-color: var(--primary-blue);
+    color: white;
+}

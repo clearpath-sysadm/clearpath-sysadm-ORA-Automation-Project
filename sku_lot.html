@@ -588,6 +588,8 @@
         }
     </style>
     <link rel="stylesheet" href="/static/shipping-violations-alert.css">
+    <link rel="stylesheet" href="/static/swipe-gesture.css">
+    <script src="/static/swipe-gesture.js"></script>
 </head>
 <body>
 <!-- Shipping Violations Alert Banner -->
@@ -938,7 +940,11 @@
             }
             
             tbody.innerHTML = filteredSkuLots.map(item => `
-                <tr>
+                <tr class="swipeable-row" data-lot-id="${item.id}" data-active="${item.active}">
+                    <div class="swipe-action-right">
+                        <span class="swipe-action-icon">${item.active ? '🚫' : '✓'}</span>
+                        <span class="swipe-action-text">${item.active ? 'Deactivate' : 'Activate'}</span>
+                    </div>
                     <td><strong>${item.sku}</strong></td>
                     <td>${item.lot}</td>
                     <td>
@@ -953,6 +959,8 @@
                     </td>
                 </tr>
             `).join('');
+            
+            initializeSwipeGestures();
         }
 
         // Load SKU Lots
@@ -1092,6 +1100,85 @@
                 closeModal();
             }
         });
+
+        // Swipe Gesture Implementation
+        let swipeController = null;
+        
+        function initializeSwipeGestures() {
+            if (swipeController) {
+                swipeController = null;
+            }
+            
+            swipeController = new SwipeGestureController({
+                enableLeft: false,
+                enableRight: true,
+                deadZone: 20,
+                commitThreshold: 0.35,
+                onSwipeRight: (row) => {
+                    const lotId = parseInt(row.dataset.lotId);
+                    const currentActive = parseInt(row.dataset.active);
+                    toggleStatus(lotId, currentActive);
+                }
+            });
+            
+            const tbody = document.getElementById('skuLotTableBody');
+            if (tbody) {
+                swipeController.attachToElement(tbody, '.swipeable-row');
+            }
+        }
+        
+        async function toggleStatus(lotId, currentActive) {
+            const newActive = currentActive === 1 ? 0 : 1;
+            const statusText = newActive === 1 ? 'Active' : 'Inactive';
+            const lot = skuLots.find(item => item.id === lotId);
+            
+            if (!lot) return;
+            
+            try {
+                const response = await fetch(`/api/sku_lots/${lotId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sku: lot.sku,
+                        lot: lot.lot,
+                        active: newActive
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    swipeController.showUndo(
+                        `Status changed to ${statusText}`,
+                        async () => {
+                            try {
+                                await fetch(`/api/sku_lots/${lotId}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        sku: lot.sku,
+                                        lot: lot.lot,
+                                        active: currentActive
+                                    })
+                                });
+                                loadSkuLots();
+                            } catch (error) {
+                                console.error('Failed to undo:', error);
+                                alert('Failed to undo status change');
+                            }
+                        },
+                        5000
+                    );
+                    
+                    setTimeout(() => loadSkuLots(), 300);
+                } else {
+                    alert('Failed to update status: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error toggling status:', error);
+                alert('Error updating status');
+            }
+        }
 
         // Load data on page load
         loadSkuLots();

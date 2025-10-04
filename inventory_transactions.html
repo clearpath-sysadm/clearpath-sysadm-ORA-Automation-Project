@@ -633,6 +633,8 @@
     </style>
     <script src="/static/timezone-utils.js"></script>
     <link rel="stylesheet" href="/static/shipping-violations-alert.css">
+    <link rel="stylesheet" href="/static/swipe-gesture.css">
+    <script src="/static/swipe-gesture.js"></script>
 </head>
 <body>
 <!-- Shipping Violations Alert Banner -->
@@ -933,7 +935,15 @@
             tbody.innerHTML = transactions.map(t => {
                 const badgeClass = `badge-${t.transaction_type.toLowerCase().replace(' ', '-')}`;
                 return `
-                    <tr>
+                    <tr class="swipeable-row" data-transaction-id="${t.id}" data-sku="${t.sku}">
+                        <div class="swipe-action-left">
+                            <span class="swipe-action-icon">📊</span>
+                            <span class="swipe-action-text">Quick Adjust</span>
+                        </div>
+                        <div class="quick-action-buttons left">
+                            <button class="quick-action-btn increment" onclick="quickAdjust('${t.sku}', 10, event)" title="Add 10 units">+</button>
+                            <button class="quick-action-btn decrement" onclick="quickAdjust('${t.sku}', -10, event)" title="Remove 10 units">−</button>
+                        </div>
                         <td>${t.date}</td>
                         <td><strong>${t.sku}</strong></td>
                         <td>${t.quantity}</td>
@@ -951,6 +961,8 @@
             
             loading.style.display = 'none';
             table.style.display = 'table';
+            
+            initializeSwipeGestures();
         }
         
         async function fetchSkus() {
@@ -1069,6 +1081,83 @@
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.innerHTML = `<div class="error">${message}</div>`;
             document.getElementById('loading').style.display = 'none';
+        }
+        
+        let swipeController = null;
+        
+        function initializeSwipeGestures() {
+            if (swipeController) {
+                swipeController = null;
+            }
+            
+            swipeController = new SwipeGestureController({
+                enableRight: false,
+                enableLeft: true,
+                deadZone: 20,
+                commitThreshold: 0.35,
+                onSwipeLeft: (row) => {
+                    row.classList.add('swiped');
+                }
+            });
+            
+            const tbody = document.getElementById('transactionsBody');
+            if (tbody) {
+                swipeController.attachToElement(tbody, '.swipeable-row');
+            }
+        }
+        
+        async function quickAdjust(sku, quantity, event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            
+            const adjustmentType = quantity > 0 ? 'Adjust Up' : 'Adjust Down';
+            const data = {
+                date: new Date().toISOString().split('T')[0],
+                sku: sku,
+                quantity: Math.abs(quantity),
+                transaction_type: adjustmentType,
+                notes: `Quick adjustment via swipe gesture (${quantity > 0 ? '+' : ''}${quantity} units)`
+            };
+            
+            try {
+                const response = await fetch('/api/inventory_transactions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const undoData = { ...data, id: result.id };
+                    
+                    swipeController.showUndo(
+                        `${adjustmentType}: ${sku} ${quantity > 0 ? '+' : ''}${quantity} units`,
+                        async () => {
+                            try {
+                                await fetch(`/api/inventory_transactions/${result.id}`, {
+                                    method: 'DELETE'
+                                });
+                                fetchTransactions();
+                            } catch (error) {
+                                console.error('Failed to undo:', error);
+                                alert('Failed to undo adjustment');
+                            }
+                        },
+                        5000
+                    );
+                    
+                    setTimeout(() => fetchTransactions(), 300);
+                } else {
+                    alert('Failed to adjust inventory: ' + result.error);
+                }
+            } catch (error) {
+                alert('Failed to adjust inventory: ' + error.message);
+            }
         }
         
         fetchTransactions();
