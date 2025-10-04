@@ -1248,11 +1248,11 @@
                     </div>
                     
                     <div class="stats-grid">
-                        <div class="stat-card">
+                        <div class="stat-card" onclick="filterByStatus('pending')" style="cursor: pointer;" title="Click to filter pending orders">
                             <div class="stat-value" id="stat-pending">0</div>
                             <div class="stat-label">Pending Upload</div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card" onclick="filterByStatus('awaiting_shipment')" style="cursor: pointer;" title="Click to filter awaiting shipment">
                             <div class="stat-value" id="stat-uploaded">0</div>
                             <div class="stat-label">Awaiting Shipment</div>
                         </div>
@@ -1527,6 +1527,31 @@
                 renderOrdersTable(currentOrders);
             }
         });
+
+        // Filter by status function (called from KPI cards)
+        function filterByStatus(status) {
+            filterMode = status;
+            
+            // Update button styling to match filter
+            if (filterMode === 'pending') {
+                btnToggleFilter.textContent = 'Show Pending Only';
+                btnToggleFilter.style.backgroundColor = 'var(--primary-blue)';
+                btnToggleFilter.style.borderColor = 'var(--primary-blue)';
+                const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
+                if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show Pending Only';
+            } else if (filterMode === 'awaiting_shipment') {
+                btnToggleFilter.textContent = 'Show Awaiting Shipment';
+                btnToggleFilter.style.backgroundColor = '#7c3aed';
+                btnToggleFilter.style.borderColor = '#7c3aed';
+                const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
+                if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show Awaiting Shipment';
+            }
+            
+            // Re-render table with current filter
+            if (currentOrders.length > 0) {
+                renderOrdersTable(currentOrders);
+            }
+        }
 
         // Load orders inbox
         async function loadOrdersInbox() {
