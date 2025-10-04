@@ -941,11 +941,18 @@
             
             tbody.innerHTML = filteredSkuLots.map(item => `
                 <tr class="swipeable-row" data-lot-id="${item.id}" data-active="${item.active}">
-                    <div class="swipe-action-right">
-                        <span class="swipe-action-icon">${item.active ? '🚫' : '✓'}</span>
-                        <span class="swipe-action-text">${item.active ? 'Deactivate' : 'Activate'}</span>
-                    </div>
-                    <td><strong>${item.sku}</strong></td>
+                    <td>
+                        <div class="swipe-action-right">
+                            <span class="swipe-action-icon">${item.active ? '🚫' : '✓'}</span>
+                            <span class="swipe-action-text">${item.active ? 'Deactivate' : 'Activate'}</span>
+                        </div>
+                        <div class="quick-action-buttons right">
+                            <button class="quick-action-btn toggle" onclick="toggleSkuLotStatus(${item.id}, ${item.active}, event)" title="${item.active ? 'Deactivate' : 'Activate'}">
+                                ${item.active ? '×' : '✓'}
+                            </button>
+                        </div>
+                        <strong>${item.sku}</strong>
+                    </td>
                     <td>${item.lot}</td>
                     <td>
                         <span class="badge ${item.active ? 'badge-success' : 'badge-inactive'}">
@@ -1125,6 +1132,14 @@
             if (tbody) {
                 swipeController.attachToElement(tbody, '.swipeable-row');
             }
+        }
+        
+        async function toggleSkuLotStatus(lotId, currentActive, event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            toggleStatus(lotId, currentActive);
         }
         
         async function toggleStatus(lotId, currentActive) {

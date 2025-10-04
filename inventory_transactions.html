@@ -936,15 +936,17 @@
                 const badgeClass = `badge-${t.transaction_type.toLowerCase().replace(' ', '-')}`;
                 return `
                     <tr class="swipeable-row" data-transaction-id="${t.id}" data-sku="${t.sku}">
-                        <div class="swipe-action-left">
-                            <span class="swipe-action-icon">📊</span>
-                            <span class="swipe-action-text">Quick Adjust</span>
-                        </div>
-                        <div class="quick-action-buttons left">
-                            <button class="quick-action-btn increment" onclick="quickAdjust('${t.sku}', 10, event)" title="Add 10 units">+</button>
-                            <button class="quick-action-btn decrement" onclick="quickAdjust('${t.sku}', -10, event)" title="Remove 10 units">−</button>
-                        </div>
-                        <td>${t.date}</td>
+                        <td>
+                            <div class="swipe-action-left">
+                                <span class="swipe-action-icon">📊</span>
+                                <span class="swipe-action-text">Quick Adjust</span>
+                            </div>
+                            <div class="quick-action-buttons left">
+                                <button class="quick-action-btn increment" onclick="quickAdjust('${t.sku}', 10, event)" title="Add 10 units">+</button>
+                                <button class="quick-action-btn decrement" onclick="quickAdjust('${t.sku}', -10, event)" title="Remove 10 units">−</button>
+                            </div>
+                            ${t.date}
+                        </td>
                         <td><strong>${t.sku}</strong></td>
                         <td>${t.quantity}</td>
                         <td><span class="badge ${badgeClass}">${t.transaction_type}</span></td>
