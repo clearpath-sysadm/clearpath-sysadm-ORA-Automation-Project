@@ -680,9 +680,9 @@
             <div class="content-area">
                 <!-- Info Banner -->
                 <div class="info-banner">
-                    <div class="info-banner-title">📦 FIFO Lot Management</div>
+                    <div class="info-banner-title">📦 Auto-Calculated FIFO Inventory</div>
                     <div class="info-banner-text">
-                        Lots are automatically sorted by received date (oldest first per SKU). The system uses FIFO (First In, First Out) to ensure older lots are shipped before newer ones. Manually update quantities as inventory changes.
+                        Current quantity is automatically calculated: <strong>Initial Qty - Shipped + Manual Adjustment</strong>. Lots are sorted by received date (oldest first per SKU). Shipped quantities are automatically deducted from shipped_items table. Use manual adjustments for corrections, damages, or receipts.
                     </div>
                 </div>
 
@@ -729,8 +729,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="qty-on-hand">Quantity On Hand *</label>
-                        <input type="number" class="form-input" id="qty-on-hand" min="0" placeholder="e.g., 5000" required>
+                        <label class="form-label" for="initial-qty">Initial Quantity *</label>
+                        <input type="number" class="form-input" id="initial-qty" min="0" placeholder="e.g., 5000" required>
+                        <small style="color: var(--text-tertiary); font-size: 12px;">Starting inventory for this lot</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="manual-adjustment">Manual Adjustment</label>
+                        <input type="number" class="form-input" id="manual-adjustment" value="0" placeholder="e.g., -50 or +100">
+                        <small style="color: var(--text-tertiary); font-size: 12px;">Use for corrections, damages, or additional receipts (can be negative)</small>
                     </div>
 
                     <div class="form-group">
@@ -856,11 +863,13 @@
             let html = '<div class="table-container"><table><thead><tr>';
             html += '<th>SKU</th>';
             html += '<th>Lot Number</th>';
-            html += '<th>Qty On Hand</th>';
+            html += '<th>Initial Qty</th>';
+            html += '<th>Shipped</th>';
+            html += '<th>Manual Adj</th>';
+            html += '<th>Current Qty</th>';
             html += '<th>Received Date</th>';
             html += '<th>Priority (FIFO)</th>';
             html += '<th>Status</th>';
-            html += '<th>Notes</th>';
             html += '<th>Actions</th>';
             html += '</tr></thead><tbody>';
 
@@ -871,15 +880,17 @@
                     html += '<tr>';
                     html += `<td><strong>${lot.sku}</strong></td>`;
                     html += `<td>${lot.lot}</td>`;
-                    html += `<td><strong>${lot.qty_on_hand.toLocaleString()}</strong></td>`;
+                    html += `<td>${lot.initial_qty.toLocaleString()}</td>`;
+                    html += `<td style="color: var(--error-red);">-${lot.total_shipped.toLocaleString()}</td>`;
+                    html += `<td style="color: ${lot.manual_adjustment >= 0 ? 'var(--success-green)' : 'var(--error-red)'};">${lot.manual_adjustment >= 0 ? '+' : ''}${lot.manual_adjustment.toLocaleString()}</td>`;
+                    html += `<td><strong style="font-size: 15px;">${lot.current_qty.toLocaleString()}</strong></td>`;
                     html += `<td>${formatDate(lot.received_date)}</td>`;
                     
                     // Priority indicator (1st = oldest)
                     const priority = index + 1;
                     html += `<td><span class="priority-indicator ${priority === 1 ? 'priority-1' : ''}">#${priority}</span></td>`;
                     
-                    html += `<td>${getStatusBadge(lot.status, lot.qty_on_hand)}</td>`;
-                    html += `<td><span style="color: var(--text-tertiary); font-size: 13px;">${lot.notes || '-'}</span></td>`;
+                    html += `<td>${getStatusBadge(lot.status, lot.current_qty)}</td>`;
                     html += `<td><div class="action-buttons">
                         <button class="btn btn-sm btn-secondary" onclick="editLot(${lot.id})">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteLot(${lot.id})">Delete</button>
@@ -942,7 +953,8 @@
             document.getElementById('lot-id').value = lot.id;
             document.getElementById('sku').value = lot.sku;
             document.getElementById('lot').value = lot.lot;
-            document.getElementById('qty-on-hand').value = lot.qty_on_hand;
+            document.getElementById('initial-qty').value = lot.initial_qty;
+            document.getElementById('manual-adjustment').value = lot.manual_adjustment;
             document.getElementById('received-date').value = lot.received_date;
             document.getElementById('status').value = lot.status;
             document.getElementById('notes').value = lot.notes || '';
@@ -960,6 +972,7 @@
             document.getElementById('lot-form').reset();
             document.getElementById('sku').disabled = false;
             document.getElementById('lot').disabled = false;
+            document.getElementById('manual-adjustment').value = 0;
             editingLotId = null;
         }
 
@@ -967,7 +980,8 @@
         async function saveLot() {
             const sku = document.getElementById('sku').value.trim();
             const lot = document.getElementById('lot').value.trim();
-            const qtyOnHand = parseInt(document.getElementById('qty-on-hand').value);
+            const initialQty = parseInt(document.getElementById('initial-qty').value);
+            const manualAdjustment = parseInt(document.getElementById('manual-adjustment').value || 0);
             const receivedDate = document.getElementById('received-date').value;
             const status = document.getElementById('status').value;
             const notes = document.getElementById('notes').value.trim();
@@ -980,7 +994,8 @@
             const lotData = {
                 sku,
                 lot,
-                qty_on_hand: qtyOnHand,
+                initial_qty: initialQty,
+                manual_adjustment: manualAdjustment,
                 received_date: receivedDate,
                 status,
                 notes

@@ -3108,15 +3108,29 @@ def api_resolve_violation(violation_id):
 
 @app.route('/api/lot_inventory', methods=['GET'])
 def api_get_lot_inventory():
-    """Get all lot inventory records sorted by FIFO (oldest first per SKU)"""
+    """Get all lot inventory records with auto-calculated quantities (sorted by FIFO)"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
         
+        # Get lot inventory with shipped quantities calculated
         cursor.execute("""
-            SELECT id, sku, lot, qty_on_hand, received_date, status, notes, created_at, updated_at
-            FROM lot_inventory
-            ORDER BY sku ASC, received_date ASC
+            SELECT 
+                li.id,
+                li.sku,
+                li.lot,
+                li.initial_qty,
+                li.manual_adjustment,
+                COALESCE(SUM(si.quantity_shipped), 0) as total_shipped,
+                li.received_date,
+                li.status,
+                li.notes,
+                li.created_at,
+                li.updated_at
+            FROM lot_inventory li
+            LEFT JOIN shipped_items si ON li.sku = si.base_sku AND li.lot = si.sku_lot
+            GROUP BY li.id, li.sku, li.lot, li.initial_qty, li.manual_adjustment, li.received_date, li.status, li.notes, li.created_at, li.updated_at
+            ORDER BY li.sku ASC, li.received_date ASC
         """)
         
         rows = cursor.fetchall()
@@ -3124,16 +3138,24 @@ def api_get_lot_inventory():
         
         lots = []
         for row in rows:
+            initial_qty = row[3]
+            manual_adjustment = row[4]
+            total_shipped = row[5]
+            current_qty = initial_qty - total_shipped + manual_adjustment
+            
             lots.append({
                 'id': row[0],
                 'sku': row[1],
                 'lot': row[2],
-                'qty_on_hand': row[3],
-                'received_date': row[4],
-                'status': row[5],
-                'notes': row[6] if row[6] else '',
-                'created_at': row[7],
-                'updated_at': row[8]
+                'initial_qty': initial_qty,
+                'manual_adjustment': manual_adjustment,
+                'total_shipped': total_shipped,
+                'current_qty': current_qty,
+                'received_date': row[6],
+                'status': row[7],
+                'notes': row[8] if row[8] else '',
+                'created_at': row[9],
+                'updated_at': row[10]
             })
         
         return jsonify({
@@ -3154,7 +3176,8 @@ def api_create_lot_inventory():
         data = request.get_json()
         sku = data.get('sku', '').strip()
         lot = data.get('lot', '').strip()
-        qty_on_hand = data.get('qty_on_hand', 0)
+        initial_qty = data.get('initial_qty', 0)
+        manual_adjustment = data.get('manual_adjustment', 0)
         received_date = data.get('received_date', '')
         status = data.get('status', 'active')
         notes = data.get('notes', '').strip()
@@ -3169,9 +3192,9 @@ def api_create_lot_inventory():
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO lot_inventory (sku, lot, qty_on_hand, received_date, status, notes)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (sku, lot, int(qty_on_hand), received_date, status, notes))
+            INSERT INTO lot_inventory (sku, lot, initial_qty, manual_adjustment, received_date, status, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (sku, lot, int(initial_qty), int(manual_adjustment), received_date, status, notes))
         
         lot_id = cursor.lastrowid
         conn.commit()
@@ -3195,10 +3218,11 @@ def api_create_lot_inventory():
 
 @app.route('/api/lot_inventory/<int:lot_id>', methods=['PUT'])
 def api_update_lot_inventory(lot_id):
-    """Update an existing lot inventory record"""
+    """Update an existing lot inventory record (initial qty or manual adjustment)"""
     try:
         data = request.get_json()
-        qty_on_hand = data.get('qty_on_hand')
+        initial_qty = data.get('initial_qty')
+        manual_adjustment = data.get('manual_adjustment')
         received_date = data.get('received_date')
         status = data.get('status')
         notes = data.get('notes', '')
@@ -3208,13 +3232,14 @@ def api_update_lot_inventory(lot_id):
         
         cursor.execute("""
             UPDATE lot_inventory
-            SET qty_on_hand = ?,
+            SET initial_qty = ?,
+                manual_adjustment = ?,
                 received_date = ?,
                 status = ?,
                 notes = ?,
                 updated_at = datetime('now')
             WHERE id = ?
-        """, (int(qty_on_hand), received_date, status, notes, lot_id))
+        """, (int(initial_qty), int(manual_adjustment), received_date, status, notes, lot_id))
         
         if cursor.rowcount == 0:
             conn.close()
