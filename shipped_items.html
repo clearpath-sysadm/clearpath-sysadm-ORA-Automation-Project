@@ -675,6 +675,11 @@
                     <select class="filter-select" id="skuFilter" onchange="applyFilters()">
                         <option value="">All SKUs</option>
                     </select>
+                    <select class="filter-select" id="duplicateFilter" onchange="applyFilters()">
+                        <option value="">All Orders</option>
+                        <option value="duplicates">⚠️ Duplicates Only</option>
+                        <option value="unique">Unique Only</option>
+                    </select>
                     <input type="text" class="search-box" id="searchBox" placeholder="Search by order number, SKU, lot number, or ship date...">
                 </div>
 
@@ -740,13 +745,32 @@
             document.querySelector('.dark-mode-toggle').textContent = '☀️';
         }
 
+        function identifyDuplicates(items) {
+            const orderSkuMap = {};
+            
+            items.forEach(item => {
+                const key = `${item.order_number}|${item.base_sku}`;
+                if (!orderSkuMap[key]) {
+                    orderSkuMap[key] = [];
+                }
+                orderSkuMap[key].push(item);
+            });
+            
+            items.forEach(item => {
+                const key = `${item.order_number}|${item.base_sku}`;
+                item.isDuplicate = orderSkuMap[key].length > 1;
+            });
+            
+            return items;
+        }
+
         async function fetchItems() {
             try {
                 const response = await fetch('/api/shipped_items');
                 const result = await response.json();
                 
                 if (result.success) {
-                    allItems = result.data;
+                    allItems = identifyDuplicates(result.data);
                     populateFilters();
                     updateSortIndicators();
                     applyFilters();
@@ -809,7 +833,15 @@
                 row.appendChild(dateCell);
                 
                 const orderCell = document.createElement('td');
-                orderCell.textContent = item.order_number || '-';
+                if (item.isDuplicate) {
+                    const warningSpan = document.createElement('span');
+                    warningSpan.textContent = '❗ ';
+                    warningSpan.style.color = '#ef4444';
+                    warningSpan.title = 'Duplicate order detected';
+                    orderCell.appendChild(warningSpan);
+                }
+                const orderText = document.createTextNode(item.order_number || '-');
+                orderCell.appendChild(orderText);
                 row.appendChild(orderCell);
                 
                 const lotCell = document.createElement('td');
@@ -894,6 +926,7 @@
         function applyFilters() {
             const dateFilter = document.getElementById('dateFilter').value;
             const skuFilter = document.getElementById('skuFilter').value;
+            const duplicateFilter = document.getElementById('duplicateFilter').value;
             const searchTerm = document.getElementById('searchBox').value.toLowerCase();
             
             let filtered = allItems;
@@ -904,6 +937,12 @@
             
             if (skuFilter) {
                 filtered = filtered.filter(item => item.base_sku === skuFilter);
+            }
+            
+            if (duplicateFilter === 'duplicates') {
+                filtered = filtered.filter(item => item.isDuplicate);
+            } else if (duplicateFilter === 'unique') {
+                filtered = filtered.filter(item => !item.isDuplicate);
             }
             
             if (searchTerm) {
@@ -939,6 +978,7 @@
             document.getElementById('errorMessage').innerHTML = '';
             document.getElementById('dateFilter').value = '';
             document.getElementById('skuFilter').value = '';
+            document.getElementById('duplicateFilter').value = '';
             document.getElementById('searchBox').value = '';
             fetchItems();
         }
