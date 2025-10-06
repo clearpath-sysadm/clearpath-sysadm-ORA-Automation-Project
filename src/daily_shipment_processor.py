@@ -271,9 +271,9 @@ def save_shipped_orders_to_db(orders_df):
 def save_shipped_items_to_db(items_df):
     """Save shipped items to database with UPSERT
     
-    Schema: shipped_items(ship_date, sku_lot, base_sku, quantity_shipped, order_number)
+    Schema: shipped_items(ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number)
     UNIQUE(order_number, base_sku, sku_lot)
-    Input DataFrame columns: Ship Date, SKU - Lot, Base SKU, Quantity Shipped, OrderNumber
+    Input DataFrame columns: Ship Date, SKU - Lot, Base SKU, Quantity Shipped, OrderNumber, TrackingNumber
     """
     if items_df.empty:
         logger.warning("No items to save to database")
@@ -289,6 +289,7 @@ def save_shipped_items_to_db(items_df):
             base_sku = row.get('Base SKU')
             quantity = row.get('Quantity Shipped')
             order_number = row.get('OrderNumber')
+            tracking_number = row.get('TrackingNumber', '')
             
             if not ship_date or not base_sku or not quantity:
                 logger.warning(f"Skipping row with missing required fields: {row}")
@@ -296,15 +297,17 @@ def save_shipped_items_to_db(items_df):
             
             # Ensure sku_lot is never None/NaN - coalesce to empty string
             sku_lot = str(sku_lot) if sku_lot and str(sku_lot) != 'nan' else ''
+            tracking_number = str(tracking_number) if tracking_number and str(tracking_number) != 'nan' else ''
             
             conn.execute("""
                 INSERT INTO shipped_items (
-                    ship_date, sku_lot, base_sku, quantity_shipped, order_number
-                ) VALUES (?, ?, ?, ?, ?)
+                    ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number
+                ) VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
                     ship_date = excluded.ship_date,
-                    quantity_shipped = excluded.quantity_shipped
-            """, (str(ship_date), sku_lot, str(base_sku), int(quantity), str(order_number) if order_number else None))
+                    quantity_shipped = excluded.quantity_shipped,
+                    tracking_number = excluded.tracking_number
+            """, (str(ship_date), sku_lot, str(base_sku), int(quantity), str(order_number) if order_number else None, tracking_number))
             records_saved += 1
     
     logger.info(f"Successfully saved {records_saved} shipped items to database")

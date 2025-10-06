@@ -630,7 +630,8 @@ def api_charge_report_orders():
                     COALESCE(si.sku_lot, '') as sku_lot,
                     si.quantity_shipped,
                     COALESCE(so.shipstation_order_id, '') as shipstation_order_id,
-                    COALESCE(oi.shipping_service_name, '') as shipping_service
+                    COALESCE(oi.shipping_service_name, '') as shipping_service,
+                    COALESCE(si.tracking_number, '') as tracking_number
                 FROM shipped_items si
                 LEFT JOIN shipped_orders so ON si.order_number = so.order_number
                 LEFT JOIN orders_inbox oi ON si.order_number = oi.order_number
@@ -649,7 +650,8 @@ def api_charge_report_orders():
                     COALESCE(si.sku_lot, '') as sku_lot,
                     si.quantity_shipped,
                     COALESCE(so.shipstation_order_id, '') as shipstation_order_id,
-                    COALESCE(oi.shipping_service_name, '') as shipping_service
+                    COALESCE(oi.shipping_service_name, '') as shipping_service,
+                    COALESCE(si.tracking_number, '') as tracking_number
                 FROM shipped_items si
                 LEFT JOIN shipped_orders so ON si.order_number = so.order_number
                 LEFT JOIN orders_inbox oi ON si.order_number = oi.order_number
@@ -668,7 +670,8 @@ def api_charge_report_orders():
                 'sku_lot': row[4] or '',
                 'quantity_shipped': row[5],
                 'shipstation_order_id': row[6] or '',
-                'shipping_service': row[7] or ''
+                'shipping_service': row[7] or '',
+                'tracking_number': row[8] or ''
             })
         
         return jsonify({

@@ -38,7 +38,7 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: A DataFrame with columns 'Ship Date', 'SKU - Lot',
-                      'Quantity Shipped', and 'Base SKU'.
+                      'Quantity Shipped', 'Base SKU', 'OrderNumber', and 'TrackingNumber'.
     """
     logger.info("Processing raw shipment data for Shipped_Items_Data tab...")
     extracted_data = []
@@ -46,6 +46,7 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
     for shipment in raw_shipment_data:
         ship_date = shipment.get('shipDate')
         order_number = shipment.get('orderNumber')
+        tracking_number = shipment.get('trackingNumber', '')
         if not ship_date:
             continue  # Skip shipments with no ship date
 
@@ -63,14 +64,15 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
                     'SKU - Lot': sku_lot,
                     'Quantity Shipped': quantity,
                     'Base SKU': base_sku,
-                    'OrderNumber': order_number
+                    'OrderNumber': order_number,
+                    'TrackingNumber': tracking_number
                 })
 
     df = pd.DataFrame(extracted_data)
 
     # Ensure columns are in the correct order for the sheet
     if not df.empty:
-        df = df[['Ship Date', 'SKU - Lot', 'Quantity Shipped', 'Base SKU', 'OrderNumber']]
+        df = df[['Ship Date', 'SKU - Lot', 'Quantity Shipped', 'Base SKU', 'OrderNumber', 'TrackingNumber']]
 
     logger.info(f"Finished processing. Resulting DataFrame has {len(df)} rows.")
     return df

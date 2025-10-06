@@ -932,7 +932,7 @@
                                         <th class="modal-sortable" onclick="sortModalTable('sku_lot')">Lot</th>
                                         <th class="modal-sortable" onclick="sortModalTable('quantity_shipped')">Quantity</th>
                                         <th class="modal-sortable" onclick="sortModalTable('shipping_service')">Shipping Service</th>
-                                        <th class="modal-sortable" onclick="sortModalTable('shipstation_order_id')">ShipStation ID</th>
+                                        <th class="modal-sortable" onclick="sortModalTable('tracking_number')">Tracking</th>
                                     </tr>
                                 </thead>
                                 <tbody id="ordersModalBody">
@@ -1328,6 +1328,12 @@
             modalOrders = [];
         }
 
+        function getTrackingUrl(trackingNumber) {
+            if (!trackingNumber || trackingNumber === '') return null;
+            // Use a universal tracking URL that works for FedEx, UPS, USPS
+            return `https://www.google.com/search?q=${encodeURIComponent(trackingNumber)}+tracking`;
+        }
+
         function renderModalTable() {
             const tbody = document.getElementById('ordersModalBody');
             
@@ -1339,17 +1345,24 @@
             // Calculate total quantity
             const totalQuantity = modalOrders.reduce((sum, order) => sum + (parseInt(order.quantity_shipped) || 0), 0);
             
-            const html = modalOrders.map(order => `
-                <tr>
-                    <td><a href="/xml_import.html?order=${order.order_number}" style="color: var(--primary); text-decoration: none; cursor: pointer;" title="View in Orders Inbox">${order.order_number}</a></td>
-                    <td>${order.company_name}</td>
-                    <td>${order.base_sku}</td>
-                    <td>${order.sku_lot}</td>
-                    <td>${order.quantity_shipped}</td>
-                    <td>${order.shipping_service}</td>
-                    <td>${order.shipstation_order_id}</td>
-                </tr>
-            `).join('');
+            const html = modalOrders.map(order => {
+                const trackingUrl = getTrackingUrl(order.tracking_number);
+                const trackingCell = trackingUrl && order.tracking_number
+                    ? `<a href="${trackingUrl}" target="_blank" style="color: var(--primary); text-decoration: none; cursor: pointer;" title="Track shipment">${order.tracking_number}</a>`
+                    : '<span style="color: var(--text-tertiary);">-</span>';
+                
+                return `
+                    <tr>
+                        <td><a href="/xml_import.html?order=${order.order_number}" style="color: var(--primary); text-decoration: none; cursor: pointer;" title="View in Orders Inbox">${order.order_number}</a></td>
+                        <td>${order.company_name}</td>
+                        <td>${order.base_sku}</td>
+                        <td>${order.sku_lot}</td>
+                        <td>${order.quantity_shipped}</td>
+                        <td>${order.shipping_service}</td>
+                        <td>${trackingCell}</td>
+                    </tr>
+                `;
+            }).join('');
             
             // Add total row
             const totalRow = `
