@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lot Inventory Monitor - ORA Business Automation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/shipping-violations-alert.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --spacing-unit: 8px;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-tertiary: #6c757d;
+            --border-color: #dee2e6;
+            --primary-blue: #4A90E2;
+            --success-green: #52c41a;
+            --error-red: #ff4d4f;
+            --warning-yellow: #faad14;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #404040;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --text-tertiary: #a0a0a0;
+            --border-color: #404040;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .nav-section {
+            padding: 24px 0;
+        }
+
+        .nav-section-title {
+            padding: 0 24px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+        }
+
+        .nav-item {
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--primary-blue);
+            color: white;
+            font-weight: 500;
+        }
+
+        .nav-item-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .admin-section {
+            border-top: 1px solid var(--border-color);
+        }
+
+        .admin-toggle {
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+        }
+
+        .admin-toggle:hover {
+            background: var(--bg-secondary);
+        }
+
+        .admin-toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .admin-toggle.expanded .admin-toggle-icon {
+            transform: rotate(90deg);
+        }
+
+        .admin-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .admin-items.expanded {
+            max-height: 500px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 8px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .dark-mode-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .dark-mode-toggle:hover {
+            background: var(--bg-secondary);
+        }
+
+        .content-area {
+            padding: 32px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3a7bc8;
+        }
+
+        .btn-success {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--error-red);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .status-active {
+            background: #e6f4ea;
+            color: #1e7e34;
+        }
+
+        .status-depleted {
+            background: #fdecea;
+            color: #c62828;
+        }
+
+        .status-low {
+            background: #fff4e6;
+            color: #d84315;
+        }
+
+        body.dark-mode .status-active {
+            background: #1e4620;
+            color: #81c784;
+        }
+
+        body.dark-mode .status-depleted {
+            background: #4a1e1e;
+            color: #ef5350;
+        }
+
+        body.dark-mode .status-low {
+            background: #4a3a1e;
+            color: #ffb74d;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 64px 24px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+        }
+
+        .info-banner {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary-blue);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        body.dark-mode .info-banner {
+            background: #1e3a5f;
+        }
+
+        .info-banner-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .info-banner-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .priority-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+        }
+
+        .priority-1 {
+            background: #e6f4ea;
+            color: #1e7e34;
+        }
+
+        body.dark-mode .priority-1 {
+            background: #1e4620;
+            color: #81c784;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .modal {
+                width: 95%;
+            }
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .mobile-overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="shipping-violations-alert"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo">
+                    <div class="logo-icon">O</div>
+                    <div class="logo-text">ORA Business</div>
+                </a>
+            </div>
+
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/index.html" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item active">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
+                    </a>
+                </div>
+
+                <!-- Admin Section -->
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle expanded" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items expanded" id="admin-items">
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">🏭 Lot Inventory Monitor</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Info Banner -->
+                <div class="info-banner">
+                    <div class="info-banner-title">📦 FIFO Lot Management</div>
+                    <div class="info-banner-text">
+                        Lots are automatically sorted by received date (oldest first per SKU). The system uses FIFO (First In, First Out) to ensure older lots are shipped before newer ones. Manually update quantities as inventory changes.
+                    </div>
+                </div>
+
+                <!-- Lot Inventory Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Lot Inventory</h2>
+                        <button class="btn btn-primary" onclick="openAddModal()">
+                            <span>➕</span>
+                            Add Lot
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="lot-table-container">
+                            <!-- Table will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="lot-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Add Lot Inventory</h3>
+            </div>
+            <div class="modal-body">
+                <form id="lot-form">
+                    <input type="hidden" id="lot-id">
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="sku">SKU *</label>
+                        <input type="text" class="form-input" id="sku" placeholder="e.g., 17612" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="lot">Lot Number *</label>
+                        <input type="text" class="form-input" id="lot" placeholder="e.g., 250237" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="qty-on-hand">Quantity On Hand *</label>
+                        <input type="number" class="form-input" id="qty-on-hand" min="0" placeholder="e.g., 5000" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="received-date">Received Date * (FIFO Order)</label>
+                        <input type="date" class="form-input" id="received-date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="status">Status *</label>
+                        <select class="form-select" id="status" required>
+                            <option value="active">Active</option>
+                            <option value="depleted">Depleted</option>
+                            <option value="quarantine">Quarantine</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="notes">Notes (Optional)</label>
+                        <textarea class="form-textarea" id="notes" placeholder="Add any notes about this lot..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveLot()">Save Lot</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/timezone-utils.js"></script>
+    <script src="/static/shipping-violations-alert.js"></script>
+    <script>
+        // Global state
+        let darkMode = localStorage.getItem('darkMode') === 'true';
+        let lots = [];
+        let editingLotId = null;
+
+        // Initialize
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = '☀️';
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = darkMode ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        // Toggle admin section
+        function toggleAdmin() {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            toggle.classList.toggle('expanded');
+            items.classList.toggle('expanded');
+        }
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+
+        // Load lots on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLots();
+        });
+
+        // Load lots from API
+        async function loadLots() {
+            try {
+                const response = await fetch('/api/lot_inventory');
+                const data = await response.json();
+                
+                if (data.success) {
+                    lots = data.lots;
+                    renderTable();
+                } else {
+                    console.error('Error loading lots:', data.error);
+                    showError('Failed to load lot inventory');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to load lot inventory');
+            }
+        }
+
+        // Render table
+        function renderTable() {
+            const container = document.getElementById('lot-table-container');
+            
+            if (lots.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <div class="empty-state-title">No Lot Inventory</div>
+                        <div class="empty-state-text">Add your first lot to start tracking inventory by lot number</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group lots by SKU
+            const lotsBySKU = {};
+            lots.forEach(lot => {
+                if (!lotsBySKU[lot.sku]) {
+                    lotsBySKU[lot.sku] = [];
+                }
+                lotsBySKU[lot.sku].push(lot);
+            });
+
+            let html = '<div class="table-container"><table><thead><tr>';
+            html += '<th>SKU</th>';
+            html += '<th>Lot Number</th>';
+            html += '<th>Qty On Hand</th>';
+            html += '<th>Received Date</th>';
+            html += '<th>Priority (FIFO)</th>';
+            html += '<th>Status</th>';
+            html += '<th>Notes</th>';
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+
+            // Render rows grouped by SKU
+            Object.keys(lotsBySKU).sort().forEach(sku => {
+                const skuLots = lotsBySKU[sku];
+                skuLots.forEach((lot, index) => {
+                    html += '<tr>';
+                    html += `<td><strong>${lot.sku}</strong></td>`;
+                    html += `<td>${lot.lot}</td>`;
+                    html += `<td><strong>${lot.qty_on_hand.toLocaleString()}</strong></td>`;
+                    html += `<td>${formatDate(lot.received_date)}</td>`;
+                    
+                    // Priority indicator (1st = oldest)
+                    const priority = index + 1;
+                    html += `<td><span class="priority-indicator ${priority === 1 ? 'priority-1' : ''}">#${priority}</span></td>`;
+                    
+                    html += `<td>${getStatusBadge(lot.status, lot.qty_on_hand)}</td>`;
+                    html += `<td><span style="color: var(--text-tertiary); font-size: 13px;">${lot.notes || '-'}</span></td>`;
+                    html += `<td><div class="action-buttons">
+                        <button class="btn btn-sm btn-secondary" onclick="editLot(${lot.id})">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteLot(${lot.id})">Delete</button>
+                    </div></td>`;
+                    html += '</tr>';
+                });
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Format date
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        // Get status badge
+        function getStatusBadge(status, qty) {
+            let badgeClass = 'status-active';
+            let displayStatus = status;
+
+            if (status === 'depleted' || qty === 0) {
+                badgeClass = 'status-depleted';
+                displayStatus = 'Depleted';
+            } else if (status === 'active' && qty < 1000) {
+                badgeClass = 'status-low';
+                displayStatus = 'Low Stock';
+            } else if (status === 'active') {
+                displayStatus = 'Active';
+            } else if (status === 'quarantine') {
+                badgeClass = 'status-low';
+                displayStatus = 'Quarantine';
+            }
+
+            return `<span class="status-badge ${badgeClass}">${displayStatus}</span>`;
+        }
+
+        // Open add modal
+        function openAddModal() {
+            editingLotId = null;
+            document.getElementById('modal-title').textContent = 'Add Lot Inventory';
+            document.getElementById('lot-form').reset();
+            document.getElementById('lot-id').value = '';
+            
+            // Set today as default received date
+            document.getElementById('received-date').valueAsDate = new Date();
+            
+            document.getElementById('lot-modal').classList.add('active');
+        }
+
+        // Edit lot
+        function editLot(id) {
+            const lot = lots.find(l => l.id === id);
+            if (!lot) return;
+
+            editingLotId = id;
+            document.getElementById('modal-title').textContent = 'Edit Lot Inventory';
+            document.getElementById('lot-id').value = lot.id;
+            document.getElementById('sku').value = lot.sku;
+            document.getElementById('lot').value = lot.lot;
+            document.getElementById('qty-on-hand').value = lot.qty_on_hand;
+            document.getElementById('received-date').value = lot.received_date;
+            document.getElementById('status').value = lot.status;
+            document.getElementById('notes').value = lot.notes || '';
+
+            // Disable SKU/Lot editing
+            document.getElementById('sku').disabled = true;
+            document.getElementById('lot').disabled = true;
+
+            document.getElementById('lot-modal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('lot-modal').classList.remove('active');
+            document.getElementById('lot-form').reset();
+            document.getElementById('sku').disabled = false;
+            document.getElementById('lot').disabled = false;
+            editingLotId = null;
+        }
+
+        // Save lot
+        async function saveLot() {
+            const sku = document.getElementById('sku').value.trim();
+            const lot = document.getElementById('lot').value.trim();
+            const qtyOnHand = parseInt(document.getElementById('qty-on-hand').value);
+            const receivedDate = document.getElementById('received-date').value;
+            const status = document.getElementById('status').value;
+            const notes = document.getElementById('notes').value.trim();
+
+            if (!sku || !lot || !receivedDate) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const lotData = {
+                sku,
+                lot,
+                qty_on_hand: qtyOnHand,
+                received_date: receivedDate,
+                status,
+                notes
+            };
+
+            try {
+                let url = '/api/lot_inventory';
+                let method = 'POST';
+
+                if (editingLotId) {
+                    url = `/api/lot_inventory/${editingLotId}`;
+                    method = 'PUT';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(lotData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeModal();
+                    loadLots();
+                    showSuccess(editingLotId ? 'Lot updated successfully' : 'Lot added successfully');
+                } else {
+                    showError(data.error || 'Failed to save lot');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to save lot');
+            }
+        }
+
+        // Delete lot
+        async function deleteLot(id) {
+            if (!confirm('Are you sure you want to delete this lot? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/lot_inventory/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    loadLots();
+                    showSuccess('Lot deleted successfully');
+                } else {
+                    showError(data.error || 'Failed to delete lot');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to delete lot');
+            }
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            // Simple alert for now
+            alert('✅ ' + message);
+        }
+
+        // Show error message
+        function showError(message) {
+            alert('❌ ' + message);
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeMobileMenu();
+            }
+        });
+    </script>
+</body>
+</html>

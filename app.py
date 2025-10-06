@@ -24,7 +24,7 @@ app.config['JSON_SORT_KEYS'] = False
 DB_PATH = os.path.join(project_root, 'ora.db')
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html']
 
 @app.route('/')
 def index():
@@ -3099,6 +3099,165 @@ def api_resolve_violation(violation_id):
         return jsonify({
             'success': True,
             'message': 'Violation marked as resolved'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/lot_inventory', methods=['GET'])
+def api_get_lot_inventory():
+    """Get all lot inventory records sorted by FIFO (oldest first per SKU)"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, sku, lot, qty_on_hand, received_date, status, notes, created_at, updated_at
+            FROM lot_inventory
+            ORDER BY sku ASC, received_date ASC
+        """)
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        lots = []
+        for row in rows:
+            lots.append({
+                'id': row[0],
+                'sku': row[1],
+                'lot': row[2],
+                'qty_on_hand': row[3],
+                'received_date': row[4],
+                'status': row[5],
+                'notes': row[6] if row[6] else '',
+                'created_at': row[7],
+                'updated_at': row[8]
+            })
+        
+        return jsonify({
+            'success': True,
+            'lots': lots,
+            'count': len(lots)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/lot_inventory', methods=['POST'])
+def api_create_lot_inventory():
+    """Create a new lot inventory record"""
+    try:
+        data = request.get_json()
+        sku = data.get('sku', '').strip()
+        lot = data.get('lot', '').strip()
+        qty_on_hand = data.get('qty_on_hand', 0)
+        received_date = data.get('received_date', '')
+        status = data.get('status', 'active')
+        notes = data.get('notes', '').strip()
+        
+        if not sku or not lot or not received_date:
+            return jsonify({
+                'success': False,
+                'error': 'SKU, lot, and received date are required'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO lot_inventory (sku, lot, qty_on_hand, received_date, status, notes)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (sku, lot, int(qty_on_hand), received_date, status, notes))
+        
+        lot_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Lot inventory created successfully',
+            'id': lot_id
+        })
+    except sqlite3.IntegrityError:
+        return jsonify({
+            'success': False,
+            'error': 'This SKU-Lot combination already exists'
+        }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/lot_inventory/<int:lot_id>', methods=['PUT'])
+def api_update_lot_inventory(lot_id):
+    """Update an existing lot inventory record"""
+    try:
+        data = request.get_json()
+        qty_on_hand = data.get('qty_on_hand')
+        received_date = data.get('received_date')
+        status = data.get('status')
+        notes = data.get('notes', '')
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE lot_inventory
+            SET qty_on_hand = ?,
+                received_date = ?,
+                status = ?,
+                notes = ?,
+                updated_at = datetime('now')
+            WHERE id = ?
+        """, (int(qty_on_hand), received_date, status, notes, lot_id))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Lot not found'
+            }), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Lot inventory updated successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/lot_inventory/<int:lot_id>', methods=['DELETE'])
+def api_delete_lot_inventory(lot_id):
+    """Delete a lot inventory record"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM lot_inventory WHERE id = ?", (lot_id,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Lot not found'
+            }), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Lot inventory deleted successfully'
         })
     except Exception as e:
         return jsonify({
