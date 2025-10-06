@@ -616,42 +616,45 @@ def api_charge_report_orders():
             }), 400
         
         # Base query to get orders for the specified date
+        # NOTE: Filter by shipped_items.ship_date, not shipped_orders.ship_date
+        # because items can be shipped on different dates than the order record date
+        # NOTE: No DISTINCT needed - shipped_items has unique constraint on (order_number, base_sku, sku_lot)
         if sku_filter:
             # Filter by specific SKU
             query = """
-                SELECT DISTINCT
-                    so.order_number,
+                SELECT
+                    si.order_number,
                     COALESCE(oi.ship_company, 'N/A') as company_name,
-                    so.ship_date,
+                    si.ship_date,
                     si.base_sku,
                     COALESCE(si.sku_lot, '') as sku_lot,
                     si.quantity_shipped,
                     COALESCE(so.shipstation_order_id, '') as shipstation_order_id,
                     COALESCE(oi.shipping_service_name, '') as shipping_service
-                FROM shipped_orders so
-                JOIN shipped_items si ON so.order_number = si.order_number
-                LEFT JOIN orders_inbox oi ON so.order_number = oi.order_number
-                WHERE so.ship_date = ? AND si.base_sku = ?
-                ORDER BY so.order_number
+                FROM shipped_items si
+                LEFT JOIN shipped_orders so ON si.order_number = so.order_number
+                LEFT JOIN orders_inbox oi ON si.order_number = oi.order_number
+                WHERE si.ship_date = ? AND si.base_sku = ?
+                ORDER BY si.order_number
             """
             results = execute_query(query, (ship_date, sku_filter))
         else:
             # Get all orders for the date (showing all SKUs)
             query = """
-                SELECT DISTINCT
-                    so.order_number,
+                SELECT
+                    si.order_number,
                     COALESCE(oi.ship_company, 'N/A') as company_name,
-                    so.ship_date,
+                    si.ship_date,
                     si.base_sku,
                     COALESCE(si.sku_lot, '') as sku_lot,
                     si.quantity_shipped,
                     COALESCE(so.shipstation_order_id, '') as shipstation_order_id,
                     COALESCE(oi.shipping_service_name, '') as shipping_service
-                FROM shipped_orders so
-                JOIN shipped_items si ON so.order_number = si.order_number
-                LEFT JOIN orders_inbox oi ON so.order_number = oi.order_number
-                WHERE so.ship_date = ?
-                ORDER BY so.order_number, si.base_sku
+                FROM shipped_items si
+                LEFT JOIN shipped_orders so ON si.order_number = so.order_number
+                LEFT JOIN orders_inbox oi ON si.order_number = oi.order_number
+                WHERE si.ship_date = ?
+                ORDER BY si.order_number, si.base_sku
             """
             results = execute_query(query, (ship_date,))
         
