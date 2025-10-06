@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import logging
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
@@ -28,6 +29,35 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 UPLOAD_INTERVAL_SECONDS = 300  # 5 minutes
+
+def normalize_sku(sku):
+    """
+    FIX 1: Normalize SKU format to prevent duplicates from spacing inconsistencies
+    
+    Standardizes SKU format by:
+    - Removing extra whitespace
+    - Standardizing dash spacing to " - " (space-dash-space)
+    - Handling both "17612-250237" and "17612 - 250237" formats
+    
+    Args:
+        sku (str): Raw SKU string from database
+        
+    Returns:
+        str: Normalized SKU in format "BASE - LOT" or "BASE" if no lot
+    """
+    if not sku:
+        return ''
+    
+    sku = sku.strip()
+    
+    if '-' in sku:
+        parts = sku.split('-')
+        if len(parts) == 2:
+            base = parts[0].strip()
+            lot = parts[1].strip()
+            return f"{base} - {lot}"
+    
+    return sku
 
 def upload_pending_orders():
     """
@@ -95,11 +125,34 @@ def upload_pending_orders():
             """, (order_id,))
             items = cursor.fetchall()
             
-            # Create SEPARATE ShipStation order for EACH SKU
+            # FIX 2: CONSOLIDATE items by base SKU to prevent duplicates
+            # Group items by normalized base SKU and sum quantities
+            consolidated_items = defaultdict(lambda: {'qty': 0, 'price': 0, 'original_sku': ''})
+            
             for sku, qty, unit_price_cents in items:
-                lot_number = sku_lot_map.get(sku, '')
-                sku_with_lot = f"{sku} - {lot_number}" if lot_number else sku
-                product_name = product_name_map.get(sku, f'Product {sku}')
+                # Normalize the SKU to handle spacing inconsistencies
+                normalized_sku = normalize_sku(sku)
+                # Extract base SKU (without lot number)
+                base_sku = normalized_sku.split(' - ')[0].strip()
+                
+                # Accumulate quantities for same base SKU
+                consolidated_items[base_sku]['qty'] += qty
+                # Keep first price found (should be same for same SKU)
+                if consolidated_items[base_sku]['price'] == 0 and unit_price_cents:
+                    consolidated_items[base_sku]['price'] = unit_price_cents
+                # Keep original SKU for tracking
+                if not consolidated_items[base_sku]['original_sku']:
+                    consolidated_items[base_sku]['original_sku'] = sku
+            
+            # Create ONE ShipStation order per UNIQUE base SKU
+            for base_sku, item_data in consolidated_items.items():
+                qty = item_data['qty']
+                unit_price_cents = item_data['price']
+                
+                # Get lot number from sku_lot mapping
+                lot_number = sku_lot_map.get(base_sku, '')
+                sku_with_lot = f"{base_sku} - {lot_number}" if lot_number else base_sku
+                product_name = product_name_map.get(base_sku, f'Product {base_sku}')
                 
                 shipstation_order = {
                     'orderNumber': order_number,
@@ -121,15 +174,14 @@ def upload_pending_orders():
                         'company': ship_company or '',
                         'street1': ship_street1 or '',
                         'city': ship_city or '',
-                        'state': ship_state or '',
-                        'postalCode': ship_postal_code or '',
+                        'state': ship_postal_code or '',
                         'country': ship_country or 'US',
                         'phone': ship_phone or ''
                     },
                     'items': [{
                         'sku': sku_with_lot,
                         'name': product_name,
-                        'quantity': qty,
+                        'quantity': qty,  # Consolidated quantity
                         'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
                     }],
                     'amountPaid': (unit_price_cents * qty / 100) if unit_price_cents else 0,
@@ -140,10 +192,37 @@ def upload_pending_orders():
                 shipstation_orders.append(shipstation_order)
                 order_sku_map.append({
                     'order_inbox_id': order_id,
-                    'sku': sku,
+                    'sku': base_sku,  # Use base SKU for consistency
                     'order_number': order_number,
                     'sku_with_lot': sku_with_lot
                 })
+        
+        # FIX 3: IN-BATCH DUPLICATE PREVENTION
+        # Remove duplicates within the current batch before checking ShipStation
+        seen_in_batch = set()
+        deduplicated_orders = []
+        deduplicated_sku_map = []
+        
+        for idx, order in enumerate(shipstation_orders):
+            order_num = order['orderNumber'].upper()
+            order_sku_info = order_sku_map[idx]
+            # Use normalized base SKU for comparison
+            base_sku = normalize_sku(order_sku_info['sku']).split(' - ')[0].strip()
+            
+            key = f"{order_num}_{base_sku}"
+            
+            if key not in seen_in_batch:
+                seen_in_batch.add(key)
+                deduplicated_orders.append(order)
+                deduplicated_sku_map.append(order_sku_info)
+            else:
+                logger.warning(f"Skipped in-batch duplicate: Order {order_num}, SKU {base_sku}")
+        
+        # Replace with deduplicated lists
+        shipstation_orders = deduplicated_orders
+        order_sku_map = deduplicated_sku_map
+        
+        logger.info(f"After in-batch deduplication: {len(shipstation_orders)} unique orders")
         
         # Check for duplicates in ShipStation
         unique_order_numbers = list(set([o['orderNumber'] for o in shipstation_orders]))
@@ -155,7 +234,7 @@ def upload_pending_orders():
             unique_order_numbers
         )
         
-        # Create map of existing orders
+        # FIX 4: Create map of existing orders with NORMALIZED SKUs
         existing_order_map = {}
         for o in existing_orders:
             order_num = o.get('orderNumber', '').strip().upper()
@@ -165,16 +244,19 @@ def upload_pending_orders():
             items = o.get('items', [])
             if items and len(items) > 0:
                 sku_with_lot = items[0].get('sku', '')
-                sku = sku_with_lot.split(' - ')[0].strip() if ' - ' in sku_with_lot else sku_with_lot.strip()
+                # Normalize SKU to handle spacing inconsistencies
+                normalized_sku = normalize_sku(sku_with_lot)
+                # Extract base SKU
+                base_sku = normalized_sku.split(' - ')[0].strip()
                 
-                key = f"{order_num}_{sku}"
+                key = f"{order_num}_{base_sku}"
                 existing_order_map[key] = {
                     'orderId': order_id,
                     'orderKey': order_key,
-                    'sku': sku
+                    'sku': base_sku
                 }
         
-        # Filter out duplicates
+        # Filter out duplicates using NORMALIZED SKUs
         new_orders = []
         new_order_sku_map = []
         skipped_count = 0
@@ -184,7 +266,10 @@ def upload_pending_orders():
             order_sku_info = order_sku_map[idx]
             sku = order_sku_info['sku']
             
-            key = f"{order_num_upper}_{sku}"
+            # FIX 4: Normalize SKU for comparison
+            normalized_sku = normalize_sku(sku)
+            base_sku = normalized_sku.split(' - ')[0].strip()
+            key = f"{order_num_upper}_{base_sku}"
             
             if key in existing_order_map:
                 # Already exists - mark as awaiting_shipment
