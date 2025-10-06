@@ -686,11 +686,11 @@
                         <table id="itemsTable">
                             <thead>
                                 <tr>
-                                    <th>Ship Date</th>
-                                    <th>Order Number</th>
-                                    <th>SKU - Lot</th>
-                                    <th>Quantity Shipped</th>
-                                    <th>Base SKU</th>
+                                    <th onclick="sortTable('ship_date')" style="cursor: pointer;">Ship Date <span id="sort-ship_date"></span></th>
+                                    <th onclick="sortTable('order_number')" style="cursor: pointer;">Order Number <span id="sort-order_number"></span></th>
+                                    <th onclick="sortTable('sku_lot')" style="cursor: pointer;">SKU - Lot <span id="sort-sku_lot"></span></th>
+                                    <th onclick="sortTable('quantity_shipped')" style="cursor: pointer;">Quantity Shipped <span id="sort-quantity_shipped"></span></th>
+                                    <th onclick="sortTable('base_sku')" style="cursor: pointer;">Base SKU <span id="sort-base_sku"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="itemsBody">
@@ -704,6 +704,7 @@
 
     <script>
         let allItems = [];
+        let currentSort = { column: 'ship_date', direction: 'desc' };
 
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
@@ -747,7 +748,8 @@
                 if (result.success) {
                     allItems = result.data;
                     populateFilters();
-                    renderItems(allItems);
+                    updateSortIndicators();
+                    applyFilters();
                 } else {
                     showError('Failed to load items: ' + result.error);
                 }
@@ -845,6 +847,50 @@
             document.getElementById('uniqueSkus').textContent = uniqueSkus;
         }
 
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            
+            updateSortIndicators();
+            applyFilters();
+        }
+
+        function updateSortIndicators() {
+            ['ship_date', 'order_number', 'sku_lot', 'quantity_shipped', 'base_sku'].forEach(col => {
+                const indicator = document.getElementById(`sort-${col}`);
+                if (col === currentSort.column) {
+                    indicator.textContent = currentSort.direction === 'asc' ? '▲' : '▼';
+                } else {
+                    indicator.textContent = '';
+                }
+            });
+        }
+
+        function sortItems(items) {
+            const sorted = [...items];
+            sorted.sort((a, b) => {
+                let aVal = a[currentSort.column];
+                let bVal = b[currentSort.column];
+                
+                if (currentSort.column === 'quantity_shipped') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                } else {
+                    aVal = String(aVal || '').toLowerCase();
+                    bVal = String(bVal || '').toLowerCase();
+                }
+                
+                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            return sorted;
+        }
+
         function applyFilters() {
             const dateFilter = document.getElementById('dateFilter').value;
             const skuFilter = document.getElementById('skuFilter').value;
@@ -869,7 +915,8 @@
                 );
             }
             
-            renderItems(filtered);
+            const sorted = sortItems(filtered);
+            renderItems(sorted);
         }
 
         function filterItems() {
