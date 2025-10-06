@@ -103,7 +103,7 @@ def process_shipped_orders(raw_shipment_data: list) -> pd.DataFrame:
                                   'GET /shipments' endpoint.
 
     Returns:
-        pd.DataFrame: A DataFrame with unique 'Ship Date' and 'OrderNumber'.
+        pd.DataFrame: A DataFrame with unique 'Ship Date', 'OrderNumber', and 'ShipStationOrderId'.
     """
     logger.info("Processing raw shipment data for Shipped_Orders_Data tab...")
     extracted_data = []
@@ -111,12 +111,14 @@ def process_shipped_orders(raw_shipment_data: list) -> pd.DataFrame:
     for shipment in raw_shipment_data:
         order_number = shipment.get('orderNumber')
         ship_date = shipment.get('shipDate')
+        shipstation_order_id = shipment.get('orderId')
 
         if order_number and ship_date:
             ship_date = datetime.datetime.strptime(ship_date[:10], '%Y-%m-%d').date()
             extracted_data.append({
                 'Ship Date': ship_date,
-                'OrderNumber': order_number
+                'OrderNumber': order_number,
+                'ShipStationOrderId': str(shipstation_order_id) if shipstation_order_id else ''
             })
 
     df = pd.DataFrame(extracted_data)

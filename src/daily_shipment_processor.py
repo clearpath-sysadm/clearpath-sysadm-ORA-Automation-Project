@@ -238,7 +238,7 @@ def save_shipped_orders_to_db(orders_df):
     """Save shipped orders to database with UPSERT by order_number
     
     Schema: shipped_orders(ship_date, order_number UNIQUE, customer_email, total_items, shipstation_order_id)
-    Input DataFrame columns: Ship Date, OrderNumber
+    Input DataFrame columns: Ship Date, OrderNumber, ShipStationOrderId
     """
     if orders_df.empty:
         logger.warning("No orders to save to database")
@@ -251,17 +251,21 @@ def save_shipped_orders_to_db(orders_df):
         for _, row in orders_df.iterrows():
             ship_date = row.get('Ship Date')
             order_number = row.get('OrderNumber')
+            shipstation_order_id = row.get('ShipStationOrderId', '')
             
             if not order_number or not ship_date:
                 logger.warning(f"Skipping row with missing order_number or ship_date: {row}")
                 continue
             
+            shipstation_order_id = str(shipstation_order_id) if shipstation_order_id and str(shipstation_order_id) != 'nan' else None
+            
             conn.execute("""
-                INSERT INTO shipped_orders (ship_date, order_number)
-                VALUES (?, ?)
+                INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
+                VALUES (?, ?, ?)
                 ON CONFLICT(order_number) DO UPDATE SET
-                    ship_date = excluded.ship_date
-            """, (str(ship_date), str(order_number)))
+                    ship_date = excluded.ship_date,
+                    shipstation_order_id = excluded.shipstation_order_id
+            """, (str(ship_date), str(order_number), shipstation_order_id))
             records_saved += 1
     
     logger.info(f"Successfully saved {records_saved} shipped orders to database")
