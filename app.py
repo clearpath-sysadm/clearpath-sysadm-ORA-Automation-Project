@@ -621,15 +621,16 @@ def api_charge_report_orders():
             query = """
                 SELECT DISTINCT
                     so.order_number,
-                    so.company_name,
+                    COALESCE(oi.ship_company, 'N/A') as company_name,
                     so.ship_date,
                     si.base_sku,
-                    si.sku_lot,
+                    COALESCE(si.sku_lot, '') as sku_lot,
                     si.quantity_shipped,
-                    so.shipstation_order_id,
-                    so.shipping_service_name
+                    COALESCE(so.shipstation_order_id, '') as shipstation_order_id,
+                    COALESCE(oi.shipping_service_name, '') as shipping_service
                 FROM shipped_orders so
-                JOIN shipped_items si ON so.order_number = si.order_number AND so.ship_date = si.ship_date
+                JOIN shipped_items si ON so.order_number = si.order_number
+                LEFT JOIN orders_inbox oi ON so.order_number = oi.order_number
                 WHERE so.ship_date = ? AND si.base_sku = ?
                 ORDER BY so.order_number
             """
@@ -639,15 +640,16 @@ def api_charge_report_orders():
             query = """
                 SELECT DISTINCT
                     so.order_number,
-                    so.company_name,
+                    COALESCE(oi.ship_company, 'N/A') as company_name,
                     so.ship_date,
                     si.base_sku,
-                    si.sku_lot,
+                    COALESCE(si.sku_lot, '') as sku_lot,
                     si.quantity_shipped,
-                    so.shipstation_order_id,
-                    so.shipping_service_name
+                    COALESCE(so.shipstation_order_id, '') as shipstation_order_id,
+                    COALESCE(oi.shipping_service_name, '') as shipping_service
                 FROM shipped_orders so
-                JOIN shipped_items si ON so.order_number = si.order_number AND so.ship_date = si.ship_date
+                JOIN shipped_items si ON so.order_number = si.order_number
+                LEFT JOIN orders_inbox oi ON so.order_number = oi.order_number
                 WHERE so.ship_date = ?
                 ORDER BY so.order_number, si.base_sku
             """
