@@ -27,6 +27,21 @@ def extract_base_sku(sku_lot: str) -> str:
         return ''
     return sku_lot.split('-')[0].strip()
 
+def extract_lot_number(sku_lot: str) -> str:
+    """Extracts only the lot number from a combined 'SKU - Lot' string.
+    
+    If the string contains a hyphen (e.g., '17914-240286'), returns only the lot portion ('240286').
+    If the string has no hyphen (already a lot number), returns it as-is.
+    """
+    if not isinstance(sku_lot, str) or not sku_lot:
+        return ''
+    
+    if '-' not in sku_lot:
+        return sku_lot.strip()
+    
+    parts = sku_lot.split('-', 1)
+    return parts[1].strip() if len(parts) > 1 else sku_lot.strip()
+
 def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:     
     """
     Processes raw shipment data into a DataFrame suitable for the       
@@ -54,14 +69,15 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
 
         if 'shipmentItems' in shipment and shipment['shipmentItems']:   
             for item in shipment['shipmentItems']:
-                sku_lot = item.get('sku', '')
+                sku_full = item.get('sku', '')
                 quantity = item.get('quantity')
-                base_sku = extract_base_sku(sku_lot)
+                base_sku = extract_base_sku(sku_full)
+                lot_number = extract_lot_number(sku_full)
 
                 # Append to our list of dictionaries
                 extracted_data.append({
                     'Ship Date': ship_date,
-                    'SKU - Lot': sku_lot,
+                    'SKU - Lot': lot_number,
                     'Quantity Shipped': quantity,
                     'Base SKU': base_sku,
                     'OrderNumber': order_number,

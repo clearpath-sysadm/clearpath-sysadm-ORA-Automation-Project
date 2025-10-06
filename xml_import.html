@@ -1288,6 +1288,7 @@
                                     <th class="sortable" data-sort="quantity">Quantity</th>
                                     <th class="sortable" data-sort="status">Status</th>
                                     <th class="sortable" data-sort="shipping_service_name">Service</th>
+                                    <th class="sortable" data-sort="tracking_number">Tracking</th>
                                     <th class="sortable" data-sort="shipping_carrier_id">Carrier Acct</th>
                                     <th class="sortable" data-sort="shipstation_order_id">ShipStation ID</th>
                                     <th class="sortable" data-sort="created_at">Created At</th>
@@ -1714,7 +1715,7 @@
                 const message = filterMode === 'pending' ? 'No pending orders' : 
                                filterMode === 'awaiting_shipment' ? 'No orders awaiting shipment' :
                                'No orders in inbox';
-                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</td></tr>`;
                 
                 // Update mobile cards list (not the entire container)
                 const mobileCardsList = document.getElementById('mobile-cards-list');
@@ -1748,6 +1749,11 @@
                 const serviceBadge = getServiceBadge(order.shipping_service_name);
                 const carrierAcctBadge = getCarrierAccountBadge(order);
                 
+                // Format tracking number
+                const trackingCell = order.tracking_number 
+                    ? `<a href="https://www.google.com/search?q=${encodeURIComponent(order.tracking_number)}+tracking" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a>`
+                    : '<span style="color: var(--text-tertiary);">-</span>';
+                
                 return `
                 <tr data-order-id="${order.id}" class="order-row">
                     <td>
@@ -1760,6 +1766,7 @@
                     <td>${order.quantity}</td>
                     <td>${statusBadge}</td>
                     <td>${serviceBadge}</td>
+                    <td>${trackingCell}</td>
                     <td>${carrierAcctBadge}</td>
                     <td>${order.shipstation_order_id || '-'}</td>
                     <td>${formatRelativeDate(order.created_at)}</td>
@@ -1812,6 +1819,12 @@
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Service:</span>
                             <span class="order-card-detail-value">${getServiceBadge(order.shipping_service_name)}</span>
+                        </div>
+                        ` : ''}
+                        ${order.tracking_number ? `
+                        <div class="order-card-detail-row">
+                            <span class="order-card-detail-label">Tracking:</span>
+                            <span class="order-card-detail-value"><a href="https://www.google.com/search?q=${encodeURIComponent(order.tracking_number)}+tracking" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a></span>
                         </div>
                         ` : ''}
                         ${order.shipping_carrier_id ? `
