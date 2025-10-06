@@ -1582,7 +1582,7 @@
         function getTrackingUrl(trackingNumber) {
             if (!trackingNumber || trackingNumber === '') return null;
             // Use a universal tracking URL that works for FedEx, UPS, USPS
-            return `https://www.google.com/search?q=${encodeURIComponent(trackingNumber)}+tracking`;
+            return `https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(trackingNumber)}&trkqual=12029~${encodeURIComponent(trackingNumber)}~FDEG`;
         }
 
         function renderModalTable() {

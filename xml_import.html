@@ -1751,7 +1751,7 @@
                 
                 // Format tracking number
                 const trackingCell = order.tracking_number 
-                    ? `<a href="https://www.google.com/search?q=${encodeURIComponent(order.tracking_number)}+tracking" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a>`
+                    ? `<a href="https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(order.tracking_number)}&trkqual=12029~${encodeURIComponent(order.tracking_number)}~FDEG" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a>`
                     : '<span style="color: var(--text-tertiary);">-</span>';
                 
                 return `
@@ -1824,7 +1824,7 @@
                         ${order.tracking_number ? `
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Tracking:</span>
-                            <span class="order-card-detail-value"><a href="https://www.google.com/search?q=${encodeURIComponent(order.tracking_number)}+tracking" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a></span>
+                            <span class="order-card-detail-value"><a href="https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(order.tracking_number)}&trkqual=12029~${encodeURIComponent(order.tracking_number)}~FDEG" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a></span>
                         </div>
                         ` : ''}
                         ${order.shipping_carrier_id ? `
