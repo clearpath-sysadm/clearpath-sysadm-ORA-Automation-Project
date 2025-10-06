@@ -77,7 +77,7 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
                 # Append to our list of dictionaries
                 extracted_data.append({
                     'Ship Date': ship_date,
-                    'SKU - Lot': lot_number,
+                    'SKU - Lot': sku_full,
                     'Quantity Shipped': quantity,
                     'Base SKU': base_sku,
                     'OrderNumber': order_number,
