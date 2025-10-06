@@ -675,11 +675,10 @@
                     <select class="filter-select" id="skuFilter" onchange="applyFilters()">
                         <option value="">All SKUs</option>
                     </select>
-                    <select class="filter-select" id="duplicateFilter" onchange="applyFilters()">
-                        <option value="">All Orders</option>
-                        <option value="duplicates">⚠️ Duplicates Only</option>
-                        <option value="unique">Unique Only</option>
-                    </select>
+                    <button class="btn" id="duplicateToggle" onclick="toggleDuplicateFilter()" style="display: inline-flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 16px;">⚠️</span>
+                        <span id="duplicateToggleText">Show Duplicates Only</span>
+                    </button>
                     <input type="text" class="search-box" id="searchBox" placeholder="Search by order number, SKU, lot number, or ship date...">
                 </div>
 
@@ -710,6 +709,7 @@
     <script>
         let allItems = [];
         let currentSort = { column: 'ship_date', direction: 'desc' };
+        let showDuplicatesOnly = false;
 
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
@@ -923,10 +923,29 @@
             return sorted;
         }
 
+        function toggleDuplicateFilter() {
+            showDuplicatesOnly = !showDuplicatesOnly;
+            const toggleBtn = document.getElementById('duplicateToggle');
+            const toggleText = document.getElementById('duplicateToggleText');
+            
+            if (showDuplicatesOnly) {
+                toggleBtn.style.backgroundColor = '#ef4444';
+                toggleBtn.style.color = 'white';
+                toggleBtn.style.borderColor = '#ef4444';
+                toggleText.textContent = 'Showing Duplicates Only';
+            } else {
+                toggleBtn.style.backgroundColor = '';
+                toggleBtn.style.color = '';
+                toggleBtn.style.borderColor = '';
+                toggleText.textContent = 'Show Duplicates Only';
+            }
+            
+            applyFilters();
+        }
+
         function applyFilters() {
             const dateFilter = document.getElementById('dateFilter').value;
             const skuFilter = document.getElementById('skuFilter').value;
-            const duplicateFilter = document.getElementById('duplicateFilter').value;
             const searchTerm = document.getElementById('searchBox').value.toLowerCase();
             
             let filtered = allItems;
@@ -939,10 +958,8 @@
                 filtered = filtered.filter(item => item.base_sku === skuFilter);
             }
             
-            if (duplicateFilter === 'duplicates') {
+            if (showDuplicatesOnly) {
                 filtered = filtered.filter(item => item.isDuplicate);
-            } else if (duplicateFilter === 'unique') {
-                filtered = filtered.filter(item => !item.isDuplicate);
             }
             
             if (searchTerm) {
@@ -978,8 +995,14 @@
             document.getElementById('errorMessage').innerHTML = '';
             document.getElementById('dateFilter').value = '';
             document.getElementById('skuFilter').value = '';
-            document.getElementById('duplicateFilter').value = '';
             document.getElementById('searchBox').value = '';
+            showDuplicatesOnly = false;
+            const toggleBtn = document.getElementById('duplicateToggle');
+            const toggleText = document.getElementById('duplicateToggleText');
+            toggleBtn.style.backgroundColor = '';
+            toggleBtn.style.color = '';
+            toggleBtn.style.borderColor = '';
+            toggleText.textContent = 'Show Duplicates Only';
             fetchItems();
         }
 
