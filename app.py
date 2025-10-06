@@ -331,7 +331,8 @@ def api_shipped_items():
                 ship_date,
                 sku_lot,
                 quantity_shipped,
-                base_sku
+                base_sku,
+                order_number
             FROM shipped_items
             WHERE ship_date >= ? AND ship_date <= ?
             ORDER BY ship_date DESC, id DESC
@@ -345,7 +346,8 @@ def api_shipped_items():
                 'ship_date': row[0],
                 'sku_lot': row[1] or '',
                 'quantity_shipped': row[2],
-                'base_sku': row[3]
+                'base_sku': row[3],
+                'order_number': row[4] or ''
             })
         
         return jsonify({

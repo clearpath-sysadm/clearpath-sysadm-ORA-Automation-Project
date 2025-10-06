@@ -675,7 +675,7 @@
                     <select class="filter-select" id="skuFilter" onchange="applyFilters()">
                         <option value="">All SKUs</option>
                     </select>
-                    <input type="text" class="search-box" id="searchBox" placeholder="Search by SKU, lot number, or ship date...">
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search by order number, SKU, lot number, or ship date...">
                 </div>
 
                 <div id="errorMessage"></div>
@@ -687,6 +687,7 @@
                             <thead>
                                 <tr>
                                     <th>Ship Date</th>
+                                    <th>Order Number</th>
                                     <th>SKU - Lot</th>
                                     <th>Quantity Shipped</th>
                                     <th>Base SKU</th>
@@ -805,6 +806,10 @@
                 dateCell.textContent = item.ship_date || '-';
                 row.appendChild(dateCell);
                 
+                const orderCell = document.createElement('td');
+                orderCell.textContent = item.order_number || '-';
+                row.appendChild(orderCell);
+                
                 const lotCell = document.createElement('td');
                 lotCell.textContent = formatSkuLot(item.sku_lot);
                 row.appendChild(lotCell);
@@ -859,7 +864,8 @@
                 filtered = filtered.filter(item => 
                     (item.base_sku && item.base_sku.toLowerCase().includes(searchTerm)) ||
                     (item.sku_lot && item.sku_lot.toLowerCase().includes(searchTerm)) ||
-                    (item.ship_date && item.ship_date.includes(searchTerm))
+                    (item.ship_date && item.ship_date.includes(searchTerm)) ||
+                    (item.order_number && item.order_number.toLowerCase().includes(searchTerm))
                 );
             }
             
