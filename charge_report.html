@@ -610,11 +610,19 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .modal {
+                transition: none;
+            }
         }
 
         .modal-content {
@@ -625,6 +633,28 @@
             display: flex;
             flex-direction: column;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        /* Mobile: Bottom sheet layout */
+        @media (max-width: 768px) {
+            .modal {
+                align-items: flex-end;
+            }
+            
+            .modal-content {
+                width: 100%;
+                max-height: 90vh;
+                border-radius: 16px 16px 0 0;
+                transform-origin: bottom;
+            }
+        }
+
+        /* Tablet: Centered with 70% width */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .modal-content {
+                width: 70%;
+            }
         }
 
         .modal-header {
@@ -647,8 +677,8 @@
             font-size: 28px;
             cursor: pointer;
             color: var(--text-tertiary);
-            width: 36px;
-            height: 36px;
+            min-width: 44px;
+            min-height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -724,6 +754,141 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Card Layout */
+        .modal-cards-container {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            #modal-table-container {
+                display: none !important;
+            }
+            
+            .modal-cards-container {
+                display: block;
+            }
+            
+            .modal-body {
+                padding: 16px;
+            }
+        }
+
+        .order-card {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .order-card:active {
+            transform: scale(0.98);
+            background: var(--bg-tertiary);
+        }
+
+        .order-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .order-card-number {
+            font-weight: 600;
+            color: var(--primary-blue);
+            font-size: 16px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .order-card-quantity {
+            background: var(--primary-blue);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .order-card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 8px 0;
+            min-height: 44px;
+        }
+
+        .order-card-label {
+            color: var(--text-tertiary);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .order-card-value {
+            color: var(--text-primary);
+            font-size: 14px;
+            text-align: right;
+            flex: 1;
+            margin-left: 12px;
+        }
+
+        .order-card-tracking {
+            color: var(--primary-blue);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            display: inline-block;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+        }
+
+        .order-card-tracking:active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .modal-total-card {
+            background: var(--primary-blue);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Modal swipe handle for mobile */
+        .modal-swipe-handle {
+            display: none;
+            width: 40px;
+            height: 4px;
+            background: var(--text-tertiary);
+            border-radius: 2px;
+            margin: 12px auto 8px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .modal-swipe-handle {
+                display: block;
+            }
+        }
+
+        /* Focus trap accessibility */
+        body.modal-open {
+            overflow: hidden;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -911,17 +1076,19 @@
             </div>
 
             <!-- Orders Detail Modal -->
-            <div id="ordersModal" class="modal" style="display: none;">
+            <div id="ordersModal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
                 <div class="modal-content" style="max-width: 1000px;">
+                    <div class="modal-swipe-handle"></div>
                     <div class="modal-header">
                         <h2 id="modalTitle">Orders for Date</h2>
-                        <button class="btn-close-modal" onclick="closeOrdersModal()">×</button>
+                        <button class="btn-close-modal" onclick="closeOrdersModal()" aria-label="Close modal">×</button>
                     </div>
                     <div class="modal-body">
                         <div id="modal-loading" style="display: none; text-align: center; padding: 2rem;">
                             <div class="spinner"></div>
                             <p>Loading orders...</p>
                         </div>
+                        <!-- Desktop Table View -->
                         <div id="modal-table-container">
                             <table id="ordersModalTable">
                                 <thead>
@@ -938,6 +1105,9 @@
                                 <tbody id="ordersModalBody">
                                 </tbody>
                             </table>
+                        </div>
+                        <!-- Mobile Card View -->
+                        <div class="modal-cards-container" id="modal-cards-container">
                         </div>
                     </div>
                 </div>
@@ -1280,6 +1450,9 @@
         let modalSortField = 'order_number';
         let modalSortDirection = 'asc';
 
+        let modalTouchStartY = 0;
+        let modalTouchCurrentY = 0;
+
         async function openOrdersModal(date, sku = null) {
             const modal = document.getElementById('ordersModal');
             const modalTitle = document.getElementById('modalTitle');
@@ -1293,10 +1466,23 @@
                 modalTitle.textContent = `All Orders for ${formatChargeReportDate(date)}`;
             }
             
+            // Lock body scroll
+            document.body.classList.add('modal-open');
+            
             // Show modal and loading
             modal.style.display = 'flex';
             modalLoading.style.display = 'block';
             modalTableContainer.style.display = 'none';
+            
+            // Add event listeners for dismissal
+            modal.addEventListener('click', handleBackdropClick);
+            document.addEventListener('keydown', handleEscKey);
+            
+            // Add swipe-to-dismiss for mobile
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.addEventListener('touchstart', handleTouchStart, { passive: true });
+            modalContent.addEventListener('touchmove', handleTouchMove, { passive: false });
+            modalContent.addEventListener('touchend', handleTouchEnd);
             
             try {
                 // Build API URL
@@ -1324,9 +1510,74 @@
         }
 
         function closeOrdersModal() {
-            document.getElementById('ordersModal').style.display = 'none';
+            const modal = document.getElementById('ordersModal');
+            const modalContent = modal.querySelector('.modal-content');
+            
+            // Remove event listeners
+            modal.removeEventListener('click', handleBackdropClick);
+            document.removeEventListener('keydown', handleEscKey);
+            modalContent.removeEventListener('touchstart', handleTouchStart);
+            modalContent.removeEventListener('touchmove', handleTouchMove);
+            modalContent.removeEventListener('touchend', handleTouchEnd);
+            
+            // Unlock body scroll
+            document.body.classList.remove('modal-open');
+            
+            // Hide modal
+            modal.style.display = 'none';
             modalOrders = [];
         }
+
+        function handleBackdropClick(event) {
+            if (event.target.id === 'ordersModal') {
+                closeOrdersModal();
+            }
+        }
+
+        function handleEscKey(event) {
+            if (event.key === 'Escape') {
+                closeOrdersModal();
+            }
+        }
+
+        function handleTouchStart(event) {
+            modalTouchStartY = event.touches[0].clientY;
+        }
+
+        function handleTouchMove(event) {
+            modalTouchCurrentY = event.touches[0].clientY;
+            const deltaY = modalTouchCurrentY - modalTouchStartY;
+            
+            // Only allow swipe down from top of modal
+            const modalBody = event.currentTarget.querySelector('.modal-body');
+            if (modalBody.scrollTop === 0 && deltaY > 0) {
+                event.preventDefault();
+                event.currentTarget.style.transform = `translateY(${deltaY}px)`;
+            }
+        }
+
+        function handleTouchEnd(event) {
+            const deltaY = modalTouchCurrentY - modalTouchStartY;
+            const velocity = deltaY / 100;
+            
+            // Close modal if swiped down more than 100px or with enough velocity
+            if (deltaY > 100 || velocity > 1) {
+                closeOrdersModal();
+            } else {
+                // Reset position
+                event.currentTarget.style.transform = '';
+            }
+            
+            modalTouchStartY = 0;
+            modalTouchCurrentY = 0;
+        }
+
+        // Re-render on window resize to switch between mobile/desktop views
+        window.addEventListener('resize', () => {
+            if (modalOrders.length > 0) {
+                renderModalTable();
+            }
+        });
 
         function getTrackingUrl(trackingNumber) {
             if (!trackingNumber || trackingNumber === '') return null;
@@ -1335,6 +1586,16 @@
         }
 
         function renderModalTable() {
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                renderMobileCards();
+            } else {
+                renderDesktopTable();
+            }
+        }
+
+        function renderDesktopTable() {
             const tbody = document.getElementById('ordersModalBody');
             
             if (modalOrders.length === 0) {
@@ -1374,6 +1635,63 @@
             `;
             
             tbody.innerHTML = html + totalRow;
+        }
+
+        function renderMobileCards() {
+            const container = document.getElementById('modal-cards-container');
+            
+            if (modalOrders.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No orders found</p>';
+                return;
+            }
+            
+            // Calculate total quantity
+            const totalQuantity = modalOrders.reduce((sum, order) => sum + (parseInt(order.quantity_shipped) || 0), 0);
+            
+            const cardsHtml = modalOrders.map(order => {
+                const trackingUrl = getTrackingUrl(order.tracking_number);
+                const trackingHtml = trackingUrl && order.tracking_number
+                    ? `<a href="${trackingUrl}" target="_blank" class="order-card-tracking" title="Track shipment">${order.tracking_number}</a>`
+                    : '<span style="color: var(--text-tertiary);">No tracking</span>';
+                
+                return `
+                    <div class="order-card">
+                        <div class="order-card-header">
+                            <a href="/xml_import.html?order=${order.order_number}" class="order-card-number" title="View in Orders Inbox">#${order.order_number}</a>
+                            <div class="order-card-quantity">${order.quantity_shipped}</div>
+                        </div>
+                        <div class="order-card-row">
+                            <span class="order-card-label">Company</span>
+                            <span class="order-card-value">${order.company_name}</span>
+                        </div>
+                        <div class="order-card-row">
+                            <span class="order-card-label">SKU</span>
+                            <span class="order-card-value">${order.base_sku}</span>
+                        </div>
+                        <div class="order-card-row">
+                            <span class="order-card-label">Lot</span>
+                            <span class="order-card-value">${order.sku_lot}</span>
+                        </div>
+                        <div class="order-card-row">
+                            <span class="order-card-label">Shipping</span>
+                            <span class="order-card-value">${order.shipping_service}</span>
+                        </div>
+                        <div class="order-card-row">
+                            <span class="order-card-label">Tracking</span>
+                            <span class="order-card-value">${trackingHtml}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            const totalCard = `
+                <div class="modal-total-card">
+                    <span>TOTAL QUANTITY</span>
+                    <span>${totalQuantity}</span>
+                </div>
+            `;
+            
+            container.innerHTML = cardsHtml + totalCard;
         }
 
         function sortModalTable(field) {
