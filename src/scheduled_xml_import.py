@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import logging
+from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -200,8 +201,17 @@ def import_orders_from_drive():
                     logger.info(f"SKIPPED Order {order_number}: No Key Products found. SKUs: {', '.join(skipped_skus)}")
                     continue
                 
-                # Calculate total quantity from filtered items (only Key Products)
-                total_quantity = sum(item['quantity'] for item in filtered_items)
+                # FIX: Consolidate items by SKU to prevent duplicate rows in database
+                # Multiple bundles or items can expand to the same SKU - combine them
+                consolidated = defaultdict(int)
+                for item in filtered_items:
+                    consolidated[item['sku']] += item['quantity']
+                
+                # Convert back to list format for insertion
+                consolidated_items = [{'sku': sku, 'quantity': qty} for sku, qty in consolidated.items()]
+                
+                # Calculate total quantity from consolidated items (only Key Products)
+                total_quantity = sum(item['quantity'] for item in consolidated_items)
                 
                 cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
                 existing = cursor.fetchone()
@@ -222,8 +232,8 @@ def import_orders_from_drive():
                     
                     order_inbox_id = cursor.lastrowid
                     
-                    # Insert filtered line items (only Key Products)
-                    for item in filtered_items:
+                    # Insert consolidated line items (duplicates merged, only Key Products)
+                    for item in consolidated_items:
                         cursor.execute("""
                             INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
                             VALUES (?, ?, ?)
