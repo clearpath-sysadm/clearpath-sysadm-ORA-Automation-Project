@@ -1,0 +1,78 @@
+Recommended 3-Phase Approach
+Phase 1: Immediate Fix (Quick Win - Today)
+Add a Lot Inventory Display to your dashboard showing:
+
+Current inventory quantity for each lot
+Which lot is "active" (should be used first)
+Visual indicator when a lot is depleted
+New Page: "Lot Inventory Monitor"
+
+Table view: SKU | Lot | Qty On Hand | Status | Priority
+Color coding: Green (active), Yellow (low stock), Red (depleted)
+Manual controls to set priority (which lot to use first)
+Phase 2: Semi-Automation (This Week)
+Add Bulk Order Lot Assignment tool:
+
+Button: "Update Pending Orders to Use New Lot"
+Select SKU, old lot, new lot
+Updates all pending orders in one click
+Prevents manual one-by-one updates
+Phase 3: Full Automation (Next Week)
+Implement Smart Lot Allocation System:
+
+Track inventory quantities by lot (not just SKU)
+Automatically assign lots to orders based on:
+Priority (manual override for "use this lot first")
+FIFO (oldest lot first by default)
+Availability (auto-switch when lot runs out)
+Reserve inventory when orders created
+Real-time depletion tracking
+🏗️ Technical Implementation
+New Database Table: lot_inventory
+
+- sku (e.g., "17612")
+- lot (e.g., "250237")
+- quantity_on_hand (e.g., 5000)
+- quantity_reserved (orders not shipped yet)
+- priority (1, 2, 3... for sort order)
+- received_date (for FIFO)
+- status (active/depleted/quarantine)
+New Database Table: order_item_lot_assignments
+
+- order_number
+- sku
+- lot_assigned
+- quantity
+- assigned_at
+Modified Workflow:
+
+When XML imports orders → Check lot_inventory for available lots
+Allocate lot automatically (priority-based or FIFO)
+Reserve quantity in lot_inventory
+When shipped → Deduct from lot_inventory
+When lot depleted → Auto-switch to next priority lot
+⚡ Quick Start: What I Recommend Building First
+Option A: Just Display (Fastest - 30 min)
+
+New page showing current lot inventory levels
+Manual controls to update lot assignments
+Bulk update tool for switching lots
+Option B: Semi-Automated (Medium - 2-3 hours)
+
+Option A + automatic lot selection on import
+Still requires manual lot inventory updates
+Option C: Fully Automated (Full - 1 day)
+
+Complete system with reservation tracking
+Auto-depletion, auto-switching, full audit trail
+🤔 Questions for You:
+Which phase do you want to start with? (Quick display first, or jump to automation?)
+
+How do you currently know lot quantities? (Manual count? Separate system? Need to manually enter?)
+
+Lot selection preference:
+
+Use oldest lot first (FIFO)?
+Manual priority (you set which lot to use)?
+Hybrid (FIFO with override capability)?
+For today's immediate problem: Should I build a quick tool to bulk-update all pending orders from old lot → new lot for SKU 17612?
