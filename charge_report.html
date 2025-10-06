@@ -590,6 +590,141 @@
                 width: 100%;
             }
         }
+
+        /* Clickable cells in charge report */
+        .clickable-cell {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clickable-cell:hover {
+            background: #5d5d6d !important;
+            color: #a78bfa !important;
+            text-decoration: underline;
+        }
+
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 20px;
+        }
+
+        .btn-close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-close-modal:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        #ordersModalTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        #ordersModalTable thead {
+            background: var(--primary-blue);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        #ordersModalTable th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #ordersModalTable th:hover {
+            background: var(--primary-blue-hover);
+        }
+
+        #ordersModalTable td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            text-align: left;
+        }
+
+        #ordersModalTable tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .modal-sortable::after {
+            content: ' ↕';
+            opacity: 0.5;
+            font-size: 10px;
+        }
+
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -774,6 +909,39 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Orders Detail Modal -->
+            <div id="ordersModal" class="modal" style="display: none;">
+                <div class="modal-content" style="max-width: 1000px;">
+                    <div class="modal-header">
+                        <h2 id="modalTitle">Orders for Date</h2>
+                        <button class="btn-close-modal" onclick="closeOrdersModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modal-loading" style="display: none; text-align: center; padding: 2rem;">
+                            <div class="spinner"></div>
+                            <p>Loading orders...</p>
+                        </div>
+                        <div id="modal-table-container">
+                            <table id="ordersModalTable">
+                                <thead>
+                                    <tr>
+                                        <th class="modal-sortable" onclick="sortModalTable('order_number')">Order #</th>
+                                        <th class="modal-sortable" onclick="sortModalTable('company_name')">Company</th>
+                                        <th class="modal-sortable" onclick="sortModalTable('base_sku')">SKU</th>
+                                        <th class="modal-sortable" onclick="sortModalTable('sku_lot')">Lot</th>
+                                        <th class="modal-sortable" onclick="sortModalTable('quantity_shipped')">Quantity</th>
+                                        <th class="modal-sortable" onclick="sortModalTable('shipping_service')">Shipping Service</th>
+                                        <th class="modal-sortable" onclick="sortModalTable('shipstation_order_id')">ShipStation ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersModalBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -903,12 +1071,12 @@
                 <tr>
                     <td class="date-cell" data-label="Date">${formatChargeReportDate(row.date)}</td>
                     <td class="stat-highlight" data-label="# Of Orders">${row.order_count}</td>
-                    <td data-label="17612">${row.sku_17612 || '-'}</td>
-                    <td data-label="17904">${row.sku_17904 || '-'}</td>
-                    <td data-label="17914">${row.sku_17914 || '-'}</td>
-                    <td data-label="18675">${row.sku_18675 || '-'}</td>
-                    <td data-label="18795">${row.sku_18795 || '-'}</td>
-                    <td class="currency" data-label="Orders">${formatCurrency(row.orders_charge)}</td>
+                    <td class="clickable-cell" data-label="17612" onclick="openOrdersModal('${row.date}', '17612')" title="Click to view orders">${row.sku_17612 || '-'}</td>
+                    <td class="clickable-cell" data-label="17904" onclick="openOrdersModal('${row.date}', '17904')" title="Click to view orders">${row.sku_17904 || '-'}</td>
+                    <td class="clickable-cell" data-label="17914" onclick="openOrdersModal('${row.date}', '17914')" title="Click to view orders">${row.sku_17914 || '-'}</td>
+                    <td class="clickable-cell" data-label="18675" onclick="openOrdersModal('${row.date}', '18675')" title="Click to view orders">${row.sku_18675 || '-'}</td>
+                    <td class="clickable-cell" data-label="18795" onclick="openOrdersModal('${row.date}', '18795')" title="Click to view orders">${row.sku_18795 || '-'}</td>
+                    <td class="currency clickable-cell" data-label="Orders" onclick="openOrdersModal('${row.date}')" title="Click to view all orders">${formatCurrency(row.orders_charge)}</td>
                     <td class="currency" data-label="Packages">${formatCurrency(row.packages_charge)}</td>
                     <td class="currency" data-label="Space Rental">${formatCurrency(row.space_rental)}</td>
                     <td class="currency stat-highlight" data-label="Total">${formatCurrency(row.total)}</td>
@@ -1106,6 +1274,125 @@
             document.getElementById('errorMessage').innerHTML = '';
             fetchReport();
         }
+
+        // Modal functionality
+        let modalOrders = [];
+        let modalSortField = 'order_number';
+        let modalSortDirection = 'asc';
+
+        async function openOrdersModal(date, sku = null) {
+            const modal = document.getElementById('ordersModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalLoading = document.getElementById('modal-loading');
+            const modalTableContainer = document.getElementById('modal-table-container');
+            
+            // Set title
+            if (sku) {
+                modalTitle.textContent = `Orders for ${formatChargeReportDate(date)} - SKU ${sku}`;
+            } else {
+                modalTitle.textContent = `All Orders for ${formatChargeReportDate(date)}`;
+            }
+            
+            // Show modal and loading
+            modal.style.display = 'flex';
+            modalLoading.style.display = 'block';
+            modalTableContainer.style.display = 'none';
+            
+            try {
+                // Build API URL
+                let url = `/api/charge_report/orders?date=${date}`;
+                if (sku) {
+                    url += `&sku=${sku}`;
+                }
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    modalOrders = result.data;
+                    renderModalTable();
+                    modalLoading.style.display = 'none';
+                    modalTableContainer.style.display = 'block';
+                } else {
+                    alert('Failed to load orders: ' + result.error);
+                    closeOrdersModal();
+                }
+            } catch (error) {
+                alert('Error fetching orders: ' + error.message);
+                closeOrdersModal();
+            }
+        }
+
+        function closeOrdersModal() {
+            document.getElementById('ordersModal').style.display = 'none';
+            modalOrders = [];
+        }
+
+        function renderModalTable() {
+            const tbody = document.getElementById('ordersModalBody');
+            
+            if (modalOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No orders found</td></tr>';
+                return;
+            }
+            
+            const html = modalOrders.map(order => `
+                <tr>
+                    <td>${order.order_number}</td>
+                    <td>${order.company_name}</td>
+                    <td>${order.base_sku}</td>
+                    <td>${order.sku_lot}</td>
+                    <td>${order.quantity_shipped}</td>
+                    <td>${order.shipping_service}</td>
+                    <td>${order.shipstation_order_id}</td>
+                </tr>
+            `).join('');
+            
+            tbody.innerHTML = html;
+        }
+
+        function sortModalTable(field) {
+            // Toggle sort direction if clicking same field
+            if (modalSortField === field) {
+                modalSortDirection = modalSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                modalSortField = field;
+                modalSortDirection = 'asc';
+            }
+            
+            // Sort the orders
+            modalOrders.sort((a, b) => {
+                let aVal = a[field];
+                let bVal = b[field];
+                
+                // Handle numbers
+                if (field === 'quantity_shipped') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                }
+                
+                // Handle strings
+                if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+                
+                if (modalSortDirection === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            renderModalTable();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('ordersModal').addEventListener('click', function(e) {
+            if (e.target.id === 'ordersModal') {
+                closeOrdersModal();
+            }
+        });
 
         // Initialize on page load
         initializeSelectors();
