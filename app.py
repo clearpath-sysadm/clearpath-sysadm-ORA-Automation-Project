@@ -593,6 +593,92 @@ def api_charge_report():
             'error': str(e)
         }), 500
 
+@app.route('/api/charge_report/orders')
+def api_charge_report_orders():
+    """
+    Get orders for a specific date and optional SKU filter
+    Used by charge report modal to show order details
+    
+    Query Parameters:
+    - date: Ship date (YYYY-MM-DD) - required
+    - sku: SKU filter (optional) - if provided, only returns orders with that SKU
+    """
+    try:
+        from flask import request
+        
+        ship_date = request.args.get('date')
+        sku_filter = request.args.get('sku')
+        
+        if not ship_date:
+            return jsonify({
+                'success': False,
+                'error': 'Date parameter is required'
+            }), 400
+        
+        # Base query to get orders for the specified date
+        if sku_filter:
+            # Filter by specific SKU
+            query = """
+                SELECT DISTINCT
+                    so.order_number,
+                    so.company_name,
+                    so.ship_date,
+                    si.base_sku,
+                    si.sku_lot,
+                    si.quantity_shipped,
+                    so.shipstation_order_id,
+                    so.shipping_service_name
+                FROM shipped_orders so
+                JOIN shipped_items si ON so.order_number = si.order_number AND so.ship_date = si.ship_date
+                WHERE so.ship_date = ? AND si.base_sku = ?
+                ORDER BY so.order_number
+            """
+            results = execute_query(query, (ship_date, sku_filter))
+        else:
+            # Get all orders for the date (showing all SKUs)
+            query = """
+                SELECT DISTINCT
+                    so.order_number,
+                    so.company_name,
+                    so.ship_date,
+                    si.base_sku,
+                    si.sku_lot,
+                    si.quantity_shipped,
+                    so.shipstation_order_id,
+                    so.shipping_service_name
+                FROM shipped_orders so
+                JOIN shipped_items si ON so.order_number = si.order_number AND so.ship_date = si.ship_date
+                WHERE so.ship_date = ?
+                ORDER BY so.order_number, si.base_sku
+            """
+            results = execute_query(query, (ship_date,))
+        
+        orders = []
+        for row in results:
+            orders.append({
+                'order_number': row[0],
+                'company_name': row[1],
+                'ship_date': row[2],
+                'base_sku': row[3],
+                'sku_lot': row[4] or '',
+                'quantity_shipped': row[5],
+                'shipstation_order_id': row[6] or '',
+                'shipping_service': row[7] or ''
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': orders,
+            'count': len(orders),
+            'date': ship_date,
+            'sku': sku_filter
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/kpis')
 def api_kpis():
     """Get latest KPIs for dashboard"""
