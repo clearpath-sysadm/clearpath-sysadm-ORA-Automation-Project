@@ -375,11 +375,11 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                     
                     if sku and quantity > 0:
                         # Parse SKU - LOT format (e.g., "17612 - 250237")
+                        # Store the FULL SKU in sku_lot column as it comes from ShipStation
                         if ' - ' in sku:
                             sku_parts = sku.split(' - ')
                             base_sku = sku_parts[0].strip()
-                            lot = sku_parts[1].strip()
-                            sku_lot = f"{base_sku}-{lot}"
+                            sku_lot = sku  # Store full "17612 - 250237" format
                         else:
                             base_sku = sku
                             sku_lot = sku

@@ -192,15 +192,23 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                 # Insert into shipped_items
                 for sku, quantity in items_rows:
                     if sku and quantity > 0:
+                        # Parse SKU to extract base_sku (SKU from order_items_inbox may include lot)
+                        if ' - ' in sku:
+                            base_sku = sku.split(' - ')[0].strip()
+                            sku_lot = sku  # Store full "17612 - 250237" format
+                        else:
+                            base_sku = sku
+                            sku_lot = sku
+                        
                         conn.execute("""
                             INSERT INTO shipped_items (
                                 ship_date, sku_lot, base_sku, quantity_shipped, order_number
                             )
-                            VALUES (?, '', ?, ?, ?)
+                            VALUES (?, ?, ?, ?, ?)
                             ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
                                 ship_date = excluded.ship_date,
                                 quantity_shipped = excluded.quantity_shipped
-                        """, (ship_date, sku, quantity, order_number))
+                        """, (ship_date, sku_lot, base_sku, quantity, order_number))
                 
                 # Update orders_inbox with status and carrier/service information
                 conn.execute("""
