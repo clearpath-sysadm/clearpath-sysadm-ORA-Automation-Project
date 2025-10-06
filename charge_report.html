@@ -1070,7 +1070,7 @@
             let html = reportData.map(row => `
                 <tr>
                     <td class="date-cell" data-label="Date">${formatChargeReportDate(row.date)}</td>
-                    <td class="stat-highlight" data-label="# Of Orders">${row.order_count}</td>
+                    <td class="stat-highlight clickable-cell" data-label="# Of Orders" onclick="openOrdersModal('${row.date}')" title="Click to view all orders">${row.order_count}</td>
                     <td class="clickable-cell" data-label="17612" onclick="openOrdersModal('${row.date}', '17612')" title="Click to view orders">${row.sku_17612 || '-'}</td>
                     <td class="clickable-cell" data-label="17904" onclick="openOrdersModal('${row.date}', '17904')" title="Click to view orders">${row.sku_17904 || '-'}</td>
                     <td class="clickable-cell" data-label="17914" onclick="openOrdersModal('${row.date}', '17914')" title="Click to view orders">${row.sku_17914 || '-'}</td>
