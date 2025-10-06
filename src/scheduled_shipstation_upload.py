@@ -174,7 +174,8 @@ def upload_pending_orders():
                         'company': ship_company or '',
                         'street1': ship_street1 or '',
                         'city': ship_city or '',
-                        'state': ship_postal_code or '',
+                        'state': ship_state or '',
+                        'postalCode': ship_postal_code or '',
                         'country': ship_country or 'US',
                         'phone': ship_phone or ''
                     },
