@@ -1714,6 +1714,10 @@
             showSkeletons();
             
             try {
+                // Refresh ShipStation metrics first (prevent stale cache)
+                await fetch('/api/shipstation/refresh_units_to_ship', { method: 'POST' });
+                
+                // Then load all dashboard data
                 await Promise.all([
                     loadDashboardData(),
                     loadWeeklyReport()

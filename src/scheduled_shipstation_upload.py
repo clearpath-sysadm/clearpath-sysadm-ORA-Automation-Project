@@ -408,6 +408,16 @@ def upload_pending_orders():
         conn.close()
         
         logger.info(f'Upload complete: {uploaded_count} uploaded, {failed_count} failed, {skipped_count} skipped')
+        
+        # Auto-refresh ShipStation metrics to prevent stale cache
+        if uploaded_count > 0:
+            try:
+                from src.services.shipstation.metrics_refresher import refresh_shipstation_metrics
+                refresh_shipstation_metrics()
+                logger.info("ShipStation metrics refreshed after upload")
+            except Exception as refresh_error:
+                logger.warning(f"Failed to refresh ShipStation metrics: {refresh_error}")
+        
         return uploaded_count
         
     except Exception as e:

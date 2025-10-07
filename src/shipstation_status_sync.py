@@ -543,6 +543,15 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
         logger.info(f"=== Status Sync Completed in {elapsed:.2f}s ===")
         logger.info(f"Summary: {total_updated} synced ({shipped_count} shipped, {cancelled_count} cancelled), 0 errors")
         
+        # Auto-refresh ShipStation metrics to prevent stale cache
+        if total_updated > 0:
+            try:
+                from src.services.shipstation.metrics_refresher import refresh_shipstation_metrics
+                refresh_shipstation_metrics()
+                logger.info("ShipStation metrics refreshed after status sync")
+            except Exception as refresh_error:
+                logger.warning(f"Failed to refresh ShipStation metrics: {refresh_error}")
+        
         return result, 200
         
     except Exception as e:
