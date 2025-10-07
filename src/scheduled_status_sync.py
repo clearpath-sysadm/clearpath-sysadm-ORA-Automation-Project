@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Scheduled ShipStation Status Sync
-Runs every hour to sync order statuses from ShipStation back to local database
+Runs every 5 minutes to sync order statuses from ShipStation back to local database
 """
 import os
 import sys
@@ -20,12 +20,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Run every hour (3600 seconds)
-SYNC_INTERVAL_SECONDS = 3600
+# Run every 5 minutes (300 seconds)
+SYNC_INTERVAL_SECONDS = 300
 
 def run_scheduled_status_sync():
-    """Main loop - runs hourly status sync"""
-    logger.info(f"Starting scheduled ShipStation status sync (every {SYNC_INTERVAL_SECONDS}s / 1 hour)")
+    """Main loop - runs status sync every 5 minutes"""
+    logger.info(f"Starting scheduled ShipStation status sync (every {SYNC_INTERVAL_SECONDS}s / 5 minutes)")
     
     while True:
         try:
@@ -34,7 +34,7 @@ def run_scheduled_status_sync():
             result, status_code = run_status_sync()
             logger.info(f"Sync complete: {result} (Status: {status_code})")
             
-            logger.info(f"Next sync in {SYNC_INTERVAL_SECONDS} seconds (1 hour)")
+            logger.info(f"Next sync in {SYNC_INTERVAL_SECONDS} seconds (5 minutes)")
             time.sleep(SYNC_INTERVAL_SECONDS)
             
         except KeyboardInterrupt:

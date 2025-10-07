@@ -76,18 +76,23 @@ def get_orders_needing_status_check() -> List[Dict[str, Any]]:
         return []
 
 
-def fetch_order_status_from_shipstation(api_key: str, api_secret: str, shipstation_order_id: str) -> Dict[str, Any]:
+def fetch_orders_batch_from_shipstation(api_key: str, api_secret: str, shipstation_order_ids: List[str]) -> Dict[str, Dict[str, Any]]:
     """
-    Fetch a single order's current status from ShipStation by order ID.
-    Returns order data including status, shipDate, etc.
+    Fetch multiple orders from ShipStation in a single batch call.
+    Returns dict mapping shipstation_order_id -> order data.
     """
     headers = get_shipstation_headers(api_key, api_secret)
     
-    # Query by orderId to get exact match
+    if not shipstation_order_ids:
+        return {}
+    
+    # Build orderIds comma-separated list for batch query
+    order_ids_str = ','.join(str(oid) for oid in shipstation_order_ids)
+    
     params = {
-        'orderId': shipstation_order_id,
+        'orderIds': order_ids_str,
         'page': 1,
-        'pageSize': 1
+        'pageSize': 500  # Fetch up to 500 orders at once
     }
     
     try:
@@ -96,20 +101,29 @@ def fetch_order_status_from_shipstation(api_key: str, api_secret: str, shipstati
             method='GET',
             headers=headers,
             params=params,
-            timeout=30
+            timeout=60
         )
         
         if response and response.status_code == 200:
             data = response.json()
             orders = data.get('orders', [])
-            if orders:
-                return orders[0]
+            
+            # Build lookup map: shipstation_order_id -> order data
+            orders_map = {}
+            for order in orders:
+                order_id = str(order.get('orderId', ''))
+                if order_id:
+                    orders_map[order_id] = order
+            
+            logger.info(f"Batch fetched {len(orders_map)}/{len(shipstation_order_ids)} orders from ShipStation")
+            return orders_map
         
-        return None
+        logger.warning(f"Batch fetch failed with status {response.status_code if response else 'None'}")
+        return {}
         
     except Exception as e:
-        logger.error(f"Error fetching order {shipstation_order_id} from ShipStation: {e}", exc_info=True)
-        return None
+        logger.error(f"Error batch fetching orders from ShipStation: {e}", exc_info=True)
+        return {}
 
 
 def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str, Any]) -> bool:
@@ -250,18 +264,19 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
             logger.info("No orders need status checking")
             return {"message": "No orders to sync"}, 200
         
-        # Check each order's status in ShipStation
+        # Batch fetch all orders from ShipStation at once
+        shipstation_order_ids = [order['shipstation_order_id'] for order in orders]
+        shipstation_orders_map = fetch_orders_batch_from_shipstation(api_key, api_secret, shipstation_order_ids)
+        
+        # Update each order with data from batch fetch
         updated_count = 0
         shipped_count = 0
         cancelled_count = 0
         error_count = 0
         
         for local_order in orders:
-            shipstation_order = fetch_order_status_from_shipstation(
-                api_key,
-                api_secret,
-                local_order['shipstation_order_id']
-            )
+            ss_order_id = local_order['shipstation_order_id']
+            shipstation_order = shipstation_orders_map.get(ss_order_id)
             
             if shipstation_order:
                 success = update_order_status(local_order, shipstation_order)
@@ -275,7 +290,7 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
                 else:
                     error_count += 1
             else:
-                logger.warning(f"Could not fetch order {local_order['order_number']} from ShipStation")
+                logger.warning(f"Could not find order {local_order['order_number']} in batch fetch")
                 error_count += 1
         
         elapsed = (datetime.datetime.now() - start_time).total_seconds()
