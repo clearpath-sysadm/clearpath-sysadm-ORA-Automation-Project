@@ -163,24 +163,22 @@ def upload_pending_orders():
             """, (order_id,))
             items = cursor.fetchall()
             
-            # FIX 2: CONSOLIDATE items by base SKU to prevent duplicates
-            # Group items by normalized base SKU and sum quantities
+            # CONSOLIDATE items by FULL SKU (with lot) to preserve lot-level granularity
+            # CRITICAL: Must preserve lot information to prevent inventory tracking failures
             consolidated_items = defaultdict(lambda: {'qty': 0, 'price': 0, 'original_sku': ''})
             
             for sku, qty, unit_price_cents in items:
-                # Normalize the SKU to handle spacing inconsistencies
-                normalized_sku = normalize_sku(sku)
-                # Extract base SKU (without lot number)
-                base_sku = normalized_sku.split(' - ')[0].strip()
+                # Normalize the SKU to handle spacing inconsistencies (preserves lot number)
+                normalized_sku = normalize_sku(sku)  # "17612 - 250237" format
                 
-                # Accumulate quantities for same base SKU
-                consolidated_items[base_sku]['qty'] += qty
+                # Accumulate quantities for same FULL SKU (base + lot)
+                consolidated_items[normalized_sku]['qty'] += qty
                 # Keep first price found (should be same for same SKU)
-                if consolidated_items[base_sku]['price'] == 0 and unit_price_cents:
-                    consolidated_items[base_sku]['price'] = unit_price_cents
+                if consolidated_items[normalized_sku]['price'] == 0 and unit_price_cents:
+                    consolidated_items[normalized_sku]['price'] = unit_price_cents
                 # Keep original SKU for tracking
-                if not consolidated_items[base_sku]['original_sku']:
-                    consolidated_items[base_sku]['original_sku'] = sku
+                if not consolidated_items[normalized_sku]['original_sku']:
+                    consolidated_items[normalized_sku]['original_sku'] = sku
             
             # FIX: Create ONE ShipStation order with ALL SKUs as line items
             if consolidated_items:
@@ -189,17 +187,16 @@ def upload_pending_orders():
                 total_amount = 0
                 all_skus = []
                 
-                for base_sku, item_data in consolidated_items.items():
+                for full_sku, item_data in consolidated_items.items():
                     qty = item_data['qty']
                     unit_price_cents = item_data['price']
                     
-                    # Get lot number from sku_lot mapping
-                    lot_number = sku_lot_map.get(base_sku, '')
-                    sku_with_lot = f"{base_sku} - {lot_number}" if lot_number else base_sku
+                    # Extract base_sku ONLY for product_name lookup (keep full SKU for shipment)
+                    base_sku = full_sku.split(' - ')[0].strip() if ' - ' in full_sku else full_sku
                     product_name = product_name_map.get(base_sku, f'Product {base_sku}')
                     
                     line_items.append({
-                        'sku': sku_with_lot,
+                        'sku': full_sku,  # Use FULL SKU with lot (already normalized)
                         'name': product_name,
                         'quantity': qty,
                         'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
