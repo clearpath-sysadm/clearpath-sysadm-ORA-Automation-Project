@@ -24,6 +24,10 @@ args = "dashboard-server"
 task = "workflow.run"
 args = "orders-cleanup"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "status-sync"
+
 [[workflows.workflow]]
 name = "dashboard-server"
 author = "agent"
@@ -43,6 +47,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/scheduled_cleanup.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "status-sync"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python src/shipstation_status_sync.py"
 
 [workflows.workflow.metadata]
 outputType = "console"
