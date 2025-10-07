@@ -1254,7 +1254,7 @@
                         </div>
                         <div class="stat-card" onclick="filterByStatus('awaiting_shipment')" style="cursor: pointer;" title="Click to filter awaiting shipment">
                             <div class="stat-value" id="stat-uploaded">0</div>
-                            <div class="stat-label">Awaiting Shipment</div>
+                            <div class="stat-label">Units Awaiting Shipment</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="stat-failed">0</div>
@@ -1583,11 +1583,13 @@
 
         function updateStats(orders) {
             const pending = orders.filter(o => o.status === 'pending').length;
-            const awaitingShipment = orders.filter(o => o.status === 'awaiting_shipment').length;
+            const awaitingShipmentUnits = orders
+                .filter(o => o.status === 'awaiting_shipment')
+                .reduce((sum, o) => sum + (o.total_quantity || 0), 0);
             const failed = orders.filter(o => o.status === 'failed').length;
 
             document.getElementById('stat-pending').textContent = pending;
-            document.getElementById('stat-uploaded').textContent = awaitingShipment;
+            document.getElementById('stat-uploaded').textContent = awaitingShipmentUnits;
             document.getElementById('stat-failed').textContent = failed;
             
             // Show retry button if there are failed orders
