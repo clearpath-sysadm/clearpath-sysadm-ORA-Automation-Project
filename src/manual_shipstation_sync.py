@@ -523,9 +523,19 @@ def run_manual_order_sync():
         
         # Only update watermark if we successfully imported orders
         # Use the max modifyDate from successful imports, or current time if no imports
+        # FIX: Add 1 second to watermark to make it EXCLUSIVE (prevent re-fetching same order)
         if imported_count > 0 and max_modify_date:
-            update_sync_watermark(max_modify_date)
-            logger.info(f"Updated watermark to max successful modifyDate: {max_modify_date}")
+            # Parse the timestamp and add 1 second
+            try:
+                dt = datetime.datetime.strptime(max_modify_date, '%Y-%m-%dT%H:%M:%S.%f')
+                dt_plus_one = dt + datetime.timedelta(seconds=1)
+                new_watermark = dt_plus_one.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + '0000'  # Match ShipStation format
+            except:
+                # Fallback: just use current time if parsing fails
+                new_watermark = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+            
+            update_sync_watermark(new_watermark)
+            logger.info(f"Updated watermark to max successful modifyDate +1s: {new_watermark}")
         elif imported_count == 0 and failed_count == 0:
             # No orders to process - advance watermark to now to avoid reprocessing same empty set
             new_watermark = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
