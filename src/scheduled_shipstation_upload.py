@@ -63,7 +63,13 @@ def upload_pending_orders():
     """
     Upload pending orders from orders_inbox to ShipStation
     This is the same logic as the /api/upload_orders_to_shipstation endpoint
+    
+    RACE CONDITION FIX: Uses atomic claiming with run-specific identifier to prevent
+    duplicate uploads when multiple upload runs execute concurrently.
     """
+    # Generate unique run identifier for this upload batch (outside try block for exception handler)
+    run_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
+    
     try:
         # Get ShipStation credentials
         api_key, api_secret = get_shipstation_credentials()
@@ -74,6 +80,44 @@ def upload_pending_orders():
         conn = get_connection()
         cursor = conn.cursor()
         
+        # STEP 1: ATOMICALLY CLAIM PENDING ORDERS WITH RUN IDENTIFIER
+        
+        # Use BEGIN IMMEDIATE to get exclusive lock immediately
+        cursor.execute("BEGIN IMMEDIATE")
+        
+        # Fetch pending order IDs that need upload
+        cursor.execute("""
+            SELECT id
+            FROM orders_inbox
+            WHERE status = 'pending'
+              AND order_number NOT IN (SELECT order_number FROM shipped_orders)
+        """)
+        
+        pending_ids = [row[0] for row in cursor.fetchall()]
+        
+        if not pending_ids:
+            conn.commit()
+            conn.close()
+            logger.info('No pending orders to upload')
+            return 0
+        
+        # Mark ONLY these specific orders as 'processing' with our run_id
+        # This prevents other concurrent runs from picking up our orders
+        placeholders = ','.join('?' * len(pending_ids))
+        cursor.execute(f"""
+            UPDATE orders_inbox
+            SET status = 'processing',
+                failure_reason = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id IN ({placeholders})
+        """, [run_id] + pending_ids)
+        
+        claimed_count = cursor.rowcount
+        conn.commit()
+        
+        logger.info(f'Claimed {claimed_count} pending orders for upload (run_id: {run_id})')
+        
+        # STEP 2: FETCH ONLY THE ORDERS WE JUST CLAIMED
         # Fetch SKU-Lot mappings
         cursor.execute("""
             SELECT sku, lot
@@ -90,23 +134,17 @@ def upload_pending_orders():
         """)
         product_name_map = {row[0]: row[1] for row in cursor.fetchall()}
         
-        # Fetch pending orders (exclude already shipped)
-        cursor.execute("""
+        # Fetch ONLY the orders we claimed (identified by our run_id)
+        cursor.execute(f"""
             SELECT id, order_number, order_date, customer_email, total_amount_cents,
                    ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                    bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
             FROM orders_inbox 
-            WHERE status = 'pending'
-              AND order_number NOT IN (SELECT order_number FROM shipped_orders)
-        """)
+            WHERE status = 'processing'
+              AND failure_reason = ?
+        """, (run_id,))
         
         pending_orders = cursor.fetchall()
-        
-        if not pending_orders:
-            logger.info('No pending orders to upload')
-            return 0
-        
-        logger.info(f'Found {len(pending_orders)} pending orders to upload')
         
         # Build ShipStation order payloads (ONE ORDER PER SKU)
         shipstation_orders = []
@@ -264,7 +302,7 @@ def upload_pending_orders():
             order_sku_info = order_sku_map[idx]
             
             if order_num_upper in existing_order_map:
-                # Already exists - mark as awaiting_shipment
+                # Already exists in ShipStation - update status from 'processing' to 'awaiting_shipment'
                 existing = existing_order_map[order_num_upper]
                 skipped_count += 1
                 shipstation_id = existing['orderId'] or existing['orderKey']
@@ -277,10 +315,12 @@ def upload_pending_orders():
                         VALUES (?, ?, ?)
                     """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                 
+                # Update from 'processing' to 'awaiting_shipment' (clear run_id)
                 cursor.execute("""
                     UPDATE orders_inbox
                     SET status = 'awaiting_shipment',
                         shipstation_order_id = ?,
+                        failure_reason = NULL,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 """, (shipstation_id, order_sku_info['order_inbox_id']))
@@ -341,24 +381,28 @@ def upload_pending_orders():
                     error_details = error_msg or result.get('message') or 'Unknown error'
                     logger.error(f"Upload failed for order {order_sku_info['order_number']}: {error_details}")
                     
+                    # Revert failed orders back to 'pending' for retry
                     cursor.execute("""
                         UPDATE orders_inbox 
-                        SET status = 'failed',
+                        SET status = 'pending',
                             failure_reason = ?,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
                     """, (error_details, order_sku_info['order_inbox_id']))
         
-        # Update successfully uploaded orders
+        # Update successfully uploaded orders from THIS RUN ONLY (clear run_id from failure_reason)
         cursor.execute("""
             UPDATE orders_inbox
             SET status = 'awaiting_shipment',
+                failure_reason = NULL,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id IN (
+            WHERE status = 'processing'
+              AND failure_reason = ?
+              AND id IN (
                 SELECT DISTINCT order_inbox_id 
                 FROM shipstation_order_line_items
             )
-        """)
+        """, (run_id,))
         
         conn.commit()
         conn.close()
@@ -367,7 +411,29 @@ def upload_pending_orders():
         return uploaded_count
         
     except Exception as e:
-        logger.error(f'Error uploading orders: {str(e)}', exc_info=True)
+        logger.error(f'Error uploading orders (run_id: {run_id}): {str(e)}', exc_info=True)
+        
+        # SAFETY: Revert ONLY THIS RUN's orders back to 'pending'
+        # DO NOT touch other concurrent runs' claimed orders
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET status = 'pending',
+                    failure_reason = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE status = 'processing'
+                  AND failure_reason = ?
+            """, (run_id,))
+            reverted = cursor.rowcount
+            conn.commit()
+            conn.close()
+            if reverted > 0:
+                logger.info(f'Reverted {reverted} orders from run {run_id} back to pending')
+        except Exception as revert_error:
+            logger.error(f'Failed to revert run {run_id} orders: {str(revert_error)}')
+        
         return 0
 
 def run_scheduled_upload():
