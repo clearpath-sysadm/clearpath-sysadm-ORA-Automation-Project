@@ -883,6 +883,10 @@ def api_sync_manual_orders():
                     order_id = order.get('orderId') or order.get('orderKey')
                     order_number = order.get('orderNumber', 'UNKNOWN')
                     
+                    # CRITICAL: Only process orders starting with "10" (manual orders)
+                    if not order_number.startswith('10'):
+                        continue
+                    
                     if is_order_from_local_system(str(order_id)):
                         continue
                     

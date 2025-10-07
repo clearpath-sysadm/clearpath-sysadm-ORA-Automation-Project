@@ -476,15 +476,21 @@ def run_manual_order_sync():
         manual_orders = []
         for order in orders:
             order_id = order.get('orderId') or order.get('orderKey')
+            order_number = order.get('orderNumber', '')
+            
+            # CRITICAL: Skip if order number doesn't start with "10" (manual orders only)
+            if not order_number.startswith('10'):
+                logger.debug(f"Skipping order {order_number} - not a manual order (doesn't start with '10')")
+                continue
             
             # Skip if order came from our system
             if is_order_from_local_system(str(order_id)):
-                logger.debug(f"Skipping order {order.get('orderNumber')} - originated from local system")
+                logger.debug(f"Skipping order {order_number} - originated from local system")
                 continue
             
             # Skip if order doesn't contain key product SKUs
             if not has_key_product_skus(order):
-                logger.debug(f"Skipping order {order.get('orderNumber')} - no key product SKUs")
+                logger.debug(f"Skipping order {order_number} - no key product SKUs")
                 continue
             
             manual_orders.append(order)
