@@ -27,7 +27,7 @@ if project_root not in sys.path:
 
 from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
-from src.services.database.db_utils import execute_query, transaction, transaction_with_retry
+from src.services.database.db_utils import execute_query, transaction_with_retry
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from utils.api_utils import make_api_request
 
@@ -69,7 +69,7 @@ def get_last_sync_timestamp() -> str:
 def update_sync_watermark(new_timestamp: str):
     """Update the watermark with the latest sync timestamp"""
     try:
-        with transaction() as conn:
+        with transaction_with_retry() as conn:
             conn.execute("""
                 INSERT INTO sync_watermark (workflow_name, last_sync_timestamp)
                 VALUES ('manual_shipstation_sync', ?)
@@ -432,7 +432,7 @@ def run_manual_order_sync():
     
     try:
         # Initialize workflow tracking
-        with transaction() as conn:
+        with transaction_with_retry() as conn:
             conn.execute("""
                 INSERT INTO workflows (name, display_name, status, last_run_at)
                 VALUES ('manual_shipstation_sync', 'Manual ShipStation Sync', 'running', CURRENT_TIMESTAMP)
@@ -461,7 +461,7 @@ def run_manual_order_sync():
             update_sync_watermark(new_watermark)
             
             # Update workflow status
-            with transaction() as conn:
+            with transaction_with_retry() as conn:
                 conn.execute("""
                     UPDATE workflows 
                     SET status = 'completed',
@@ -502,7 +502,7 @@ def run_manual_order_sync():
         failed_count = 0
         max_modify_date = None
         
-        with transaction() as conn:
+        with transaction_with_retry() as conn:
             for order in manual_orders:
                 try:
                     if import_manual_order(order, conn):
@@ -537,7 +537,7 @@ def run_manual_order_sync():
         
         # Update workflow status
         duration = (datetime.datetime.now() - workflow_start_time).total_seconds()
-        with transaction() as conn:
+        with transaction_with_retry() as conn:
             conn.execute("""
                 UPDATE workflows 
                 SET status = 'completed',
@@ -554,7 +554,7 @@ def run_manual_order_sync():
         
         # Update workflow status to failed
         try:
-            with transaction() as conn:
+            with transaction_with_retry() as conn:
                 conn.execute("""
                     UPDATE workflows 
                     SET status = 'failed'

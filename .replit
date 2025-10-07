@@ -26,7 +26,19 @@ args = "orders-cleanup"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
+args = "xml-import"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "shipstation-upload"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
 args = "status-sync"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "manual-order-sync"
 
 [[workflows.workflow]]
 name = "dashboard-server"
@@ -52,12 +64,45 @@ args = "python src/scheduled_cleanup.py"
 outputType = "console"
 
 [[workflows.workflow]]
+name = "xml-import"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "while true; do python src/scheduled_xml_import.py; sleep 300; done"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "shipstation-upload"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "while true; do python src/scheduled_shipstation_upload.py; sleep 300; done"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
 name = "status-sync"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python src/shipstation_status_sync.py"
+args = "while true; do python src/shipstation_status_sync.py; sleep 300; done"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "manual-order-sync"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "while true; do python src/manual_shipstation_sync.py; sleep 300; done"
 
 [workflows.workflow.metadata]
 outputType = "console"
