@@ -101,12 +101,12 @@ def upload_pending_orders():
             logger.info('No pending orders to upload')
             return 0
         
-        # Mark ONLY these specific orders as 'processing' with our run_id
+        # Mark ONLY these specific orders as 'uploaded' with our run_id  
         # This prevents other concurrent runs from picking up our orders
         placeholders = ','.join('?' * len(pending_ids))
         cursor.execute(f"""
             UPDATE orders_inbox
-            SET status = 'processing',
+            SET status = 'uploaded',
                 failure_reason = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id IN ({placeholders})
@@ -140,7 +140,7 @@ def upload_pending_orders():
                    ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                    bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
             FROM orders_inbox 
-            WHERE status = 'processing'
+            WHERE status = 'uploaded'
               AND failure_reason = ?
         """, (run_id,))
         
