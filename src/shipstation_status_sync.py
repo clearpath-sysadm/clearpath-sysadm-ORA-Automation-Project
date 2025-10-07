@@ -158,59 +158,7 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
         
         with transaction() as conn:
             if ss_status == 'shipped':
-                # Order has been shipped - move to shipped_orders and shipped_items
-                ship_date_str = shipstation_order.get('shipDate', '')
-                try:
-                    ship_date = datetime.datetime.strptime(ship_date_str[:10], '%Y-%m-%d').date()
-                except:
-                    ship_date = datetime.date.today()
-                
-                # Insert into shipped_orders with carrier/service info
-                conn.execute("""
-                    INSERT INTO shipped_orders (
-                        ship_date, order_number, shipstation_order_id,
-                        shipping_carrier_code, shipping_carrier_id,
-                        shipping_service_code, shipping_service_name
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(order_number) DO UPDATE SET
-                        ship_date = excluded.ship_date,
-                        shipstation_order_id = excluded.shipstation_order_id,
-                        shipping_carrier_code = excluded.shipping_carrier_code,
-                        shipping_carrier_id = excluded.shipping_carrier_id,
-                        shipping_service_code = excluded.shipping_service_code,
-                        shipping_service_name = excluded.shipping_service_name
-                """, (ship_date, order_number, str(ss_order_id), carrier_code, carrier_id, service_code, service_name))
-                
-                # Get order items from order_items_inbox
-                items_rows = conn.execute("""
-                    SELECT sku, quantity
-                    FROM order_items_inbox
-                    WHERE order_inbox_id = ?
-                """, (order_id,)).fetchall()
-                
-                # Insert into shipped_items
-                for sku, quantity in items_rows:
-                    if sku and quantity > 0:
-                        # Parse SKU to extract base_sku (SKU from order_items_inbox may include lot)
-                        if ' - ' in sku:
-                            base_sku = sku.split(' - ')[0].strip()
-                            sku_lot = sku  # Store full "17612 - 250237" format
-                        else:
-                            base_sku = sku
-                            sku_lot = sku
-                        
-                        conn.execute("""
-                            INSERT INTO shipped_items (
-                                ship_date, sku_lot, base_sku, quantity_shipped, order_number
-                            )
-                            VALUES (?, ?, ?, ?, ?)
-                            ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
-                                ship_date = excluded.ship_date,
-                                quantity_shipped = excluded.quantity_shipped
-                        """, (ship_date, sku_lot, base_sku, quantity, order_number))
-                
-                # Update orders_inbox with status and carrier/service information
+                # Order has been shipped - update status in orders_inbox (keep it there)
                 conn.execute("""
                     UPDATE orders_inbox
                     SET status = 'shipped',
@@ -222,7 +170,7 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                     WHERE id = ?
                 """, (carrier_code, carrier_id, service_code, service_name, order_id))
                 
-                logger.info(f"✅ Moved order {order_number} to shipped_orders (ship_date: {ship_date})")
+                logger.info(f"✅ Updated order {order_number} status to 'shipped'")
                 
             elif ss_status == 'cancelled':
                 # Order was cancelled (also capture carrier info even though cancelled)
