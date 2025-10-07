@@ -345,10 +345,92 @@ def sync_order_from_shipstation(shipstation_order: Dict[str, Any], conn=None) ->
         return False
 
 
+def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> Dict[str, int]:
+    """
+    Batch update orders by status using executemany for efficiency.
+    
+    Args:
+        status_buckets: Dict mapping status -> list of (order_id, carrier_code, carrier_id, service_code, service_name) tuples
+        conn: Database connection
+    
+    Returns:
+        Dict with counts per status
+    """
+    counts = {}
+    
+    # Batch update for 'shipped' status
+    if 'shipped' in status_buckets and status_buckets['shipped']:
+        conn.executemany("""
+            UPDATE orders_inbox
+            SET status = 'shipped',
+                shipping_carrier_code = ?,
+                shipping_carrier_id = ?,
+                shipping_service_code = ?,
+                shipping_service_name = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, [(carrier_code, carrier_id, service_code, service_name, order_id) 
+              for order_id, carrier_code, carrier_id, service_code, service_name in status_buckets['shipped']])
+        counts['shipped'] = len(status_buckets['shipped'])
+        logger.info(f"✅ Batch updated {counts['shipped']} shipped orders")
+    
+    # Batch update for 'cancelled' status
+    if 'cancelled' in status_buckets and status_buckets['cancelled']:
+        conn.executemany("""
+            UPDATE orders_inbox
+            SET status = 'cancelled',
+                shipping_carrier_code = ?,
+                shipping_carrier_id = ?,
+                shipping_service_code = ?,
+                shipping_service_name = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, [(carrier_code, carrier_id, service_code, service_name, order_id)
+              for order_id, carrier_code, carrier_id, service_code, service_name in status_buckets['cancelled']])
+        counts['cancelled'] = len(status_buckets['cancelled'])
+        logger.info(f"✅ Batch updated {counts['cancelled']} cancelled orders")
+    
+    # Batch update for 'awaiting_shipment' status
+    if 'awaiting_shipment' in status_buckets and status_buckets['awaiting_shipment']:
+        conn.executemany("""
+            UPDATE orders_inbox
+            SET status = 'awaiting_shipment',
+                shipping_carrier_code = ?,
+                shipping_carrier_id = ?,
+                shipping_service_code = ?,
+                shipping_service_name = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, [(carrier_code, carrier_id, service_code, service_name, order_id)
+              for order_id, carrier_code, carrier_id, service_code, service_name in status_buckets['awaiting_shipment']])
+        counts['awaiting_shipment'] = len(status_buckets['awaiting_shipment'])
+        logger.debug(f"Batch updated {counts['awaiting_shipment']} awaiting_shipment orders")
+    
+    # Batch update for 'on_hold' and 'awaiting_payment' statuses
+    for status in ['on_hold', 'awaiting_payment']:
+        if status in status_buckets and status_buckets[status]:
+            conn.executemany("""
+                UPDATE orders_inbox
+                SET status = ?,
+                    shipping_carrier_code = ?,
+                    shipping_carrier_id = ?,
+                    shipping_service_code = ?,
+                    shipping_service_name = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, [(status, carrier_code, carrier_id, service_code, service_name, order_id)
+                  for order_id, carrier_code, carrier_id, service_code, service_name in status_buckets[status]])
+            counts[status] = len(status_buckets[status])
+            logger.info(f"✅ Batch updated {counts[status]} {status} orders")
+    
+    return counts
+
+
 def run_status_sync() -> tuple[Dict[str, Any], int]:
     """
     Main function to sync orders from ShipStation (last 7 days).
     Fetches orders and updates local database with current ShipStation data.
+    Uses batched updates for efficiency (instead of individual UPDATE statements).
     """
     start_time = datetime.datetime.now()
     logger.info("=== Starting ShipStation Status Sync (7-day window) ===")
@@ -367,39 +449,99 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
             logger.info("No orders found in ShipStation (last 7 days)")
             return {"message": "No orders to sync"}, 200
         
-        # Sync all orders in a single batch transaction
-        updated_count = 0
-        shipped_count = 0
-        cancelled_count = 0
-        error_count = 0
+        # Build lookup of local orders
+        local_orders_map = {}
+        local_orders = execute_query("""
+            SELECT id, order_number, shipstation_order_id, status as local_status
+            FROM orders_inbox
+            WHERE shipstation_order_id IS NOT NULL
+        """)
         
-        with transaction() as conn:
-            for shipstation_order in shipstation_orders:
-                success = sync_order_from_shipstation(shipstation_order, conn)
-                if success:
-                    updated_count += 1
-                    ss_status = shipstation_order.get('orderStatus', '').lower()
-                    if ss_status == 'shipped':
-                        shipped_count += 1
-                    elif ss_status == 'cancelled':
-                        cancelled_count += 1
-                else:
-                    error_count += 1
+        for order in local_orders:
+            ss_id = str(order[2])
+            if ss_id:
+                local_orders_map[ss_id] = {
+                    'id': order[0],
+                    'order_number': order[1],
+                    'shipstation_order_id': ss_id,
+                    'local_status': order[3]
+                }
+        
+        # Group orders by status for batch updates
+        status_buckets = {
+            'shipped': [],
+            'cancelled': [],
+            'awaiting_shipment': [],
+            'on_hold': [],
+            'awaiting_payment': []
+        }
+        
+        skipped_count = 0
+        
+        for ss_order in shipstation_orders:
+            ss_order_id = str(ss_order.get('orderId', ''))
+            ss_status = ss_order.get('orderStatus', '').lower()
+            
+            if ss_order_id not in local_orders_map:
+                skipped_count += 1
+                continue
+            
+            local_order = local_orders_map[ss_order_id]
+            order_id = local_order['id']
+            
+            # Extract carrier/service info
+            carrier_code = ss_order.get('carrierCode')
+            service_code = ss_order.get('serviceCode')
+            
+            carrier_id = None
+            advanced_options = ss_order.get('advancedOptions', {})
+            if advanced_options and isinstance(advanced_options, dict):
+                carrier_id = (advanced_options.get('billToMyOtherAccount') or 
+                             advanced_options.get('carrierId'))
+            if not carrier_id:
+                carrier_id = ss_order.get('carrierId')
+            
+            # Map service code to name
+            service_name = None
+            if service_code:
+                service_name_map = {
+                    'fedex_2day': 'FedEx 2Day',
+                    'fedex_international_ground': 'FedEx International Ground',
+                    'fedex_ground': 'FedEx Ground',
+                    'fedex_home_delivery': 'FedEx Home Delivery',
+                    'fedex_express_saver': 'FedEx Express Saver',
+                    'fedex_standard_overnight': 'FedEx Standard Overnight'
+                }
+                service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
+            
+            # Add to appropriate status bucket
+            if ss_status in status_buckets:
+                status_buckets[ss_status].append((order_id, carrier_code, carrier_id, service_code, service_name))
+        
+        # Execute batched updates in single transaction
+        logger.info(f"Batching updates: {sum(len(v) for v in status_buckets.values())} orders, {skipped_count} skipped")
+        
+        with transaction_with_retry() as conn:
+            batch_counts = batch_update_orders_status(status_buckets, conn)
+        
+        total_updated = sum(batch_counts.values())
+        shipped_count = batch_counts.get('shipped', 0)
+        cancelled_count = batch_counts.get('cancelled', 0)
         
         elapsed = (datetime.datetime.now() - start_time).total_seconds()
         
         result = {
-            "message": f"Status sync complete: {updated_count} orders synced",
+            "message": f"Status sync complete: {total_updated} orders synced",
             "fetched": len(shipstation_orders),
-            "updated": updated_count,
+            "updated": total_updated,
             "shipped": shipped_count,
             "cancelled": cancelled_count,
-            "errors": error_count,
+            "errors": 0,
             "elapsed_seconds": round(elapsed, 2)
         }
         
         logger.info(f"=== Status Sync Completed in {elapsed:.2f}s ===")
-        logger.info(f"Summary: {updated_count} synced ({shipped_count} shipped, {cancelled_count} cancelled), {error_count} errors")
+        logger.info(f"Summary: {total_updated} synced ({shipped_count} shipped, {cancelled_count} cancelled), 0 errors")
         
         return result, 200
         
