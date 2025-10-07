@@ -417,6 +417,17 @@ def upload_pending_orders():
                 logger.info("ShipStation metrics refreshed after upload")
             except Exception as refresh_error:
                 logger.warning(f"Failed to refresh ShipStation metrics: {refresh_error}")
+            
+            # Run duplicate detection after successful upload
+            try:
+                from src.services.shipping_validator import detect_duplicate_order_sku
+                duplicate_results = detect_duplicate_order_sku()
+                if duplicate_results.get('violations_created', 0) > 0:
+                    logger.warning(f"Duplicate detection: {duplicate_results['violations_created']} violations created for {duplicate_results['total_duplicates']} duplicate combinations")
+                else:
+                    logger.info("Duplicate detection: No duplicates found")
+            except Exception as duplicate_error:
+                logger.warning(f"Failed to run duplicate detection: {duplicate_error}")
         
         return uploaded_count
         

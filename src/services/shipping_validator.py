@@ -219,7 +219,8 @@ def create_or_update_violation(violation: Dict[str, Any]):
         rule_type_map = {
             'hawaiian_fedex_2day': 'hawaiian_service',
             'canadian_international_ground': 'canadian_service',
-            'benco_carrier_account': 'benco_carrier'
+            'benco_carrier_account': 'benco_carrier',
+            'duplicate_order_sku': 'duplicate_order_sku'
         }
         db_violation_type = rule_type_map.get(violation['rule_type'], violation['rule_type'])
         
@@ -274,6 +275,142 @@ def create_or_update_violation(violation: Dict[str, Any]):
     
     except Exception as e:
         logger.error(f"Error creating/updating violation: {e}", exc_info=True)
+
+
+def detect_duplicate_order_sku() -> Dict[str, Any]:
+    """
+    Detect duplicate order+SKU combinations in ShipStation.
+    
+    Checks shipstation_order_line_items for cases where the same order_number + SKU
+    combination appears multiple times (indicates duplicate uploads to ShipStation).
+    Also resolves violations when duplicates no longer exist.
+    
+    Returns summary statistics of duplicates found.
+    """
+    logger.info("=== Starting Duplicate Order+SKU Detection ===")
+    
+    try:
+        # Find duplicate order_number + SKU combinations in ShipStation line items
+        # Fix: Use MIN(order_inbox_id) to deterministically select one order per duplicate
+        duplicate_rows = execute_query("""
+            SELECT 
+                MIN(ssli.order_inbox_id) as order_inbox_id,
+                oi.order_number,
+                ssli.sku,
+                COUNT(*) as occurrence_count
+            FROM shipstation_order_line_items ssli
+            JOIN orders_inbox oi ON ssli.order_inbox_id = oi.id
+            GROUP BY oi.order_number, ssli.sku
+            HAVING COUNT(*) > 1
+            ORDER BY oi.order_number, ssli.sku
+        """)
+        
+        # Get all orders that currently have duplicate violations
+        existing_violations = execute_query("""
+            SELECT order_id, order_number
+            FROM shipping_violations
+            WHERE violation_type = 'duplicate_order_sku'
+              AND is_resolved = 0
+        """)
+        
+        existing_violation_orders = {row[0]: row[1] for row in existing_violations}
+        
+        if not duplicate_rows:
+            logger.info("No duplicate order+SKU combinations found")
+            
+            # Resolve all existing duplicate violations since no duplicates exist
+            if existing_violation_orders:
+                with transaction() as conn:
+                    for order_id in existing_violation_orders.keys():
+                        conn.execute("""
+                            UPDATE shipping_violations
+                            SET is_resolved = 1,
+                                resolved_at = CURRENT_TIMESTAMP
+                            WHERE order_id = ?
+                              AND violation_type = 'duplicate_order_sku'
+                              AND is_resolved = 0
+                        """, (order_id,))
+                logger.info(f"Resolved {len(existing_violation_orders)} duplicate violations (no duplicates found)")
+            
+            return {
+                'total_duplicates': 0,
+                'violations_created': 0,
+                'violations_resolved': len(existing_violation_orders)
+            }
+        
+        # Group duplicates by order for violation creation
+        duplicates_by_order = {}
+        current_duplicate_orders = set()
+        
+        for row in duplicate_rows:
+            order_inbox_id, order_number, sku, count = row
+            current_duplicate_orders.add(order_inbox_id)
+            
+            if order_inbox_id not in duplicates_by_order:
+                duplicates_by_order[order_inbox_id] = {
+                    'order_number': order_number,
+                    'skus': []
+                }
+            
+            duplicates_by_order[order_inbox_id]['skus'].append({
+                'sku': sku,
+                'count': count
+            })
+        
+        # Create/update violations for orders with duplicates
+        violations_created = 0
+        for order_inbox_id, data in duplicates_by_order.items():
+            order_number = data['order_number']
+            duplicate_skus = data['skus']
+            
+            # Build SKU summary
+            sku_summary = ', '.join([f"{item['sku']} (x{item['count']})" for item in duplicate_skus])
+            
+            violation = {
+                'order_inbox_id': order_inbox_id,
+                'order_number': order_number,
+                'rule_type': 'duplicate_order_sku',
+                'expected_service_name': 'Unique order+SKU combination',
+                'actual_service_name': f"Duplicate SKUs found: {sku_summary}",
+                'message': f'Duplicate order+SKU detected in ShipStation: {sku_summary}'
+            }
+            
+            create_or_update_violation(violation)
+            violations_created += 1
+        
+        # Resolve violations for orders that no longer have duplicates
+        violations_resolved = 0
+        for order_id, order_number in existing_violation_orders.items():
+            if order_id not in current_duplicate_orders:
+                # This order previously had duplicates but no longer does
+                with transaction() as conn:
+                    conn.execute("""
+                        UPDATE shipping_violations
+                        SET is_resolved = 1,
+                            resolved_at = CURRENT_TIMESTAMP
+                        WHERE order_id = ?
+                          AND violation_type = 'duplicate_order_sku'
+                          AND is_resolved = 0
+                    """, (order_id,))
+                violations_resolved += 1
+                logger.info(f"Resolved duplicate violation for order {order_number} (no longer has duplicates)")
+        
+        logger.info(f"Duplicate detection complete: {len(duplicate_rows)} duplicate combinations found, {violations_created} violations created/updated, {violations_resolved} resolved")
+        
+        return {
+            'total_duplicates': len(duplicate_rows),
+            'violations_created': violations_created,
+            'violations_resolved': violations_resolved
+        }
+        
+    except Exception as e:
+        logger.error(f"Error detecting duplicates: {e}", exc_info=True)
+        return {
+            'total_duplicates': 0,
+            'violations_created': 0,
+            'violations_resolved': 0,
+            'error': str(e)
+        }
 
 
 def run_validation() -> Dict[str, Any]:

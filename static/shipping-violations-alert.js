@@ -32,7 +32,9 @@ function updateViolationsAlert(count) {
         const typeSummary = Object.entries(violationTypes)
             .map(([type, count]) => {
                 const displayName = type === 'hawaiian_service' ? 'Hawaiian' : 
-                                  type === 'canadian_service' ? 'Canadian' : 'Benco';
+                                  type === 'canadian_service' ? 'Canadian' : 
+                                  type === 'benco_carrier' ? 'Benco' :
+                                  type === 'duplicate_order_sku' ? 'Duplicate' : type;
                 return `${count} ${displayName}`;
             })
             .join(', ');
