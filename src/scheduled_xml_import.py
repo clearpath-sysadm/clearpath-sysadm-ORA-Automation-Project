@@ -104,6 +104,7 @@ def expand_bundle_items(line_items, bundle_config):
 
 def import_orders_from_drive():
     """Import orders.xml from Google Drive with bundle expansion"""
+    conn = None
     try:
         files = list_xml_files_from_folder(GOOGLE_DRIVE_FOLDER_ID)
         
@@ -120,6 +121,11 @@ def import_orders_from_drive():
         root = ET.fromstring(xml_content)
         
         conn = get_connection()
+        
+        # BEGIN IMMEDIATE transaction to prevent race conditions
+        # This locks the database early, preventing concurrent imports from causing duplicates
+        conn.execute("BEGIN IMMEDIATE")
+        
         cursor = conn.cursor()
         
         # Load bundle configurations
@@ -213,10 +219,35 @@ def import_orders_from_drive():
                 # Calculate total quantity from consolidated items (only Key Products)
                 total_quantity = sum(item['quantity'] for item in consolidated_items)
                 
+                # IDEMPOTENT UPSERT: Check if order exists
                 cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
                 existing = cursor.fetchone()
                 
-                if not existing:
+                if existing:
+                    # Order exists - DELETE old items and UPDATE order (idempotent reprocessing)
+                    order_inbox_id = existing[0]
+                    
+                    # Delete old items
+                    cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = ?", (order_inbox_id,))
+                    
+                    # Update order metadata
+                    cursor.execute("""
+                        UPDATE orders_inbox
+                        SET order_date = ?, customer_email = ?, total_items = ?,
+                            ship_name = ?, ship_company = ?, ship_street1 = ?, ship_city = ?, 
+                            ship_state = ?, ship_postal_code = ?, ship_country = ?, ship_phone = ?,
+                            bill_name = ?, bill_company = ?, bill_street1 = ?, bill_city = ?, 
+                            bill_state = ?, bill_postal_code = ?, bill_country = ?, bill_phone = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (
+                        order_date_str, customer_email, total_quantity,
+                        ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                        bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
+                        order_inbox_id
+                    ))
+                else:
+                    # New order - INSERT
                     cursor.execute("""
                         INSERT INTO orders_inbox (
                             order_number, order_date, customer_email, status, total_items, source_system,
@@ -231,15 +262,14 @@ def import_orders_from_drive():
                     ))
                     
                     order_inbox_id = cursor.lastrowid
-                    
-                    # Insert consolidated line items (duplicates merged, only Key Products)
-                    for item in consolidated_items:
-                        cursor.execute("""
-                            INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                            VALUES (?, ?, ?)
-                        """, (order_inbox_id, item['sku'], item['quantity']))
-                    
                     orders_imported += 1
+                
+                # Insert consolidated line items (duplicates merged, only Key Products)
+                for item in consolidated_items:
+                    cursor.execute("""
+                        INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                        VALUES (?, ?, ?)
+                    """, (order_inbox_id, item['sku'], item['quantity']))
         
         conn.commit()
         conn.close()
@@ -249,6 +279,13 @@ def import_orders_from_drive():
         
     except Exception as e:
         logger.error(f"Error importing from Google Drive: {str(e)}")
+        # Rollback transaction on any error
+        if conn:
+            try:
+                conn.rollback()
+                conn.close()
+            except:
+                pass
         return 0
 
 def run_scheduled_import():
