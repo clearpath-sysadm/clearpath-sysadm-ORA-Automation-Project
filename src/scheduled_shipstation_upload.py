@@ -144,16 +144,33 @@ def upload_pending_orders():
                 if not consolidated_items[base_sku]['original_sku']:
                     consolidated_items[base_sku]['original_sku'] = sku
             
-            # Create ONE ShipStation order per UNIQUE base SKU
-            for base_sku, item_data in consolidated_items.items():
-                qty = item_data['qty']
-                unit_price_cents = item_data['price']
+            # FIX: Create ONE ShipStation order with ALL SKUs as line items
+            if consolidated_items:
+                # Build line items array with ALL SKUs
+                line_items = []
+                total_amount = 0
+                all_skus = []
                 
-                # Get lot number from sku_lot mapping
-                lot_number = sku_lot_map.get(base_sku, '')
-                sku_with_lot = f"{base_sku} - {lot_number}" if lot_number else base_sku
-                product_name = product_name_map.get(base_sku, f'Product {base_sku}')
+                for base_sku, item_data in consolidated_items.items():
+                    qty = item_data['qty']
+                    unit_price_cents = item_data['price']
+                    
+                    # Get lot number from sku_lot mapping
+                    lot_number = sku_lot_map.get(base_sku, '')
+                    sku_with_lot = f"{base_sku} - {lot_number}" if lot_number else base_sku
+                    product_name = product_name_map.get(base_sku, f'Product {base_sku}')
+                    
+                    line_items.append({
+                        'sku': sku_with_lot,
+                        'name': product_name,
+                        'quantity': qty,
+                        'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
+                    })
+                    
+                    total_amount += (unit_price_cents * qty / 100) if unit_price_cents else 0
+                    all_skus.append(base_sku)
                 
+                # Create SINGLE ShipStation order with ALL line items
                 shipstation_order = {
                     'orderNumber': order_number,
                     'orderDate': order_date,
@@ -179,13 +196,8 @@ def upload_pending_orders():
                         'country': ship_country or 'US',
                         'phone': ship_phone or ''
                     },
-                    'items': [{
-                        'sku': sku_with_lot,
-                        'name': product_name,
-                        'quantity': qty,  # Consolidated quantity
-                        'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
-                    }],
-                    'amountPaid': (unit_price_cents * qty / 100) if unit_price_cents else 0,
+                    'items': line_items,  # ALL SKUs in single order
+                    'amountPaid': total_amount,
                     'taxAmount': 0,
                     'shippingAmount': 0
                 }
@@ -193,31 +205,26 @@ def upload_pending_orders():
                 shipstation_orders.append(shipstation_order)
                 order_sku_map.append({
                     'order_inbox_id': order_id,
-                    'sku': base_sku,  # Use base SKU for consistency
+                    'sku': '|'.join(all_skus),  # Track all SKUs for this order
                     'order_number': order_number,
-                    'sku_with_lot': sku_with_lot
+                    'sku_with_lot': '|'.join([item['sku'] for item in line_items])
                 })
         
         # FIX 3: IN-BATCH DUPLICATE PREVENTION
-        # Remove duplicates within the current batch before checking ShipStation
+        # Remove duplicates within the current batch (should be rare now - one order per order_number)
         seen_in_batch = set()
         deduplicated_orders = []
         deduplicated_sku_map = []
         
         for idx, order in enumerate(shipstation_orders):
             order_num = order['orderNumber'].upper()
-            order_sku_info = order_sku_map[idx]
-            # Use normalized base SKU for comparison
-            base_sku = normalize_sku(order_sku_info['sku']).split(' - ')[0].strip()
             
-            key = f"{order_num}_{base_sku}"
-            
-            if key not in seen_in_batch:
-                seen_in_batch.add(key)
+            if order_num not in seen_in_batch:
+                seen_in_batch.add(order_num)
                 deduplicated_orders.append(order)
-                deduplicated_sku_map.append(order_sku_info)
+                deduplicated_sku_map.append(order_sku_map[idx])
             else:
-                logger.warning(f"Skipped in-batch duplicate: Order {order_num}, SKU {base_sku}")
+                logger.warning(f"Skipped in-batch duplicate: Order {order_num}")
         
         # Replace with deduplicated lists
         shipstation_orders = deduplicated_orders
@@ -235,29 +242,19 @@ def upload_pending_orders():
             unique_order_numbers
         )
         
-        # FIX 4: Create map of existing orders with NORMALIZED SKUs
+        # FIX 4: Create map of existing orders by order_number
         existing_order_map = {}
         for o in existing_orders:
             order_num = o.get('orderNumber', '').strip().upper()
             order_id = o.get('orderId')
             order_key = o.get('orderKey')
             
-            items = o.get('items', [])
-            if items and len(items) > 0:
-                sku_with_lot = items[0].get('sku', '')
-                # Normalize SKU to handle spacing inconsistencies
-                normalized_sku = normalize_sku(sku_with_lot)
-                # Extract base SKU
-                base_sku = normalized_sku.split(' - ')[0].strip()
-                
-                key = f"{order_num}_{base_sku}"
-                existing_order_map[key] = {
-                    'orderId': order_id,
-                    'orderKey': order_key,
-                    'sku': base_sku
-                }
+            existing_order_map[order_num] = {
+                'orderId': order_id,
+                'orderKey': order_key
+            }
         
-        # Filter out duplicates using NORMALIZED SKUs
+        # Filter out duplicates
         new_orders = []
         new_order_sku_map = []
         skipped_count = 0
@@ -265,23 +262,20 @@ def upload_pending_orders():
         for idx, order in enumerate(shipstation_orders):
             order_num_upper = order['orderNumber'].strip().upper()
             order_sku_info = order_sku_map[idx]
-            sku = order_sku_info['sku']
             
-            # FIX 4: Normalize SKU for comparison
-            normalized_sku = normalize_sku(sku)
-            base_sku = normalized_sku.split(' - ')[0].strip()
-            key = f"{order_num_upper}_{base_sku}"
-            
-            if key in existing_order_map:
+            if order_num_upper in existing_order_map:
                 # Already exists - mark as awaiting_shipment
-                existing = existing_order_map[key]
+                existing = existing_order_map[order_num_upper]
                 skipped_count += 1
                 shipstation_id = existing['orderId'] or existing['orderKey']
                 
-                cursor.execute("""
-                    INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                    VALUES (?, ?, ?)
-                """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
+                # Track all SKUs for this order
+                all_skus = order_sku_info['sku'].split('|')
+                for sku in all_skus:
+                    cursor.execute("""
+                        INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                        VALUES (?, ?, ?)
+                    """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                 
                 cursor.execute("""
                     UPDATE orders_inbox
@@ -327,10 +321,13 @@ def upload_pending_orders():
                 if success:
                     shipstation_id = order_id or order_key
                     
-                    cursor.execute("""
-                        INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                        VALUES (?, ?, ?)
-                    """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
+                    # Track all SKUs for this order
+                    all_skus = order_sku_info['sku'].split('|')
+                    for sku in all_skus:
+                        cursor.execute("""
+                            INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                            VALUES (?, ?, ?)
+                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                     
                     cursor.execute("""
                         UPDATE orders_inbox
@@ -342,7 +339,7 @@ def upload_pending_orders():
                 else:
                     failed_count += 1
                     error_details = error_msg or result.get('message') or 'Unknown error'
-                    logger.error(f"Upload failed for order {order_sku_info['order_number']}, SKU {order_sku_info['sku']}: {error_details}")
+                    logger.error(f"Upload failed for order {order_sku_info['order_number']}: {error_details}")
                     
                     cursor.execute("""
                         UPDATE orders_inbox 
