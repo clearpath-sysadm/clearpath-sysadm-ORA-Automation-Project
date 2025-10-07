@@ -326,11 +326,11 @@ def sync_order_from_shipstation(shipstation_order: Dict[str, Any]) -> bool:
 
 def run_status_sync() -> tuple[Dict[str, Any], int]:
     """
-    Main function to sync orders from ShipStation (last 4 days).
+    Main function to sync orders from ShipStation (last 7 days).
     Fetches orders and updates local database with current ShipStation data.
     """
     start_time = datetime.datetime.now()
-    logger.info("=== Starting ShipStation Status Sync (4-day window) ===")
+    logger.info("=== Starting ShipStation Status Sync (7-day window) ===")
     
     try:
         # Get ShipStation credentials
@@ -339,11 +339,11 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
             logger.error("ShipStation credentials not found")
             return {"error": "Missing credentials"}, 500
         
-        # Fetch orders from ShipStation (last 4 days)
-        shipstation_orders = fetch_orders_from_shipstation_by_date(api_key, api_secret, days_back=4)
+        # Fetch orders from ShipStation (last 7 days)
+        shipstation_orders = fetch_orders_from_shipstation_by_date(api_key, api_secret, days_back=7)
         
         if not shipstation_orders:
-            logger.info("No orders found in ShipStation (last 4 days)")
+            logger.info("No orders found in ShipStation (last 7 days)")
             return {"message": "No orders to sync"}, 200
         
         # Sync each order to local database
