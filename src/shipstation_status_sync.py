@@ -38,41 +38,58 @@ setup_logging(log_file_path=log_file, log_level=logging.INFO, enable_console_log
 logger = logging.getLogger(__name__)
 
 
-def get_orders_needing_status_check() -> List[Dict[str, Any]]:
+def fetch_orders_from_shipstation_by_date(api_key: str, api_secret: str, days_back: int = 4) -> List[Dict[str, Any]]:
     """
-    Get all orders from local DB that need status checking.
-    Returns orders with shipstation_order_id that need sync (uploaded, awaiting_shipment, pending).
+    Fetch orders from ShipStation modified in the last N days.
+    Returns list of order data from ShipStation API.
     """
+    headers = get_shipstation_headers(api_key, api_secret)
+    
+    # Calculate date range (last 4 days)
+    end_date = datetime.datetime.now()
+    start_date = end_date - datetime.timedelta(days=days_back)
+    
+    params = {
+        'modifyDateStart': start_date.strftime('%Y-%m-%dT00:00:00'),
+        'modifyDateEnd': end_date.strftime('%Y-%m-%dT23:59:59'),
+        'page': 1,
+        'pageSize': 500
+    }
+    
+    all_orders = []
+    
     try:
-        rows = execute_query("""
-            SELECT 
-                id,
-                order_number,
-                shipstation_order_id,
-                status,
-                order_date
-            FROM orders_inbox
-            WHERE shipstation_order_id IS NOT NULL
-              AND shipstation_order_id != ''
-              AND status IN ('uploaded', 'awaiting_shipment', 'pending')
-            ORDER BY order_date DESC
-        """)
+        while True:
+            response = make_api_request(
+                url=SHIPSTATION_ORDERS_ENDPOINT,
+                method='GET',
+                headers=headers,
+                params=params,
+                timeout=60
+            )
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                orders = data.get('orders', [])
+                all_orders.extend(orders)
+                
+                # Check if there are more pages
+                total_pages = data.get('pages', 1)
+                current_page = params['page']
+                
+                if current_page < total_pages:
+                    params['page'] += 1
+                else:
+                    break
+            else:
+                logger.warning(f"Failed to fetch orders: status {response.status_code if response else 'None'}")
+                break
         
-        orders = []
-        for row in rows:
-            orders.append({
-                'id': row[0],
-                'order_number': row[1],
-                'shipstation_order_id': row[2],
-                'local_status': row[3],
-                'order_date': row[4]
-            })
-        
-        logger.info(f"Found {len(orders)} orders needing status check")
-        return orders
+        logger.info(f"Fetched {len(all_orders)} orders from ShipStation (last {days_back} days)")
+        return all_orders
         
     except Exception as e:
-        logger.error(f"Error getting orders for status check: {e}", exc_info=True)
+        logger.error(f"Error fetching orders from ShipStation: {e}", exc_info=True)
         return []
 
 
@@ -242,13 +259,78 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
         return False
 
 
+def sync_order_from_shipstation(shipstation_order: Dict[str, Any]) -> bool:
+    """
+    Sync a single order from ShipStation to local database.
+    Updates order in orders_inbox with current ShipStation data.
+    """
+    try:
+        order_id = shipstation_order.get('orderId')
+        order_number = shipstation_order.get('orderNumber', '').strip()
+        order_status = shipstation_order.get('orderStatus', '').lower()
+        
+        if not order_number:
+            return False
+        
+        # Extract carrier and service information
+        carrier_code = shipstation_order.get('carrierCode')
+        service_code = shipstation_order.get('serviceCode')
+        
+        carrier_id = None
+        advanced_options = shipstation_order.get('advancedOptions', {})
+        if advanced_options and isinstance(advanced_options, dict):
+            carrier_id = (advanced_options.get('billToMyOtherAccount') or 
+                         advanced_options.get('carrierId'))
+        if not carrier_id:
+            carrier_id = shipstation_order.get('carrierId')
+        
+        service_name = None
+        if service_code:
+            service_name_map = {
+                'fedex_2day': 'FedEx 2Day',
+                'fedex_international_ground': 'FedEx International Ground',
+                'fedex_ground': 'FedEx Ground',
+                'fedex_home_delivery': 'FedEx Home Delivery',
+                'fedex_express_saver': 'FedEx Express Saver',
+                'fedex_standard_overnight': 'FedEx Standard Overnight'
+            }
+            service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
+        
+        with transaction() as conn:
+            # Check if order exists
+            existing = conn.execute("""
+                SELECT id FROM orders_inbox WHERE order_number = ?
+            """, (order_number,)).fetchone()
+            
+            if existing:
+                # Update existing order with current ShipStation data
+                conn.execute("""
+                    UPDATE orders_inbox
+                    SET status = ?,
+                        shipstation_order_id = ?,
+                        shipping_carrier_code = ?,
+                        shipping_carrier_id = ?,
+                        shipping_service_code = ?,
+                        shipping_service_name = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE order_number = ?
+                """, (order_status, str(order_id), carrier_code, carrier_id, 
+                      service_code, service_name, order_number))
+            
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error syncing order {shipstation_order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
+        return False
+
+
 def run_status_sync() -> tuple[Dict[str, Any], int]:
     """
-    Main function to run status sync.
-    Returns (result_dict, status_code) for API compatibility.
+    Main function to sync orders from ShipStation (last 4 days).
+    Fetches orders and updates local database with current ShipStation data.
     """
     start_time = datetime.datetime.now()
-    logger.info("=== Starting ShipStation Status Sync ===")
+    logger.info("=== Starting ShipStation Status Sync (4-day window) ===")
     
     try:
         # Get ShipStation credentials
@@ -257,47 +339,36 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
             logger.error("ShipStation credentials not found")
             return {"error": "Missing credentials"}, 500
         
-        # Get orders needing status check
-        orders = get_orders_needing_status_check()
+        # Fetch orders from ShipStation (last 4 days)
+        shipstation_orders = fetch_orders_from_shipstation_by_date(api_key, api_secret, days_back=4)
         
-        if not orders:
-            logger.info("No orders need status checking")
+        if not shipstation_orders:
+            logger.info("No orders found in ShipStation (last 4 days)")
             return {"message": "No orders to sync"}, 200
         
-        # Batch fetch all orders from ShipStation at once
-        shipstation_order_ids = [order['shipstation_order_id'] for order in orders]
-        shipstation_orders_map = fetch_orders_batch_from_shipstation(api_key, api_secret, shipstation_order_ids)
-        
-        # Update each order with data from batch fetch
+        # Sync each order to local database
         updated_count = 0
         shipped_count = 0
         cancelled_count = 0
         error_count = 0
         
-        for local_order in orders:
-            ss_order_id = local_order['shipstation_order_id']
-            shipstation_order = shipstation_orders_map.get(ss_order_id)
-            
-            if shipstation_order:
-                success = update_order_status(local_order, shipstation_order)
-                if success:
-                    updated_count += 1
-                    ss_status = shipstation_order.get('orderStatus', '').lower()
-                    if ss_status == 'shipped':
-                        shipped_count += 1
-                    elif ss_status == 'cancelled':
-                        cancelled_count += 1
-                else:
-                    error_count += 1
+        for shipstation_order in shipstation_orders:
+            success = sync_order_from_shipstation(shipstation_order)
+            if success:
+                updated_count += 1
+                ss_status = shipstation_order.get('orderStatus', '').lower()
+                if ss_status == 'shipped':
+                    shipped_count += 1
+                elif ss_status == 'cancelled':
+                    cancelled_count += 1
             else:
-                logger.warning(f"Could not find order {local_order['order_number']} in batch fetch")
                 error_count += 1
         
         elapsed = (datetime.datetime.now() - start_time).total_seconds()
         
         result = {
-            "message": f"Status sync complete: {updated_count} orders updated",
-            "checked": len(orders),
+            "message": f"Status sync complete: {updated_count} orders synced",
+            "fetched": len(shipstation_orders),
             "updated": updated_count,
             "shipped": shipped_count,
             "cancelled": cancelled_count,
@@ -306,7 +377,7 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
         }
         
         logger.info(f"=== Status Sync Completed in {elapsed:.2f}s ===")
-        logger.info(f"Summary: {updated_count} updated ({shipped_count} shipped, {cancelled_count} cancelled), {error_count} errors")
+        logger.info(f"Summary: {updated_count} synced ({shipped_count} shipped, {cancelled_count} cancelled), {error_count} errors")
         
         return result, 200
         
