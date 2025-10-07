@@ -210,7 +210,7 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
             return False
         
         # Extract full shipping address from ShipStation
-        ship_to = order.get('shipTo', {})
+        ship_to = order.get('shipTo') or {}
         ship_name = ship_to.get('name', '').strip() or None
         ship_company = ship_to.get('company', '').strip() or None
         ship_street1 = ship_to.get('street1', '').strip() or None
@@ -221,7 +221,7 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
         ship_phone = ship_to.get('phone', '').strip() or None
         
         # Extract full billing address from ShipStation
-        bill_to = order.get('billTo', {})
+        bill_to = order.get('billTo') or {}
         bill_name = bill_to.get('name', '').strip() or None
         bill_company = bill_to.get('company', '').strip() or None
         bill_street1 = bill_to.get('street1', '').strip() or None
