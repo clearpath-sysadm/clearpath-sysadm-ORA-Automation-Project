@@ -3114,6 +3114,70 @@ def api_resolve_violation(violation_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/quantity_mismatch', methods=['GET'])
+def api_get_quantity_mismatch():
+    """Check for quantity mismatch between ShipStation and Orders Inbox"""
+    try:
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        from utils.api_utils import make_api_request
+        
+        # Get ShipStation total units
+        api_key, api_secret = get_shipstation_credentials()
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        response = make_api_request(
+            url='https://ssapi.shipstation.com/orders',
+            method='GET',
+            headers=headers,
+            params={'orderStatus': 'awaiting_shipment', 'pageSize': 500},
+            timeout=30
+        )
+        
+        ss_orders = response.json()['orders']
+        
+        # Handle consolidated orders (multiple ShipStation orders with same order number)
+        ss_order_map = {}
+        for order in ss_orders:
+            order_num = order['orderNumber']
+            qty = sum(item['quantity'] for item in order.get('items', []))
+            if order_num in ss_order_map:
+                ss_order_map[order_num] += qty
+            else:
+                ss_order_map[order_num] = qty
+        
+        ss_total = sum(ss_order_map.values())
+        
+        # Get local database total
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT COALESCE(SUM(oii.quantity), 0) as total_units
+            FROM orders_inbox oi
+            LEFT JOIN order_items_inbox oii ON oi.id = oii.order_inbox_id
+            WHERE oi.status IN ('pending', 'uploaded', 'awaiting_shipment')
+        """)
+        
+        local_total = cursor.fetchone()[0] or 0
+        conn.close()
+        
+        difference = ss_total - local_total
+        has_mismatch = difference != 0
+        
+        return jsonify({
+            'success': True,
+            'has_mismatch': has_mismatch,
+            'shipstation_units': ss_total,
+            'local_units': local_total,
+            'difference': difference
+        })
+    except Exception as e:
+        logger.error(f"Error checking quantity mismatch: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/lot_inventory', methods=['GET'])
 def api_get_lot_inventory():
     """Get all lot inventory records with auto-calculated quantities (sorted by FIFO)"""

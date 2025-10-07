@@ -1057,6 +1057,21 @@
     </style>
 </head>
 <body>
+    <!-- Quantity Mismatch Alert Banner -->
+    <div class="mismatch-alert" id="mismatch-alert">
+        <div class="mismatch-content">
+            <span class="mismatch-icon">🔴</span>
+            <div class="mismatch-text">
+                <div class="mismatch-title">Unit Count Mismatch Detected</div>
+                <div class="mismatch-details" id="mismatch-details">Checking...</div>
+            </div>
+        </div>
+        <div class="mismatch-actions">
+            <button class="btn-refresh-mismatch" onclick="refreshMismatchCheck()">Refresh Check</button>
+            <button class="btn-dismiss-mismatch" onclick="dismissMismatchAlert()" title="Dismiss">×</button>
+        </div>
+    </div>
+
     <!-- Shipping Violations Alert Banner -->
     <div class="violations-alert" id="violations-alert">
         <div class="violations-content">
@@ -1361,6 +1376,8 @@
     </div>
 
     <script src="/static/timezone-utils.js"></script>
+    <script src="/static/quantity-mismatch-alert.js"></script>
+    <script src="/static/shipping-violations-alert.js"></script>
     <script>
         // Global state
         let lastUpdateTime = Date.now();
