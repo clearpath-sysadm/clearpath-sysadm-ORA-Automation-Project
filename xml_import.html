@@ -1585,7 +1585,7 @@
             const pending = orders.filter(o => o.status === 'pending').length;
             const awaitingShipmentUnits = orders
                 .filter(o => o.status === 'awaiting_shipment')
-                .reduce((sum, o) => sum + (o.total_quantity || 0), 0);
+                .reduce((sum, o) => sum + (o.quantity || 0), 0);
             const failed = orders.filter(o => o.status === 'failed').length;
 
             document.getElementById('stat-pending').textContent = pending;
