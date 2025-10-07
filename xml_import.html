@@ -1254,7 +1254,7 @@
                         </div>
                         <div class="stat-card" onclick="filterByStatus('awaiting_shipment')" style="cursor: pointer;" title="Click to filter awaiting shipment">
                             <div class="stat-value" id="stat-uploaded">0</div>
-                            <div class="stat-label">Units Awaiting Shipment</div>
+                            <div class="stat-label">Units to Ship (ShipStation)</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="stat-failed">0</div>
@@ -1566,10 +1566,10 @@
                 const result = await response.json();
 
                 if (result.data && Array.isArray(result.data)) {
-                    updateStats(result.data);
+                    await updateStats(result.data);
                     renderOrdersTable(result.data);
                 } else if (result.success) {
-                    updateStats(result.data);
+                    await updateStats(result.data);
                     renderOrdersTable(result.data);
                 } else {
                     showAlert('Error loading orders: ' + (result.error || 'No data returned'), 'error');
@@ -1581,16 +1581,33 @@
             }
         }
 
-        function updateStats(orders) {
+        async function updateStats(orders) {
             const pending = orders.filter(o => o.status === 'pending').length;
-            const awaitingShipmentUnits = orders
-                .filter(o => o.status === 'awaiting_shipment')
-                .reduce((sum, o) => sum + (o.quantity || 0), 0);
             const failed = orders.filter(o => o.status === 'failed').length;
 
             document.getElementById('stat-pending').textContent = pending;
-            document.getElementById('stat-uploaded').textContent = awaitingShipmentUnits;
             document.getElementById('stat-failed').textContent = failed;
+            
+            // Fetch accurate unit count from ShipStation cache (same as dashboard)
+            try {
+                const response = await fetch('/api/shipstation/units_to_ship');
+                const result = await response.json();
+                if (result.success && result.units_to_ship !== undefined) {
+                    document.getElementById('stat-uploaded').textContent = result.units_to_ship;
+                } else {
+                    // Fallback to local DB count if API fails
+                    const awaitingShipmentUnits = orders
+                        .filter(o => o.status === 'awaiting_shipment')
+                        .reduce((sum, o) => sum + (o.quantity || 0), 0);
+                    document.getElementById('stat-uploaded').textContent = awaitingShipmentUnits;
+                }
+            } catch (error) {
+                // Fallback to local DB count on error
+                const awaitingShipmentUnits = orders
+                    .filter(o => o.status === 'awaiting_shipment')
+                    .reduce((sum, o) => sum + (o.quantity || 0), 0);
+                document.getElementById('stat-uploaded').textContent = awaitingShipmentUnits;
+            }
             
             // Show retry button if there are failed orders
             const retryBtn = document.getElementById('btn-retry-failed');
