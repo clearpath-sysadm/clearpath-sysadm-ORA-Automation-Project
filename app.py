@@ -893,16 +893,18 @@ def api_sync_manual_orders():
                 
                 print(f"Found {len(manual_orders)} manual orders to sync")
                 
-                # Import manual orders
+                # Import manual orders in batch transaction
+                from src.services.database.db_utils import transaction
                 imported = 0
-                for order in manual_orders:
-                    order_number = order.get('orderNumber', 'UNKNOWN')
-                    try:
-                        if import_manual_order(order):
-                            imported += 1
-                            print(f"Imported manual order: {order_number}")
-                    except Exception as e:
-                        print(f"Failed to import order {order_number}: {e}")
+                with transaction() as conn:
+                    for order in manual_orders:
+                        order_number = order.get('orderNumber', 'UNKNOWN')
+                        try:
+                            if import_manual_order(order, conn):
+                                imported += 1
+                                print(f"Imported manual order: {order_number}")
+                        except Exception as e:
+                            print(f"Failed to import order {order_number}: {e}")
                 
                 print(f"Manual sync complete: {imported} orders imported")
                 

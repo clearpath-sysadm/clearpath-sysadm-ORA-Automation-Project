@@ -164,12 +164,16 @@ def has_key_product_skus(order: Dict[Any, Any]) -> bool:
     return False
 
 
-def import_manual_order(order: Dict[Any, Any]) -> bool:
+def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
     """
     Import a manual ShipStation order into the local database.
     Creates entries in orders_inbox, order_items_inbox, and potentially shipped_orders/shipped_items.
     Also captures carrier/service information for shipping validation.
     Returns True if successfully imported, False otherwise.
+    
+    Args:
+        order: ShipStation order dict
+        conn: Optional database connection. If None, creates its own transaction.
     """
     try:
         order_id = order.get('orderId') or order.get('orderKey')
@@ -257,7 +261,8 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
         total_amount = order.get('orderTotal', 0)
         total_amount_cents = int(float(total_amount) * 100) if total_amount else 0
         
-        with transaction() as conn:
+        # Use provided connection or create a new transaction
+        def _do_import(conn):
             # Check if order already exists
             existing = conn.execute("""
                 SELECT id FROM orders_inbox WHERE order_number = ?
@@ -403,8 +408,14 @@ def import_manual_order(order: Dict[Any, Any]) -> bool:
                 logger.info(f"Imported shipped order {order_number} (ShipStation ID: {order_id})")
             else:
                 logger.info(f"Imported awaiting order {order_number} (ShipStation ID: {order_id})")
+            return True
         
-        return True
+        # Execute import with provided connection or create new transaction
+        if conn is not None:
+            return _do_import(conn)
+        else:
+            with transaction() as new_conn:
+                return _do_import(new_conn)
         
     except Exception as e:
         logger.error(f"Error importing order {order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
@@ -480,26 +491,27 @@ def run_manual_order_sync():
         
         logger.info(f"Found {len(manual_orders)} manual orders to import (out of {len(orders)} total)")
         
-        # Import each manual order and track success/failure
+        # Import all manual orders in a single batch transaction
         imported_count = 0
         failed_count = 0
         max_modify_date = None
         
-        for order in manual_orders:
-            try:
-                if import_manual_order(order):
-                    imported_count += 1
-                    # Track the latest modifyDate from successfully imported orders
-                    modify_date_str = order.get('modifyDate', '')
-                    if modify_date_str:
-                        if max_modify_date is None or modify_date_str > max_modify_date:
-                            max_modify_date = modify_date_str
-                else:
+        with transaction() as conn:
+            for order in manual_orders:
+                try:
+                    if import_manual_order(order, conn):
+                        imported_count += 1
+                        # Track the latest modifyDate from successfully imported orders
+                        modify_date_str = order.get('modifyDate', '')
+                        if modify_date_str:
+                            if max_modify_date is None or modify_date_str > max_modify_date:
+                                max_modify_date = modify_date_str
+                    else:
+                        failed_count += 1
+                        logger.warning(f"Failed to import order {order.get('orderNumber', 'UNKNOWN')}")
+                except Exception as e:
                     failed_count += 1
-                    logger.warning(f"Failed to import order {order.get('orderNumber', 'UNKNOWN')}")
-            except Exception as e:
-                failed_count += 1
-                logger.error(f"Exception importing order {order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
+                    logger.error(f"Exception importing order {order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
         
         logger.info(f"Successfully imported {imported_count} manual orders, {failed_count} failed")
         
