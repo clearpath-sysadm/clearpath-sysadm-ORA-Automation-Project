@@ -38,10 +38,6 @@ args = "orders-cleanup"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "manual-order-sync"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "shipstation-upload"
 
 [[workflows.workflow]]
@@ -96,17 +92,6 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/scheduled_cleanup.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "manual-order-sync"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python src/scheduled_manual_sync.py"
 
 [workflows.workflow.metadata]
 outputType = "console"
