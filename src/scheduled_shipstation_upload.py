@@ -273,12 +273,19 @@ def upload_pending_orders():
         # Check for duplicates in ShipStation
         unique_order_numbers = list(set([o['orderNumber'] for o in shipstation_orders]))
         
-        existing_orders = fetch_shipstation_orders_by_order_numbers(
-            api_key,
-            api_secret,
-            settings.SHIPSTATION_ORDERS_ENDPOINT,
-            unique_order_numbers
-        )
+        # STEP 1: Safe error handling for API duplicate check
+        try:
+            existing_orders = fetch_shipstation_orders_by_order_numbers(
+                api_key,
+                api_secret,
+                settings.SHIPSTATION_ORDERS_ENDPOINT,
+                unique_order_numbers
+            )
+            api_check_failed = False
+        except Exception as e:
+            logger.error(f"ShipStation API duplicate check failed: {e}")
+            existing_orders = []  # Safe default: treat as no existing orders
+            api_check_failed = True
         
         # FIX 4: Create map of existing orders by order_number
         existing_order_map = {}
