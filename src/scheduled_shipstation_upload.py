@@ -287,6 +287,27 @@ def upload_pending_orders():
             existing_orders = []  # Safe default: treat as no existing orders
             api_check_failed = True
         
+        # STEP 2: ABORT if API check failed to prevent duplicate uploads
+        if api_check_failed:
+            logger.error("ABORT: Cannot verify duplicates - reverting orders to prevent duplicate uploads")
+            
+            # Revert claimed orders back to 'pending' for retry in next cycle
+            # Use run_id match only (no status filter) to catch orders regardless of current state
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET status = 'pending',
+                    failure_reason = 'API duplicate check failed - will retry next cycle',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE failure_reason = ?
+            """, (run_id,))
+            
+            reverted = cursor.rowcount
+            conn.commit()
+            # Note: Keep connection open - function will exit cleanly with return 0
+            
+            logger.info(f'Aborted upload: Reverted {reverted} orders from run {run_id} back to pending due to API failure')
+            return 0
+        
         # FIX 4: Create map of existing orders by order_number
         existing_order_map = {}
         for o in existing_orders:
