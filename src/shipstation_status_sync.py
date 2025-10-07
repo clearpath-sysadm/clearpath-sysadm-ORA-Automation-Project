@@ -143,13 +143,18 @@ def fetch_orders_batch_from_shipstation(api_key: str, api_secret: str, shipstati
         return {}
 
 
-def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str, Any]) -> bool:
+def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str, Any], conn=None) -> bool:
     """
     Update local database with current status from ShipStation.
     Handles: shipped → move to shipped_orders, cancelled → update status, etc.
     Also captures carrier/service information for validation.
+    
+    Args:
+        local_order: Local order data from database
+        shipstation_order: Order data from ShipStation API
+        conn: Optional database connection (for batch operations)
     """
-    try:
+    def _do_update(conn):
         order_id = local_order['id']
         order_number = local_order['order_number']
         local_status = local_order['local_status']
@@ -187,84 +192,94 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
         
         logger.info(f"Syncing order {order_number}: local='{local_status}' → ShipStation='{ss_status}' (carrier: {carrier_code}, service: {service_code}, carrier_id: {carrier_id})")
         
-        with transaction() as conn:
-            if ss_status == 'shipped':
-                # Order has been shipped - update status in orders_inbox (keep it there)
-                conn.execute("""
-                    UPDATE orders_inbox
-                    SET status = 'shipped',
-                        shipping_carrier_code = ?,
-                        shipping_carrier_id = ?,
-                        shipping_service_code = ?,
-                        shipping_service_name = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (carrier_code, carrier_id, service_code, service_name, order_id))
-                
-                logger.info(f"✅ Updated order {order_number} status to 'shipped'")
-                
-            elif ss_status == 'cancelled':
-                # Order was cancelled (also capture carrier info even though cancelled)
-                conn.execute("""
-                    UPDATE orders_inbox
-                    SET status = 'cancelled',
-                        shipping_carrier_code = ?,
-                        shipping_carrier_id = ?,
-                        shipping_service_code = ?,
-                        shipping_service_name = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (carrier_code, carrier_id, service_code, service_name, order_id))
-                
-                logger.info(f"✅ Marked order {order_number} as cancelled")
-                
-            elif ss_status == 'awaiting_shipment':
-                # Still waiting to ship - capture carrier info for validation
-                conn.execute("""
-                    UPDATE orders_inbox
-                    SET status = 'awaiting_shipment',
-                        shipping_carrier_code = ?,
-                        shipping_carrier_id = ?,
-                        shipping_service_code = ?,
-                        shipping_service_name = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (carrier_code, carrier_id, service_code, service_name, order_id))
-                
-                logger.debug(f"Order {order_number} still awaiting shipment")
-                
-            elif ss_status in ('on_hold', 'awaiting_payment'):
-                # Order is on hold or awaiting payment (also capture carrier info)
-                conn.execute("""
-                    UPDATE orders_inbox
-                    SET status = ?,
-                        shipping_carrier_code = ?,
-                        shipping_carrier_id = ?,
-                        shipping_service_code = ?,
-                        shipping_service_name = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (ss_status, carrier_code, carrier_id, service_code, service_name, order_id))
-                
-                logger.info(f"✅ Updated order {order_number} to status '{ss_status}'")
+        if ss_status == 'shipped':
+            # Order has been shipped - update status in orders_inbox (keep it there)
+            conn.execute("""
+                UPDATE orders_inbox
+                SET status = 'shipped',
+                    shipping_carrier_code = ?,
+                    shipping_carrier_id = ?,
+                    shipping_service_code = ?,
+                    shipping_service_name = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (carrier_code, carrier_id, service_code, service_name, order_id))
             
-            else:
-                # Unknown status - log it
-                logger.warning(f"Unknown ShipStation status '{ss_status}' for order {order_number}")
+            logger.info(f"✅ Updated order {order_number} status to 'shipped'")
+            
+        elif ss_status == 'cancelled':
+            # Order was cancelled (also capture carrier info even though cancelled)
+            conn.execute("""
+                UPDATE orders_inbox
+                SET status = 'cancelled',
+                    shipping_carrier_code = ?,
+                    shipping_carrier_id = ?,
+                    shipping_service_code = ?,
+                    shipping_service_name = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (carrier_code, carrier_id, service_code, service_name, order_id))
+            
+            logger.info(f"✅ Marked order {order_number} as cancelled")
+            
+        elif ss_status == 'awaiting_shipment':
+            # Still waiting to ship - capture carrier info for validation
+            conn.execute("""
+                UPDATE orders_inbox
+                SET status = 'awaiting_shipment',
+                    shipping_carrier_code = ?,
+                    shipping_carrier_id = ?,
+                    shipping_service_code = ?,
+                    shipping_service_name = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (carrier_code, carrier_id, service_code, service_name, order_id))
+            
+            logger.debug(f"Order {order_number} still awaiting shipment")
+            
+        elif ss_status in ('on_hold', 'awaiting_payment'):
+            # Order is on hold or awaiting payment (also capture carrier info)
+            conn.execute("""
+                UPDATE orders_inbox
+                SET status = ?,
+                    shipping_carrier_code = ?,
+                    shipping_carrier_id = ?,
+                    shipping_service_code = ?,
+                    shipping_service_name = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (ss_status, carrier_code, carrier_id, service_code, service_name, order_id))
+            
+            logger.info(f"✅ Updated order {order_number} to status '{ss_status}'")
+        
+        else:
+            # Unknown status - log it
+            logger.warning(f"Unknown ShipStation status '{ss_status}' for order {order_number}")
         
         return True
-        
+    
+    try:
+        # Execute update with provided connection or create new transaction
+        if conn is not None:
+            return _do_update(conn)
+        else:
+            with transaction() as new_conn:
+                return _do_update(new_conn)
     except Exception as e:
         logger.error(f"Error updating order {local_order['order_number']}: {e}", exc_info=True)
         return False
 
 
-def sync_order_from_shipstation(shipstation_order: Dict[str, Any]) -> bool:
+def sync_order_from_shipstation(shipstation_order: Dict[str, Any], conn=None) -> bool:
     """
     Sync a single order from ShipStation to local database.
     Updates order in orders_inbox with current ShipStation data.
+    
+    Args:
+        shipstation_order: Order data from ShipStation API
+        conn: Optional database connection (for batch operations)
     """
-    try:
+    def _do_sync(conn):
         order_id = shipstation_order.get('orderId')
         order_number = shipstation_order.get('orderNumber', '').strip()
         order_status = shipstation_order.get('orderStatus', '').lower()
@@ -296,29 +311,35 @@ def sync_order_from_shipstation(shipstation_order: Dict[str, Any]) -> bool:
             }
             service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
         
-        with transaction() as conn:
-            # Check if order exists
-            existing = conn.execute("""
-                SELECT id FROM orders_inbox WHERE order_number = ?
-            """, (order_number,)).fetchone()
-            
-            if existing:
-                # Update existing order with current ShipStation data
-                conn.execute("""
-                    UPDATE orders_inbox
-                    SET status = ?,
-                        shipstation_order_id = ?,
-                        shipping_carrier_code = ?,
-                        shipping_carrier_id = ?,
-                        shipping_service_code = ?,
-                        shipping_service_name = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE order_number = ?
-                """, (order_status, str(order_id), carrier_code, carrier_id, 
-                      service_code, service_name, order_number))
-            
-        return True
+        # Check if order exists
+        existing = conn.execute("""
+            SELECT id FROM orders_inbox WHERE order_number = ?
+        """, (order_number,)).fetchone()
         
+        if existing:
+            # Update existing order with current ShipStation data
+            conn.execute("""
+                UPDATE orders_inbox
+                SET status = ?,
+                    shipstation_order_id = ?,
+                    shipping_carrier_code = ?,
+                    shipping_carrier_id = ?,
+                    shipping_service_code = ?,
+                    shipping_service_name = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_number = ?
+            """, (order_status, str(order_id), carrier_code, carrier_id, 
+                  service_code, service_name, order_number))
+        
+        return True
+    
+    try:
+        # Execute sync with provided connection or create new transaction
+        if conn is not None:
+            return _do_sync(conn)
+        else:
+            with transaction() as new_conn:
+                return _do_sync(new_conn)
     except Exception as e:
         logger.error(f"Error syncing order {shipstation_order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
         return False
@@ -346,23 +367,24 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
             logger.info("No orders found in ShipStation (last 7 days)")
             return {"message": "No orders to sync"}, 200
         
-        # Sync each order to local database
+        # Sync all orders in a single batch transaction
         updated_count = 0
         shipped_count = 0
         cancelled_count = 0
         error_count = 0
         
-        for shipstation_order in shipstation_orders:
-            success = sync_order_from_shipstation(shipstation_order)
-            if success:
-                updated_count += 1
-                ss_status = shipstation_order.get('orderStatus', '').lower()
-                if ss_status == 'shipped':
-                    shipped_count += 1
-                elif ss_status == 'cancelled':
-                    cancelled_count += 1
-            else:
-                error_count += 1
+        with transaction() as conn:
+            for shipstation_order in shipstation_orders:
+                success = sync_order_from_shipstation(shipstation_order, conn)
+                if success:
+                    updated_count += 1
+                    ss_status = shipstation_order.get('orderStatus', '').lower()
+                    if ss_status == 'shipped':
+                        shipped_count += 1
+                    elif ss_status == 'cancelled':
+                        cancelled_count += 1
+                else:
+                    error_count += 1
         
         elapsed = (datetime.datetime.now() - start_time).total_seconds()
         
