@@ -213,27 +213,27 @@ def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
             logger.warning(f"Skipping order without order_number: {order_id}")
             return False
         
-        # Extract full shipping address from ShipStation
+        # Extract full shipping address from ShipStation (null-safe for explicit None values)
         ship_to = order.get('shipTo') or {}
-        ship_name = ship_to.get('name', '').strip() or None
-        ship_company = ship_to.get('company', '').strip() or None
-        ship_street1 = ship_to.get('street1', '').strip() or None
-        ship_city = ship_to.get('city', '').strip() or None
-        ship_state = ship_to.get('state', '').strip() or None
-        ship_postal_code = ship_to.get('postalCode', '').strip() or None
-        ship_country = ship_to.get('country', '').strip() or None
-        ship_phone = ship_to.get('phone', '').strip() or None
+        ship_name = (ship_to.get('name') or '').strip() or None
+        ship_company = (ship_to.get('company') or '').strip() or None
+        ship_street1 = (ship_to.get('street1') or '').strip() or None
+        ship_city = (ship_to.get('city') or '').strip() or None
+        ship_state = (ship_to.get('state') or '').strip() or None
+        ship_postal_code = (ship_to.get('postalCode') or '').strip() or None
+        ship_country = (ship_to.get('country') or '').strip() or None
+        ship_phone = (ship_to.get('phone') or '').strip() or None
         
-        # Extract full billing address from ShipStation
+        # Extract full billing address from ShipStation (null-safe for explicit None values)
         bill_to = order.get('billTo') or {}
-        bill_name = bill_to.get('name', '').strip() or None
-        bill_company = bill_to.get('company', '').strip() or None
-        bill_street1 = bill_to.get('street1', '').strip() or None
-        bill_city = bill_to.get('city', '').strip() or None
-        bill_state = bill_to.get('state', '').strip() or None
-        bill_postal_code = bill_to.get('postalCode', '').strip() or None
-        bill_country = bill_to.get('country', '').strip() or None
-        bill_phone = bill_to.get('phone', '').strip() or None
+        bill_name = (bill_to.get('name') or '').strip() or None
+        bill_company = (bill_to.get('company') or '').strip() or None
+        bill_street1 = (bill_to.get('street1') or '').strip() or None
+        bill_city = (bill_to.get('city') or '').strip() or None
+        bill_state = (bill_to.get('state') or '').strip() or None
+        bill_postal_code = (bill_to.get('postalCode') or '').strip() or None
+        bill_country = (bill_to.get('country') or '').strip() or None
+        bill_phone = (bill_to.get('phone') or '').strip() or None
         
         # Map ShipStation status to database status
         # ShipStation statuses: awaiting_payment, awaiting_shipment, shipped, on_hold, cancelled
