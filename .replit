@@ -18,38 +18,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "weekly-reporter"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "dashboard-server"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "xml-import-scheduler"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "shipstation-units-refresh"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "orders-cleanup"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "shipstation-upload"
-
-[[workflows.workflow]]
-name = "weekly-reporter"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "export DEV_MODE=1 && python src/weekly_reporter.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [[workflows.workflow]]
 name = "dashboard-server"
@@ -64,45 +37,12 @@ waitForPort = 5000
 outputType = "webview"
 
 [[workflows.workflow]]
-name = "xml-import-scheduler"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python src/scheduled_xml_import.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "shipstation-units-refresh"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python src/shipstation_units_refresher.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
 name = "orders-cleanup"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/scheduled_cleanup.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "shipstation-upload"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python src/scheduled_shipstation_upload.py"
 
 [workflows.workflow.metadata]
 outputType = "console"
@@ -142,6 +82,10 @@ externalPort = 4200
 [[ports]]
 localPort = 41395
 externalPort = 5000
+
+[[ports]]
+localPort = 41919
+externalPort = 8008
 
 [[ports]]
 localPort = 42695
