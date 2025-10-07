@@ -190,7 +190,10 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             }
             service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
         
-        logger.info(f"Syncing order {order_number}: local='{local_status}' → ShipStation='{ss_status}' (carrier: {carrier_code}, service: {service_code}, carrier_id: {carrier_id})")
+        # Extract tracking number from order (at top level, not in shipmentItems)
+        tracking_number = shipstation_order.get('trackingNumber')
+        
+        logger.info(f"Syncing order {order_number}: local='{local_status}' → ShipStation='{ss_status}' (carrier: {carrier_code}, service: {service_code}, carrier_id: {carrier_id}, tracking: {tracking_number})")
         
         if ss_status == 'shipped':
             # Order has been shipped - update status in orders_inbox (keep it there)
@@ -201,9 +204,10 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                     shipping_carrier_id = ?,
                     shipping_service_code = ?,
                     shipping_service_name = ?,
+                    tracking_number = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
-            """, (carrier_code, carrier_id, service_code, service_name, order_id))
+            """, (carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
             
             logger.info(f"✅ Updated order {order_number} status to 'shipped'")
             
@@ -216,9 +220,10 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                     shipping_carrier_id = ?,
                     shipping_service_code = ?,
                     shipping_service_name = ?,
+                    tracking_number = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
-            """, (carrier_code, carrier_id, service_code, service_name, order_id))
+            """, (carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
             
             logger.info(f"✅ Marked order {order_number} as cancelled")
             
@@ -231,9 +236,10 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                     shipping_carrier_id = ?,
                     shipping_service_code = ?,
                     shipping_service_name = ?,
+                    tracking_number = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
-            """, (carrier_code, carrier_id, service_code, service_name, order_id))
+            """, (carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
             
             logger.debug(f"Order {order_number} still awaiting shipment")
             
@@ -246,9 +252,10 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
                     shipping_carrier_id = ?,
                     shipping_service_code = ?,
                     shipping_service_name = ?,
+                    tracking_number = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
-            """, (ss_status, carrier_code, carrier_id, service_code, service_name, order_id))
+            """, (ss_status, carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
             
             logger.info(f"✅ Updated order {order_number} to status '{ss_status}'")
         
@@ -350,7 +357,7 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
     Batch update orders by status using executemany for efficiency.
     
     Args:
-        status_buckets: Dict mapping status -> list of (order_id, carrier_code, carrier_id, service_code, service_name) tuples
+        status_buckets: Dict mapping status -> list of (order_id, carrier_code, carrier_id, service_code, service_name, tracking_number) tuples
         conn: Database connection
     
     Returns:
@@ -367,10 +374,11 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
                 shipping_carrier_id = ?,
                 shipping_service_code = ?,
                 shipping_service_name = ?,
+                tracking_number = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        """, [(carrier_code, carrier_id, service_code, service_name, order_id) 
-              for order_id, carrier_code, carrier_id, service_code, service_name in status_buckets['shipped']])
+        """, [(carrier_code, carrier_id, service_code, service_name, tracking_number, order_id) 
+              for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets['shipped']])
         counts['shipped'] = len(status_buckets['shipped'])
         logger.info(f"✅ Batch updated {counts['shipped']} shipped orders")
     
@@ -383,10 +391,11 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
                 shipping_carrier_id = ?,
                 shipping_service_code = ?,
                 shipping_service_name = ?,
+                tracking_number = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        """, [(carrier_code, carrier_id, service_code, service_name, order_id)
-              for order_id, carrier_code, carrier_id, service_code, service_name in status_buckets['cancelled']])
+        """, [(carrier_code, carrier_id, service_code, service_name, tracking_number, order_id)
+              for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets['cancelled']])
         counts['cancelled'] = len(status_buckets['cancelled'])
         logger.info(f"✅ Batch updated {counts['cancelled']} cancelled orders")
     
@@ -399,10 +408,11 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
                 shipping_carrier_id = ?,
                 shipping_service_code = ?,
                 shipping_service_name = ?,
+                tracking_number = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        """, [(carrier_code, carrier_id, service_code, service_name, order_id)
-              for order_id, carrier_code, carrier_id, service_code, service_name in status_buckets['awaiting_shipment']])
+        """, [(carrier_code, carrier_id, service_code, service_name, tracking_number, order_id)
+              for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets['awaiting_shipment']])
         counts['awaiting_shipment'] = len(status_buckets['awaiting_shipment'])
         logger.debug(f"Batch updated {counts['awaiting_shipment']} awaiting_shipment orders")
     
@@ -416,10 +426,11 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
                     shipping_carrier_id = ?,
                     shipping_service_code = ?,
                     shipping_service_name = ?,
+                    tracking_number = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
-            """, [(status, carrier_code, carrier_id, service_code, service_name, order_id)
-                  for order_id, carrier_code, carrier_id, service_code, service_name in status_buckets[status]])
+            """, [(status, carrier_code, carrier_id, service_code, service_name, tracking_number, order_id)
+                  for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets[status]])
             counts[status] = len(status_buckets[status])
             logger.info(f"✅ Batch updated {counts[status]} {status} orders")
     
@@ -514,9 +525,12 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
                 }
                 service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
             
+            # Extract tracking number from order (at top level, not in shipmentItems)
+            tracking_number = ss_order.get('trackingNumber')
+            
             # Add to appropriate status bucket
             if ss_status in status_buckets:
-                status_buckets[ss_status].append((order_id, carrier_code, carrier_id, service_code, service_name))
+                status_buckets[ss_status].append((order_id, carrier_code, carrier_id, service_code, service_name, tracking_number))
         
         # Execute batched updates in single transaction
         logger.info(f"Batching updates: {sum(len(v) for v in status_buckets.values())} orders, {skipped_count} skipped")
