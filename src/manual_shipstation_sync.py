@@ -92,7 +92,6 @@ def fetch_shipstation_orders_since_watermark(api_key: str, api_secret: str, modi
     
     params = {
         'modifyDateStart': modify_date_start,
-        'orderStatus': 'awaiting_shipment,shipped',
         'page': 1,
         'pageSize': 500
     }
