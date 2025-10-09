@@ -171,6 +171,10 @@ def upload_pending_orders():
                 # Normalize the SKU to handle spacing inconsistencies (preserves lot number)
                 normalized_sku = normalize_sku(sku)  # "17612 - 250237" format
                 
+                # FIX: If SKU doesn't have a lot number, append active lot from sku_lot_map
+                if ' - ' not in normalized_sku and normalized_sku in sku_lot_map:
+                    normalized_sku = f"{normalized_sku} - {sku_lot_map[normalized_sku]}"
+                
                 # Accumulate quantities for same FULL SKU (base + lot)
                 consolidated_items[normalized_sku]['qty'] += qty
                 # Keep first price found (should be same for same SKU)
