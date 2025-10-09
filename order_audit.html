@@ -824,11 +824,17 @@
 
             data.forEach(item => {
                 const row = tbody.insertRow();
+                // Check if order number starts with "10" to identify manual orders
+                const isManualOrder = item.order_number.toString().startsWith('10');
+                const typeLabel = isManualOrder 
+                    ? '<span class="badge badge-success">Manual Order</span>'
+                    : '<span class="badge badge-warning">SKU Discrepancy</span>';
+                
                 row.innerHTML = `
                     <td>${item.order_number}</td>
                     <td>${item.sku}</td>
                     <td>${item.shipped_qty}</td>
-                    <td><span class="badge badge-success">Manual Order</span></td>
+                    <td>${typeLabel}</td>
                 `;
             });
         }
