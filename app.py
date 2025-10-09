@@ -3528,6 +3528,131 @@ def api_order_audit():
             'error': str(e)
         }), 500
 
+@app.route('/api/order_comparison', methods=['GET'])
+def api_order_comparison():
+    """
+    Compare XML orders with ShipStation orders for a date range.
+    Returns side-by-side comparison for easy auditing.
+    """
+    try:
+        from collections import defaultdict
+        import requests
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        if not start_date or not end_date:
+            return jsonify({
+                'success': False,
+                'error': 'Both start_date and end_date are required'
+            }), 400
+        
+        # Connect to database
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Fetch XML orders from database (consolidated by order and SKU)
+        cursor.execute("""
+            SELECT oi.order_number, oii.sku, SUM(oii.quantity) as total_qty
+            FROM order_items_inbox oii
+            JOIN orders_inbox oi ON oii.order_inbox_id = oi.id
+            WHERE DATE(oi.order_date) BETWEEN ? AND ?
+            GROUP BY oi.order_number, oii.sku
+            ORDER BY oi.order_number, oii.sku
+        """, (start_date, end_date))
+        
+        xml_orders = defaultdict(dict)
+        for row in cursor.fetchall():
+            order_number, sku, qty = row
+            base_sku = sku.split('-')[0].strip() if '-' in sku else sku.strip()
+            if base_sku in xml_orders[order_number]:
+                xml_orders[order_number][base_sku] += qty
+            else:
+                xml_orders[order_number][base_sku] = qty
+        
+        # Fetch ShipStation orders via API (batch)
+        api_key, api_secret = get_shipstation_credentials()
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        ss_url = f"https://ssapi.shipstation.com/orders?orderDateStart={start_date}&orderDateEnd={end_date}&pageSize=500"
+        response = requests.get(ss_url, headers=headers)
+        response.raise_for_status()
+        
+        ss_data = response.json()
+        ss_orders = defaultdict(dict)
+        
+        # Process ShipStation orders (consolidated by order and SKU)
+        for order in ss_data.get('orders', []):
+            order_number = order.get('orderNumber')
+            for item in order.get('items', []):
+                sku = item.get('sku', '').strip()
+                base_sku = sku.split('-')[0].strip() if '-' in sku else sku
+                qty = item.get('quantity', 0)
+                
+                if base_sku in ss_orders[order_number]:
+                    ss_orders[order_number][base_sku] += qty
+                else:
+                    ss_orders[order_number][base_sku] = qty
+        
+        conn.close()
+        
+        # Create comparison data
+        comparison = []
+        all_orders = set(xml_orders.keys()) | set(ss_orders.keys())
+        
+        match_count = 0
+        discrepancy_count = 0
+        
+        for order_num in sorted(all_orders):
+            xml_items = xml_orders.get(order_num, {})
+            ss_items = ss_orders.get(order_num, {})
+            
+            all_skus = set(xml_items.keys()) | set(ss_items.keys())
+            
+            for sku in sorted(all_skus):
+                xml_qty = xml_items.get(sku, 0)
+                ss_qty = ss_items.get(sku, 0)
+                
+                status = 'match'
+                if xml_qty == 0:
+                    status = 'ss_only'
+                    discrepancy_count += 1
+                elif ss_qty == 0:
+                    status = 'xml_only'
+                    discrepancy_count += 1
+                elif xml_qty != ss_qty:
+                    status = 'discrepancy'
+                    discrepancy_count += 1
+                else:
+                    match_count += 1
+                
+                comparison.append({
+                    'order_number': order_num,
+                    'xml_sku': sku if xml_qty > 0 else None,
+                    'xml_qty': xml_qty if xml_qty > 0 else None,
+                    'ss_sku': sku if ss_qty > 0 else None,
+                    'ss_qty': ss_qty if ss_qty > 0 else None,
+                    'status': status
+                })
+        
+        return jsonify({
+            'success': True,
+            'xml_count': len(xml_orders),
+            'ss_count': len(ss_orders),
+            'match_count': match_count,
+            'discrepancy_count': discrepancy_count,
+            'comparison': comparison
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)

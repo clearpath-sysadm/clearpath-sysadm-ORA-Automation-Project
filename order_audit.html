@@ -298,6 +298,24 @@
             color: var(--error-red);
         }
 
+        /* Date Input */
+        .date-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
         /* Table */
         .table-container {
             overflow-x: auto;
@@ -554,115 +572,79 @@
             </div>
 
             <div class="content-area">
-                <!-- Summary Cards -->
-                <div id="summary-section" style="display: none;">
-                    <div class="summary-grid">
-                        <div class="summary-card success">
-                            <div class="summary-number" id="perfect-matches-count">0</div>
-                            <div class="summary-label">✅ Perfect Matches</div>
+                <!-- Date Filter Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📅 Date Range Filter</div>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; gap: 16px; align-items: end; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">Start Date *</label>
+                                <input type="date" id="start-date" class="date-input" required>
+                            </div>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">End Date *</label>
+                                <input type="date" id="end-date" class="date-input" required>
+                            </div>
+                            <button class="btn btn-primary" onclick="runAuditWithDates()" style="height: 42px;">
+                                🔍 Compare Orders
+                            </button>
                         </div>
-                        <div class="summary-card warning">
-                            <div class="summary-number" id="over-shipped-count">0</div>
-                            <div class="summary-label">⚠️ Over-Shipped</div>
-                        </div>
-                        <div class="summary-card warning">
-                            <div class="summary-number" id="under-shipped-count">0</div>
-                            <div class="summary-label">⚠️ Under-Shipped</div>
-                        </div>
-                        <div class="summary-card error">
-                            <div class="summary-number" id="missing-shipments-count">0</div>
-                            <div class="summary-label">❌ Missing Shipments</div>
-                        </div>
-                        <div class="summary-card">
-                            <div class="summary-number" id="extra-shipments-count">0</div>
-                            <div class="summary-label">➕ Extra Shipments</div>
-                        </div>
-                        <div class="summary-card error">
-                            <div class="summary-number" id="missing-orders-count">0</div>
-                            <div class="summary-label">📦 Missing Orders</div>
-                        </div>
+                        <p style="margin-top: 12px; font-size: 13px; color: var(--text-tertiary);">
+                            Select a date range to compare XML orders with ShipStation orders
+                        </p>
                     </div>
                 </div>
 
-                <!-- Tabs and Data -->
-                <div class="card">
-                    <div class="card-body">
-                        <div id="loading-state" class="loading-state">
-                            <div class="spinner"></div>
-                            <p>Click "Run Audit" to compare XML orders with actual shipments</p>
+                <!-- Loading State -->
+                <div id="loading-state" class="loading-state" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading orders from XML and ShipStation...</p>
+                </div>
+
+                <!-- Comparison Results -->
+                <div id="comparison-results" style="display: none;">
+                    <!-- Summary Stats -->
+                    <div class="summary-grid" style="margin-bottom: 24px;">
+                        <div class="summary-card">
+                            <div class="summary-number" id="xml-count">0</div>
+                            <div class="summary-label">📄 XML Orders</div>
                         </div>
+                        <div class="summary-card">
+                            <div class="summary-number" id="ss-count">0</div>
+                            <div class="summary-label">📦 ShipStation Orders</div>
+                        </div>
+                        <div class="summary-card success">
+                            <div class="summary-number" id="match-count">0</div>
+                            <div class="summary-label">✅ Matches</div>
+                        </div>
+                        <div class="summary-card error">
+                            <div class="summary-number" id="discrepancy-count">0</div>
+                            <div class="summary-label">⚠️ Discrepancies</div>
+                        </div>
+                    </div>
 
-                        <div id="audit-results" style="display: none;">
-                            <div class="tabs">
-                                <button class="tab active" onclick="switchTab('over-shipped')">Over-Shipped</button>
-                                <button class="tab" onclick="switchTab('under-shipped')">Under-Shipped</button>
-                                <button class="tab" onclick="switchTab('missing-shipments')">Missing Shipments</button>
-                                <button class="tab" onclick="switchTab('extra-shipments')">Extra Shipments</button>
-                            </div>
-
-                            <div id="tab-over-shipped" class="tab-content active">
-                                <div class="table-container">
-                                    <table id="table-over-shipped">
-                                        <thead>
-                                            <tr>
-                                                <th>Order Number</th>
-                                                <th>SKU</th>
-                                                <th>Ordered Qty</th>
-                                                <th>Shipped Qty</th>
-                                                <th>Excess</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div id="tab-under-shipped" class="tab-content">
-                                <div class="table-container">
-                                    <table id="table-under-shipped">
-                                        <thead>
-                                            <tr>
-                                                <th>Order Number</th>
-                                                <th>SKU</th>
-                                                <th>Ordered Qty</th>
-                                                <th>Shipped Qty</th>
-                                                <th>Short</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div id="tab-missing-shipments" class="tab-content">
-                                <div class="table-container">
-                                    <table id="table-missing-shipments">
-                                        <thead>
-                                            <tr>
-                                                <th>Order Number</th>
-                                                <th>SKU</th>
-                                                <th>Ordered Qty</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div id="tab-extra-shipments" class="tab-content">
-                                <div class="table-container">
-                                    <table id="table-extra-shipments">
-                                        <thead>
-                                            <tr>
-                                                <th>Order Number</th>
-                                                <th>SKU</th>
-                                                <th>Shipped Qty</th>
-                                                <th>Type</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
+                    <!-- Side-by-Side Comparison Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📊 Order Comparison</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table id="comparison-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order Number</th>
+                                            <th>XML SKU</th>
+                                            <th>XML Qty</th>
+                                            <th>ShipStation SKU</th>
+                                            <th>ShipStation Qty</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -707,49 +689,93 @@
             document.getElementById('tab-' + tabName).classList.add('active');
         }
 
-        // Run audit
-        async function runAudit() {
+        // Run audit with dates
+        async function runAuditWithDates() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+
             const loadingState = document.getElementById('loading-state');
-            const auditResults = document.getElementById('audit-results');
-            const summarySection = document.getElementById('summary-section');
+            const comparisonResults = document.getElementById('comparison-results');
             
             loadingState.style.display = 'block';
-            loadingState.innerHTML = '<div class="spinner"></div><p>Running audit...</p>';
-            auditResults.style.display = 'none';
-            summarySection.style.display = 'none';
+            comparisonResults.style.display = 'none';
 
             try {
-                const response = await fetch('/api/order_audit');
+                const response = await fetch(`/api/order_comparison?start_date=${startDate}&end_date=${endDate}`);
                 const data = await response.json();
 
                 if (!data.success) {
-                    throw new Error(data.error || 'Failed to run audit');
+                    throw new Error(data.error || 'Failed to run comparison');
                 }
 
-                const results = data.data;
-                
-                // Update summary
-                document.getElementById('perfect-matches-count').textContent = results.summary.perfect_matches.toLocaleString();
-                document.getElementById('over-shipped-count').textContent = results.summary.over_shipped.toLocaleString();
-                document.getElementById('under-shipped-count').textContent = results.summary.under_shipped.toLocaleString();
-                document.getElementById('missing-shipments-count').textContent = results.summary.missing_shipments.toLocaleString();
-                document.getElementById('extra-shipments-count').textContent = results.summary.extra_shipments.toLocaleString();
-                document.getElementById('missing-orders-count').textContent = results.summary.missing_orders.toLocaleString();
+                // Update summary stats
+                document.getElementById('xml-count').textContent = data.xml_count.toLocaleString();
+                document.getElementById('ss-count').textContent = data.ss_count.toLocaleString();
+                document.getElementById('match-count').textContent = data.match_count.toLocaleString();
+                document.getElementById('discrepancy-count').textContent = data.discrepancy_count.toLocaleString();
 
-                // Populate tables
-                populateOverShipped(results.over_shipped);
-                populateUnderShipped(results.under_shipped);
-                populateMissingShipments(results.missing_shipments);
-                populateExtraShipments(results.extra_shipments);
+                // Populate comparison table
+                populateComparisonTable(data.comparison);
 
                 // Show results
                 loadingState.style.display = 'none';
-                summarySection.style.display = 'block';
-                auditResults.style.display = 'block';
+                comparisonResults.style.display = 'block';
 
             } catch (error) {
                 loadingState.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><p>Error: ${error.message}</p></div>`;
             }
+        }
+
+        // Populate comparison table
+        function populateComparisonTable(data) {
+            const tbody = document.querySelector('#comparison-table tbody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No orders found for this date range</td></tr>';
+                return;
+            }
+
+            data.forEach(item => {
+                const row = tbody.insertRow();
+                let statusBadge = '';
+                
+                if (item.status === 'match') {
+                    statusBadge = '<span class="badge badge-success">✅ Match</span>';
+                } else if (item.status === 'xml_only') {
+                    statusBadge = '<span class="badge badge-error">📄 XML Only</span>';
+                } else if (item.status === 'ss_only') {
+                    statusBadge = '<span class="badge badge-warning">📦 SS Only</span>';
+                } else if (item.status === 'discrepancy') {
+                    statusBadge = '<span class="badge badge-warning">⚠️ Diff</span>';
+                }
+
+                row.innerHTML = `
+                    <td>${item.order_number}</td>
+                    <td>${item.xml_sku || '-'}</td>
+                    <td>${item.xml_qty || '-'}</td>
+                    <td>${item.ss_sku || '-'}</td>
+                    <td>${item.ss_qty || '-'}</td>
+                    <td>${statusBadge}</td>
+                `;
+            });
+        }
+
+        // Old function kept for backwards compatibility with top button
+        async function runAudit() {
+            // Set today as default dates
+            const today = new Date().toISOString().split('T')[0];
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            document.getElementById('start-date').value = weekAgo;
+            document.getElementById('end-date').value = today;
+            
+            await runAuditWithDates();
         }
 
         function populateOverShipped(data) {
