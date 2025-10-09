@@ -3575,7 +3575,8 @@ def api_order_comparison():
         api_key, api_secret = get_shipstation_credentials()
         headers = get_shipstation_headers(api_key, api_secret)
         
-        ss_url = f"https://ssapi.shipstation.com/orders?orderDateStart={start_date}&orderDateEnd={end_date}&pageSize=500"
+        # ShipStation requires ISO 8601 format with time
+        ss_url = f"https://ssapi.shipstation.com/orders?orderDateStart={start_date}T00:00:00&orderDateEnd={end_date}T23:59:59&pageSize=500"
         response = requests.get(ss_url, headers=headers)
         response.raise_for_status()
         
