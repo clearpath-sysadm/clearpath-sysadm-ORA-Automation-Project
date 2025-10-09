@@ -179,9 +179,8 @@ def main():
             continue
         
         # Show order details
-        print(f"  Ship To: {order_data['ship_name']}")
-        if order_data.get('ship_company'):
-            print(f"  Company: {order_data['ship_company']}")
+        company = order_data.get('ship_company') or 'No Company'
+        print(f"  Ship To: {order_data['ship_name']} @ {company}")
         print(f"  Address: {order_data['ship_street1']}, {order_data['ship_city']}, {order_data['ship_state']}")
         print(f"  Items (CORRECT from XML):")
         for item in items:
@@ -191,7 +190,7 @@ def main():
             print(f"    - {sku} (x{qty}) -> Will ship as: {sku} - {lot}")
         
         # Ask for confirmation
-        confirm = input(f"\n  Create corrected order {manual_order_counter} in ShipStation? (y/n): ")
+        confirm = input(f"\n  Create corrected order {manual_order_counter} for {company}? (y/n): ")
         if confirm.lower() != 'y':
             print(f"  ⏭️  Skipped")
             results.append({'order': order_num, 'status': 'skipped'})
