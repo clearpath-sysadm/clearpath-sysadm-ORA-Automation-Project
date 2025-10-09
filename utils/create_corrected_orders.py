@@ -27,7 +27,7 @@ def get_sku_lot_mapping():
     cursor.execute("""
         SELECT sku, lot 
         FROM sku_lot 
-        WHERE status = 'active'
+        WHERE active = 1
     """)
     mapping = {row[0]: row[1] for row in cursor.fetchall()}
     conn.close()
