@@ -24,7 +24,7 @@ app.config['JSON_SORT_KEYS'] = False
 DB_PATH = os.path.join(project_root, 'ora.db')
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html']
 
 @app.route('/')
 def index():
@@ -3356,6 +3356,158 @@ def api_delete_lot_inventory(lot_id):
             'success': True,
             'message': 'Lot inventory deleted successfully'
         })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/order_audit', methods=['GET'])
+def api_order_audit():
+    """
+    Compare XML orders (normalized/consolidated) with actual shipments.
+    Returns discrepancies: over-shipped, under-shipped, missing orders, etc.
+    """
+    try:
+        from collections import defaultdict
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        def normalize_sku(sku):
+            """Extract base SKU from SKU string (strip lot number)"""
+            if not sku:
+                return ""
+            sku = sku.strip()
+            if '-' in sku:
+                return sku.split('-', 1)[0].strip()
+            return sku
+        
+        # Get XML orders from order_items_inbox (consolidated by base SKU)
+        cursor.execute("""
+            SELECT oi.order_number, oii.sku, oii.quantity
+            FROM order_items_inbox oii
+            JOIN orders_inbox oi ON oii.order_inbox_id = oi.id
+            ORDER BY oi.order_number, oii.sku
+        """)
+        
+        xml_orders = defaultdict(lambda: defaultdict(int))
+        for row in cursor.fetchall():
+            order_number, sku, quantity = row
+            base_sku = normalize_sku(sku)
+            xml_orders[order_number][base_sku] += quantity
+        
+        # Get shipped orders from shipped_items (consolidated by base SKU)
+        cursor.execute("""
+            SELECT order_number, base_sku, quantity_shipped
+            FROM shipped_items
+            WHERE order_number IS NOT NULL
+            ORDER BY order_number, base_sku
+        """)
+        
+        shipped_orders = defaultdict(lambda: defaultdict(int))
+        for row in cursor.fetchall():
+            order_number, base_sku, quantity = row
+            shipped_orders[order_number][base_sku] += quantity
+        
+        conn.close()
+        
+        # Compare orders and find discrepancies
+        results = {
+            'perfect_matches': [],
+            'over_shipped': [],
+            'under_shipped': [],
+            'missing_shipments': [],
+            'extra_shipments': [],
+            'missing_orders': []
+        }
+        
+        all_orders = set(xml_orders.keys()) | set(shipped_orders.keys())
+        
+        for order_num in sorted(all_orders):
+            xml_items = xml_orders.get(order_num, {})
+            shipped_items = shipped_orders.get(order_num, {})
+            
+            # Order shipped but not in XML (manual order)
+            if not xml_items and shipped_items:
+                for sku, qty in shipped_items.items():
+                    results['extra_shipments'].append({
+                        'order_number': order_num,
+                        'sku': sku,
+                        'shipped_qty': qty
+                    })
+                continue
+            
+            # Order in XML but never shipped
+            if xml_items and not shipped_items:
+                results['missing_orders'].append(order_num)
+                for sku, qty in xml_items.items():
+                    results['missing_shipments'].append({
+                        'order_number': order_num,
+                        'sku': sku,
+                        'ordered_qty': qty
+                    })
+                continue
+            
+            # Compare SKUs within the order
+            all_skus = set(xml_items.keys()) | set(shipped_items.keys())
+            
+            for sku in sorted(all_skus):
+                xml_qty = xml_items.get(sku, 0)
+                shipped_qty = shipped_items.get(sku, 0)
+                
+                if xml_qty == 0 and shipped_qty > 0:
+                    results['extra_shipments'].append({
+                        'order_number': order_num,
+                        'sku': sku,
+                        'shipped_qty': shipped_qty
+                    })
+                elif xml_qty > 0 and shipped_qty == 0:
+                    results['missing_shipments'].append({
+                        'order_number': order_num,
+                        'sku': sku,
+                        'ordered_qty': xml_qty
+                    })
+                elif xml_qty == shipped_qty:
+                    results['perfect_matches'].append({
+                        'order_number': order_num,
+                        'sku': sku,
+                        'quantity': xml_qty
+                    })
+                elif shipped_qty > xml_qty:
+                    results['over_shipped'].append({
+                        'order_number': order_num,
+                        'sku': sku,
+                        'ordered_qty': xml_qty,
+                        'shipped_qty': shipped_qty,
+                        'diff': shipped_qty - xml_qty
+                    })
+                else:
+                    results['under_shipped'].append({
+                        'order_number': order_num,
+                        'sku': sku,
+                        'ordered_qty': xml_qty,
+                        'shipped_qty': shipped_qty,
+                        'diff': xml_qty - shipped_qty
+                    })
+        
+        # Add summary counts
+        results['summary'] = {
+            'perfect_matches': len(results['perfect_matches']),
+            'over_shipped': len(results['over_shipped']),
+            'under_shipped': len(results['under_shipped']),
+            'missing_shipments': len(results['missing_shipments']),
+            'extra_shipments': len(results['extra_shipments']),
+            'missing_orders': len(results['missing_orders']),
+            'total_xml_orders': len(xml_orders),
+            'total_shipped_orders': len(shipped_orders)
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': results
+        })
+        
     except Exception as e:
         return jsonify({
             'success': False,

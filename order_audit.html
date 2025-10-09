@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Audit - ORA Business Automation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/shipping-violations-alert.css">
+    <link rel="stylesheet" href="/static/swipe-gesture.css">
+    <script src="/static/swipe-gesture.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-tertiary: #6c757d;
+            --border-color: #dee2e6;
+            --primary-blue: #4A90E2;
+            --success-green: #52c41a;
+            --error-red: #ff4d4f;
+            --warning-yellow: #faad14;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #404040;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --text-tertiary: #a0a0a0;
+            --border-color: #404040;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .nav-section {
+            padding: 24px 0;
+        }
+
+        .nav-section-title {
+            padding: 0 24px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+        }
+
+        .nav-item {
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--primary-blue);
+            color: white;
+            font-weight: 500;
+        }
+
+        .nav-item-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 8px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3a7bc8;
+            transform: translateY(-1px);
+        }
+
+        .dark-mode-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .dark-mode-toggle:hover {
+            background: var(--bg-secondary);
+        }
+
+        .content-area {
+            padding: 32px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* Summary Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .summary-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-number {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-card.success .summary-number {
+            color: var(--success-green);
+        }
+
+        .summary-card.warning .summary-number {
+            color: var(--warning-yellow);
+        }
+
+        .summary-card.error .summary-number {
+            color: var(--error-red);
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--bg-tertiary);
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d4f4dd;
+            color: #1d8e3e;
+        }
+
+        .badge-warning {
+            background: #fff4e6;
+            color: #d46b08;
+        }
+
+        .badge-error {
+            background: #ffe2e5;
+            color: #cf1322;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .mobile-overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Violations Alert Banner Placeholder -->
+    <div id="violations-alert-container"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo">
+                    <div class="logo-icon">O</div>
+                    <div class="logo-text">ORA Business</div>
+                </a>
+            </div>
+            
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Reports & Analytics</div>
+                    <a href="/weekly_shipped_history.html" class="nav-item">
+                        <span class="nav-item-icon">📈</span>
+                        Weekly Reports
+                    </a>
+                    <a href="/shipped_orders.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Shipped Orders
+                    </a>
+                    <a href="/order_audit.html" class="nav-item active">
+                        <span class="nav-item-icon">🔍</span>
+                        Order Audit
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Inventory</div>
+                    <a href="/bundle_skus.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Bundle SKUs
+                    </a>
+                    <a href="/sku_lot.html" class="nav-item">
+                        <span class="nav-item-icon">🏷️</span>
+                        SKU Lot
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Lot Inventory
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Settings</div>
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12h18M3 6h18M3 18h18"></path>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">Order Audit</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="btn btn-primary" onclick="runAudit()">
+                        🔄 Run Audit
+                    </button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">
+                        <span id="dark-mode-icon">🌙</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Summary Cards -->
+                <div id="summary-section" style="display: none;">
+                    <div class="summary-grid">
+                        <div class="summary-card success">
+                            <div class="summary-number" id="perfect-matches-count">0</div>
+                            <div class="summary-label">✅ Perfect Matches</div>
+                        </div>
+                        <div class="summary-card warning">
+                            <div class="summary-number" id="over-shipped-count">0</div>
+                            <div class="summary-label">⚠️ Over-Shipped</div>
+                        </div>
+                        <div class="summary-card warning">
+                            <div class="summary-number" id="under-shipped-count">0</div>
+                            <div class="summary-label">⚠️ Under-Shipped</div>
+                        </div>
+                        <div class="summary-card error">
+                            <div class="summary-number" id="missing-shipments-count">0</div>
+                            <div class="summary-label">❌ Missing Shipments</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-number" id="extra-shipments-count">0</div>
+                            <div class="summary-label">➕ Extra Shipments</div>
+                        </div>
+                        <div class="summary-card error">
+                            <div class="summary-number" id="missing-orders-count">0</div>
+                            <div class="summary-label">📦 Missing Orders</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs and Data -->
+                <div class="card">
+                    <div class="card-body">
+                        <div id="loading-state" class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Click "Run Audit" to compare XML orders with actual shipments</p>
+                        </div>
+
+                        <div id="audit-results" style="display: none;">
+                            <div class="tabs">
+                                <button class="tab active" onclick="switchTab('over-shipped')">Over-Shipped</button>
+                                <button class="tab" onclick="switchTab('under-shipped')">Under-Shipped</button>
+                                <button class="tab" onclick="switchTab('missing-shipments')">Missing Shipments</button>
+                                <button class="tab" onclick="switchTab('extra-shipments')">Extra Shipments</button>
+                            </div>
+
+                            <div id="tab-over-shipped" class="tab-content active">
+                                <div class="table-container">
+                                    <table id="table-over-shipped">
+                                        <thead>
+                                            <tr>
+                                                <th>Order Number</th>
+                                                <th>SKU</th>
+                                                <th>Ordered Qty</th>
+                                                <th>Shipped Qty</th>
+                                                <th>Excess</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div id="tab-under-shipped" class="tab-content">
+                                <div class="table-container">
+                                    <table id="table-under-shipped">
+                                        <thead>
+                                            <tr>
+                                                <th>Order Number</th>
+                                                <th>SKU</th>
+                                                <th>Ordered Qty</th>
+                                                <th>Shipped Qty</th>
+                                                <th>Short</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div id="tab-missing-shipments" class="tab-content">
+                                <div class="table-container">
+                                    <table id="table-missing-shipments">
+                                        <thead>
+                                            <tr>
+                                                <th>Order Number</th>
+                                                <th>SKU</th>
+                                                <th>Ordered Qty</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div id="tab-extra-shipments" class="tab-content">
+                                <div class="table-container">
+                                    <table id="table-extra-shipments">
+                                        <thead>
+                                            <tr>
+                                                <th>Order Number</th>
+                                                <th>SKU</th>
+                                                <th>Shipped Qty</th>
+                                                <th>Type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+    <script src="/static/shipping-violations-alert.js"></script>
+    <script>
+        // Dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const icon = document.getElementById('dark-mode-icon');
+            icon.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            toggleDarkMode();
+        }
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+            document.getElementById('mobile-overlay').classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('sidebar').classList.remove('mobile-open');
+            document.getElementById('mobile-overlay').classList.remove('active');
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // Run audit
+        async function runAudit() {
+            const loadingState = document.getElementById('loading-state');
+            const auditResults = document.getElementById('audit-results');
+            const summarySection = document.getElementById('summary-section');
+            
+            loadingState.style.display = 'block';
+            loadingState.innerHTML = '<div class="spinner"></div><p>Running audit...</p>';
+            auditResults.style.display = 'none';
+            summarySection.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/order_audit');
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to run audit');
+                }
+
+                const results = data.data;
+                
+                // Update summary
+                document.getElementById('perfect-matches-count').textContent = results.summary.perfect_matches.toLocaleString();
+                document.getElementById('over-shipped-count').textContent = results.summary.over_shipped.toLocaleString();
+                document.getElementById('under-shipped-count').textContent = results.summary.under_shipped.toLocaleString();
+                document.getElementById('missing-shipments-count').textContent = results.summary.missing_shipments.toLocaleString();
+                document.getElementById('extra-shipments-count').textContent = results.summary.extra_shipments.toLocaleString();
+                document.getElementById('missing-orders-count').textContent = results.summary.missing_orders.toLocaleString();
+
+                // Populate tables
+                populateOverShipped(results.over_shipped);
+                populateUnderShipped(results.under_shipped);
+                populateMissingShipments(results.missing_shipments);
+                populateExtraShipments(results.extra_shipments);
+
+                // Show results
+                loadingState.style.display = 'none';
+                summarySection.style.display = 'block';
+                auditResults.style.display = 'block';
+
+            } catch (error) {
+                loadingState.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><p>Error: ${error.message}</p></div>`;
+            }
+        }
+
+        function populateOverShipped(data) {
+            const tbody = document.querySelector('#table-over-shipped tbody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No over-shipments found ✅</td></tr>';
+                return;
+            }
+
+            data.forEach(item => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${item.order_number}</td>
+                    <td>${item.sku}</td>
+                    <td>${item.ordered_qty}</td>
+                    <td>${item.shipped_qty}</td>
+                    <td><span class="badge badge-warning">+${item.diff}</span></td>
+                `;
+            });
+        }
+
+        function populateUnderShipped(data) {
+            const tbody = document.querySelector('#table-under-shipped tbody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No under-shipments found ✅</td></tr>';
+                return;
+            }
+
+            data.forEach(item => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${item.order_number}</td>
+                    <td>${item.sku}</td>
+                    <td>${item.ordered_qty}</td>
+                    <td>${item.shipped_qty}</td>
+                    <td><span class="badge badge-warning">-${item.diff}</span></td>
+                `;
+            });
+        }
+
+        function populateMissingShipments(data) {
+            const tbody = document.querySelector('#table-missing-shipments tbody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No missing shipments found ✅</td></tr>';
+                return;
+            }
+
+            data.forEach(item => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${item.order_number}</td>
+                    <td>${item.sku}</td>
+                    <td>${item.ordered_qty}</td>
+                `;
+            });
+        }
+
+        function populateExtraShipments(data) {
+            const tbody = document.querySelector('#table-extra-shipments tbody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No extra shipments found ✅</td></tr>';
+                return;
+            }
+
+            data.forEach(item => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${item.order_number}</td>
+                    <td>${item.sku}</td>
+                    <td>${item.shipped_qty}</td>
+                    <td><span class="badge badge-success">Manual Order</span></td>
+                `;
+            });
+        }
+
+        // Load violations alert on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof loadShippingViolationsAlert === 'function') {
+                loadShippingViolationsAlert();
+            }
+        });
+    </script>
+</body>
+</html>
