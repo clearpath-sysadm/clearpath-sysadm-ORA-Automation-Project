@@ -20,6 +20,25 @@ def get_shipstation_credentials():
         raise ValueError("ShipStation credentials not found in environment")
     return api_key, api_secret
 
+def get_next_manual_order_number(api_key, api_secret):
+    """Find the next available manual order number starting with 10"""
+    # User confirmed highest is 100517, start at 100518
+    starting_number = 100518
+    
+    # Check if this number exists in ShipStation
+    response = requests.get(
+        f'https://ssapi.shipstation.com/orders?orderNumber={starting_number}',
+        auth=(api_key, api_secret)
+    )
+    
+    if response.status_code == 200:
+        orders = response.json().get('orders', [])
+        if orders:
+            # Number exists, increment
+            starting_number += 1
+    
+    return starting_number
+
 def get_sku_lot_mapping():
     """Get active SKU-Lot mappings from database"""
     conn = sqlite3.connect('ora.db')
@@ -62,12 +81,12 @@ def get_order_data(order_number):
     conn.close()
     return dict(order), items
 
-def create_shipstation_order(api_key, api_secret, order_data, items, sku_lot_mapping):
+def create_shipstation_order(api_key, api_secret, order_data, items, sku_lot_mapping, manual_order_num):
     """Create a new order in ShipStation with corrected SKUs"""
     
-    # Create unique order number with -FIX suffix
+    # Use manual order number (100518, 100519, etc.)
     original_order_num = order_data['order_number']
-    new_order_num = f"{original_order_num}-FIX"
+    new_order_num = str(manual_order_num)
     
     # Build order items with lot numbers
     ss_items = []
@@ -142,6 +161,10 @@ def main():
         print(f"  {sku} -> {lot}")
     print()
     
+    # Get starting manual order number
+    manual_order_counter = get_next_manual_order_number(api_key, api_secret)
+    print(f"Starting manual order numbers at: {manual_order_counter}\n")
+    
     # Process each order
     results = []
     for order_num in ORDERS_TO_CORRECT:
@@ -168,7 +191,7 @@ def main():
             print(f"    - {sku} (x{qty}) -> Will ship as: {sku} - {lot}")
         
         # Ask for confirmation
-        confirm = input(f"\n  Create corrected order {order_num}-FIX in ShipStation? (y/n): ")
+        confirm = input(f"\n  Create corrected order {manual_order_counter} in ShipStation? (y/n): ")
         if confirm.lower() != 'y':
             print(f"  ⏭️  Skipped")
             results.append({'order': order_num, 'status': 'skipped'})
@@ -177,7 +200,7 @@ def main():
         # Create order
         try:
             response, new_order_num = create_shipstation_order(
-                api_key, api_secret, order_data, items, sku_lot_mapping
+                api_key, api_secret, order_data, items, sku_lot_mapping, manual_order_counter
             )
             
             if response.status_code in [200, 201]:
@@ -190,6 +213,8 @@ def main():
                     'ss_id': ss_order_id,
                     'status': 'success'
                 })
+                # Increment for next order
+                manual_order_counter += 1
             else:
                 print(f"  ❌ FAILED: {response.status_code} - {response.text}")
                 results.append({
