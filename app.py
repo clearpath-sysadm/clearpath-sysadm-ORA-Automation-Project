@@ -3598,7 +3598,7 @@ def api_order_comparison():
         
         conn.close()
         
-        # Create comparison data
+        # Create comparison data - consolidated by order number
         comparison = []
         all_orders = set(xml_orders.keys()) | set(ss_orders.keys())
         
@@ -3609,33 +3609,43 @@ def api_order_comparison():
             xml_items = xml_orders.get(order_num, {})
             ss_items = ss_orders.get(order_num, {})
             
-            all_skus = set(xml_items.keys()) | set(ss_items.keys())
+            # Build consolidated SKU strings
+            xml_skus = []
+            ss_skus = []
             
-            for sku in sorted(all_skus):
-                xml_qty = xml_items.get(sku, 0)
-                ss_qty = ss_items.get(sku, 0)
-                
-                status = 'match'
-                if xml_qty == 0:
-                    status = 'ss_only'
-                    discrepancy_count += 1
-                elif ss_qty == 0:
-                    status = 'xml_only'
-                    discrepancy_count += 1
-                elif xml_qty != ss_qty:
-                    status = 'discrepancy'
-                    discrepancy_count += 1
-                else:
-                    match_count += 1
-                
-                comparison.append({
-                    'order_number': order_num,
-                    'xml_sku': sku if xml_qty > 0 else None,
-                    'xml_qty': xml_qty if xml_qty > 0 else None,
-                    'ss_sku': sku if ss_qty > 0 else None,
-                    'ss_qty': ss_qty if ss_qty > 0 else None,
-                    'status': status
-                })
+            for sku in sorted(xml_items.keys()):
+                qty = xml_items[sku]
+                xml_skus.append(f"{sku} (x{qty})")
+            
+            for sku in sorted(ss_items.keys()):
+                qty = ss_items[sku]
+                ss_skus.append(f"{sku} (x{qty})")
+            
+            xml_sku_str = ', '.join(xml_skus) if xml_skus else None
+            ss_sku_str = ', '.join(ss_skus) if ss_skus else None
+            
+            # Determine overall status for the order
+            status = 'match'
+            if not xml_items and ss_items:
+                status = 'ss_only'
+                discrepancy_count += 1
+            elif xml_items and not ss_items:
+                status = 'xml_only'
+                discrepancy_count += 1
+            elif xml_items != ss_items:
+                status = 'discrepancy'
+                discrepancy_count += 1
+            else:
+                match_count += 1
+            
+            comparison.append({
+                'order_number': order_num,
+                'xml_sku': xml_sku_str,
+                'xml_qty': sum(xml_items.values()) if xml_items else None,
+                'ss_sku': ss_sku_str,
+                'ss_qty': sum(ss_items.values()) if ss_items else None,
+                'status': status
+            })
         
         return jsonify({
             'success': True,
