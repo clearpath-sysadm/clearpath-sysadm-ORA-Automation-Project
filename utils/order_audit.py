@@ -70,6 +70,20 @@ def get_xml_orders(conn) -> Dict[str, Dict[str, int]]:
     
     return dict(xml_orders)
 
+def get_active_pending_orders(conn) -> set:
+    """
+    Get orders that are in active pending states (should NOT be counted as missing).
+    Active states: pending, awaiting_shipment, cancelled
+    Returns: set of order_numbers
+    """
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT order_number
+        FROM orders_inbox
+        WHERE status IN ('pending', 'awaiting_shipment', 'cancelled')
+    """)
+    return {row['order_number'] for row in cursor.fetchall()}
+
 def get_shipped_orders(conn) -> Dict[str, Dict[str, int]]:
     """
     Get actual shipped orders from shipped_items.
@@ -97,9 +111,14 @@ def get_shipped_orders(conn) -> Dict[str, Dict[str, int]]:
     
     return dict(shipped_orders)
 
-def compare_orders(xml_orders: Dict, shipped_orders: Dict) -> Dict:
+def compare_orders(xml_orders: Dict, shipped_orders: Dict, active_pending_orders: set = None) -> Dict:
     """
     Compare XML orders vs shipped orders and find discrepancies.
+    
+    Args:
+        xml_orders: {order_number: {base_sku: total_quantity}}
+        shipped_orders: {order_number: {base_sku: total_quantity}}
+        active_pending_orders: set of order_numbers in pending/awaiting_shipment/cancelled status
     
     Returns dict with:
         - perfect_matches: [(order_num, sku, qty)]
@@ -109,6 +128,9 @@ def compare_orders(xml_orders: Dict, shipped_orders: Dict) -> Dict:
         - extra_shipments: [(order_num, sku, shipped_qty)]
         - missing_orders: [order_num]
     """
+    if active_pending_orders is None:
+        active_pending_orders = set()
+    
     results = {
         'perfect_matches': [],
         'over_shipped': [],
@@ -132,10 +154,12 @@ def compare_orders(xml_orders: Dict, shipped_orders: Dict) -> Dict:
             continue
         
         if xml_items and not shipped_items:
-            # Order in XML but never shipped
-            results['missing_orders'].append(order_num)
-            for sku, qty in xml_items.items():
-                results['missing_shipments'].append((order_num, sku, qty))
+            # CRITICAL: Only count as "missing" if NOT in active pending states
+            # (pending/awaiting_shipment/cancelled should NOT be flagged as missing)
+            if order_num not in active_pending_orders:
+                results['missing_orders'].append(order_num)
+                for sku, qty in xml_items.items():
+                    results['missing_shipments'].append((order_num, sku, qty))
             continue
         
         # Compare SKUs within the order
@@ -150,7 +174,9 @@ def compare_orders(xml_orders: Dict, shipped_orders: Dict) -> Dict:
                 results['extra_shipments'].append((order_num, sku, shipped_qty))
             elif xml_qty > 0 and shipped_qty == 0:
                 # SKU ordered but not shipped
-                results['missing_shipments'].append((order_num, sku, xml_qty))
+                # CRITICAL: Only count as "missing" if NOT in active pending states
+                if order_num not in active_pending_orders:
+                    results['missing_shipments'].append((order_num, sku, xml_qty))
             elif xml_qty == shipped_qty:
                 # Perfect match
                 results['perfect_matches'].append((order_num, sku, xml_qty))
@@ -261,8 +287,12 @@ def main():
         shipped_count = sum(len(items) for items in shipped_orders.values())
         print(f"   Found {len(shipped_orders)} orders with {shipped_count} SKU line items")
         
+        print("\n🔍 Checking active pending orders (to exclude from missing count)...")
+        active_pending = get_active_pending_orders(conn)
+        print(f"   Found {len(active_pending)} orders in pending/awaiting_shipment/cancelled status")
+        
         print("\n🔄 Comparing orders...")
-        results = compare_orders(xml_orders, shipped_orders)
+        results = compare_orders(xml_orders, shipped_orders, active_pending)
         
         print_audit_report(results)
         

@@ -3410,6 +3410,15 @@ def api_order_audit():
             order_number, base_sku, quantity = row
             shipped_orders[order_number][base_sku] += quantity
         
+        # Get active pending orders (to exclude from "missing" count)
+        # These are orders in pending/awaiting_shipment/cancelled status
+        cursor.execute("""
+            SELECT order_number
+            FROM orders_inbox
+            WHERE status IN ('pending', 'awaiting_shipment', 'cancelled')
+        """)
+        active_pending_orders = {row[0] for row in cursor.fetchall()}
+        
         conn.close()
         
         # Compare orders and find discrepancies
@@ -3440,13 +3449,16 @@ def api_order_audit():
             
             # Order in XML but never shipped
             if xml_items and not shipped_items:
-                results['missing_orders'].append(order_num)
-                for sku, qty in xml_items.items():
-                    results['missing_shipments'].append({
-                        'order_number': order_num,
-                        'sku': sku,
-                        'ordered_qty': qty
-                    })
+                # CRITICAL: Only count as "missing" if NOT in active pending states
+                # (pending/awaiting_shipment/cancelled should NOT be flagged as missing)
+                if order_num not in active_pending_orders:
+                    results['missing_orders'].append(order_num)
+                    for sku, qty in xml_items.items():
+                        results['missing_shipments'].append({
+                            'order_number': order_num,
+                            'sku': sku,
+                            'ordered_qty': qty
+                        })
                 continue
             
             # Compare SKUs within the order
@@ -3463,11 +3475,13 @@ def api_order_audit():
                         'shipped_qty': shipped_qty
                     })
                 elif xml_qty > 0 and shipped_qty == 0:
-                    results['missing_shipments'].append({
-                        'order_number': order_num,
-                        'sku': sku,
-                        'ordered_qty': xml_qty
-                    })
+                    # CRITICAL: Only count as "missing" if NOT in active pending states
+                    if order_num not in active_pending_orders:
+                        results['missing_shipments'].append({
+                            'order_number': order_num,
+                            'sku': sku,
+                            'ordered_qty': xml_qty
+                        })
                 elif xml_qty == shipped_qty:
                     results['perfect_matches'].append({
                         'order_number': order_num,
