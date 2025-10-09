@@ -3552,7 +3552,7 @@ def api_order_comparison():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Fetch XML orders from database by order date (consolidated by order and SKU)
+        # Fetch XML orders from database (consolidated by order and SKU)
         cursor.execute("""
             SELECT oi.order_number, oii.sku, SUM(oii.quantity) as total_qty
             FROM order_items_inbox oii
@@ -3571,12 +3571,12 @@ def api_order_comparison():
             else:
                 xml_orders[order_number][base_sku] = qty
         
-        # Fetch ShipStation shipped orders via API by ship date (batch)
+        # Fetch ShipStation orders via API (batch) - shipped orders only
         api_key, api_secret = get_shipstation_credentials()
         headers = get_shipstation_headers(api_key, api_secret)
         
-        # ShipStation requires ISO 8601 format with time, use shipDateStart/End for shipped orders in date range
-        ss_url = f"https://ssapi.shipstation.com/orders?shipDateStart={start_date}T00:00:00&shipDateEnd={end_date}T23:59:59&pageSize=500"
+        # ShipStation requires ISO 8601 format with time, filter for shipped orders only
+        ss_url = f"https://ssapi.shipstation.com/orders?orderDateStart={start_date}T00:00:00&orderDateEnd={end_date}T23:59:59&orderStatus=shipped&pageSize=500"
         response = requests.get(ss_url, headers=headers)
         response.raise_for_status()
         
