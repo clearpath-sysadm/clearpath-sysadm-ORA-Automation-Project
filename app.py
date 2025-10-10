@@ -3553,16 +3553,12 @@ def api_order_comparison():
         cursor = conn.cursor()
         
         # Fetch XML orders from database (consolidated by order and SKU)
-        # Use EXISTS to filter by ship_date without JOIN duplication (handles split shipments)
+        # Filter by order_date (when orders came in)
         cursor.execute("""
             SELECT oi.order_number, oii.sku, SUM(oii.quantity) as total_qty
             FROM order_items_inbox oii
             JOIN orders_inbox oi ON oii.order_inbox_id = oi.id
-            WHERE EXISTS (
-                SELECT 1 FROM shipped_orders so 
-                WHERE so.order_number = oi.order_number 
-                AND DATE(so.ship_date) BETWEEN ? AND ?
-            )
+            WHERE DATE(oi.order_date) BETWEEN ? AND ?
             GROUP BY oi.order_number, oii.sku
             ORDER BY oi.order_number, oii.sku
         """, (start_date, end_date))
