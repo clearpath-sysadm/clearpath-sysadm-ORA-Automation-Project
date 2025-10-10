@@ -58,6 +58,10 @@ def main():
     discrepancies = get_discrepancy_data(report_date)
     print(f"Found {len(discrepancies)} discrepancies\n")
     
+    # Define delivery status for specific orders
+    delivered_orders = ['688195', '688595']  # Already delivered
+    return_to_shipper_orders = ['688005', '688025', '688085', '688245']  # Return to shipper requested
+    
     # Prepare CSV data
     csv_data = []
     corrected_order_num = corrected_order_start
@@ -65,6 +69,14 @@ def main():
     for disc in discrepancies:
         order_num = disc['order_number']
         print(f"Processing {order_num}...")
+        
+        # Determine delivery status
+        if order_num in delivered_orders:
+            delivery_status = 'Delivered'
+        elif order_num in return_to_shipper_orders:
+            delivery_status = 'Return to Shipper Requested'
+        else:
+            delivery_status = 'Unknown'
         
         # Get customer details
         details = get_order_details(order_num)
@@ -80,6 +92,7 @@ def main():
                 'Qty Shipped': disc['ss_qty'],
                 'Items Ordered (CORRECT)': disc['xml_sku'],
                 'Qty Ordered': disc['xml_qty'],
+                'Incorrect Order Status': delivery_status,
                 'Corrected Order Number': corrected_order_num,
                 'Status': 'Correction Created',
                 'Customer Email': details['customer_email'] or 'N/A'
@@ -94,6 +107,7 @@ def main():
             'Date', 'Original Order', 'Customer Name', 'Company', 'Location',
             'Items Shipped (INCORRECT)', 'Qty Shipped',
             'Items Ordered (CORRECT)', 'Qty Ordered',
+            'Incorrect Order Status',
             'Corrected Order Number', 'Status', 'Customer Email'
         ]
         
@@ -111,6 +125,7 @@ def main():
             print(f"  {row['Original Order']} → {row['Corrected Order Number']}: {row['Company']}")
             print(f"    Wrong: {row['Items Shipped (INCORRECT)']} (x{row['Qty Shipped']})")
             print(f"    Right: {row['Items Ordered (CORRECT)']} (x{row['Qty Ordered']})")
+            print(f"    Status: {row['Incorrect Order Status']}")
             print()
     else:
         print("❌ No data to report")
