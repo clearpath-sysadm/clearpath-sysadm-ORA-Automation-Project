@@ -471,6 +471,72 @@
             margin-bottom: 16px;
         }
 
+        /* Toggle Switch */
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background: var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary-blue);
+        }
+
+        .toggle-switch-handle {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-switch-handle {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .toggle-switch.active + .toggle-label {
+            color: var(--primary-blue);
+        }
+
+        /* Date input label clickable */
+        .date-label {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .date-input-wrapper {
+            position: relative;
+        }
+
+        .date-input-wrapper::after {
+            content: '📅';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            font-size: 18px;
+        }
+
         /* Mobile */
         @media (max-width: 768px) {
             .sidebar {
@@ -613,12 +679,16 @@
                     <div class="card-body">
                         <div style="display: flex; gap: 16px; align-items: end; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 200px;">
-                                <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">Start Date *</label>
-                                <input type="date" id="start-date" class="date-input" required>
+                                <label for="start-date" class="date-label" style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">📅 Start Date *</label>
+                                <div class="date-input-wrapper">
+                                    <input type="date" id="start-date" class="date-input" required>
+                                </div>
                             </div>
                             <div style="flex: 1; min-width: 200px;">
-                                <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">End Date *</label>
-                                <input type="date" id="end-date" class="date-input" required>
+                                <label for="end-date" class="date-label" style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">📅 End Date *</label>
+                                <div class="date-input-wrapper">
+                                    <input type="date" id="end-date" class="date-input" required>
+                                </div>
                             </div>
                             <button class="btn btn-primary" onclick="runAuditWithDates()" style="height: 42px;">
                                 🔍 Compare Orders
@@ -662,6 +732,13 @@
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title">📊 Order Comparison</div>
+                            <div class="filter-toggle">
+                                <span class="toggle-label">Show All</span>
+                                <div class="toggle-switch" id="discrepancy-toggle" onclick="toggleDiscrepancyFilter()">
+                                    <div class="toggle-switch-handle"></div>
+                                </div>
+                                <span class="toggle-label">Discrepancies Only</span>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="table-container">
@@ -766,11 +843,39 @@
 
         // Store comparison data globally for sorting
         let comparisonData = [];
+        let showDiscrepanciesOnly = false;
+
+        // Toggle discrepancy filter
+        function toggleDiscrepancyFilter() {
+            showDiscrepanciesOnly = !showDiscrepanciesOnly;
+            const toggle = document.getElementById('discrepancy-toggle');
+            toggle.classList.toggle('active');
+            
+            // Apply filter and re-render
+            applyFilterAndRender();
+        }
+
+        // Apply filter and render table
+        function applyFilterAndRender() {
+            let dataToRender = comparisonData;
+            
+            if (showDiscrepanciesOnly) {
+                // Filter to show only discrepancies (not matches)
+                dataToRender = comparisonData.filter(item => item.status !== 'match');
+            }
+            
+            // Apply current sort if exists
+            if (currentSortColumn) {
+                dataToRender = sortData(dataToRender, currentSortColumn, currentSortDirection);
+            }
+            
+            renderComparisonTable(dataToRender);
+        }
 
         // Populate comparison table
         function populateComparisonTable(data) {
             comparisonData = data; // Store for sorting
-            renderComparisonTable(data);
+            applyFilterAndRender();
         }
 
         // Render table rows
@@ -779,7 +884,10 @@
             tbody.innerHTML = '';
             
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No orders found for this date range</td></tr>';
+                const message = showDiscrepanciesOnly 
+                    ? 'No discrepancies found ✅' 
+                    : 'No orders found for this date range';
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${message}</td></tr>`;
                 return;
             }
 
@@ -812,6 +920,29 @@
         let currentSortColumn = null;
         let currentSortDirection = 'asc';
 
+        // Helper function to sort data
+        function sortData(data, column, direction) {
+            return [...data].sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                // Handle null/undefined values
+                if (aVal === null || aVal === undefined) aVal = '';
+                if (bVal === null || bVal === undefined) bVal = '';
+
+                // Convert to numbers for quantity columns
+                if (column.includes('qty')) {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                }
+
+                // Compare values
+                if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
         function sortTable(column) {
             // Toggle direction if same column, otherwise default to asc
             if (currentSortColumn === column) {
@@ -828,28 +959,8 @@
             const activeHeader = document.querySelector(`th[data-column="${column}"]`);
             activeHeader.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
 
-            // Sort data
-            const sortedData = [...comparisonData].sort((a, b) => {
-                let aVal = a[column];
-                let bVal = b[column];
-
-                // Handle null/undefined values
-                if (aVal === null || aVal === undefined) aVal = '';
-                if (bVal === null || bVal === undefined) bVal = '';
-
-                // Convert to numbers for quantity columns
-                if (column.includes('qty')) {
-                    aVal = parseInt(aVal) || 0;
-                    bVal = parseInt(bVal) || 0;
-                }
-
-                // Compare values
-                if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
-                if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            renderComparisonTable(sortedData);
+            // Re-apply filter and render with sort
+            applyFilterAndRender();
         }
 
         // Attach sorting event listeners to table headers
