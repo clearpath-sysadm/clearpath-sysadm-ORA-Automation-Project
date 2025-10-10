@@ -368,11 +368,12 @@ def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
                 """, (order_number,)).fetchone()
                 
                 if shipped_exists:
+                    # Only update shipstation_order_id, preserve original ship_date
                     conn.execute("""
                         UPDATE shipped_orders
-                        SET ship_date = ?, shipstation_order_id = ?
+                        SET shipstation_order_id = ?
                         WHERE order_number = ?
-                    """, (ship_date, str(order_id), order_number))
+                    """, (str(order_id), order_number))
                 else:
                     conn.execute("""
                         INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
