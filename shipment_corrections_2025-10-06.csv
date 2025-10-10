@@ -1,0 +1,7 @@
+Date,Original Order,Customer Name,Company,Location,Items Shipped (INCORRECT),Qty Shipped,Items Ordered (CORRECT),Qty Ordered,Corrected Order Number,Status,Customer Email
+2025-10-06,688005,Caitlin Graziano,Deitz Family Dental,"Albany, NY",17914 (x1),1,17612 (x1),1,100518,Correction Created,grazianodds@gmail.com
+2025-10-06,688025,Brandon Phuong,Ease Dental,"San Jose, CA",18795 (x2),2,17612 (x2),2,100519,Correction Created,sjeasedental@gmail.com
+2025-10-06,688085,Erin Estey,Estey & Carpenter Dentistry,"Redlands, CA",18795 (x2),2,17612 (x2),2,100520,Correction Created,carpenteresteydds@yahoo.com
+2025-10-06,688195,Jennie Sahm,Center For Advanced Dentistry,"Indianapolis, IN",17914 (x5),5,17612 (x5),5,100521,Correction Created,bills@brightdirectiondental.com
+2025-10-06,688245,Aparna Menami,"Aparna Menrai, DDS","San Jose, CA",18795 (x1),1,17612 (x1),1,100522,Correction Created,armenrai@yahoo.com
+2025-10-06,688595,MATTHEW CRIPE,Dr. Matthew Cripe,"Dowagiac, MI",17612 (x2),2,17914 (x2),2,100523,Correction Created,info@matthewcripedds.com
