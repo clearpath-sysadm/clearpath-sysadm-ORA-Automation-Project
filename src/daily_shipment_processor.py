@@ -263,6 +263,7 @@ def save_shipped_orders_to_db(orders_df):
                 INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
                 VALUES (?, ?, ?)
                 ON CONFLICT(order_number) DO UPDATE SET
+                    ship_date = excluded.ship_date,
                     shipstation_order_id = excluded.shipstation_order_id
             """, (str(ship_date), str(order_number), shipstation_order_id))
             records_saved += 1
@@ -307,6 +308,7 @@ def save_shipped_items_to_db(items_df):
                     ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number
                 ) VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
+                    ship_date = excluded.ship_date,
                     quantity_shipped = excluded.quantity_shipped,
                     tracking_number = excluded.tracking_number
             """, (str(ship_date), sku_lot, str(base_sku), int(quantity), str(order_number) if order_number else None, tracking_number))
