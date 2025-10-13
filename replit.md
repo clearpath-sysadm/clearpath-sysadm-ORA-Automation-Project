@@ -88,9 +88,12 @@ python utils/identify_shipstation_duplicates.py --mode summary
 ```
 
 ### Documentation
-- **Full Remediation Plan**: `docs/manuals/SHIPSTATION_DUPLICATE_REMEDIATION_PLAN.md` (comprehensive 6-phase process with safety controls)
-- **Quick Reference Guide**: `docs/manuals/QUICK_REFERENCE_DUPLICATE_CLEANUP.md` (TL;DR commands and troubleshooting)
-- **Duplicate Detection Fix**: `docs/DUPLICATE_DETECTION_FIX_PLAN.md` (prevention system details)
+Complete documentation located in `docs/duplicate-remediation/`:
+- **[Start Here - README](docs/duplicate-remediation/README.md)** (overview and index)
+- **[Quick Reference](docs/duplicate-remediation/QUICK_REFERENCE.md)** (TL;DR commands and troubleshooting)
+- **[Remediation Plan](docs/duplicate-remediation/REMEDIATION_PLAN.md)** (comprehensive 6-phase process)
+- **[Detection Fix](docs/duplicate-remediation/DUPLICATE_DETECTION_FIX.md)** (prevention system details)
+- **[System Assumptions](docs/duplicate-remediation/ASSUMPTIONS.md)** (requirements and limitations)
 
 ## CRITICAL: Google Sheets Deprecation
 **Google Sheets are COMPLETELY DEPRECATED.** The system is 100% database-driven (SQLite only).

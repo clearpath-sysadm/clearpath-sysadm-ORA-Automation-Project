@@ -271,7 +271,7 @@ Manually review and handle those orders in ShipStation UI.
 ---
 
 ## Full Documentation
-For detailed process, see: `docs/manuals/SHIPSTATION_DUPLICATE_REMEDIATION_PLAN.md`
+For detailed process, see: [Remediation Plan](REMEDIATION_PLAN.md)
 
 ---
 

@@ -217,9 +217,9 @@ If cleanup causes issues:
 **Solution**: Restore from backup using `utils/restore_shipstation_backup.py`
 
 ### Contact
-- Documentation: `docs/manuals/WORKFLOW_CONTROLS_USER_MANUAL.md`
-- Duplicate Detection: `docs/DUPLICATE_DETECTION_FIX_PLAN.md`
-- System Architecture: `replit.md`
+- Documentation: [Workflow Controls Manual](../manuals/WORKFLOW_CONTROLS_USER_MANUAL.md)
+- Duplicate Detection: [Detection Fix](DUPLICATE_DETECTION_FIX.md)
+- System Architecture: [Main README](../../replit.md)
 
 ---
 
