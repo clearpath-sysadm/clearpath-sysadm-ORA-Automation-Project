@@ -309,19 +309,35 @@ def upload_pending_orders():
             logger.info(f'Aborted upload: Reverted {reverted} orders from run {run_id} back to pending due to API failure')
             return 0
         
-        # FIX 4: Create map of existing orders by order_number
+        # FIX 4: Create map of existing orders by order_number with base SKUs (5-digit)
         existing_order_map = {}
         for o in existing_orders:
             order_num = o.get('orderNumber', '').strip().upper()
             order_id = o.get('orderId')
             order_key = o.get('orderKey')
             
+            # Extract base SKUs (first 5 chars) from line items
+            base_skus = set()
+            items = o.get('items', [])
+            for item in items:
+                item_sku = item.get('sku', '')
+                if item_sku:
+                    base_sku = item_sku[:5]  # First 5 digits only
+                    base_skus.add(base_sku)
+            
+            # Verification logging: Warn if no items in response
+            if len(items) == 0:
+                logger.warning(f"Order {order_num} has no items in ShipStation API response - potential API issue")
+            else:
+                logger.debug(f"Order {order_num}: {len(items)} items, base SKUs: {base_skus}")
+            
             existing_order_map[order_num] = {
                 'orderId': order_id,
-                'orderKey': order_key
+                'orderKey': order_key,
+                'base_skus': base_skus  # NEW: Set of 5-digit base SKUs
             }
         
-        # Filter out duplicates
+        # Filter out duplicates based on (order_number + base_sku) combination
         new_orders = []
         new_order_sku_map = []
         skipped_count = 0
@@ -330,29 +346,49 @@ def upload_pending_orders():
             order_num_upper = order['orderNumber'].strip().upper()
             order_sku_info = order_sku_map[idx]
             
+            # Extract base SKUs from this new order (first 5 chars)
+            new_order_base_skus = set()
+            for item in order['items']:
+                item_sku = item.get('sku', '')
+                if item_sku:
+                    base_sku = item_sku[:5]  # First 5 digits only
+                    new_order_base_skus.add(base_sku)
+            
+            # Check if order_number exists in ShipStation
             if order_num_upper in existing_order_map:
-                # Already exists in ShipStation - update status from 'processing' to 'awaiting_shipment'
                 existing = existing_order_map[order_num_upper]
-                skipped_count += 1
-                shipstation_id = existing['orderId'] or existing['orderKey']
+                existing_base_skus = existing.get('base_skus', set())
                 
-                # Track all SKUs for this order
-                all_skus = order_sku_info['sku'].split('|')
-                for sku in all_skus:
+                # Check if ANY base SKU overlaps (order + SKU combination exists)
+                if new_order_base_skus.intersection(existing_base_skus):
+                    # DUPLICATE: Same order number + same base SKU exists
+                    skipped_count += 1
+                    shipstation_id = existing['orderId'] or existing['orderKey']
+                    
+                    logger.warning(f"Skipped duplicate: Order {order_num_upper} + SKU(s) {new_order_base_skus} already exists in ShipStation")
+                    
+                    # Track all SKUs for this order
+                    all_skus = order_sku_info['sku'].split('|')
+                    for sku in all_skus:
+                        cursor.execute("""
+                            INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                            VALUES (?, ?, ?)
+                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
+                    
+                    # Update from 'processing' to 'awaiting_shipment' (clear run_id)
                     cursor.execute("""
-                        INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                        VALUES (?, ?, ?)
-                    """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
-                
-                # Update from 'processing' to 'awaiting_shipment' (clear run_id)
-                cursor.execute("""
-                    UPDATE orders_inbox
-                    SET status = 'awaiting_shipment',
-                        shipstation_order_id = ?,
-                        failure_reason = NULL,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (shipstation_id, order_sku_info['order_inbox_id']))
+                        UPDATE orders_inbox
+                        SET status = 'awaiting_shipment',
+                            shipstation_order_id = ?,
+                            failure_reason = NULL,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (shipstation_id, order_sku_info['order_inbox_id']))
+                else:
+                    # DIFFERENT SKUs - allow upload (rare edge case: same order, different products)
+                    logger.info(f"Order {order_num_upper} exists but with different SKUs ({existing_base_skus} vs {new_order_base_skus}) - allowing upload")
+                    new_orders.append(order)
+                    new_order_sku_map.append(order_sku_info)
             else:
                 # New order - needs upload
                 new_orders.append(order)
