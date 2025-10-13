@@ -50,6 +50,48 @@ The system is built around a SQLite database (`ora.db`) with WAL mode, replacing
 - **SendGrid:** (Optional) For email notifications.
 - **Google Cloud Secret Manager:** For managing production credentials.
 
+## Duplicate Order Remediation System
+**Purpose**: Clean up historical duplicate orders in ShipStation created before the duplicate detection fix was implemented.
+
+### Remediation Tools (Located in `utils/`)
+1. **identify_shipstation_duplicates.py**: Scans ShipStation for duplicate (order_number + base_SKU) combinations. Generates CSV reports and console summaries. Safe read-only operation.
+2. **cleanup_shipstation_duplicates.py**: Executes cleanup using smart strategy (keeps active lot numbers or earliest orders). Includes dry-run mode, batch processing, manual confirmation prompts, and shipped order protection.
+3. **backup_shipstation_data.py**: Creates JSON backups of ShipStation orders before cleanup. Recommended safety step.
+
+### Cleanup Strategy
+- **Priority 1**: Keep orders with ACTIVE lot numbers (from `sku_lot` table)
+- **Priority 2**: Keep EARLIEST uploaded order (lowest createDate)
+- **Protection**: Cannot delete shipped/cancelled orders (API restriction)
+
+### Usage Workflow
+```bash
+# 1. Identify duplicates (READ-ONLY)
+python utils/identify_shipstation_duplicates.py --mode both
+
+# 2. Create backup (RECOMMENDED)
+python utils/backup_shipstation_data.py
+
+# 3. Test cleanup plan (DRY-RUN)
+python utils/cleanup_shipstation_duplicates.py --dry-run
+
+# 4. Disable workflows (CRITICAL - prevent new uploads during cleanup)
+# Via workflow_controls.html: Turn OFF shipstation-upload, status-sync, manual-order-sync
+
+# 5. Execute cleanup (DESTRUCTIVE)
+python utils/cleanup_shipstation_duplicates.py --execute
+
+# 6. Verify success
+python utils/identify_shipstation_duplicates.py --mode summary
+
+# 7. Re-enable workflows
+# Via workflow_controls.html: Turn ON shipstation-upload, status-sync, manual-order-sync
+```
+
+### Documentation
+- **Full Remediation Plan**: `docs/manuals/SHIPSTATION_DUPLICATE_REMEDIATION_PLAN.md` (comprehensive 6-phase process with safety controls)
+- **Quick Reference Guide**: `docs/manuals/QUICK_REFERENCE_DUPLICATE_CLEANUP.md` (TL;DR commands and troubleshooting)
+- **Duplicate Detection Fix**: `docs/DUPLICATE_DETECTION_FIX_PLAN.md` (prevention system details)
+
 ## CRITICAL: Google Sheets Deprecation
 **Google Sheets are COMPLETELY DEPRECATED.** The system is 100% database-driven (SQLite only).
 - ❌ **Migration scripts DISABLED:** `scripts/migrate_historical_data.py` has been renamed to `.DISABLED`
