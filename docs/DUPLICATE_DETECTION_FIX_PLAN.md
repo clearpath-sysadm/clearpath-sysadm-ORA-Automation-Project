@@ -52,6 +52,46 @@ Use `LEFT(sku, 5)` to extract base SKU (all SKUs are 5 digits):
 
 ---
 
+## ShipStation API Verification
+
+### **Confirmed: Line Items Are Included By Default** ✅
+
+According to ShipStation API documentation (https://www.shipstation.com/docs/api/orders/list-orders/):
+
+- The `/orders` endpoint **automatically includes the `items` array**
+- No special parameter required (unlike `/shipments` which needs `includeShipmentItems=true`)
+- Each order includes full line item details with SKU
+
+**Current Implementation:**
+```python
+# config/settings.py
+SHIPSTATION_ORDERS_ENDPOINT = f"{SHIPSTATION_BASE_URL}/orders"  # ✅ Correct endpoint
+
+# src/services/shipstation/api_client.py
+# fetch_shipstation_orders_by_order_numbers() uses this endpoint
+# Response includes items array automatically
+```
+
+**Response Structure:**
+```json
+{
+  "orders": [
+    {
+      "orderId": 987654321,
+      "orderNumber": "689755",
+      "items": [              // ← Always included!
+        {
+          "sku": "17612-250237",   // ← SKU field
+          "quantity": 6
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
 ## Implementation Details
 
 ### File: `src/scheduled_shipstation_upload.py`
@@ -214,7 +254,45 @@ Result: UPLOAD ✅ (rare but valid case)
 
 ---
 
+## Additional Concerns Addressed
+
+### **Concern 1: Bundle SKUs**
+✅ **Already Handled:** Bundles are expanded to component SKUs during XML import (before upload).  
+- See: `src/scheduled_xml_import.py` - Bundles expand before insertion into `orders_inbox`
+- Upload only sees component SKUs, never bundle SKUs
+- No special handling needed in duplicate detection
+
+### **Concern 2: Other Upload Entry Points**
+**Review Needed:** Check if other workflows need same fix:
+- ❓ `src/manual_shipstation_sync.py` - Manual order import (doesn't upload, only imports from ShipStation)
+- ✅ `src/scheduled_shipstation_upload.py` - Primary upload workflow (this fix)
+- ✅ Manual upload via API endpoint uses same `upload_pending_orders()` function
+
+**Conclusion:** Only one upload code path exists → Single fix point ✅
+
+### **Concern 3: Response Verification**
+**Action:** Add logging to verify `items` array is present in ShipStation response:
+
+```python
+# After fetching existing orders
+for o in existing_orders:
+    items_count = len(o.get('items', []))
+    logger.debug(f"Order {o.get('orderNumber')}: {items_count} items in response")
+    if items_count == 0:
+        logger.warning(f"Order {o.get('orderNumber')} has no items - potential API issue")
+```
+
+This helps catch any API changes or issues early.
+
+---
+
 ## Testing Plan
+
+### Test 0: API Response Verification (Pre-Flight Check)
+1. Enable debug logging in `fetch_shipstation_orders_by_order_numbers()`
+2. Query an existing order
+3. Verify log shows: `"Order 689755: 1 items in response"`
+4. If 0 items → investigate API issue before proceeding
 
 ### Test 1: Dev/Prod Conflict
 1. Manually create order in ShipStation with lot 250237
