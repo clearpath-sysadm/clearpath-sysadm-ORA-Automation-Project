@@ -29,8 +29,11 @@ With Workflow Controls, you can:
 
 ### Option 1: Dashboard Navigation
 1. Open your dashboard at `https://your-app.replit.app`
-2. Look in the left sidebar under "System"
-3. Click **"Workflow Controls"**
+2. Look in the left sidebar for **"Admin & Data"** section
+3. Click the **"Admin & Data"** dropdown arrow (▶) to expand it
+4. Click **"Workflow Controls"** in the expanded menu
+
+**Note**: The Workflow Controls link is inside the Admin & Data section, so you need to expand that section first to see it.
 
 ### Option 2: Direct URL
 Go directly to: `https://your-app.replit.app/workflow_controls.html`
