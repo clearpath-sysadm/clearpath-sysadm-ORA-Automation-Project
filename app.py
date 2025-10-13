@@ -3571,30 +3571,36 @@ def api_order_comparison():
             else:
                 xml_orders[order_number][base_sku] = qty
         
-        # Fetch ShipStation orders via API (batch) - shipped orders only
+        # Fetch ShipStation orders via API (batch) - shipped AND cancelled orders
         api_key, api_secret = get_shipstation_credentials()
         headers = get_shipstation_headers(api_key, api_secret)
         
-        # ShipStation requires ISO 8601 format with time, filter for shipped orders only
-        ss_url = f"https://ssapi.shipstation.com/orders?orderDateStart={start_date}T00:00:00&orderDateEnd={end_date}T23:59:59&orderStatus=shipped&pageSize=500"
-        response = requests.get(ss_url, headers=headers)
-        response.raise_for_status()
-        
-        ss_data = response.json()
+        # ShipStation requires ISO 8601 format with time
+        # Query shipped and cancelled orders separately, then combine
         ss_orders = defaultdict(dict)
+        order_statuses = {}  # Track order status from ShipStation
         
-        # Process ShipStation orders (consolidated by order and SKU)
-        for order in ss_data.get('orders', []):
-            order_number = order.get('orderNumber')
-            for item in order.get('items', []):
-                sku = item.get('sku', '').strip()
-                base_sku = sku.split('-')[0].strip() if '-' in sku else sku
-                qty = item.get('quantity', 0)
+        for status in ['shipped', 'cancelled']:
+            ss_url = f"https://ssapi.shipstation.com/orders?orderDateStart={start_date}T00:00:00&orderDateEnd={end_date}T23:59:59&orderStatus={status}&pageSize=500"
+            response = requests.get(ss_url, headers=headers)
+            response.raise_for_status()
+            
+            ss_data = response.json()
+            
+            # Process ShipStation orders (consolidated by order and SKU)
+            for order in ss_data.get('orders', []):
+                order_number = order.get('orderNumber')
+                order_statuses[order_number] = order.get('orderStatus')
                 
-                if base_sku in ss_orders[order_number]:
-                    ss_orders[order_number][base_sku] += qty
-                else:
-                    ss_orders[order_number][base_sku] = qty
+                for item in order.get('items', []):
+                    sku = item.get('sku', '').strip()
+                    base_sku = sku.split('-')[0].strip() if '-' in sku else sku
+                    qty = item.get('quantity', 0)
+                    
+                    if base_sku in ss_orders[order_number]:
+                        ss_orders[order_number][base_sku] += qty
+                    else:
+                        ss_orders[order_number][base_sku] = qty
         
         conn.close()
         
@@ -3626,6 +3632,8 @@ def api_order_comparison():
             
             # Determine overall status for the order
             status = 'match'
+            ss_order_status = order_statuses.get(order_num)  # Get actual ShipStation status
+            
             if not xml_items and ss_items:
                 status = 'ss_only'
                 discrepancy_count += 1
@@ -3638,13 +3646,18 @@ def api_order_comparison():
             else:
                 match_count += 1
             
+            # Override status if order is cancelled in ShipStation
+            if ss_order_status == 'cancelled':
+                status = 'cancelled'
+            
             comparison.append({
                 'order_number': order_num,
                 'xml_sku': xml_sku_str,
                 'xml_qty': sum(xml_items.values()) if xml_items else None,
                 'ss_sku': ss_sku_str,
                 'ss_qty': sum(ss_items.values()) if ss_items else None,
-                'status': status
+                'status': status,
+                'ss_order_status': ss_order_status  # Include actual ShipStation status
             })
         
         return jsonify({

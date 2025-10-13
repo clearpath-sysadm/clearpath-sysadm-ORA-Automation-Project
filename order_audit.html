@@ -404,6 +404,12 @@
             color: #cf1322;
         }
 
+        .badge-cancelled {
+            background: #f0f0f0;
+            color: #595959;
+            text-decoration: line-through;
+        }
+
         .loading-state {
             text-align: center;
             padding: 60px 20px;
@@ -897,6 +903,8 @@
                 
                 if (item.status === 'match') {
                     statusBadge = '<span class="badge badge-success">✅ Match</span>';
+                } else if (item.status === 'cancelled') {
+                    statusBadge = '<span class="badge badge-cancelled">❌ Cancelled</span>';
                 } else if (item.status === 'xml_only') {
                     statusBadge = '<span class="badge badge-error">📄 XML Only</span>';
                 } else if (item.status === 'ss_only') {
