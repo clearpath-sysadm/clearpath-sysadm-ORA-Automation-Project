@@ -15,7 +15,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
-from src.services.database.db_utils import get_connection, transaction_with_retry
+from src.services.database.db_utils import get_connection, transaction_with_retry, is_workflow_enabled
 import defusedxml.ElementTree as ET
 
 logging.basicConfig(
@@ -295,6 +295,11 @@ def run_scheduled_import():
     
     while True:
         try:
+            if not is_workflow_enabled('xml-import'):
+                logger.info("Workflow 'xml-import' is DISABLED - sleeping 60s")
+                time.sleep(60)
+                continue
+            
             logger.info("Running scheduled import...")
             
             imported = import_orders_from_drive()

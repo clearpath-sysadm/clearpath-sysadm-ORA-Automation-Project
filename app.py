@@ -24,7 +24,7 @@ app.config['JSON_SORT_KEYS'] = False
 DB_PATH = os.path.join(project_root, 'ora.db')
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html']
 
 @app.route('/')
 def index():
@@ -3676,6 +3676,66 @@ def api_order_comparison():
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/workflow_controls', methods=['GET'])
+def get_workflow_controls():
+    """Get all workflow control states"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT workflow_name, enabled, last_updated, updated_by
+            FROM workflow_controls
+            ORDER BY workflow_name
+        """)
+        workflows = cursor.fetchall()
+        conn.close()
+        
+        return jsonify([{
+            'name': w[0],
+            'enabled': bool(w[1]),
+            'last_updated': w[2],
+            'updated_by': w[3]
+        } for w in workflows])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/workflow_controls/<workflow_name>', methods=['PUT'])
+def update_workflow_control(workflow_name):
+    """Toggle workflow control"""
+    try:
+        data = request.json
+        enabled = data.get('enabled')
+        
+        if enabled is None:
+            return jsonify({'error': 'enabled field required'}), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT workflow_name FROM workflow_controls WHERE workflow_name = ?
+        """, (workflow_name,))
+        
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'Workflow {workflow_name} not found'}), 404
+        
+        cursor.execute("""
+            UPDATE workflow_controls
+            SET enabled = ?, last_updated = CURRENT_TIMESTAMP, updated_by = ?
+            WHERE workflow_name = ?
+        """, (enabled, 'admin', workflow_name))
+        conn.commit()
+        conn.close()
+        
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Workflow '{workflow_name}' {'ENABLED' if enabled else 'DISABLED'} by admin")
+        
+        return jsonify({'success': True, 'workflow': workflow_name, 'enabled': enabled})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit

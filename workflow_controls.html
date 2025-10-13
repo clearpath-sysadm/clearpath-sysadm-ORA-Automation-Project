@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Controls - ORA Automation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #2563eb;
+            --primary-blue-hover: #1d4ed8;
+            --secondary-purple: #7c3aed;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --sidebar-width: 260px;
+            --header-height: 64px;
+            --success-green: #10b981;
+            --warning-yellow: #f59e0b;
+            --error-red: #ef4444;
+            --spacing-unit: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .header {
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .workflows-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .workflow-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: border-color 0.2s;
+        }
+
+        .workflow-card:hover {
+            border-color: var(--primary-blue);
+        }
+
+        .workflow-info {
+            flex: 1;
+        }
+
+        .workflow-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .workflow-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .workflow-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .workflow-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-indicator.enabled {
+            background-color: var(--success-green);
+        }
+
+        .status-indicator.disabled {
+            background-color: var(--text-tertiary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--text-tertiary);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--success-green);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+
+        .back-link:hover {
+            color: var(--primary-blue-hover);
+        }
+
+        .warning-banner {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .warning-icon {
+            color: #f59e0b;
+            font-size: 20px;
+        }
+
+        .warning-content {
+            flex: 1;
+        }
+
+        .warning-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 4px;
+        }
+
+        .warning-text {
+            font-size: 13px;
+            color: #78350f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">
+            ← Back to Dashboard
+        </a>
+
+        <div class="header">
+            <h1>Workflow Controls</h1>
+            <p>Enable or disable automation workflows. Changes take effect within 60 seconds.</p>
+        </div>
+
+        <div class="warning-banner">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-content">
+                <div class="warning-title">Important</div>
+                <div class="warning-text">Disabling workflows will pause automation. Use this to prevent dev/prod conflicts or during maintenance.</div>
+            </div>
+        </div>
+
+        <div class="workflows-grid" id="workflows-grid">
+            <!-- Workflows will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        const WORKFLOW_INFO = {
+            'xml-import': {
+                name: 'XML Import',
+                description: 'Imports orders from Google Drive XML files every 5 minutes'
+            },
+            'shipstation-upload': {
+                name: 'ShipStation Upload',
+                description: 'Uploads pending orders to ShipStation every 5 minutes'
+            },
+            'status-sync': {
+                name: 'Status Sync',
+                description: 'Syncs order status from ShipStation hourly'
+            },
+            'manual-order-sync': {
+                name: 'Manual Order Sync',
+                description: 'Imports manual ShipStation orders hourly'
+            },
+            'orders-cleanup': {
+                name: 'Orders Cleanup',
+                description: 'Deletes old orders (60+ days) daily'
+            },
+            'weekly-reporter': {
+                name: 'Weekly Reporter',
+                description: 'Generates weekly inventory report (runs at startup)'
+            }
+        };
+
+        async function loadWorkflows() {
+            try {
+                const response = await fetch('/api/workflow_controls');
+                const workflows = await response.json();
+                
+                const grid = document.getElementById('workflows-grid');
+                grid.innerHTML = '';
+                
+                workflows.forEach(workflow => {
+                    const info = WORKFLOW_INFO[workflow.name] || { name: workflow.name, description: 'Automation workflow' };
+                    const card = createWorkflowCard(workflow, info);
+                    grid.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Failed to load workflows:', error);
+            }
+        }
+
+        function createWorkflowCard(workflow, info) {
+            const card = document.createElement('div');
+            card.className = 'workflow-card';
+            
+            card.innerHTML = `
+                <div class="workflow-info">
+                    <div class="workflow-name">${info.name}</div>
+                    <div class="workflow-description">${info.description}</div>
+                </div>
+                <div class="workflow-controls">
+                    <div class="workflow-status">
+                        <span class="status-indicator ${workflow.enabled ? 'enabled' : 'disabled'}"></span>
+                        <span>${workflow.enabled ? 'Enabled' : 'Disabled'}</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" ${workflow.enabled ? 'checked' : ''} 
+                               onchange="toggleWorkflow('${workflow.name}', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        async function toggleWorkflow(name, enabled) {
+            try {
+                const response = await fetch(`/api/workflow_controls/${name}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log(`Workflow ${name} ${enabled ? 'enabled' : 'disabled'}`);
+                    await loadWorkflows();
+                } else {
+                    console.error('Failed to toggle workflow:', result.error);
+                    alert('Failed to toggle workflow: ' + result.error);
+                    await loadWorkflows();
+                }
+            } catch (error) {
+                console.error('Error toggling workflow:', error);
+                alert('Error toggling workflow');
+                await loadWorkflows();
+            }
+        }
+
+        loadWorkflows();
+        setInterval(loadWorkflows, 5000);
+    </script>
+</body>
+</html>

@@ -1,12 +1,16 @@
 import os
 import sqlite3
 import time
+import random
 import logging
 from contextlib import contextmanager
 from typing import Optional, List, Tuple, Any
 
 DATABASE_PATH = os.getenv('DATABASE_PATH', 'ora.db')
 logger = logging.getLogger(__name__)
+
+_workflow_cache = {}
+_cache_ttl = {}
 
 def get_connection():
     """Get SQLite connection with foreign keys enabled"""
@@ -88,3 +92,47 @@ def upsert(table: str, data: dict, conflict_columns: list):
     """
     with transaction() as conn:
         conn.execute(sql, tuple(data.values()))
+
+def is_workflow_enabled(workflow_name: str, cache_seconds: int = 45) -> bool:
+    """
+    Check if workflow is enabled with in-memory caching
+    
+    Args:
+        workflow_name: Name of the workflow
+        cache_seconds: Cache TTL (30-60s recommended, default 45s with jitter)
+    
+    Returns:
+        bool: True if enabled, or if DB fails (fail-open)
+    """
+    now = time.time()
+    
+    if workflow_name in _workflow_cache:
+        if now < _cache_ttl.get(workflow_name, 0):
+            return _workflow_cache[workflow_name]
+    
+    try:
+        conn = get_connection()
+        cursor = conn.execute(
+            "SELECT enabled FROM workflow_controls WHERE workflow_name = ?",
+            (workflow_name,)
+        )
+        result = cursor.fetchone()
+        conn.close()
+        
+        enabled = result[0] if result else True
+        
+        jitter = random.uniform(-10, 10)
+        _workflow_cache[workflow_name] = enabled
+        _cache_ttl[workflow_name] = now + cache_seconds + jitter
+        
+        return enabled
+        
+    except Exception as e:
+        logger.error(f"DB error checking workflow status for {workflow_name}: {e}")
+        logger.warning(f"Failing OPEN - {workflow_name} will continue")
+        
+        if workflow_name in _workflow_cache:
+            logger.info(f"Using cached state for {workflow_name}: {_workflow_cache[workflow_name]}")
+            return _workflow_cache[workflow_name]
+        
+        return True

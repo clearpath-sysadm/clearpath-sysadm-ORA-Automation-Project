@@ -10,7 +10,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import database utilities
-from src.services.database.db_utils import execute_query, upsert, transaction
+from src.services.database.db_utils import execute_query, upsert, transaction, is_workflow_enabled
 
 # Import inventory and average calculations from their modules
 from src.services.reporting_logic.inventory_calculations import calculate_current_inventory
@@ -255,6 +255,10 @@ def generate_weekly_inventory_report():
     """
     Orchestrates the generation of the Weekly Inventory Report using SQLite database.
     """
+    if not is_workflow_enabled('weekly-reporter'):
+        logger.info("Workflow 'weekly-reporter' is DISABLED - skipping execution")
+        return
+    
     logger.info("--- Starting Weekly Inventory Report Generation ---")
 
     # 1. Get Key SKUs and Product Names from database

@@ -27,7 +27,7 @@ if project_root not in sys.path:
 
 from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
-from src.services.database.db_utils import execute_query, transaction_with_retry
+from src.services.database.db_utils import execute_query, transaction_with_retry, is_workflow_enabled
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from utils.api_utils import make_api_request
 
@@ -426,6 +426,10 @@ def run_manual_order_sync():
     """
     Main sync function that pulls manual orders from ShipStation and imports them.
     """
+    if not is_workflow_enabled('manual-order-sync'):
+        logger.info("Workflow 'manual-order-sync' is DISABLED - skipping execution")
+        return "Workflow disabled", 200
+    
     logger.info("=== Starting Manual ShipStation Order Sync ===")
     
     workflow_start_time = datetime.datetime.now()
