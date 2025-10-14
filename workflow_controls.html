@@ -3,48 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workflow Controls - ORA Automation</title>
+    <title>Workflow Controls - ORA Business Automation</title>
     
+    <!-- Premium Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+    
+    <!-- Global Premium Design System -->
     <link rel="stylesheet" href="/static/css/global-styles.css">
 </head>
 <body>
-    <div class="container">
-        <a href="/" class="back-link">← Back to Dashboard</a>
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
-        <div class="header">
-            <h1>Workflow Controls</h1>
-            <p>Enable or disable automation workflows. Changes take effect within 60 seconds.</p>
-        </div>
-
-        <div class="warning-banner">
-            <div class="warning-icon">⚠️</div>
-            <div class="warning-content">
-                <div class="warning-title">Important</div>
-                <div class="warning-text">Disabling workflows will pause automation. Use this to prevent dev/prod conflicts or during maintenance.</div>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">O</div>
+                <div class="sidebar-title">ORA Business</div>
             </div>
-        </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
+                    </a>
+                </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Workflow</th>
-                        <th>Description</th>
-                        <th>Status</th>
-                        <th>Last Sync</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="workflows-table">
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-tertiary);">
-                            Loading workflows...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                <!-- Admin Section -->
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                        <a href="/workflow_controls.html" class="nav-item active">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">Workflow Controls</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="warning-banner">
+                    <div class="warning-icon">⚠️</div>
+                    <div class="warning-content">
+                        <div class="warning-title">Important</div>
+                        <div class="warning-text">Disabling workflows will pause automation. Use this to prevent dev/prod conflicts or during maintenance. Changes take effect within 60 seconds.</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Workflow</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Last Sync</th>
+                                <th style="width: 100px;">Toggle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workflows-table">
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-tertiary);">
+                                    Loading workflows...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -119,6 +215,7 @@
 
         function createWorkflowRow(workflow, info) {
             const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
             
             const lastRunText = formatRelativeTime(workflow.last_run_at);
             const statusClass = workflow.enabled ? 'enabled' : 'disabled';
@@ -132,7 +229,7 @@
                     <span>${statusText}</span>
                 </td>
                 <td>${lastRunText}</td>
-                <td>
+                <td onclick="event.stopPropagation()">
                     <label class="toggle-switch">
                         <input type="checkbox" ${workflow.enabled ? 'checked' : ''} 
                                onchange="toggleWorkflow('${workflow.name}', this.checked)">
@@ -140,6 +237,14 @@
                     </label>
                 </td>
             `;
+            
+            // Make row clickable (except the toggle column)
+            tr.addEventListener('click', function(e) {
+                if (e.target.closest('td:last-child')) return; // Don't trigger on toggle column
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                checkbox.checked = !checkbox.checked;
+                toggleWorkflow(workflow.name, checkbox.checked);
+            });
             
             return tr;
         }
@@ -169,6 +274,52 @@
                 alert('Error toggling workflow');
                 await loadWorkflows();
             }
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        // Admin section toggle
+        function toggleAdmin() {
+            const adminItems = document.getElementById('admin-items');
+            const adminToggle = document.querySelector('.admin-toggle-icon');
+            adminItems.classList.toggle('open');
+            adminToggle.classList.toggle('open');
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+            const btn = document.querySelector('.dark-mode-toggle');
+            btn.textContent = isDark ? '☀️' : '🌙';
+        }
+
+        // Initialize dark mode from localStorage
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = '☀️';
+        }
+
+        // Keep admin section open if on admin page
+        if (window.location.pathname.includes('workflow_controls')) {
+            const adminItems = document.getElementById('admin-items');
+            const adminToggle = document.querySelector('.admin-toggle-icon');
+            adminItems.classList.add('open');
+            adminToggle.classList.add('open');
         }
 
         loadWorkflows();
