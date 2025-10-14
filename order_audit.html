@@ -159,20 +159,20 @@
                 <!-- Comparison Results -->
                 <div id="comparison-results" style="display: none;">
                     <!-- Summary Stats -->
-                    <div class="summary-grid" style="margin-bottom: 24px;">
-                        <div class="summary-card">
+                    <div class="summary-grid" style="margin-bottom: 24px; display: flex; gap: 16px; flex-wrap: nowrap; overflow-x: auto;">
+                        <div class="summary-card" style="flex: 1; min-width: 200px;">
                             <div class="summary-number" id="xml-count">0</div>
                             <div class="summary-label">📄 XML Orders</div>
                         </div>
-                        <div class="summary-card">
+                        <div class="summary-card" style="flex: 1; min-width: 200px;">
                             <div class="summary-number" id="ss-count">0</div>
                             <div class="summary-label">📦 ShipStation Orders</div>
                         </div>
-                        <div class="summary-card success">
+                        <div class="summary-card success" style="flex: 1; min-width: 200px;">
                             <div class="summary-number" id="match-count">0</div>
                             <div class="summary-label">✅ Matches</div>
                         </div>
-                        <div class="summary-card error">
+                        <div class="summary-card error" style="flex: 1; min-width: 200px;">
                             <div class="summary-number" id="discrepancy-count">0</div>
                             <div class="summary-label">⚠️ Discrepancies</div>
                         </div>
@@ -182,13 +182,6 @@
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title">📊 Order Comparison</div>
-                            <div class="filter-toggle">
-                                <span class="toggle-label">Show All</span>
-                                <div class="toggle-switch" id="discrepancy-toggle" onclick="toggleDiscrepancyFilter()">
-                                    <div class="toggle-switch-handle"></div>
-                                </div>
-                                <span class="toggle-label">Discrepancies Only</span>
-                            </div>
                         </div>
                         <div class="card-body">
                             <div class="table-container">
@@ -293,26 +286,10 @@
 
         // Store comparison data globally for sorting
         let comparisonData = [];
-        let showDiscrepanciesOnly = false;
-
-        // Toggle discrepancy filter
-        function toggleDiscrepancyFilter() {
-            showDiscrepanciesOnly = !showDiscrepanciesOnly;
-            const toggle = document.getElementById('discrepancy-toggle');
-            toggle.classList.toggle('active');
-            
-            // Apply filter and re-render
-            applyFilterAndRender();
-        }
 
         // Apply filter and render table
         function applyFilterAndRender() {
             let dataToRender = comparisonData;
-            
-            if (showDiscrepanciesOnly) {
-                // Filter to show only discrepancies (not matches)
-                dataToRender = comparisonData.filter(item => item.status !== 'match');
-            }
             
             // Apply current sort if exists
             if (currentSortColumn) {
@@ -334,10 +311,7 @@
             tbody.innerHTML = '';
             
             if (data.length === 0) {
-                const message = showDiscrepanciesOnly 
-                    ? 'No discrepancies found ✅' 
-                    : 'No orders found for this date range';
-                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No orders found for this date range</td></tr>`;
                 return;
             }
 
@@ -415,7 +389,7 @@
             applyFilterAndRender();
         }
 
-        // Attach sorting event listeners to table headers
+        // Attach sorting event listeners to table headers and set default dates
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('#comparison-table th.sortable').forEach(th => {
                 th.addEventListener('click', () => {
@@ -423,6 +397,14 @@
                     sortTable(column);
                 });
             });
+
+            // Set default dates: yesterday to today
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            document.getElementById('start-date').value = yesterday.toISOString().split('T')[0];
+            document.getElementById('end-date').value = today.toISOString().split('T')[0];
         });
 
         // Old function kept for backwards compatibility with top button
