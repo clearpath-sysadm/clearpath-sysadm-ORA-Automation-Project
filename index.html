@@ -1262,7 +1262,8 @@
                         <!-- Actual Stats -->
                         <!-- ShipStation Count -->
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card id="shipstation-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div class="stat-card hidden" data-stat-card id="shipstation-card" style="cursor: pointer; transition: transform 0.2s; position: relative;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <span id="shipstation-badge" style="display: none; position: absolute; top: 8px; right: 8px; background: #f59e0b; color: white; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 12px; text-transform: uppercase;">Mismatch</span>
                                 <div class="stat-value" id="shipstation-units">0</div>
                                 <div class="stat-label">ShipStation Units</div>
                                 <div class="stat-change" id="shipstation-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
@@ -1270,7 +1271,8 @@
                         </a>
                         <!-- Local DB Count -->
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card id="local-db-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div class="stat-card hidden" data-stat-card id="local-db-card" style="cursor: pointer; transition: transform 0.2s; position: relative;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <span id="local-db-badge" style="display: none; position: absolute; top: 8px; right: 8px; background: #f59e0b; color: white; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 12px; text-transform: uppercase;">Mismatch</span>
                                 <div class="stat-value" id="local-db-units">0</div>
                                 <div class="stat-label">Local DB Units</div>
                                 <div class="stat-change" id="local-db-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
@@ -1701,22 +1703,18 @@
                     document.getElementById('local-db-timestamp').textContent = 
                         'Updated: ' + formatRelativeTime(localDb.last_updated);
                     
-                    // Visual mismatch indicator
-                    const ssCard = document.getElementById('shipstation-card');
-                    const localCard = document.getElementById('local-db-card');
+                    // Visual mismatch indicator - show orange badge
+                    const ssBadge = document.getElementById('shipstation-badge');
+                    const localBadge = document.getElementById('local-db-badge');
                     
                     if (mismatch) {
-                        // Add warning styling
-                        ssCard.style.borderLeft = '4px solid #f59e0b';
-                        localCard.style.borderLeft = '4px solid #f59e0b';
-                        ssCard.style.backgroundColor = 'rgba(245, 158, 11, 0.05)';
-                        localCard.style.backgroundColor = 'rgba(245, 158, 11, 0.05)';
+                        // Show mismatch badges
+                        ssBadge.style.display = 'block';
+                        localBadge.style.display = 'block';
                     } else {
-                        // Remove warning styling
-                        ssCard.style.borderLeft = '';
-                        localCard.style.borderLeft = '';
-                        ssCard.style.backgroundColor = '';
-                        localCard.style.backgroundColor = '';
+                        // Hide mismatch badges
+                        ssBadge.style.display = 'none';
+                        localBadge.style.display = 'none';
                     }
                 }
                 
