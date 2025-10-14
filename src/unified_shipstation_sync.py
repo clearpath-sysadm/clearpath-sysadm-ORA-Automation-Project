@@ -180,15 +180,19 @@ def has_key_product_skus(order: Dict[Any, Any]) -> bool:
     return False
 
 
-def order_exists_locally(order_number: str) -> Tuple[bool, int]:
+def order_exists_locally(order_number: str, conn) -> Tuple[bool, int]:
     """
     Check if order already exists in local database.
     Returns (exists, order_id) tuple.
+    
+    Args:
+        order_number: Order number to check
+        conn: Database connection (transaction context)
     """
     try:
-        rows = execute_query("""
+        rows = conn.execute("""
             SELECT id FROM orders_inbox WHERE order_number = ?
-        """, (order_number,))
+        """, (order_number,)).fetchall()
         
         if rows and rows[0]:
             return True, rows[0][0]
@@ -543,7 +547,7 @@ def run_unified_sync():
                     # Decision tree: NEW manual order or EXISTING order update?
                     
                     # Check if order exists locally
-                    exists, local_order_id = order_exists_locally(order_number)
+                    exists, local_order_id = order_exists_locally(order_number, conn)
                     
                     if exists:
                         # EXISTING ORDER → Update status
