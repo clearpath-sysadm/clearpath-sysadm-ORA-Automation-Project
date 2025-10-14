@@ -3034,14 +3034,15 @@ def api_get_local_awaiting_shipment_count():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Count total units in orders_inbox with status = 'awaiting_shipment'
+        # Count total units by joining orders_inbox with order_items_inbox
         cursor.execute("""
             SELECT 
-                COUNT(*) as order_count,
-                SUM(quantity) as total_units,
-                MAX(created_at) as last_updated
-            FROM orders_inbox
-            WHERE status = 'awaiting_shipment'
+                COUNT(DISTINCT o.id) as order_count,
+                COALESCE(SUM(oi.quantity), 0) as total_units,
+                MAX(o.created_at) as last_updated
+            FROM orders_inbox o
+            LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
+            WHERE o.status = 'awaiting_shipment'
         """)
         
         result = cursor.fetchone()
