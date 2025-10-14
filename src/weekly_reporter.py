@@ -10,7 +10,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import database utilities
-from src.services.database.db_utils import execute_query, upsert, transaction, is_workflow_enabled
+from src.services.database.db_utils import execute_query, upsert, transaction, is_workflow_enabled, update_workflow_last_run
 
 # Import inventory and average calculations from their modules
 from src.services.reporting_logic.inventory_calculations import calculate_current_inventory
@@ -259,6 +259,7 @@ def generate_weekly_inventory_report():
         logger.info("Workflow 'weekly-reporter' is DISABLED - skipping execution")
         return
     
+    update_workflow_last_run('weekly-reporter')
     logger.info("--- Starting Weekly Inventory Report Generation ---")
 
     # 1. Get Key SKUs and Product Names from database
