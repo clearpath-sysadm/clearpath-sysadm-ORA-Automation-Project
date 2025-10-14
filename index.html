@@ -1257,13 +1257,23 @@
                         <div class="skeleton skeleton-card" id="stat-skeleton-5"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-6"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-7"></div>
+                        <div class="skeleton skeleton-card" id="stat-skeleton-8"></div>
 
                         <!-- Actual Stats -->
+                        <!-- ShipStation Count -->
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div class="stat-value">0</div>
-                                <div class="stat-label">Units to Ship</div>
-                                <div class="stat-change">View orders →</div>
+                            <div class="stat-card hidden" data-stat-card id="shipstation-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value" id="shipstation-units">0</div>
+                                <div class="stat-label">ShipStation Units</div>
+                                <div class="stat-change" id="shipstation-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
+                            </div>
+                        </a>
+                        <!-- Local DB Count -->
+                        <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
+                            <div class="stat-card hidden" data-stat-card id="local-db-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value" id="local-db-units">0</div>
+                                <div class="stat-label">Local DB Units</div>
+                                <div class="stat-change" id="local-db-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
                             </div>
                         </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
@@ -1643,29 +1653,82 @@
             }
         }
 
+        // Helper function to format relative time
+        function formatRelativeTime(timestamp) {
+            if (!timestamp) return 'Never';
+            const now = new Date();
+            const then = new Date(timestamp);
+            const diffMs = now - then;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            return then.toLocaleDateString();
+        }
+
         // Load dashboard data
         async function loadDashboardData() {
             try {
-                const [statsRes, alertsRes, automationRes] = await Promise.all([
+                const [statsRes, alertsRes, automationRes, shipstationRes, localDbRes] = await Promise.all([
                     fetch('/api/dashboard_stats'),
                     fetch('/api/inventory_alerts'),
-                    fetch('/api/automation_status')
+                    fetch('/api/automation_status'),
+                    fetch('/api/shipstation/units_to_ship'),
+                    fetch('/api/local/awaiting_shipment_count')
                 ]);
                 
                 const stats = await statsRes.json();
                 const alerts = await alertsRes.json();
                 const automation = await automationRes.json();
+                const shipstation = await shipstationRes.json();
+                const localDb = await localDbRes.json();
+                
+                // Update ShipStation and Local DB cards with mismatch detection
+                if (shipstation.success && localDb.success) {
+                    const ssUnits = shipstation.units_to_ship || 0;
+                    const localUnits = localDb.total_units || 0;
+                    const mismatch = ssUnits !== localUnits;
+                    
+                    // Update ShipStation card
+                    document.getElementById('shipstation-units').textContent = ssUnits;
+                    document.getElementById('shipstation-timestamp').textContent = 
+                        'Updated: ' + formatRelativeTime(shipstation.last_updated);
+                    
+                    // Update Local DB card
+                    document.getElementById('local-db-units').textContent = localUnits;
+                    document.getElementById('local-db-timestamp').textContent = 
+                        'Updated: ' + formatRelativeTime(localDb.last_updated);
+                    
+                    // Visual mismatch indicator
+                    const ssCard = document.getElementById('shipstation-card');
+                    const localCard = document.getElementById('local-db-card');
+                    
+                    if (mismatch) {
+                        // Add warning styling
+                        ssCard.style.borderLeft = '4px solid #f59e0b';
+                        localCard.style.borderLeft = '4px solid #f59e0b';
+                        ssCard.style.backgroundColor = 'rgba(245, 158, 11, 0.05)';
+                        localCard.style.backgroundColor = 'rgba(245, 158, 11, 0.05)';
+                    } else {
+                        // Remove warning styling
+                        ssCard.style.borderLeft = '';
+                        localCard.style.borderLeft = '';
+                        ssCard.style.backgroundColor = '';
+                        localCard.style.backgroundColor = '';
+                    }
+                }
                 
                 // Update stats cards
                 if (stats.success) {
                     const statCards = document.querySelectorAll('[data-stat-card]');
-                    if (statCards[0]) statCards[0].querySelector('.stat-value').textContent = stats.data.units_to_ship || 0;
-                    if (statCards[1]) statCards[1].querySelector('.stat-value').textContent = stats.data.pending_uploads || 0;
-                    if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = stats.data.benco_orders || 0;
-                    if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.data.hawaiian_orders || 0;
-                    if (statCards[4]) statCards[4].querySelector('.stat-value').textContent = stats.data.canadian_orders || 0;
-                    if (statCards[5]) statCards[5].querySelector('.stat-value').textContent = stats.data.other_international_orders || 0;
-                    if (statCards[6]) {
+                    if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = stats.data.pending_uploads || 0;
+                    if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.data.benco_orders || 0;
+                    if (statCards[4]) statCards[4].querySelector('.stat-value').textContent = stats.data.hawaiian_orders || 0;
+                    if (statCards[5]) statCards[5].querySelector('.stat-value').textContent = stats.data.canadian_orders || 0;
+                    if (statCards[6]) statCards[6].querySelector('.stat-value').textContent = stats.data.other_international_orders || 0;
+                    if (statCards[7]) {
                         // Enhanced system status with real-time workflow health
                         let statusText, statusClass, statusMessage;
                         

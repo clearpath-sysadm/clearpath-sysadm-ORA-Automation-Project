@@ -3027,6 +3027,47 @@ def api_refresh_units_to_ship():
             'error': str(e)
         }), 500
 
+@app.route('/api/local/awaiting_shipment_count', methods=['GET'])
+def api_get_local_awaiting_shipment_count():
+    """Get count of items in local DB with status awaiting_shipment"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Count total units in orders_inbox with status = 'awaiting_shipment'
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as order_count,
+                SUM(quantity) as total_units,
+                MAX(created_at) as last_updated
+            FROM orders_inbox
+            WHERE status = 'awaiting_shipment'
+        """)
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            order_count, total_units, last_updated = result
+            return jsonify({
+                'success': True,
+                'total_units': total_units or 0,
+                'order_count': order_count or 0,
+                'last_updated': last_updated
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'total_units': 0,
+                'order_count': 0,
+                'last_updated': None
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/shipping_violations', methods=['GET'])
 def api_get_shipping_violations():
     """Get all unresolved shipping violations"""
