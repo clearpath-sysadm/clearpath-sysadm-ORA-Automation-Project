@@ -182,6 +182,13 @@
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title">📊 Order Comparison</div>
+                            <div class="filter-toggle">
+                                <span class="toggle-label">Show All</span>
+                                <div class="toggle-switch" id="discrepancy-toggle" onclick="toggleDiscrepancyFilter()">
+                                    <div class="toggle-switch-handle"></div>
+                                </div>
+                                <span class="toggle-label">Discrepancies Only</span>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="table-container">
@@ -286,10 +293,26 @@
 
         // Store comparison data globally for sorting
         let comparisonData = [];
+        let showDiscrepanciesOnly = false;
+
+        // Toggle discrepancy filter
+        function toggleDiscrepancyFilter() {
+            showDiscrepanciesOnly = !showDiscrepanciesOnly;
+            const toggle = document.getElementById('discrepancy-toggle');
+            toggle.classList.toggle('active');
+            
+            // Apply filter and re-render
+            applyFilterAndRender();
+        }
 
         // Apply filter and render table
         function applyFilterAndRender() {
             let dataToRender = comparisonData;
+            
+            if (showDiscrepanciesOnly) {
+                // Filter to show only discrepancies (not matches)
+                dataToRender = comparisonData.filter(item => item.status !== 'match');
+            }
             
             // Apply current sort if exists
             if (currentSortColumn) {
@@ -311,7 +334,10 @@
             tbody.innerHTML = '';
             
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No orders found for this date range</td></tr>`;
+                const message = showDiscrepanciesOnly 
+                    ? 'No discrepancies found ✅' 
+                    : 'No orders found for this date range';
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${message}</td></tr>`;
                 return;
             }
 
