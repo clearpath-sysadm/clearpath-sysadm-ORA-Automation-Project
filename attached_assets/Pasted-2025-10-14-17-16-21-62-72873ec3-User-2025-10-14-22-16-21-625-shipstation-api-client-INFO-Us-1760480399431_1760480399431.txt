@@ -1,0 +1,205 @@
+2025-10-14 17:16:21.62
+72873ec3
+User
+2025-10-14 22:16:21,625 - shipstation_api_client - INFO - Using ShipStation credentials from Replit environment variables
+2025-10-14 17:16:21.62
+72873ec3
+User
+2025-10-14 22:16:21,628 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-10-14 17:16:21.98
+72873ec3
+User
+2025-10-14 22:16:21,983 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /orders?orderDateStart=2025-10-13T00:00:00&orderDateEnd=2025-10-14T23:59:59&orderStatus=shipped&pageSize=500 HTTP/1.1" 200 94162
+2025-10-14 17:16:22.02
+72873ec3
+User
+2025-10-14 22:16:22,021 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): ssapi.shipstation.com:443
+2025-10-14 17:16:22.28
+72873ec3
+User
+2025-10-14 22:16:22,284 - urllib3.connectionpool - DEBUG - https://ssapi.shipstation.com:443 "GET /orders?orderDateStart=2025-10-13T00:00:00&orderDateEnd=2025-10-14T23:59:59&orderStatus=cancelled&pageSize=500 HTTP/1.1" 200 2543
+2025-10-14 17:16:22.29
+72873ec3
+User
+127.0.0.1 - - [14/Oct/2025 22:16:22] "GET /api/order_comparison?start_date=2025-10-13&end_date=2025-10-14 HTTP/1.1" 200 -
+2025-10-14 17:16:22.29
+72873ec3
+User
+2025-10-14 22:16:22,289 - werkzeug - INFO - 127.0.0.1 - - [14/Oct/2025 22:16:22] "GET /api/order_comparison?start_date=2025-10-13&end_date=2025-10-14 HTTP/1.1" 200 -
+2025-10-14 17:17:20.90
+72873ec3
+User
+127.0.0.1 - - [14/Oct/2025 22:17:20] "GET /api/shipping_violations HTTP/1.1" 200 -
+2025-10-14 17:17:20.90
+72873ec3
+User
+2025-10-14 22:17:20,903 - werkzeug - INFO - 127.0.0.1 - - [14/Oct/2025 22:17:20] "GET /api/shipping_violations HTTP/1.1" 200 -
+2025-10-14 17:18:20.89
+72873ec3
+User
+127.0.0.1 - - [14/Oct/2025 22:18:20] "GET /api/shipping_violations HTTP/1.1" 200 -
+2025-10-14 17:18:20.89
+72873ec3
+User
+2025-10-14 22:18:20,891 - werkzeug - INFO - 127.0.0.1 - - [14/Oct/2025 22:18:20] "GET /api/shipping_violations HTTP/1.1" 200 -
+2025-10-14 17:19:07.07
+72873ec3
+User
+2025-10-14 22:19:07,075 - __main__ - INFO - Running scheduled upload...
+2025-10-14 17:19:07.08
+72873ec3
+User
+2025-10-14 22:19:07,086 - shipstation_api_client - INFO - Using ShipStation credentials from Replit environment variables
+2025-10-14 17:19:07.08
+72873ec3
+User
+2025-10-14 22:19:07,089 - __main__ - INFO - No pending orders to upload
+2025-10-14 17:19:07.08
+72873ec3
+User
+2025-10-14 22:19:07,089 - __main__ - INFO - Next upload in 300 seconds
+2025-10-14 17:19:10.48
+72873ec3
+User
+2025-10-14 22:19:10,484 - __main__ - INFO - Running scheduled import...
+2025-10-14 17:19:10.56
+72873ec3
+User
+2025-10-14 22:19:10,562 - src.services.google_drive.api_client - INFO - Successfully retrieved Google Drive access token from Replit connector
+2025-10-14 17:19:10.56
+72873ec3
+User
+2025-10-14 22:19:10,567 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-10-14 17:19:10.80
+72873ec3
+User
+2025-10-14 22:19:10,801 - src.services.google_drive.api_client - INFO - Found 5 XML files in Google Drive folder 1rNudeesa_c6q--KIKUAOLwXta_gyRqAE
+2025-10-14 17:19:10.80
+72873ec3
+User
+2025-10-14 22:19:10,802 - __main__ - INFO - Found orders.xml (ID: 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY)
+2025-10-14 17:19:10.88
+72873ec3
+User
+2025-10-14 22:19:10,886 - src.services.google_drive.api_client - INFO - Successfully retrieved Google Drive access token from Replit connector
+2025-10-14 17:19:10.88
+72873ec3
+User
+2025-10-14 22:19:10,889 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-10-14 17:19:11.04
+72873ec3
+User
+2025-10-14 22:19:11,043 - src.services.google_drive.api_client - INFO - Fetching file: orders.xml
+2025-10-14 17:19:11.34
+72873ec3
+User
+2025-10-14 22:19:11,342 - src.services.google_drive.api_client - INFO - Successfully fetched XML content from file 1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY
+2025-10-14 17:19:11.35
+72873ec3
+User
+2025-10-14 22:19:11,349 - __main__ - INFO - Loaded 51 bundle configurations
+2025-10-14 17:19:11.35
+72873ec3
+User
+2025-10-14 22:19:11,350 - __main__ - INFO - Loaded 5 Key Products for filtering
+2025-10-14 17:19:11.36
+72873ec3
+User
+2025-10-14 22:19:11,364 - __main__ - INFO - Successfully imported 1 new orders from Google Drive (0 skipped - no Key Products)
+2025-10-14 17:19:11.36
+72873ec3
+User
+2025-10-14 22:19:11,365 - __main__ - INFO - Import complete: 1 orders imported
+2025-10-14 17:19:11.36
+72873ec3
+User
+2025-10-14 22:19:11,367 - __main__ - INFO - Next import in 300 seconds
+2025-10-14 17:19:21.12
+72873ec3
+User
+127.0.0.1 - - [14/Oct/2025 22:19:21] "GET /api/shipping_violations HTTP/1.1" 200 -
+2025-10-14 17:19:21.12
+72873ec3
+User
+2025-10-14 22:19:21,128 - werkzeug - INFO - 127.0.0.1 - - [14/Oct/2025 22:19:21] "GET /api/shipping_violations HTTP/1.1" 200 -
+
+Wrap
+
+Colors
+1515m
+ • 
+1 day ago
+1515m
+ • 
+1 day ago
+1431m
+ • 
+24 hours ago
+275m
+ • 
+5 hours ago
+4m
+ • 
+5 minutes ago
+Quick Reference: ShipStation Duplicate Cleanup
+TL;DR - Quick Start
+1. Identify Duplicates (READ-ONLY, SAFE)
+python utils/identify_shipstation_duplicates.py --mode both
+This will show duplicates on screen AND save a CSV report to reports/.
+
+2. Create Backup (RECOMMENDED)
+python utils/backup_shipstation_data.py
+Creates backup in backups/shipstation_backup_YYYYMMDD.json
+
+3. Test Cleanup Plan (DRY-RUN, NO CHANGES)
+python utils/cleanup_shipstation_duplicates.py --dry-run
+Shows what WOULD be deleted without actually deleting anything.
+
+4. Execute Cleanup (DESTRUCTIVE)
+# Disable workflows first!
+# Then run:
+python utils/cleanup_shipstation_duplicates.py --execute
+This WILL delete duplicate orders from ShipStation.
+
+Before You Start
+✅ Pre-Cleanup Checklist
+Create Backup: Run utils/backup_shipstation_data.py
+Disable Workflows: Go to workflow_controls.html and turn OFF:
+shipstation-upload
+status-sync
+manual-order-sync
+Review Duplicate Report: Check reports/shipstation_duplicates_*.csv
+Notify Team: Let others know you're doing maintenance
+Available Commands
+Identify Duplicates
+# Console summary only:
+python utils/identify_shipstation_duplicates.py --mode summary
+# CSV report only:
+python utils/identify_shipstation_duplicates.py --mode report
+# Both console + CSV (recommended):
+python utils/identify_shipstation_duplicates.py --mode both
+# Look back 90 days instead of default 180:
+python utils/identify_shipstation_duplicates.py --mode both --days-back 90
+Output Locations:
+
+Console: Printed to screen
+Report: reports/shipstation_duplicates_YYYYMMDD_HHMMSS.csv
+Create Backup
+# Standard backup (180 days):
+python utils/backup_shipstation_data.py
+# Backup last 90 days only:
+python utils/backup_shipstation_data.py --days-back 90
+# Save to custom directory:
+python utils/backup_shipstation_data.py --output-dir my_backups
+Output Location: backups/shipstation_backup_YYYYMMDD_HHMMSS.json
+
+Cleanup Duplicates
+Dry-Run (Safe Testing)
+# Test cleanup plan (shows what would happen):
+python utils/cleanup_shipstation_duplicates.py --dry-run
+# Test with different lookback period:
+python utils/cleanup_shipstation_duplicates.py --dry-run --days-back 90
+Execute Cleanup (Destructive)
+# Interactive cleanup (prompts for each batch):
+python utils/cleanup_shipstation_duplicates.py --execute
+# Auto-confirm all batches (no prompts):
