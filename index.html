@@ -810,15 +810,15 @@
         }
 
         .status-green {
-            background-color: var(--success-green);
+            background-color: var(--success-teal);
         }
 
         .status-yellow {
-            background-color: var(--warning-yellow);
+            background-color: var(--warning-gold);
         }
 
         .status-red {
-            background-color: var(--error-red);
+            background-color: var(--critical-red);
         }
 
         /* Loading States */
@@ -905,7 +905,7 @@
 
         .quick-action-btn:active {
             transform: scale(0.95);
-            background: var(--primary-blue);
+            background: var(--primary-navy);
             color: white;
         }
 
@@ -1688,7 +1688,7 @@
                 tableDiv.style.display = 'block';
             } catch (error) {
                 loadingDiv.style.display = 'none';
-                errorDiv.innerHTML = `<div style="padding: 20px; background: var(--bg-tertiary); color: var(--error-red); border-radius: 8px;">Failed to load weekly report: ${error.message}</div>`;
+                errorDiv.innerHTML = `<div style="padding: 20px; background: var(--bg-tertiary); color: var(--critical-red); border-radius: 8px;">Failed to load weekly report: ${error.message}</div>`;
             }
         }
 
