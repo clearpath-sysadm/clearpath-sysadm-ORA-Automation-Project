@@ -582,6 +582,49 @@ body.dark-mode .admin-toggle:hover {
     color: #B13E3D;
 }
 
+/* Status-Specific Badge Colors */
+.badge-pending {
+    background-color: #EBF5FF;
+    color: #4A90E2;
+}
+
+.badge-awaiting_shipment,
+.badge-uploaded {
+    background-color: #EBF5FF;
+    color: #4A90E2;
+}
+
+.badge-shipped {
+    background-color: #E6F9F7;
+    color: #2A8075;
+}
+
+.badge-failed {
+    background-color: #FCEAEA;
+    color: #B13E3D;
+}
+
+.badge-cancelled {
+    background-color: #F5F5F5;
+    color: #6B7280;
+}
+
+.badge-on_hold {
+    background-color: #FFF9E6;
+    color: #A87D1E;
+}
+
+.badge-awaiting_payment {
+    background-color: #FEF3C7;
+    color: #D97706;
+}
+
+.badge-synced_manual {
+    background-color: #F3E8FF;
+    color: #9333EA;
+}
+
+/* Dark Mode Status Badges */
 body.dark-mode .badge-success {
     background-color: rgba(60, 174, 163, 0.15);
     color: var(--success-teal);
@@ -595,6 +638,43 @@ body.dark-mode .badge-warning {
 body.dark-mode .badge-critical {
     background-color: rgba(225, 85, 84, 0.15);
     color: var(--critical-red);
+}
+
+body.dark-mode .badge-pending,
+body.dark-mode .badge-awaiting_shipment,
+body.dark-mode .badge-uploaded {
+    background-color: rgba(74, 144, 226, 0.15);
+    color: #60A5FA;
+}
+
+body.dark-mode .badge-shipped {
+    background-color: rgba(60, 174, 163, 0.15);
+    color: var(--success-teal);
+}
+
+body.dark-mode .badge-failed {
+    background-color: rgba(225, 85, 84, 0.15);
+    color: var(--critical-red);
+}
+
+body.dark-mode .badge-cancelled {
+    background-color: rgba(156, 163, 175, 0.15);
+    color: #9CA3AF;
+}
+
+body.dark-mode .badge-on_hold {
+    background-color: rgba(242, 193, 78, 0.15);
+    color: var(--warning-gold);
+}
+
+body.dark-mode .badge-awaiting_payment {
+    background-color: rgba(217, 119, 6, 0.15);
+    color: #FBBF24;
+}
+
+body.dark-mode .badge-synced_manual {
+    background-color: rgba(147, 51, 234, 0.15);
+    color: #C084FC;
 }
 
 .status-indicator {
