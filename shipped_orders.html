@@ -48,13 +48,14 @@
     <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
     <div class="app-container">
-        <aside class="sidebar" id="sidebar">
+                <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">O</div>
                 <div class="sidebar-title">ORA Business</div>
             </div>
             
             <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
                 <div class="nav-section">
                     <div class="nav-section-title">Operations</div>
                     <a href="/" class="nav-item">
@@ -69,18 +70,23 @@
                         <span class="nav-item-icon">📦</span>
                         Inventory Monitor
                     </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
                     <a href="/charge_report.html" class="nav-item">
                         <span class="nav-item-icon">💰</span>
                         Charge Report
                     </a>
                 </div>
 
+                <!-- Admin Section -->
                 <div class="nav-section admin-section">
-                    <div class="admin-toggle expanded" onclick="toggleAdmin()">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
                         <span>Admin & Data</span>
                         <span class="admin-toggle-icon">▶</span>
                     </div>
-                    <div class="admin-items expanded" id="admin-items">
+                    <div class="admin-items" id="admin-items">
                         <a href="/weekly_shipped_history.html" class="nav-item">
                             <span class="nav-item-icon">📈</span>
                             Weekly Reports
@@ -88,6 +94,10 @@
                         <a href="/shipped_orders.html" class="nav-item active">
                             <span class="nav-item-icon">📋</span>
                             Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
                         </a>
                         <a href="/shipped_items.html" class="nav-item">
                             <span class="nav-item-icon">📊</span>
@@ -101,9 +111,14 @@
                             <span class="nav-item-icon">🏷️</span>
                             SKU Lot Management
                         </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
                     </div>
                 </div>
 
+                <!-- Settings Section -->
                 <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
                     <a href="/settings.html" class="nav-item">
                         <span class="nav-item-icon">⚙️</span>
@@ -112,6 +127,7 @@
                 </div>
             </nav>
         </aside>
+
 
         <main class="main-content">
             <div class="top-bar">

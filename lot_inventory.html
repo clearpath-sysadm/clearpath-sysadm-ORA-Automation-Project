@@ -17,18 +17,17 @@
 
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+                <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <a href="/" class="logo">
-                    <div class="logo-icon">O</div>
-                    <div class="logo-text">ORA Business</div>
-                </a>
+                <div class="sidebar-logo">O</div>
+                <div class="sidebar-title">ORA Business</div>
             </div>
-
-            <nav>
+            
+            <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
                 <div class="nav-section">
                     <div class="nav-section-title">Operations</div>
-                    <a href="/index.html" class="nav-item">
+                    <a href="/" class="nav-item">
                         <span class="nav-item-icon">📊</span>
                         Dashboard
                     </a>
@@ -52,11 +51,11 @@
 
                 <!-- Admin Section -->
                 <div class="nav-section admin-section">
-                    <div class="admin-toggle expanded" onclick="toggleAdmin()">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
                         <span>Admin & Data</span>
                         <span class="admin-toggle-icon">▶</span>
                     </div>
-                    <div class="admin-items expanded" id="admin-items">
+                    <div class="admin-items" id="admin-items">
                         <a href="/weekly_shipped_history.html" class="nav-item">
                             <span class="nav-item-icon">📈</span>
                             Weekly Reports
@@ -64,6 +63,10 @@
                         <a href="/shipped_orders.html" class="nav-item">
                             <span class="nav-item-icon">📋</span>
                             Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
                         </a>
                         <a href="/shipped_items.html" class="nav-item">
                             <span class="nav-item-icon">📊</span>
@@ -77,6 +80,10 @@
                             <span class="nav-item-icon">🏷️</span>
                             SKU Lot Management
                         </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
                     </div>
                 </div>
 
@@ -89,6 +96,7 @@
                 </div>
             </nav>
         </aside>
+
 
         <!-- Main Content -->
         <main class="main-content">

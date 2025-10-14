@@ -1,0 +1,116 @@
+/* Dashboard-Specific Styles */
+/* Components ONLY used on the Dashboard page */
+
+/* Fedex Alert */
+        #fedex-alert {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #78350f;
+            padding: calc(var(--spacing-unit) * 2);
+            border-radius: 12px;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            display: none;
+        }
+
+        #fedex-alert a {
+            color: #78350f;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+/* Auto-Ship Day Alert */
+        #autoship-alert {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: calc(var(--spacing-unit) * 2.5);
+            border-radius: 12px;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            display: none;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+/* Mobile Quick Action Dock */
+        .mobile-quick-actions {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg-primary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 12px;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 8px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            min-height: 72px;
+            transition: all 0.2s;
+        }
+
+        .quick-action-btn:active {
+            transform: scale(0.95);
+            background: var(--primary-navy);
+            color: white;
+        }
+
+        .quick-action-icon {
+            font-size: 24px;
+        }
+
+        #autoship-alert.weekend-notice {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+        }
+
+        #autoship-alert h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #autoship-alert p {
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.9; }
+        }
+
+/* Mismatch Badge Styling */
+        .mismatch-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--warning-gold);
+            color: var(--primary-navy);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 2px 8px rgba(242, 153, 74, 0.3);
+        }
+        
+        .stat-value {
+            animation: countUp 0.4s ease-out;
+        }

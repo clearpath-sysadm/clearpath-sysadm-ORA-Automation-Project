@@ -15,65 +15,86 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+                <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <a href="/" class="logo">
-                    <div class="logo-icon">O</div>
-                    <span class="logo-text">ORA Business</span>
-                </a>
+                <div class="sidebar-logo">O</div>
+                <div class="sidebar-title">ORA Business</div>
             </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
+                    </a>
+                </div>
 
-            <nav class="nav-section">
-                <div class="nav-section-title">Operations</div>
-                <a href="/" class="nav-item">
-                    <span class="nav-item-icon">📊</span>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/orders_inbox.html" class="nav-item">
-                    <span class="nav-item-icon">📦</span>
-                    <span>Orders Inbox</span>
-                </a>
-                <a href="/inventory_transactions.html" class="nav-item">
-                    <span class="nav-item-icon">📦</span>
-                    <span>Inventory Monitor</span>
-                </a>
-                <a href="/charge_report.html" class="nav-item">
-                    <span class="nav-item-icon">💰</span>
-                    <span>Charge Report</span>
-                </a>
-            </nav>
+                <!-- Admin Section -->
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item active">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
+                    </div>
+                </div>
 
-            <nav class="nav-section">
-                <div class="nav-section-title">Admin & Data</div>
-                <a href="/weekly_reports.html" class="nav-item">
-                    <span class="nav-item-icon">📈</span>
-                    <span>Weekly Reports</span>
-                </a>
-                <a href="/shipped_orders.html" class="nav-item">
-                    <span class="nav-item-icon">📋</span>
-                    <span>Shipped Orders</span>
-                </a>
-                <a href="/shipped_items.html" class="nav-item">
-                    <span class="nav-item-icon">📊</span>
-                    <span>Shipped Items</span>
-                </a>
-                <a href="/bundle_skus.html" class="nav-item">
-                    <span class="nav-item-icon">📦</span>
-                    <span>Bundle SKUs</span>
-                </a>
-                <a href="/sku_lot.html" class="nav-item active">
-                    <span class="nav-item-icon">🏷️</span>
-                    <span>SKU Lot Management</span>
-                </a>
-            </nav>
-
-            <nav class="nav-section">
-                <a href="/settings.html" class="nav-item">
-                    <span class="nav-item-icon">⚙️</span>
-                    <span>Settings</span>
-                </a>
+                <!-- Settings Section -->
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                </div>
             </nav>
         </aside>
+
 
         <!-- Main Content -->
         <main class="main-content">

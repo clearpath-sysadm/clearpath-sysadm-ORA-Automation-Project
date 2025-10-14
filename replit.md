@@ -1,7 +1,7 @@
 # ORA Automation Project
 
 ## Overview
-The ORA Automation Project aims to replace Google Sheets with a SQLite database for managing inventory, shipments, and automation workflows. This project provides a real-time business automation dashboard, offering improved visibility and efficiency. The core purpose is to achieve a zero-cost, minimal development time solution that fully deprecates the legacy Google Sheets system, transforming manual processes into automated, database-driven workflows. The ambition is to provide a robust, real-time operational dashboard for Oracare.
+The ORA Automation Project replaces Google Sheets with a SQLite database for managing inventory, shipments, and automation workflows. Its core purpose is to provide a zero-cost, minimal development time solution that fully deprecates the legacy Google Sheets system, transforming manual processes into automated, database-driven workflows. This project delivers a robust, real-time operational dashboard for Oracare, offering improved visibility and efficiency in business automation.
 
 ## User Preferences
 - **Development Philosophy:**
@@ -19,85 +19,31 @@ The ORA Automation Project aims to replace Google Sheets with a SQLite database 
     - Transaction handling with BEGIN IMMEDIATE
 
 ## System Architecture
-The system is built around a SQLite database (`ora.db`) with WAL mode, replacing all Google Sheets functionality across 14 tables. The UI is an **enterprise-grade web dashboard** (`index.html`) with left sidebar navigation, professional design system (Inter font, neutral colors, 8px grid), and fully responsive mobile support. It features real-time KPI cards (including Benco and Hawaiian order tracking), workflow status, inventory alerts, dark mode, and directly queries the SQLite database via Flask API endpoints.
+The system is centered around a SQLite database (`ora.db`) operating in WAL mode, replacing all functionality previously handled by 14 Google Sheets. The user interface is an enterprise-grade web dashboard designed with a premium corporate aesthetic, featuring a deep navy (#1B2A4A) and accent orange (#F2994A) palette, IBM Plex Sans typography, a left sidebar navigation, and full responsiveness. It displays real-time KPI cards (including Benco and Hawaiian order tracking), workflow status, inventory alerts, and supports light/dark modes with glass effects. The dashboard directly queries the SQLite database via Flask API endpoints.
+
+**Global Stylesheet Architecture:**
+A single centralized `global-styles.css` (25KB) defines the premium corporate design system used across all 13 HTML pages, ensuring consistency and ease of maintenance. This includes the color palette, typography (IBM Plex Sans body + Source Serif 4 hero stats), design tokens, component library (buttons, cards, tables, forms, modals, sidebars), light/dark mode with navy glass sidebar effect, responsive breakpoints, and an elevation system. Page-specific styles are contained in `dashboard-specific.css` (3.3KB).
 
 **Core Services & Entry Points:**
-- **Database Layer:** SQLite with WAL mode for zero cost and performance. Schema is documented in `docs/DATABASE_SCHEMA.md`. Tables include `workflows`, `inventory_current`, `shipped_orders`, `orders_inbox` (30 columns including ship/bill address fields), `system_kpis`, `bundle_skus`, `bundle_components`, and `sku_lot`. Configuration stored in `configuration_params` table (pallet counts, key products, initial inventory). **CRITICAL: InitialInventory baseline date is September 19, 2025. These values must NEVER be overwritten by migration scripts or manual processes.** Migrations stored in `migrations/` directory for schema changes.
-- **Backend Automation:** Python scripts handle core logic:
-    - **Weekly Reporter (`src/weekly_reporter.py`):** Captures 52-week shipped quantity window for rolling average calculations in inventory report. **CRITICAL TIMING:** Must run at END of business week AFTER shipping completes. Normal schedule: Friday after shipping. Edge cases: (1) Friday holiday→run Thursday after shipping, (2) Thanksgiving week (closed Thu+Fri)→run Wednesday after shipping, (3) Mid-week holiday→run Friday after shipping. Runs once at startup. **MANUAL TRIGGER:** Weekly Reports page includes "Run Report" button (API: POST `/api/run_weekly_report`) and displays "Last updated" timestamp for manual execution during edge cases.
-    - `src/daily_shipment_processor.py`: Fetches ShipStation data.
-    - `src/shipstation_order_uploader.py`: Uploads orders to ShipStation.
-    - `src/shipstation_reporter.py`: Generates monthly charge and weekly inventory reports.
-    - `src/main_order_import_daily_reporter.py`: Daily import summary.
-    - **XML Polling Service:** Continuously monitors Google Drive for new orders from XML files every 5 minutes. Bundle SKUs are automatically expanded into component SKUs during import.
-    - **ShipStation Upload Service:** Automatically uploads pending orders from `orders_inbox` to ShipStation every 5 minutes (`src/scheduled_shipstation_upload.py`). Applies SKU-Lot mappings from `sku_lot` table and product name mappings from configuration. Creates one ShipStation order per SKU with proper address fields. Detects and skips duplicates. Updates order status to 'uploaded' on success or 'failed' with error details.
-    - **ShipStation Status Sync:** Runs hourly (`src/shipstation_status_sync.py`) to check uploaded orders for status changes. When orders are shipped/cancelled in ShipStation, updates local database and moves shipped orders to `shipped_orders` table. Supports statuses: pending, uploaded, shipped, cancelled, on_hold, awaiting_payment, failed, synced_manual.
-    - **Manual Order Sync:** Runs hourly (`src/manual_shipstation_sync.py`) to detect and import orders created manually in ShipStation (not originated from local system). Identifies manual orders by checking if ShipStation order ID exists in `shipstation_order_line_items` table. Handles SKU-lot format (e.g., "17612 - 250237") by parsing into base_sku and sku_lot for proper inventory tracking. Backfill utility available at `utils/backfill_manual_orders.py` for historical recovery. **Known limitation**: Duplicate ShipStation order numbers (rare) will keep most recent version only.
-    - **Orders Cleanup Service:** Runs daily (`src/scheduled_cleanup.py`) to automatically delete orders older than 60 days from `orders_inbox` table. Preserves `shipped_orders` for historical reporting. Maintains data hygiene with configurable retention period.
-    - **Backfill Utilities:** `src/backfill_shipstation_ids.py` populates missing ShipStation IDs in `orders_inbox` and `shipped_orders` tables by querying ShipStation API. One-time utility for data integrity restoration.
-- **Frontend:** `index.html` provides the dashboard UI with a complete enterprise layout, including a two-tier navigation system (Dashboard, Orders Inbox, Weekly Reports, Inventory Monitor, Bundle SKUs Management, SKU Lot Management, etc.), a neutral color palette, card-based components, and responsive design. It includes features like auto-refresh, manual refresh, skeleton loaders, and error handling. Dashboard displays 6 operational KPI cards: Units to Ship, Pending Uploads, Shipments Sent (7 days), Benco Orders, Hawaiian Orders, and System Status.
-- **Bundle SKU System:** Database-driven bundle management system (`bundle_skus.html`) with full CRUD capabilities. Bundles automatically expand to component SKUs during XML import (both scheduled and manual). REST API endpoints: GET/POST/PUT/DELETE `/api/bundles`, GET `/api/bundle_components/:id`. Supports single-component (e.g., 18225 → 40× 17612) and multi-component bundles (e.g., 18615 → 4 components).
-- **SKU Lot Management:** Database-driven SKU-Lot tracking system (`sku_lot.html`) with full CRUD capabilities. Manages SKU-Lot combinations with active/inactive status. REST API endpoints: GET/POST/PUT/DELETE `/api/sku_lots`. UNIQUE constraint on (sku, lot) combination prevents duplicates. Stores 12 active SKU-Lot records for tracking. **Data Format:** SKU-Lot values are stored in normalized format without spaces (e.g., "17612-250237") to prevent duplicates and ensure data consistency. UI automatically formats for display with spaces (e.g., "17612 - 250237") using `formatSkuLot()` helper function in presentation layer.
-- **Lot Inventory Management (`lot_inventory.html`):** Auto-calculated FIFO inventory tracking per lot. Database table `lot_inventory` stores initial_qty (from 9/19/2025 baseline), manual_adjustment, and received_date. Current quantity auto-calculated: **initial_qty - shipped_qty + manual_adjustment**. Shipped quantities dynamically calculated from `shipped_items` table via LEFT JOIN. Lots sorted by received_date ASC (FIFO priority). REST API endpoints: GET/POST/PUT/DELETE `/api/lot_inventory`. UI displays calculation breakdown (Initial → Shipped → Manual Adj → Current). Baseline imported from `configuration_params` InitialInventory category using `utils/import_initial_lot_inventory.py`. Manual adjustments used for corrections, damages, or additional receipts.
-- **Key Services:** Database utilities (`db_utils.py`), ShipStation API integration, reporting logic, and Google Cloud Platform integrations.
-- **Workflow Controls System:** Programmatic on/off switches for all automation workflows to prevent dev/prod conflicts and enable maintenance control. Database table `workflow_controls` stores enable/disable state for each workflow. All 6 workflows check enabled status via cached `is_workflow_enabled()` helper (45s cache with ±10s jitter, fail-open behavior). Workflows respond to toggles within 60 seconds. REST API endpoints: GET `/api/workflow_controls`, PUT `/api/workflow_controls/:name`. UI dashboard (`workflow_controls.html`) provides toggle switches for: xml-import, shipstation-upload, status-sync, manual-order-sync, orders-cleanup, weekly-reporter. **Use Case:** Disable dev workflows to prevent interference with production, or pause workflows during maintenance. Changes persist across deployments. **User Manual:** Complete usage guide at `docs/manuals/WORKFLOW_CONTROLS_USER_MANUAL.md`.
-- **Deployment:** Configured as a VM deployment in Replit using `start_all.sh` startup script that launches all automation workflows in parallel. Runs continuously on Reserved VM ($20/month, covered by Core plan credits). All processes start automatically on deployment: dashboard server (port 5000), XML polling (5 min), ShipStation upload (5 min), status sync (hourly), manual order sync (hourly), cleanup (daily), units refresh, and weekly reporter. Single deployment runs all 7 background automation workflows plus dashboard.
-- **Shipping Validation System (COMPLETE):** ALERT-ONLY system (does NOT modify ShipStation orders). Database tracks carrier/service info in 4 fields (`shipping_carrier_code`, `shipping_carrier_id`, `shipping_service_code`, `shipping_service_name`) added to both `orders_inbox` and `shipped_orders` tables. Status sync (`src/shipstation_status_sync.py`) and manual order sync (`src/manual_shipstation_sync.py`) both capture actual carrier/service/carrier_id from ShipStation after upload. Validation service (`src/services/shipping_validator.py`) compares actual vs. expected for 3 rules: (1) Hawaiian (HI state)→FedEx 2Day, (2) Canadian (CA/CANADA country)→FedEx International Ground, (3) Benco (company contains "BENCO")→Benco FedEx carrier account (requires BENCO_CARRIER_IDS configuration). Violations stored in `shipping_violations` table with resolved status tracking. REST API endpoints: GET `/api/shipping_violations`, PUT `/api/shipping_violations/:id/resolve`. Sticky yellow alert banner on dashboard (`index.html`) shows violation count and summary. Modal displays detailed violation list with resolve buttons. System is cross-page persistent and auto-refreshes.
+- **Database Layer:** SQLite with WAL mode. Schema is documented in `docs/DATABASE_SCHEMA.md`. Key tables include `workflows`, `inventory_current`, `shipped_orders`, `orders_inbox`, `system_kpis`, `bundle_skus`, `bundle_components`, and `sku_lot`. The `configuration_params` table stores critical settings. The `InitialInventory` baseline date is September 19, 2025, and these values are protected from modification. Migrations are managed in the `migrations/` directory.
+- **Backend Automation (Python scripts):**
+    - **Weekly Reporter (`src/weekly_reporter.py`):** Calculates rolling averages for inventory, runs at the end of the business week. Manual trigger available.
+    - **XML Polling Service:** Continuously monitors Google Drive every 5 minutes for new order XML files, automatically expanding bundle SKUs.
+    - **ShipStation Upload Service (`src/scheduled_shipstation_upload.py`):** Automatically uploads pending orders from `orders_inbox` to ShipStation every 5 minutes, applying SKU-Lot mappings and product name mappings. Handles duplicates and updates order status.
+    - **ShipStation Status Sync (`src/shipstation_status_sync.py`):** Runs hourly to update local database order statuses from ShipStation (shipped, cancelled, etc.) and moves shipped orders to `shipped_orders`.
+    - **Manual Order Sync (`src/manual_shipstation_sync.py`):** Runs hourly to detect and import orders created directly in ShipStation, parsing SKU-lot formats for inventory tracking.
+    - **Orders Cleanup Service (`src/scheduled_cleanup.py`):** Daily deletion of `orders_inbox` entries older than 60 days, maintaining `shipped_orders` for history.
+    - **Duplicate Order Remediation System:** Tools (`utils/`) for identifying, backing up, and cleaning up historical duplicate orders in ShipStation based on a smart strategy (prioritizing active lot numbers or earliest orders) with dry-run and execution modes.
+- **Frontend:** `index.html` serves as the dashboard, offering a complete enterprise layout with two-tier navigation (Dashboard, Orders Inbox, Weekly Reports, Inventory Monitor, etc.), card-based components, and responsive design. Features include auto-refresh, skeleton loaders, and error handling. It displays 6 key operational KPIs.
+- **Bundle SKU System:** Database-driven management (`bundle_skus.html`) with full CRUD capabilities and automatic expansion during import.
+- **SKU Lot Management:** Database-driven tracking (`sku_lot.html`) for SKU-Lot combinations with CRUD support and a unique constraint. UI formats SKU-Lot values for display.
+- **Lot Inventory Management (`lot_inventory.html`):** Auto-calculated FIFO inventory tracking per lot, based on initial quantities, manual adjustments, and shipped quantities.
+- **Workflow Controls System:** A programmatic system allowing on/off toggling for all automation workflows via the `workflow_controls` database table and a UI (`workflow_controls.html`). Changes persist and workflows respond within 60 seconds.
+- **Shipping Validation System:** An alert-only system that compares actual carrier/service information from ShipStation against expected rules (e.g., Hawaiian orders → FedEx 2Day). Violations are stored in `shipping_violations` and displayed on the dashboard with resolution capabilities.
+- **Deployment:** The system is deployed as a continuous VM in Replit, using `start_all.sh` to launch the dashboard server and all 7 background automation workflows in parallel.
 
 ## External Dependencies
-- **ShipStation API:** For order uploading and shipment tracking.
-- **Google Drive:** Integrated via Replit connector for XML file import.
+- **ShipStation API:** Used for order uploads and shipment status synchronization.
+- **Google Drive:** Integrated via Replit connector for XML file imports.
 - **SendGrid:** (Optional) For email notifications.
-- **Google Cloud Secret Manager:** For managing production credentials.
-
-## Duplicate Order Remediation System
-**Purpose**: Clean up historical duplicate orders in ShipStation created before the duplicate detection fix was implemented.
-
-### Remediation Tools (Located in `utils/`)
-1. **identify_shipstation_duplicates.py**: Scans ShipStation for duplicate (order_number + base_SKU) combinations. Generates CSV reports and console summaries. Safe read-only operation.
-2. **cleanup_shipstation_duplicates.py**: Executes cleanup using smart strategy (keeps active lot numbers or earliest orders). Includes dry-run mode, batch processing, manual confirmation prompts, and shipped order protection.
-3. **backup_shipstation_data.py**: Creates JSON backups of ShipStation orders before cleanup. Recommended safety step.
-
-### Cleanup Strategy
-- **Priority 1**: Keep orders with ACTIVE lot numbers (from `sku_lot` table)
-- **Priority 2**: Keep EARLIEST uploaded order (lowest createDate)
-- **Protection**: Cannot delete shipped/cancelled orders (API restriction)
-
-### Usage Workflow
-```bash
-# 1. Identify duplicates (READ-ONLY)
-python utils/identify_shipstation_duplicates.py --mode both
-
-# 2. Create backup (RECOMMENDED)
-python utils/backup_shipstation_data.py
-
-# 3. Test cleanup plan (DRY-RUN)
-python utils/cleanup_shipstation_duplicates.py --dry-run
-
-# 4. Disable workflows (CRITICAL - prevent new uploads during cleanup)
-# Via workflow_controls.html: Turn OFF shipstation-upload, status-sync, manual-order-sync
-
-# 5. Execute cleanup (DESTRUCTIVE)
-python utils/cleanup_shipstation_duplicates.py --execute
-
-# 6. Verify success
-python utils/identify_shipstation_duplicates.py --mode summary
-
-# 7. Re-enable workflows
-# Via workflow_controls.html: Turn ON shipstation-upload, status-sync, manual-order-sync
-```
-
-### Documentation
-Complete documentation located in `docs/duplicate-remediation/`:
-- **[Start Here - README](docs/duplicate-remediation/README.md)** (overview and index)
-- **[Quick Reference](docs/duplicate-remediation/QUICK_REFERENCE.md)** (TL;DR commands and troubleshooting)
-- **[Remediation Plan](docs/duplicate-remediation/REMEDIATION_PLAN.md)** (comprehensive 6-phase process)
-- **[Detection Fix](docs/duplicate-remediation/DUPLICATE_DETECTION_FIX.md)** (prevention system details)
-- **[System Assumptions](docs/duplicate-remediation/ASSUMPTIONS.md)** (requirements and limitations)
-
-## CRITICAL: Google Sheets Deprecation
-**Google Sheets are COMPLETELY DEPRECATED.** The system is 100% database-driven (SQLite only).
-- ❌ **Migration scripts DISABLED:** `scripts/migrate_historical_data.py` has been renamed to `.DISABLED`
-- 🔒 **InitialInventory LOCKED:** Database trigger prevents any modifications to baseline values (Sep 19, 2025)
-- ✅ **Google Drive XML import:** Still active for order imports (uses separate credential scope)
-- ⚠️ **Any code referencing Google Sheets API is deprecated and should NOT be used**
+- **Google Cloud Secret Manager:** For secure management of production credentials.
