@@ -5,18 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workflow Controls - ORA Automation</title>
     
-    <!-- Premium Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
-    
-    <!-- Global Premium Design System -->
     <link rel="stylesheet" href="/static/css/global-styles.css">
-    
 </head>
 <body>
     <div class="container">
-        <a href="/" class="back-link">
-            ← Back to Dashboard
-        </a>
+        <a href="/" class="back-link">← Back to Dashboard</a>
 
         <div class="header">
             <h1>Workflow Controls</h1>
@@ -31,8 +25,25 @@
             </div>
         </div>
 
-        <div class="workflows-grid" id="workflows-grid">
-            <!-- Workflows will be loaded here -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Workflow</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Last Sync</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="workflows-table">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-tertiary);">
+                            Loading workflows...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -69,16 +80,27 @@
                 const response = await fetch('/api/workflow_controls');
                 const workflows = await response.json();
                 
-                const grid = document.getElementById('workflows-grid');
-                grid.innerHTML = '';
+                const tbody = document.getElementById('workflows-table');
+                tbody.innerHTML = '';
                 
                 workflows.forEach(workflow => {
-                    const info = WORKFLOW_INFO[workflow.name] || { name: workflow.name, description: 'Automation workflow' };
-                    const card = createWorkflowCard(workflow, info);
-                    grid.appendChild(card);
+                    const info = WORKFLOW_INFO[workflow.name] || { 
+                        name: workflow.name, 
+                        description: 'Automation workflow' 
+                    };
+                    const row = createWorkflowRow(workflow, info);
+                    tbody.appendChild(row);
                 });
             } catch (error) {
                 console.error('Failed to load workflows:', error);
+                const tbody = document.getElementById('workflows-table');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-danger);">
+                            Error loading workflows
+                        </td>
+                    </tr>
+                `;
             }
         }
 
@@ -95,34 +117,31 @@
             return `${Math.floor(seconds / 86400)}d ago`;
         }
 
-        function createWorkflowCard(workflow, info) {
-            const card = document.createElement('div');
-            card.className = 'workflow-card';
+        function createWorkflowRow(workflow, info) {
+            const tr = document.createElement('tr');
             
             const lastRunText = formatRelativeTime(workflow.last_run_at);
+            const statusClass = workflow.enabled ? 'enabled' : 'disabled';
+            const statusText = workflow.enabled ? 'Enabled' : 'Disabled';
             
-            card.innerHTML = `
-                <div class="workflow-info">
-                    <div class="workflow-name">${info.name}</div>
-                    <div class="workflow-description">${info.description}</div>
-                    <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">
-                        Last sync: ${lastRunText}
-                    </div>
-                </div>
-                <div class="workflow-controls">
-                    <div class="workflow-status">
-                        <span class="status-indicator ${workflow.enabled ? 'enabled' : 'disabled'}"></span>
-                        <span>${workflow.enabled ? 'Enabled' : 'Disabled'}</span>
-                    </div>
+            tr.innerHTML = `
+                <td><strong>${info.name}</strong></td>
+                <td>${info.description}</td>
+                <td>
+                    <span class="status-indicator ${statusClass}"></span>
+                    <span>${statusText}</span>
+                </td>
+                <td>${lastRunText}</td>
+                <td>
                     <label class="toggle-switch">
                         <input type="checkbox" ${workflow.enabled ? 'checked' : ''} 
                                onchange="toggleWorkflow('${workflow.name}', this.checked)">
                         <span class="toggle-slider"></span>
                     </label>
-                </div>
+                </td>
             `;
             
-            return card;
+            return tr;
         }
 
         async function toggleWorkflow(name, enabled) {
