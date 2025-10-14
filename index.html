@@ -372,18 +372,17 @@
         /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             transition: transform 0.3s;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-sm);
         }
 
         .sidebar-header {
             padding: calc(var(--spacing-unit) * 3);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             gap: calc(var(--spacing-unit) * 2);
@@ -392,7 +391,7 @@
         .sidebar-logo {
             width: 32px;
             height: 32px;
-            background: linear-gradient(135deg, var(--accent-orange), #FFB366);
+            background: linear-gradient(135deg, var(--primary-navy), var(--accent-orange));
             border-radius: var(--border-radius-md);
             display: flex;
             align-items: center;
@@ -405,7 +404,7 @@
         .sidebar-title {
             font-size: 16px;
             font-weight: 600;
-            color: white;
+            color: var(--text-primary);
         }
 
         .sidebar-nav {
@@ -423,7 +422,7 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: rgba(255, 255, 255, 0.5);
+            color: var(--text-tertiary);
             padding: calc(var(--spacing-unit) * 1) calc(var(--spacing-unit) * 2);
             margin-bottom: calc(var(--spacing-unit) * 1);
         }
@@ -434,7 +433,7 @@
             gap: calc(var(--spacing-unit) * 2);
             padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
             border-radius: 8px;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-secondary);
             text-decoration: none;
             transition: all 0.2s ease;
             margin-bottom: calc(var(--spacing-unit) * 0.5);
@@ -444,15 +443,16 @@
         }
 
         .nav-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
             transform: translateX(4px);
         }
 
         .nav-item.active {
-            background-color: rgba(242, 153, 74, 0.2);
-            color: white;
-            border-left: 3px solid var(--accent-orange);
+            background-color: rgba(27, 42, 74, 0.08);
+            color: var(--primary-navy);
+            border-left: 3px solid var(--primary-navy);
+            font-weight: 600;
         }
 
         .nav-item-icon {
@@ -464,7 +464,7 @@
         }
 
         .admin-section {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid var(--border-color);
             padding-top: calc(var(--spacing-unit) * 2);
         }
 
@@ -474,7 +474,7 @@
             justify-content: space-between;
             padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
             border-radius: 8px;
-            color: rgba(255, 255, 255, 0.5);
+            color: var(--text-tertiary);
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 12px;
@@ -484,8 +484,8 @@
         }
 
         .admin-toggle:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.8);
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
         }
 
         .admin-toggle-icon {
@@ -494,6 +494,58 @@
 
         .admin-toggle.expanded .admin-toggle-icon {
             transform: rotate(90deg);
+        }
+
+        /* Dark Mode: Premium Navy Glass Sidebar */
+        body.dark-mode .sidebar {
+            background: linear-gradient(180deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        body.dark-mode .sidebar-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .sidebar-logo {
+            background: linear-gradient(135deg, var(--accent-orange), #FFB366);
+        }
+
+        body.dark-mode .sidebar-title {
+            color: white;
+        }
+
+        body.dark-mode .nav-section-title {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        body.dark-mode .nav-item {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        body.dark-mode .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        body.dark-mode .nav-item.active {
+            background-color: rgba(242, 153, 74, 0.2);
+            color: white;
+            border-left: 3px solid var(--accent-orange);
+        }
+
+        body.dark-mode .admin-section {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .admin-toggle {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        body.dark-mode .admin-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .admin-items {
