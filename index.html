@@ -19,21 +19,6 @@
     
 </head>
 <body>
-    <!-- Quantity Mismatch Alert Banner -->
-    <div class="mismatch-alert" id="mismatch-alert">
-        <div class="mismatch-content">
-            <span class="mismatch-icon">🔴</span>
-            <div class="mismatch-text">
-                <div class="mismatch-title">Unit Count Mismatch Detected</div>
-                <div class="mismatch-details" id="mismatch-details">Checking...</div>
-            </div>
-        </div>
-        <div class="mismatch-actions">
-            <button class="btn-refresh-mismatch" onclick="refreshMismatchCheck()">Refresh Check</button>
-            <button class="btn-dismiss-mismatch" onclick="dismissMismatchAlert()" title="Dismiss">×</button>
-        </div>
-    </div>
-
     <!-- Shipping Violations Alert Banner -->
     <div class="violations-alert" id="violations-alert">
         <div class="violations-content">
@@ -220,7 +205,6 @@
                         <div class="skeleton skeleton-card" id="stat-skeleton-5"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-6"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-7"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-8"></div>
 
                         <!-- Actual Stats -->
                         <!-- ShipStation Count -->
@@ -239,13 +223,6 @@
                                 <div class="stat-value" id="local-db-units">0</div>
                                 <div class="stat-label">Local DB Units</div>
                                 <div class="stat-change" id="local-db-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
-                            </div>
-                        </a>
-                        <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div class="stat-value">0</div>
-                                <div class="stat-label">Pending Uploads</div>
-                                <div class="stat-change">Click to upload →</div>
                             </div>
                         </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
@@ -359,7 +336,6 @@
     </div>
 
     <script src="/static/timezone-utils.js"></script>
-    <script src="/static/quantity-mismatch-alert.js"></script>
     <script src="/static/shipping-violations-alert.js"></script>
     <script>
         // Global state

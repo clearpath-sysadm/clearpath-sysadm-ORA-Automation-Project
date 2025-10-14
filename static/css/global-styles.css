@@ -415,15 +415,15 @@ body.dark-mode .admin-toggle:hover {
 /* Stat Cards */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: calc(var(--spacing-unit) * 2);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: calc(var(--spacing-unit) * 1.5);
     margin-bottom: calc(var(--spacing-unit) * 3);
 }
 
 .stat-card {
     background: var(--bg-primary);
     color: var(--text-primary);
-    padding: calc(var(--spacing-unit) * 3);
+    padding: calc(var(--spacing-unit) * 2.5);
     border-radius: var(--border-radius-md);
     border: 1px solid var(--border-translucent);
     position: relative;
