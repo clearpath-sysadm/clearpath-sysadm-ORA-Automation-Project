@@ -118,22 +118,24 @@ Replaces time-based weekly/monthly automations with **user-driven button trigger
 
 ---
 
-## 🗓️ Timeline
+## 🗓️ Timeline - UPDATED (With Critical Fixes)
 
 | Phase | Duration | Key Activities |
 |-------|----------|----------------|
-| **Unified Sync** | | |
-| Development | 4 hours | Build unified workflow with locking |
-| Configuration | 2 hours | Deploy in shadow mode (parallel) |
-| Shadow Validation | **48 hours** | Verify 100% parity |
-| Testing | 6 hours | Run 12 comprehensive tests |
-| Cutover | 1 hour | Disable old workflows |
-| Cleanup | 30 min | Archive old files |
-| **Physical Inventory** | | |
-| UI Development | 3 hours | Add EOD/EOW/EOM buttons & modals |
-| API & Logic | 2 hours | Implement endpoints & dependencies |
-| Testing | 2 hours | Test all button workflows |
-| **TOTAL** | **~5 business days** | Includes validation period |
+| **Phase 1: Core Development** | 6 hours | Build unified sync, SyncOrchestrator, job queue, checkpoints |
+| **Phase 2: Shadow Deployment** | 2 hours | Deploy in parallel with automated validation |
+| **Phase 3: Shadow Validation** | **48 hours** | Automated parity checking every 2 hours |
+| **Phase 4: Testing** | 8 hours | 12 test cases + queue/checkpoint/lock testing |
+| **Phase 5: Physical Inventory UI** | 4 hours | EOD/EOW/EOM buttons with async polling |
+| **Phase 6: Cutover** | 1 hour | Disable legacy workflows, monitor 24h |
+| **Phase 7: Cleanup** | 1 hour | Archive old code, update docs |
+| **TOTAL** | **~6 business days** | Includes 48h validation + 24h stability |
+
+### Critical Enhancements Added
+1. ✅ **SyncOrchestrator** - Prevents concurrent watermark corruption
+2. ✅ **Job Queue** - Async processing with single-queue constraint  
+3. ✅ **Checkpoints** - Graceful recovery from partial failures
+4. ✅ **Auto Validation** - Automated parity checking during shadow mode
 
 ---
 
