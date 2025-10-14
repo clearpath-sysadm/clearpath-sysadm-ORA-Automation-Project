@@ -136,3 +136,22 @@ def is_workflow_enabled(workflow_name: str, cache_seconds: int = 45) -> bool:
             return _workflow_cache[workflow_name]
         
         return True
+
+def update_workflow_last_run(workflow_name: str):
+    """
+    Update the last_run_at timestamp for a workflow
+    
+    Args:
+        workflow_name: Name of the workflow to update
+    """
+    try:
+        conn = get_connection()
+        conn.execute(
+            "UPDATE workflow_controls SET last_run_at = CURRENT_TIMESTAMP WHERE workflow_name = ?",
+            (workflow_name,)
+        )
+        conn.commit()
+        conn.close()
+        logger.debug(f"Updated last_run_at for workflow: {workflow_name}")
+    except Exception as e:
+        logger.error(f"Failed to update last_run_at for {workflow_name}: {e}")

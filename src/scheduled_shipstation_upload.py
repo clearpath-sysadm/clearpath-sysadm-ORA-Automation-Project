@@ -14,7 +14,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.services.database.db_utils import get_connection, transaction_with_retry, is_workflow_enabled
+from src.services.database.db_utils import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import (
     get_shipstation_credentials,
     send_all_orders_to_shipstation,
@@ -534,6 +534,7 @@ def run_scheduled_upload():
                 continue
             
             logger.info("Running scheduled upload...")
+            update_workflow_last_run('shipstation-upload')
             
             uploaded = upload_pending_orders()
             

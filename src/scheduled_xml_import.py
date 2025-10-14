@@ -15,7 +15,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
-from src.services.database.db_utils import get_connection, transaction_with_retry, is_workflow_enabled
+from src.services.database.db_utils import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 import defusedxml.ElementTree as ET
 
 logging.basicConfig(
@@ -301,6 +301,7 @@ def run_scheduled_import():
                 continue
             
             logger.info("Running scheduled import...")
+            update_workflow_last_run('xml-import')
             
             imported = import_orders_from_drive()
             logger.info(f"Import complete: {imported} orders imported")

@@ -3684,7 +3684,7 @@ def get_workflow_controls():
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT workflow_name, enabled, last_updated, updated_by
+            SELECT workflow_name, enabled, last_updated, updated_by, last_run_at
             FROM workflow_controls
             ORDER BY workflow_name
         """)
@@ -3695,7 +3695,8 @@ def get_workflow_controls():
             'name': w[0],
             'enabled': bool(w[1]),
             'last_updated': w[2],
-            'updated_by': w[3]
+            'updated_by': w[3],
+            'last_run_at': w[4]
         } for w in workflows])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
