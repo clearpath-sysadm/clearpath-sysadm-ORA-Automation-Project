@@ -40,6 +40,10 @@ args = "status-sync"
 task = "workflow.run"
 args = "manual-order-sync"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "unified-shipstation-sync"
+
 [[workflows.workflow]]
 name = "dashboard-server"
 author = "agent"
@@ -103,6 +107,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "sleep 180; while true; do python src/manual_shipstation_sync.py; sleep 300; done"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "unified-shipstation-sync"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python src/unified_shipstation_sync.py"
 
 [workflows.workflow.metadata]
 outputType = "console"
