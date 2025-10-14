@@ -87,6 +87,11 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Utility Classes */
+.is-hidden {
+    display: none !important;
+}
+
 /* ========================================
    3. TYPOGRAPHY SCALE
    ======================================== */
@@ -496,61 +501,150 @@ body.dark-mode .admin-toggle:hover {
 }
 
 .btn-primary {
-    background-color: var(--primary-navy);
+    background-color: #5A6B8C;
     color: white;
-    border-color: var(--primary-navy);
-    font-weight: 600;
+    border: 1px solid #5A6B8C;
+    font-weight: 500;
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-navy-hover);
+    background-color: #4A5B7C;
+    border-color: #4A5B7C;
     transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
 }
 
 .btn-success {
-    background-color: var(--success-teal);
+    background-color: #6B9E98;
     color: white;
-    border-color: var(--success-teal);
-    font-weight: 600;
+    border: 1px solid #6B9E98;
+    font-weight: 500;
 }
 
 .btn-success:hover {
-    background-color: #359890;
+    background-color: #5B8E88;
+    border-color: #5B8E88;
     transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
 }
 
 .btn-warning {
-    background-color: var(--warning-gold);
-    color: var(--primary-navy);
-    border-color: var(--warning-gold);
-    font-weight: 600;
+    background-color: #D4A574;
+    color: white;
+    border: 1px solid #D4A574;
+    font-weight: 500;
 }
 
 .btn-warning:hover {
-    background-color: #E6B03E;
+    background-color: #C49564;
+    border-color: #C49564;
     transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
 }
 
 .btn-danger {
-    background-color: var(--critical-red);
+    background-color: #C97A79;
     color: white;
-    border-color: var(--critical-red);
-    font-weight: 600;
+    border: 1px solid #C97A79;
+    font-weight: 500;
 }
 
 .btn-danger:hover {
-    background-color: #D14443;
+    background-color: #B96A69;
+    border-color: #B96A69;
     transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
 }
 
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Premium Action Button Variants */
+.btn-upload,
+.btn-manual-import {
+    background-color: #C9987A;
+    color: white;
+    border: 1px solid #C9987A;
+    font-weight: 500;
+}
+
+.btn-upload:hover,
+.btn-manual-import:hover {
+    background-color: #B9886A;
+    border-color: #B9886A;
+    transform: translateY(-1px);
+}
+
+/* Desktop Actions Container */
+.desktop-actions {
+    display: flex;
+    gap: calc(var(--spacing-unit) * 1.5);
+    flex-wrap: wrap;
+}
+
+/* Actions Dropdown (Mobile) */
+.actions-dropdown {
+    position: relative;
+    display: none;
+}
+
+.dropdown-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing-unit) * 1);
+    padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dropdown-toggle:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: calc(var(--spacing-unit) * 1);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-md);
+    min-width: 220px;
+    display: none;
+    z-index: 100;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-menu button {
+    width: 100%;
+    text-align: left;
+    padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-menu button:last-child {
+    border-bottom: none;
+}
+
+.dropdown-menu button:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--primary-navy);
 }
 
 /* ========================================
@@ -873,6 +967,15 @@ body.dark-mode .alert-critical {
     
     .orders-table-container {
         display: none;
+    }
+
+    /* Hide desktop actions, show dropdown on mobile */
+    .desktop-actions {
+        display: none !important;
+    }
+
+    .actions-dropdown {
+        display: block;
     }
 
     .sidebar {

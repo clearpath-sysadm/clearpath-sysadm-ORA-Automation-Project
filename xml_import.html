@@ -159,25 +159,25 @@
                         
                         <!-- Desktop Actions -->
                         <div class="desktop-actions">
-                            <button class="btn" id="btn-toggle-filter" style="background-color: var(--primary-blue); color: white; border-color: var(--primary-blue);">
+                            <button class="btn btn-primary" id="btn-toggle-filter">
                                 Show Pending Only
                             </button>
-                            <button class="btn-upload" id="btn-upload-selected" style="display: none;">
+                            <button class="btn-upload is-hidden" id="btn-upload-selected">
                                 🚀 Upload Selected
                             </button>
-                            <button class="btn" id="btn-retry-failed" style="display: none; background-color: #f59e0b; border-color: #f59e0b; color: white;">
+                            <button class="btn btn-warning is-hidden" id="btn-retry-failed">
                                 🔄 Retry Failed
                             </button>
-                            <button class="btn" id="btn-validate-orders" style="background-color: #8b5cf6; border-color: #8b5cf6; color: white;">
+                            <button class="btn btn-success" id="btn-validate-orders">
                                 ✓ Validate
                             </button>
                             <button class="btn-manual-import" id="btn-manual-import">
                                 ↻ Manual Import
                             </button>
-                            <button class="btn" id="btn-sync-manual-orders" style="background-color: var(--secondary-purple); border-color: var(--secondary-purple); color: white;">
+                            <button class="btn btn-primary" id="btn-sync-manual-orders">
                                 🔄 Sync Manual
                             </button>
-                            <button class="btn" id="btn-export-csv" style="background-color: var(--success-green); border-color: var(--success-green); color: white;">
+                            <button class="btn btn-success" id="btn-export-csv">
                                 📊 Export CSV
                             </button>
                         </div>
@@ -192,10 +192,10 @@
                                 <button id="mobile-btn-toggle-filter" onclick="document.getElementById('btn-toggle-filter').click(); toggleActionsDropdown();">
                                     Show Pending Only
                                 </button>
-                                <button id="mobile-btn-upload-selected" style="display: none;" onclick="document.getElementById('btn-upload-selected').click(); toggleActionsDropdown();">
+                                <button id="mobile-btn-upload-selected" class="is-hidden" onclick="document.getElementById('btn-upload-selected').click(); toggleActionsDropdown();">
                                     🚀 Upload Selected
                                 </button>
-                                <button id="mobile-btn-retry-failed" style="display: none;" onclick="document.getElementById('btn-retry-failed').click(); toggleActionsDropdown();">
+                                <button id="mobile-btn-retry-failed" class="is-hidden" onclick="document.getElementById('btn-retry-failed').click(); toggleActionsDropdown();">
                                     🔄 Retry Failed
                                 </button>
                                 <button onclick="document.getElementById('btn-validate-orders').click(); toggleActionsDropdown();">
@@ -238,7 +238,7 @@
                         />
                     </div>
 
-                    <div id="orders-loading" class="loading" style="display: none;">
+                    <div id="orders-loading" class="loading is-hidden">
                         <div class="spinner"></div>
                         <p style="margin-top: 1rem; color: var(--text-tertiary);">Loading orders...</p>
                     </div>
@@ -271,7 +271,7 @@
 
                     <!-- Mobile Card View -->
                     <div class="orders-mobile-cards" id="orders-mobile-cards">
-                        <div class="mobile-select-all" id="mobile-select-all-container" style="display: none;">
+                        <div class="mobile-select-all is-hidden" id="mobile-select-all-container">
                             <label>
                                 <input type="checkbox" id="mobile-select-all">
                                 Select all pending orders
@@ -500,17 +500,15 @@
         function filterByStatus(status) {
             filterMode = status;
             
-            // Update button styling to match filter
+            // Update button text and classes to match filter
             if (filterMode === 'pending') {
                 btnToggleFilter.textContent = 'Show Pending Only';
-                btnToggleFilter.style.backgroundColor = 'var(--primary-blue)';
-                btnToggleFilter.style.borderColor = 'var(--primary-blue)';
+                btnToggleFilter.className = 'btn btn-primary';
                 const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
                 if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show Pending Only';
             } else if (filterMode === 'awaiting_shipment') {
                 btnToggleFilter.textContent = 'Show Awaiting Shipment';
-                btnToggleFilter.style.backgroundColor = '#7c3aed';
-                btnToggleFilter.style.borderColor = '#7c3aed';
+                btnToggleFilter.className = 'btn btn-primary';
                 const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
                 if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show Awaiting Shipment';
             }
@@ -526,7 +524,7 @@
             const loading = document.getElementById('orders-loading');
             const tbody = document.getElementById('orders-tbody');
 
-            loading.style.display = 'block';
+            loading.classList.remove('is-hidden');
 
             try {
                 const response = await fetch('/api/orders_inbox');
@@ -544,7 +542,7 @@
             } catch (error) {
                 showAlert('Error loading orders: ' + error.message, 'error');
             } finally {
-                loading.style.display = 'none';
+                loading.classList.add('is-hidden');
             }
         }
 
@@ -564,8 +562,13 @@
             // Show retry button if there are failed orders
             const retryBtn = document.getElementById('btn-retry-failed');
             const mobileRetryBtn = document.getElementById('mobile-btn-retry-failed');
-            retryBtn.style.display = failed > 0 ? 'block' : 'none';
-            if (mobileRetryBtn) mobileRetryBtn.style.display = failed > 0 ? 'block' : 'none';
+            if (failed > 0) {
+                retryBtn.classList.remove('is-hidden');
+                if (mobileRetryBtn) mobileRetryBtn.classList.remove('is-hidden');
+            } else {
+                retryBtn.classList.add('is-hidden');
+                if (mobileRetryBtn) mobileRetryBtn.classList.add('is-hidden');
+            }
         }
 
         // Helper: Format relative date
@@ -697,19 +700,25 @@
                 // Hide mobile select-all container
                 const mobileSelectAllContainer = document.getElementById('mobile-select-all-container');
                 if (mobileSelectAllContainer) {
-                    mobileSelectAllContainer.style.display = 'none';
+                    mobileSelectAllContainer.classList.add('is-hidden');
                 }
                 
-                uploadBtn.style.display = 'none';
+                uploadBtn.classList.add('is-hidden');
                 const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
-                if (mobileUploadBtn) mobileUploadBtn.style.display = 'none';
+                if (mobileUploadBtn) mobileUploadBtn.classList.add('is-hidden');
                 return;
             }
 
             const hasPending = filteredOrders.some(o => o.status === 'pending');
-            uploadBtn.style.display = hasPending ? 'block' : 'none';
-            const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
-            if (mobileUploadBtn) mobileUploadBtn.style.display = hasPending ? 'block' : 'none';
+            if (hasPending) {
+                uploadBtn.classList.remove('is-hidden');
+                const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
+                if (mobileUploadBtn) mobileUploadBtn.classList.remove('is-hidden');
+            } else {
+                uploadBtn.classList.add('is-hidden');
+                const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
+                if (mobileUploadBtn) mobileUploadBtn.classList.add('is-hidden');
+            }
 
             // Render desktop table rows
             tbody.innerHTML = filteredOrders.map(order => {
@@ -748,7 +757,11 @@
             // Show/hide mobile select-all based on pending orders
             const mobileSelectAllContainer = document.getElementById('mobile-select-all-container');
             if (mobileSelectAllContainer) {
-                mobileSelectAllContainer.style.display = hasPending ? 'block' : 'none';
+                if (hasPending) {
+                    mobileSelectAllContainer.classList.remove('is-hidden');
+                } else {
+                    mobileSelectAllContainer.classList.add('is-hidden');
+                }
             }
 
             // Render mobile cards
