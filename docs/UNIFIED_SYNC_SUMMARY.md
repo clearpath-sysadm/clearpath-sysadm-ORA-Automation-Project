@@ -4,9 +4,11 @@
 
 The detailed implementation plan has been created and reviewed by the architect. **5 critical issues** were identified and **ALL have been addressed** in the updated plan.
 
+**NEW:** Physical Inventory Controls (EOD/EOW/EOM) system added to replace time-based automations with user-driven button triggers.
+
 ---
 
-## 📋 What's Being Combined
+## 📋 What's Being Combined & Enhanced
 
 ### Current State (2 Workflows)
 1. **Status Sync** (hourly) - Updates order status from ShipStation using 7-day window
@@ -63,6 +65,44 @@ The detailed implementation plan has been created and reviewed by the architect.
 
 ---
 
+## 🎯 Physical Inventory Controls (NEW)
+
+### 3-Button System: EOD / EOW / EOM
+
+Replaces time-based weekly/monthly automations with **user-driven button triggers** to eliminate edge cases from variable shipping times.
+
+#### 📦 EOD (End of Day) - Physical Count Check
+- **Trigger:** Click when shipping complete (~1pm, but flexible)
+- **Actions:** 
+  1. Force ShipStation sync
+  2. Move shipped orders to history
+  3. Refresh current inventory
+  4. Display: "✅ Physical Count Ready - 23 orders shipped"
+
+#### 📊 EOW (End of Week) - Weekly Inventory Report  
+- **Trigger:** Click Friday after shipping
+- **Actions:**
+  1. Run EOD sync if not done today
+  2. Aggregate weekly history
+  3. Calculate 52-week rolling averages
+  4. Generate & email weekly report
+
+#### 💰 EOM (End of Month) - Monthly Charge Report
+- **Trigger:** Click last day of month
+- **Actions:**
+  1. Run EOW sync if not done this week
+  2. Calculate monthly ShipStation charges
+  3. Generate charge report with carrier breakdown
+  4. Email monthly invoice
+
+### Smart Dependencies
+- EOW automatically runs EOD if needed
+- EOM automatically runs EOW if needed
+- Tracks last sync time to prevent duplicates
+- User controls exact timing for all reports
+
+---
+
 ## 📊 Benefits
 
 ### Efficiency Gains
@@ -82,13 +122,18 @@ The detailed implementation plan has been created and reviewed by the architect.
 
 | Phase | Duration | Key Activities |
 |-------|----------|----------------|
+| **Unified Sync** | | |
 | Development | 4 hours | Build unified workflow with locking |
 | Configuration | 2 hours | Deploy in shadow mode (parallel) |
 | Shadow Validation | **48 hours** | Verify 100% parity |
 | Testing | 6 hours | Run 12 comprehensive tests |
 | Cutover | 1 hour | Disable old workflows |
 | Cleanup | 30 min | Archive old files |
-| **TOTAL** | **~4 business days** | Includes validation period |
+| **Physical Inventory** | | |
+| UI Development | 3 hours | Add EOD/EOW/EOM buttons & modals |
+| API & Logic | 2 hours | Implement endpoints & dependencies |
+| Testing | 2 hours | Test all button workflows |
+| **TOTAL** | **~5 business days** | Includes validation period |
 
 ---
 

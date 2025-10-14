@@ -730,6 +730,576 @@ None identified. Changes are additive and reversible.
 
 ---
 
+## Physical Inventory Controls & Reporting Strategy
+
+### Overview
+Replace time-based weekly/monthly automations with **user-driven button triggers** that eliminate edge cases from variable shipping completion times. Shipping completion varies daily (~1pm typical but not always), making manual triggers the most reliable approach.
+
+### Problem Statement
+- Shipping completion time varies (not always 1pm)
+- Physical count verification needs **accurate, on-demand data**
+- Weekly inventory reports needed at end of week
+- Monthly charge reports needed at end of month
+- Time-based automation creates edge case failures
+
+### Solution: 3-Button System (EOD / EOW / EOM)
+
+#### System Architecture
+
+```
+ALWAYS RUNNING (Background - Every 5 min):
+├── XML Import → New X-Cart orders
+├── ShipStation Upload → Pending orders to ShipStation  
+└── Unified ShipStation Sync → Status updates + manual orders
+
+ON-DEMAND TRIGGERS (Button-Based):
+├── 📦 EOD (End of Day) → Physical count verification
+├── 📊 EOW (End of Week) → Weekly inventory report
+└── 💰 EOM (End of Month) → Monthly charge report
+```
+
+---
+
+### 📦 EOD Button - Daily Physical Count Check
+
+**Purpose:** Sync all shipped orders and refresh inventory for physical count verification
+
+**Trigger:** Clicked when shipping complete (~1pm typically, but flexible)
+
+**Workflow:**
+```
+Step 1: Force ShipStation Sync
+        • Fetch latest order statuses (use unified sync)
+        • Detect all shipped orders TODAY
+        • Update orders_inbox with carrier/tracking data
+        ↓
+Step 2: Move Shipped to History
+        • Transfer shipped orders to shipped_orders table
+        • Create shipped_items records (with SKU-lot)
+        • Include today's shipments
+        ↓
+Step 3: Refresh Current Inventory
+        • Recalculate inventory_current table
+        • Update quantities based on shipments
+        • Update alert levels (critical/low/normal)
+        ↓
+Step 4: Display Summary
+        "✅ Physical Count Ready"
+        "📦 23 orders shipped today"
+        "📊 47 SKUs updated"
+        [View Current Inventory]
+```
+
+**API Endpoint:**
+```python
+@app.route('/api/sync/eod', methods=['POST'])
+def end_of_day_sync():
+    """Sync for physical count verification"""
+    try:
+        results = {
+            'shipped_orders': 0,
+            'skus_updated': 0,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # 1. Force ShipStation sync (use unified sync)
+        run_shipstation_unified_sync()
+        
+        # 2. Move shipped orders to history
+        shipped_count = move_shipped_to_history()
+        results['shipped_orders'] = shipped_count
+        
+        # 3. Recalculate current inventory
+        skus_updated = recalculate_current_inventory()
+        results['skus_updated'] = skus_updated
+        
+        # 4. Update sync timestamp
+        update_sync_timestamp('eod')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Physical count ready! {shipped_count} orders shipped today.',
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"EOD sync failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+```
+
+---
+
+### 📊 EOW Button - End of Week Report
+
+**Purpose:** Generate weekly inventory report with rolling averages
+
+**Trigger:** Clicked at end of week (Friday after shipping)
+
+**Workflow:**
+```
+Step 1: Run EOD Sync (if not done today)
+        • Ensures all today's shipments captured
+        • Check last_sync_time('eod')
+        • Skip if already run today
+        ↓
+Step 2: Aggregate Weekly History
+        • Update weekly_shipped_history table
+        • Calculate this week's totals per SKU
+        • Archive 52-week rolling window
+        ↓
+Step 3: Run Weekly Reporter
+        • Execute src/weekly_reporter.py
+        • Calculate 52-week rolling averages
+        • Update inventory projections
+        • Calculate days of inventory remaining
+        ↓
+Step 4: Generate & Email Report
+        • Save to inventory_current
+        • Send weekly inventory email (SendGrid)
+        • Archive for records
+        ↓
+Display:
+        "✅ Weekly Report Generated"
+        "📧 Email sent to team"
+        [View Weekly Report] [Download PDF]
+```
+
+**API Endpoint:**
+```python
+@app.route('/api/sync/eow', methods=['POST'])
+def end_of_week_sync():
+    """Generate weekly inventory report"""
+    try:
+        results = {
+            'eod_run': False,
+            'weekly_history_updated': False,
+            'report_generated': False,
+            'email_sent': False
+        }
+        
+        # 1. Check if EOD already run today
+        last_eod = get_last_sync_time('eod')
+        if not is_today(last_eod):
+            logger.info("Running EOD first...")
+            end_of_day_sync()
+            results['eod_run'] = True
+        
+        # 2. Aggregate weekly shipped history
+        aggregate_weekly_history()
+        results['weekly_history_updated'] = True
+        
+        # 3. Run weekly reporter
+        from src.weekly_reporter import generate_weekly_inventory_report
+        generate_weekly_inventory_report()
+        results['report_generated'] = True
+        
+        # 4. Send email (optional)
+        if settings.ENABLE_EMAIL_NOTIFICATIONS:
+            send_weekly_report_email()
+            results['email_sent'] = True
+        
+        # 5. Update sync timestamp
+        update_sync_timestamp('eow')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Weekly report generated successfully!',
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"EOW sync failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+```
+
+---
+
+### 💰 EOM Button - End of Month Charge Report
+
+**Purpose:** Generate monthly ShipStation charge report
+
+**Trigger:** Clicked at end of month (last day after shipping)
+
+**Workflow:**
+```
+Step 1: Run EOW Sync (if not done this week)
+        • Ensures all week's data captured
+        • Check last_sync_time('eow')
+        • Skip if already run this week
+        ↓
+Step 2: Calculate Monthly Charges
+        • Query shipped_orders for current month
+        • Aggregate ShipStation costs
+        • Calculate carrier breakdown
+        • Calculate daily totals
+        ↓
+Step 3: Generate Charge Report
+        • Daily breakdown (orders, packages, costs)
+        • Monthly totals and summaries
+        • Carrier analysis (FedEx, USPS, etc.)
+        • Update charge_report database
+        ↓
+Step 4: Email & Archive
+        • Send monthly charge summary (SendGrid)
+        • Save to database for history
+        • Generate PDF invoice (optional)
+        ↓
+Display:
+        "✅ Monthly Charge Report Complete"
+        "💰 Total: $X,XXX.XX"
+        "📧 Report emailed"
+        [View Charge Report] [Download Invoice]
+```
+
+**API Endpoint:**
+```python
+@app.route('/api/sync/eom', methods=['POST'])
+def end_of_month_sync():
+    """Generate monthly charge report"""
+    try:
+        results = {
+            'eow_run': False,
+            'charges_calculated': False,
+            'report_generated': False,
+            'total_charges': 0,
+            'email_sent': False
+        }
+        
+        # 1. Check if EOW already run this week
+        last_eow = get_last_sync_time('eow')
+        if not is_this_week(last_eow):
+            logger.info("Running EOW first...")
+            end_of_week_sync()
+            results['eow_run'] = True
+        
+        # 2. Calculate monthly charges
+        from src.services.reporting_logic.monthly_report_generator import generate_monthly_report
+        charges = calculate_monthly_charges()
+        results['charges_calculated'] = True
+        results['total_charges'] = charges['total']
+        
+        # 3. Generate charge report
+        generate_monthly_report()
+        results['report_generated'] = True
+        
+        # 4. Send email (optional)
+        if settings.ENABLE_EMAIL_NOTIFICATIONS:
+            send_monthly_charge_email(charges)
+            results['email_sent'] = True
+        
+        # 5. Update sync timestamp
+        update_sync_timestamp('eom')
+        
+        return jsonify({
+            'success': True,
+            'message': f"Monthly report complete! Total: ${charges['total']:,.2f}",
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"EOM sync failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+```
+
+---
+
+### Smart Dependency Management
+
+Each button checks if prerequisite syncs have been run:
+
+```python
+def get_last_sync_time(sync_type):
+    """Get timestamp of last sync for given type (eod/eow/eom)"""
+    row = execute_query("""
+        SELECT last_sync_timestamp 
+        FROM sync_tracking 
+        WHERE sync_type = ?
+    """, (sync_type,))
+    return row[0][0] if row else None
+
+def is_today(timestamp):
+    """Check if timestamp is from today"""
+    if not timestamp:
+        return False
+    sync_date = datetime.fromisoformat(timestamp).date()
+    return sync_date == datetime.now().date()
+
+def is_this_week(timestamp):
+    """Check if timestamp is from this week"""
+    if not timestamp:
+        return False
+    sync_date = datetime.fromisoformat(timestamp).date()
+    today = datetime.now().date()
+    week_start = today - timedelta(days=today.weekday())
+    return sync_date >= week_start
+```
+
+---
+
+### Dashboard UI Design
+
+#### New Section: Physical Inventory Controls
+
+```html
+<!-- Physical Inventory Controls Section -->
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2 class="section-title">📊 Physical Inventory & Reporting</h2>
+    </div>
+    
+    <div class="sync-status-bar">
+        <div class="sync-status-item">
+            <span class="sync-label">Last EOD:</span>
+            <span class="sync-time" id="last-eod-time">Not run today</span>
+        </div>
+        <div class="sync-status-item">
+            <span class="sync-label">Last EOW:</span>
+            <span class="sync-time" id="last-eow-time">-</span>
+        </div>
+        <div class="sync-status-item">
+            <span class="sync-label">Last EOM:</span>
+            <span class="sync-time" id="last-eom-time">-</span>
+        </div>
+    </div>
+    
+    <div class="sync-buttons-grid">
+        <!-- EOD Button -->
+        <div class="sync-button-card">
+            <div class="sync-card-icon">📦</div>
+            <h3 class="sync-card-title">End of Day</h3>
+            <p class="sync-card-desc">Physical Count Check</p>
+            <button class="btn-sync" id="btn-eod" onclick="runEODSync()">
+                Run EOD Sync
+            </button>
+            <div class="sync-card-help">
+                Click when shipping is complete
+            </div>
+        </div>
+        
+        <!-- EOW Button -->
+        <div class="sync-button-card">
+            <div class="sync-card-icon">📊</div>
+            <h3 class="sync-card-title">End of Week</h3>
+            <p class="sync-card-desc">Weekly Inventory Report</p>
+            <button class="btn-sync" id="btn-eow" onclick="runEOWSync()">
+                Run EOW Sync
+            </button>
+            <div class="sync-card-help">
+                Friday after shipping complete
+            </div>
+        </div>
+        
+        <!-- EOM Button -->
+        <div class="sync-button-card">
+            <div class="sync-card-icon">💰</div>
+            <h3 class="sync-card-title">End of Month</h3>
+            <p class="sync-card-desc">Monthly Charge Report</p>
+            <button class="btn-sync" id="btn-eom" onclick="runEOMSync()">
+                Run EOM Sync
+            </button>
+            <div class="sync-card-help">
+                Last day of month
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Links -->
+    <div class="sync-quick-links">
+        <a href="/lot_inventory.html" class="quick-link">→ View Current Inventory</a>
+        <a href="/weekly_shipped_history.html" class="quick-link">→ View Weekly Report</a>
+        <a href="/charge_report.html" class="quick-link">→ View Charge Report</a>
+    </div>
+</section>
+```
+
+#### JavaScript for Button Interactions
+
+```javascript
+async function runEODSync() {
+    const btn = document.getElementById('btn-eod');
+    btn.disabled = true;
+    btn.textContent = 'Syncing...';
+    
+    try {
+        showProgress('EOD Sync', [
+            'Fetching ShipStation updates...',
+            'Processing shipped orders...',
+            'Updating inventory...'
+        ]);
+        
+        const response = await fetch('/api/sync/eod', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess(
+                '✅ Physical Count Ready!',
+                `📦 ${data.results.shipped_orders} orders shipped<br>` +
+                `📊 ${data.results.skus_updated} SKUs updated`,
+                [
+                    { text: 'View Inventory', href: '/lot_inventory.html' }
+                ]
+            );
+            updateLastSyncTime('eod', data.results.timestamp);
+        } else {
+            showError('EOD sync failed', data.error);
+        }
+    } catch (error) {
+        showError('EOD sync error', error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Run EOD Sync';
+    }
+}
+
+async function runEOWSync() {
+    const btn = document.getElementById('btn-eow');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    
+    try {
+        showProgress('EOW Sync', [
+            'Running EOD if needed...',
+            'Aggregating weekly history...',
+            'Calculating rolling averages...',
+            'Generating report...'
+        ]);
+        
+        const response = await fetch('/api/sync/eow', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            const emailMsg = data.results.email_sent 
+                ? '<br>📧 Email sent to team' 
+                : '';
+            showSuccess(
+                '✅ Weekly Report Generated!',
+                `Report ready for review${emailMsg}`,
+                [
+                    { text: 'View Report', href: '/weekly_shipped_history.html' },
+                    { text: 'Download PDF', href: '/api/download/weekly-report' }
+                ]
+            );
+            updateLastSyncTime('eow', data.results.timestamp);
+        } else {
+            showError('EOW sync failed', data.error);
+        }
+    } catch (error) {
+        showError('EOW sync error', error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Run EOW Sync';
+    }
+}
+
+async function runEOMSync() {
+    const btn = document.getElementById('btn-eom');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    
+    try {
+        showProgress('EOM Sync', [
+            'Running EOW if needed...',
+            'Calculating monthly charges...',
+            'Generating charge report...',
+            'Creating invoice...'
+        ]);
+        
+        const response = await fetch('/api/sync/eom', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            const emailMsg = data.results.email_sent 
+                ? '<br>📧 Report emailed' 
+                : '';
+            showSuccess(
+                '✅ Monthly Report Complete!',
+                `💰 Total: $${data.results.total_charges.toLocaleString('en-US', {minimumFractionDigits: 2})}${emailMsg}`,
+                [
+                    { text: 'View Report', href: '/charge_report.html' },
+                    { text: 'Download Invoice', href: '/api/download/invoice' }
+                ]
+            );
+            updateLastSyncTime('eom', data.results.timestamp);
+        } else {
+            showError('EOM sync failed', data.error);
+        }
+    } catch (error) {
+        showError('EOM sync error', error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Run EOM Sync';
+    }
+}
+```
+
+---
+
+### Database Schema Addition
+
+#### Sync Tracking Table
+
+```sql
+CREATE TABLE IF NOT EXISTS sync_tracking (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sync_type TEXT NOT NULL UNIQUE, -- 'eod', 'eow', 'eom'
+    last_sync_timestamp TEXT NOT NULL,
+    records_processed INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'success', -- 'success', 'failed', 'running'
+    details TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed initial records
+INSERT INTO sync_tracking (sync_type, last_sync_timestamp, status)
+VALUES 
+    ('eod', '1970-01-01T00:00:00', 'pending'),
+    ('eow', '1970-01-01T00:00:00', 'pending'),
+    ('eom', '1970-01-01T00:00:00', 'pending')
+ON CONFLICT(sync_type) DO NOTHING;
+```
+
+---
+
+### Complete Automation Schedule (Updated)
+
+| Time/Trigger | Automation | Purpose | Type |
+|--------------|------------|---------|------|
+| **Every 5 min** | XML Import | Import new X-Cart orders | Auto |
+| **Every 5 min** | ShipStation Upload | Upload pending orders | Auto |
+| **Every 5 min** | Unified ShipStation Sync | Status + manual orders | Auto |
+| **~1pm (Button)** | 📦 EOD Sync | Physical count verification | Manual |
+| **Fri EOD (Button)** | 📊 EOW Sync | Weekly inventory report | Manual |
+| **Last day (Button)** | 💰 EOM Sync | Monthly charge report | Manual |
+| **Daily 11:59 PM** | Orders Cleanup | Delete old orders (60+ days) | Auto |
+
+---
+
+### Benefits of Button-Based Approach
+
+1. ✅ **Flexible timing** - No hardcoded schedules to fail
+2. ✅ **User-driven** - Shipper controls when syncs run
+3. ✅ **No edge cases** - Works regardless of shipping time variation
+4. ✅ **Smart dependencies** - EOW auto-runs EOD if needed, EOM auto-runs EOW if needed
+5. ✅ **Clear purpose** - Each button has specific business function
+6. ✅ **Progress visibility** - Shows sync steps in real-time
+7. ✅ **Audit trail** - Tracks when each sync last ran
+8. ✅ **Error recovery** - Can re-run if sync fails
+9. ✅ **Business alignment** - Matches actual operational workflow
+
+---
+
+### Implementation Phases (Addition to Timeline)
+
+| Phase | Task | Duration |
+|-------|------|----------|
+| **Phase 7: Physical Inventory UI** | • Add EOD/EOW/EOM buttons to dashboard<br>• Create sync_tracking table<br>• Implement API endpoints<br>• Add progress modals | 3 hours |
+| **Phase 8: Dependency Logic** | • Smart EOD check in EOW<br>• Smart EOW check in EOM<br>• Timestamp tracking<br>• Error handling | 2 hours |
+| **Phase 9: Testing** | • Test EOD workflow<br>• Test EOW with/without EOD<br>• Test EOM with/without EOW<br>• Verify email sending | 2 hours |
+| **Total** | **Physical Inventory System** | **~7 hours (~1 day)** |
+
+---
+
 ## Appendix A: Code Comparison
 
 ### Current Approach (Inefficient)
