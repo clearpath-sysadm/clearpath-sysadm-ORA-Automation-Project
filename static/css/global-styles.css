@@ -551,41 +551,41 @@ body.dark-mode .admin-toggle:hover {
 }
 
 .btn-success {
-    background-color: #6B9E98;
+    background-color: #5A6B8C;
     color: white;
-    border: 1px solid #6B9E98;
+    border: 1px solid #5A6B8C;
     font-weight: 500;
 }
 
 .btn-success:hover {
-    background-color: #5B8E88;
-    border-color: #5B8E88;
+    background-color: #4A5B7C;
+    border-color: #4A5B7C;
     transform: translateY(-1px);
 }
 
 .btn-warning {
-    background-color: #D4A574;
+    background-color: #5A6B8C;
     color: white;
-    border: 1px solid #D4A574;
+    border: 1px solid #5A6B8C;
     font-weight: 500;
 }
 
 .btn-warning:hover {
-    background-color: #C49564;
-    border-color: #C49564;
+    background-color: #4A5B7C;
+    border-color: #4A5B7C;
     transform: translateY(-1px);
 }
 
 .btn-danger {
-    background-color: #C97A79;
+    background-color: #5A6B8C;
     color: white;
-    border: 1px solid #C97A79;
+    border: 1px solid #5A6B8C;
     font-weight: 500;
 }
 
 .btn-danger:hover {
-    background-color: #B96A69;
-    border-color: #B96A69;
+    background-color: #4A5B7C;
+    border-color: #4A5B7C;
     transform: translateY(-1px);
 }
 
@@ -598,16 +598,16 @@ body.dark-mode .admin-toggle:hover {
 /* Premium Action Button Variants */
 .btn-upload,
 .btn-manual-import {
-    background-color: #C9987A;
+    background-color: #5A6B8C;
     color: white;
-    border: 1px solid #C9987A;
+    border: 1px solid #5A6B8C;
     font-weight: 500;
 }
 
 .btn-upload:hover,
 .btn-manual-import:hover {
-    background-color: #B9886A;
-    border-color: #B9886A;
+    background-color: #4A5B7C;
+    border-color: #4A5B7C;
     transform: translateY(-1px);
 }
 
