@@ -16,7 +16,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.cleanup_old_orders import cleanup_old_orders
-from src.services.database.db_utils import is_workflow_enabled
+from src.services.database.db_utils import is_workflow_enabled, update_workflow_last_run
 from utils.logging_config import setup_logging
 
 log_dir = os.path.join(project_root, 'logs')
@@ -39,6 +39,7 @@ def main():
                 time.sleep(60)
                 continue
             
+            update_workflow_last_run('orders-cleanup')
             logger.info("Running scheduled cleanup...")
             result = cleanup_old_orders(days=60)
             

@@ -26,7 +26,7 @@ if project_root not in sys.path:
 
 from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
-from src.services.database.db_utils import execute_query, transaction, transaction_with_retry, is_workflow_enabled
+from src.services.database.db_utils import execute_query, transaction, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from utils.api_utils import make_api_request
 
@@ -447,6 +447,7 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
         logger.info("Workflow 'status-sync' is DISABLED - skipping execution")
         return {"message": "Workflow disabled"}, 200
     
+    update_workflow_last_run('status-sync')
     start_time = datetime.datetime.now()
     logger.info("=== Starting ShipStation Status Sync (7-day window) ===")
     
