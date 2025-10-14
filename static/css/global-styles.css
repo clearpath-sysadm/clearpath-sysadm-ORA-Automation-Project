@@ -856,7 +856,25 @@ body.dark-mode .alert-critical {
    13. RESPONSIVE DESIGN
    ======================================== */
 
+/* Hide mobile cards on desktop, show table */
+.orders-mobile-cards {
+    display: none;
+}
+
+.orders-table-container {
+    display: block;
+}
+
 @media (max-width: 768px) {
+    /* Show mobile cards on mobile, hide table */
+    .orders-mobile-cards {
+        display: block;
+    }
+    
+    .orders-table-container {
+        display: none;
+    }
+
     .sidebar {
         position: fixed;
         left: 0;
