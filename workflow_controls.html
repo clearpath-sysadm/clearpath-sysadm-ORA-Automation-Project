@@ -153,13 +153,9 @@
                 name: 'ShipStation Upload',
                 description: 'Uploads pending orders to ShipStation every 5 minutes'
             },
-            'status-sync': {
-                name: 'Status Sync',
-                description: 'Syncs order status from ShipStation hourly'
-            },
-            'manual-order-sync': {
-                name: 'Manual Order Sync',
-                description: 'Imports manual ShipStation orders hourly'
+            'unified-shipstation-sync': {
+                name: 'Unified ShipStation Sync',
+                description: 'Syncs manual orders and status updates from ShipStation every 5 minutes (replaces manual-order-sync and status-sync)'
             },
             'orders-cleanup': {
                 name: 'Orders Cleanup',

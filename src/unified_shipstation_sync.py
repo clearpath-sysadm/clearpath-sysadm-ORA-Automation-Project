@@ -587,13 +587,21 @@ def run_unified_sync():
                     logger.error(f"❌ Error processing order {order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
                     stats['errors'] += 1
             
-            # Update watermark within same transaction (per architect - critical for no skips on failure)
-            if max_modify_date:
-                update_sync_watermark(max_modify_date, conn)
+            # CRITICAL: Only update watermark if NO errors occurred (per architect)
+            # This prevents data loss - failed orders will be reprocessed on next run
+            if stats['errors'] == 0:
+                if max_modify_date:
+                    update_sync_watermark(max_modify_date, conn)
+                    logger.info(f"✅ Watermark advanced (no errors)")
+                else:
+                    # No valid modifyDate found, advance to now
+                    new_watermark = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+                    update_sync_watermark(new_watermark, conn)
+                    logger.info(f"✅ Watermark advanced to current time (no errors)")
             else:
-                # No valid modifyDate found, advance to now
-                new_watermark = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-                update_sync_watermark(new_watermark, conn)
+                logger.warning(f"⚠️ Watermark NOT advanced due to {stats['errors']} errors - will retry on next run")
+                # Rollback transaction to avoid partial commits
+                raise Exception(f"Processing failed with {stats['errors']} errors - aborting transaction")
         
         # Comprehensive summary logging
         elapsed = (datetime.datetime.now() - sync_start).total_seconds()

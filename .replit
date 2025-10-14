@@ -34,14 +34,6 @@ args = "shipstation-upload"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "status-sync"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "manual-order-sync"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "unified-shipstation-sync"
 
 [[workflows.workflow]]
@@ -85,28 +77,6 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "sleep 60; while true; do python src/scheduled_shipstation_upload.py; sleep 300; done"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "status-sync"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "sleep 120; while true; do python src/shipstation_status_sync.py; sleep 300; done"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "manual-order-sync"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "sleep 180; while true; do python src/manual_shipstation_sync.py; sleep 300; done"
 
 [workflows.workflow.metadata]
 outputType = "console"
@@ -165,6 +135,10 @@ externalPort = 5000
 [[ports]]
 localPort = 42695
 externalPort = 8000
+
+[[ports]]
+localPort = 43263
+externalPort = 8080
 
 [[ports]]
 localPort = 43939
