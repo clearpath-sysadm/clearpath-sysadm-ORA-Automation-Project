@@ -14,13 +14,9 @@ echo "Starting ShipStation upload (polling every 5 min)..."
 python src/scheduled_shipstation_upload.py &
 UPLOAD_PID=$!
 
-echo "Starting ShipStation status sync (hourly)..."
-python src/scheduled_status_sync.py &
-STATUS_PID=$!
-
-echo "Starting manual order sync (hourly)..."
-python src/scheduled_manual_sync.py &
-MANUAL_PID=$!
+echo "Starting unified ShipStation sync (every 5 min)..."
+python src/unified_shipstation_sync.py &
+UNIFIED_PID=$!
 
 echo "Starting orders cleanup (daily)..."
 python src/scheduled_cleanup.py &
@@ -41,8 +37,7 @@ echo "================================================"
 echo "✅ Background automation workflows started"
 echo "   - XML Import: PID $XML_PID"
 echo "   - ShipStation Upload: PID $UPLOAD_PID"
-echo "   - Status Sync: PID $STATUS_PID"
-echo "   - Manual Orders: PID $MANUAL_PID"
+echo "   - Unified ShipStation Sync: PID $UNIFIED_PID"
 echo "   - Cleanup: PID $CLEANUP_PID"
 echo "   - Units Refresh: PID $UNITS_PID"
 echo "   - Weekly Reporter: PID $REPORTER_PID"
@@ -56,4 +51,4 @@ python app.py
 
 # If Flask exits, kill background processes
 echo "⚠️  Dashboard stopped, shutting down background processes..."
-kill $XML_PID $UPLOAD_PID $STATUS_PID $MANUAL_PID $CLEANUP_PID $UNITS_PID $REPORTER_PID 2>/dev/null
+kill $XML_PID $UPLOAD_PID $UNIFIED_PID $CLEANUP_PID $UNITS_PID $REPORTER_PID 2>/dev/null
