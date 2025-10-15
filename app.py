@@ -6,14 +6,13 @@ import os
 import sys
 from flask import Flask, jsonify, render_template, send_from_directory, request
 from datetime import datetime, timedelta
-import sqlite3
 
 # Add project root to path
 project_root = os.path.abspath(os.path.dirname(__file__))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from src.services.database.db_utils import get_connection, execute_query
+from src.services.database.pg_utils import get_connection, execute_query
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
@@ -73,7 +72,7 @@ def api_dashboard_stats():
         
         # Recent shipments (last 7 days)
         week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-        cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= ?", (week_ago,))
+        cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= %s", (week_ago,))
         recent_shipments = cursor.fetchone()[0] or 0
         
         # Benco orders (orders with "BENCO" in company name) - awaiting shipment only
@@ -119,7 +118,7 @@ def api_dashboard_stats():
                 SUM(CASE WHEN status = 'failed' OR status = 'error' THEN 1 ELSE 0 END) as failed,
                 MAX(last_run_at) as last_activity
             FROM workflows 
-            WHERE last_run_at >= ?
+            WHERE last_run_at >= %s
         """, (two_hours_ago,))
         workflow_health = cursor.fetchone()
         
@@ -334,7 +333,7 @@ def api_shipped_items():
                 base_sku,
                 order_number
             FROM shipped_items
-            WHERE ship_date >= ? AND ship_date <= ?
+            WHERE ship_date >= %s AND ship_date <= %s
             ORDER BY ship_date DESC, id DESC
             LIMIT 5000
         """
@@ -396,7 +395,7 @@ def api_charge_report():
                 ship_date,
                 COUNT(DISTINCT order_number) as order_count
             FROM shipped_orders
-            WHERE ship_date >= ? AND ship_date <= ?
+            WHERE ship_date >= %s AND ship_date <= %s
             GROUP BY ship_date
             ORDER BY ship_date
         """
@@ -409,7 +408,7 @@ def api_charge_report():
                 base_sku,
                 SUM(quantity_shipped) as total_qty
             FROM shipped_items
-            WHERE ship_date >= ? AND ship_date <= ?
+            WHERE ship_date >= %s AND ship_date <= %s
             GROUP BY ship_date, base_sku
             ORDER BY ship_date, base_sku
         """
@@ -483,14 +482,14 @@ def api_charge_report():
         transactions_query = """
             SELECT date, sku, transaction_type, quantity
             FROM inventory_transactions
-            WHERE date >= ? AND date <= ?
+            WHERE date >= %s AND date <= %s
         """
         transactions = execute_query(transactions_query, (str(start_date), str(end_date)))
         
         shipments_query = """
             SELECT ship_date, base_sku, SUM(quantity_shipped)
             FROM shipped_items
-            WHERE ship_date >= ? AND ship_date <= ?
+            WHERE ship_date >= %s AND ship_date <= %s
             GROUP BY ship_date, base_sku
         """
         shipments = execute_query(shipments_query, (str(start_date), str(end_date)))
@@ -637,7 +636,7 @@ def api_charge_report_orders():
                 FROM shipped_items si
                 LEFT JOIN shipped_orders so ON si.order_number = so.order_number
                 LEFT JOIN orders_inbox oi ON si.order_number = oi.order_number
-                WHERE si.ship_date = ? AND si.base_sku = ?
+                WHERE si.ship_date = %s AND si.base_sku = %s
                 ORDER BY si.order_number
             """
             results = execute_query(query, (ship_date, sku_filter))
@@ -657,7 +656,7 @@ def api_charge_report_orders():
                 FROM shipped_items si
                 LEFT JOIN shipped_orders so ON si.order_number = so.order_number
                 LEFT JOIN orders_inbox oi ON si.order_number = oi.order_number
-                WHERE si.ship_date = ?
+                WHERE si.ship_date = %s
                 ORDER BY si.order_number, si.base_sku
             """
             results = execute_query(query, (ship_date,))
@@ -898,7 +897,7 @@ def api_sync_manual_orders():
                 print(f"Found {len(manual_orders)} manual orders to sync")
                 
                 # Import manual orders in batch transaction
-                from src.services.database.db_utils import transaction
+                from src.services.database.pg_utils import transaction
                 imported = 0
                 with transaction() as conn:
                     for order in manual_orders:
@@ -946,16 +945,16 @@ def api_get_inventory_transactions():
         params = []
         
         if start_date:
-            query += " AND date >= ?"
+            query += " AND date >= %s"
             params.append(start_date)
         if end_date:
-            query += " AND date <= ?"
+            query += " AND date <= %s"
             params.append(end_date)
         if sku:
-            query += " AND sku = ?"
+            query += " AND sku = %s"
             params.append(sku)
         if transaction_type:
-            query += " AND transaction_type = ?"
+            query += " AND transaction_type = %s"
             params.append(transaction_type)
         
         query += " ORDER BY date DESC, created_at DESC"
@@ -1024,7 +1023,7 @@ def api_create_inventory_transaction():
         # Insert transaction
         cursor.execute("""
             INSERT INTO inventory_transactions (date, sku, quantity, transaction_type, notes)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, %s, %s, %s, %s)
         """, (date, sku, quantity, transaction_type, notes))
         transaction_id = cursor.lastrowid
         
@@ -1039,9 +1038,9 @@ def api_create_inventory_transaction():
         # Update current quantity in inventory_current
         cursor.execute("""
             UPDATE inventory_current 
-            SET current_quantity = current_quantity + ?,
+            SET current_quantity = current_quantity + %s,
                 last_updated = CURRENT_TIMESTAMP
-            WHERE sku = ?
+            WHERE sku = %s
         """, (delta, sku))
         
         # If SKU doesn't exist in inventory_current, we need to handle it
@@ -1050,7 +1049,7 @@ def api_create_inventory_transaction():
             # Get product name from configuration
             cursor.execute("""
                 SELECT parameter_name FROM configuration_params 
-                WHERE category = 'Key Products' AND sku = ?
+                WHERE category = 'Key Products' AND sku = %s
             """, (sku,))
             result = cursor.fetchone()
             product_name = result[0] if result else 'Unknown Product'
@@ -1058,7 +1057,7 @@ def api_create_inventory_transaction():
             # Insert new record
             cursor.execute("""
                 INSERT INTO inventory_current (sku, product_name, current_quantity, weekly_avg_cents, alert_level, reorder_point)
-                VALUES (?, ?, ?, 0, 'normal', 50)
+                VALUES (?, %s, %s, 0, 'normal', 50)
             """, (sku, product_name, max(0, delta)))
         
         conn.commit()
@@ -1115,7 +1114,7 @@ def api_update_inventory_transaction(transaction_id):
         cursor.execute("""
             SELECT sku, quantity, transaction_type 
             FROM inventory_transactions 
-            WHERE id = ?
+            WHERE id = %s
         """, (transaction_id,))
         old_transaction = cursor.fetchone()
         
@@ -1136,16 +1135,16 @@ def api_update_inventory_transaction(transaction_id):
         
         cursor.execute("""
             UPDATE inventory_current 
-            SET current_quantity = current_quantity + ?,
+            SET current_quantity = current_quantity + %s,
                 last_updated = CURRENT_TIMESTAMP
-            WHERE sku = ?
+            WHERE sku = %s
         """, (old_delta, old_sku))
         
         # Update the transaction
         cursor.execute("""
             UPDATE inventory_transactions 
-            SET date = ?, sku = ?, quantity = ?, transaction_type = ?, notes = ?
-            WHERE id = ?
+            SET date = %s, sku = %s, quantity = %s, transaction_type = %s, notes = %s
+            WHERE id = %s
         """, (date, sku, quantity, transaction_type, notes, transaction_id))
         
         # Apply new transaction effect
@@ -1156,9 +1155,9 @@ def api_update_inventory_transaction(transaction_id):
         
         cursor.execute("""
             UPDATE inventory_current 
-            SET current_quantity = current_quantity + ?,
+            SET current_quantity = current_quantity + %s,
                 last_updated = CURRENT_TIMESTAMP
-            WHERE sku = ?
+            WHERE sku = %s
         """, (new_delta, sku))
         
         conn.commit()
@@ -1185,7 +1184,7 @@ def api_delete_inventory_transaction(transaction_id):
         cursor.execute("""
             SELECT sku, quantity, transaction_type 
             FROM inventory_transactions 
-            WHERE id = ?
+            WHERE id = %s
         """, (transaction_id,))
         transaction = cursor.fetchone()
         
@@ -1206,13 +1205,13 @@ def api_delete_inventory_transaction(transaction_id):
         
         cursor.execute("""
             UPDATE inventory_current 
-            SET current_quantity = current_quantity + ?,
+            SET current_quantity = current_quantity + %s,
                 last_updated = CURRENT_TIMESTAMP
-            WHERE sku = ?
+            WHERE sku = %s
         """, (delta, sku))
         
         # Now delete the transaction
-        cursor.execute("DELETE FROM inventory_transactions WHERE id = ?", (transaction_id,))
+        cursor.execute("DELETE FROM inventory_transactions WHERE id = %s", (transaction_id,))
         conn.commit()
         conn.close()
         
@@ -1383,7 +1382,7 @@ def api_weekly_shipped_history():
                     sku,
                     quantity_shipped
                 FROM weekly_shipped_history
-                WHERE sku = ?
+                WHERE sku = %s
                 ORDER BY start_date DESC
                 LIMIT 52
             """
@@ -1540,14 +1539,14 @@ def api_xml_import():
                     total_quantity = sum(item['quantity'] for item in filtered_items)
                     
                     # Check if order already exists
-                    cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
+                    cursor.execute("SELECT id FROM orders_inbox WHERE order_number = %s", (order_number,))
                     existing = cursor.fetchone()
                     
                     if not existing:
                         # Insert order into inbox
                         cursor.execute("""
                             INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
-                            VALUES (?, ?, ?, 'pending', ?, 'X-Cart')
+                            VALUES (?, %s, %s, 'pending', %s, 'X-Cart')
                         """, (order_number, order_date_str, customer_email, total_quantity))
                         
                         order_inbox_id = cursor.lastrowid
@@ -1556,7 +1555,7 @@ def api_xml_import():
                         for item in filtered_items:
                             cursor.execute("""
                                 INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                                VALUES (?, ?, ?)
+                                VALUES (?, %s, %s)
                             """, (order_inbox_id, item['sku'], item['quantity']))
                         
                         orders_imported += 1
@@ -1697,7 +1696,7 @@ def api_order_items(order_id):
             FROM order_items_inbox oi
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
             LEFT JOIN shipstation_order_line_items ssli ON oi.order_inbox_id = ssli.order_inbox_id AND oi.sku = ssli.sku
-            WHERE oi.order_inbox_id = ?
+            WHERE oi.order_inbox_id = %s
             ORDER BY oi.sku
         """, (order_id,))
         
@@ -1891,7 +1890,7 @@ def api_google_drive_import_file(file_id):
                 total_quantity = sum(item['quantity'] for item in expanded_items)
                 
                 # Check if order already exists
-                cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
+                cursor.execute("SELECT id FROM orders_inbox WHERE order_number = %s", (order_number,))
                 existing = cursor.fetchone()
                 
                 if not existing:
@@ -1902,7 +1901,7 @@ def api_google_drive_import_file(file_id):
                             ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                             bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                         )
-                        VALUES (?, ?, ?, 'pending', ?, 'X-Cart', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, %s, %s, 'pending', %s, 'X-Cart', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         order_number, order_date_str, customer_email, total_quantity,
                         ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
@@ -1915,7 +1914,7 @@ def api_google_drive_import_file(file_id):
                     for item in expanded_items:
                         cursor.execute("""
                             INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                            VALUES (?, ?, ?)
+                            VALUES (?, %s, %s)
                         """, (order_inbox_id, item['sku'], item['quantity']))
                     
                     orders_imported += 1
@@ -2072,7 +2071,7 @@ def api_validate_orders():
                         stats['missing_ss_id'] += 1
                         stats['corrections_made'] += 1
                         conn.execute(
-                            "UPDATE orders_inbox SET shipstation_order_id = ? WHERE id = ?",
+                            "UPDATE orders_inbox SET shipstation_order_id = %s WHERE id = %s",
                             (ss_order_id, order_id)
                         )
                     
@@ -2080,7 +2079,7 @@ def api_validate_orders():
                     elif order['shipstation_order_id'] != ss_order_id:
                         stats['corrections_made'] += 1
                         conn.execute(
-                            "UPDATE orders_inbox SET shipstation_order_id = ? WHERE id = ?",
+                            "UPDATE orders_inbox SET shipstation_order_id = %s WHERE id = %s",
                             (ss_order_id, order_id)
                         )
                     
@@ -2098,7 +2097,7 @@ def api_validate_orders():
                         stats['wrong_status'] += 1
                         stats['corrections_made'] += 1
                         conn.execute(
-                            "UPDATE orders_inbox SET status = ? WHERE id = ?",
+                            "UPDATE orders_inbox SET status = %s WHERE id = %s",
                             (expected_status, order_id)
                         )
                     
@@ -2136,10 +2135,10 @@ def api_validate_orders():
                     if updates:
                         stats['missing_addresses'] += 1
                         stats['corrections_made'] += 1
-                        set_clause = ', '.join([f"{field} = ?" for field in updates.keys()])
+                        set_clause = ', '.join([f"{field} = %s" for field in updates.keys()])
                         values = list(updates.values()) + [order_id]
                         conn.execute(
-                            f"UPDATE orders_inbox SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                            f"UPDATE orders_inbox SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
                             values
                         )
                     
@@ -2173,12 +2172,12 @@ def api_validate_orders():
                         stats['corrections_made'] += 1
                         conn.execute(
                             """UPDATE orders_inbox 
-                               SET shipping_carrier_code = ?, 
-                                   shipping_carrier_id = ?, 
-                                   shipping_service_code = ?,
-                                   shipping_service_name = ?,
+                               SET shipping_carrier_code = %s, 
+                                   shipping_carrier_id = %s, 
+                                   shipping_service_code = %s,
+                                   shipping_service_name = %s,
                                    updated_at = CURRENT_TIMESTAMP 
-                               WHERE id = ?""",
+                               WHERE id = %s""",
                             (carrier_code, carrier_id, service_code, service_name, order_id)
                         )
                 
@@ -2294,7 +2293,7 @@ def api_upload_orders_to_shipstation():
             cursor.execute("""
                 SELECT sku, quantity, unit_price_cents
                 FROM order_items_inbox
-                WHERE order_inbox_id = ?
+                WHERE order_inbox_id = %s
             """, (order_id,))
             items = cursor.fetchall()
             
@@ -2407,16 +2406,16 @@ def api_upload_orders_to_shipstation():
                 # Store in shipstation_order_line_items table (skip if already exists)
                 cursor.execute("""
                     INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                    VALUES (?, ?, ?)
+                    VALUES (?, %s, %s)
                 """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                 
                 # Mark order as awaiting_shipment and store ShipStation ID
                 cursor.execute("""
                     UPDATE orders_inbox
                     SET status = 'awaiting_shipment',
-                        shipstation_order_id = ?,
+                        shipstation_order_id = %s,
                         updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
+                    WHERE id = %s
                 """, (shipstation_id, order_sku_info['order_inbox_id']))
             else:
                 # New order - needs to be uploaded
@@ -2454,7 +2453,7 @@ def api_upload_orders_to_shipstation():
                 # Re-check if order has shipped
                 cursor.execute("""
                     SELECT 1 FROM shipped_orders 
-                    WHERE order_number = ?
+                    WHERE order_number = %s
                 """, (order_num,))
                 
                 if cursor.fetchone() is None:
@@ -2468,7 +2467,7 @@ def api_upload_orders_to_shipstation():
                         UPDATE orders_inbox
                         SET status = 'awaiting_shipment',
                             updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
+                        WHERE id = %s
                     """, (sku_info['order_inbox_id'],))
             
             # Upload only orders that passed the re-check
@@ -2505,14 +2504,14 @@ def api_upload_orders_to_shipstation():
                     # Store ShipStation order ID in shipstation_order_line_items table (skip if already exists)
                     cursor.execute("""
                         INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                        VALUES (?, ?, ?)
+                        VALUES (?, %s, %s)
                     """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
                     
                     # Also update orders_inbox.shipstation_order_id for the first SKU uploaded
                     cursor.execute("""
                         UPDATE orders_inbox
-                        SET shipstation_order_id = ?
-                        WHERE id = ? AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
+                        SET shipstation_order_id = %s
+                        WHERE id = %s AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
                     """, (shipstation_id, order_sku_info['order_inbox_id']))
                     
                     uploaded_count += 1
@@ -2529,9 +2528,9 @@ def api_upload_orders_to_shipstation():
                     cursor.execute("""
                         UPDATE orders_inbox 
                         SET status = 'failed',
-                            failure_reason = ?,
+                            failure_reason = %s,
                             updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
+                        WHERE id = %s
                     """, (error_details, order_sku_info['order_inbox_id']))
         
         # Update all successfully uploaded orders to 'awaiting_shipment' status
@@ -2610,7 +2609,7 @@ def api_get_bundle_components(bundle_id):
         query = """
             SELECT component_sku, multiplier, sequence
             FROM bundle_components
-            WHERE bundle_sku_id = ?
+            WHERE bundle_sku_id = %s
             ORDER BY sequence
         """
         results = execute_query(query, (bundle_id,))
@@ -2662,7 +2661,7 @@ def api_create_bundle():
         # Insert bundle
         cursor.execute("""
             INSERT INTO bundle_skus (bundle_sku, description, active)
-            VALUES (?, ?, ?)
+            VALUES (?, %s, %s)
         """, (bundle_sku, description, active))
         
         bundle_id = cursor.lastrowid
@@ -2671,7 +2670,7 @@ def api_create_bundle():
         for comp in components:
             cursor.execute("""
                 INSERT INTO bundle_components (bundle_sku_id, component_sku, multiplier, sequence)
-                VALUES (?, ?, ?, ?)
+                VALUES (?, %s, %s, %s)
             """, (bundle_id, comp['component_sku'], comp['multiplier'], comp['sequence']))
         
         conn.commit()
@@ -2717,18 +2716,18 @@ def api_update_bundle(bundle_id):
         # Update bundle
         cursor.execute("""
             UPDATE bundle_skus 
-            SET bundle_sku = ?, description = ?, active = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
+            SET bundle_sku = %s, description = %s, active = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
         """, (bundle_sku, description, active, bundle_id))
         
         # Delete existing components
-        cursor.execute("DELETE FROM bundle_components WHERE bundle_sku_id = ?", (bundle_id,))
+        cursor.execute("DELETE FROM bundle_components WHERE bundle_sku_id = %s", (bundle_id,))
         
         # Insert new components
         for comp in components:
             cursor.execute("""
                 INSERT INTO bundle_components (bundle_sku_id, component_sku, multiplier, sequence)
-                VALUES (?, ?, ?, ?)
+                VALUES (?, %s, %s, %s)
             """, (bundle_id, comp['component_sku'], comp['multiplier'], comp['sequence']))
         
         conn.commit()
@@ -2752,7 +2751,7 @@ def api_delete_bundle(bundle_id):
         cursor = conn.cursor()
         
         # Delete bundle (components will cascade delete due to FK)
-        cursor.execute("DELETE FROM bundle_skus WHERE id = ?", (bundle_id,))
+        cursor.execute("DELETE FROM bundle_skus WHERE id = %s", (bundle_id,))
         
         conn.commit()
         conn.close()
@@ -2825,7 +2824,7 @@ def api_create_sku_lot():
         # Insert new SKU-Lot
         cursor.execute("""
             INSERT INTO sku_lot (sku, lot, active)
-            VALUES (?, ?, ?)
+            VALUES (?, %s, %s)
         """, (data['sku'], data['lot'], data.get('active', 1)))
         
         sku_lot_id = cursor.lastrowid
@@ -2867,8 +2866,8 @@ def api_update_sku_lot(sku_lot_id):
         # Update SKU-Lot
         cursor.execute("""
             UPDATE sku_lot 
-            SET sku = ?, lot = ?, active = ?, updated_at = datetime('now')
-            WHERE id = ?
+            SET sku = %s, lot = %s, active = %s, updated_at = datetime('now')
+            WHERE id = %s
         """, (data['sku'], data['lot'], data.get('active', 1), sku_lot_id))
         
         conn.commit()
@@ -2896,7 +2895,7 @@ def api_delete_sku_lot(sku_lot_id):
         conn = get_connection()
         cursor = conn.cursor()
         
-        cursor.execute("DELETE FROM sku_lot WHERE id = ?", (sku_lot_id,))
+        cursor.execute("DELETE FROM sku_lot WHERE id = %s", (sku_lot_id,))
         
         conn.commit()
         conn.close()
@@ -2998,7 +2997,7 @@ def api_refresh_units_to_ship():
         
         cursor.execute("""
             UPDATE shipstation_metrics
-            SET metric_value = ?,
+            SET metric_value = %s,
                 last_updated = CURRENT_TIMESTAMP
             WHERE metric_name = 'units_to_ship'
         """, (total_units,))
@@ -3133,7 +3132,7 @@ def api_resolve_violation(violation_id):
             UPDATE shipping_violations
             SET is_resolved = 1,
                 resolved_at = CURRENT_TIMESTAMP
-            WHERE id = ?
+            WHERE id = %s
         """, (violation_id,))
         
         if cursor.rowcount == 0:
@@ -3307,7 +3306,7 @@ def api_create_lot_inventory():
         
         cursor.execute("""
             INSERT INTO lot_inventory (sku, lot, initial_qty, manual_adjustment, received_date, status, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, %s, %s, %s, %s, %s, %s)
         """, (sku, lot, int(initial_qty), int(manual_adjustment), received_date, status, notes))
         
         lot_id = cursor.lastrowid
@@ -3346,13 +3345,13 @@ def api_update_lot_inventory(lot_id):
         
         cursor.execute("""
             UPDATE lot_inventory
-            SET initial_qty = ?,
-                manual_adjustment = ?,
-                received_date = ?,
-                status = ?,
-                notes = ?,
+            SET initial_qty = %s,
+                manual_adjustment = %s,
+                received_date = %s,
+                status = %s,
+                notes = %s,
                 updated_at = datetime('now')
-            WHERE id = ?
+            WHERE id = %s
         """, (int(initial_qty), int(manual_adjustment), received_date, status, notes, lot_id))
         
         if cursor.rowcount == 0:
@@ -3382,7 +3381,7 @@ def api_delete_lot_inventory(lot_id):
         conn = get_connection()
         cursor = conn.cursor()
         
-        cursor.execute("DELETE FROM lot_inventory WHERE id = ?", (lot_id,))
+        cursor.execute("DELETE FROM lot_inventory WHERE id = %s", (lot_id,))
         
         if cursor.rowcount == 0:
             conn.close()
@@ -3599,7 +3598,7 @@ def api_order_comparison():
             SELECT oi.order_number, oii.sku, SUM(oii.quantity) as total_qty
             FROM order_items_inbox oii
             JOIN orders_inbox oi ON oii.order_inbox_id = oi.id
-            WHERE DATE(oi.order_date) BETWEEN ? AND ?
+            WHERE DATE(oi.order_date) BETWEEN %s AND %s
             GROUP BY oi.order_number, oii.sku
             ORDER BY oi.order_number, oii.sku
         """, (start_date, end_date))
@@ -3757,7 +3756,7 @@ def update_workflow_control(workflow_name):
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT workflow_name FROM workflow_controls WHERE workflow_name = ?
+            SELECT workflow_name FROM workflow_controls WHERE workflow_name = %s
         """, (workflow_name,))
         
         if not cursor.fetchone():
@@ -3766,8 +3765,8 @@ def update_workflow_control(workflow_name):
         
         cursor.execute("""
             UPDATE workflow_controls
-            SET enabled = ?, last_updated = CURRENT_TIMESTAMP, updated_by = ?
-            WHERE workflow_name = ?
+            SET enabled = %s, last_updated = CURRENT_TIMESTAMP, updated_by = %s
+            WHERE workflow_name = %s
         """, (enabled, 'admin', workflow_name))
         conn.commit()
         conn.close()

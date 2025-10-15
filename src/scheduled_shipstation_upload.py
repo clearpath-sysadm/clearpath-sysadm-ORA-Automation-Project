@@ -82,15 +82,18 @@ def upload_pending_orders():
         
         # STEP 1: ATOMICALLY CLAIM PENDING ORDERS WITH RUN IDENTIFIER
         
-        # Use BEGIN IMMEDIATE to get exclusive lock immediately
-        cursor.execute("BEGIN IMMEDIATE")
+        # PostgreSQL: Use SELECT FOR UPDATE SKIP LOCKED to prevent race conditions
+        # - FOR UPDATE locks the selected rows
+        # - SKIP LOCKED makes concurrent queries skip already-locked rows
+        # This ensures only one process can claim each pending order
         
-        # Fetch pending order IDs that need upload
+        # Fetch pending order IDs that need upload (with row-level locking)
         cursor.execute("""
             SELECT id
             FROM orders_inbox
             WHERE status = 'pending'
               AND order_number NOT IN (SELECT order_number FROM shipped_orders)
+            FOR UPDATE SKIP LOCKED
         """)
         
         pending_ids = [row[0] for row in cursor.fetchall()]
@@ -165,7 +168,7 @@ def upload_pending_orders():
             cursor.execute("""
                 SELECT sku, quantity, unit_price_cents
                 FROM order_items_inbox
-                WHERE order_inbox_id = ?
+                WHERE order_inbox_id = %s
             """, (order_id,))
             items = cursor.fetchall()
             
@@ -305,7 +308,7 @@ def upload_pending_orders():
                 SET status = 'pending',
                     failure_reason = 'API duplicate check failed - will retry next cycle',
                     updated_at = CURRENT_TIMESTAMP
-                WHERE failure_reason = ?
+                WHERE failure_reason = %s
             """, (run_id,))
             
             reverted = cursor.rowcount
@@ -377,18 +380,19 @@ def upload_pending_orders():
                     all_skus = order_sku_info['sku'].split('|')
                     for sku in all_skus:
                         cursor.execute("""
-                            INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                            VALUES (?, ?, ?)
+                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (order_inbox_id, sku) DO NOTHING
                         """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                     
                     # Update from 'processing' to 'awaiting_shipment' (clear run_id)
                     cursor.execute("""
                         UPDATE orders_inbox
                         SET status = 'awaiting_shipment',
-                            shipstation_order_id = ?,
+                            shipstation_order_id = %s,
                             failure_reason = NULL,
                             updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
+                        WHERE id = %s
                     """, (shipstation_id, order_sku_info['order_inbox_id']))
                 else:
                     # DIFFERENT SKUs - allow upload (rare edge case: same order, different products)
@@ -436,14 +440,15 @@ def upload_pending_orders():
                     all_skus = order_sku_info['sku'].split('|')
                     for sku in all_skus:
                         cursor.execute("""
-                            INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                            VALUES (?, ?, ?)
+                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (order_inbox_id, sku) DO NOTHING
                         """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                     
                     cursor.execute("""
                         UPDATE orders_inbox
-                        SET shipstation_order_id = ?
-                        WHERE id = ? AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
+                        SET shipstation_order_id = %s
+                        WHERE id = %s AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
                     """, (shipstation_id, order_sku_info['order_inbox_id']))
                     
                     uploaded_count += 1
@@ -456,9 +461,9 @@ def upload_pending_orders():
                     cursor.execute("""
                         UPDATE orders_inbox 
                         SET status = 'pending',
-                            failure_reason = ?,
+                            failure_reason = %s,
                             updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
+                        WHERE id = %s
                     """, (error_details, order_sku_info['order_inbox_id']))
         
         # Update successfully uploaded orders from THIS RUN ONLY (clear run_id from failure_reason)
@@ -468,7 +473,7 @@ def upload_pending_orders():
                 failure_reason = NULL,
                 updated_at = CURRENT_TIMESTAMP
             WHERE status = 'processing'
-              AND failure_reason = ?
+              AND failure_reason = %s
               AND id IN (
                 SELECT DISTINCT order_inbox_id 
                 FROM shipstation_order_line_items
@@ -516,7 +521,7 @@ def upload_pending_orders():
                     failure_reason = NULL,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE status = 'processing'
-                  AND failure_reason = ?
+                  AND failure_reason = %s
             """, (run_id,))
             reverted = cursor.rowcount
             conn.commit()

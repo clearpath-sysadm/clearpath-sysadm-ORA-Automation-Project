@@ -6,7 +6,6 @@ Automatically refreshes units_to_ship metric every 5 minutes
 import os
 import sys
 import time
-import sqlite3
 import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
@@ -14,6 +13,8 @@ from datetime import datetime
 # Add project root to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
+
+from src.services.database.pg_utils import get_connection
 
 def refresh_units_to_ship():
     """Fetch units from ShipStation and update database"""
@@ -50,13 +51,15 @@ def refresh_units_to_ship():
                     total_units += item.get('quantity', 0)
             
             # Update database
-            conn = sqlite3.connect('ora.db')
+            conn = get_connection()
             cursor = conn.cursor()
             
             cursor.execute("""
-                INSERT OR REPLACE INTO shipstation_metrics (metric_name, metric_value, last_updated)
-                VALUES ('units_to_ship', ?, datetime('now'))
-            """, (total_units,))
+                INSERT INTO shipstation_metrics (metric_name, metric_value, last_updated)
+                VALUES (%s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (metric_name) 
+                DO UPDATE SET metric_value = EXCLUDED.metric_value, last_updated = CURRENT_TIMESTAMP
+            """, ('units_to_ship', total_units))
             
             conn.commit()
             conn.close()

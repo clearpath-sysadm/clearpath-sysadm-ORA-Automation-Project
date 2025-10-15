@@ -6,7 +6,7 @@ Auto-refreshes ShipStation metrics cache to prevent stale data
 import requests
 from requests.auth import HTTPBasicAuth
 from src.services.shipstation.api_client import get_shipstation_credentials
-from src.services.database.db_utils import get_connection
+from src.services.database.pg_utils import get_connection
 from config.settings import settings
 
 
@@ -55,7 +55,7 @@ def refresh_shipstation_metrics():
     
     cursor.execute("""
         UPDATE shipstation_metrics
-        SET metric_value = ?,
+        SET metric_value = %s,
             last_updated = CURRENT_TIMESTAMP
         WHERE metric_name = 'units_to_ship'
     """, (total_units,))

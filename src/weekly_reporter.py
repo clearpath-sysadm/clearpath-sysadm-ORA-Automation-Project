@@ -10,7 +10,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import database utilities
-from src.services.database.db_utils import execute_query, upsert, transaction, is_workflow_enabled, update_workflow_last_run
+from src.services.database.pg_utils import execute_query, upsert, transaction, is_workflow_enabled, update_workflow_last_run
 
 # Import inventory and average calculations from their modules
 from src.services.reporting_logic.inventory_calculations import calculate_current_inventory
@@ -213,7 +213,7 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
                 conn.execute("""
                     INSERT INTO inventory_current 
                         (sku, product_name, current_quantity, weekly_avg_cents, alert_level, last_updated)
-                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    VALUES (?, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                     ON CONFLICT(sku) DO UPDATE SET
                         product_name = excluded.product_name,
                         current_quantity = excluded.current_quantity,
@@ -228,7 +228,7 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
             conn.execute("""
                 UPDATE workflows 
                 SET status = 'completed',
-                    records_processed = ?,
+                    records_processed = %s,
                     duration_seconds = CAST((julianday('now') - julianday(last_run_at)) * 86400 AS INTEGER)
                 WHERE name = 'weekly_reporter'
             """, (records_processed,))
@@ -243,7 +243,7 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
                 conn.execute("""
                     UPDATE workflows 
                     SET status = 'failed',
-                        details = ?
+                        details = %s
                     WHERE name = 'weekly_reporter'
                 """, (str(e),))
         except:

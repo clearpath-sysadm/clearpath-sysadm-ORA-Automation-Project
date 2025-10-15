@@ -29,7 +29,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from src.services.database.db_utils import execute_query, transaction
+from src.services.database.pg_utils import execute_query, transaction
 from utils.logging_config import setup_logging
 
 # Logging setup
@@ -202,7 +202,7 @@ def clear_resolved_violations(order_inbox_id: int):
                 UPDATE shipping_violations
                 SET is_resolved = 1,
                     resolved_at = CURRENT_TIMESTAMP
-                WHERE order_id = ?
+                WHERE order_id = %s
                   AND is_resolved = 0
             """, (order_inbox_id,))
     except Exception as e:
@@ -232,7 +232,7 @@ def create_or_update_violation(violation: Dict[str, Any]):
             # Check if violation already exists
             existing = conn.execute("""
                 SELECT id, is_resolved FROM shipping_violations
-                WHERE order_id = ? AND violation_type = ?
+                WHERE order_id = %s AND violation_type = %s
                 ORDER BY detected_at DESC
                 LIMIT 1
             """, (violation['order_inbox_id'], db_violation_type)).fetchone()
@@ -243,9 +243,9 @@ def create_or_update_violation(violation: Dict[str, Any]):
                     # Update existing unresolved violation
                     conn.execute("""
                         UPDATE shipping_violations
-                        SET expected_value = ?,
-                            actual_value = ?
-                        WHERE id = ?
+                        SET expected_value = %s,
+                            actual_value = %s
+                        WHERE id = %s
                     """, (expected_str, actual_str, violation_id))
                     logger.info(f"Updated existing violation for order {violation['order_number']}")
                 else:
@@ -254,9 +254,9 @@ def create_or_update_violation(violation: Dict[str, Any]):
                         UPDATE shipping_violations
                         SET is_resolved = 0,
                             resolved_at = NULL,
-                            expected_value = ?,
-                            actual_value = ?
-                        WHERE id = ?
+                            expected_value = %s,
+                            actual_value = %s
+                        WHERE id = %s
                     """, (expected_str, actual_str, violation_id))
                     logger.info(f"Re-opened resolved violation for order {violation['order_number']}")
             else:
@@ -266,7 +266,7 @@ def create_or_update_violation(violation: Dict[str, Any]):
                         order_id, order_number, violation_type,
                         expected_value, actual_value, is_resolved
                     )
-                    VALUES (?, ?, ?, ?, ?, 0)
+                    VALUES (?, %s, %s, %s, %s, 0)
                 """, (
                     violation['order_inbox_id'], violation['order_number'], db_violation_type,
                     expected_str, actual_str
@@ -326,7 +326,7 @@ def detect_duplicate_order_sku() -> Dict[str, Any]:
                             UPDATE shipping_violations
                             SET is_resolved = 1,
                                 resolved_at = CURRENT_TIMESTAMP
-                            WHERE order_id = ?
+                            WHERE order_id = %s
                               AND violation_type = 'duplicate_order_sku'
                               AND is_resolved = 0
                         """, (order_id,))
@@ -388,7 +388,7 @@ def detect_duplicate_order_sku() -> Dict[str, Any]:
                         UPDATE shipping_violations
                         SET is_resolved = 1,
                             resolved_at = CURRENT_TIMESTAMP
-                        WHERE order_id = ?
+                        WHERE order_id = %s
                           AND violation_type = 'duplicate_order_sku'
                           AND is_resolved = 0
                     """, (order_id,))

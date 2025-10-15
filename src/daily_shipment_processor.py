@@ -27,7 +27,7 @@ from src.services.data_processing.shipment_processor import (
     aggregate_weekly_shipped_history # Re-added for weekly aggregation
 )
 # Import database utilities for SQLite operations
-from src.services.database.db_utils import execute_query, transaction
+from src.services.database.pg_utils import execute_query, transaction
 from src.services.shipstation.api_client import (
     get_shipstation_credentials,
     fetch_shipstation_shipments
@@ -261,7 +261,7 @@ def save_shipped_orders_to_db(orders_df):
             
             conn.execute("""
                 INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
-                VALUES (?, ?, ?)
+                VALUES (?, %s, %s)
                 ON CONFLICT(order_number) DO UPDATE SET
                     ship_date = excluded.ship_date,
                     shipstation_order_id = excluded.shipstation_order_id
@@ -306,7 +306,7 @@ def save_shipped_items_to_db(items_df):
             conn.execute("""
                 INSERT INTO shipped_items (
                     ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number
-                ) VALUES (?, ?, ?, ?, ?, ?)
+                ) VALUES (?, %s, %s, %s, %s, %s)
                 ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
                     ship_date = excluded.ship_date,
                     quantity_shipped = excluded.quantity_shipped,
@@ -349,7 +349,7 @@ def save_weekly_history_to_db(history_df):
                     conn.execute("""
                         INSERT INTO weekly_shipped_history (
                             start_date, end_date, sku, quantity_shipped
-                        ) VALUES (?, ?, ?, ?)
+                        ) VALUES (?, %s, %s, %s)
                         ON CONFLICT(start_date, end_date, sku) DO UPDATE SET
                             quantity_shipped = excluded.quantity_shipped
                     """, (str(start_date), str(end_date), sku, quantity))
@@ -510,7 +510,7 @@ def run_daily_shipment_pull(request=None):
             conn.execute("""
                 UPDATE workflows 
                 SET status = 'completed',
-                    records_processed = ?,
+                    records_processed = %s,
                     duration_seconds = CAST(? AS INTEGER)
                 WHERE name = 'daily_shipment_processor'
             """, (total_records, duration))
@@ -528,7 +528,7 @@ def run_daily_shipment_pull(request=None):
                 conn.execute("""
                     UPDATE workflows 
                     SET status = 'failed',
-                        error_message = ?
+                        error_message = %s
                     WHERE name = 'daily_shipment_processor'
                 """, (str(e)[:500],))
         except Exception as workflow_err:

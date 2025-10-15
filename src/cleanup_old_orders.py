@@ -18,7 +18,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from utils.logging_config import setup_logging
-from src.services.database.db_utils import execute_query, transaction
+from src.services.database.pg_utils import execute_query, transaction
 
 log_dir = os.path.join(project_root, 'logs')
 os.makedirs(log_dir, exist_ok=True)
@@ -44,7 +44,7 @@ def cleanup_old_orders(days=60):
         with transaction() as conn:
             cursor = conn.execute("""
                 SELECT COUNT(*) FROM orders_inbox
-                WHERE DATE(order_date) < ?
+                WHERE DATE(order_date) < %s
             """, (cutoff_date,))
             orders_to_delete = cursor.fetchone()[0]
             
@@ -62,7 +62,7 @@ def cleanup_old_orders(days=60):
                 DELETE FROM order_items_inbox
                 WHERE order_inbox_id IN (
                     SELECT id FROM orders_inbox
-                    WHERE DATE(order_date) < ?
+                    WHERE DATE(order_date) < %s
                 )
             """, (cutoff_date,))
             items_deleted = cursor.rowcount
@@ -72,7 +72,7 @@ def cleanup_old_orders(days=60):
                 DELETE FROM shipstation_order_line_items
                 WHERE order_inbox_id IN (
                     SELECT id FROM orders_inbox
-                    WHERE DATE(order_date) < ?
+                    WHERE DATE(order_date) < %s
                 )
             """, (cutoff_date,))
             line_items_deleted = cursor.rowcount
@@ -80,7 +80,7 @@ def cleanup_old_orders(days=60):
             
             cursor = conn.execute("""
                 DELETE FROM orders_inbox
-                WHERE DATE(order_date) < ?
+                WHERE DATE(order_date) < %s
             """, (cutoff_date,))
             orders_deleted = cursor.rowcount
             logger.info(f"Deleted {orders_deleted} orders from inbox")
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         rows = execute_query("""
             SELECT order_number, order_date, status
             FROM orders_inbox
-            WHERE DATE(order_date) < ?
+            WHERE DATE(order_date) < %s
             ORDER BY order_date
             LIMIT 10
         """, (cutoff_date,))
@@ -134,7 +134,7 @@ if __name__ == '__main__':
         
         count_rows = execute_query("""
             SELECT COUNT(*) FROM orders_inbox
-            WHERE DATE(order_date) < ?
+            WHERE DATE(order_date) < %s
         """, (cutoff_date,))
         
         total = count_rows[0][0] if count_rows else 0

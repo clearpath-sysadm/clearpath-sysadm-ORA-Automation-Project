@@ -26,7 +26,7 @@ if project_root not in sys.path:
 
 from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
-from src.services.database.db_utils import execute_query, transaction, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+from src.services.database.pg_utils import execute_query, transaction, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from utils.api_utils import make_api_request
 
@@ -200,13 +200,13 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             conn.execute("""
                 UPDATE orders_inbox
                 SET status = 'shipped',
-                    shipping_carrier_code = ?,
-                    shipping_carrier_id = ?,
-                    shipping_service_code = ?,
-                    shipping_service_name = ?,
-                    tracking_number = ?,
+                    shipping_carrier_code = %s,
+                    shipping_carrier_id = %s,
+                    shipping_service_code = %s,
+                    shipping_service_name = %s,
+                    tracking_number = %s,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
+                WHERE id = %s
             """, (carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
             
             logger.info(f"✅ Updated order {order_number} status to 'shipped'")
@@ -216,13 +216,13 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             conn.execute("""
                 UPDATE orders_inbox
                 SET status = 'cancelled',
-                    shipping_carrier_code = ?,
-                    shipping_carrier_id = ?,
-                    shipping_service_code = ?,
-                    shipping_service_name = ?,
-                    tracking_number = ?,
+                    shipping_carrier_code = %s,
+                    shipping_carrier_id = %s,
+                    shipping_service_code = %s,
+                    shipping_service_name = %s,
+                    tracking_number = %s,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
+                WHERE id = %s
             """, (carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
             
             logger.info(f"✅ Marked order {order_number} as cancelled")
@@ -232,13 +232,13 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             conn.execute("""
                 UPDATE orders_inbox
                 SET status = 'awaiting_shipment',
-                    shipping_carrier_code = ?,
-                    shipping_carrier_id = ?,
-                    shipping_service_code = ?,
-                    shipping_service_name = ?,
-                    tracking_number = ?,
+                    shipping_carrier_code = %s,
+                    shipping_carrier_id = %s,
+                    shipping_service_code = %s,
+                    shipping_service_name = %s,
+                    tracking_number = %s,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
+                WHERE id = %s
             """, (carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
             
             logger.debug(f"Order {order_number} still awaiting shipment")
@@ -247,14 +247,14 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             # Order is on hold or awaiting payment (also capture carrier info)
             conn.execute("""
                 UPDATE orders_inbox
-                SET status = ?,
-                    shipping_carrier_code = ?,
-                    shipping_carrier_id = ?,
-                    shipping_service_code = ?,
-                    shipping_service_name = ?,
-                    tracking_number = ?,
+                SET status = %s,
+                    shipping_carrier_code = %s,
+                    shipping_carrier_id = %s,
+                    shipping_service_code = %s,
+                    shipping_service_name = %s,
+                    tracking_number = %s,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
+                WHERE id = %s
             """, (ss_status, carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
             
             logger.info(f"✅ Updated order {order_number} to status '{ss_status}'")
@@ -320,21 +320,21 @@ def sync_order_from_shipstation(shipstation_order: Dict[str, Any], conn=None) ->
         
         # Check if order exists
         existing = conn.execute("""
-            SELECT id FROM orders_inbox WHERE order_number = ?
+            SELECT id FROM orders_inbox WHERE order_number = %s
         """, (order_number,)).fetchone()
         
         if existing:
             # Update existing order with current ShipStation data
             conn.execute("""
                 UPDATE orders_inbox
-                SET status = ?,
-                    shipstation_order_id = ?,
-                    shipping_carrier_code = ?,
-                    shipping_carrier_id = ?,
-                    shipping_service_code = ?,
-                    shipping_service_name = ?,
+                SET status = %s,
+                    shipstation_order_id = %s,
+                    shipping_carrier_code = %s,
+                    shipping_carrier_id = %s,
+                    shipping_service_code = %s,
+                    shipping_service_name = %s,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE order_number = ?
+                WHERE order_number = %s
             """, (order_status, str(order_id), carrier_code, carrier_id, 
                   service_code, service_name, order_number))
         
@@ -370,13 +370,13 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
         conn.executemany("""
             UPDATE orders_inbox
             SET status = 'shipped',
-                shipping_carrier_code = ?,
-                shipping_carrier_id = ?,
-                shipping_service_code = ?,
-                shipping_service_name = ?,
-                tracking_number = ?,
+                shipping_carrier_code = %s,
+                shipping_carrier_id = %s,
+                shipping_service_code = %s,
+                shipping_service_name = %s,
+                tracking_number = %s,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
+            WHERE id = %s
         """, [(carrier_code, carrier_id, service_code, service_name, tracking_number, order_id) 
               for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets['shipped']])
         counts['shipped'] = len(status_buckets['shipped'])
@@ -387,13 +387,13 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
         conn.executemany("""
             UPDATE orders_inbox
             SET status = 'cancelled',
-                shipping_carrier_code = ?,
-                shipping_carrier_id = ?,
-                shipping_service_code = ?,
-                shipping_service_name = ?,
-                tracking_number = ?,
+                shipping_carrier_code = %s,
+                shipping_carrier_id = %s,
+                shipping_service_code = %s,
+                shipping_service_name = %s,
+                tracking_number = %s,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
+            WHERE id = %s
         """, [(carrier_code, carrier_id, service_code, service_name, tracking_number, order_id)
               for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets['cancelled']])
         counts['cancelled'] = len(status_buckets['cancelled'])
@@ -404,13 +404,13 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
         conn.executemany("""
             UPDATE orders_inbox
             SET status = 'awaiting_shipment',
-                shipping_carrier_code = ?,
-                shipping_carrier_id = ?,
-                shipping_service_code = ?,
-                shipping_service_name = ?,
-                tracking_number = ?,
+                shipping_carrier_code = %s,
+                shipping_carrier_id = %s,
+                shipping_service_code = %s,
+                shipping_service_name = %s,
+                tracking_number = %s,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
+            WHERE id = %s
         """, [(carrier_code, carrier_id, service_code, service_name, tracking_number, order_id)
               for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets['awaiting_shipment']])
         counts['awaiting_shipment'] = len(status_buckets['awaiting_shipment'])
@@ -421,14 +421,14 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
         if status in status_buckets and status_buckets[status]:
             conn.executemany("""
                 UPDATE orders_inbox
-                SET status = ?,
-                    shipping_carrier_code = ?,
-                    shipping_carrier_id = ?,
-                    shipping_service_code = ?,
-                    shipping_service_name = ?,
-                    tracking_number = ?,
+                SET status = %s,
+                    shipping_carrier_code = %s,
+                    shipping_carrier_id = %s,
+                    shipping_service_code = %s,
+                    shipping_service_name = %s,
+                    tracking_number = %s,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
+                WHERE id = %s
             """, [(status, carrier_code, carrier_id, service_code, service_name, tracking_number, order_id)
                   for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets[status]])
             counts[status] = len(status_buckets[status])
