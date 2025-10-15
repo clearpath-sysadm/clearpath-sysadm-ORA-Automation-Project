@@ -35,11 +35,12 @@ from src.services.database.pg_utils import execute_query
 execute_query('''
     UPDATE workflow_controls 
     SET enabled = FALSE 
-    WHERE name IN ('shipstation-upload', 'status-sync', 'unified-shipstation-sync')
+    WHERE workflow_name IN ('shipstation-upload', 'unified-shipstation-sync', 'xml-import')
 ''')
 print('✅ Workflows disabled')
 "
 ```
+**Note:** Disables upload, sync, and XML import to prevent new orders during fix.
 
 ### **Step 3: Test Cancellation - ALL 6 Orders** (1 min)
 ```bash
@@ -91,7 +92,7 @@ from src.services.database.pg_utils import execute_query
 execute_query('''
     UPDATE workflow_controls 
     SET enabled = TRUE 
-    WHERE name IN ('shipstation-upload', 'status-sync', 'unified-shipstation-sync')
+    WHERE workflow_name IN ('shipstation-upload', 'unified-shipstation-sync', 'xml-import')
 ''')
 print('✅ Workflows re-enabled')
 "
