@@ -10,12 +10,12 @@
 
 | Order # | Status | ShipStation ID | Company Name | Action |
 |---------|--------|----------------|--------------|--------|
-| 100521 | awaiting_shipment | 223387873 | LAKEVIEW FAMILY DENTAL | ✅ DELETE via API |
-| 100522 | awaiting_shipment | 223387885 | LAKEVIEW FAMILY DENTAL | ✅ DELETE via API |
-| 100523 | awaiting_shipment | 223387942 | LAKEVIEW FAMILY DENTAL | ✅ DELETE via API |
-| 100524 | awaiting_shipment | 223770760 | LAKEVIEW FAMILY DENTAL | ✅ DELETE via API |
-| 100525 | awaiting_shipment | 223770778 | BRAZOS RIVER DENTAL | ✅ DELETE via API |
-| 100526 | awaiting_shipment | 224435389 | BORDLEE FAMILY & COSMET | ✅ DELETE via API |
+| 100521 | awaiting_shipment | 223387873 | LAKEVIEW FAMILY DENTAL | ✅ CANCEL via API |
+| 100522 | awaiting_shipment | 223387885 | LAKEVIEW FAMILY DENTAL | ✅ CANCEL via API |
+| 100523 | awaiting_shipment | 223387942 | LAKEVIEW FAMILY DENTAL | ✅ CANCEL via API |
+| 100524 | awaiting_shipment | 223770760 | LAKEVIEW FAMILY DENTAL | ✅ CANCEL via API |
+| 100525 | awaiting_shipment | 223770778 | BRAZOS RIVER DENTAL | ✅ CANCEL via API |
+| 100526 | awaiting_shipment | 224435389 | BORDLEE FAMILY & COSMET | ✅ CANCEL via API |
 
 **Good News:** All orders are "Awaiting Shipment" - no manual handling required! ✅
 
@@ -43,18 +43,22 @@ print('✅ Workflows disabled')
 
 ### **Step 3: Test Cancellation - ALL 6 Orders** (1 min)
 ```bash
-python utils/cancel_manual_orders.py \
+# RECOMMENDED: CANCEL (preserves audit trail)
+python utils/cancel_orders_by_status.py \
   --order-ids 223387873,223387885,223387942,223770760,223770778,224435389 \
   --dry-run
 ```
 
 ### **Step 4: Execute Cancellation - ALL 6 Orders** (2 min)
 ```bash
-python utils/cancel_manual_orders.py \
+# RECOMMENDED: CANCEL (sets status to 'cancelled', preserves orders for audit)
+python utils/cancel_orders_by_status.py \
   --order-ids 223387873,223387885,223387942,223770760,223770778,224435389
 ```
 
 **When prompted, type:** `yes`
+
+**Note:** Using CANCEL (not DELETE) to preserve audit trail.
 
 ### **Step 5: Verify Cancellation** (1 min)
 ```bash
@@ -100,7 +104,7 @@ print('✅ Workflows re-enabled')
 - [ ] **Backup created** (`backups/shipstation_backup_*.json`)
 - [ ] **Workflows disabled** 
 - [ ] **Dry-run tested** (6 orders confirmed)
-- [ ] **ALL 6 orders cancelled** (100521-100526 deleted from ShipStation)
+- [ ] **ALL 6 orders cancelled** (100521-100526 status set to 'cancelled' - preserved for audit)
 - [ ] **Local DB updated** (all marked as cancelled)
 - [ ] **New orders created** (100527+ with correct numbers and lot 250070)
 - [ ] **Results verified** (no duplicates)
