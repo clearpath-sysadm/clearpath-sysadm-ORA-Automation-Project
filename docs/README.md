@@ -2,6 +2,11 @@
 
 This directory contains all project documentation, organized by category for easy navigation.
 
+## 📓 Project Journal
+
+For a chronological overview of all major development work and milestones, see:
+- **[`PROJECT_JOURNAL.md`](PROJECT_JOURNAL.md)** - High-level log of all project work with references to detailed documentation
+
 ## 📁 Directory Structure
 
 ### `/planning`

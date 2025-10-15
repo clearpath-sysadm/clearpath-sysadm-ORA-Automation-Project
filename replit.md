@@ -1,5 +1,7 @@
 # ORA Automation Project
 
+> **📓 Project Journal:** For a chronological log of all development work and milestones, see [`/docs/PROJECT_JOURNAL.md`](docs/PROJECT_JOURNAL.md)
+
 ## Overview
 The ORA Automation Project replaces Google Sheets with a PostgreSQL database for managing inventory, shipments, and automation workflows. Its core purpose is to provide a production-ready, zero-data-loss solution that fully deprecates the legacy Google Sheets system, transforming manual processes into automated, database-driven workflows. This project delivers a robust, real-time operational dashboard for Oracare, offering improved visibility and efficiency in business automation.
 
