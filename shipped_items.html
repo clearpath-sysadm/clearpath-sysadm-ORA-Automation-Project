@@ -206,6 +206,9 @@
         </main>
     </div>
 
+    <script src="/static/dark-mode.js"></script>
+
+
     <script>
         let allItems = [];
         let currentSort = { column: 'ship_date', direction: 'desc' };
@@ -230,22 +233,7 @@
             const items = document.getElementById('admin-items');
             toggle.classList.toggle('expanded');
             items.classList.toggle('expanded');
-        }
-
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark);
-            const toggle = document.querySelector('.dark-mode-toggle');
-            toggle.textContent = isDark ? '☀️' : '🌙';
-        }
-
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-            document.querySelector('.dark-mode-toggle').textContent = '☀️';
-        }
-
-        function identifyDuplicates(items) {
+        }        function identifyDuplicates(items) {
             const orderSkuMap = {};
             
             items.forEach(item => {

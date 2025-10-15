@@ -143,6 +143,9 @@
         </main>
     </div>
 
+    <script src="/static/dark-mode.js"></script>
+
+
     <script>
         const WORKFLOW_INFO = {
             'xml-import': {
@@ -297,14 +300,6 @@
         }
 
         // Dark mode toggle
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
-            const btn = document.querySelector('.dark-mode-toggle');
-            btn.textContent = isDark ? '☀️' : '🌙';
-        }
-
         // Initialize dark mode from localStorage
         if (localStorage.getItem('darkMode') === 'enabled') {
             document.body.classList.add('dark-mode');
