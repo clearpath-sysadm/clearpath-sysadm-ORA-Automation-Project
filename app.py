@@ -1023,7 +1023,7 @@ def api_create_inventory_transaction():
         # Insert transaction
         cursor.execute("""
             INSERT INTO inventory_transactions (date, sku, quantity, transaction_type, notes)
-            VALUES (?, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s)
         """, (date, sku, quantity, transaction_type, notes))
         transaction_id = cursor.lastrowid
         
@@ -1057,7 +1057,7 @@ def api_create_inventory_transaction():
             # Insert new record
             cursor.execute("""
                 INSERT INTO inventory_current (sku, product_name, current_quantity, weekly_avg_cents, alert_level, reorder_point)
-                VALUES (?, %s, %s, 0, 'normal', 50)
+                VALUES (%s, %s, %s, 0, 'normal', 50)
             """, (sku, product_name, max(0, delta)))
         
         conn.commit()
@@ -1546,7 +1546,7 @@ def api_xml_import():
                         # Insert order into inbox
                         cursor.execute("""
                             INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
-                            VALUES (?, %s, %s, 'pending', %s, 'X-Cart')
+                            VALUES (%s, %s, %s, 'pending', %s, 'X-Cart')
                         """, (order_number, order_date_str, customer_email, total_quantity))
                         
                         order_inbox_id = cursor.lastrowid
@@ -1555,7 +1555,7 @@ def api_xml_import():
                         for item in filtered_items:
                             cursor.execute("""
                                 INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                                VALUES (?, %s, %s)
+                                VALUES (%s, %s, %s)
                             """, (order_inbox_id, item['sku'], item['quantity']))
                         
                         orders_imported += 1
@@ -1901,7 +1901,7 @@ def api_google_drive_import_file(file_id):
                             ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                             bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                         )
-                        VALUES (?, %s, %s, 'pending', %s, 'X-Cart', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, 'pending', %s, 'X-Cart', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         order_number, order_date_str, customer_email, total_quantity,
                         ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
@@ -1914,7 +1914,7 @@ def api_google_drive_import_file(file_id):
                     for item in expanded_items:
                         cursor.execute("""
                             INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                            VALUES (?, %s, %s)
+                            VALUES (%s, %s, %s)
                         """, (order_inbox_id, item['sku'], item['quantity']))
                     
                     orders_imported += 1
@@ -1947,7 +1947,7 @@ def api_retry_failed_orders():
         
         if order_ids:
             # Reset specific failed orders to pending
-            placeholders = ','.join('?' * len(order_ids))
+            placeholders = ','.join('%s' for _ in order_ids)
             cursor.execute(f"""
                 UPDATE orders_inbox
                 SET status = 'pending',
@@ -2249,7 +2249,7 @@ def api_upload_orders_to_shipstation():
         # Build query for pending orders with address data
         # CRITICAL: Exclude orders that already exist in shipped_orders (already fulfilled)
         if order_ids:
-            placeholders = ','.join('?' * len(order_ids))
+            placeholders = ','.join('%s' for _ in order_ids)
             order_query = f"""
                 SELECT id, order_number, order_date, customer_email, total_amount_cents,
                        ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
@@ -2405,8 +2405,9 @@ def api_upload_orders_to_shipstation():
                 
                 # Store in shipstation_order_line_items table (skip if already exists)
                 cursor.execute("""
-                    INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                    VALUES (?, %s, %s)
+                    INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT DO NOTHING
                 """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
                 
                 # Mark order as awaiting_shipment and store ShipStation ID
@@ -2503,8 +2504,9 @@ def api_upload_orders_to_shipstation():
                     
                     # Store ShipStation order ID in shipstation_order_line_items table (skip if already exists)
                     cursor.execute("""
-                        INSERT OR IGNORE INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                        VALUES (?, %s, %s)
+                        INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                        VALUES (%s, %s, %s)
+                        ON CONFLICT DO NOTHING
                     """, (order_sku_info['order_inbox_id'], order_sku_info['sku'], shipstation_id))
                     
                     # Also update orders_inbox.shipstation_order_id for the first SKU uploaded
@@ -2661,7 +2663,7 @@ def api_create_bundle():
         # Insert bundle
         cursor.execute("""
             INSERT INTO bundle_skus (bundle_sku, description, active)
-            VALUES (?, %s, %s)
+            VALUES (%s, %s, %s)
         """, (bundle_sku, description, active))
         
         bundle_id = cursor.lastrowid
@@ -2670,7 +2672,7 @@ def api_create_bundle():
         for comp in components:
             cursor.execute("""
                 INSERT INTO bundle_components (bundle_sku_id, component_sku, multiplier, sequence)
-                VALUES (?, %s, %s, %s)
+                VALUES (%s, %s, %s, %s)
             """, (bundle_id, comp['component_sku'], comp['multiplier'], comp['sequence']))
         
         conn.commit()
@@ -2727,7 +2729,7 @@ def api_update_bundle(bundle_id):
         for comp in components:
             cursor.execute("""
                 INSERT INTO bundle_components (bundle_sku_id, component_sku, multiplier, sequence)
-                VALUES (?, %s, %s, %s)
+                VALUES (%s, %s, %s, %s)
             """, (bundle_id, comp['component_sku'], comp['multiplier'], comp['sequence']))
         
         conn.commit()
@@ -2824,7 +2826,7 @@ def api_create_sku_lot():
         # Insert new SKU-Lot
         cursor.execute("""
             INSERT INTO sku_lot (sku, lot, active)
-            VALUES (?, %s, %s)
+            VALUES (%s, %s, %s)
         """, (data['sku'], data['lot'], data.get('active', 1)))
         
         sku_lot_id = cursor.lastrowid
@@ -3306,7 +3308,7 @@ def api_create_lot_inventory():
         
         cursor.execute("""
             INSERT INTO lot_inventory (sku, lot, initial_qty, manual_adjustment, received_date, status, notes)
-            VALUES (?, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (sku, lot, int(initial_qty), int(manual_adjustment), received_date, status, notes))
         
         lot_id = cursor.lastrowid
