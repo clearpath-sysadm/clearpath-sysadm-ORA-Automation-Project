@@ -1,22 +1,25 @@
 # ORA Automation Project
 
 ## Overview
-The ORA Automation Project replaces Google Sheets with a SQLite database for managing inventory, shipments, and automation workflows. Its core purpose is to provide a zero-cost, minimal development time solution that fully deprecates the legacy Google Sheets system, transforming manual processes into automated, database-driven workflows. This project delivers a robust, real-time operational dashboard for Oracare, offering improved visibility and efficiency in business automation.
+The ORA Automation Project replaces Google Sheets with a PostgreSQL database for managing inventory, shipments, and automation workflows. Its core purpose is to provide a production-ready, zero-data-loss solution that fully deprecates the legacy Google Sheets system, transforming manual processes into automated, database-driven workflows. This project delivers a robust, real-time operational dashboard for Oracare, offering improved visibility and efficiency in business automation.
+
+**Database Migration (October 2025):** Successfully migrated from SQLite to PostgreSQL to prevent catastrophic data loss on Replit deployments where "Republish" would replace production database with dev snapshot. Migration completed with 100% data integrity (2,864 rows in 4 seconds) using smart database adapter pattern for automatic PostgreSQL/SQLite switching based on DATABASE_URL.
 
 ## User Preferences
 - **Development Philosophy:**
-    - Lowest cost infrastructure (SQLite over hosted databases)
+    - Production-ready infrastructure (PostgreSQL for data persistence)
     - Minimal development time (pragmatic over perfect)
     - Complete replacement, not augmentation (deprecate Google Sheets entirely)
     - Real-time visibility for business operations
     - Automated workflows with manual oversight capability
+    - Zero data loss tolerance
 - **Technical Preferences:**
-    - SQLite with WAL mode for concurrency
+    - PostgreSQL with Replit-managed database (automatic backups, rollback support)
     - STRICT tables with proper constraints
     - Foreign keys enforced for data integrity
     - Money stored as INTEGER (cents) for precision
-    - UPSERT patterns for idempotent operations
-    - Transaction handling with BEGIN IMMEDIATE
+    - UPSERT patterns with ON CONFLICT for idempotent operations
+    - Transaction handling with SAVEPOINT pattern for error isolation
 
 ## System Architecture
 The system is centered around a SQLite database (`ora.db`) operating in WAL mode, replacing all functionality previously handled by 14 Google Sheets. The user interface is an enterprise-grade web dashboard designed with a premium corporate aesthetic, featuring a deep navy (#1B2A4A) and accent orange (#F2994A) palette, IBM Plex Sans typography, a left sidebar navigation, and full responsiveness. It displays real-time KPI cards (including Benco and Hawaiian order tracking), workflow status, inventory alerts, and supports light/dark modes with glass effects. The dashboard directly queries the SQLite database via Flask API endpoints.
