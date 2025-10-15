@@ -404,9 +404,9 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
                             ship_date, sku_lot, base_sku, quantity_shipped, order_number
                         )
                         VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (ship_date, sku_lot, order_number) DO UPDATE
+                        ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
                         SET quantity_shipped = EXCLUDED.quantity_shipped,
-                            base_sku = EXCLUDED.base_sku
+                            ship_date = EXCLUDED.ship_date
                     """, (ship_date, sku_lot, base_sku, quantity, order_number))
             
             logger.info(f"✅ Imported SHIPPED manual order: {order_number} (ship_date: {ship_date})")
