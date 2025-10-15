@@ -47,73 +47,464 @@ The October 2025 database migration from SQLite to PostgreSQL left **9 critical 
 
 ---
 
-## Remediation Steps
+## Exact Code Fixes
 
-### Step 1: Fix Critical Production Workflows (30 minutes)
+### 🔴 Priority 1: Critical Production Workflows
 
-**A. Fix `scheduled_shipstation_upload.py`:**
+#### **File: src/scheduled_shipstation_upload.py**
+
+**Fix 1 - Import Statement (Line 20):**
 ```python
-# Line 20: Change import
+# BEFORE:
+from src.services.database.db_utils import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+
+# AFTER:
 from src.services.database.pg_utils import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
-
-# Lines 168, 308, 381, 391, 440, 445, 446, 461: Change ? to %s
-# Example:
-WHERE order_inbox_id = %s    # was: WHERE order_inbox_id = ?
 ```
 
-**B. Fix `shipstation_status_sync.py`:**
+**Fix 2 - Line 168:**
 ```python
-# Change import from db_utils to pg_utils
-# Replace all ? with %s (15 locations)
+# BEFORE:
+                WHERE order_inbox_id = ?
+
+# AFTER:
+                WHERE order_inbox_id = %s
 ```
 
-**C. Fix `scheduled_cleanup.py`:**
+**Fix 3 - Line 308:**
 ```python
-# Change import from db_utils to pg_utils
+# BEFORE:
+                WHERE failure_reason = ?
+
+# AFTER:
+                WHERE failure_reason = %s
 ```
 
-### Step 2: Fix Supporting Services (20 minutes)
-
-**D. Fix `weekly_reporter.py`:**
+**Fix 4 - Line 381:**
 ```python
-# Change import from db_utils to pg_utils
-# Line 216: VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) → VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+# BEFORE:
+                            VALUES (?, ?, ?)
+
+# AFTER:
+                            VALUES (%s, %s, %s)
 ```
 
-**E. Fix `shipping_validator.py`:**
+**Fix 5 - Line 391:**
 ```python
-# Change import from db_utils to pg_utils
-# Replace all ? with %s (10 locations)
+# BEFORE:
+                        WHERE id = ?
+
+# AFTER:
+                        WHERE id = %s
 ```
 
-**F. Fix `daily_shipment_processor.py`:**
+**Fix 6 - Line 440:**
 ```python
-# Change import from db_utils to pg_utils
-# Replace all ? with %s (5 locations)
+# BEFORE:
+                            VALUES (?, ?, ?)
+
+# AFTER:
+                            VALUES (%s, %s, %s)
 ```
 
-### Step 3: Fix Utility Scripts (15 minutes)
-
-**G. Fix `backfill_shipstation_ids.py`:**
+**Fix 7 - Lines 445-446:**
 ```python
-# Change import from db_utils to pg_utils
-# Replace all ? with %s (4 locations)
+# BEFORE:
+                        SET shipstation_order_id = ?
+                        WHERE id = ? AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
+
+# AFTER:
+                        SET shipstation_order_id = %s
+                        WHERE id = %s AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
 ```
 
-**H. Fix `sku_lot_parser.py`:**
+**Fix 8 - Line 461:**
 ```python
-# Line 186: Replace cursor.lastrowid with RETURNING id
-cursor.execute("""
-    INSERT INTO lots (sku_id, lot_number, status)
-    VALUES (%s, %s, 'active')
-    RETURNING id
-""", (sku_id, lot_number))
-new_lot_id = cursor.fetchone()[0]
+# BEFORE:
+                        WHERE id = ?
+
+# AFTER:
+                        WHERE id = %s
 ```
 
-**I. Fix `metrics_refresher.py`:**
+---
+
+#### **File: src/shipstation_status_sync.py**
+
+**Fix 1 - Import Statement:**
 ```python
-# Change import from db_utils to pg_utils
+# BEFORE:
+from src.services.database.db_utils import execute_query, transaction, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+
+# AFTER:
+from src.services.database.pg_utils import execute_query, transaction, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+```
+
+**Fix 2 - Line 209:**
+```python
+# BEFORE:
+                WHERE id = ?
+
+# AFTER:
+                WHERE id = %s
+```
+
+**Fix 3 - Line 225:**
+```python
+# BEFORE:
+                WHERE id = ?
+
+# AFTER:
+                WHERE id = %s
+```
+
+**Fix 4 - Line 241:**
+```python
+# BEFORE:
+                WHERE id = ?
+
+# AFTER:
+                WHERE id = %s
+```
+
+**Fix 5 - Lines 250-257:**
+```python
+# BEFORE:
+                SET status = ?,
+                    shipstation_order_id = ?,
+                    shipstation_shipment_id = ?,
+                    tracking_number = ?,
+                    carrier_code = ?,
+                    service_code = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+
+# AFTER:
+                SET status = %s,
+                    shipstation_order_id = %s,
+                    shipstation_shipment_id = %s,
+                    tracking_number = %s,
+                    carrier_code = %s,
+                    service_code = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+```
+
+**Fix 6 - Line 323:**
+```python
+# BEFORE:
+            SELECT id FROM orders_inbox WHERE order_number = ?
+
+# AFTER:
+            SELECT id FROM orders_inbox WHERE order_number = %s
+```
+
+**Fix 7 - Lines 330-337:**
+```python
+# BEFORE:
+                SET status = ?,
+                    shipstation_order_id = ?,
+                    shipstation_shipment_id = ?,
+                    tracking_number = ?,
+                    carrier_code = ?,
+                    service_code = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_number = ?
+
+# AFTER:
+                SET status = %s,
+                    shipstation_order_id = %s,
+                    shipstation_shipment_id = %s,
+                    tracking_number = %s,
+                    carrier_code = %s,
+                    service_code = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_number = %s
+```
+
+**Fix 8 - Lines 379, 396, 413:**
+```python
+# BEFORE (Line 379):
+            WHERE id = ?
+
+# BEFORE (Line 396):
+            WHERE id = ?
+
+# BEFORE (Line 413):
+            WHERE id = ?
+
+# AFTER (All three):
+            WHERE id = %s
+```
+
+**Fix 9 - Lines 424-431:**
+```python
+# BEFORE:
+                SET status = ?,
+                    shipstation_order_id = ?,
+                    shipstation_shipment_id = ?,
+                    tracking_number = ?,
+                    carrier_code = ?,
+                    service_code = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+
+# AFTER:
+                SET status = %s,
+                    shipstation_order_id = %s,
+                    shipstation_shipment_id = %s,
+                    tracking_number = %s,
+                    carrier_code = %s,
+                    service_code = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+```
+
+---
+
+#### **File: src/scheduled_cleanup.py**
+
+**Fix - Import Statement (Line 19):**
+```python
+# BEFORE:
+from src.services.database.db_utils import is_workflow_enabled, update_workflow_last_run
+
+# AFTER:
+from src.services.database.pg_utils import is_workflow_enabled, update_workflow_last_run
+```
+
+---
+
+### 🟡 Priority 2: Supporting Services
+
+#### **File: src/weekly_reporter.py**
+
+**Fix 1 - Import Statement (Line 13):**
+```python
+# BEFORE:
+from src.services.database.db_utils import execute_query, upsert, transaction, is_workflow_enabled, update_workflow_last_run
+
+# AFTER:
+from src.services.database.pg_utils import execute_query, upsert, transaction, is_workflow_enabled, update_workflow_last_run
+```
+
+**Fix 2 - Line 216:**
+```python
+# BEFORE:
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+
+# AFTER:
+                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+```
+
+---
+
+#### **File: src/services/shipping_validator.py**
+
+**Fix 1 - Import Statement (Line 32):**
+```python
+# BEFORE:
+from src.services.database.db_utils import execute_query, transaction
+
+# AFTER:
+from src.services.database.pg_utils import execute_query, transaction
+```
+
+**Fix 2 - Line 205:**
+```python
+# BEFORE:
+                WHERE order_id = ?
+
+# AFTER:
+                WHERE order_id = %s
+```
+
+**Fix 3 - Line 235:**
+```python
+# BEFORE:
+                WHERE order_id = ? AND violation_type = ?
+
+# AFTER:
+                WHERE order_id = %s AND violation_type = %s
+```
+
+**Fix 4 - Lines 246-248:**
+```python
+# BEFORE:
+                        SET expected_value = ?,
+                            actual_value = ?
+                        WHERE id = ?
+
+# AFTER:
+                        SET expected_value = %s,
+                            actual_value = %s
+                        WHERE id = %s
+```
+
+**Fix 5 - Line 259:**
+```python
+# BEFORE:
+                        WHERE id = ?
+
+# AFTER:
+                        WHERE id = %s
+```
+
+**Fix 6 - Line 269:**
+```python
+# BEFORE:
+                    VALUES (?, ?, ?, ?, ?, 0)
+
+# AFTER:
+                    VALUES (%s, %s, %s, %s, %s, 0)
+```
+
+**Fix 7 - Line 329:**
+```python
+# BEFORE:
+                            WHERE order_id = ?
+
+# AFTER:
+                            WHERE order_id = %s
+```
+
+**Fix 8 - Line 391:**
+```python
+# BEFORE:
+                        WHERE order_id = ?
+
+# AFTER:
+                        WHERE order_id = %s
+```
+
+---
+
+#### **File: src/daily_shipment_processor.py**
+
+**Fix 1 - Import Statement (Line 30):**
+```python
+# BEFORE:
+from src.services.database.db_utils import execute_query, transaction
+
+# AFTER:
+from src.services.database.pg_utils import execute_query, transaction
+```
+
+**Fix 2 - Line 264:**
+```python
+# BEFORE:
+                VALUES (?, ?, ?)
+
+# AFTER:
+                VALUES (%s, %s, %s)
+```
+
+**Fix 3 - Line 309:**
+```python
+# BEFORE:
+                ) VALUES (?, ?, ?, ?, ?, ?)
+
+# AFTER:
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+```
+
+**Fix 4 - Line 352:**
+```python
+# BEFORE:
+                        ) VALUES (?, ?, ?, ?)
+
+# AFTER:
+                        ) VALUES (%s, %s, %s, %s)
+```
+
+**Fix 5 - Line 373:**
+```python
+# BEFORE:
+        """.format(','.join('?' * len(target_skus))), tuple(target_skus))
+
+# AFTER:
+        """.format(','.join('%s' * len(target_skus))), tuple(target_skus))
+```
+
+**Fix 6 - Line 514:**
+```python
+# BEFORE:
+                    duration_seconds = CAST(? AS INTEGER)
+
+# AFTER:
+                    duration_seconds = CAST(%s AS INTEGER)
+```
+
+---
+
+### 🟢 Priority 3: Utility Scripts
+
+#### **File: src/backfill_shipstation_ids.py**
+
+**Fix 1 - Import Statement (Line 21):**
+```python
+# BEFORE:
+from src.services.database.db_utils import execute_query, transaction
+
+# AFTER:
+from src.services.database.pg_utils import execute_query, transaction
+```
+
+**Fix 2 - Lines 102-104:**
+```python
+# BEFORE:
+                            SET shipstation_order_id = ?,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE order_number = ?
+
+# AFTER:
+                            SET shipstation_order_id = %s,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE order_number = %s
+```
+
+**Fix 3 - Lines 113-114:**
+```python
+# BEFORE:
+                            SET shipstation_order_id = ?
+                            WHERE order_number = ?
+
+# AFTER:
+                            SET shipstation_order_id = %s
+                            WHERE order_number = %s
+```
+
+---
+
+#### **File: src/services/data_processing/sku_lot_parser.py**
+
+**Fix - Lines 183-186:**
+```python
+# BEFORE:
+            VALUES (?, ?, 'active')
+        """, (sku_id, lot_number))
+        
+        new_lot_id = cursor.lastrowid
+
+# AFTER:
+            VALUES (%s, %s, 'active')
+            RETURNING id
+        """, (sku_id, lot_number))
+        
+        new_lot_id = cursor.fetchone()[0]
+```
+
+---
+
+#### **File: src/services/shipstation/metrics_refresher.py**
+
+**Fix - Import Statement (Line 9):**
+```python
+# BEFORE:
+from src.services.database.db_utils import get_connection
+
+# AFTER:
+from src.services.database.pg_utils import get_connection
 ```
 
 ---
@@ -122,8 +513,11 @@ new_lot_id = cursor.fetchone()[0]
 
 ### 1. Unit Testing (Per File)
 ```bash
-# Test each fixed file
+# Test imports work
 python -c "import src.scheduled_shipstation_upload; print('✅ Import OK')"
+python -c "import src.shipstation_status_sync; print('✅ Import OK')"
+python -c "import src.scheduled_cleanup; print('✅ Import OK')"
+python -c "import src.weekly_reporter; print('✅ Import OK')"
 ```
 
 ### 2. Integration Testing (Critical Path)
@@ -137,7 +531,7 @@ python -c "import src.scheduled_shipstation_upload; print('✅ Import OK')"
 
 ### 3. Regression Testing
 - Compare order quantities: Database vs ShipStation
-- Verify bundle expansion works correctly
+- Verify bundle expansion works correctly  
 - Check consolidation logic preserves quantities
 
 ---
@@ -177,13 +571,17 @@ If issues arise:
 
 | Priority | Task | Time | Owner |
 |----------|------|------|-------|
-| P1 | Fix shipstation-upload | 15 min | Dev |
-| P1 | Fix status sync | 10 min | Dev |
-| P1 | Fix cleanup workflow | 5 min | Dev |
-| P2 | Fix supporting services | 20 min | Dev |
-| P3 | Fix utility scripts | 15 min | Dev |
+| P1 | Fix shipstation-upload (8 fixes) | 15 min | Dev |
+| P1 | Fix status sync (15 fixes) | 15 min | Dev |
+| P1 | Fix cleanup workflow (1 fix) | 2 min | Dev |
+| P2 | Fix weekly reporter (2 fixes) | 5 min | Dev |
+| P2 | Fix shipping validator (8 fixes) | 10 min | Dev |
+| P2 | Fix daily processor (6 fixes) | 10 min | Dev |
+| P3 | Fix backfill script (3 fixes) | 5 min | Dev |
+| P3 | Fix sku_lot_parser (1 fix) | 5 min | Dev |
+| P3 | Fix metrics refresher (1 fix) | 2 min | Dev |
 | - | **Testing & Verification** | 30 min | Dev |
-| - | **TOTAL** | ~95 min | - |
+| - | **TOTAL** | ~99 min | - |
 
 ---
 
@@ -202,3 +600,4 @@ If issues arise:
 - **Order 690045 Case Study:** Bundle 18225 (qty 1) should expand to 40x SKU 17612. Database shows 40 ✅, but ShipStation shows 17 ❌ due to failed item query on line 168.
 - **Silent Failures:** PostgreSQL rejects `?` placeholders without error logging, causing partial data operations.
 - **Migration Lessons:** Always test ALL code paths after database engine changes.
+- **Total Changes:** 52 exact code fixes across 9 files
