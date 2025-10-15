@@ -28,7 +28,7 @@ if project_root not in sys.path:
 
 from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
-from src.services.database.db_utils import execute_query, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+from src.services.database import execute_query, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from utils.api_utils import make_api_request
 
@@ -54,7 +54,7 @@ def get_last_sync_timestamp() -> str:
         rows = execute_query("""
             SELECT last_sync_timestamp 
             FROM sync_watermark 
-            WHERE workflow_name = ?
+            WHERE workflow_name = %s
         """, (WORKFLOW_NAME,))
         
         if rows and rows[0]:
@@ -85,7 +85,7 @@ def update_sync_watermark(new_timestamp: str, conn):
     try:
         conn.execute("""
             INSERT INTO sync_watermark (workflow_name, last_sync_timestamp)
-            VALUES (?, ?)
+            VALUES (%s, %s)
             ON CONFLICT(workflow_name) DO UPDATE SET
                 last_sync_timestamp = excluded.last_sync_timestamp,
                 updated_at = CURRENT_TIMESTAMP

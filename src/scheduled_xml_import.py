@@ -15,7 +15,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
-from src.services.database.db_utils import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+from src.services.database import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 import defusedxml.ElementTree as ET
 
 logging.basicConfig(
@@ -39,11 +39,11 @@ def cleanup_old_orders():
         cursor.execute("""
             DELETE FROM order_items_inbox 
             WHERE order_inbox_id IN (
-                SELECT id FROM orders_inbox WHERE created_at < ?
+                SELECT id FROM orders_inbox WHERE created_at < %s
             )
         """, (cutoff_date,))
         
-        cursor.execute("DELETE FROM orders_inbox WHERE created_at < ?", (cutoff_date,))
+        cursor.execute("DELETE FROM orders_inbox WHERE created_at < %s", (cutoff_date,))
         
         deleted_count = cursor.rowcount
         conn.commit()
@@ -124,7 +124,7 @@ def import_orders_from_drive():
         
         # BEGIN IMMEDIATE transaction to prevent race conditions
         # This locks the database early, preventing concurrent imports from causing duplicates
-        conn.execute("BEGIN IMMEDIATE")
+        cursor = conn.cursor()        cursor.execute("BEGIN IMMEDIATE")
         
         cursor = conn.cursor()
         
@@ -220,7 +220,7 @@ def import_orders_from_drive():
                 total_quantity = sum(item['quantity'] for item in consolidated_items)
                 
                 # IDEMPOTENT UPSERT: Check if order exists
-                cursor.execute("SELECT id FROM orders_inbox WHERE order_number = ?", (order_number,))
+                cursor.execute("SELECT id FROM orders_inbox WHERE order_number = %s", (order_number,))
                 existing = cursor.fetchone()
                 
                 if existing:
@@ -228,18 +228,18 @@ def import_orders_from_drive():
                     order_inbox_id = existing[0]
                     
                     # Delete old items
-                    cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = ?", (order_inbox_id,))
+                    cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = %s", (order_inbox_id,))
                     
                     # Update order metadata
                     cursor.execute("""
                         UPDATE orders_inbox
-                        SET order_date = ?, customer_email = ?, total_items = ?,
-                            ship_name = ?, ship_company = ?, ship_street1 = ?, ship_city = ?, 
-                            ship_state = ?, ship_postal_code = ?, ship_country = ?, ship_phone = ?,
-                            bill_name = ?, bill_company = ?, bill_street1 = ?, bill_city = ?, 
-                            bill_state = ?, bill_postal_code = ?, bill_country = ?, bill_phone = ?,
+                        SET order_date = %s, customer_email = %s, total_items = %s,
+                            ship_name = %s, ship_company = %s, ship_street1 = %s, ship_city = %s, 
+                            ship_state = %s, ship_postal_code = %s, ship_country = %s, ship_phone = %s,
+                            bill_name = %s, bill_company = %s, bill_street1 = %s, bill_city = %s, 
+                            bill_state = %s, bill_postal_code = %s, bill_country = %s, bill_phone = %s,
                             updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
+                        WHERE id = %s
                     """, (
                         order_date_str, customer_email, total_quantity,
                         ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
@@ -254,7 +254,7 @@ def import_orders_from_drive():
                             ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                             bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                         )
-                        VALUES (?, ?, ?, 'pending', ?, 'X-Cart', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, 'pending', %s, 'X-Cart', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         order_number, order_date_str, customer_email, total_quantity,
                         ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
@@ -268,7 +268,7 @@ def import_orders_from_drive():
                 for item in consolidated_items:
                     cursor.execute("""
                         INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                        VALUES (?, ?, ?)
+                        VALUES (%s, %s, %s)
                     """, (order_inbox_id, item['sku'], item['quantity']))
         
         conn.commit()

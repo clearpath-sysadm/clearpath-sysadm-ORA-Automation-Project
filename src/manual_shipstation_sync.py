@@ -27,7 +27,7 @@ if project_root not in sys.path:
 
 from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
-from src.services.database.db_utils import execute_query, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+from src.services.database import execute_query, transaction_with_retry, is_workflow_enabled, update_workflow_last_run, USE_POSTGRES
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from utils.api_utils import make_api_request
 
@@ -70,11 +70,14 @@ def update_sync_watermark(new_timestamp: str):
     """Update the watermark with the latest sync timestamp"""
     try:
         with transaction_with_retry() as conn:
-            conn.execute("""
+            cursor = conn.cursor()
+            # Use %s for PostgreSQL, ? for SQLite
+            placeholder = '%s' if USE_POSTGRES else '?'
+            cursor.execute(f"""
                 INSERT INTO sync_watermark (workflow_name, last_sync_timestamp)
-                VALUES ('manual_shipstation_sync', ?)
+                VALUES('manual_shipstation_sync', {placeholder})
                 ON CONFLICT(workflow_name) DO UPDATE SET
-                    last_sync_timestamp = excluded.last_sync_timestamp,
+                    last_sync_timestamp = {'EXCLUDED' if USE_POSTGRES else 'excluded'}.last_sync_timestamp,
                     updated_at = CURRENT_TIMESTAMP
             """, (new_timestamp,))
         logger.info(f"Updated sync watermark to: {new_timestamp}")
@@ -141,7 +144,7 @@ def is_order_from_local_system(shipstation_order_id: str) -> bool:
     try:
         rows = execute_query("""
             SELECT 1 FROM shipstation_order_line_items
-            WHERE shipstation_order_id = ?
+            WHERE shipstation_order_id = %s
             LIMIT 1
         """, (str(shipstation_order_id),))
         
@@ -264,42 +267,47 @@ def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
         # Use provided connection or create a new transaction
         def _do_import(conn):
             # Check if order already exists
-            existing = conn.execute("""
-                SELECT id FROM orders_inbox WHERE order_number = ?
-            """, (order_number,)).fetchone()
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT id FROM orders_inbox WHERE order_number = %s
+            """, (order_number,))
+
+            existing = cursor.fetchone()
             
             if existing:
                 # Update existing order (including carrier/service information)
-                conn.execute("""
+                cursor = conn.cursor()
+                cursor.execute("""
                     UPDATE orders_inbox
-                    SET status = ?,
-                        shipstation_order_id = ?,
-                        customer_email = ?,
-                        total_items = ?,
-                        total_amount_cents = ?,
-                        ship_name = ?,
-                        ship_company = ?,
-                        ship_street1 = ?,
-                        ship_city = ?,
-                        ship_state = ?,
-                        ship_postal_code = ?,
-                        ship_country = ?,
-                        ship_phone = ?,
-                        bill_name = ?,
-                        bill_company = ?,
-                        bill_street1 = ?,
-                        bill_city = ?,
-                        bill_state = ?,
-                        bill_postal_code = ?,
-                        bill_country = ?,
-                        bill_phone = ?,
-                        shipping_carrier_code = ?,
-                        shipping_carrier_id = ?,
-                        shipping_service_code = ?,
-                        shipping_service_name = ?,
+                    SET status = %s,
+                        shipstation_order_id = %s,
+                        customer_email = %s,
+                        total_items = %s,
+                        total_amount_cents = %s,
+                        ship_name = %s,
+                        ship_company = %s,
+                        ship_street1 = %s,
+                        ship_city = %s,
+                        ship_state = %s,
+                        ship_postal_code = %s,
+                        ship_country = %s,
+                        ship_phone = %s,
+                        bill_name = %s,
+                        bill_company = %s,
+                        bill_street1 = %s,
+                        bill_city = %s,
+                        bill_state = %s,
+                        bill_postal_code = %s,
+                        bill_country = %s,
+                        bill_phone = %s,
+                        shipping_carrier_code = %s,
+                        shipping_carrier_id = %s,
+                        shipping_service_code = %s,
+                        shipping_service_name = %s,
                         source_system = 'ShipStation Manual',
                         updated_at = CURRENT_TIMESTAMP
-                    WHERE order_number = ?
+                    WHERE order_number = %s
                 """, (db_status, str(order_id), customer_email, total_items, total_amount_cents,
                       ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                       bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
@@ -308,7 +316,9 @@ def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
                 order_inbox_id = existing[0]
             else:
                 # Insert new order (including carrier/service information)
-                cursor = conn.execute("""
+                cursor = conn.cursor()
+
+                cursor.execute("""
                     INSERT INTO orders_inbox (
                         order_number, order_date, customer_email, status, shipstation_order_id,
                         total_items, total_amount_cents,
@@ -317,17 +327,19 @@ def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
                         shipping_carrier_code, shipping_carrier_id, shipping_service_code, shipping_service_name,
                         source_system
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ShipStation Manual')
+                    VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ShipStation Manual')
+                    RETURNING id
                 """, (
                     order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents,
                     ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                     bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
                     carrier_code, carrier_id, service_code, service_name
                 ))
-                order_inbox_id = cursor.lastrowid
+                order_inbox_id = cursor.fetchone()[0]
             
             # Delete existing items and re-insert (simpler than UPSERT without unique constraint)
-            conn.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = ?", (order_inbox_id,))
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = %s", (order_inbox_id,))
             
             # Insert items into order_items_inbox
             for item in items:
@@ -347,11 +359,12 @@ def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
                         base_sku = sku_raw
                         sku_lot = None
                     
-                    conn.execute("""
+                    cursor = conn.cursor()
+                    cursor.execute("""
                         INSERT INTO order_items_inbox (
                             order_inbox_id, sku, sku_lot, quantity, unit_price_cents
                         )
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES(%s, %s, %s, %s, %s)
                     """, (order_inbox_id, base_sku, sku_lot, quantity, unit_price_cents))
             
             # If order is shipped, also create entries in shipped_orders and shipped_items
@@ -363,24 +376,30 @@ def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
                     ship_date = order_date
                 
                 # Check if shipped order exists
-                shipped_exists = conn.execute("""
-                    SELECT 1 FROM shipped_orders WHERE order_number = ?
-                """, (order_number,)).fetchone()
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT 1 FROM shipped_orders WHERE order_number = %s
+                """, (order_number,))
+
+                shipped_exists = cursor.fetchone()
                 
                 if shipped_exists:
-                    conn.execute("""
+                    cursor = conn.cursor()
+                    cursor.execute("""
                         UPDATE shipped_orders
-                        SET ship_date = ?, shipstation_order_id = ?
-                        WHERE order_number = ?
+                        SET ship_date = %s, shipstation_order_id = %s
+                        WHERE order_number = %s
                     """, (ship_date, str(order_id), order_number))
                 else:
-                    conn.execute("""
+                    cursor = conn.cursor()
+                    cursor.execute("""
                         INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
-                        VALUES (?, ?, ?)
+                        VALUES(%s, %s, %s)
                     """, (ship_date, order_number, str(order_id)))
                 
                 # Delete existing shipped items and re-insert
-                conn.execute("DELETE FROM shipped_items WHERE order_number = ?", (order_number,))
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM shipped_items WHERE order_number = %s", (order_number,))
                 
                 # Insert into shipped_items
                 for item in items:
@@ -398,11 +417,12 @@ def import_manual_order(order: Dict[Any, Any], conn=None) -> bool:
                             base_sku = sku
                             sku_lot = sku
                         
-                        conn.execute("""
+                        cursor = conn.cursor()
+                        cursor.execute("""
                             INSERT INTO shipped_items (
                                 ship_date, sku_lot, base_sku, quantity_shipped, order_number
                             )
-                            VALUES (?, ?, ?, ?, ?)
+                            VALUES(%s, %s, %s, %s, %s)
                         """, (ship_date, sku_lot, base_sku, quantity, order_number))
                 
                 logger.info(f"Imported shipped order {order_number} (ShipStation ID: {order_id})")
@@ -438,9 +458,10 @@ def run_manual_order_sync():
     try:
         # Initialize workflow tracking
         with transaction_with_retry() as conn:
-            conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 INSERT INTO workflows (name, display_name, status, last_run_at)
-                VALUES ('manual_shipstation_sync', 'Manual ShipStation Sync', 'running', CURRENT_TIMESTAMP)
+                VALUES('manual_shipstation_sync', 'Manual ShipStation Sync', 'running', CURRENT_TIMESTAMP)
                 ON CONFLICT(name) DO UPDATE SET
                     status = 'running',
                     last_run_at = CURRENT_TIMESTAMP
@@ -467,11 +488,12 @@ def run_manual_order_sync():
             
             # Update workflow status
             with transaction_with_retry() as conn:
-                conn.execute("""
+                cursor = conn.cursor()
+                cursor.execute("""
                     UPDATE workflows 
                     SET status = 'completed',
                         records_processed = 0,
-                        duration_seconds = ?
+                        duration_seconds = %s
                     WHERE name = 'manual_shipstation_sync'
                 """, (int((datetime.datetime.now() - workflow_start_time).total_seconds()),))
             
@@ -553,11 +575,12 @@ def run_manual_order_sync():
         # Update workflow status
         duration = (datetime.datetime.now() - workflow_start_time).total_seconds()
         with transaction_with_retry() as conn:
-            conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 UPDATE workflows 
                 SET status = 'completed',
-                    records_processed = ?,
-                    duration_seconds = ?
+                    records_processed = %s,
+                    duration_seconds = %s
                 WHERE name = 'manual_shipstation_sync'
             """, (imported_count, int(duration)))
         
@@ -570,7 +593,8 @@ def run_manual_order_sync():
         # Update workflow status to failed
         try:
             with transaction_with_retry() as conn:
-                conn.execute("""
+                cursor = conn.cursor()
+                cursor.execute("""
                     UPDATE workflows 
                     SET status = 'failed'
                     WHERE name = 'manual_shipstation_sync'
