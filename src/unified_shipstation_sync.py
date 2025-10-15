@@ -541,13 +541,22 @@ def run_unified_sync():
         
         # Process all orders in a single transaction (per architect)
         with transaction_with_retry() as conn:
-            for order in orders:
+            cursor = conn.cursor()
+            
+            for idx, order in enumerate(orders):
+                savepoint_name = f"sp_order_{idx}"
+                
                 try:
+                    # PostgreSQL SAVEPOINT: Isolate this order's operations
+                    # If this order fails, we can rollback to this point without aborting the whole transaction
+                    cursor.execute(f"SAVEPOINT {savepoint_name}")
+                    
                     order_id = order.get('orderId') or order.get('orderKey')
                     order_number = order.get('orderNumber', '').strip()
                     
                     if not order_number:
                         logger.debug(f"⏭️ Skipping order without number: {order_id}")
+                        cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                         continue
                     
                     # Track latest modifyDate for watermark update
@@ -575,18 +584,21 @@ def run_unified_sync():
                         if not order_number.startswith('10'):
                             logger.debug(f"⏭️ Skipping {order_number} - not manual (doesn't start with '10')")
                             stats['skipped_not_manual'] += 1
+                            cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                             continue
                         
                         # Filter 2: Must NOT be from local system
                         if is_order_from_local_system(str(order_id)):
                             logger.debug(f"⏭️ Skipping {order_number} - originated from local system")
                             stats['skipped_local_origin'] += 1
+                            cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                             continue
                         
                         # Filter 3: Must contain key product SKUs
                         if not has_key_product_skus(order):
                             logger.debug(f"⏭️ Skipping {order_number} - no key product SKUs")
                             stats['skipped_no_key_skus'] += 1
+                            cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                             continue
                         
                         # All filters passed → Import as NEW manual order
@@ -594,10 +606,22 @@ def run_unified_sync():
                             stats['new_manual_imported'] += 1
                         else:
                             stats['errors'] += 1
+                    
+                    # Success - release the savepoint
+                    cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                 
                 except Exception as e:
+                    # PostgreSQL: Rollback to savepoint to keep transaction alive
+                    try:
+                        cursor.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
+                        cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
+                    except:
+                        pass  # If rollback fails, transaction will abort anyway
+                    
                     logger.error(f"❌ Error processing order {order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
                     stats['errors'] += 1
+            
+            cursor.close()
             
             # CRITICAL: Only update watermark if NO errors occurred (per architect)
             # This prevents data loss - failed orders will be reprocessed on next run
