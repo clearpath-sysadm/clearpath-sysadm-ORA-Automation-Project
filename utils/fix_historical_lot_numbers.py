@@ -50,10 +50,16 @@ def get_awaiting_shipment_orders():
             params=params
         )
         
-        if not response or 'orders' not in response:
+        if not response:
+            break
+        
+        # Parse JSON from response
+        data = response.json()
+        
+        if not data or 'orders' not in data:
             break
             
-        page_orders = response['orders']
+        page_orders = data['orders']
         orders.extend(page_orders)
         
         logger.info(f"   📄 Page {page}: {len(page_orders)} orders")
@@ -138,7 +144,8 @@ def update_order_lot(headers, order_info, dry_run=True):
                 headers=headers,
                 data=update_payload
             )
-            logger.info(f"   ✅ Updated order {order_number} ({changes_made} items)")
+            result = response.json()
+            logger.info(f"   ✅ Updated order {order_number} ({changes_made} items) - Response: {result.get('orderId')}")
             return True
         except Exception as e:
             logger.error(f"   ❌ Failed to update order {order_number}: {e}")
