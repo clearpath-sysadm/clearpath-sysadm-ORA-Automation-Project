@@ -103,11 +103,11 @@ def upload_pending_orders():
         
         # Mark ONLY these specific orders as 'uploaded' with our run_id  
         # This prevents other concurrent runs from picking up our orders
-        placeholders = ','.join('?' * len(pending_ids))
+        placeholders = ','.join(['%s'] * len(pending_ids))
         cursor.execute(f"""
             UPDATE orders_inbox
             SET status = 'uploaded',
-                failure_reason = ?,
+                failure_reason = %s,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id IN ({placeholders})
         """, [run_id] + pending_ids)
@@ -126,6 +126,12 @@ def upload_pending_orders():
         """)
         sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
         
+        # DEFENSIVE CHECK: Warn if no active lots found
+        if not sku_lot_map:
+            logger.warning('⚠️ No active lot numbers found in sku_lot table! Orders will upload without lot numbers.')
+        else:
+            logger.info(f'✅ Loaded {len(sku_lot_map)} active lot mappings: {sku_lot_map}')
+        
         # Fetch Product Name mappings
         cursor.execute("""
             SELECT sku, value
@@ -141,7 +147,7 @@ def upload_pending_orders():
                    bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
             FROM orders_inbox 
             WHERE status = 'uploaded'
-              AND failure_reason = ?
+              AND failure_reason = %s
         """, (run_id,))
         
         pending_orders = cursor.fetchall()
