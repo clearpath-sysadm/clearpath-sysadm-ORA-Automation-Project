@@ -122,11 +122,10 @@ def import_orders_from_drive():
         
         conn = get_connection()
         
-        # BEGIN IMMEDIATE transaction to prevent race conditions
-        # This locks the database early, preventing concurrent imports from causing duplicates
-        cursor = conn.cursor()        cursor.execute("BEGIN IMMEDIATE")
-        
+        # BEGIN transaction to prevent race conditions
+        # PostgreSQL doesn't support BEGIN IMMEDIATE - just use BEGIN
         cursor = conn.cursor()
+        cursor.execute("BEGIN")
         
         # Load bundle configurations
         bundle_config = load_bundle_config(cursor)

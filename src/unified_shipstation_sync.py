@@ -83,7 +83,8 @@ def update_sync_watermark(new_timestamp: str, conn):
         conn: Database connection (transaction context)
     """
     try:
-        conn.execute("""
+        cursor = conn.cursor()
+        cursor.execute("""
             INSERT INTO sync_watermark (workflow_name, last_sync_timestamp)
             VALUES (%s, %s)
             ON CONFLICT(workflow_name) DO UPDATE SET
@@ -158,7 +159,7 @@ def is_order_from_local_system(shipstation_order_id: str) -> bool:
     try:
         rows = execute_query("""
             SELECT 1 FROM shipstation_order_line_items
-            WHERE shipstation_order_id = ?
+            WHERE shipstation_order_id = %s
             LIMIT 1
         """, (str(shipstation_order_id),))
         
@@ -190,9 +191,11 @@ def order_exists_locally(order_number: str, conn) -> Tuple[bool, int]:
         conn: Database connection (transaction context)
     """
     try:
-        rows = conn.execute("""
-            SELECT id FROM orders_inbox WHERE order_number = ?
-        """, (order_number,)).fetchall()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id FROM orders_inbox WHERE order_number = %s
+        """, (order_number,))
+        rows = cursor.fetchall()
         
         if rows and rows[0]:
             return True, rows[0][0]
@@ -318,7 +321,8 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
         # Insert new order
         logger.info(f"📥 Importing NEW manual order: {order_number} (status: {db_status}, items: {total_items})")
         
-        cursor = conn.execute("""
+        cursor = conn.cursor()
+        cursor.execute("""
             INSERT INTO orders_inbox (
                 order_number, order_date, customer_email, status, shipstation_order_id,
                 total_items, total_amount_cents,
@@ -327,7 +331,8 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
                 shipping_carrier_code, shipping_carrier_id, shipping_service_code, shipping_service_name,
                 source_system
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ShipStation Manual')
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ShipStation Manual')
+            RETURNING id
         """, (
             order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents,
             ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
@@ -335,7 +340,7 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
             carrier_info['carrier_code'], carrier_info['carrier_id'], 
             carrier_info['service_code'], carrier_info['service_name']
         ))
-        order_inbox_id = cursor.lastrowid
+        order_inbox_id = cursor.fetchone()[0]
         
         # Insert items into order_items_inbox
         for item in items:
@@ -354,11 +359,11 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
                     base_sku = sku_raw
                     sku_lot = None
                 
-                conn.execute("""
+                cursor.execute("""
                     INSERT INTO order_items_inbox (
                         order_inbox_id, sku, sku_lot, quantity, unit_price_cents
                     )
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s)
                 """, (order_inbox_id, base_sku, sku_lot, quantity, unit_price_cents))
                 
                 logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
@@ -371,9 +376,12 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
             except:
                 ship_date = order_date
             
-            conn.execute("""
+            cursor.execute("""
                 INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
-                VALUES (?, ?, ?)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (order_number) DO UPDATE 
+                SET ship_date = EXCLUDED.ship_date,
+                    shipstation_order_id = EXCLUDED.shipstation_order_id
             """, (ship_date, order_number, str(order_id)))
             
             # Insert into shipped_items
@@ -391,11 +399,14 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
                         base_sku = sku
                         sku_lot = sku
                     
-                    conn.execute("""
+                    cursor.execute("""
                         INSERT INTO shipped_items (
                             ship_date, sku_lot, base_sku, quantity_shipped, order_number
                         )
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (ship_date, sku_lot, order_number) DO UPDATE
+                        SET quantity_shipped = EXCLUDED.quantity_shipped,
+                            base_sku = EXCLUDED.base_sku
                     """, (ship_date, sku_lot, base_sku, quantity, order_number))
             
             logger.info(f"✅ Imported SHIPPED manual order: {order_number} (ship_date: {ship_date})")
@@ -442,16 +453,17 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         logger.info(f"🔄 Updating EXISTING order: {order_number} → status: {db_status}, carrier: {carrier_info['carrier_code']}, service: {carrier_info['service_code']}")
         
         # Update order in orders_inbox
-        conn.execute("""
+        cursor = conn.cursor()
+        cursor.execute("""
             UPDATE orders_inbox
-            SET status = ?,
-                shipping_carrier_code = ?,
-                shipping_carrier_id = ?,
-                shipping_service_code = ?,
-                shipping_service_name = ?,
-                tracking_number = ?,
+            SET status = %s,
+                shipping_carrier_code = %s,
+                shipping_carrier_id = %s,
+                shipping_service_code = %s,
+                shipping_service_name = %s,
+                tracking_number = %s,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
+            WHERE id = %s
         """, (
             db_status,
             carrier_info['carrier_code'],
