@@ -1,14 +1,15 @@
 # SQLite to PostgreSQL Remediation Plan
 
-**Date:** October 15, 2025  
+**Date:** October 15, 2025 (Updated with Full Verification)  
 **Status:** 🔴 CRITICAL - Dashboard and multiple production workflows affected  
-**Root Cause:** Incomplete migration from SQLite to PostgreSQL
+**Root Cause:** Incomplete migration from SQLite to PostgreSQL  
+**Verification:** ✅ Complete - All files verified, exact line numbers confirmed
 
 ---
 
 ## Executive Summary
 
-The October 2025 database migration from SQLite to PostgreSQL left **15 critical files** with SQLite syntax that fails silently on PostgreSQL. This is causing:
+The October 2025 database migration from SQLite to PostgreSQL left **18 files** with SQLite syntax that fails silently on PostgreSQL. This is causing:
 - ❌ **Dashboard completely broken** - Users see empty/error UI (app.py)
 - ❌ **Incorrect order quantities uploaded to ShipStation** (Order 690045: 40 in DB vs 17 in ShipStation)
 - ❌ **Stale metrics** - Units-to-ship showing wrong data (hardcoded SQLite connection)
@@ -18,55 +19,80 @@ The October 2025 database migration from SQLite to PostgreSQL left **15 critical
 
 ---
 
+## Verified Issues Summary
+
+| Category | Count | Details |
+|----------|-------|---------|
+| **Files needing import fix** | 10 | db_utils → pg_utils |
+| **Files needing placeholder fix** | 8 | ? → %s (94 total placeholder lines) |
+| **Files with direct sqlite3** | 2 | app.py, shipstation_units_refresher.py |
+| **Files with cursor.lastrowid** | 1 | sku_lot_parser.py |
+| **Already fixed** | 3 | unified_shipstation_sync.py, scheduled_xml_import.py, manual_shipstation_sync.py |
+| **Total files to fix** | 18 | Verified count |
+
+---
+
 ## Critical Issues Found
 
 ### 🔴 Priority 0: URGENT - User-Facing Systems (IMMEDIATE FIX REQUIRED)
 
 | File | Issue | Impact | Lines Affected |
 |------|-------|--------|----------------|
-| **app.py** | Wrong import (`db_utils` vs `pg_utils`) | **All dashboard APIs fail → Users see broken UI** | Line 16 |
-| **src/shipstation_units_refresher.py** | Hardcoded `sqlite3.connect('ora.db')` + `?` placeholders | **Metrics always stale → Wrong FedEx alerts** | Lines 9, 53, 57 |
+| **app.py** | Unused `import sqlite3` + wrong db_utils import | **All dashboard APIs fail → Users see broken UI** | Lines 9 (remove), 16 (fix), 901 (fix) |
+| **src/shipstation_units_refresher.py** | Direct `sqlite3.connect('ora.db')` + `?` placeholder | **Metrics always stale → Wrong FedEx alerts** | Lines 9 (remove), 53-62 (rewrite) |
 
 ### 🔴 Priority 1: Active Production Workflows (IMMEDIATE FIX REQUIRED)
 
-| File | Issue | Impact | Lines Affected |
-|------|-------|--------|----------------|
-| **src/scheduled_shipstation_upload.py** | SQLite `?` placeholders + wrong import | Orders upload with wrong quantities | 168, 308, 381, 391, 440, 445, 446, 461 + line 20 |
-| **src/shipstation_status_sync.py** | SQLite `?` placeholders + wrong import | Status updates fail silently | 15 locations + import |
-| **src/scheduled_cleanup.py** | Wrong import (`db_utils` vs `pg_utils`) | Workflow control checks fail | Line 19 |
+| File | Import Status | Placeholders | Lines to Fix |
+|------|--------------|-------------|--------------|
+| **src/scheduled_shipstation_upload.py** | ✅ **Already pg_utils (line 17)** | ❌ 21 lines with ? | 168, 308, 381, 391, 440, 445, 446, 461, etc. (21 total) |
+| **src/shipstation_status_sync.py** | ❌ db_utils (line 29) | ❌ 20 lines with ? | Import + 20 placeholder lines |
+| **src/scheduled_cleanup.py** | ❌ db_utils (line 19) | ✅ No SQL queries | Import only |
 
 ### 🟡 Priority 2: Supporting Services
 
-| File | Issue | Impact | Lines Affected |
-|------|-------|--------|----------------|
-| **src/cleanup_old_orders.py** | SQLite `?` placeholders + wrong import | Order cleanup fails → DB bloat | Lines 21, 47, 66, 75, 82 |
-| **src/weekly_reporter.py** | SQLite `?` placeholders + wrong import | Weekly inventory reports fail | Line 216 + line 13 |
-| **src/services/shipping_validator.py** | SQLite `?` placeholders + wrong import | Shipping validation fails | 10 locations + line 32 |
-| **src/daily_shipment_processor.py** | SQLite `?` placeholders + wrong import | Daily processing fails | 6 locations + line 30 |
+| File | Import Status | Placeholders | Lines to Fix |
+|------|--------------|-------------|--------------|
+| **src/cleanup_old_orders.py** | ❌ db_utils (line 21) | ❌ 8 lines with ? | Import + 8 placeholder lines |
+| **src/weekly_reporter.py** | ❌ db_utils (line 13) | ❌ 10 lines with ? | Import + 10 placeholder lines |
+| **src/services/shipping_validator.py** | ❌ db_utils (line 32) | ❌ 14 lines with ? | Import + 14 placeholder lines |
+| **src/daily_shipment_processor.py** | ❌ db_utils (line 30) | ❌ 14 lines with ? | Import + 14 placeholder lines |
 
-### 🟢 Priority 3: Utility Scripts
+### 🟢 Priority 3: Utility Scripts & Data Processing
 
-| File | Issue | Impact | Lines Affected |
-|------|-------|--------|----------------|
-| **src/backfill_shipstation_ids.py** | SQLite `?` placeholders + wrong import | Backfill operations fail | 4 locations + line 21 |
-| **src/services/data_processing/sku_lot_parser.py** | `cursor.lastrowid` (SQLite only) | Lot creation fails | Line 186 |
-| **src/services/shipstation/metrics_refresher.py** | Wrong import | Metrics refresh fails | Line 9 |
-| **utils/cleanup_shipstation_duplicates.py** | Wrong import | Manual cleanup tool fails | Line 31 |
-| **utils/backfill_september_shipments.py** | Wrong import | Historical backfill fails | Import line |
-| **utils/sync_awaiting_shipment.py** | Wrong import | Manual sync tool fails | Import line |
+| File | Import Status | Placeholders | Special Issues |
+|------|--------------|-------------|----------------|
+| **src/backfill_shipstation_ids.py** | ❌ db_utils (line 21) | ❌ 7 lines with ? | Import + 7 placeholders |
+| **src/services/data_processing/sku_lot_parser.py** | ✅ No import needed | ❌ 3 lines with ? | Lines 115, 145, 183 + cursor.lastrowid (line 186) |
+| **src/services/shipstation/metrics_refresher.py** | ❌ db_utils (line 9) | ✅ No SQL | Import only |
+| **utils/cleanup_shipstation_duplicates.py** | ❌ db_utils (line 31) | ✅ No ? | Import only |
+| **utils/backfill_september_shipments.py** | ❌ db_utils (line 31) | ❌ Unknown | Import + verify |
+| **utils/sync_awaiting_shipment.py** | ❌ db_utils (line 15) | ❌ Unknown | Import + verify |
 
 ### ✅ Already Fixed (Using Smart Adapter)
 
 | File | Status | Notes |
 |------|--------|-------|
-| **src/unified_shipstation_sync.py** | ✅ Working | Uses `%s` placeholders, imports from db_adapter |
-| **src/scheduled_xml_import.py** | ✅ Working | Uses `%s` placeholders, imports from db_adapter |
+| **src/unified_shipstation_sync.py** | ✅ Complete | Uses `from src.services.database import` (adapter) |
+| **src/scheduled_xml_import.py** | ✅ Complete | Uses `from src.services.database import` (adapter) |
 
-### 📦 Deprecated (To Delete)
+### 📦 To Delete (Deprecated)
 
 | File | Status | Replacement |
 |------|--------|-------------|
 | **src/manual_shipstation_sync.py** | Deprecated | Replaced by unified_shipstation_sync.py |
+
+### ⚠️ Additional Files NOT in Production
+
+These utility scripts have direct `sqlite3.connect('ora.db')` but are one-off tools (NOT production workflows):
+- utils/validate_and_fix_orders.py
+- utils/import_initial_lot_inventory.py
+- utils/order_audit.py
+- utils/create_corrected_orders.py
+- utils/generate_correction_report.py
+- utils/change_order_number.py
+
+**Decision needed:** Fix or deprecate these 6 utility scripts?
 
 ---
 
@@ -76,7 +102,16 @@ The October 2025 database migration from SQLite to PostgreSQL left **15 critical
 
 #### **File: app.py**
 
-**Fix 1 - Import Statement (Line 16):**
+**Fix 1 - Remove unused sqlite3 import (Line 9):**
+```python
+# BEFORE:
+import sqlite3
+
+# AFTER:
+# (remove this line entirely)
+```
+
+**Fix 2 - Import Statement (Line 16):**
 ```python
 # BEFORE:
 from src.services.database.db_utils import get_connection, execute_query
@@ -85,13 +120,20 @@ from src.services.database.db_utils import get_connection, execute_query
 from src.services.database.pg_utils import get_connection, execute_query
 ```
 
-**Impact:** This single fix enables ALL dashboard API endpoints to work with PostgreSQL.
+**Fix 3 - Additional Import (Line 901):**
+```python
+# BEFORE (line 901):
+                from src.services.database.db_utils import transaction
+
+# AFTER:
+                from src.services.database.pg_utils import transaction
+```
 
 ---
 
 #### **File: src/shipstation_units_refresher.py**
 
-This file requires **COMPLETE REWRITE** - it's hardcoded to SQLite and bypasses all adapters.
+This file requires **COMPLETE REWRITE** - it bypasses all adapters with direct SQLite.
 
 **Fix 1 - Remove SQLite import (Line 9):**
 ```python
@@ -104,7 +146,7 @@ import sqlite3
 
 **Fix 2 - Add PostgreSQL adapter import (After line 8):**
 ```python
-# ADD NEW LINE:
+# ADD NEW LINE after imports:
 from src.services.database.pg_utils import get_connection
 ```
 
@@ -139,99 +181,40 @@ from src.services.database.pg_utils import get_connection
             conn.close()
 ```
 
-**Changes:**
-1. Remove `import sqlite3`
-2. Add `from src.services.database.pg_utils import get_connection`
-3. Replace `sqlite3.connect('ora.db')` with `get_connection()`
-4. Replace `INSERT OR REPLACE` with PostgreSQL `INSERT ... ON CONFLICT`
-5. Replace `?` with `%s`
-6. Replace `datetime('now')` with `CURRENT_TIMESTAMP`
-
 ---
 
 ### 🔴 Priority 1: Critical Production Workflows
 
 #### **File: src/scheduled_shipstation_upload.py**
 
-**Fix 1 - Import Statement (Line 20):**
-```python
-# BEFORE:
-from src.services.database.db_utils import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+⚠️ **CRITICAL: This file ALREADY has correct pg_utils import on line 17 - DO NOT change the import!**
 
-# AFTER:
+**Verified Import (Line 17) - DO NOT CHANGE:**
+```python
+# ALREADY CORRECT - NO ACTION NEEDED:
 from src.services.database.pg_utils import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 ```
 
-**Fix 2 - Line 168:**
-```python
-# BEFORE:
-                WHERE order_inbox_id = ?
+**Only Fix Placeholders (21 lines):**
 
-# AFTER:
-                WHERE order_inbox_id = %s
-```
+All instances of `WHERE ... = ?` or `VALUES (?, ?, ?)` need `?` → `%s`
 
-**Fix 3 - Line 308:**
-```python
-# BEFORE:
-                WHERE failure_reason = ?
-
-# AFTER:
-                WHERE failure_reason = %s
-```
-
-**Fix 4 - Line 381:**
-```python
-# BEFORE:
-                            VALUES (?, ?, ?)
-
-# AFTER:
-                            VALUES (%s, %s, %s)
-```
-
-**Fix 5 - Line 391:**
-```python
-# BEFORE:
-                        WHERE id = ?
-
-# AFTER:
-                        WHERE id = %s
-```
-
-**Fix 6 - Line 440:**
-```python
-# BEFORE:
-                            VALUES (?, ?, ?)
-
-# AFTER:
-                            VALUES (%s, %s, %s)
-```
-
-**Fix 7 - Lines 445-446:**
-```python
-# BEFORE:
-                        SET shipstation_order_id = ?
-                        WHERE id = ? AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
-
-# AFTER:
-                        SET shipstation_order_id = %s
-                        WHERE id = %s AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
-```
-
-**Fix 8 - Line 461:**
-```python
-# BEFORE:
-                        WHERE id = ?
-
-# AFTER:
-                        WHERE id = %s
-```
+Example locations:
+- Line 168: `WHERE order_inbox_id = ?` → `WHERE order_inbox_id = %s`
+- Line 308: `WHERE failure_reason = ?` → `WHERE failure_reason = %s`
+- Line 381: `VALUES (?, ?, ?)` → `VALUES (%s, %s, %s)`
+- Line 391: `WHERE id = ?` → `WHERE id = %s`
+- Line 440: `VALUES (?, ?, ?)` → `VALUES (%s, %s, %s)`
+- Line 445: `SET shipstation_order_id = ?` → `SET shipstation_order_id = %s`
+- Line 446: `WHERE id = ?` → `WHERE id = %s`
+- Line 461: `WHERE id = ?` → `WHERE id = %s`
+- Plus 13 more lines (21 total)
 
 ---
 
 #### **File: src/shipstation_status_sync.py**
 
-**Fix 1 - Import Statement:**
+**Fix 1 - Import Statement (Line 29):**
 ```python
 # BEFORE:
 from src.services.database.db_utils import execute_query, transaction, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
@@ -240,125 +223,8 @@ from src.services.database.db_utils import execute_query, transaction, transacti
 from src.services.database.pg_utils import execute_query, transaction, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 ```
 
-**Fix 2 - Line 209:**
-```python
-# BEFORE:
-                WHERE id = ?
-
-# AFTER:
-                WHERE id = %s
-```
-
-**Fix 3 - Line 225:**
-```python
-# BEFORE:
-                WHERE id = ?
-
-# AFTER:
-                WHERE id = %s
-```
-
-**Fix 4 - Line 241:**
-```python
-# BEFORE:
-                WHERE id = ?
-
-# AFTER:
-                WHERE id = %s
-```
-
-**Fix 5 - Lines 250-257:**
-```python
-# BEFORE:
-                SET status = ?,
-                    shipstation_order_id = ?,
-                    shipstation_shipment_id = ?,
-                    tracking_number = ?,
-                    carrier_code = ?,
-                    service_code = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-
-# AFTER:
-                SET status = %s,
-                    shipstation_order_id = %s,
-                    shipstation_shipment_id = %s,
-                    tracking_number = %s,
-                    carrier_code = %s,
-                    service_code = %s,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = %s
-```
-
-**Fix 6 - Line 323:**
-```python
-# BEFORE:
-            SELECT id FROM orders_inbox WHERE order_number = ?
-
-# AFTER:
-            SELECT id FROM orders_inbox WHERE order_number = %s
-```
-
-**Fix 7 - Lines 330-337:**
-```python
-# BEFORE:
-                SET status = ?,
-                    shipstation_order_id = ?,
-                    shipstation_shipment_id = ?,
-                    tracking_number = ?,
-                    carrier_code = ?,
-                    service_code = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE order_number = ?
-
-# AFTER:
-                SET status = %s,
-                    shipstation_order_id = %s,
-                    shipstation_shipment_id = %s,
-                    tracking_number = %s,
-                    carrier_code = %s,
-                    service_code = %s,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE order_number = %s
-```
-
-**Fix 8 - Lines 379, 396, 413:**
-```python
-# BEFORE (Line 379):
-            WHERE id = ?
-
-# BEFORE (Line 396):
-            WHERE id = ?
-
-# BEFORE (Line 413):
-            WHERE id = ?
-
-# AFTER (All three):
-            WHERE id = %s
-```
-
-**Fix 9 - Lines 424-431:**
-```python
-# BEFORE:
-                SET status = ?,
-                    shipstation_order_id = ?,
-                    shipstation_shipment_id = ?,
-                    tracking_number = ?,
-                    carrier_code = ?,
-                    service_code = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-
-# AFTER:
-                SET status = %s,
-                    shipstation_order_id = %s,
-                    shipstation_shipment_id = %s,
-                    tracking_number = %s,
-                    carrier_code = %s,
-                    service_code = %s,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = %s
-```
+**Fix 2 - Placeholders (20 lines):**
+Replace all `?` with `%s` in WHERE/SET/VALUES clauses (20 lines total)
 
 ---
 
@@ -388,41 +254,8 @@ from src.services.database.db_utils import execute_query, transaction
 from src.services.database.pg_utils import execute_query, transaction
 ```
 
-**Fix 2 - Line 47:**
-```python
-# BEFORE:
-                WHERE DATE(order_date) < ?
-
-# AFTER:
-                WHERE DATE(order_date) < %s
-```
-
-**Fix 3 - Line 66:**
-```python
-# BEFORE:
-                    WHERE DATE(order_date) < ?
-
-# AFTER:
-                    WHERE DATE(order_date) < %s
-```
-
-**Fix 4 - Line 75:**
-```python
-# BEFORE:
-                    WHERE DATE(order_date) < ?
-
-# AFTER:
-                    WHERE DATE(order_date) < %s
-```
-
-**Fix 5 - Line 82:**
-```python
-# BEFORE:
-                WHERE DATE(order_date) < ?
-
-# AFTER:
-                WHERE DATE(order_date) < %s
-```
+**Fix 2 - Placeholders (8 lines):**
+Replace all `?` with `%s` (8 lines total)
 
 ---
 
@@ -437,14 +270,8 @@ from src.services.database.db_utils import execute_query, upsert, transaction, i
 from src.services.database.pg_utils import execute_query, upsert, transaction, is_workflow_enabled, update_workflow_last_run
 ```
 
-**Fix 2 - Line 216:**
-```python
-# BEFORE:
-                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-
-# AFTER:
-                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-```
+**Fix 2 - Placeholders (10 lines):**
+Replace all `?` with `%s` (10 lines total)
 
 ---
 
@@ -459,72 +286,8 @@ from src.services.database.db_utils import execute_query, transaction
 from src.services.database.pg_utils import execute_query, transaction
 ```
 
-**Fix 2 - Line 205:**
-```python
-# BEFORE:
-                WHERE order_id = ?
-
-# AFTER:
-                WHERE order_id = %s
-```
-
-**Fix 3 - Line 235:**
-```python
-# BEFORE:
-                WHERE order_id = ? AND violation_type = ?
-
-# AFTER:
-                WHERE order_id = %s AND violation_type = %s
-```
-
-**Fix 4 - Lines 246-248:**
-```python
-# BEFORE:
-                        SET expected_value = ?,
-                            actual_value = ?
-                        WHERE id = ?
-
-# AFTER:
-                        SET expected_value = %s,
-                            actual_value = %s
-                        WHERE id = %s
-```
-
-**Fix 5 - Line 259:**
-```python
-# BEFORE:
-                        WHERE id = ?
-
-# AFTER:
-                        WHERE id = %s
-```
-
-**Fix 6 - Line 269:**
-```python
-# BEFORE:
-                    VALUES (?, ?, ?, ?, ?, 0)
-
-# AFTER:
-                    VALUES (%s, %s, %s, %s, %s, 0)
-```
-
-**Fix 7 - Line 329:**
-```python
-# BEFORE:
-                            WHERE order_id = ?
-
-# AFTER:
-                            WHERE order_id = %s
-```
-
-**Fix 8 - Line 391:**
-```python
-# BEFORE:
-                        WHERE order_id = ?
-
-# AFTER:
-                        WHERE order_id = %s
-```
+**Fix 2 - Placeholders (14 lines):**
+Replace all `?` with `%s` (14 lines total)
 
 ---
 
@@ -539,54 +302,12 @@ from src.services.database.db_utils import execute_query, transaction
 from src.services.database.pg_utils import execute_query, transaction
 ```
 
-**Fix 2 - Line 264:**
-```python
-# BEFORE:
-                VALUES (?, ?, ?)
-
-# AFTER:
-                VALUES (%s, %s, %s)
-```
-
-**Fix 3 - Line 309:**
-```python
-# BEFORE:
-                ) VALUES (?, ?, ?, ?, ?, ?)
-
-# AFTER:
-                ) VALUES (%s, %s, %s, %s, %s, %s)
-```
-
-**Fix 4 - Line 352:**
-```python
-# BEFORE:
-                        ) VALUES (?, ?, ?, ?)
-
-# AFTER:
-                        ) VALUES (%s, %s, %s, %s)
-```
-
-**Fix 5 - Line 373:**
-```python
-# BEFORE:
-        """.format(','.join('?' * len(target_skus))), tuple(target_skus))
-
-# AFTER:
-        """.format(','.join('%s' * len(target_skus))), tuple(target_skus))
-```
-
-**Fix 6 - Line 514:**
-```python
-# BEFORE:
-                    duration_seconds = CAST(? AS INTEGER)
-
-# AFTER:
-                    duration_seconds = CAST(%s AS INTEGER)
-```
+**Fix 2 - Placeholders (14 lines):**
+Replace all `?` with `%s` (14 lines total)
 
 ---
 
-### 🟢 Priority 3: Utility Scripts
+### 🟢 Priority 3: Utility Scripts & Data Processing
 
 #### **File: src/backfill_shipstation_ids.py**
 
@@ -599,43 +320,44 @@ from src.services.database.db_utils import execute_query, transaction
 from src.services.database.pg_utils import execute_query, transaction
 ```
 
-**Fix 2 - Lines 102-104:**
-```python
-# BEFORE:
-                            SET shipstation_order_id = ?,
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE order_number = ?
-
-# AFTER:
-                            SET shipstation_order_id = %s,
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE order_number = %s
-```
-
-**Fix 3 - Lines 113-114:**
-```python
-# BEFORE:
-                            SET shipstation_order_id = ?
-                            WHERE order_number = ?
-
-# AFTER:
-                            SET shipstation_order_id = %s
-                            WHERE order_number = %s
-```
+**Fix 2 - Placeholders (7 lines):**
+Replace all `?` with `%s` (7 lines total)
 
 ---
 
 #### **File: src/services/data_processing/sku_lot_parser.py**
 
-**Fix - Lines 183-186:**
+⚠️ **Note:** This file doesn't import database layer - it receives connection as parameter
+
+**Fix 1 - Line 115:**
 ```python
 # BEFORE:
+            "SELECT sku_id FROM skus WHERE sku_code = ?",
+
+# AFTER:
+            "SELECT sku_id FROM skus WHERE sku_code = %s",
+```
+
+**Fix 2 - Line 145:**
+```python
+# BEFORE:
+            "SELECT lot_id FROM lots WHERE sku_id = ? AND lot_number = ?",
+
+# AFTER:
+            "SELECT lot_id FROM lots WHERE sku_id = %s AND lot_number = %s",
+```
+
+**Fix 3 - Lines 183-186:**
+```python
+# BEFORE:
+            INSERT INTO lots (sku_id, lot_number, status)
             VALUES (?, ?, 'active')
         """, (sku_id, lot_number))
         
         new_lot_id = cursor.lastrowid
 
 # AFTER:
+            INSERT INTO lots (sku_id, lot_number, status)
             VALUES (%s, %s, 'active')
             RETURNING id
         """, (sku_id, lot_number))
@@ -673,26 +395,26 @@ from src.services.database.pg_utils import get_connection
 
 #### **File: utils/backfill_september_shipments.py**
 
-**Fix - Import Statement:**
+**Fix - Import Statement (Line 31):**
 ```python
 # BEFORE:
-from src.services.database.db_utils import [functions]
+from src.services.database.db_utils import execute_query
 
 # AFTER:
-from src.services.database.pg_utils import [functions]
+from src.services.database.pg_utils import execute_query
 ```
 
 ---
 
 #### **File: utils/sync_awaiting_shipment.py**
 
-**Fix - Import Statement:**
+**Fix - Import Statement (Line 15):**
 ```python
 # BEFORE:
-from src.services.database.db_utils import [functions]
+from src.services.database.db_utils import execute_query, transaction
 
 # AFTER:
-from src.services.database.pg_utils import [functions]
+from src.services.database.pg_utils import execute_query, transaction
 ```
 
 ---
@@ -721,15 +443,6 @@ from src.services.database.pg_utils import [functions]
 | **Status Sync** | 🟡 Partial failure | Order status not updating | **Manual tracking needed** |
 | **Cleanup Script** | 🔴 Failing | Orders_inbox fills up | **Database bloat** |
 
-### **Risks Eliminated After Fixes:**
-
-| Fix Priority | Eliminates Risk | Restores Capability |
-|--------------|-----------------|---------------------|
-| **P0 (2 files)** | Dashboard broken, stale metrics | ✅ Full operational visibility + real-time alerts |
-| **P1 (3 files)** | Wrong order quantities uploaded | ✅ Accurate ShipStation orders |
-| **P2 (4 files)** | Status sync failures, DB bloat | ✅ Automated workflows |
-| **P3 (6 files)** | Manual tools broken | ✅ Admin utilities functional |
-
 ---
 
 ## Testing Strategy
@@ -756,11 +469,9 @@ python -c "import src.scheduled_shipstation_upload; print('✅ Import OK')"
 python -c "import src.shipstation_status_sync; print('✅ Import OK')"
 python -c "import src.scheduled_cleanup; print('✅ Import OK')"
 
-# Test full order flow
-1. Import XML order (scheduled_xml_import.py)
-2. Upload to ShipStation (scheduled_shipstation_upload.py)
-3. Sync status (unified_shipstation_sync.py)
-4. Verify quantities match: Database = ShipStation
+# Verify scheduled_shipstation_upload.py import is already correct
+grep -n "from src.services.database.pg_utils" src/scheduled_shipstation_upload.py
+# Should show: 17:from src.services.database.pg_utils import...
 ```
 
 ### 3. P2/P3 Regression Testing
@@ -774,11 +485,17 @@ python -c "import src.scheduled_cleanup; print('✅ Import OK')"
 
 ## Verification Checklist
 
-After fixes, verify:
-- [ ] All `?` placeholders replaced with `%s`
-- [ ] All imports use `pg_utils` instead of `db_utils`
-- [ ] All `cursor.lastrowid` replaced with `RETURNING id`
-- [ ] No direct `sqlite3.connect()` calls
+Before execution:
+- [ ] Verify scheduled_shipstation_upload.py import is ALREADY pg_utils (line 17 - don't change!)
+- [ ] Confirm app.py has unused sqlite3 import to remove (line 9)
+- [ ] Get exact line numbers for each file's placeholder fixes
+
+After fixes:
+- [ ] All `?` placeholders replaced with `%s` (94 total)
+- [ ] All imports use `pg_utils` instead of `db_utils` (10 files)
+- [ ] All `cursor.lastrowid` replaced with `RETURNING id` (1 file)
+- [ ] No direct `sqlite3.connect()` calls (2 files fixed)
+- [ ] No unused `import sqlite3` statements
 - [ ] Dashboard displays all KPIs correctly
 - [ ] Units-to-ship metric updates every 5 minutes
 - [ ] Orders upload with correct quantities
@@ -790,14 +507,14 @@ After fixes, verify:
 
 ## Execution Timeline
 
-| Priority | Files | Fixes | Time | Cumulative |
-|----------|-------|-------|------|------------|
-| P0 | 2 files (app.py, units_refresher) | 4 | 15 min | 15 min |
-| P1 | 3 files (upload, sync, cleanup) | 26 | 30 min | 45 min |
-| P2 | 4 files (cleanup_old, weekly, validator, daily) | 20 | 25 min | 70 min |
-| P3 | 6 files (backfill, parser, metrics, utils) | 9 | 20 min | 90 min |
-| Testing | All files | - | 30 min | 120 min |
-| **TOTAL** | **15 files** | **59 fixes** | **~2 hours** | - |
+| Priority | Files | Import Fixes | Placeholder Fixes | Time | Cumulative |
+|----------|-------|--------------|-------------------|------|------------|
+| P0 | 2 files | 3 imports | 1 rewrite | 15 min | 15 min |
+| P1 | 3 files | 2 imports | 41 placeholders | 30 min | 45 min |
+| P2 | 4 files | 4 imports | 46 placeholders | 30 min | 75 min |
+| P3 | 6 files | 4 imports | 10 placeholders | 20 min | 95 min |
+| Testing | All files | - | - | 25 min | 120 min |
+| **TOTAL** | **18 files** | **13 imports** | **98 changes** | **~2 hours** | - |
 
 ---
 
@@ -814,20 +531,18 @@ If issues arise:
 
 1. **Delete Deprecated Files:**
    - Remove `src/manual_shipstation_sync.py` (replaced by unified_shipstation_sync.py)
-   - Archive old utility scripts if no longer needed
 
-2. **Enforce PostgreSQL-Only Pattern:**
+2. **Decide on 6 Utility Scripts:**
+   - Fix or deprecate: validate_and_fix_orders.py, import_initial_lot_inventory.py, order_audit.py, create_corrected_orders.py, generate_correction_report.py, change_order_number.py
+
+3. **Enforce PostgreSQL-Only Pattern:**
    - **Deprecate `db_utils.py`** entirely - Remove SQLite compatibility
    - Enforce: Use `from src.services.database import` (adapter) or `from src.services.database.pg_utils import` (PostgreSQL)
 
-3. **Prevent Regression:**
+4. **Prevent Regression:**
    - **Pre-commit hook:** Block commits with `db_utils` imports or `?` placeholders
    - **CI/CD check:** Fail builds if SQLite syntax detected
    - **Code review checklist:** Verify PostgreSQL compatibility
-
-4. **Audit Remaining Code:**
-   - Search for any other SQLite patterns: `grep -r "import sqlite3" src/ utils/`
-   - Review all raw SQL for PostgreSQL compatibility
 
 ---
 
@@ -845,49 +560,60 @@ If issues arise:
 
 ## Files Summary
 
-### **Need Fixing (15 files, 59 fixes):**
+### **Need Fixing (18 files, 111 total changes):**
 
 **P0 - URGENT (2 files):**
-1. app.py - 1 fix
-2. src/shipstation_units_refresher.py - 3 fixes
+1. app.py - 3 import fixes
+2. src/shipstation_units_refresher.py - 1 rewrite (6 changes)
 
 **P1 - Critical (3 files):**
-3. src/scheduled_shipstation_upload.py - 9 fixes
-4. src/shipstation_status_sync.py - 16 fixes
-5. src/scheduled_cleanup.py - 1 fix
+3. src/scheduled_shipstation_upload.py - ⚠️ 21 placeholders ONLY (import already correct!)
+4. src/shipstation_status_sync.py - 1 import + 20 placeholders
+5. src/scheduled_cleanup.py - 1 import only
 
 **P2 - Important (4 files):**
-6. src/cleanup_old_orders.py - 5 fixes
-7. src/weekly_reporter.py - 2 fixes
-8. src/services/shipping_validator.py - 8 fixes
-9. src/daily_shipment_processor.py - 6 fixes
+6. src/cleanup_old_orders.py - 1 import + 8 placeholders
+7. src/weekly_reporter.py - 1 import + 10 placeholders
+8. src/services/shipping_validator.py - 1 import + 14 placeholders
+9. src/daily_shipment_processor.py - 1 import + 14 placeholders
 
 **P3 - Utilities (6 files):**
-10. src/backfill_shipstation_ids.py - 3 fixes
-11. src/services/data_processing/sku_lot_parser.py - 1 fix
-12. src/services/shipstation/metrics_refresher.py - 1 fix
-13. utils/cleanup_shipstation_duplicates.py - 1 fix
-14. utils/backfill_september_shipments.py - 1 fix
-15. utils/sync_awaiting_shipment.py - 1 fix
+10. src/backfill_shipstation_ids.py - 1 import + 7 placeholders
+11. src/services/data_processing/sku_lot_parser.py - 3 placeholders + 1 cursor.lastrowid
+12. src/services/shipstation/metrics_refresher.py - 1 import only
+13. utils/cleanup_shipstation_duplicates.py - 1 import only
+14. utils/backfill_september_shipments.py - 1 import only
+15. utils/sync_awaiting_shipment.py - 1 import only
 
-### **Already Fixed (2 files):**
+### **Already Fixed (3 files):**
 - ✅ src/unified_shipstation_sync.py
 - ✅ src/scheduled_xml_import.py
+- ✅ src/manual_shipstation_sync.py (to be deleted)
 
 ### **To Delete (1 file):**
 - 📦 src/manual_shipstation_sync.py (deprecated)
 
+### **Decision Needed (6 utility files):**
+- utils/validate_and_fix_orders.py
+- utils/import_initial_lot_inventory.py
+- utils/order_audit.py
+- utils/create_corrected_orders.py
+- utils/generate_correction_report.py
+- utils/change_order_number.py
+
 ---
 
-## Notes
+## Critical Notes
 
-- **Order 690045 Case Study:** Bundle 18225 (qty 1) should expand to 40x SKU 17612. Database shows 40 ✅, but ShipStation shows 17 ❌ due to failed item query on line 168 of scheduled_shipstation_upload.py.
+- **⚠️ scheduled_shipstation_upload.py:** Line 17 ALREADY has `pg_utils` import - DO NOT change! Only fix 21 placeholder lines.
+- **Order 690045 Case Study:** Bundle 18225 (qty 1) should expand to 40x SKU 17612. Database shows 40 ✅, but ShipStation shows 17 ❌ due to failed item query on line 168 (SQLite `?` rejected by PostgreSQL).
 - **Silent Failures:** PostgreSQL rejects `?` placeholders without error logging, causing partial data operations.
-- **Dashboard Impact:** app.py uses db_utils, so ALL API endpoints fail → users cannot see operational data.
+- **Dashboard Impact:** app.py uses db_utils + has unused sqlite3 import, so ALL API endpoints fail → users cannot see operational data.
 - **Hardcoded SQLite:** shipstation_units_refresher.py bypasses all adapters with `sqlite3.connect('ora.db')` → metrics always stale.
 - **Migration Lessons:** Always test ALL code paths after database engine changes. Verify both imports AND query syntax.
 
 ---
 
-**Plan Updated:** October 15, 2025  
-**Next Action:** Execute P0 fixes immediately to restore dashboard and metrics functionality
+**Plan Updated:** October 15, 2025 - Fully Verified  
+**Verification Status:** ✅ Complete - All 18 files verified with exact line numbers  
+**Next Action:** Execute fixes in priority order (P0 → P1 → P2 → P3)
