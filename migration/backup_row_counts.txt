@@ -1,0 +1,2 @@
+shipped_orders: 1014
+orders_inbox: 494
