@@ -236,7 +236,7 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
                 UPDATE workflows 
                 SET status = 'completed',
                     records_processed = %s,
-                    duration_seconds = CAST((julianday('now') - julianday(last_run_at)) * 86400 AS INTEGER)
+                    duration_seconds = CAST(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - last_run_at::timestamp)) AS INTEGER)
                 WHERE name = 'weekly_reporter'
             """, (records_processed,))
             
