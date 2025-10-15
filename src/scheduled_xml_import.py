@@ -254,13 +254,14 @@ def import_orders_from_drive():
                             bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                         )
                         VALUES (%s, %s, %s, 'pending', %s, 'X-Cart', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id
                     """, (
                         order_number, order_date_str, customer_email, total_quantity,
                         ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                         bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
                     ))
                     
-                    order_inbox_id = cursor.lastrowid
+                    order_inbox_id = cursor.fetchone()[0]
                     orders_imported += 1
                 
                 # Insert consolidated line items (duplicates merged, only Key Products)
