@@ -197,7 +197,9 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
         
         if ss_status == 'shipped':
             # Order has been shipped - update status in orders_inbox (keep it there)
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 UPDATE orders_inbox
                 SET status = 'shipped',
                     shipping_carrier_code = %s,
@@ -213,7 +215,9 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             
         elif ss_status == 'cancelled':
             # Order was cancelled (also capture carrier info even though cancelled)
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 UPDATE orders_inbox
                 SET status = 'cancelled',
                     shipping_carrier_code = %s,
@@ -229,7 +233,9 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             
         elif ss_status == 'awaiting_shipment':
             # Still waiting to ship - capture carrier info for validation
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 UPDATE orders_inbox
                 SET status = 'awaiting_shipment',
                     shipping_carrier_code = %s,
@@ -245,7 +251,9 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             
         elif ss_status in ('on_hold', 'awaiting_payment'):
             # Order is on hold or awaiting payment (also capture carrier info)
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 UPDATE orders_inbox
                 SET status = %s,
                     shipping_carrier_code = %s,
@@ -319,13 +327,17 @@ def sync_order_from_shipstation(shipstation_order: Dict[str, Any], conn=None) ->
             service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
         
         # Check if order exists
-        existing = conn.execute("""
+        cursor = conn.cursor()
+        cursor.execute("""
             SELECT id FROM orders_inbox WHERE order_number = %s
-        """, (order_number,)).fetchone()
+        """, (order_number,))
+        existing = cursor.fetchone()
         
         if existing:
             # Update existing order with current ShipStation data
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 UPDATE orders_inbox
                 SET status = %s,
                     shipstation_order_id = %s,
@@ -367,7 +379,9 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
     
     # Batch update for 'shipped' status
     if 'shipped' in status_buckets and status_buckets['shipped']:
-        conn.executemany("""
+        cursor = conn.cursor()
+
+        cursor.executemany("""
             UPDATE orders_inbox
             SET status = 'shipped',
                 shipping_carrier_code = %s,
@@ -384,7 +398,9 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
     
     # Batch update for 'cancelled' status
     if 'cancelled' in status_buckets and status_buckets['cancelled']:
-        conn.executemany("""
+        cursor = conn.cursor()
+
+        cursor.executemany("""
             UPDATE orders_inbox
             SET status = 'cancelled',
                 shipping_carrier_code = %s,
@@ -401,7 +417,9 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
     
     # Batch update for 'awaiting_shipment' status
     if 'awaiting_shipment' in status_buckets and status_buckets['awaiting_shipment']:
-        conn.executemany("""
+        cursor = conn.cursor()
+
+        cursor.executemany("""
             UPDATE orders_inbox
             SET status = 'awaiting_shipment',
                 shipping_carrier_code = %s,
@@ -419,7 +437,9 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
     # Batch update for 'on_hold' and 'awaiting_payment' statuses
     for status in ['on_hold', 'awaiting_payment']:
         if status in status_buckets and status_buckets[status]:
-            conn.executemany("""
+            cursor = conn.cursor()
+
+            cursor.executemany("""
                 UPDATE orders_inbox
                 SET status = %s,
                     shipping_carrier_code = %s,

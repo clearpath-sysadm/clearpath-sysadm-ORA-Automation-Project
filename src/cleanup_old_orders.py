@@ -42,7 +42,9 @@ def cleanup_old_orders(days=60):
         logger.info(f"Starting cleanup of orders older than {days} days (before {cutoff_date})")
         
         with transaction() as conn:
-            cursor = conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 SELECT COUNT(*) FROM orders_inbox
                 WHERE DATE(order_date) < %s
             """, (cutoff_date,))
@@ -58,7 +60,10 @@ def cleanup_old_orders(days=60):
             
             logger.info(f"Found {orders_to_delete} orders to delete")
             
-            cursor = conn.execute("""
+            cursor = conn.cursor()
+
+            
+            cursor.execute("""
                 DELETE FROM order_items_inbox
                 WHERE order_inbox_id IN (
                     SELECT id FROM orders_inbox
@@ -68,7 +73,10 @@ def cleanup_old_orders(days=60):
             items_deleted = cursor.rowcount
             logger.info(f"Deleted {items_deleted} order items")
             
-            cursor = conn.execute("""
+            cursor = conn.cursor()
+
+            
+            cursor.execute("""
                 DELETE FROM shipstation_order_line_items
                 WHERE order_inbox_id IN (
                     SELECT id FROM orders_inbox
@@ -78,7 +86,10 @@ def cleanup_old_orders(days=60):
             line_items_deleted = cursor.rowcount
             logger.info(f"Deleted {line_items_deleted} ShipStation line items")
             
-            cursor = conn.execute("""
+            cursor = conn.cursor()
+
+            
+            cursor.execute("""
                 DELETE FROM orders_inbox
                 WHERE DATE(order_date) < %s
             """, (cutoff_date,))

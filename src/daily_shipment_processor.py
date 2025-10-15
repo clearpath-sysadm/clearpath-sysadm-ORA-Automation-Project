@@ -259,9 +259,12 @@ def save_shipped_orders_to_db(orders_df):
             
             shipstation_order_id = str(shipstation_order_id) if shipstation_order_id and str(shipstation_order_id) != 'nan' else None
             
-            conn.execute("""
+            cursor = conn.cursor()
+
+            
+            cursor.execute("""
                 INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
-                VALUES (?, %s, %s)
+                VALUES (%s, %s, %s)
                 ON CONFLICT(order_number) DO UPDATE SET
                     ship_date = excluded.ship_date,
                     shipstation_order_id = excluded.shipstation_order_id
@@ -303,10 +306,13 @@ def save_shipped_items_to_db(items_df):
             sku_lot = str(sku_lot) if sku_lot and str(sku_lot) != 'nan' else ''
             tracking_number = str(tracking_number) if tracking_number and str(tracking_number) != 'nan' else ''
             
-            conn.execute("""
+            cursor = conn.cursor()
+
+            
+            cursor.execute("""
                 INSERT INTO shipped_items (
                     ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number
-                ) VALUES (?, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
                     ship_date = excluded.ship_date,
                     quantity_shipped = excluded.quantity_shipped,
@@ -346,10 +352,12 @@ def save_weekly_history_to_db(history_df):
                     quantity = 0
                 
                 if quantity > 0:
-                    conn.execute("""
+                    cursor = conn.cursor()
+
+                    cursor.execute("""
                         INSERT INTO weekly_shipped_history (
                             start_date, end_date, sku, quantity_shipped
-                        ) VALUES (?, %s, %s, %s)
+                        ) VALUES (%s, %s, %s, %s)
                         ON CONFLICT(start_date, end_date, sku) DO UPDATE SET
                             quantity_shipped = excluded.quantity_shipped
                     """, (str(start_date), str(end_date), sku, quantity))
@@ -426,7 +434,9 @@ def run_daily_shipment_pull(request=None):
     try:
         # Create or update workflow record
         with transaction() as conn:
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 INSERT INTO workflows (name, display_name, status, last_run_at)
                 VALUES ('daily_shipment_processor', 'Daily Shipment Processor', 'running', CURRENT_TIMESTAMP)
                 ON CONFLICT(name) DO UPDATE SET
@@ -507,7 +517,9 @@ def run_daily_shipment_pull(request=None):
         duration = (datetime.datetime.now() - workflow_start_time).total_seconds()
         
         with transaction() as conn:
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 UPDATE workflows 
                 SET status = 'completed',
                     records_processed = %s,
@@ -525,7 +537,9 @@ def run_daily_shipment_pull(request=None):
         # Update workflow status to failed
         try:
             with transaction() as conn:
-                conn.execute("""
+                cursor = conn.cursor()
+
+                cursor.execute("""
                     UPDATE workflows 
                     SET status = 'failed',
                         error_message = %s

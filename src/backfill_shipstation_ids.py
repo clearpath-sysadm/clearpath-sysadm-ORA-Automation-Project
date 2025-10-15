@@ -97,21 +97,27 @@ def backfill_shipstation_ids(batch_size=50, limit=None):
                         if not order_number or not order_id:
                             continue
                         
-                        cursor = conn.execute("""
+                        cursor = conn.cursor()
+
+                        
+                        cursor.execute("""
                             UPDATE orders_inbox
-                            SET shipstation_order_id = ?,
+                            SET shipstation_order_id = %s,
                                 updated_at = CURRENT_TIMESTAMP
-                            WHERE order_number = ?
+                            WHERE order_number = %s
                               AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
                         """, (str(order_id), order_number))
                         
                         if cursor.rowcount > 0:
                             updated_inbox += cursor.rowcount
                         
-                        cursor = conn.execute("""
+                        cursor = conn.cursor()
+
+                        
+                        cursor.execute("""
                             UPDATE shipped_orders
-                            SET shipstation_order_id = ?
-                            WHERE order_number = ?
+                            SET shipstation_order_id = %s
+                            WHERE order_number = %s
                               AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
                         """, (str(order_id), order_number))
                         

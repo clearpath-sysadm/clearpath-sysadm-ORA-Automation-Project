@@ -175,7 +175,9 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
     try:
         with transaction() as conn:
             # Track workflow status
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 UPDATE workflows 
                 SET status = 'running',
                     last_run_at = CURRENT_TIMESTAMP
@@ -210,10 +212,13 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
                 elif current_quantity < 50:  # Default reorder point
                     alert_level = 'low'
                 
-                conn.execute("""
+                cursor = conn.cursor()
+
+                
+                cursor.execute("""
                     INSERT INTO inventory_current 
                         (sku, product_name, current_quantity, weekly_avg_cents, alert_level, last_updated)
-                    VALUES (?, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                     ON CONFLICT(sku) DO UPDATE SET
                         product_name = excluded.product_name,
                         current_quantity = excluded.current_quantity,
@@ -225,7 +230,9 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
                 records_processed += 1
             
             # Update workflow status to completed
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 UPDATE workflows 
                 SET status = 'completed',
                     records_processed = %s,
@@ -240,7 +247,9 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
         # Update workflow status to failed
         try:
             with transaction() as conn:
-                conn.execute("""
+                cursor = conn.cursor()
+
+                cursor.execute("""
                     UPDATE workflows 
                     SET status = 'failed',
                         details = %s
