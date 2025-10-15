@@ -77,8 +77,6 @@ def find_orders_with_old_lot(orders):
     matching_orders = []
     
     for order in orders:
-        order_id = order.get('orderId')
-        order_number = order.get('orderNumber')
         items = order.get('items', [])
         
         # Check if any item has the old lot number
@@ -90,20 +88,16 @@ def find_orders_with_old_lot(orders):
                 break
         
         if has_old_lot:
-            matching_orders.append({
-                'orderId': order_id,
-                'orderNumber': order_number,
-                'orderStatus': order.get('orderStatus'),
-                'items': items
-            })
+            # Store the ENTIRE order object for updating
+            matching_orders.append(order)
     
     return matching_orders
 
-def update_order_lot(headers, order_info, dry_run=True):
+def update_order_lot(headers, order, dry_run=True):
     """Update a single order's lot number"""
-    order_id = order_info['orderId']
-    order_number = order_info['orderNumber']
-    items = order_info['items']
+    order_id = order.get('orderId')
+    order_number = order.get('orderNumber')
+    items = order.get('items', [])
     
     # Create updated items list
     updated_items = []
@@ -126,11 +120,10 @@ def update_order_lot(headers, order_info, dry_run=True):
     if changes_made == 0:
         return False
     
-    # Prepare update payload
-    update_payload = {
-        'orderId': order_id,
-        'items': updated_items
-    }
+    # Prepare FULL order payload with updated items
+    # ShipStation requires ALL fields, not just changes
+    update_payload = order.copy()
+    update_payload['items'] = updated_items
     
     if dry_run:
         logger.info(f"   [DRY RUN] Would update order {order_number} ({changes_made} items)")
@@ -176,11 +169,11 @@ def main(dry_run=True):
     logger.info("📋 ORDERS TO UPDATE:")
     logger.info(f"{'='*80}")
     
-    for i, order_info in enumerate(matching_orders, 1):
-        logger.info(f"\n{i}. Order: {order_info['orderNumber']} (ID: {order_info['orderId']})")
-        logger.info(f"   Status: {order_info['orderStatus']}")
+    for i, order in enumerate(matching_orders, 1):
+        logger.info(f"\n{i}. Order: {order.get('orderNumber')} (ID: {order.get('orderId')})")
+        logger.info(f"   Status: {order.get('orderStatus')}")
         
-        old_lot_items = [item for item in order_info['items'] if item.get('sku') == OLD_LOT]
+        old_lot_items = [item for item in order.get('items', []) if item.get('sku') == OLD_LOT]
         for item in old_lot_items:
             logger.info(f"   - SKU: {item.get('sku')} | Qty: {item.get('quantity')} | Name: {item.get('name')}")
     
@@ -193,9 +186,9 @@ def main(dry_run=True):
     logger.info(f"{'='*80}\n")
     
     updated_count = 0
-    for order_info in matching_orders:
-        logger.info(f"Order {order_info['orderNumber']}:")
-        if update_order_lot(headers, order_info, dry_run=dry_run):
+    for order in matching_orders:
+        logger.info(f"Order {order.get('orderNumber')}:")
+        if update_order_lot(headers, order, dry_run=dry_run):
             updated_count += 1
     
     # Summary
