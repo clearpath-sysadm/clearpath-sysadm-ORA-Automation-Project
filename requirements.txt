@@ -25,4 +25,4 @@ sendgrid
 sqlalchemy
 tenacity
 flask
-defusedxml
+defusedxmlpsycopg2-binary==2.9.9
