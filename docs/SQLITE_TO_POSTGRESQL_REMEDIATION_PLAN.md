@@ -507,14 +507,92 @@ After fixes:
 
 ## Execution Timeline
 
-| Priority | Files | Import Fixes | Placeholder Fixes | Time | Cumulative |
-|----------|-------|--------------|-------------------|------|------------|
+### Detailed Effort Estimates
+
+#### **P0 - URGENT (15 minutes)**
+
+| File | Task | Effort | Notes |
+|------|------|--------|-------|
+| app.py | Remove import (line 9) | 30 sec | Delete `import sqlite3` |
+| app.py | Fix import (line 16) | 30 sec | `db_utils` → `pg_utils` |
+| app.py | Fix import (line 901) | 30 sec | `db_utils` → `pg_utils` |
+| shipstation_units_refresher.py | Remove import (line 9) | 30 sec | Delete `import sqlite3` |
+| shipstation_units_refresher.py | Add import | 30 sec | Add pg_utils import |
+| shipstation_units_refresher.py | Rewrite query (lines 53-62) | 5 min | Complete rewrite to PostgreSQL |
+| **P0 Testing** | Test dashboard + metrics | 7 min | Verify APIs work, metrics update |
+| **P0 Subtotal** | 3 imports, 1 rewrite | **15 min** | |
+
+#### **P1 - Critical Production (30 minutes)**
+
+| File | Task | Effort | Notes |
+|------|------|--------|-------|
+| scheduled_shipstation_upload.py | Fix 21 placeholders | 8 min | Find/replace `?` → `%s` (import already correct) |
+| shipstation_status_sync.py | Fix import (line 29) | 30 sec | `db_utils` → `pg_utils` |
+| shipstation_status_sync.py | Fix 20 placeholders | 8 min | Find/replace `?` → `%s` |
+| scheduled_cleanup.py | Fix import (line 19) | 30 sec | `db_utils` → `pg_utils` |
+| **P1 Testing** | Test upload + sync + cleanup | 12 min | Run workflows, verify no errors |
+| **P1 Subtotal** | 2 imports, 41 placeholders | **30 min** | |
+
+#### **P2 - Supporting Services (30 minutes)**
+
+| File | Task | Effort | Notes |
+|------|------|--------|-------|
+| cleanup_old_orders.py | Fix import (line 21) | 30 sec | `db_utils` → `pg_utils` |
+| cleanup_old_orders.py | Fix 8 placeholders | 3 min | Find/replace `?` → `%s` |
+| weekly_reporter.py | Fix import (line 13) | 30 sec | `db_utils` → `pg_utils` |
+| weekly_reporter.py | Fix 10 placeholders | 4 min | Find/replace `?` → `%s` |
+| shipping_validator.py | Fix import (line 32) | 30 sec | `db_utils` → `pg_utils` |
+| shipping_validator.py | Fix 14 placeholders | 5 min | Find/replace `?` → `%s` |
+| daily_shipment_processor.py | Fix import (line 30) | 30 sec | `db_utils` → `pg_utils` |
+| daily_shipment_processor.py | Fix 14 placeholders | 5 min | Find/replace `?` → `%s` |
+| **P2 Testing** | Test supporting services | 10 min | Run reports, validation, processor |
+| **P2 Subtotal** | 4 imports, 46 placeholders | **30 min** | |
+
+#### **P3 - Utilities & Data Processing (20 minutes)**
+
+| File | Task | Effort | Notes |
+|------|------|--------|-------|
+| backfill_shipstation_ids.py | Fix import (line 21) | 30 sec | `db_utils` → `pg_utils` |
+| backfill_shipstation_ids.py | Fix 7 placeholders | 3 min | Find/replace `?` → `%s` |
+| sku_lot_parser.py | Fix 3 placeholders | 2 min | Lines 115, 145, 183: `?` → `%s` |
+| sku_lot_parser.py | Fix cursor.lastrowid | 2 min | Line 186: Use `RETURNING id` |
+| metrics_refresher.py | Fix import (line 9) | 30 sec | `db_utils` → `pg_utils` |
+| cleanup_shipstation_duplicates.py | Fix import (line 31) | 30 sec | `db_utils` → `pg_utils` |
+| backfill_september_shipments.py | Fix import (line 31) | 30 sec | `db_utils` → `pg_utils` |
+| sync_awaiting_shipment.py | Fix import (line 15) | 30 sec | `db_utils` → `pg_utils` |
+| **P3 Testing** | Test utility scripts | 7 min | Spot check utilities work |
+| **P3 Subtotal** | 7 imports, 13 changes | **20 min** | |
+
+#### **Final Testing & Verification (25 minutes)**
+
+| Task | Effort | Notes |
+|------|--------|-------|
+| Integration testing | 10 min | Full order flow: XML import → Upload → Sync |
+| Regression testing | 8 min | Verify quantities match, workflows run |
+| Final verification | 7 min | Check all success criteria, LSP diagnostics |
+| **Testing Subtotal** | **25 min** | |
+
+### Summary Timeline
+
+| Priority | Files | Import Fixes | Placeholder/Other Fixes | Time | Cumulative |
+|----------|-------|--------------|------------------------|------|------------|
 | P0 | 2 files | 3 imports | 1 rewrite | 15 min | 15 min |
 | P1 | 3 files | 2 imports | 41 placeholders | 30 min | 45 min |
 | P2 | 4 files | 4 imports | 46 placeholders | 30 min | 75 min |
-| P3 | 6 files | 4 imports | 10 placeholders | 20 min | 95 min |
-| Testing | All files | - | - | 25 min | 120 min |
-| **TOTAL** | **18 files** | **13 imports** | **98 changes** | **~2 hours** | - |
+| P3 | 6 files | 7 imports | 13 changes | 20 min | 95 min |
+| Testing | All 18 files | - | - | 25 min | 120 min |
+| **TOTAL** | **18 files** | **16 imports** | **101 changes** | **~2 hours** | - |
+
+### Time-Saving Optimizations
+
+**Parallel Execution Opportunities:**
+- All P2 files can be fixed in parallel (4 files simultaneously) → Save 15 min
+- All P3 files can be fixed in parallel (6 files simultaneously) → Save 10 min
+
+**With Parallel Execution:**
+- P2: 30 min → **15 min** (if using 4 parallel editors)
+- P3: 20 min → **10 min** (if using 6 parallel editors)
+- **Optimized Total: ~90 minutes** (1.5 hours)
 
 ---
 
