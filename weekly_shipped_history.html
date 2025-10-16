@@ -141,27 +141,26 @@
                             <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                     </button>
-                    <div>
+                    <div style="display: flex; align-items: center; gap: 16px;">
                         <h1 class="page-title">Weekly Reports</h1>
-                        <div id="lastUpdated" style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">
-                            Last updated: <span id="lastUpdatedTime">Loading...</span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button class="btn btn-primary" onclick="runEOD()" id="btn-eod">
+                                📦 EOD
+                                <div class="btn-status" id="eod-status"></div>
+                            </button>
+                            <button class="btn btn-primary" onclick="runEOW()" id="btn-eow">
+                                📊 EOW
+                                <div class="btn-status" id="eow-status"></div>
+                            </button>
+                            <button class="btn btn-primary" onclick="runEOM()" id="btn-eom">
+                                💰 EOM
+                                <div class="btn-status" id="eom-status"></div>
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div class="top-bar-actions">
-                    <button class="btn btn-primary" onclick="runEOD()" id="btn-eod">
-                        📦 EOD
-                        <div class="btn-status" id="eod-status"></div>
-                    </button>
-                    <button class="btn btn-primary" onclick="runEOW()" id="btn-eow" style="margin-left: 8px;">
-                        📊 EOW
-                        <div class="btn-status" id="eow-status"></div>
-                    </button>
-                    <button class="btn btn-primary" onclick="runEOM()" id="btn-eom" style="margin-left: 8px;">
-                        💰 EOM
-                        <div class="btn-status" id="eom-status"></div>
-                    </button>
-                    <button class="dark-mode-toggle" onclick="toggleDarkMode()" style="margin-left: 8px;">🌙</button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
                 </div>
             </div>
 
@@ -169,20 +168,27 @@
             <div class="content-area">
                 <!-- Filter Controls -->
                 <div class="controls">
-                    <label for="skuFilter">
-                        <strong>Filter by SKU:</strong>
-                    </label>
-                    <select id="skuFilter">
-                        <option value="">All SKUs</option>
-                        <option value="17612">17612</option>
-                        <option value="17904">17904</option>
-                        <option value="17914">17914</option>
-                        <option value="17975">17975</option>
-                        <option value="18675">18675</option>
-                        <option value="18795">18795</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="applyFilter()">Apply Filter</button>
-                    <button class="btn" onclick="clearFilter()">Clear Filter</button>
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <div>
+                            <label for="skuFilter">
+                                <strong>Filter by SKU:</strong>
+                            </label>
+                            <select id="skuFilter">
+                                <option value="">All SKUs</option>
+                                <option value="17612">17612</option>
+                                <option value="17904">17904</option>
+                                <option value="17914">17914</option>
+                                <option value="17975">17975</option>
+                                <option value="18675">18675</option>
+                                <option value="18795">18795</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="applyFilter()">Apply Filter</button>
+                            <button class="btn" onclick="clearFilter()">Clear Filter</button>
+                        </div>
+                        <div id="lastUpdated" style="font-size: 12px; color: var(--text-tertiary); margin-left: auto;">
+                            Last updated: <span id="lastUpdatedTime">Loading...</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Summary Cards -->
