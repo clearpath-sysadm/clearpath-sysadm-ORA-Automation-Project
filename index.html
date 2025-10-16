@@ -714,6 +714,9 @@
                     document.getElementById('automation-list').innerHTML = '<p style="color: var(--text-tertiary); text-align: center; padding: 20px;">No automation data</p>';
                 }
                 
+                // Re-check auto-ship day status (updates in real-time)
+                checkAutoShipDay();
+                
                 hideSkeletons();
                 lastUpdateTime = Date.now();
                 updateTimestamp();
