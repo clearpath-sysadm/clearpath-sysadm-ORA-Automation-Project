@@ -497,7 +497,7 @@ def get_sync_interval():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT param_value FROM configuration_params WHERE param_key = 'sync_interval'")
+        cursor.execute("SELECT value FROM configuration_params WHERE category = 'Polling' AND parameter_name = 'sync_interval'")
         result = cursor.fetchone()
         _sync_interval_cache = int(result[0]) if result else 300
         _sync_interval_cache_time = datetime.now()
@@ -531,13 +531,13 @@ if cycle_count % 5 == 0:  # Every 5 cycles
 **Validation Commands:**
 ```bash
 # Verify interval from config
-psql $DATABASE_URL -c "SELECT param_value FROM configuration_params WHERE param_key = 'sync_interval';"
+psql $DATABASE_URL -c "SELECT value FROM configuration_params WHERE category = 'Polling' AND parameter_name = 'sync_interval';"
 
 # Check startup log
 grep "Unified sync started" logs/*.log | tail -1
 
 # Test dynamic update
-psql $DATABASE_URL -c "UPDATE configuration_params SET param_value = '180' WHERE param_key = 'sync_interval';"
+psql $DATABASE_URL -c "UPDATE configuration_params SET value = '180' WHERE category = 'Polling' AND parameter_name = 'sync_interval';"
 # Wait 5 cycles, check if new interval logged
 grep "interval=" logs/*.log | tail -5
 ```
@@ -682,8 +682,8 @@ psql $DATABASE_URL -c "SELECT max(numbackends) FROM pg_stat_database WHERE datna
 ### Stage 1: Upload Only (Days 1-3)
 
 ```sql
-UPDATE configuration_params SET param_value = 'true' WHERE param_key = 'fast_polling_enabled';
-UPDATE configuration_params SET param_value = '15' WHERE param_key = 'fast_polling_interval';
+UPDATE configuration_params SET value = 'true' WHERE category = 'Polling' AND parameter_name = 'fast_polling_enabled';
+UPDATE configuration_params SET value = '15' WHERE category = 'Polling' AND parameter_name = 'fast_polling_interval';
 ```
 
 **Monitor Commands:**
@@ -713,7 +713,7 @@ psql $DATABASE_URL -c "SELECT * FROM polling_state;"
 ### Stage 2: Full Optimization (Days 4-7)
 
 ```sql
-UPDATE configuration_params SET param_value = '120' WHERE param_key = 'sync_interval';
+UPDATE configuration_params SET value = '120' WHERE category = 'Polling' AND parameter_name = 'sync_interval';
 ```
 
 **Continue monitoring all metrics for 72 hours.**
@@ -778,11 +778,11 @@ echo "=== END-TO-END LATENCY ==="
 
 ```sql
 -- Disable fast polling
-UPDATE configuration_params SET param_value = 'false' WHERE param_key = 'fast_polling_enabled';
+UPDATE configuration_params SET value = 'false' WHERE category = 'Polling' AND parameter_name = 'fast_polling_enabled';
 
 -- Reset to 5-min intervals
-UPDATE configuration_params SET param_value = '300' WHERE param_key = 'fast_polling_interval';
-UPDATE configuration_params SET param_value = '300' WHERE param_key = 'sync_interval';
+UPDATE configuration_params SET value = '300' WHERE category = 'Polling' AND parameter_name = 'fast_polling_interval';
+UPDATE configuration_params SET value = '300' WHERE category = 'Polling' AND parameter_name = 'sync_interval';
 ```
 
 Workflows pick up changes within 15-60 seconds (cached).
@@ -936,7 +936,7 @@ psql $DATABASE_URL -c "SELECT count(*) FROM pg_stat_activity WHERE datname = cur
 echo "(target: <10)"
 
 echo -e "\n⚙️  FEATURE FLAGS:"
-psql $DATABASE_URL -c "SELECT param_key, param_value FROM configuration_params WHERE param_key IN ('fast_polling_enabled', 'fast_polling_interval', 'sync_interval');"
+psql $DATABASE_URL -c "SELECT parameter_name, value FROM configuration_params WHERE category = 'Polling';"
 
 echo -e "\n📈 POLLING STATE:"
 psql $DATABASE_URL -c "SELECT * FROM polling_state;"
@@ -955,4 +955,30 @@ echo -e "\n🎯 FINAL STATUS: $([ $(grep 'ERROR' logs/*.log | wc -l) -eq 0 ] && 
 
 **Status:** FINAL - All Break Points Fixed, Efficiencies Added  
 **Ready:** YES - Safe to implement  
-**Next:** Approve → Execute Phase 0
+
+---
+
+## 📝 Plan Corrections Applied (Oct 16, 2025)
+
+During Phase 0 implementation, discovered the plan had incorrect database schema assumptions:
+
+**Original Plan Assumed:**
+- Configuration table columns: `param_key`, `param_value`
+
+**Actual Database Schema:**
+- Configuration table columns: `parameter_name`, `value`
+- Unique constraint: `(category, parameter_name, sku)`
+
+**All Code Examples Corrected:**
+- ✅ Phase 1: `get_feature_flag()` function updated
+- ✅ Phase 2: XML import helpers updated
+- ✅ Phase 3: `get_sync_interval()` function updated
+- ✅ Phase 5: Rollout SQL commands updated
+- ✅ Rollback procedures updated
+- ✅ Final validation script updated
+
+**Plan is now accurate and ready for implementation.**
+
+---
+
+**Next:** Phase 0 Complete → Proceed to Phase 1

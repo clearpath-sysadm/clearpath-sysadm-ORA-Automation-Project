@@ -28,7 +28,103 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-UPLOAD_INTERVAL_SECONDS = 300  # 5 minutes
+UPLOAD_INTERVAL_SECONDS = 300  # 5 minutes (used when fast polling disabled)
+
+# ============================================
+# OPTIMIZED POLLING - Phase 1 Implementation
+# ============================================
+
+# Feature flag cache (reduce DB queries)
+_flag_cache = {}
+_flag_cache_time = None
+
+def get_feature_flag(key, default='false'):
+    """Cached feature flag check (60 sec TTL)"""
+    global _flag_cache, _flag_cache_time
+    
+    # Cache for 60 seconds
+    if _flag_cache_time and (datetime.now() - _flag_cache_time).seconds < 60:
+        return _flag_cache.get(key, default)
+    
+    # Refresh cache using existing get_connection
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT parameter_name, value 
+            FROM configuration_params 
+            WHERE category = 'Polling'
+        """)
+        _flag_cache = {row[0]: row[1] for row in cursor.fetchall()}
+        _flag_cache_time = datetime.now()
+        return _flag_cache.get(key, default)
+    finally:
+        conn.close()
+
+def has_pending_orders_fast():
+    """
+    EFFICIENT: Use EXISTS instead of COUNT
+    Returns (has_orders: bool, count: int, duration_ms: int)
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        start = time.time()
+        
+        # CORRECTED: Use 'awaiting_shipment' not 'Pending'
+        # EXISTS is faster than COUNT for large tables
+        cursor.execute("""
+            SELECT EXISTS(
+                SELECT 1 FROM orders_inbox 
+                WHERE status = 'awaiting_shipment'
+                LIMIT 1
+            )
+        """)
+        has_orders = cursor.fetchone()[0]
+        
+        # If orders exist, get actual count for logging
+        count = 0
+        if has_orders:
+            cursor.execute("""
+                SELECT COUNT(*) FROM orders_inbox 
+                WHERE status = 'awaiting_shipment'
+            """)
+            count = cursor.fetchone()[0]
+        
+        duration_ms = int((time.time() - start) * 1000)
+        
+        # Structured log for monitoring
+        logger.info(f"METRICS: workflow=upload exists={has_orders} count={count} duration_ms={duration_ms} action={'process' if has_orders else 'skip'}")
+        
+        return has_orders, count, duration_ms
+        
+    except Exception as e:
+        logger.error(f"Error checking pending orders: {e}")
+        return True, 0, 0  # Default to processing on error (safe fallback)
+    finally:
+        conn.close()
+
+def update_polling_state(count):
+    """Update polling state for monitoring"""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE polling_state 
+            SET last_upload_count = %s,
+                last_upload_check = CURRENT_TIMESTAMP
+            WHERE id = 1
+        """, (count,))
+        conn.commit()
+    except Exception as e:
+        logger.debug(f"Failed to update polling state: {e}")
+        # Don't fail workflow on metrics update
+    finally:
+        conn.close()
+
+# ============================================
+# END OPTIMIZED POLLING
+# ============================================
 
 def normalize_sku(sku):
     """
@@ -91,7 +187,7 @@ def upload_pending_orders():
         cursor.execute("""
             SELECT id
             FROM orders_inbox
-            WHERE status = 'pending'
+            WHERE status = 'awaiting_shipment'
               AND order_number NOT IN (SELECT order_number FROM shipped_orders)
             FOR UPDATE SKIP LOCKED
         """)
@@ -534,33 +630,63 @@ def upload_pending_orders():
         return 0
 
 def run_scheduled_upload():
-    """Main loop - runs every 5 minutes"""
-    logger.info(f"Starting scheduled ShipStation upload (every {UPLOAD_INTERVAL_SECONDS}s)")
+    """Main loop with efficient change detection (Phase 1 optimized polling)"""
+    
+    # Get config
+    enabled = get_feature_flag('fast_polling_enabled', 'true') == 'true'
+    interval = int(get_feature_flag('fast_polling_interval', '300'))
+    
+    logger.info(f"🚀 Upload workflow started (fast_polling={enabled}, interval={interval}s)")
+    
+    last_count = 0
+    error_count = 0
     
     while True:
         try:
+            # Check workflow control
             if not is_workflow_enabled('shipstation-upload'):
-                logger.info("Workflow 'shipstation-upload' is DISABLED - sleeping 60s")
+                logger.debug("Workflow disabled - sleeping 60s")
                 time.sleep(60)
                 continue
             
-            logger.info("Running scheduled upload...")
+            # Preflight check (if fast polling enabled)
+            if enabled:
+                has_orders, count, duration = has_pending_orders_fast()
+                
+                if not has_orders:
+                    # Throttle logging - only log state changes
+                    if last_count > 0:
+                        logger.info("✅ Upload queue empty")
+                        update_polling_state(0)
+                    last_count = 0
+                    time.sleep(interval)
+                    continue
+                
+                # Log only if count changed
+                if count != last_count:
+                    logger.info(f"📤 Processing {count} pending orders")
+                
+                update_polling_state(count)
+                last_count = count
+            
+            # Run existing upload logic (all safeguards preserved)
             update_workflow_last_run('shipstation-upload')
+            upload_pending_orders()
+            error_count = 0
             
-            uploaded = upload_pending_orders()
-            
-            if uploaded > 0:
-                logger.info(f"Successfully uploaded {uploaded} orders to ShipStation")
-            
-            logger.info(f"Next upload in {UPLOAD_INTERVAL_SECONDS} seconds")
-            time.sleep(UPLOAD_INTERVAL_SECONDS)
+            time.sleep(interval if enabled else UPLOAD_INTERVAL_SECONDS)
             
         except KeyboardInterrupt:
             logger.info("Scheduled upload stopped by user")
             break
         except Exception as e:
-            logger.error(f"Error in scheduled upload: {str(e)}")
-            time.sleep(UPLOAD_INTERVAL_SECONDS)
+            error_count += 1
+            logger.error(f"❌ Upload error: {e}", exc_info=True)
+            
+            # Exponential backoff with max 5 min
+            backoff = min(60 * error_count, 300)
+            logger.info(f"Backing off {backoff}s after error #{error_count}")
+            time.sleep(backoff)
 
 if __name__ == '__main__':
     run_scheduled_upload()
