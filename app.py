@@ -276,6 +276,36 @@ def api_automation_status():
             'error': str(e)
         }), 500
 
+@app.route('/api/workflow_timestamps')
+def api_workflow_timestamps():
+    """Lightweight endpoint - returns only workflow timestamps for change detection"""
+    try:
+        query = """
+            SELECT 
+                workflow_name,
+                EXTRACT(EPOCH FROM last_run_at) as timestamp_epoch
+            FROM workflow_controls
+            WHERE workflow_name IN ('shipstation-upload', 'xml-import', 'unified-shipstation-sync')
+            AND last_run_at IS NOT NULL
+        """
+        results = execute_query(query)
+        
+        timestamps = {}
+        for row in results:
+            workflow_name = row[0]
+            timestamp_epoch = row[1]
+            timestamps[workflow_name] = timestamp_epoch
+        
+        return jsonify({
+            'success': True,
+            'timestamps': timestamps
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/shipped_orders')
 def api_shipped_orders():
     """Get all shipped orders with pagination"""

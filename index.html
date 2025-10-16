@@ -344,11 +344,45 @@
         let lastUpdateTime = Date.now();
         let isRefreshing = false;
         let darkMode = localStorage.getItem('darkMode') === 'true';
+        let lastKnownTimestamps = {}; // Track workflow timestamps for smart polling
 
         // Initialize dark mode
         if (darkMode) {
             document.body.classList.add('dark-mode');
             document.querySelector('.dark-mode-toggle').textContent = '☀️';
+        }
+
+        // Smart polling: Check timestamps and only fetch data when workflows run
+        async function checkWorkflowTimestamps() {
+            try {
+                const response = await fetch('/api/workflow_timestamps');
+                const result = await response.json();
+                
+                if (!result.success || !result.timestamps) return;
+                
+                const currentTimestamps = result.timestamps;
+                let hasChanges = false;
+                
+                // Check if any workflow timestamp changed
+                for (const [workflow, timestamp] of Object.entries(currentTimestamps)) {
+                    if (!lastKnownTimestamps[workflow] || lastKnownTimestamps[workflow] !== timestamp) {
+                        hasChanges = true;
+                        break;
+                    }
+                }
+                
+                // Only fetch full data if workflows actually ran
+                if (hasChanges) {
+                    console.log('📊 Workflows updated - fetching fresh data');
+                    lastKnownTimestamps = currentTimestamps;
+                    await loadDashboardData();
+                    lastUpdateTime = Date.now();
+                }
+            } catch (error) {
+                console.error('Timestamp check failed:', error);
+                // Fallback: load data anyway if check fails
+                await loadDashboardData();
+            }
         }
 
         // Toggle dark mode
@@ -750,14 +784,15 @@
             }
         }
 
-        // Auto-refresh every 15 seconds (matches workflow polling rate)
+        // Smart polling: Check workflow timestamps every 5 seconds
+        // Only fetch full data when workflows actually run (event-driven)
         setInterval(() => {
             if (!document.hidden) {
-                loadDashboardData();
+                checkWorkflowTimestamps();
             }
-        }, 15000);
+        }, 5000);
 
-        // Update timestamp every 5 seconds (for real-time feel)
+        // Update timestamp display every 5 seconds
         setInterval(updateTimestamp, 5000);
 
         // Close mobile menu on ESC key
