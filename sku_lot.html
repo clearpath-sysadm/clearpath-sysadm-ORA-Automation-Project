@@ -343,7 +343,9 @@
                 </div>
             `).join('');
             
-            initializeSwipeGestures();
+            if (typeof SwipeGestureController !== 'undefined') {
+                initializeSwipeGestures();
+            }
         }
 
         // Load SKU Lots
