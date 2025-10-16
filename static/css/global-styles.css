@@ -728,18 +728,26 @@ textarea::placeholder {
 }
 
 /* ========================================
-   6. BUTTONS
+   6. BUTTONS - GLOBAL UNIFIED STYLE
    ======================================== */
 
-.btn {
+/* Single global button style - all buttons look identical */
+.btn,
+.btn-primary,
+.btn-success,
+.btn-warning,
+.btn-danger,
+.btn-upload,
+.btn-manual-import,
+.btn-secondary {
     display: inline-flex;
     align-items: center;
     gap: calc(var(--spacing-unit) * 1);
     padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2);
     border-radius: var(--border-radius-sm);
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+    background-color: #5A6B8C;
+    color: white;
+    border: 1px solid #5A6B8C;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -747,83 +755,25 @@ textarea::placeholder {
     text-decoration: none;
 }
 
-.btn:hover {
-    background-color: var(--bg-tertiary);
-    transform: translateY(-1px);
-}
-
-.btn-primary {
-    background-color: #5A6B8C;
-    color: white;
-    border: 1px solid #5A6B8C;
-    font-weight: 500;
-}
-
-.btn-primary:hover {
+.btn:hover,
+.btn-primary:hover,
+.btn-success:hover,
+.btn-warning:hover,
+.btn-danger:hover,
+.btn-upload:hover,
+.btn-manual-import:hover,
+.btn-secondary:hover {
     background-color: #4A5B7C;
     border-color: #4A5B7C;
     transform: translateY(-1px);
 }
 
-.btn-success {
-    background-color: #5A6B8C;
-    color: white;
-    border: 1px solid #5A6B8C;
-    font-weight: 500;
-}
-
-.btn-success:hover {
-    background-color: #4A5B7C;
-    border-color: #4A5B7C;
-    transform: translateY(-1px);
-}
-
-.btn-warning {
-    background-color: #5A6B8C;
-    color: white;
-    border: 1px solid #5A6B8C;
-    font-weight: 500;
-}
-
-.btn-warning:hover {
-    background-color: #4A5B7C;
-    border-color: #4A5B7C;
-    transform: translateY(-1px);
-}
-
-.btn-danger {
-    background-color: #5A6B8C;
-    color: white;
-    border: 1px solid #5A6B8C;
-    font-weight: 500;
-}
-
-.btn-danger:hover {
-    background-color: #4A5B7C;
-    border-color: #4A5B7C;
-    transform: translateY(-1px);
-}
-
-.btn:disabled {
+.btn:disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
-}
-
-/* Premium Action Button Variants */
-.btn-upload,
-.btn-manual-import {
-    background-color: #5A6B8C;
-    color: white;
-    border: 1px solid #5A6B8C;
-    font-weight: 500;
-}
-
-.btn-upload:hover,
-.btn-manual-import:hover {
-    background-color: #4A5B7C;
-    border-color: #4A5B7C;
-    transform: translateY(-1px);
 }
 
 /* Desktop Actions Container */
