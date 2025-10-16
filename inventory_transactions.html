@@ -161,7 +161,7 @@
                     </select>
                     <button class="btn" onclick="applyFilters()">🔍 Filter</button>
                     <button class="btn" onclick="clearFilters()">✖️ Clear</button>
-                    <button class="btn btn-success" onclick="openAddModal()">➕ Add Transaction</button>
+                    <button class="btn" onclick="openAddModal()">➕ Add Transaction</button>
                 </div>
 
                 <div class="card">
@@ -238,8 +238,8 @@
                     <textarea id="transactionNotes" placeholder="Optional notes..."></textarea>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn">Save</button>
                 </div>
             </form>
         </div>
@@ -336,7 +336,7 @@
                         <td>
                             <div class="action-buttons">
                                 <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
-                                <button class="btn btn-danger btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
+                                <button class="btn btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
                             </div>
                         </td>
                     </tr>
@@ -367,7 +367,7 @@
                             </div>
                             <div class="card-actions">
                                 <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
-                                <button class="btn btn-danger btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
+                                <button class="btn btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
                             </div>
                         </div>
                     </div>

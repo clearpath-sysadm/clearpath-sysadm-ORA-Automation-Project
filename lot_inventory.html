@@ -200,7 +200,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn" onclick="closeModal()">Cancel</button>
                 <button class="btn" onclick="saveLot()">Save Lot</button>
             </div>
         </div>
@@ -326,8 +326,8 @@
                     
                     html += `<td>${getStatusBadge(lot.status, lot.current_qty)}</td>`;
                     html += `<td><div class="action-buttons">
-                        <button class="btn btn-sm btn-secondary" onclick="editLot(${lot.id})">Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteLot(${lot.id})">Delete</button>
+                        <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>
+                        <button class="btn btn-sm" onclick="deleteLot(${lot.id})">Delete</button>
                     </div></td>`;
                     html += '</tr>';
                 });
