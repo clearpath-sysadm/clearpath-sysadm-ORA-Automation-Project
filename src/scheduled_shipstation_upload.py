@@ -71,12 +71,12 @@ def has_pending_orders_fast():
         cursor = conn.cursor()
         start = time.time()
         
-        # CORRECTED: Use 'awaiting_shipment' not 'Pending'
+        # Process both 'pending' (from XML import) and 'awaiting_shipment' (from ShipStation sync)
         # EXISTS is faster than COUNT for large tables
         cursor.execute("""
             SELECT EXISTS(
                 SELECT 1 FROM orders_inbox 
-                WHERE status = 'awaiting_shipment'
+                WHERE status IN ('pending', 'awaiting_shipment')
                 LIMIT 1
             )
         """)
@@ -87,7 +87,7 @@ def has_pending_orders_fast():
         if has_orders:
             cursor.execute("""
                 SELECT COUNT(*) FROM orders_inbox 
-                WHERE status = 'awaiting_shipment'
+                WHERE status IN ('pending', 'awaiting_shipment')
             """)
             count = cursor.fetchone()[0]
         
@@ -187,7 +187,7 @@ def upload_pending_orders():
         cursor.execute("""
             SELECT id
             FROM orders_inbox
-            WHERE status = 'awaiting_shipment'
+            WHERE status IN ('pending', 'awaiting_shipment')
               AND order_number NOT IN (SELECT order_number FROM shipped_orders)
             FOR UPDATE SKIP LOCKED
         """)
