@@ -83,15 +83,15 @@ psql $DATABASE_URL -c "SELECT * FROM configuration_params WHERE param_key LIKE '
 
 **Must complete ALL before proceeding to Phase 1:**
 
-- [ ] **Migration executed successfully** - No SQL errors
-- [ ] **polling_state table exists** with columns: `id`, `last_upload_count`, `last_upload_check`, `last_xml_count`, `last_xml_check`
-- [ ] **Single row inserted** - `SELECT COUNT(*) FROM polling_state` returns 1
-- [ ] **Index created** - `idx_orders_inbox_awaiting` visible in `\d orders_inbox`
-- [ ] **Index uses correct status** - Index definition shows `WHERE status = 'awaiting_shipment'` (not 'Pending')
-- [ ] **Feature flags present** - All 3 config params exist: `fast_polling_enabled`, `fast_polling_interval`, `sync_interval`
-- [ ] **Default values correct** - `fast_polling_enabled='true'`, `fast_polling_interval='15'`, `sync_interval='120'`
-- [ ] **Statement timeout set** - Verify with `SHOW statement_timeout;` (should be 15s)
-- [ ] **Backup created** - Database backup file exists and is recent
+- [x] **Migration executed successfully** - No SQL errors
+- [x] **polling_state table exists** with columns: `id`, `last_upload_count`, `last_upload_check`, `last_xml_count`, `last_xml_check`
+- [x] **Single row inserted** - `SELECT COUNT(*) FROM polling_state` returns 1
+- [x] **Index created** - `idx_orders_inbox_awaiting` visible in `\d orders_inbox`
+- [x] **Index uses correct status** - Index definition shows `WHERE status = 'awaiting_shipment'` (not 'Pending')
+- [x] **Feature flags present** - All 3 config params exist: `fast_polling_enabled`, `fast_polling_interval`, `sync_interval`
+- [x] **Default values correct** - `fast_polling_enabled='true'`, `fast_polling_interval='15'`, `sync_interval='120'`
+- [x] **Statement timeout set** - Verify with `SHOW statement_timeout;` (should be 15s)
+- [x] **Backup created** - Database backup file exists and is recent
 
 **Validation Commands:**
 ```bash
@@ -101,6 +101,50 @@ psql $DATABASE_URL -c "SELECT * FROM configuration_params WHERE param_key LIKE '
 psql $DATABASE_URL -c "\d orders_inbox" | grep idx_orders_inbox_awaiting # Shows index
 psql $DATABASE_URL -c "SHOW statement_timeout;" # Returns: 15s
 ```
+
+### 📋 Phase 0 Completion Report
+
+**Status:** ✅ COMPLETE  
+**Date:** October 16, 2025  
+**Duration:** 30 minutes  
+
+**Schema Changes Applied:**
+1. ✅ Created `polling_state` table with 5 columns (id, last_upload_count, last_upload_check, last_xml_count, last_xml_check)
+2. ✅ Inserted single tracking row (id=1)
+3. ✅ Added 3 feature flags to `configuration_params` (category='Polling'):
+   - `fast_polling_enabled` = 'true'
+   - `fast_polling_interval` = '15'
+   - `sync_interval` = '120'
+4. ✅ Created partial index `idx_orders_inbox_awaiting` on `orders_inbox(status)` WHERE status='awaiting_shipment'
+5. ✅ Set database statement_timeout to 15s
+
+**Index Performance Verification:**
+```sql
+EXPLAIN SELECT COUNT(*) FROM orders_inbox WHERE status = 'awaiting_shipment';
+-- Result: Index Only Scan using idx_orders_inbox_awaiting ✅
+-- Cost: 8.14..8.15 (very efficient)
+```
+
+**Current Order Status Distribution:**
+- awaiting_shipment: 2 orders (will use optimized index)
+- on_hold: 1
+- cancelled: 16
+- shipped: 571
+
+**Issues Encountered & Resolved:**
+1. ⚠️ Initial migration used wrong column names (`param_key`/`param_value` instead of `parameter_name`/`value`)
+   - **Fix:** Updated migration to match actual `configuration_params` schema
+2. ⚠️ Unique constraint on configuration_params is `(category, parameter_name, sku)` not just `parameter_name`
+   - **Fix:** Added explicit SKU=NULL and correct ON CONFLICT clause
+3. ⚠️ Database name needed to be explicit for ALTER DATABASE
+   - **Fix:** Used `ALTER DATABASE neondb SET statement_timeout`
+
+**Backup Created:**
+- File: `backup_phase0_20251016_173258.sql` (478KB)
+
+**All 9 DoD Criteria:** ✅ PASSED
+
+**Ready for Phase 1:** YES
 
 ---
 
