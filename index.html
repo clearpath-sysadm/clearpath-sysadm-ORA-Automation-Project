@@ -750,15 +750,15 @@
             }
         }
 
-        // Auto-refresh every 60 seconds
+        // Auto-refresh every 15 seconds (matches workflow polling rate)
         setInterval(() => {
             if (!document.hidden) {
                 loadDashboardData();
             }
-        }, 60000);
+        }, 15000);
 
-        // Update timestamp every 10 seconds
-        setInterval(updateTimestamp, 10000);
+        // Update timestamp every 5 seconds (for real-time feel)
+        setInterval(updateTimestamp, 5000);
 
         // Close mobile menu on ESC key
         document.addEventListener('keydown', (e) => {
