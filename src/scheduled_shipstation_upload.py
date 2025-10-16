@@ -670,8 +670,12 @@ def run_scheduled_upload():
                 last_count = count
             
             # Run existing upload logic (all safeguards preserved)
-            update_workflow_last_run('shipstation-upload')
-            upload_pending_orders()
+            uploaded_count = upload_pending_orders()
+            
+            # ONLY update timestamp when we actually uploaded something
+            if uploaded_count > 0:
+                update_workflow_last_run('shipstation-upload')
+            
             error_count = 0
             
             time.sleep(interval if enabled else UPLOAD_INTERVAL_SECONDS)

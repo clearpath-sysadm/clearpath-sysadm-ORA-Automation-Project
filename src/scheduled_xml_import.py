@@ -418,16 +418,17 @@ def run_scheduled_import():
             
             # Changes detected - process files
             logger.info(f"📥 Processing XML files from Drive (signature changed)")
-            update_workflow_last_run('xml-import')
             
             imported = import_orders_from_drive()
             
             if imported > 0:
                 logger.info(f"✅ Import complete: {imported} orders imported")
+                # ONLY update timestamp when we actually imported something
+                update_workflow_last_run('xml-import')
             else:
                 logger.info(f"ℹ️ Import complete: No new orders")
             
-            # Update polling state on success with file signature
+            # Update polling state on success with file signature (for change detection)
             update_xml_polling_state(file_signature)
             
             # Cleanup old orders
