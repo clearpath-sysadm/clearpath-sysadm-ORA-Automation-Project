@@ -65,43 +65,48 @@ def get_feature_flag(flag_name, default_value):
 # OPTIMIZED POLLING: Change Detection
 # ============================================================================
 def has_new_xml_files():
-    """Check if new XML files exist using file count comparison"""
+    """Check if new XML files exist using robust file signature (IDs + timestamps)"""
     conn = get_connection()
     try:
         cursor = conn.cursor()
         start = time.time()
         
-        # Get last check from polling_state
+        # Get last check signature from polling_state
         cursor.execute("SELECT last_xml_count, last_xml_check FROM polling_state WHERE id = 1")
         result = cursor.fetchone()
-        last_count = result[0] if result else 0
+        last_signature = result[0] if result else ""
         last_check = result[1] if result else datetime.now() - timedelta(hours=1)
         
-        # Get current file count from Google Drive
+        # Get current files from Google Drive
         try:
             files = list_xml_files_from_folder(GOOGLE_DRIVE_FOLDER_ID)
-            current_count = len(files)
+            
+            # Create robust signature: sorted concat of file_id:modified_time
+            # This detects: new files, deleted files, AND replaced files (same name, different ID/timestamp)
+            file_signatures = sorted([f"{f['id']}:{f.get('modifiedTime', '')}" for f in files])
+            current_signature = "|".join(file_signatures)
+            
         except Exception as e:
             logger.error(f"Error checking Drive files: {e}")
             # Process on error (fail-safe)
             duration_ms = int((time.time() - start) * 1000)
-            logger.info(f"METRICS: workflow=xml-import count=? duration_ms={duration_ms} action=process_error")
-            return True, 0, duration_ms
+            logger.info(f"METRICS: workflow=xml-import signature=error duration_ms={duration_ms} action=process_error")
+            return True, "", duration_ms
         
         duration_ms = int((time.time() - start) * 1000)
-        has_changes = current_count != last_count
+        has_changes = current_signature != last_signature
         
-        logger.info(f"METRICS: workflow=xml-import count={current_count} last_count={last_count} duration_ms={duration_ms} action={'process' if has_changes else 'skip'}")
+        logger.info(f"METRICS: workflow=xml-import files={len(files)} duration_ms={duration_ms} action={'process' if has_changes else 'skip'}")
         
-        return has_changes, current_count, duration_ms
+        return has_changes, current_signature, duration_ms
         
     except Exception as e:
         logger.error(f"Error in has_new_xml_files: {e}")
-        return True, 0, 0  # Process on error (fail-safe)
+        return True, "", 0  # Process on error (fail-safe)
     finally:
         conn.close()
 
-def update_xml_polling_state(count):
+def update_xml_polling_state(signature):
     """Update XML polling state after successful import"""
     conn = get_connection()
     try:
@@ -111,8 +116,9 @@ def update_xml_polling_state(count):
             SET last_xml_count = %s,
                 last_xml_check = CURRENT_TIMESTAMP
             WHERE id = 1
-        """, (count,))
+        """, (signature,))
         conn.commit()
+        logger.debug(f"✅ Updated polling state with signature (len={len(signature)})")
     except Exception as e:
         logger.debug(f"Failed to update XML polling state: {e}")
     finally:
@@ -120,8 +126,8 @@ def update_xml_polling_state(count):
 
 def cleanup_old_orders():
     """Delete orders older than 2 months from orders_inbox"""
+    conn = get_connection()
     try:
-        conn = get_connection()
         cursor = conn.cursor()
         
         cutoff_date = (datetime.now() - timedelta(days=DATA_RETENTION_DAYS)).strftime('%Y-%m-%d')
@@ -137,7 +143,6 @@ def cleanup_old_orders():
         
         deleted_count = cursor.rowcount
         conn.commit()
-        conn.close()
         
         if deleted_count > 0:
             logger.info(f"Cleaned up {deleted_count} orders older than {DATA_RETENTION_DAYS} days")
@@ -146,6 +151,8 @@ def cleanup_old_orders():
     except Exception as e:
         logger.error(f"Error cleaning up old orders: {str(e)}")
         return 0
+    finally:
+        conn.close()
 
 def load_bundle_config(cursor):
     """Load bundle configurations from database"""
@@ -402,7 +409,7 @@ def run_scheduled_import():
                 continue
             
             # PREFLIGHT CHECK: Do we have new files?
-            has_changes, file_count, check_duration = has_new_xml_files()
+            has_changes, file_signature, check_duration = has_new_xml_files()
             
             if not has_changes:
                 # No changes - skip processing
@@ -410,7 +417,7 @@ def run_scheduled_import():
                 continue
             
             # Changes detected - process files
-            logger.info(f"📥 Processing XML files from Drive (count: {file_count})")
+            logger.info(f"📥 Processing XML files from Drive (signature changed)")
             update_workflow_last_run('xml-import')
             
             imported = import_orders_from_drive()
@@ -420,8 +427,8 @@ def run_scheduled_import():
             else:
                 logger.info(f"ℹ️ Import complete: No new orders")
             
-            # Update polling state on success
-            update_xml_polling_state(file_count)
+            # Update polling state on success with file signature
+            update_xml_polling_state(file_signature)
             
             # Cleanup old orders
             deleted = cleanup_old_orders()
