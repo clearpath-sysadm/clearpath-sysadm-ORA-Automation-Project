@@ -79,6 +79,29 @@ psql $DATABASE_URL -c "SELECT * FROM polling_state;"
 psql $DATABASE_URL -c "SELECT * FROM configuration_params WHERE param_key LIKE '%polling%';"
 ```
 
+### ✅ Phase 0 Definition of Done (DoD)
+
+**Must complete ALL before proceeding to Phase 1:**
+
+- [ ] **Migration executed successfully** - No SQL errors
+- [ ] **polling_state table exists** with columns: `id`, `last_upload_count`, `last_upload_check`, `last_xml_count`, `last_xml_check`
+- [ ] **Single row inserted** - `SELECT COUNT(*) FROM polling_state` returns 1
+- [ ] **Index created** - `idx_orders_inbox_awaiting` visible in `\d orders_inbox`
+- [ ] **Index uses correct status** - Index definition shows `WHERE status = 'awaiting_shipment'` (not 'Pending')
+- [ ] **Feature flags present** - All 3 config params exist: `fast_polling_enabled`, `fast_polling_interval`, `sync_interval`
+- [ ] **Default values correct** - `fast_polling_enabled='true'`, `fast_polling_interval='15'`, `sync_interval='120'`
+- [ ] **Statement timeout set** - Verify with `SHOW statement_timeout;` (should be 15s)
+- [ ] **Backup created** - Database backup file exists and is recent
+
+**Validation Commands:**
+```bash
+# All checks pass
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM polling_state;" # Returns: 1
+psql $DATABASE_URL -c "SELECT * FROM configuration_params WHERE param_key LIKE '%polling%' OR param_key = 'sync_interval';" # Returns: 3 rows
+psql $DATABASE_URL -c "\d orders_inbox" | grep idx_orders_inbox_awaiting # Shows index
+psql $DATABASE_URL -c "SHOW statement_timeout;" # Returns: 15s
+```
+
 ---
 
 ## Phase 1: Upload Optimization (CORRECTED - 2 hours)
@@ -257,6 +280,47 @@ To:
 python src/scheduled_shipstation_upload.py &
 ```
 
+### ✅ Phase 1 Definition of Done (DoD)
+
+**Must complete ALL before proceeding to Phase 2:**
+
+- [ ] **Code changes complete** - All functions added: `get_feature_flag()`, `has_pending_orders_fast()`, `update_polling_state()`, modified `main()`
+- [ ] **Uses correct status value** - All queries use `'awaiting_shipment'` (not 'Pending' or 'pending')
+- [ ] **Uses db_adapter consistently** - All DB connections via `get_db_connection()` (no pool mixing)
+- [ ] **Workflow command updated** - `start_all.sh` has new command (no while loop)
+- [ ] **Script starts without errors** - `python src/scheduled_shipstation_upload.py` runs successfully
+- [ ] **Feature flags read correctly** - Logs show `fast_polling=true, interval=15s` on startup
+- [ ] **EXISTS query works** - `has_pending_orders_fast()` returns correct boolean and count
+- [ ] **Polling state updates** - `SELECT * FROM polling_state` shows changing `last_upload_count` and `last_upload_check`
+- [ ] **Performance target met** - Average duration < 10ms in METRICS logs
+- [ ] **Logs are structured** - See `METRICS: workflow=upload exists=... count=... duration_ms=... action=...` format
+- [ ] **Error handling works** - Simulated error triggers exponential backoff (60s, 120s, 180s, 240s, 300s max)
+- [ ] **Connection cleanup verified** - No connection leaks after 100 iterations
+- [ ] **Skip logic working** - When no orders, logs show "action=skip" and sleeps 15 seconds
+- [ ] **Process logic working** - When orders exist, logs show "action=process" and calls `upload_pending_orders()`
+
+**Validation Commands:**
+```bash
+# Start workflow manually
+python src/scheduled_shipstation_upload.py &
+
+# Check logs for correct startup
+grep "Upload workflow started" logs/*.log | tail -1
+
+# Verify METRICS format
+grep "METRICS: workflow=upload" logs/*.log | tail -5
+
+# Check polling state updates
+psql $DATABASE_URL -c "SELECT * FROM polling_state;"
+
+# Verify performance (<10ms average)
+grep "METRICS: workflow=upload" logs/*.log | grep -oP 'duration_ms=\K\d+' | awk '{sum+=$1; n++} END {print sum/n}'
+
+# Check skip rate (should be high when no orders)
+grep "METRICS: workflow=upload" logs/*.log | grep -c "action=skip"
+grep "METRICS: workflow=upload" logs/*.log | grep -c "action=process"
+```
+
 ---
 
 ## Phase 2: XML Import Optimization (2 hours)
@@ -331,6 +395,38 @@ To:
 python src/scheduled_xml_import.py &
 ```
 
+### ✅ Phase 2 Definition of Done (DoD)
+
+**Must complete ALL before proceeding to Phase 3:**
+
+- [ ] **Code changes complete** - All functions added: `get_feature_flag()`, `has_new_xml_files()`, `update_xml_polling_state()`, modified `main()`
+- [ ] **Workflow command updated** - `start_all.sh` has new command (no while loop)
+- [ ] **Script starts without errors** - `python src/scheduled_xml_import.py` runs successfully
+- [ ] **Feature flags read correctly** - Uses cached flags (same cache as upload)
+- [ ] **XML check works** - `has_new_xml_files()` queries polling_state and compares counts
+- [ ] **Polling state updates** - `SELECT * FROM polling_state` shows changing `last_xml_count` and `last_xml_check`
+- [ ] **Performance target met** - Average duration < 50ms in METRICS logs (Drive API is slower than DB)
+- [ ] **Logs are structured** - See `METRICS: workflow=xml-import count=... duration_ms=... action=...` format
+- [ ] **Error handling works** - Simulated error triggers exponential backoff
+- [ ] **Connection cleanup verified** - No connection leaks
+- [ ] **Skip logic working** - When no new files, logs show "action=skip" and sleeps 15 seconds
+- [ ] **Process logic working** - When new files exist, logs show "action=process" and imports XML
+
+**Validation Commands:**
+```bash
+# Start workflow manually
+python src/scheduled_xml_import.py &
+
+# Verify METRICS format
+grep "METRICS: workflow=xml-import" logs/*.log | tail -5
+
+# Check polling state updates (XML columns)
+psql $DATABASE_URL -c "SELECT last_xml_count, last_xml_check FROM polling_state WHERE id = 1;"
+
+# Verify performance (<50ms average for Drive API)
+grep "METRICS: workflow=xml-import" logs/*.log | grep -oP 'duration_ms=\K\d+' | awk '{sum+=$1; n++} END {print sum/n}'
+```
+
 ---
 
 ## Phase 3: Unified Sync Interval (30 min)
@@ -372,6 +468,34 @@ logger.info(f"🚀 Unified sync started (interval={SYNC_INTERVAL_SECONDS}s)")
 # In loop, refresh interval periodically:
 if cycle_count % 5 == 0:  # Every 5 cycles
     SYNC_INTERVAL_SECONDS = get_sync_interval()
+```
+
+### ✅ Phase 3 Definition of Done (DoD)
+
+**Must complete ALL before proceeding to Phase 4:**
+
+- [ ] **Code changes complete** - Functions added: `get_sync_interval()` with 60-sec cache
+- [ ] **Uses db_adapter consistently** - DB connections via `get_db_connection()`
+- [ ] **Script starts without errors** - `python src/unified_shipstation_sync.py` runs successfully
+- [ ] **Config read correctly** - Logs show `interval=120s` on startup (from config param)
+- [ ] **Cache works** - Interval only queried once per minute (not every cycle)
+- [ ] **Dynamic updates** - Changing `sync_interval` config picked up within 5 cycles
+- [ ] **Connection cleanup verified** - No connection leaks
+- [ ] **Error handling preserved** - Existing error handling still works
+- [ ] **Watermark logic intact** - Sync still advances watermark correctly
+
+**Validation Commands:**
+```bash
+# Verify interval from config
+psql $DATABASE_URL -c "SELECT param_value FROM configuration_params WHERE param_key = 'sync_interval';"
+
+# Check startup log
+grep "Unified sync started" logs/*.log | tail -1
+
+# Test dynamic update
+psql $DATABASE_URL -c "UPDATE configuration_params SET param_value = '180' WHERE param_key = 'sync_interval';"
+# Wait 5 cycles, check if new interval logged
+grep "interval=" logs/*.log | tail -5
 ```
 
 ---
@@ -474,6 +598,39 @@ if __name__ == '__main__':
 - [ ] **Connections:** Monitor `pg_stat_activity`, verify < 10 connections
 - [ ] **Error Recovery:** Kill DB connection, verify exponential backoff
 
+### ✅ Phase 4 Definition of Done (DoD)
+
+**Must complete ALL before proceeding to Phase 5:**
+
+- [ ] **All unit tests pass** - `python tests/test_optimized_polling_final.py` completes with 0 failures
+- [ ] **test_correct_status_value passes** - Confirms 'awaiting_shipment' is used
+- [ ] **test_exists_faster_than_count passes** - Query completes in <100ms
+- [ ] **test_feature_flag_cache passes** - Cache is 10x faster than first query
+- [ ] **test_polling_state_updates passes** - State updates correctly in DB
+- [ ] **test_no_connection_leak passes** - <10 connections after 100 iterations
+- [ ] **Manual tests complete** - All 7 manual test scenarios passed
+- [ ] **Feature flag rollback tested** - Toggling flag changes behavior within 60 sec
+- [ ] **Concurrent processing tested** - Multiple orders processed without duplicates or misses
+- [ ] **Error recovery tested** - Exponential backoff observed (60s → 120s → 180s → 240s → 300s)
+- [ ] **Performance validated** - Average query duration <10ms across 100 samples
+- [ ] **Connection limit validated** - Peak connections stay <10 under load
+- [ ] **No regressions** - Existing duplicate detection and safeguards still work
+
+**Validation Commands:**
+```bash
+# Run unit tests
+python tests/test_optimized_polling_final.py
+
+# Run performance test (100 iterations)
+for i in {1..100}; do python -c "from src.scheduled_shipstation_upload import has_pending_orders_fast; has_pending_orders_fast()"; done
+
+# Check average duration
+grep "METRICS: workflow=upload" logs/*.log | grep -oP 'duration_ms=\K\d+' | awk '{sum+=$1; n++} END {print "Avg: " sum/n "ms"}'
+
+# Check max connections during test
+psql $DATABASE_URL -c "SELECT max(numbackends) FROM pg_stat_database WHERE datname = current_database();"
+```
+
 ---
 
 ## Phase 5: Two-Stage Rollout (1 week)
@@ -516,6 +673,60 @@ UPDATE configuration_params SET param_value = '120' WHERE param_key = 'sync_inte
 ```
 
 **Continue monitoring all metrics for 72 hours.**
+
+### ✅ Phase 5 Definition of Done (DoD)
+
+**Stage 1 Complete (Days 1-3) - Must verify ALL before Stage 2:**
+
+- [ ] **Fast polling enabled** - `fast_polling_enabled='true'` in config
+- [ ] **Interval set to 15s** - `fast_polling_interval='15'` in config
+- [ ] **Upload workflow responds** - Logs show 15-second checks within 60 sec of config change
+- [ ] **Skip rate >80%** - Calculated from METRICS logs
+- [ ] **Avg duration <10ms** - From METRICS duration_ms values
+- [ ] **Active connections <10** - From pg_stat_activity query
+- [ ] **Orders processed within 30 sec** - End-to-end latency measured
+- [ ] **No errors in logs** - No ERROR level messages in 48-72 hours
+- [ ] **API calls <200/hour** - Tracked via ShipStation API logs
+- [ ] **Polling state tracking** - `last_upload_count` and `last_upload_check` update every 15 sec
+- [ ] **48-72 hour stability** - All metrics stable for full monitoring period
+
+**Stage 2 Complete (Days 4-7) - Final verification ALL criteria:**
+
+- [ ] **Sync interval reduced** - `sync_interval='120'` in config
+- [ ] **Unified sync responds** - Logs show 2-minute cycles within 5 cycles of change
+- [ ] **All workflows optimized** - Upload (15s), XML (15s), Sync (120s)
+- [ ] **End-to-end latency <2 min** - From order arrival to ShipStation upload
+- [ ] **Skip rate maintained** - Still >80% for upload and XML workflows
+- [ ] **Performance maintained** - All duration metrics within targets
+- [ ] **Connections stable** - Peak <10 under full load
+- [ ] **No API rate limits** - No 429 errors from ShipStation
+- [ ] **No regressions** - All existing functionality works correctly
+- [ ] **72-hour stability** - All systems stable for full monitoring period
+
+**Validation Commands (Run at end of each stage):**
+```bash
+# Stage 1 validation
+echo "=== SKIP RATE ==="
+echo "Skip: $(grep "METRICS: workflow=upload" logs/*.log | grep -c "action=skip")"
+echo "Process: $(grep "METRICS: workflow=upload" logs/*.log | grep -c "action=process")"
+echo "Rate: $(echo "scale=2; $(grep "METRICS: workflow=upload" logs/*.log | grep -c "action=skip") * 100 / ($(grep "METRICS: workflow=upload" logs/*.log | wc -l))" | bc)%"
+
+echo "=== PERFORMANCE ==="
+grep "METRICS: workflow=upload" logs/*.log | grep -oP 'duration_ms=\K\d+' | awk '{sum+=$1; n++} END {print "Avg: " sum/n "ms"}'
+
+echo "=== CONNECTIONS ==="
+psql $DATABASE_URL -c "SELECT count(*) as active_connections FROM pg_stat_activity WHERE datname = current_database();"
+
+echo "=== ERRORS (should be 0) ==="
+grep "ERROR" logs/*.log | wc -l
+
+# Stage 2 additional validation
+echo "=== SYNC INTERVAL ==="
+grep "interval=" logs/*.log | tail -1
+
+echo "=== END-TO-END LATENCY ==="
+# Add test order, measure time to ShipStation (should be <120 sec)
+```
 
 ---
 
@@ -600,6 +811,101 @@ Workflows pick up changes within 15-60 seconds (cached).
 - [ ] Stage 2 rollout (full)
 - [ ] Monitor 72 hours
 - [ ] Update docs (replit.md, PROJECT_JOURNAL.md)
+
+---
+
+## 🎯 FINAL DEFINITION OF DONE (Complete Implementation)
+
+**ALL criteria must be met to mark optimization complete:**
+
+### **Functional Requirements**
+- [ ] **Correct status value used** - All queries use `'awaiting_shipment'` (verified in code)
+- [ ] **All 3 workflows optimized** - Upload (15s), XML (15s), Sync (120s)
+- [ ] **Feature flags operational** - Config changes picked up within 60 seconds
+- [ ] **Polling state tracking** - All state columns update correctly every cycle
+- [ ] **Existing safeguards preserved** - Duplicate detection, FOR UPDATE SKIP LOCKED, transactions intact
+- [ ] **Error handling complete** - Exponential backoff works (60s → 300s max)
+- [ ] **Rollback tested** - Feature flag toggle reverts to old behavior within 60 sec
+
+### **Performance Requirements**
+- [ ] **Database query speed** - EXISTS checks average <10ms
+- [ ] **Skip rate achieved** - >80% skip rate when no work (verified in production)
+- [ ] **End-to-end latency** - Order detected and uploaded in <30 sec (Stage 1) and <2 min (Stage 2)
+- [ ] **Connection efficiency** - Peak connections <10 under full load
+- [ ] **API rate compliance** - <200 ShipStation API calls/hour
+- [ ] **No slow queries** - statement_timeout prevents hangs >15 seconds
+
+### **Stability Requirements**
+- [ ] **Stage 1 stability** - 48-72 hours stable with upload optimization only
+- [ ] **Stage 2 stability** - 72 hours stable with full optimization
+- [ ] **No errors** - Zero ERROR-level messages during monitoring periods
+- [ ] **No connection leaks** - Verified via pg_stat_activity (100 iterations test passed)
+- [ ] **No regressions** - All existing functionality works correctly
+- [ ] **No API rate limits** - No 429 errors from ShipStation
+
+### **Testing Requirements**
+- [ ] **All unit tests pass** - test_optimized_polling_final.py green
+- [ ] **All manual tests pass** - 7 manual scenarios verified
+- [ ] **Performance tests pass** - 100-iteration tests meet <10ms average
+- [ ] **Concurrent processing verified** - Multiple orders processed without issues
+- [ ] **Error recovery verified** - Backoff pattern observed during failure simulation
+
+### **Code Quality Requirements**
+- [ ] **No connection pool mixing** - Uses db_adapter.get_db_connection() consistently
+- [ ] **Proper connection cleanup** - All connections have try/finally with conn.close()
+- [ ] **Feature flag caching** - 60-second TTL reduces DB queries by 95%
+- [ ] **Structured logging** - METRICS format consistent across all workflows
+- [ ] **No code duplication** - Shared functions reused (get_feature_flag, etc.)
+
+### **Documentation Requirements**
+- [ ] **replit.md updated** - Polling optimization documented in System Architecture
+- [ ] **PROJECT_JOURNAL.md updated** - Implementation logged with date and outcomes
+- [ ] **Code comments added** - All new functions have docstrings
+- [ ] **Monitoring documented** - Log queries and validation commands recorded
+- [ ] **Rollback procedures documented** - Step-by-step rollback guide available
+
+### **Production Validation**
+- [ ] **Metrics dashboard** - Can query polling stats from configuration_params
+- [ ] **Log monitoring operational** - Can grep METRICS and calculate skip rate, avg duration
+- [ ] **Alert thresholds known** - Team knows when to investigate (>50ms, <50% skip, >15 connections)
+- [ ] **Rollback playbook tested** - Rollback SQL verified and documented
+- [ ] **Business continuity verified** - Orders still process correctly during optimization
+
+### **Final Sign-Off Criteria**
+- [ ] **All Phase DoDs complete** - Phases 0-5 all checked off
+- [ ] **1 week production run** - Stage 1 (3 days) + Stage 2 (4 days) both stable
+- [ ] **Zero data loss** - No orders missed or duplicated during optimization
+- [ ] **Performance targets met** - All metrics within target ranges
+- [ ] **Team approval** - Stakeholders confirm improved response times
+
+**Completion Validation Command:**
+```bash
+#!/bin/bash
+echo "=== FINAL OPTIMIZATION VALIDATION ==="
+
+echo -e "\n📊 PERFORMANCE METRICS:"
+echo "Average duration: $(grep "METRICS: workflow=upload" logs/*.log | grep -oP 'duration_ms=\K\d+' | awk '{sum+=$1; n++} END {print sum/n}')ms (target: <10ms)"
+echo "Skip rate: $(echo "scale=2; $(grep "METRICS: workflow=upload" logs/*.log | grep -c "action=skip") * 100 / ($(grep "METRICS: workflow=upload" logs/*.log | wc -l))" | bc)% (target: >80%)"
+
+echo -e "\n🔌 CONNECTION HEALTH:"
+psql $DATABASE_URL -c "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database();" | grep -A1 count | tail -1
+echo "(target: <10)"
+
+echo -e "\n⚙️  FEATURE FLAGS:"
+psql $DATABASE_URL -c "SELECT param_key, param_value FROM configuration_params WHERE param_key IN ('fast_polling_enabled', 'fast_polling_interval', 'sync_interval');"
+
+echo -e "\n📈 POLLING STATE:"
+psql $DATABASE_URL -c "SELECT * FROM polling_state;"
+
+echo -e "\n❌ ERROR COUNT (should be 0):"
+grep "ERROR" logs/*.log | wc -l
+
+echo -e "\n✅ WORKFLOWS RUNNING:"
+ps aux | grep -E "(scheduled_shipstation_upload|scheduled_xml_import|unified_shipstation_sync)" | grep -v grep | wc -l
+echo "(should be 3)"
+
+echo -e "\n🎯 FINAL STATUS: $([ $(grep 'ERROR' logs/*.log | wc -l) -eq 0 ] && echo '✅ PASS' || echo '❌ FAIL - Check errors')"
+```
 
 ---
 
