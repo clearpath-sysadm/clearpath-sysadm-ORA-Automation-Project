@@ -159,7 +159,7 @@
                         
                         <!-- Desktop Actions -->
                         <div class="desktop-actions">
-                            <button class="btn btn-primary" id="btn-toggle-filter">
+                            <button class="btn" id="btn-toggle-filter">
                                 Show Pending Only
                             </button>
                             <button class="btn-upload is-hidden" id="btn-upload-selected">
@@ -174,7 +174,7 @@
                             <button class="btn-manual-import" id="btn-manual-import">
                                 ↻ Manual Import
                             </button>
-                            <button class="btn btn-primary" id="btn-sync-manual-orders">
+                            <button class="btn" id="btn-sync-manual-orders">
                                 🔄 Sync Manual
                             </button>
                             <button class="btn btn-success" id="btn-export-csv">
@@ -498,12 +498,12 @@
             // Update button text and classes to match filter
             if (filterMode === 'pending') {
                 btnToggleFilter.textContent = 'Show Pending Only';
-                btnToggleFilter.className = 'btn btn-primary';
+                btnToggleFilter.className = 'btn';
                 const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
                 if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show Pending Only';
             } else if (filterMode === 'awaiting_shipment') {
                 btnToggleFilter.textContent = 'Show Awaiting Shipment';
-                btnToggleFilter.className = 'btn btn-primary';
+                btnToggleFilter.className = 'btn';
                 const mobileBtnFilter = document.getElementById('mobile-btn-toggle-filter');
                 if (mobileBtnFilter) mobileBtnFilter.textContent = 'Show Awaiting Shipment';
             }

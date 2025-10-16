@@ -159,8 +159,8 @@
                         <option value="Adjust Down">Adjust Down</option>
                         <option value="Repack">Repack</option>
                     </select>
-                    <button class="btn btn-primary" onclick="applyFilters()">🔍 Filter</button>
-                    <button class="btn btn-primary" onclick="clearFilters()">✖️ Clear</button>
+                    <button class="btn" onclick="applyFilters()">🔍 Filter</button>
+                    <button class="btn" onclick="clearFilters()">✖️ Clear</button>
                     <button class="btn btn-success" onclick="openAddModal()">➕ Add Transaction</button>
                 </div>
 
@@ -335,7 +335,7 @@
                         <td>${t.notes || '-'}</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-primary btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
+                                <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
                                 <button class="btn btn-danger btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
                             </div>
                         </td>
@@ -366,7 +366,7 @@
                                 <span>${t.notes || '-'}</span>
                             </div>
                             <div class="card-actions">
-                                <button class="btn btn-primary btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
+                                <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
                                 <button class="btn btn-danger btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
                             </div>
                         </div>
