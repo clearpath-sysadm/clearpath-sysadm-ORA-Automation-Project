@@ -178,9 +178,9 @@ def get_feature_flag(key, default='false'):
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT param_key, param_value 
+            SELECT parameter_name, value 
             FROM configuration_params 
-            WHERE param_key IN ('fast_polling_enabled', 'fast_polling_interval', 'sync_interval')
+            WHERE category = 'Polling'
         """)
         _flag_cache = {row[0]: row[1] for row in cursor.fetchall()}
         _flag_cache_time = datetime.now()
