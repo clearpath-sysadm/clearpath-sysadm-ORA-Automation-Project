@@ -271,11 +271,17 @@
                                 <span>📊</span> Weekly Inventory Report
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
-                                    📋 Copy to Clipboard
+                                <button class="btn btn-primary" onclick="runEOD()" id="btn-eod">
+                                    📦 EOD
+                                    <div class="btn-status" id="eod-status"></div>
                                 </button>
-                                <button class="btn" onclick="refreshWeeklyReport()" id="weeklyReportRefreshBtn">
-                                    🔄 Refresh
+                                <button class="btn btn-primary" onclick="runEOW()" id="btn-eow">
+                                    📊 EOW
+                                    <div class="btn-status" id="eow-status"></div>
+                                </button>
+                                <button class="btn btn-primary" onclick="runEOM()" id="btn-eom">
+                                    💰 EOM
+                                    <div class="btn-status" id="eom-status"></div>
                                 </button>
                             </div>
                         </div>
@@ -861,11 +867,147 @@
             return days[dayOfWeek];
         }
 
+        // EOD Button Handler
+        async function runEOD() {
+            const btn = document.getElementById('btn-eod');
+            const statusDiv = document.getElementById('eod-status');
+            const originalStatus = statusDiv.textContent;
+            
+            btn.disabled = true;
+            statusDiv.textContent = 'Running...';
+            btn.style.opacity = '0.6';
+            
+            try {
+                const response = await fetch('/api/reports/eod', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Refresh weekly inventory report on dashboard
+                    await loadWeeklyReport();
+                    
+                    alert('✅ ' + result.message);
+                    await loadReportStatus();
+                } else {
+                    throw new Error(result.error || 'Failed to run EOD');
+                }
+            } catch (error) {
+                console.error('Error running EOD:', error);
+                alert('Error running EOD: ' + error.message);
+                statusDiv.textContent = originalStatus;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        // EOW Button Handler
+        async function runEOW() {
+            const btn = document.getElementById('btn-eow');
+            const statusDiv = document.getElementById('eow-status');
+            const originalStatus = statusDiv.textContent;
+            
+            btn.disabled = true;
+            statusDiv.textContent = 'Running...';
+            btn.style.opacity = '0.6';
+            
+            try {
+                const response = await fetch('/api/reports/eow', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Refresh weekly inventory report on dashboard
+                    await loadWeeklyReport();
+                    
+                    alert('✅ ' + result.message);
+                    await loadReportStatus();
+                } else {
+                    throw new Error(result.error || 'Failed to run EOW');
+                }
+            } catch (error) {
+                console.error('Error running EOW:', error);
+                alert('Error running EOW: ' + error.message);
+                statusDiv.textContent = originalStatus;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        // EOM Button Handler
+        async function runEOM() {
+            const btn = document.getElementById('btn-eom');
+            const statusDiv = document.getElementById('eom-status');
+            const originalStatus = statusDiv.textContent;
+            
+            btn.disabled = true;
+            statusDiv.textContent = 'Running...';
+            btn.style.opacity = '0.6';
+            
+            try {
+                const response = await fetch('/api/reports/eom', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    await loadReportStatus();
+                } else {
+                    throw new Error(result.error || 'Failed to run EOM');
+                }
+            } catch (error) {
+                console.error('Error running EOM:', error);
+                alert('Error running EOM: ' + error.message);
+                statusDiv.textContent = originalStatus;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        // Load button status indicators
+        async function loadReportStatus() {
+            try {
+                const response = await fetch('/api/reports/status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const formatTime = (dateStr) => {
+                        if (!dateStr) return '';
+                        const date = new Date(dateStr);
+                        return date.toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    };
+                    
+                    if (result.data.EOD) {
+                        document.getElementById('eod-status').textContent = formatTime(result.data.EOD.run_date);
+                    }
+                    if (result.data.EOW) {
+                        document.getElementById('eow-status').textContent = formatTime(result.data.EOW.run_date);
+                    }
+                    if (result.data.EOM) {
+                        document.getElementById('eom-status').textContent = formatTime(result.data.EOM.run_date);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading report status:', error);
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             checkAutoShipDay();
             loadDashboardData();
             loadWeeklyReport();
+            loadReportStatus();
         });
     </script>
 </body>
