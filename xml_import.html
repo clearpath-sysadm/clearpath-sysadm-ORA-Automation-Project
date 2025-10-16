@@ -545,7 +545,8 @@
             const pending = orders.filter(o => o.status === 'pending').length;
             const failed = orders.filter(o => o.status === 'failed').length;
             
-            // Calculate units from LOCAL DATABASE (for check and balance)
+            // Calculate units from LOCAL DATABASE (for check and balance against ShipStation)
+            // Only count 'awaiting_shipment' to match ShipStation's awaiting_shipment status
             const awaitingShipmentUnits = orders
                 .filter(o => o.status === 'awaiting_shipment')
                 .reduce((sum, o) => sum + (o.quantity || 0), 0);
