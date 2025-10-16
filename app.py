@@ -25,6 +25,11 @@ DB_PATH = os.path.join(project_root, 'ora.db')
 # List of allowed HTML files to serve (security: prevent directory traversal)
 ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html']
 
+# Concurrency locks for report endpoints (prevents duplicate processing)
+# NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
+# upgrade to database advisory locks (pg_advisory_lock) for system-wide concurrency protection.
+_report_locks = {'EOD': False, 'EOW': False, 'EOM': False}
+
 @app.route('/')
 def index():
     """Serve the main dashboard"""
@@ -1403,6 +1408,14 @@ def api_run_eod():
     import subprocess
     from src.services.database.pg_utils import log_report_run
     
+    # Concurrency guard: prevent duplicate EOD runs
+    if _report_locks['EOD']:
+        return jsonify({
+            'success': False,
+            'error': 'EOD report is already running. Please wait for it to complete.'
+        }), 409
+    
+    _report_locks['EOD'] = True
     try:
         # Run the daily shipment processor
         result = subprocess.run(
@@ -1442,6 +1455,9 @@ def api_run_eod():
             'success': False,
             'error': str(e)
         }), 500
+    finally:
+        # Always release the lock
+        _report_locks['EOD'] = False
 
 @app.route('/api/reports/eow', methods=['POST'])
 def api_run_eow():
@@ -1450,6 +1466,14 @@ def api_run_eow():
     import subprocess
     from src.services.database.pg_utils import eod_done_today, log_report_run
     
+    # Concurrency guard: prevent duplicate EOW runs
+    if _report_locks['EOW']:
+        return jsonify({
+            'success': False,
+            'error': 'EOW report is already running. Please wait for it to complete.'
+        }), 409
+    
+    _report_locks['EOW'] = True
     try:
         week_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
         
@@ -1499,17 +1523,22 @@ def api_run_eow():
             }), 500
             
     except subprocess.TimeoutExpired:
+        week_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
         log_report_run('EOW', week_start, 'failed', 'Timeout (>120s)')
         return jsonify({
             'success': False,
             'error': 'EOW timed out (>120s)'
         }), 500
     except Exception as e:
+        week_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
         log_report_run('EOW', week_start, 'failed', str(e))
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+    finally:
+        # Always release the lock
+        _report_locks['EOW'] = False
 
 @app.route('/api/reports/eom', methods=['POST'])
 def api_run_eom():
@@ -1517,6 +1546,14 @@ def api_run_eom():
     import datetime
     from src.services.database.pg_utils import log_report_run, execute_query
     
+    # Concurrency guard: prevent duplicate EOM runs
+    if _report_locks['EOM']:
+        return jsonify({
+            'success': False,
+            'error': 'EOM report is already running. Please wait for it to complete.'
+        }), 409
+    
+    _report_locks['EOM'] = True
     try:
         # Calculate month boundaries
         today = datetime.date.today()
@@ -1528,51 +1565,40 @@ def api_run_eom():
         else:
             month_end = (today.replace(month=today.month + 1, day=1) - datetime.timedelta(days=1))
         
-        # Query shipped_orders for monthly charges
+        # Query shipped_orders for monthly charges with proper aggregation
         query = """
             SELECT 
-                ship_date,
-                order_number,
                 carrier,
                 service,
-                shipping_cost_cents,
-                COUNT(*) OVER (PARTITION BY carrier, service) as service_count,
-                SUM(shipping_cost_cents) OVER (PARTITION BY carrier, service) as service_total
+                COUNT(*) as order_count,
+                SUM(shipping_cost_cents) as total_cents
             FROM shipped_orders
             WHERE ship_date >= %s AND ship_date <= %s
-            ORDER BY carrier, service, ship_date
+            GROUP BY carrier, service
+            ORDER BY carrier, service
         """
         
         results = execute_query(query, (month_start, month_end))
         
-        # Calculate totals
+        # Calculate totals from aggregated results
         total_charges_cents = 0
-        carrier_breakdown = {}
+        breakdown_list = []
         
         for row in results:
-            carrier = row[2] or 'Unknown'
-            service = row[3] or 'Unknown'
-            shipping_cost = row[4] or 0
+            carrier = row[0] or 'Unknown'
+            service = row[1] or 'Unknown'
+            order_count = row[2] or 0
+            total_cents = row[3] or 0
             
-            total_charges_cents += shipping_cost
+            total_charges_cents += total_cents
             
-            key = f"{carrier} - {service}"
-            if key not in carrier_breakdown:
-                carrier_breakdown[key] = {'count': 0, 'total_cents': 0}
-            
-            carrier_breakdown[key]['count'] += 1
-            carrier_breakdown[key]['total_cents'] += shipping_cost
+            breakdown_list.append({
+                'carrier_service': f"{carrier} - {service}",
+                'order_count': order_count,
+                'total': f"${total_cents / 100.0:,.2f}"
+            })
         
         total_dollars = total_charges_cents / 100.0
-        
-        # Format breakdown for response
-        breakdown_list = []
-        for key, data in carrier_breakdown.items():
-            breakdown_list.append({
-                'carrier_service': key,
-                'order_count': data['count'],
-                'total': f"${data['total_cents'] / 100.0:,.2f}"
-            })
         
         # Log success
         log_report_run('EOM', month_start, 'success', f'Monthly charges calculated: ${total_dollars:,.2f}')
@@ -1595,6 +1621,9 @@ def api_run_eom():
             'success': False,
             'error': str(e)
         }), 500
+    finally:
+        # Always release the lock
+        _report_locks['EOM'] = False
 
 @app.route('/api/reports/status', methods=['GET'])
 def api_report_status():
