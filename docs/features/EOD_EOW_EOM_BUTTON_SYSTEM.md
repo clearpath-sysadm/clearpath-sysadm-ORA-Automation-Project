@@ -3,8 +3,148 @@
 ## Overview
 User-driven physical inventory control buttons to replace time-based automations. These buttons give the shipping team control over when reports are generated, eliminating edge cases from variable shipping schedules.
 
-**Status:** Requirements defined, implementation pending  
-**Last Updated:** October 15, 2025
+**Status:** 🟡 PARTIALLY IMPLEMENTED (50% Complete - Backend 70%, Frontend 30%)  
+**Last Updated:** October 16, 2025
+
+---
+
+## 📊 IMPLEMENTATION STATUS
+
+### ✅ Completed Components (50%)
+
+#### 1. Database Infrastructure ✓
+- ✅ Created `report_runs` table with UNIQUE constraint on (report_type, run_for_date)
+- ✅ All data tables exist (shipped_items, shipped_orders, weekly_shipped_history)
+
+#### 2. Helper Functions (pg_utils.py) ✓
+- ✅ `eod_done_today()` - Check if EOD run for today
+- ✅ `eow_done_this_week()` - Check if EOW run for current week
+- ✅ `eom_done_this_month()` - Check if EOM run for current month
+- ✅ `log_report_run()` - Log execution to database
+- ✅ `get_last_report_runs()` - Fetch last run times for UI
+
+#### 3. API Endpoints (app.py) ✓
+- ✅ `POST /api/reports/eod` - Triggers daily_shipment_processor.py
+- ✅ `POST /api/reports/eow` - Triggers weekly_reporter.py (with EOD dependency check)
+- ✅ `POST /api/reports/eom` - Calculates monthly ShipStation charges
+- ✅ `GET /api/reports/status` - Returns last run times for UI
+
+#### 4. UI - HTML ✓
+- ✅ Button section added to index.html (horizontal layout)
+- ✅ Positioned between "Operational Pulse" and "Inventory Risk" sections
+- ✅ Warning banner placeholder added
+
+#### 5. Workflow Configuration ✓
+- ✅ Disabled automated `weekly_reporter` in start_all.sh (now button-only)
+
+### 🚨 Critical Issues Identified (MUST FIX)
+
+#### Issue #1: EOM Query Bug 🔴
+**Location:** `app.py` line ~1535-1547  
+**Problem:** Using window functions incorrectly - produces duplicate rows instead of aggregated summary  
+**Current Code:**
+```python
+SELECT carrier, service, shipping_cost_cents,
+       COUNT(*) OVER (PARTITION BY carrier, service) as service_count,
+       SUM(shipping_cost_cents) OVER (PARTITION BY carrier, service) as service_total
+FROM shipped_orders
+WHERE ship_date >= %s AND ship_date <= %s
+```
+**Fix Required:**
+```python
+SELECT carrier, service,
+       COUNT(*) as order_count,
+       SUM(shipping_cost_cents) as total_cents
+FROM shipped_orders
+WHERE ship_date >= %s AND ship_date <= %s
+GROUP BY carrier, service
+ORDER BY carrier, service
+```
+
+#### Issue #2: No Concurrency Guards 🔴
+**Location:** All 3 report endpoints  
+**Problem:** Two users clicking same button simultaneously will launch duplicate subprocess instances  
+**Risk:** Database conflicts, duplicate processing  
+**Fix Required:**
+```python
+_report_locks = {'EOD': False, 'EOW': False, 'EOM': False}
+
+@app.route('/api/reports/eod', methods=['POST'])
+def api_run_eod():
+    if _report_locks['EOD']:
+        return jsonify({'success': False, 'error': 'EOD already running'}), 409
+    
+    _report_locks['EOD'] = True
+    try:
+        # ... existing code ...
+    finally:
+        _report_locks['EOD'] = False
+```
+
+#### Issue #3: Date Logic Unverified ⚠️
+**Location:** `pg_utils.py` - `eow_done_this_week()`, `eom_done_this_month()`  
+**Problem:** Week start calculation uses `today.weekday()` - behavior needs validation  
+**Risk:** Wrong week/month boundaries → UNIQUE constraint fails or checks wrong period  
+**Verification Needed:**
+- Confirm `weekday()` returns 0=Monday (not 0=Sunday)
+- Test month_start calculation for edge cases (Jan 1, Dec 31, leap years)
+- Validate week_start calculation for boundary conditions
+
+#### Issue #4: Error Handling Gaps ⚠️
+**Location:** All 3 report endpoints  
+**Problem:** Some failure paths might not log to `report_runs` table  
+**Fix Required:** Ensure ALL exception paths call `log_report_run()` before returning error
+
+### 🔴 Missing Components (50%)
+
+#### 1. JavaScript Functions - NOT STARTED
+Missing all button handlers:
+- ❌ `runEOD()` - Disable button, call API, show success/error, re-enable
+- ❌ `runEOW()` - Same pattern with progress indicator  
+- ❌ `runEOM()` - Same pattern with charge total display
+- ❌ `loadReportStatus()` - Fetch /api/reports/status on page load
+- ❌ `checkReportWarnings()` - Show warning if EOD not run by 2 PM
+
+#### 2. CSS Styling - NOT STARTED
+Missing all button styles:
+- ❌ `.report-controls-container` - Horizontal flexbox layout
+- ❌ `.report-btn` - Button styling with hover effects
+- ❌ `.report-btn-icon` - Emoji icon styling
+- ❌ `.report-btn-status` - Last run timestamp styling
+- ❌ `#report-warnings` - Warning banner styling (orange/yellow alert)
+
+#### 3. Testing - NOT STARTED
+Zero testing completed:
+- ❌ Database UNIQUE constraint behavior
+- ❌ Helper function date calculations
+- ❌ API endpoint success/failure scenarios
+- ❌ EOW dependency check (auto-runs EOD when needed)
+- ❌ EOM monthly charge totals accuracy
+- ❌ Button clicks in UI
+- ❌ Status display updates
+
+### 📋 Remaining Work Estimate
+
+| Phase | Tasks | Estimated Time | Status |
+|-------|-------|----------------|--------|
+| **Backend Hardening** | Fix EOM query, add concurrency guards, validate dates, harden error logging | 2 hours | 🔴 Not Started |
+| **Frontend Implementation** | JavaScript functions, CSS styling, integration | 2 hours | 🔴 Not Started |
+| **Testing & Validation** | End-to-end testing, edge cases, UI/UX validation | 1 hour | 🔴 Not Started |
+| **TOTAL** | | **5 hours** | **50% Complete** |
+
+### 🎯 Next Steps (Prioritized)
+
+1. **IMMEDIATE: Fix EOM Query** (15 min) - Critical bug, wrong totals
+2. **HIGH: Add Concurrency Guards** (30 min) - Prevent duplicate processing
+3. **HIGH: Validate Helper Functions** (30 min) - Verify date calculations
+4. **MEDIUM: Complete Frontend** (2 hours) - JavaScript + CSS
+5. **HIGH: End-to-End Testing** (1 hour) - Test all scenarios
+6. **FINAL: User Acceptance** (30 min) - Get sign-off
+
+### 📚 Related Documentation
+- **Gap Analysis:** `/docs/features/EOD_EOW_EOM_GAP_ANALYSIS.md`
+- **Current State Analysis:** `/docs/features/EOD_EOW_EOM_CURRENT_STATE_ANALYSIS.md`
+- **Project Journal:** `/docs/PROJECT_JOURNAL.md`
 
 ---
 
