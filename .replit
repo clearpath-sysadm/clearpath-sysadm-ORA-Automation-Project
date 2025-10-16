@@ -148,9 +148,5 @@ externalPort = 3003
 localPort = 45775
 externalPort = 6800
 
-[[ports]]
-localPort = 46511
-externalPort = 8081
-
 [env]
 TZ = "America/Chicago"
