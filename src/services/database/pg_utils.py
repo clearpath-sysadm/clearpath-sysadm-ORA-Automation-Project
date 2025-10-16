@@ -191,3 +191,144 @@ def update_workflow_last_run(workflow_name: str):
         logger.debug(f"Updated last_run_at for workflow: {workflow_name}")
     except Exception as e:
         logger.error(f"Failed to update last_run_at for {workflow_name}: {e}")
+
+
+def eod_done_today() -> bool:
+    """
+    Check if EOD report has been run for today
+    
+    Returns:
+        bool: True if EOD run today, False otherwise
+    """
+    import datetime
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM report_runs WHERE report_type = 'EOD' AND run_for_date = %s",
+            (datetime.date.today(),)
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+    except Exception as e:
+        logger.error(f"Error checking EOD status: {e}")
+        return False
+
+
+def eow_done_this_week() -> bool:
+    """
+    Check if EOW report has been run for current week
+    
+    Returns:
+        bool: True if EOW run this week, False otherwise
+    """
+    import datetime
+    try:
+        today = datetime.date.today()
+        week_start = today - datetime.timedelta(days=today.weekday())
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM report_runs WHERE report_type = 'EOW' AND run_for_date = %s",
+            (week_start,)
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+    except Exception as e:
+        logger.error(f"Error checking EOW status: {e}")
+        return False
+
+
+def eom_done_this_month() -> bool:
+    """
+    Check if EOM report has been run for current month
+    
+    Returns:
+        bool: True if EOM run this month, False otherwise
+    """
+    import datetime
+    try:
+        month_start = datetime.date.today().replace(day=1)
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM report_runs WHERE report_type = 'EOM' AND run_for_date = %s",
+            (month_start,)
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+    except Exception as e:
+        logger.error(f"Error checking EOM status: {e}")
+        return False
+
+
+def log_report_run(report_type: str, run_for_date, status: str = 'success', message: str = ''):
+    """
+    Log a report run to the database
+    
+    Args:
+        report_type: Type of report ('EOD', 'EOW', 'EOM')
+        run_for_date: Date the report covers (date object)
+        status: Status of the run ('success', 'failed', 'in_progress')
+        message: Optional message about the run
+    """
+    import datetime
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO report_runs (report_type, run_date, run_for_date, status, message)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (report_type, run_for_date) 
+            DO UPDATE SET 
+                run_date = EXCLUDED.run_date,
+                status = EXCLUDED.status,
+                message = EXCLUDED.message,
+                created_at = NOW()
+        """, (report_type, datetime.date.today(), run_for_date, status, message))
+        conn.commit()
+        conn.close()
+        logger.info(f"Logged {report_type} report run for {run_for_date}: {status}")
+    except Exception as e:
+        logger.error(f"Failed to log {report_type} report run: {e}")
+
+
+def get_last_report_runs():
+    """
+    Get the last run information for all report types
+    
+    Returns:
+        dict: Dictionary with report types as keys and last run info as values
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT report_type, run_date, run_for_date, status, message
+            FROM report_runs
+            WHERE (report_type, run_date) IN (
+                SELECT report_type, MAX(run_date)
+                FROM report_runs
+                GROUP BY report_type
+            )
+        """)
+        results = cursor.fetchall()
+        conn.close()
+        
+        report_status = {}
+        for row in results:
+            report_status[row[0]] = {
+                'run_date': row[1].isoformat() if row[1] else None,
+                'run_for_date': row[2].isoformat() if row[2] else None,
+                'status': row[3],
+                'message': row[4]
+            }
+        return report_status
+    except Exception as e:
+        logger.error(f"Error fetching last report runs: {e}")
+        return {}
