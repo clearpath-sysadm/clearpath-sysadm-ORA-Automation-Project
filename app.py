@@ -3061,12 +3061,12 @@ def api_refresh_units_to_ship():
 
 @app.route('/api/local/awaiting_shipment_count', methods=['GET'])
 def api_get_local_awaiting_shipment_count():
-    """Get count of items in local DB with status awaiting_shipment"""
+    """Get count of items in local DB that are not shipped or cancelled"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Count total units by joining orders_inbox with order_items_inbox
+        # Count total units for all non-shipped, non-cancelled orders
         cursor.execute("""
             SELECT 
                 COUNT(DISTINCT o.id) as order_count,
@@ -3074,7 +3074,7 @@ def api_get_local_awaiting_shipment_count():
                 MAX(o.created_at) as last_updated
             FROM orders_inbox o
             LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
-            WHERE o.status = 'awaiting_shipment'
+            WHERE o.status NOT IN ('shipped', 'cancelled')
         """)
         
         result = cursor.fetchone()
