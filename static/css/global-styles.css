@@ -731,7 +731,7 @@ textarea::placeholder {
    6. BUTTONS - GLOBAL UNIFIED STYLE
    ======================================== */
 
-/* Single global button style - all buttons look identical */
+/* Single global button style - ALL buttons across the system look identical */
 .btn,
 .btn-primary,
 .btn-success,
@@ -739,7 +739,15 @@ textarea::placeholder {
 .btn-danger,
 .btn-upload,
 .btn-manual-import,
-.btn-secondary {
+.btn-secondary,
+.btn-view-violations,
+.btn-resolve-violation,
+.btn-dismiss-alert,
+.btn-close-modal,
+.btn-refresh-mismatch,
+.btn-dismiss-mismatch,
+.action-btn,
+.quick-action-btn {
     display: inline-flex;
     align-items: center;
     gap: calc(var(--spacing-unit) * 1);
@@ -762,7 +770,15 @@ textarea::placeholder {
 .btn-danger:hover,
 .btn-upload:hover,
 .btn-manual-import:hover,
-.btn-secondary:hover {
+.btn-secondary:hover,
+.btn-view-violations:hover,
+.btn-resolve-violation:hover,
+.btn-dismiss-alert:hover,
+.btn-close-modal:hover,
+.btn-refresh-mismatch:hover,
+.btn-dismiss-mismatch:hover,
+.action-btn:hover,
+.quick-action-btn:hover {
     background-color: #4A5B7C;
     border-color: #4A5B7C;
     transform: translateY(-1px);
@@ -770,7 +786,11 @@ textarea::placeholder {
 
 .btn:disabled,
 .btn-primary:disabled,
-.btn-secondary:disabled {
+.btn-secondary:disabled,
+.btn-resolve-violation:disabled,
+.btn-refresh-mismatch:disabled,
+.btn-dismiss-alert:disabled,
+.btn-close-modal:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
@@ -1555,7 +1575,8 @@ body.dark-mode .order-card-expand-btn:hover {
             gap: 12px;
         }
 
-        .btn-view-violations {
+        /* REMOVED: .btn-view-violations override - now uses global button style */
+        /* .btn-view-violations {
             background-color: var(--warning-gold);
             color: var(--primary-navy);
             border: none;
@@ -1571,9 +1592,10 @@ body.dark-mode .order-card-expand-btn:hover {
             background-color: #E6B03E;
             transform: translateY(-1px);
             box-shadow: var(--shadow-sm);
-        }
+        } */
 
-        .btn-dismiss-alert {
+        /* REMOVED: .btn-dismiss-alert override - now uses global button style */
+        /* .btn-dismiss-alert {
             background: none;
             border: none;
             color: var(--text-secondary);
@@ -1586,7 +1608,7 @@ body.dark-mode .order-card-expand-btn:hover {
 
         .btn-dismiss-alert:hover {
             opacity: 1;
-        }
+        } */
 
 /* Violations Modal */
         .violations-modal {
@@ -1632,7 +1654,8 @@ body.dark-mode .order-card-expand-btn:hover {
             color: var(--text-primary);
         }
 
-        .btn-close-modal {
+        /* REMOVED: .btn-close-modal override - now uses global button style */
+        /* .btn-close-modal {
             background: none;
             border: none;
             font-size: 24px;
@@ -1643,7 +1666,7 @@ body.dark-mode .order-card-expand-btn:hover {
 
         .btn-close-modal:hover {
             color: var(--text-primary);
-        }
+        } */
 
         .violation-item {
             background-color: var(--bg-secondary);
@@ -1716,7 +1739,8 @@ body.dark-mode .order-card-expand-btn:hover {
             color: var(--text-primary);
         }
 
-        .btn-resolve-violation {
+        /* REMOVED: .btn-resolve-violation override - now uses global button style */
+        /* .btn-resolve-violation {
             background-color: var(--success-teal);
             color: white;
             border: none;
@@ -1737,4 +1761,4 @@ body.dark-mode .order-card-expand-btn:hover {
         .btn-resolve-violation:disabled {
             background-color: var(--text-tertiary);
             cursor: not-allowed;
-        }
+        } */

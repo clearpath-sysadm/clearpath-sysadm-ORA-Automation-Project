@@ -49,7 +49,8 @@
     gap: 12px;
 }
 
-.btn-refresh-mismatch {
+/* REMOVED: Button overrides - now uses global button style */
+/*.btn-refresh-mismatch {
     background-color: #ef4444;
     color: white;
     border: none;
@@ -78,7 +79,7 @@
 
 .btn-dismiss-mismatch:hover {
     opacity: 1;
-}
+}*/
 
 /* Shipping Violations Alert Banner */
 .violations-alert {
@@ -131,7 +132,8 @@
     gap: 12px;
 }
 
-.btn-view-violations {
+/* REMOVED: Button overrides - now uses global button style */
+/*.btn-view-violations {
     background-color: #f59e0b;
     color: white;
     border: none;
@@ -160,7 +162,7 @@
 
 .btn-dismiss-alert:hover {
     opacity: 1;
-}
+}*/
 
 /* Violations Modal */
 .violations-modal {
@@ -205,7 +207,8 @@
     color: var(--text-primary);
 }
 
-.btn-close-modal {
+/* REMOVED: Button override - now uses global button style */
+/*.btn-close-modal {
     background: none;
     border: none;
     font-size: 28px;
@@ -222,7 +225,7 @@
 
 .btn-close-modal:hover {
     color: var(--text-primary);
-}
+}*/
 
 .violation-item {
     background-color: var(--bg-tertiary);
@@ -289,7 +292,8 @@
     color: var(--text-secondary);
 }
 
-.btn-resolve-violation {
+/* REMOVED: Button override - now uses global button style */
+/*.btn-resolve-violation {
     background-color: var(--primary-blue);
     color: white;
     border: none;
@@ -309,4 +313,4 @@
 .btn-resolve-violation:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-}
+}*/
