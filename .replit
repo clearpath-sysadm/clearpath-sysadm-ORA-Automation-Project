@@ -26,15 +26,15 @@ args = "orders-cleanup"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "xml-import"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "unified-shipstation-sync"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "shipstation-upload"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "xml-import"
 
 [[workflows.workflow]]
 name = "dashboard-server"
@@ -60,17 +60,6 @@ args = "python src/scheduled_cleanup.py"
 outputType = "console"
 
 [[workflows.workflow]]
-name = "xml-import"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "while true; do python src/scheduled_xml_import.py; sleep 300; done"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
 name = "unified-shipstation-sync"
 author = "agent"
 
@@ -88,6 +77,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/scheduled_shipstation_upload.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "xml-import"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python src/scheduled_xml_import.py"
 
 [workflows.workflow.metadata]
 outputType = "console"
