@@ -317,7 +317,7 @@ def upload_pending_orders():
                 # Create SINGLE ShipStation order with ALL line items
                 shipstation_order = {
                     'orderNumber': order_number,
-                    'orderDate': order_date,
+                    'orderDate': order_date.isoformat() if order_date else None,
                     'orderStatus': 'awaiting_shipment',
                     'customerEmail': customer_email or '',
                     'billTo': {
