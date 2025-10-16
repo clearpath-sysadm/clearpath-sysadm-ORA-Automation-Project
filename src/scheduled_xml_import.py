@@ -16,7 +16,6 @@ sys.path.insert(0, str(project_root))
 
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
 from src.services.database import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
-from src.services.database.db_adapter import get_db_connection
 import defusedxml.ElementTree as ET
 
 logging.basicConfig(
@@ -43,7 +42,7 @@ def get_feature_flag(flag_name, default_value):
         return _feature_flag_cache.get(flag_name, default_value)
     
     # Refresh all flags from database
-    conn = get_db_connection()
+    conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute("""
@@ -67,7 +66,7 @@ def get_feature_flag(flag_name, default_value):
 # ============================================================================
 def has_new_xml_files():
     """Check if new XML files exist using file count comparison"""
-    conn = get_db_connection()
+    conn = get_connection()
     try:
         cursor = conn.cursor()
         start = time.time()
@@ -104,7 +103,7 @@ def has_new_xml_files():
 
 def update_xml_polling_state(count):
     """Update XML polling state after successful import"""
-    conn = get_db_connection()
+    conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute("""
