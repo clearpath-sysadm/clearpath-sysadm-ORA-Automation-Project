@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Scheduled XML Import from Google Drive
-Runs every 5 minutes to import orders.xml and cleanup old data
+Optimized polling with feature flags and efficient change detection
 """
 import os
 import sys
@@ -16,6 +16,7 @@ sys.path.insert(0, str(project_root))
 
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
 from src.services.database import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+from src.services.database.db_adapter import get_db_connection
 import defusedxml.ElementTree as ET
 
 logging.basicConfig(
@@ -25,8 +26,98 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 GOOGLE_DRIVE_FOLDER_ID = '1rNudeesa_c6q--KIKUAOLwXta_gyRqAE'
-IMPORT_INTERVAL_SECONDS = 300
 DATA_RETENTION_DAYS = 60
+
+# ============================================================================
+# OPTIMIZED POLLING: Feature Flag Caching (60-second TTL)
+# ============================================================================
+_feature_flag_cache = {}
+_feature_flag_cache_time = None
+
+def get_feature_flag(flag_name, default_value):
+    """Get feature flag with 60-second cache (shared with upload workflow)"""
+    global _feature_flag_cache, _feature_flag_cache_time
+    
+    # Return cached value if fresh
+    if _feature_flag_cache_time and (datetime.now() - _feature_flag_cache_time).seconds < 60:
+        return _feature_flag_cache.get(flag_name, default_value)
+    
+    # Refresh all flags from database
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT parameter_name, value 
+            FROM configuration_params 
+            WHERE category = 'Polling'
+        """)
+        
+        _feature_flag_cache = {row[0]: row[1] for row in cursor.fetchall()}
+        _feature_flag_cache_time = datetime.now()
+        
+        return _feature_flag_cache.get(flag_name, default_value)
+    except Exception as e:
+        logger.debug(f"Failed to fetch feature flags: {e}")
+        return default_value
+    finally:
+        conn.close()
+
+# ============================================================================
+# OPTIMIZED POLLING: Change Detection
+# ============================================================================
+def has_new_xml_files():
+    """Check if new XML files exist using file count comparison"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        start = time.time()
+        
+        # Get last check from polling_state
+        cursor.execute("SELECT last_xml_count, last_xml_check FROM polling_state WHERE id = 1")
+        result = cursor.fetchone()
+        last_count = result[0] if result else 0
+        last_check = result[1] if result else datetime.now() - timedelta(hours=1)
+        
+        # Get current file count from Google Drive
+        try:
+            files = list_xml_files_from_folder(GOOGLE_DRIVE_FOLDER_ID)
+            current_count = len(files)
+        except Exception as e:
+            logger.error(f"Error checking Drive files: {e}")
+            # Process on error (fail-safe)
+            duration_ms = int((time.time() - start) * 1000)
+            logger.info(f"METRICS: workflow=xml-import count=? duration_ms={duration_ms} action=process_error")
+            return True, 0, duration_ms
+        
+        duration_ms = int((time.time() - start) * 1000)
+        has_changes = current_count != last_count
+        
+        logger.info(f"METRICS: workflow=xml-import count={current_count} last_count={last_count} duration_ms={duration_ms} action={'process' if has_changes else 'skip'}")
+        
+        return has_changes, current_count, duration_ms
+        
+    except Exception as e:
+        logger.error(f"Error in has_new_xml_files: {e}")
+        return True, 0, 0  # Process on error (fail-safe)
+    finally:
+        conn.close()
+
+def update_xml_polling_state(count):
+    """Update XML polling state after successful import"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE polling_state 
+            SET last_xml_count = %s,
+                last_xml_check = CURRENT_TIMESTAMP
+            WHERE id = 1
+        """, (count,))
+        conn.commit()
+    except Exception as e:
+        logger.debug(f"Failed to update XML polling state: {e}")
+    finally:
+        conn.close()
 
 def cleanup_old_orders():
     """Delete orders older than 2 months from orders_inbox"""
@@ -289,36 +380,75 @@ def import_orders_from_drive():
         return 0
 
 def run_scheduled_import():
-    """Main loop - runs every 5 minutes"""
-    logger.info(f"Starting scheduled XML import (every {IMPORT_INTERVAL_SECONDS}s)")
-    logger.info(f"Data retention: {DATA_RETENTION_DAYS} days")
+    """Optimized main loop with feature flags and efficient polling"""
+    # Get feature flags
+    fast_polling_enabled = get_feature_flag('fast_polling_enabled', 'false').lower() == 'true'
+    fast_polling_interval = int(get_feature_flag('fast_polling_interval', '15'))
+    fallback_interval = int(get_feature_flag('sync_interval', '300'))
+    
+    interval = fast_polling_interval if fast_polling_enabled else fallback_interval
+    
+    logger.info(f"🚀 XML import workflow started (fast_polling={fast_polling_enabled}, interval={interval}s)")
+    logger.info(f"📁 Data retention: {DATA_RETENTION_DAYS} days")
+    
+    error_count = 0
+    max_errors = 5
     
     while True:
         try:
+            # Check if workflow is enabled
             if not is_workflow_enabled('xml-import'):
-                logger.info("Workflow 'xml-import' is DISABLED - sleeping 60s")
+                logger.info("⏸️ Workflow 'xml-import' is DISABLED - sleeping 60s")
                 time.sleep(60)
                 continue
             
-            logger.info("Running scheduled import...")
+            # PREFLIGHT CHECK: Do we have new files?
+            has_changes, file_count, check_duration = has_new_xml_files()
+            
+            if not has_changes:
+                # No changes - skip processing
+                time.sleep(interval)
+                continue
+            
+            # Changes detected - process files
+            logger.info(f"📥 Processing XML files from Drive (count: {file_count})")
             update_workflow_last_run('xml-import')
             
             imported = import_orders_from_drive()
-            logger.info(f"Import complete: {imported} orders imported")
             
+            if imported > 0:
+                logger.info(f"✅ Import complete: {imported} orders imported")
+            else:
+                logger.info(f"ℹ️ Import complete: No new orders")
+            
+            # Update polling state on success
+            update_xml_polling_state(file_count)
+            
+            # Cleanup old orders
             deleted = cleanup_old_orders()
             if deleted > 0:
-                logger.info(f"Cleanup complete: {deleted} old orders deleted")
+                logger.info(f"🗑️ Cleanup complete: {deleted} old orders deleted")
             
-            logger.info(f"Next import in {IMPORT_INTERVAL_SECONDS} seconds")
-            time.sleep(IMPORT_INTERVAL_SECONDS)
+            # Reset error count on success
+            error_count = 0
+            
+            logger.info(f"😴 Next import check in {interval} seconds")
+            time.sleep(interval)
             
         except KeyboardInterrupt:
-            logger.info("Scheduled import stopped by user")
+            logger.info("⏹️ Scheduled import stopped by user")
             break
         except Exception as e:
-            logger.error(f"Error in scheduled import: {str(e)}")
-            time.sleep(IMPORT_INTERVAL_SECONDS)
+            error_count += 1
+            logger.error(f"❌ Error in scheduled import (attempt {error_count}/{max_errors}): {str(e)}")
+            
+            if error_count >= max_errors:
+                logger.error(f"🚨 Max errors ({max_errors}) reached - using exponential backoff")
+                backoff = min(interval * (2 ** (error_count - max_errors)), 3600)  # Max 1 hour
+                logger.info(f"😴 Backing off for {backoff}s due to errors")
+                time.sleep(backoff)
+            else:
+                time.sleep(interval)
 
 if __name__ == '__main__':
     run_scheduled_import()
