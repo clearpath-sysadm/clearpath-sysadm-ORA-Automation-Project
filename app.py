@@ -229,39 +229,40 @@ def api_get_inventory_alerts():
 
 @app.route('/api/automation_status')
 def api_automation_status():
-    """Get automation workflow status"""
+    """Get automation workflow status from workflow_controls table"""
     try:
         query = """
             SELECT 
-                name,
-                display_name,
-                status,
-                last_run_at,
-                duration_seconds,
-                records_processed
-            FROM workflows
-            WHERE name IN ('weekly_reporter', 'daily_shipment_processor', 'shipstation_sync', 'monthly_report')
-            ORDER BY last_run_at DESC
-            LIMIT 10
+                workflow_name,
+                enabled,
+                last_run_at
+            FROM workflow_controls
+            WHERE workflow_name IN ('shipstation-upload', 'xml-import', 'unified-shipstation-sync', 'orders-cleanup', 'weekly-reporter')
+            ORDER BY last_run_at DESC NULLS LAST
         """
         results = execute_query(query)
         
+        display_names = {
+            'shipstation-upload': 'ShipStation Upload',
+            'xml-import': 'XML Import',
+            'unified-shipstation-sync': 'ShipStation Sync',
+            'orders-cleanup': 'Orders Cleanup',
+            'weekly-reporter': 'Weekly Reporter'
+        }
+        
         workflows_data = []
         for row in results:
-            name = row[0]
-            display_name = row[1] or name
-            status = row[2]
-            last_run_at = row[3]
-            duration_seconds = row[4] or 0
-            records = row[5] or 0
+            workflow_name = row[0]
+            enabled = row[1]
+            last_run_at = row[2]
             
             workflows_data.append({
-                'workflow_name': name,
-                'display_name': display_name,
-                'status': status,
+                'workflow_name': workflow_name,
+                'display_name': display_names.get(workflow_name, workflow_name),
+                'status': 'running' if enabled else 'disabled',
                 'last_run': last_run_at,
-                'duration_seconds': duration_seconds,
-                'records_processed': records
+                'duration_seconds': 0,
+                'records_processed': 0
             })
         
         return jsonify({
