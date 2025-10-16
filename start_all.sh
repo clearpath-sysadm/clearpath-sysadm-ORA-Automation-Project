@@ -26,9 +26,10 @@ echo "Starting ShipStation units refresh..."
 python src/shipstation_units_refresher.py &
 UNITS_PID=$!
 
-echo "Starting weekly reporter..."
-DEV_MODE=1 python src/weekly_reporter.py &
-REPORTER_PID=$!
+# Weekly reporter is now manual (triggered by EOW button)
+# echo "Starting weekly reporter..."
+# DEV_MODE=1 python src/weekly_reporter.py &
+# REPORTER_PID=$!
 
 # Give background processes a moment to start
 sleep 2
@@ -40,7 +41,7 @@ echo "   - ShipStation Upload: PID $UPLOAD_PID"
 echo "   - Unified ShipStation Sync: PID $UNIFIED_PID"
 echo "   - Cleanup: PID $CLEANUP_PID"
 echo "   - Units Refresh: PID $UNITS_PID"
-echo "   - Weekly Reporter: PID $REPORTER_PID"
+echo "   - Weekly Reporter: MANUAL (EOW button)"
 echo "================================================"
 echo ""
 echo "🌐 Starting dashboard server on port 5000..."
@@ -51,4 +52,4 @@ python app.py
 
 # If Flask exits, kill background processes
 echo "⚠️  Dashboard stopped, shutting down background processes..."
-kill $XML_PID $UPLOAD_PID $UNIFIED_PID $CLEANUP_PID $UNITS_PID $REPORTER_PID 2>/dev/null
+kill $XML_PID $UPLOAD_PID $UNIFIED_PID $CLEANUP_PID $UNITS_PID 2>/dev/null
