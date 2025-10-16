@@ -81,6 +81,9 @@ def api_run_eod():
         _report_locks['EOD'] = False
 ```
 
+**⚠️ Important Limitation:**  
+In-memory locks only protect a **single Flask process**. Current deployment uses one worker, so this is sufficient. If multiple workers/processes are ever deployed, upgrade to **database advisory locks** (`SELECT pg_advisory_lock()`) or transaction-based guards to ensure system-wide concurrency protection.
+
 #### Issue #3: Date Logic Unverified ⚠️
 **Location:** `pg_utils.py` - `eow_done_this_week()`, `eom_done_this_month()`  
 **Problem:** Week start calculation uses `today.weekday()` - behavior needs validation  
@@ -94,6 +97,20 @@ def api_run_eod():
 **Location:** All 3 report endpoints  
 **Problem:** Some failure paths might not log to `report_runs` table  
 **Fix Required:** Ensure ALL exception paths call `log_report_run()` before returning error
+
+#### Issue #5: Subprocess Idempotency Requirements ℹ️
+**Location:** All report scripts (daily_shipment_processor.py, weekly_reporter.py, EOM calculation)  
+**Requirement:** Scripts must be **idempotent** and handle reruns safely  
+**Critical Behaviors:**
+1. **Non-zero exit codes on failure** - Scripts must return exit code != 0 when they fail so subprocess can detect errors
+2. **Safe reruns** - Running the same report twice for the same date should not corrupt data or create duplicates
+3. **Partial failure handling** - If a script fails midway, the database should remain in a consistent state (use transactions)
+4. **Clear error messages** - Scripts should print errors to stderr for subprocess capture
+
+**Validation Required:**
+- Test that daily_shipment_processor.py returns non-zero on ShipStation API failure
+- Test that weekly_reporter.py can be rerun for the same week without issues
+- Verify all scripts use database transactions properly
 
 ### 🔴 Missing Components (50%)
 
@@ -114,14 +131,32 @@ Missing all button styles:
 - ❌ `#report-warnings` - Warning banner styling (orange/yellow alert)
 
 #### 3. Testing - NOT STARTED
-Zero testing completed:
-- ❌ Database UNIQUE constraint behavior
-- ❌ Helper function date calculations
-- ❌ API endpoint success/failure scenarios
-- ❌ EOW dependency check (auto-runs EOD when needed)
-- ❌ EOM monthly charge totals accuracy
-- ❌ Button clicks in UI
-- ❌ Status display updates
+Zero testing completed - requires comprehensive test coverage:
+
+**Database & Backend Tests:**
+- ❌ **UNIQUE constraint behavior** - Test duplicate report_runs inserts for same date are rejected
+- ❌ **Helper function date calculations** - Verify weekday() logic, week/month boundaries
+- ❌ **API endpoint success scenarios** - Each button completes successfully and logs to report_runs
+- ❌ **API endpoint failure scenarios** - Subprocess timeout/error properly logged with status='failed'
+- ❌ **EOW dependency check** - Verify EOW auto-runs EOD when not already done today
+- ❌ **EOM monthly charge totals** - Validate aggregation accuracy against known October data
+- ❌ **Subprocess error propagation** - Verify scripts return non-zero on failure, Flask catches it
+- ❌ **Idempotency validation** - Rerun same report twice, verify no data corruption
+
+**Concurrency & Edge Case Tests:**
+- ❌ **Simultaneous button clicks** - Two users click EOD at same time → lock prevents duplicates (409 response)
+- ❌ **Timeout handling** - Script runs >120s → timeout detected, logged as failed
+- ❌ **Week boundary** - Click EOW on Monday vs Sunday, verify correct week_start calculation
+- ❌ **Month boundary** - Click EOM on last day of month (Oct 31), verify month_start/month_end
+- ❌ **Year boundary** - Test Dec 31 → Jan 1 transitions for both EOW and EOM
+- ❌ **Already run protection** - Click EOD twice in same day → second returns "already run" message
+
+**UI & Integration Tests:**
+- ❌ **Button clicks** - All 3 buttons trigger correct endpoints and show success/error
+- ❌ **Status display updates** - After clicking, last run timestamp updates in UI
+- ❌ **Warning banner** - If EOD not run by 2 PM, warning appears on dashboard
+- ❌ **Button disabled during run** - Button grays out while processing, re-enables after
+- ❌ **Error message display** - API errors show in UI with clear messaging
 
 ### 📋 Remaining Work Estimate
 
