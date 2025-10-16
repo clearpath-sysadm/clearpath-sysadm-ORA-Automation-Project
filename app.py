@@ -1396,6 +1396,223 @@ def api_run_weekly_report():
             'error': str(e)
         }), 500
 
+@app.route('/api/reports/eod', methods=['POST'])
+def api_run_eod():
+    """EOD - End of Day: Sync shipped items and update inventory"""
+    import datetime
+    import subprocess
+    from src.services.database.pg_utils import log_report_run
+    
+    try:
+        # Run the daily shipment processor
+        result = subprocess.run(
+            ['python', 'src/daily_shipment_processor.py'],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        
+        if result.returncode == 0:
+            # Log success
+            log_report_run('EOD', datetime.date.today(), 'success', 'Daily inventory updated successfully')
+            
+            return jsonify({
+                'success': True,
+                'message': '✅ Daily inventory updated - Shipped items synced from ShipStation'
+            })
+        else:
+            # Log failure
+            log_report_run('EOD', datetime.date.today(), 'failed', f'Error: {result.stderr[:200]}')
+            
+            return jsonify({
+                'success': False,
+                'error': f'EOD failed: {result.stderr}'
+            }), 500
+            
+    except subprocess.TimeoutExpired:
+        log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>120s)')
+        return jsonify({
+            'success': False,
+            'error': 'EOD timed out (>120s)'
+        }), 500
+    except Exception as e:
+        log_report_run('EOD', datetime.date.today(), 'failed', str(e))
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/reports/eow', methods=['POST'])
+def api_run_eow():
+    """EOW - End of Week: Generate weekly report with 52-week averages"""
+    import datetime
+    import subprocess
+    from src.services.database.pg_utils import eod_done_today, log_report_run
+    
+    try:
+        week_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
+        
+        # Check if EOD done today, run it if not
+        if not eod_done_today():
+            # Run EOD first
+            eod_result = subprocess.run(
+                ['python', 'src/daily_shipment_processor.py'],
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+            
+            if eod_result.returncode != 0:
+                log_report_run('EOW', week_start, 'failed', 'EOD prerequisite failed')
+                return jsonify({
+                    'success': False,
+                    'error': f'EOD prerequisite failed: {eod_result.stderr}'
+                }), 500
+            
+            log_report_run('EOD', datetime.date.today(), 'success', 'Auto-run by EOW')
+        
+        # Run the weekly reporter
+        result = subprocess.run(
+            ['python', 'src/weekly_reporter.py'],
+            cwd=project_root,
+            env={**os.environ, 'DEV_MODE': '1'},
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        
+        if result.returncode == 0:
+            log_report_run('EOW', week_start, 'success', 'Weekly report generated successfully')
+            
+            return jsonify({
+                'success': True,
+                'message': '✅ Weekly report generated - 52-week averages calculated'
+            })
+        else:
+            log_report_run('EOW', week_start, 'failed', f'Error: {result.stderr[:200]}')
+            
+            return jsonify({
+                'success': False,
+                'error': f'EOW failed: {result.stderr}'
+            }), 500
+            
+    except subprocess.TimeoutExpired:
+        log_report_run('EOW', week_start, 'failed', 'Timeout (>120s)')
+        return jsonify({
+            'success': False,
+            'error': 'EOW timed out (>120s)'
+        }), 500
+    except Exception as e:
+        log_report_run('EOW', week_start, 'failed', str(e))
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/reports/eom', methods=['POST'])
+def api_run_eom():
+    """EOM - End of Month: Generate monthly ShipStation charge report"""
+    import datetime
+    from src.services.database.pg_utils import log_report_run, execute_query
+    
+    try:
+        # Calculate month boundaries
+        today = datetime.date.today()
+        month_start = today.replace(day=1)
+        
+        # Calculate last day of month
+        if today.month == 12:
+            month_end = today.replace(month=12, day=31)
+        else:
+            month_end = (today.replace(month=today.month + 1, day=1) - datetime.timedelta(days=1))
+        
+        # Query shipped_orders for monthly charges
+        query = """
+            SELECT 
+                ship_date,
+                order_number,
+                carrier,
+                service,
+                shipping_cost_cents,
+                COUNT(*) OVER (PARTITION BY carrier, service) as service_count,
+                SUM(shipping_cost_cents) OVER (PARTITION BY carrier, service) as service_total
+            FROM shipped_orders
+            WHERE ship_date >= %s AND ship_date <= %s
+            ORDER BY carrier, service, ship_date
+        """
+        
+        results = execute_query(query, (month_start, month_end))
+        
+        # Calculate totals
+        total_charges_cents = 0
+        carrier_breakdown = {}
+        
+        for row in results:
+            carrier = row[2] or 'Unknown'
+            service = row[3] or 'Unknown'
+            shipping_cost = row[4] or 0
+            
+            total_charges_cents += shipping_cost
+            
+            key = f"{carrier} - {service}"
+            if key not in carrier_breakdown:
+                carrier_breakdown[key] = {'count': 0, 'total_cents': 0}
+            
+            carrier_breakdown[key]['count'] += 1
+            carrier_breakdown[key]['total_cents'] += shipping_cost
+        
+        total_dollars = total_charges_cents / 100.0
+        
+        # Format breakdown for response
+        breakdown_list = []
+        for key, data in carrier_breakdown.items():
+            breakdown_list.append({
+                'carrier_service': key,
+                'order_count': data['count'],
+                'total': f"${data['total_cents'] / 100.0:,.2f}"
+            })
+        
+        # Log success
+        log_report_run('EOM', month_start, 'success', f'Monthly charges calculated: ${total_dollars:,.2f}')
+        
+        return jsonify({
+            'success': True,
+            'message': f'✅ Monthly charge report generated - Total: ${total_dollars:,.2f}',
+            'data': {
+                'month': month_start.strftime('%B %Y'),
+                'total': f'${total_dollars:,.2f}',
+                'breakdown': breakdown_list,
+                'order_count': len(results)
+            }
+        })
+            
+    except Exception as e:
+        month_start = datetime.date.today().replace(day=1)
+        log_report_run('EOM', month_start, 'failed', str(e))
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/reports/status', methods=['GET'])
+def api_report_status():
+    """Get last run status for all report types"""
+    from src.services.database.pg_utils import get_last_report_runs
+    
+    try:
+        status = get_last_report_runs()
+        return jsonify({
+            'success': True,
+            'data': status
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/weekly_shipped_history', methods=['GET'])
 def api_weekly_shipped_history():
     """Get 52 weeks of weekly shipped history for all SKUs"""

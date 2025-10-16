@@ -261,6 +261,40 @@
                     </div>
                 </section>
 
+                <!-- Physical Inventory Controls Section -->
+                <section>
+                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Physical Inventory Controls</h2>
+                    
+                    <div class="report-controls-container">
+                        <button id="btn-eod" class="report-btn" onclick="runEOD()">
+                            <div class="report-btn-icon">📦</div>
+                            <div class="report-btn-content">
+                                <div class="report-btn-title">EOD - Daily Inventory</div>
+                                <div class="report-btn-status" id="eod-last-run">Last run: --</div>
+                            </div>
+                        </button>
+                        
+                        <button id="btn-eow" class="report-btn" onclick="runEOW()">
+                            <div class="report-btn-icon">📊</div>
+                            <div class="report-btn-content">
+                                <div class="report-btn-title">EOW - Weekly Report</div>
+                                <div class="report-btn-status" id="eow-last-run">Last run: --</div>
+                            </div>
+                        </button>
+                        
+                        <button id="btn-eom" class="report-btn" onclick="runEOM()">
+                            <div class="report-btn-icon">💰</div>
+                            <div class="report-btn-content">
+                                <div class="report-btn-title">EOM - Monthly Charges</div>
+                                <div class="report-btn-status" id="eom-last-run">Last run: --</div>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <!-- Report warnings section -->
+                    <div id="report-warnings" style="margin-top: 12px;"></div>
+                </section>
+
                 <!-- Inventory Risk Section -->
                 <section>
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Inventory Risk</h2>
