@@ -3,6 +3,10 @@ PostgreSQL database utilities - drop-in replacement for db_utils.py
 
 Maintains same API interface for seamless migration from SQLite to PostgreSQL.
 Uses psycopg2 for PostgreSQL connections.
+
+Environment-aware database connection:
+- Production (REPLIT_DEPLOYMENT=1): Uses PRODUCTION_DATABASE_URL or DATABASE_URL
+- Development (workspace): Uses DATABASE_URL
 """
 
 import os
@@ -14,7 +18,13 @@ import logging
 from contextlib import contextmanager
 from typing import Optional, List, Tuple, Any
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+# Environment-aware database URL selection
+IS_PRODUCTION = os.getenv('REPLIT_DEPLOYMENT') == '1'
+if IS_PRODUCTION:
+    DATABASE_URL = os.getenv('PRODUCTION_DATABASE_URL') or os.getenv('DATABASE_URL')
+else:
+    DATABASE_URL = os.getenv('DATABASE_URL')
+
 logger = logging.getLogger(__name__)
 
 _workflow_cache = {}
