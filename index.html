@@ -655,32 +655,34 @@
                 const shipstation = await shipstationRes.json();
                 const localDb = await localDbRes.json();
                 
-                // Update ShipStation and Local DB cards with mismatch detection
-                if (shipstation.success && localDb.success) {
-                    const ssUnits = shipstation.units_to_ship || 0;
-                    const localUnits = localDb.total_units || 0;
-                    const mismatch = ssUnits !== localUnits;
-                    
-                    // Update ShipStation card
+                // Update ShipStation card independently
+                let ssUnits = 0;
+                if (shipstation.success) {
+                    ssUnits = shipstation.units_to_ship || 0;
                     document.getElementById('shipstation-units').textContent = ssUnits;
                     document.getElementById('shipstation-timestamp').textContent = 
                         'Updated: ' + formatRelativeTime(shipstation.last_updated);
-                    
-                    // Update Local DB card
+                }
+                
+                // Update Local DB card independently
+                let localUnits = 0;
+                if (localDb.success) {
+                    localUnits = localDb.total_units || 0;
                     document.getElementById('local-db-units').textContent = localUnits;
                     document.getElementById('local-db-timestamp').textContent = 
                         'Updated: ' + formatRelativeTime(localDb.last_updated);
-                    
-                    // Visual mismatch indicator - show orange badge
+                }
+                
+                // Mismatch detection only if BOTH APIs succeeded
+                if (shipstation.success && localDb.success) {
+                    const mismatch = ssUnits !== localUnits;
                     const ssBadge = document.getElementById('shipstation-badge');
                     const localBadge = document.getElementById('local-db-badge');
                     
                     if (mismatch) {
-                        // Show mismatch badges
                         ssBadge.style.display = 'block';
                         localBadge.style.display = 'block';
                     } else {
-                        // Hide mismatch badges
                         ssBadge.style.display = 'none';
                         localBadge.style.display = 'none';
                     }
