@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help & Training - ORA Automation</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/global-styles.css">
+    <link rel="stylesheet" href="/static/css/dashboard-specific.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar (same as other pages) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">O</div>
+                <div class="sidebar-title">ORA Business</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
+                    </a>
+                </div>
+
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Support</div>
+                    <a href="/help.html" class="nav-item active">
+                        <span class="nav-item-icon">📚</span>
+                        Help & Training
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1 class="page-title">📚 Help & Training</h1>
+                    <p class="page-subtitle">Learn how to use the ORA Automation System</p>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <!-- Quick Start Section -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h2>🚀 Quick Start</h2>
+                    </div>
+                    <div class="card-body">
+                        <p style="margin-bottom: 16px;">New to ORA Automation? Start here:</p>
+                        <button class="btn" onclick="startWelcomeTour()">
+                            ▶️ Start Welcome Tour (3 minutes)
+                        </button>
+                        <p style="margin-top: 12px; color: var(--text-tertiary); font-size: 14px;">
+                            An interactive walkthrough of the dashboard and key features
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Getting Started Guide -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h2>📖 Getting Started</h2>
+                    </div>
+                    <div class="card-body">
+                        <h3 style="margin-bottom: 12px; color: var(--text-primary);">What is ORA Automation?</h3>
+                        <p style="margin-bottom: 16px;">
+                            ORA Automation is a fulfillment system that automatically processes orders from XML files, uploads them to ShipStation, tracks shipments, and manages inventory. The system runs 24/7 with minimal manual intervention.
+                        </p>
+
+                        <h3 style="margin-bottom: 12px; color: var(--text-primary);">How It Works</h3>
+                        <ol style="margin-left: 20px; line-height: 1.8;">
+                            <li><strong>Order Import:</strong> XML files are automatically imported from Google Drive every 5 minutes</li>
+                            <li><strong>ShipStation Upload:</strong> Orders are uploaded to ShipStation with correct lot numbers</li>
+                            <li><strong>Status Tracking:</strong> System monitors order status (pending → awaiting shipment → shipped)</li>
+                            <li><strong>Inventory Update:</strong> When orders ship, inventory is automatically updated</li>
+                        </ol>
+
+                        <h3 style="margin: 24px 0 12px; color: var(--text-primary);">Your Main Tasks</h3>
+                        <ul style="margin-left: 20px; line-height: 1.8;">
+                            <li><strong>Monitor Dashboard:</strong> Check that orders are processing smoothly</li>
+                            <li><strong>Handle Alerts:</strong> Review shipping violations and inventory warnings</li>
+                            <li><strong>Generate Reports:</strong>
+                                <ul style="margin-left: 20px; margin-top: 8px;">
+                                    <li>EOW (End of Week) - Weekly inventory report for manufacturer & customer</li>
+                                    <li>EOM (End of Month) - Monthly chargeback report for customer</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Common Tasks -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h2>✅ Common Tasks</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="help-task">
+                            <h3>📊 Monitor Daily Operations</h3>
+                            <ol>
+                                <li>Go to the <strong>Dashboard</strong></li>
+                                <li>Check the KPI cards:
+                                    <ul>
+                                        <li><strong>ShipStation Units</strong> - Orders in ShipStation awaiting shipment</li>
+                                        <li><strong>Local DB Units</strong> - Orders ready to upload to ShipStation</li>
+                                        <li><strong>Benco Orders</strong> - Benco-specific orders awaiting shipment</li>
+                                        <li><strong>Hawaiian Orders</strong> - Hawaiian orders awaiting shipment</li>
+                                    </ul>
+                                </li>
+                                <li>Green status = everything normal, Yellow/Red = needs attention</li>
+                            </ol>
+                            <button class="btn" onclick="startDashboardTour()">▶️ Interactive Tour</button>
+                        </div>
+
+                        <div class="help-task">
+                            <h3>📥 Process Orders in Orders Inbox</h3>
+                            <ol>
+                                <li>Click <strong>Orders Inbox</strong> in the sidebar</li>
+                                <li>Review pending orders (they auto-upload every 5 minutes)</li>
+                                <li>Use filters/search to find specific orders</li>
+                                <li><strong>Manual Import:</strong> Click if an order didn't auto-import</li>
+                                <li><strong>Validate:</strong> Check orders for errors</li>
+                                <li><strong>Sync Manual:</strong> Force sync with ShipStation</li>
+                            </ol>
+                            <button class="btn" onclick="startOrdersInboxTour()">▶️ Interactive Tour</button>
+                        </div>
+
+                        <div class="help-task">
+                            <h3>📈 Generate Weekly Report (EOW)</h3>
+                            <ol>
+                                <li>Go to the <strong>Dashboard</strong></li>
+                                <li>Scroll to "Weekly Inventory Report" section</li>
+                                <li>Click the <strong>📊 EOW</strong> button</li>
+                                <li>Report generates with 52-week averages</li>
+                                <li>Share with manufacturer and customer</li>
+                            </ol>
+                            <p style="margin-top: 8px; color: var(--text-tertiary);"><em>Do this every Friday or at week-end</em></p>
+                        </div>
+
+                        <div class="help-task">
+                            <h3>💰 Generate Monthly Chargeback Report (EOM)</h3>
+                            <ol>
+                                <li>Go to the <strong>Dashboard</strong></li>
+                                <li>Scroll to "Weekly Inventory Report" section</li>
+                                <li>Click the <strong>💰 EOM</strong> button</li>
+                                <li>Chargeback report generates</li>
+                                <li>Send to customer for billing</li>
+                            </ol>
+                            <p style="margin-top: 8px; color: var(--text-tertiary);"><em>Do this at end of each month</em></p>
+                        </div>
+
+                        <div class="help-task">
+                            <h3>⚠️ Handle Shipping Violations</h3>
+                            <ol>
+                                <li>When alert appears at top of dashboard, click <strong>View Details</strong></li>
+                                <li>Review violation (e.g., "Hawaiian order used USPS instead of FedEx 2Day")</li>
+                                <li>Check if it's acceptable or needs correction</li>
+                                <li>Click <strong>Mark as Resolved</strong> when handled</li>
+                            </ol>
+                        </div>
+
+                        <div class="help-task">
+                            <h3>🏭 Check Inventory Levels</h3>
+                            <ol>
+                                <li>Click <strong>Lot Inventory</strong> in sidebar</li>
+                                <li>Review current quantities by SKU and lot</li>
+                                <li>Red badges (e.g., "11 days") = low inventory warning</li>
+                                <li>Green badges (e.g., "226 days") = healthy stock</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h2>❓ Frequently Asked Questions</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="faq-item">
+                            <h3>How often do orders import automatically?</h3>
+                            <p>Every 5 minutes. The system polls Google Drive for new XML files continuously.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h3>What if an order doesn't appear?</h3>
+                            <p>Go to Orders Inbox and click "Manual Import". Make sure the XML file is in the correct Google Drive folder.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h3>When should I click EOD vs EOW vs EOM?</h3>
+                            <ul>
+                                <li><strong>EOD (End of Day):</strong> Syncs shipped items - run daily or when needed</li>
+                                <li><strong>EOW (End of Week):</strong> Generates weekly inventory report - run every Friday</li>
+                                <li><strong>EOM (End of Month):</strong> Generates chargeback report - run at month-end</li>
+                            </ul>
+                        </div>
+
+                        <div class="faq-item">
+                            <h3>What's the difference between "ShipStation Units" and "Local DB Units"?</h3>
+                            <p><strong>Local DB Units:</strong> Orders in ORA database ready to upload.<br>
+                            <strong>ShipStation Units:</strong> Orders already uploaded to ShipStation awaiting shipment.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h3>Why is there a shipping violation?</h3>
+                            <p>The system detected an order shipped with incorrect carrier/service (e.g., Hawaiian orders must use FedEx 2Day). Review and resolve if needed.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h3>Can I manually add an order?</h3>
+                            <p>Yes! Go to Orders Inbox and click "Manual Import". Enter order details and it will upload to ShipStation.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h3>What happens if inventory runs out?</h3>
+                            <p>The system shows red warning badges (e.g., "11 days left"). Coordinate with manufacturer to restock before it hits zero.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h2>🔧 Troubleshooting</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="troubleshooting-item">
+                            <h3>❌ Order shows "FAILED" status</h3>
+                            <p><strong>Possible causes:</strong></p>
+                            <ul>
+                                <li>Missing or invalid SKU-Lot mapping</li>
+                                <li>ShipStation API error</li>
+                                <li>Duplicate order already exists</li>
+                            </ul>
+                            <p><strong>Solution:</strong></p>
+                            <ol>
+                                <li>Check error message in Orders Inbox</li>
+                                <li>Verify SKU-Lot mapping exists (go to SKU Lot Management)</li>
+                                <li>Try "Sync Manual" to retry upload</li>
+                            </ol>
+                        </div>
+
+                        <div class="troubleshooting-item">
+                            <h3>⏸️ Orders stuck at "pending"</h3>
+                            <p><strong>Possible causes:</strong></p>
+                            <ul>
+                                <li>Upload workflow paused</li>
+                                <li>ShipStation connection issue</li>
+                            </ul>
+                            <p><strong>Solution:</strong></p>
+                            <ol>
+                                <li>Check Workflow Controls - ensure "ShipStation Upload" is ON</li>
+                                <li>Wait 5 minutes (auto-upload cycle)</li>
+                                <li>Use "Sync Manual" to force upload</li>
+                            </ol>
+                        </div>
+
+                        <div class="troubleshooting-item">
+                            <h3>📉 KPI numbers look wrong</h3>
+                            <p><strong>Solution:</strong></p>
+                            <ol>
+                                <li>Click the "Refresh" button in dashboard header</li>
+                                <li>Wait for auto-refresh (happens every 30 seconds)</li>
+                                <li>Check "Last updated" timestamp under each KPI</li>
+                            </ol>
+                        </div>
+
+                        <div class="troubleshooting-item">
+                            <h3>🔴 System Status shows "Warning"</h3>
+                            <p><strong>Solution:</strong></p>
+                            <ol>
+                                <li>Click on the System Status card to see details</li>
+                                <li>Check if workflows are running (Workflow Controls page)</li>
+                                <li>Review recent error logs if available</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Tours -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>🎯 Interactive Tours</h2>
+                    </div>
+                    <div class="card-body">
+                        <p style="margin-bottom: 16px;">Step-by-step walkthroughs of key pages:</p>
+                        <div style="display: grid; gap: 12px;">
+                            <button class="btn" onclick="startWelcomeTour()">▶️ Welcome Tour (Dashboard overview)</button>
+                            <button class="btn" onclick="startOrdersInboxTour()">▶️ Orders Inbox Tour</button>
+                            <button class="btn" onclick="startInventoryTour()">▶️ Inventory Management Tour</button>
+                            <button class="btn" onclick="startReportsTour()">▶️ Reports Tour (EOW/EOM)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/dark-mode.js"></script>
+    <script>
+        function toggleAdmin() {
+            const adminItems = document.getElementById('admin-items');
+            const toggleIcon = document.querySelector('.admin-toggle-icon');
+            const isExpanded = adminItems.classList.contains('show');
+            
+            if (isExpanded) {
+                adminItems.classList.remove('show');
+                toggleIcon.textContent = '▶';
+            } else {
+                adminItems.classList.add('show');
+                toggleIcon.textContent = '▼';
+            }
+        }
+
+        function startWelcomeTour() {
+            alert('Welcome Tour will start when you return to the Dashboard');
+            localStorage.setItem('startTour', 'welcome');
+            window.location.href = '/';
+        }
+
+        function startDashboardTour() {
+            alert('Dashboard Tour will start when you return to the Dashboard');
+            localStorage.setItem('startTour', 'dashboard');
+            window.location.href = '/';
+        }
+
+        function startOrdersInboxTour() {
+            alert('Orders Inbox Tour will start');
+            localStorage.setItem('startTour', 'orders-inbox');
+            window.location.href = '/xml_import.html';
+        }
+
+        function startInventoryTour() {
+            alert('Inventory Tour will start');
+            localStorage.setItem('startTour', 'inventory');
+            window.location.href = '/lot_inventory.html';
+        }
+
+        function startReportsTour() {
+            alert('Reports Tour will start');
+            localStorage.setItem('startTour', 'reports');
+            window.location.href = '/weekly_shipped_history.html';
+        }
+    </script>
+
+    <style>
+        .help-task {
+            background-color: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .help-task h3 {
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .help-task ol,
+        .help-task ul {
+            margin-left: 20px;
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .help-task ul ul {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 0;
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+
+        .faq-item h3 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .faq-item p,
+        .faq-item ul {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .faq-item ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+
+        .troubleshooting-item {
+            background-color: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .troubleshooting-item h3 {
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .troubleshooting-item p {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .troubleshooting-item ul,
+        .troubleshooting-item ol {
+            margin-left: 20px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+    </style>
+</body>
+</html>
