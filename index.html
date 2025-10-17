@@ -17,6 +17,9 @@
     <!-- Dashboard-Specific Styles (alerts, modals, mobile utilities) -->
     <link rel="stylesheet" href="/static/css/dashboard-specific.css">
     
+    <!-- Contextual Help Tooltips -->
+    <link rel="stylesheet" href="/static/tooltips.css">
+    
 </head>
 <body>
     <!-- Shipping Violations Alert Banner -->
@@ -216,7 +219,12 @@
                             <div class="stat-card hidden" data-stat-card id="shipstation-card" style="cursor: pointer; position: relative;">
                                 <span id="shipstation-badge" class="mismatch-badge" style="display: none;">Mismatch</span>
                                 <div class="stat-value" id="shipstation-units">0</div>
-                                <div class="stat-label">ShipStation Units</div>
+                                <div class="stat-label">
+                                    ShipStation Units
+                                    <span class="help-icon">
+                                        <span class="help-tooltip">Units currently in ShipStation awaiting shipment. Updates from ShipStation API every 5 minutes.</span>
+                                    </span>
+                                </div>
                                 <div class="stat-change" id="shipstation-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
                             </div>
                         </a>
@@ -225,21 +233,36 @@
                             <div class="stat-card hidden" data-stat-card id="local-db-card" style="cursor: pointer; position: relative;">
                                 <span id="local-db-badge" class="mismatch-badge" style="display: none;">Mismatch</span>
                                 <div class="stat-value" id="local-db-units">0</div>
-                                <div class="stat-label">Local DB Units</div>
+                                <div class="stat-label">
+                                    Local DB Units
+                                    <span class="help-icon">
+                                        <span class="help-tooltip">Units in local database ready to upload to ShipStation. Auto-uploads every 5 minutes.</span>
+                                    </span>
+                                </div>
                                 <div class="stat-change" id="local-db-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
                             </div>
                         </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 <div class="stat-value">0</div>
-                                <div class="stat-label">Benco Orders</div>
+                                <div class="stat-label">
+                                    Benco Orders
+                                    <span class="help-icon">
+                                        <span class="help-tooltip">Special tracking for Benco orders awaiting shipment.</span>
+                                    </span>
+                                </div>
                                 <div class="stat-change">Awaiting Shipment</div>
                             </div>
                         </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 <div class="stat-value">0</div>
-                                <div class="stat-label">Hawaiian Orders</div>
+                                <div class="stat-label">
+                                    Hawaiian Orders
+                                    <span class="help-icon">
+                                        <span class="help-tooltip">Hawaiian orders awaiting shipment. Must ship via FedEx 2Day.</span>
+                                    </span>
+                                </div>
                                 <div class="stat-change">Awaiting Shipment</div>
                             </div>
                         </a>

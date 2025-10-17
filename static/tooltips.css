@@ -1,0 +1,71 @@
+/* Contextual Help Tooltips */
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: var(--primary-blue);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: help;
+    margin-left: 6px;
+    position: relative;
+    user-select: none;
+}
+
+.help-icon:hover {
+    background-color: #4A5B7C;
+}
+
+.help-icon::before {
+    content: '?';
+}
+
+.help-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1B2A4A;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    min-width: 200px;
+    max-width: 320px;
+    white-space: normal;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.help-icon:hover .help-tooltip {
+    opacity: 1;
+}
+
+.help-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1B2A4A;
+}
+
+/* Button help icons */
+.btn .help-icon {
+    margin-left: 8px;
+}
+
+/* KPI card help icons */
+.kpi-label .help-icon {
+    vertical-align: middle;
+}
