@@ -356,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show welcome modal
         const welcomeModal = document.createElement('div');
+        welcomeModal.id = 'welcome-tour-modal';
         welcomeModal.style.cssText = `
             position: fixed;
             top: 0;
@@ -375,8 +376,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     This system handles your fulfillment operations automatically. Would you like a quick 3-minute tour to get started?
                 </p>
                 <div style="display: flex; gap: 12px; justify-content: center;">
-                    <button onclick="this.closest('div').parentElement.remove()" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Skip for now</button>
-                    <button onclick="this.closest('div').parentElement.remove(); window.tour = new GuidedTour(TOURS.welcome); window.tour.start();" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Start Tour →</button>
+                    <button onclick="document.getElementById('welcome-tour-modal').remove()" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Skip for now</button>
+                    <button onclick="document.getElementById('welcome-tour-modal').remove(); window.tour = new GuidedTour(TOURS.welcome); window.tour.start();" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Start Tour →</button>
                 </div>
             </div>
         `;
