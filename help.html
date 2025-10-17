@@ -92,36 +92,59 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <header class="page-header">
-                <div>
-                    <h1 class="page-title">📚 Help & Training</h1>
-                    <p class="page-subtitle">Learn how to use the ORA Automation System</p>
-                </div>
-            </header>
-
-            <div class="content-wrapper">
-                <!-- Quick Start Section -->
-                <div class="card" style="margin-bottom: 24px;">
-                    <div class="card-header">
-                        <h2>🚀 Quick Start</h2>
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="page-title">📚 Help & Training</h1>
+                        <p class="page-subtitle" style="font-size: 14px; color: var(--text-tertiary); margin: 0;">Learn how to use the ORA Automation System</p>
                     </div>
-                    <div class="card-body">
-                        <p style="margin-bottom: 16px;">New to ORA Automation? Start here:</p>
-                        <button class="btn" onclick="startWelcomeTour()">
-                            ▶️ Start Welcome Tour (3 minutes)
-                        </button>
-                        <p style="margin-top: 12px; color: var(--text-tertiary); font-size: 14px;">
-                            An interactive walkthrough of the dashboard and key features
-                        </p>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Tab Navigation -->
+                <div class="help-tabs">
+                    <button class="help-tab active" onclick="switchTab('quick-start')">🚀 Quick Start</button>
+                    <button class="help-tab" onclick="switchTab('getting-started')">📖 Getting Started</button>
+                    <button class="help-tab" onclick="switchTab('common-tasks')">✅ Common Tasks</button>
+                    <button class="help-tab" onclick="switchTab('faq')">❓ FAQ</button>
+                    <button class="help-tab" onclick="switchTab('troubleshooting')">🔧 Troubleshooting</button>
+                    <button class="help-tab" onclick="switchTab('tours')">🎯 Interactive Tours</button>
+                </div>
+
+                <!-- Quick Start Section -->
+                <div id="quick-start" class="help-section active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>🚀 Quick Start</h2>
+                        </div>
+                        <div class="card-body">
+                            <p style="margin-bottom: 16px;">New to ORA Automation? Start here:</p>
+                            <button class="btn" onclick="startWelcomeTour()">
+                                ▶️ Start Welcome Tour (3 minutes)
+                            </button>
+                            <p style="margin-top: 12px; color: var(--text-tertiary); font-size: 14px;">
+                                An interactive walkthrough of the dashboard and key features
+                            </p>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Getting Started Guide -->
-                <div class="card" style="margin-bottom: 24px;">
-                    <div class="card-header">
-                        <h2>📖 Getting Started</h2>
-                    </div>
-                    <div class="card-body">
+                <div id="getting-started" class="help-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📖 Getting Started</h2>
+                        </div>
+                        <div class="card-body">
                         <h3 style="margin-bottom: 12px; color: var(--text-primary);">What is ORA Automation?</h3>
                         <p style="margin-bottom: 16px;">
                             ORA Automation is a fulfillment system that automatically processes orders from XML files, uploads them to ShipStation, tracks shipments, and manages inventory. The system runs 24/7 with minimal manual intervention.
@@ -146,15 +169,17 @@
                                 </ul>
                             </li>
                         </ul>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Common Tasks -->
-                <div class="card" style="margin-bottom: 24px;">
-                    <div class="card-header">
-                        <h2>✅ Common Tasks</h2>
-                    </div>
-                    <div class="card-body">
+                <div id="common-tasks" class="help-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>✅ Common Tasks</h2>
+                        </div>
+                        <div class="card-body">
                         <div class="help-task">
                             <h3>📊 Monitor Daily Operations</h3>
                             <ol>
@@ -228,15 +253,17 @@
                                 <li>Green badges (e.g., "226 days") = healthy stock</li>
                             </ol>
                         </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- FAQ -->
-                <div class="card" style="margin-bottom: 24px;">
-                    <div class="card-header">
-                        <h2>❓ Frequently Asked Questions</h2>
-                    </div>
-                    <div class="card-body">
+                <div id="faq" class="help-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>❓ Frequently Asked Questions</h2>
+                        </div>
+                        <div class="card-body">
                         <div class="faq-item">
                             <h3>How often do orders import automatically?</h3>
                             <p>Every 5 minutes. The system polls Google Drive for new XML files continuously.</p>
@@ -276,15 +303,17 @@
                             <h3>What happens if inventory runs out?</h3>
                             <p>The system shows red warning badges (e.g., "11 days left"). Coordinate with manufacturer to restock before it hits zero.</p>
                         </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Troubleshooting -->
-                <div class="card" style="margin-bottom: 24px;">
-                    <div class="card-header">
-                        <h2>🔧 Troubleshooting</h2>
-                    </div>
-                    <div class="card-body">
+                <div id="troubleshooting" class="help-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>🔧 Troubleshooting</h2>
+                        </div>
+                        <div class="card-body">
                         <div class="troubleshooting-item">
                             <h3>❌ Order shows "FAILED" status</h3>
                             <p><strong>Possible causes:</strong></p>
@@ -335,15 +364,17 @@
                                 <li>Review recent error logs if available</li>
                             </ol>
                         </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Interactive Tours -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2>🎯 Interactive Tours</h2>
-                    </div>
-                    <div class="card-body">
+                <div id="tours" class="help-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>🎯 Interactive Tours</h2>
+                        </div>
+                        <div class="card-body">
                         <p style="margin-bottom: 16px;">Step-by-step walkthroughs of key pages:</p>
                         <div style="display: grid; gap: 12px;">
                             <button class="btn" onclick="startWelcomeTour()">▶️ Welcome Tour (Dashboard overview)</button>
@@ -358,7 +389,83 @@
     </div>
 
     <script src="/static/dark-mode.js"></script>
+    <style>
+        /* Help Tab Navigation */
+        .help-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .help-tab {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .help-tab:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+
+        .help-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .help-section {
+            display: none;
+        }
+
+        .help-section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .help-tabs {
+                gap: 4px;
+            }
+            
+            .help-tab {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+        }
+    </style>
     <script>
+        function switchTab(tabId) {
+            // Hide all sections
+            document.querySelectorAll('.help-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.help-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(tabId).classList.add('active');
+            
+            // Mark tab as active
+            event.target.classList.add('active');
+            
+            // Scroll to top of content
+            document.querySelector('.content-area').scrollTop = 0;
+        }
+
         function toggleAdmin() {
             const adminItems = document.getElementById('admin-items');
             const toggleIcon = document.querySelector('.admin-toggle-icon');
