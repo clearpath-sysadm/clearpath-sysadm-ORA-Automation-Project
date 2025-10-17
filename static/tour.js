@@ -91,10 +91,10 @@ class GuidedTour {
                 </p>
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                ${index > 0 ? `<button onclick="tour.previous()" style="background: none; border: 1px solid #ddd; color: #555; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">← Back</button>` : ''}
+                ${index > 0 ? `<button onclick="tour.previous()" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">← Back</button>` : ''}
                 ${index < this.steps.length - 1 
-                    ? `<button onclick="tour.next()" style="background-color: #5A6B8C; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 500;">Next →</button>`
-                    : `<button onclick="tour.end()" style="background-color: #5A6B8C; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 500;">Finish ✓</button>`
+                    ? `<button onclick="tour.next()" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Next →</button>`
+                    : `<button onclick="tour.end()" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Finish ✓</button>`
                 }
             </div>
             <button onclick="tour.end()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; color: #999; cursor: pointer; padding: 0; width: 32px; height: 32px;">×</button>
@@ -375,8 +375,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     This system handles your fulfillment operations automatically. Would you like a quick 3-minute tour to get started?
                 </p>
                 <div style="display: flex; gap: 12px; justify-content: center;">
-                    <button onclick="this.closest('div').parentElement.remove()" style="background: white; border: 1px solid #ddd; color: #555; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500;">Skip for now</button>
-                    <button onclick="this.closest('div').parentElement.remove(); window.tour = new GuidedTour(TOURS.welcome); window.tour.start();" style="background-color: #5A6B8C; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500;">Start Tour →</button>
+                    <button onclick="this.closest('div').parentElement.remove()" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Skip for now</button>
+                    <button onclick="this.closest('div').parentElement.remove(); window.tour = new GuidedTour(TOURS.welcome); window.tour.start();" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Start Tour →</button>
                 </div>
             </div>
         `;

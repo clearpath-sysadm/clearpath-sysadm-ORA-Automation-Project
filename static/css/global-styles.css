@@ -750,17 +750,18 @@ textarea::placeholder {
 .quick-action-btn {
     display: inline-flex;
     align-items: center;
-    gap: calc(var(--spacing-unit) * 1);
-    padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2);
-    border-radius: var(--border-radius-sm);
-    background-color: #5A6B8C;
-    color: white;
-    border: 1px solid #5A6B8C;
+    gap: calc(var(--spacing-unit) * 1.5);
+    padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2.5);
+    border-radius: 6px;
+    background-color: white;
+    color: #374151;
+    border: 1px solid #D1D5DB;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     text-decoration: none;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .btn:hover,
@@ -779,9 +780,29 @@ textarea::placeholder {
 .btn-dismiss-mismatch:hover,
 .action-btn:hover,
 .quick-action-btn:hover {
-    background-color: #4A5B7C;
-    border-color: #4A5B7C;
-    transform: translateY(-1px);
+    background-color: #F9FAFB;
+    border-color: #9CA3AF;
+    transform: none;
+}
+
+.btn:active,
+.btn-primary:active,
+.btn-success:active,
+.btn-warning:active,
+.btn-danger:active,
+.btn-upload:active,
+.btn-manual-import:active,
+.btn-secondary:active,
+.btn-view-violations:active,
+.btn-resolve-violation:active,
+.btn-dismiss-alert:active,
+.btn-close-modal:active,
+.btn-refresh-mismatch:active,
+.btn-dismiss-mismatch:active,
+.action-btn:active,
+.quick-action-btn:active {
+    background-color: #F3F4F6;
+    border-color: #6B7280;
 }
 
 .btn:disabled,
@@ -794,6 +815,70 @@ textarea::placeholder {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Button Icons */
+.btn svg,
+.btn-primary svg,
+.btn-success svg,
+.btn-warning svg,
+.btn-danger svg,
+.btn-upload svg,
+.btn-manual-import svg,
+.btn-secondary svg,
+.btn-view-violations svg,
+.btn-resolve-violation svg,
+.btn-dismiss-alert svg,
+.btn-close-modal svg,
+.btn-refresh-mismatch svg,
+.btn-dismiss-mismatch svg,
+.action-btn svg,
+.quick-action-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Dark mode button styles */
+body.dark-mode .btn,
+body.dark-mode .btn-primary,
+body.dark-mode .btn-success,
+body.dark-mode .btn-warning,
+body.dark-mode .btn-danger,
+body.dark-mode .btn-upload,
+body.dark-mode .btn-manual-import,
+body.dark-mode .btn-secondary,
+body.dark-mode .btn-view-violations,
+body.dark-mode .btn-resolve-violation,
+body.dark-mode .btn-dismiss-alert,
+body.dark-mode .btn-close-modal,
+body.dark-mode .btn-refresh-mismatch,
+body.dark-mode .btn-dismiss-mismatch,
+body.dark-mode .action-btn,
+body.dark-mode .quick-action-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .btn:hover,
+body.dark-mode .btn-primary:hover,
+body.dark-mode .btn-success:hover,
+body.dark-mode .btn-warning:hover,
+body.dark-mode .btn-danger:hover,
+body.dark-mode .btn-upload:hover,
+body.dark-mode .btn-manual-import:hover,
+body.dark-mode .btn-secondary:hover,
+body.dark-mode .btn-view-violations:hover,
+body.dark-mode .btn-resolve-violation:hover,
+body.dark-mode .btn-dismiss-alert:hover,
+body.dark-mode .btn-close-modal:hover,
+body.dark-mode .btn-refresh-mismatch:hover,
+body.dark-mode .btn-dismiss-mismatch:hover,
+body.dark-mode .action-btn:hover,
+body.dark-mode .quick-action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Desktop Actions Container */
