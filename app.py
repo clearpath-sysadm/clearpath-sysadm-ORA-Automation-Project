@@ -3664,7 +3664,7 @@ def api_update_lot_in_shipstation():
 
 @app.route('/api/manual_order_conflicts', methods=['GET'])
 def api_get_manual_order_conflicts():
-    """Get all pending manual order conflicts (order numbers that were previously shipped)"""
+    """Get all pending manual order conflicts with proposed new order numbers"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
