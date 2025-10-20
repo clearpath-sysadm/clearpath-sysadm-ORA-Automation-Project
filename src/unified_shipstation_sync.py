@@ -246,17 +246,63 @@ def extract_carrier_service_info(order: Dict[Any, Any]) -> Dict[str, Any]:
     }
 
 
-def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
+def check_order_conflict_in_shipstation(order_number: str, current_order_id: str, api_key: str, api_secret: str) -> Tuple[bool, Any]:
+    """
+    Query ShipStation to check if this order number already exists with a different ShipStation ID.
+    
+    Returns:
+        Tuple of (has_conflict, original_order_data)
+    """
+    try:
+        from src.services.shipstation.api_client import get_shipstation_headers
+        
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        # Query ShipStation for orders with this order number
+        response = make_api_request(
+            url=SHIPSTATION_ORDERS_ENDPOINT,
+            method='GET',
+            headers=headers,
+            params={'orderNumber': order_number},
+            timeout=30
+        )
+        
+        if not response or 'orders' not in response:
+            logger.warning(f"⚠️ Failed to query ShipStation for order number {order_number}")
+            return False, None
+        
+        orders = response.get('orders', [])
+        
+        # Check if there are other orders with the same order number but different ShipStation ID
+        for existing_order in orders:
+            existing_id = str(existing_order.get('orderId', ''))
+            existing_status = existing_order.get('orderStatus', '').lower()
+            
+            # Found a different order with same number (and it's shipped)
+            if existing_id != str(current_order_id) and existing_status == 'shipped':
+                logger.warning(f"⚠️ CONFLICT: Order {order_number} already exists in ShipStation (ID: {existing_id}, status: shipped)")
+                return True, existing_order
+        
+        return False, None
+        
+    except Exception as e:
+        logger.error(f"❌ Error checking for order conflicts in ShipStation: {e}", exc_info=True)
+        return False, None
+
+
+def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secret: str) -> bool:
     """
     Import a NEW manual ShipStation order into the local database.
     Creates entries in orders_inbox, order_items_inbox, and potentially shipped_orders/shipped_items.
     
-    CONFLICT DETECTION: If the order_number already exists in shipped_orders (previously shipped),
-    create a conflict alert instead of importing.
+    CONFLICT DETECTION: Queries ShipStation directly to check if order_number already exists
+    with a different ShipStation ID (indicates duplicate manual order creation).
     
     Args:
         order: ShipStation order dict
         conn: Database connection (transaction context)
+        api_key: ShipStation API key
+        api_secret: ShipStation API secret
     
     Returns:
         True if successfully imported, False otherwise
@@ -271,22 +317,24 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
             logger.warning(f"⚠️ Skipping order without order_number: {order_id}")
             return False
         
-        # CONFLICT DETECTION: Check if order_number already exists in shipped_orders
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT ship_date FROM shipped_orders WHERE order_number = %s
-        """, (order_number,))
-        conflict_row = cursor.fetchone()
+        # CONFLICT DETECTION: Query ShipStation to check if this order number already exists
+        has_conflict, original_order = check_order_conflict_in_shipstation(order_number, order_id, api_key, api_secret)
         
-        if conflict_row:
-            # Order number was previously shipped - create conflict alert
-            original_ship_date = conflict_row[0]
+        if has_conflict and original_order:
+            # Order number already exists in ShipStation (shipped) - create conflict alert
+            ship_date_str = original_order.get('shipDate', '')
+            try:
+                original_ship_date = datetime.datetime.strptime(ship_date_str[:10], '%Y-%m-%d').date() if ship_date_str else None
+            except:
+                original_ship_date = None
+            
             ship_to = order.get('shipTo') or {}
             customer_name = (ship_to.get('name') or '').strip() or None
             
-            logger.warning(f"⚠️ CONFLICT DETECTED: Order {order_number} already shipped on {original_ship_date}")
+            logger.warning(f"⚠️ CONFLICT DETECTED: Order {order_number} already exists in ShipStation as shipped")
             
             # Check if conflict already exists to avoid duplicates
+            cursor = conn.cursor()
             cursor.execute("""
                 SELECT id FROM manual_order_conflicts 
                 WHERE shipstation_order_id = %s AND resolution_status = 'pending'
@@ -691,7 +739,7 @@ def run_unified_sync():
                             continue
                         
                         # All filters passed → Import as NEW manual order
-                        if import_new_manual_order(order, conn):
+                        if import_new_manual_order(order, conn, api_key, api_secret):
                             stats['new_manual_imported'] += 1
                         else:
                             stats['errors'] += 1
