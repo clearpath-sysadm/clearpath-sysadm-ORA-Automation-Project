@@ -950,10 +950,11 @@
                 // Show details of each duplicate
                 if (alert.details && alert.details.length > 0) {
                     html += '<table style="width: 100%; font-size: 13px; margin-top: 12px; border-collapse: collapse;">';
-                    html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th></tr></thead>';
+                    html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
                         html += '<tr style="border-bottom: 1px solid var(--border-color);">';
+                        html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
                         html += `<td style="padding: 8px;">${detail.shipstation_id}</td>`;
                         html += `<td style="padding: 8px;">${detail.full_sku || detail.base_sku || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${detail.quantity || 0}</td>`;
