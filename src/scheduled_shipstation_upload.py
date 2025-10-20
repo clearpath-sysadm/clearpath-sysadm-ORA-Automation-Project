@@ -273,12 +273,17 @@ def upload_pending_orders():
             consolidated_items = defaultdict(lambda: {'qty': 0, 'price': 0, 'original_sku': ''})
             
             for sku, qty, unit_price_cents in items:
-                # Normalize the SKU to handle spacing inconsistencies (preserves lot number)
-                normalized_sku = normalize_sku(sku)  # "17612 - 250237" format
+                # Normalize the SKU to handle spacing inconsistencies
+                normalized_sku = normalize_sku(sku)  # "17612" or "17612 - 250237"
                 
-                # FIX: If SKU doesn't have a lot number, append active lot from sku_lot_map
-                if ' - ' not in normalized_sku and normalized_sku in sku_lot_map:
-                    normalized_sku = f"{normalized_sku} - {sku_lot_map[normalized_sku]}"
+                # CRITICAL FIX: ALWAYS replace with active lot from sku_lot_map
+                # Extract base SKU (strip any existing old lot number)
+                base_sku = normalized_sku.split(' - ')[0].strip() if ' - ' in normalized_sku else normalized_sku
+                
+                # Replace with active lot if available (handles both new orders and manual orders with stale lots)
+                if base_sku in sku_lot_map:
+                    normalized_sku = f"{base_sku} - {sku_lot_map[base_sku]}"
+                    logger.debug(f"🔄 Updated SKU '{sku}' → '{normalized_sku}' (active lot)")
                 
                 # Accumulate quantities for same FULL SKU (base + lot)
                 consolidated_items[normalized_sku]['qty'] += qty
