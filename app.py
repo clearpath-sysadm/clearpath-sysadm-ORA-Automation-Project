@@ -3669,12 +3669,19 @@ def api_get_manual_order_conflicts():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Calculate proposed new order number from local database
+        # Calculate proposed new order number from BOTH shipped_orders AND orders_inbox
         cursor.execute("""
-            SELECT MAX(CAST(order_number AS INTEGER))
-            FROM shipped_orders
-            WHERE order_number ~ '^[0-9]+$'
-            AND CAST(order_number AS INTEGER) < 200000
+            SELECT MAX(order_num) FROM (
+                SELECT CAST(order_number AS INTEGER) as order_num
+                FROM shipped_orders
+                WHERE order_number ~ '^[0-9]+$'
+                AND CAST(order_number AS INTEGER) < 200000
+                UNION ALL
+                SELECT CAST(order_number AS INTEGER) as order_num
+                FROM orders_inbox
+                WHERE order_number ~ '^[0-9]+$'
+                AND CAST(order_number AS INTEGER) < 200000
+            ) combined
         """)
         max_row = cursor.fetchone()
         max_order_num = max_row[0] if max_row and max_row[0] else 100000
@@ -3776,12 +3783,19 @@ def api_recreate_manual_order(conflict_id):
         from src.services.shipstation.api_client import get_shipstation_headers
         headers = get_shipstation_headers(api_key, api_secret)
         
-        # Find max order number < 200000 from LOCAL DATABASE (faster, no API errors)
+        # Find max order number < 200000 from BOTH shipped_orders AND orders_inbox
         cursor.execute("""
-            SELECT MAX(CAST(order_number AS INTEGER))
-            FROM shipped_orders
-            WHERE order_number ~ '^[0-9]+$'
-            AND CAST(order_number AS INTEGER) < 200000
+            SELECT MAX(order_num) FROM (
+                SELECT CAST(order_number AS INTEGER) as order_num
+                FROM shipped_orders
+                WHERE order_number ~ '^[0-9]+$'
+                AND CAST(order_number AS INTEGER) < 200000
+                UNION ALL
+                SELECT CAST(order_number AS INTEGER) as order_num
+                FROM orders_inbox
+                WHERE order_number ~ '^[0-9]+$'
+                AND CAST(order_number AS INTEGER) < 200000
+            ) combined
         """)
         max_row = cursor.fetchone()
         max_order_num = max_row[0] if max_row and max_row[0] else 100000
