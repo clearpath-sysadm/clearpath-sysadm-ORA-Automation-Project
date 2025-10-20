@@ -3776,38 +3776,15 @@ def api_recreate_manual_order(conflict_id):
         from src.services.shipstation.api_client import get_shipstation_headers
         headers = get_shipstation_headers(api_key, api_secret)
         
-        # Find max order number < 200000 in ShipStation
-        max_order_resp = make_api_request(
-            url='https://ssapi.shipstation.com/orders',
-            method='GET',
-            headers=headers,
-            params={
-                'sortBy': 'OrderNumber',
-                'sortDir': 'DESC',
-                'pageSize': 500
-            },
-            timeout=30
-        )
-        
-        if not max_order_resp or max_order_resp.status_code != 200:
-            conn.close()
-            return jsonify({
-                'success': False,
-                'error': 'Failed to fetch orders from ShipStation'
-            }), 500
-        
-        max_order_response = max_order_resp.json()
-        
-        # Find highest order number < 200000
-        max_order_num = 100000  # Default starting point
-        for order in max_order_response.get('orders', []):
-            try:
-                order_num = int(order.get('orderNumber', '0'))
-                if order_num < 200000 and order_num > max_order_num:
-                    max_order_num = order_num
-            except:
-                continue
-        
+        # Find max order number < 200000 from LOCAL DATABASE (faster, no API errors)
+        cursor.execute("""
+            SELECT MAX(CAST(order_number AS INTEGER))
+            FROM shipped_orders
+            WHERE order_number ~ '^[0-9]+$'
+            AND CAST(order_number AS INTEGER) < 200000
+        """)
+        max_row = cursor.fetchone()
+        max_order_num = max_row[0] if max_row and max_row[0] else 100000
         new_order_number = str(max_order_num + 1)
         
         # Fetch the conflicting order details
