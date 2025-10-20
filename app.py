@@ -3765,7 +3765,7 @@ def api_recreate_manual_order(conflict_id):
         headers = get_shipstation_headers(api_key, api_secret)
         
         # Find max order number < 200000 in ShipStation
-        max_order_response = make_api_request(
+        max_order_resp = make_api_request(
             url='https://ssapi.shipstation.com/orders',
             method='GET',
             headers=headers,
@@ -3777,12 +3777,14 @@ def api_recreate_manual_order(conflict_id):
             timeout=30
         )
         
-        if not max_order_response:
+        if not max_order_resp or max_order_resp.status_code != 200:
             conn.close()
             return jsonify({
                 'success': False,
                 'error': 'Failed to fetch orders from ShipStation'
             }), 500
+        
+        max_order_response = max_order_resp.json()
         
         # Find highest order number < 200000
         max_order_num = 100000  # Default starting point
@@ -3798,19 +3800,21 @@ def api_recreate_manual_order(conflict_id):
         
         # Fetch the conflicting order details
         order_url = f'https://ssapi.shipstation.com/orders/{shipstation_order_id}'
-        order_response = make_api_request(
+        order_resp = make_api_request(
             url=order_url,
             method='GET',
             headers=headers,
             timeout=30
         )
         
-        if not order_response:
+        if not order_resp or order_resp.status_code != 200:
             conn.close()
             return jsonify({
                 'success': False,
                 'error': 'Failed to fetch order details from ShipStation'
             }), 500
+        
+        order_response = order_resp.json()
         
         # Create new order with updated order number
         new_order = order_response.copy()
@@ -3822,21 +3826,22 @@ def api_recreate_manual_order(conflict_id):
             item.pop('orderItemId', None)
         
         # Create new order in ShipStation
-        create_response = make_api_request(
+        create_resp = make_api_request(
             url='https://ssapi.shipstation.com/orders/createorder',
             method='POST',
             headers=headers,
-            json=new_order,
+            data=new_order,
             timeout=30
         )
         
-        if not create_response:
+        if not create_resp or create_resp.status_code != 200:
             conn.close()
             return jsonify({
                 'success': False,
                 'error': 'Failed to create new order in ShipStation'
             }), 500
         
+        create_response = create_resp.json()
         new_shipstation_order_id = create_response.get('orderId')
         
         # Update conflict record with new order details
