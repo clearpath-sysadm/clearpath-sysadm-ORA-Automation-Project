@@ -9,16 +9,22 @@ Provides UI to update SKU-Lot in ShipStation.
 Safety Design: Manual-only resolution to prevent data loss.
 """
 
+import os
+import sys
 import time
 import logging
 import datetime
 from typing import Dict, List, Any
+from pathlib import Path
 
-from config.database import transaction_with_retry
-from config.settings import SHIPSTATION_API_KEY, SHIPSTATION_API_SECRET, SHIPSTATION_ORDERS_ENDPOINT
-from src.services.api.shipstation_api_client import get_shipstation_credentials
-from src.services.workflow.workflow_control import is_workflow_enabled, update_workflow_last_run
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from src.services.database.pg_utils import transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+from src.services.shipstation.api_client import get_shipstation_credentials
 from utils.api_utils import make_api_request
+
+SHIPSTATION_ORDERS_ENDPOINT = 'https://ssapi.shipstation.com/orders'
 
 # Configure logging
 logging.basicConfig(
@@ -35,20 +41,20 @@ def get_active_lot_mappings(conn) -> Dict[str, str]:
     Get active lot mappings from local database.
     
     Returns:
-        Dict mapping base_sku -> active lot number
+        Dict mapping sku -> active lot number
     """
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT base_sku, lot_number
+        SELECT sku, lot
         FROM sku_lot
         WHERE active = 1
     """)
     
     mappings = {}
     for row in cursor.fetchall():
-        base_sku = row[0]
-        lot_number = row[1]
-        mappings[base_sku] = lot_number
+        sku = row[0]
+        lot = row[1]
+        mappings[sku] = lot
     
     return mappings
 
