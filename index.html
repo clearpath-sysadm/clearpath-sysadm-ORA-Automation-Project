@@ -199,6 +199,13 @@
                     185+ units ready for shipment. Call FedEx depot to schedule trailer pickup: <a href="tel:651-846-0590">651-846-0590</a>
                 </div>
 
+                <!-- Duplicate Order Alert -->
+                <div id="duplicate-alert" style="display: none;">
+                    <strong>⚠️ Duplicate Orders Detected in ShipStation</strong><br>
+                    <span id="duplicate-count">0</span> order(s) have duplicate records that need attention.
+                    <a href="#" onclick="showDuplicateDetails(); return false;" style="text-decoration: underline; margin-left: 10px;">View Details</a>
+                </div>
+
                 <!-- Operational Pulse Section -->
                 <section>
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Operational Pulse</h2>
@@ -761,6 +768,9 @@
                     }
                 }
                 
+                // Check for duplicate order alerts
+                await checkDuplicateAlerts();
+                
                 // Update automation status
                 if (automation.success && automation.data.length > 0) {
                     const autoList = document.getElementById('automation-list');
@@ -895,6 +905,112 @@
         function getDayName(dayOfWeek) {
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             return days[dayOfWeek];
+        }
+
+        // Duplicate Alert Functions
+        let duplicateAlertsData = [];
+        
+        async function checkDuplicateAlerts() {
+            try {
+                const response = await fetch('/api/duplicate_alerts');
+                const data = await response.json();
+                
+                if (data.success && data.count > 0) {
+                    duplicateAlertsData = data.alerts;
+                    const duplicateAlert = document.getElementById('duplicate-alert');
+                    const duplicateCount = document.getElementById('duplicate-count');
+                    duplicateCount.textContent = data.count;
+                    duplicateAlert.style.display = 'block';
+                } else {
+                    document.getElementById('duplicate-alert').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking duplicate alerts:', error);
+            }
+        }
+        
+        function showDuplicateDetails() {
+            if (duplicateAlertsData.length === 0) {
+                alert('No duplicate alerts to display');
+                return;
+            }
+            
+            let html = '<div style="max-width: 800px; max-height: 70vh; overflow-y: auto;">';
+            html += '<h3 style="margin-top: 0;">Duplicate Orders in ShipStation</h3>';
+            html += '<p style="color: var(--text-secondary); margin-bottom: 20px;">The following orders have multiple records in ShipStation and need to be resolved:</p>';
+            
+            duplicateAlertsData.forEach((alert, idx) => {
+                html += '<div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #f97316;">';
+                html += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">`;
+                html += `<div><strong style="font-size: 16px;">Order #${alert.order_number}</strong><br>`;
+                html += `<span style="color: var(--text-tertiary); font-size: 13px;">Found ${alert.duplicate_count} duplicate records</span></div>`;
+                html += `<button onclick="resolveDuplicateAlert(${alert.id}, '${alert.order_number}')" style="padding: 6px 12px; background: #22c55e; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Mark Resolved</button>`;
+                html += '</div>';
+                
+                // Show details of each duplicate
+                if (alert.details && alert.details.length > 0) {
+                    html += '<table style="width: 100%; font-size: 13px; margin-top: 12px; border-collapse: collapse;">';
+                    html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Total</th><th style="padding: 8px;">Created</th></tr></thead>';
+                    html += '<tbody>';
+                    alert.details.forEach(detail => {
+                        html += '<tr style="border-bottom: 1px solid var(--border-color);">';
+                        html += `<td style="padding: 8px;">${detail.shipstation_id}</td>`;
+                        html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
+                        html += `<td style="padding: 8px;">${detail.order_status}</td>`;
+                        html += `<td style="padding: 8px;">$${(detail.order_total || 0).toFixed(2)}</td>`;
+                        html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleString()}</td>`;
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+                
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
+            modal.innerHTML = `<div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 900px; width: 100%;">${html}<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary-navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button></div>`;
+            document.body.appendChild(modal);
+            
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        async function resolveDuplicateAlert(alertId, orderNumber) {
+            if (!confirm(`Mark order #${orderNumber} duplicate alert as resolved?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/duplicate_alerts/${alertId}/resolve`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({notes: 'Resolved via dashboard'})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Duplicate alert resolved');
+                    // Refresh alerts
+                    await checkDuplicateAlerts();
+                    // Close modal if exists
+                    const modal = document.querySelector('div[style*="z-index: 9999"]');
+                    if (modal) modal.remove();
+                } else {
+                    throw new Error(result.error || 'Failed to resolve alert');
+                }
+            } catch (error) {
+                console.error('Error resolving duplicate alert:', error);
+                alert('Error resolving alert: ' + error.message);
+            }
         }
 
         // EOD Button Handler

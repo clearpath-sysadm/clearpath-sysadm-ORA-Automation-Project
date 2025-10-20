@@ -17,6 +17,23 @@
             text-decoration: underline;
         }
 
+/* Duplicate Order Alert */
+        #duplicate-alert {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: #7c2d12;
+            padding: calc(var(--spacing-unit) * 2);
+            border-radius: 12px;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            display: none;
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        }
+
+        #duplicate-alert a {
+            color: #7c2d12;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
 /* Auto-Ship Day Alert */
         #autoship-alert {
             background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
