@@ -423,7 +423,10 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
 def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, conn) -> bool:
     """
     Update status for an EXISTING order in the database.
-    Updates carrier/service info and tracking number.
+    Updates carrier/service info, tracking number, AND order items (edge case fix).
+    
+    Edge Case: Orders created before items are added (e.g., from XML without items).
+    This function keeps trying to update items until they appear in ShipStation.
     
     Args:
         order: ShipStation order dict
@@ -450,7 +453,11 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         }
         db_status = status_mapping.get(order_status, order_status)
         
-        logger.info(f"🔄 Updating EXISTING order: {order_number} → status: {db_status}, carrier: {carrier_info['carrier_code']}, service: {carrier_info['service_code']}")
+        # Get order items from ShipStation
+        items = order.get('items', [])
+        total_items = sum(item.get('quantity', 0) for item in items)
+        
+        logger.info(f"🔄 Updating EXISTING order: {order_number} → status: {db_status}, items: {total_items}, carrier: {carrier_info['carrier_code']}, service: {carrier_info['service_code']}")
         
         # Update order in orders_inbox
         cursor = conn.cursor()
@@ -462,6 +469,7 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                 shipping_service_code = %s,
                 shipping_service_name = %s,
                 tracking_number = %s,
+                total_items = %s,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
         """, (
@@ -471,8 +479,51 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
             carrier_info['service_code'],
             carrier_info['service_name'],
             carrier_info['tracking_number'],
+            total_items,
             local_order_id
         ))
+        
+        # EDGE CASE FIX: Update/add order items if they exist in ShipStation
+        # This handles the case where orders are created before items are added
+        if items:
+            # Check if order already has items
+            cursor.execute("""
+                SELECT COUNT(*) FROM order_items_inbox WHERE order_inbox_id = %s
+            """, (local_order_id,))
+            existing_items_count = cursor.fetchone()[0]
+            
+            if existing_items_count == 0:
+                logger.info(f"📦 Adding {len(items)} items to order {order_number} (was empty)")
+                
+                # Insert items into order_items_inbox
+                for item in items:
+                    sku_raw = str(item.get('sku', '')).strip()
+                    quantity = item.get('quantity', 0)
+                    unit_price = item.get('unitPrice', 0)
+                    unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
+                    
+                    if sku_raw and quantity > 0:
+                        # Parse SKU - LOT format (e.g., "17612 - 250237")
+                        if ' - ' in sku_raw:
+                            sku_parts = sku_raw.split(' - ')
+                            base_sku = sku_parts[0].strip()
+                            sku_lot = sku_raw  # Store full "17612 - 250237" format
+                        else:
+                            base_sku = sku_raw
+                            sku_lot = None
+                        
+                        cursor.execute("""
+                            INSERT INTO order_items_inbox (
+                                order_inbox_id, sku, sku_lot, quantity, unit_price_cents
+                            )
+                            VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (order_inbox_id, sku) DO UPDATE
+                            SET quantity = EXCLUDED.quantity,
+                                sku_lot = EXCLUDED.sku_lot,
+                                unit_price_cents = EXCLUDED.unit_price_cents
+                        """, (local_order_id, base_sku, sku_lot, quantity, unit_price_cents))
+                        
+                        logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
         
         logger.info(f"✅ Updated order {order_number} status to '{db_status}'")
         return True
