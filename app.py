@@ -3827,7 +3827,7 @@ def api_recreate_manual_order(conflict_id):
         new_order.pop('orderKey', None)
         
         # Replace old lot numbers with active lots from sku_lot table
-        from src.services.data_processing.sku_lot_parser import parse_sku_lot
+        from src.services.data_processing.sku_lot_parser import parse_shipstation_sku
         
         for item in new_order.get('items', []):
             item.pop('orderItemId', None)
@@ -3835,9 +3835,9 @@ def api_recreate_manual_order(conflict_id):
             # Extract base SKU and replace with active lot
             current_sku = item.get('sku', '')
             if current_sku:
-                # Parse to get base SKU
-                parsed = parse_sku_lot(current_sku)
-                base_sku = parsed.get('base_sku')
+                # Parse to get base SKU (returns ParsedSKU dataclass)
+                parsed = parse_shipstation_sku(current_sku)
+                base_sku = parsed.base_sku  # Access attribute, not dict key
                 
                 if base_sku:
                     # Look up active lot from database
@@ -3856,7 +3856,7 @@ def api_recreate_manual_order(conflict_id):
                         
                         # Only log if we're actually changing the lot
                         if new_sku != current_sku:
-                            logger.info(f"Replacing lot: {current_sku} → {new_sku}")
+                            print(f"🔄 Replacing lot: {current_sku} → {new_sku}")
                         
                         item['sku'] = new_sku
         
