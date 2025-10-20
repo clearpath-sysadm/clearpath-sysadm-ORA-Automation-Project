@@ -3486,6 +3486,182 @@ def api_resolve_duplicate_alert(alert_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/lot_mismatch_alerts', methods=['GET'])
+def api_get_lot_mismatch_alerts():
+    """Get all active lot number mismatch alerts"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                id,
+                order_number,
+                base_sku,
+                shipstation_lot,
+                active_lot,
+                shipstation_order_id,
+                shipstation_item_id,
+                order_status,
+                detected_at
+            FROM lot_mismatch_alerts
+            WHERE resolved_at IS NULL
+            ORDER BY detected_at DESC
+        """)
+        
+        alerts = []
+        for row in cursor.fetchall():
+            alerts.append({
+                'id': row[0],
+                'order_number': row[1],
+                'base_sku': row[2],
+                'shipstation_lot': row[3],
+                'active_lot': row[4],
+                'shipstation_order_id': row[5],
+                'shipstation_item_id': row[6],
+                'order_status': row[7],
+                'detected_at': row[8]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'alerts': alerts,
+            'count': len(alerts)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/lot_mismatch_alerts/<int:alert_id>/resolve', methods=['PUT'])
+def api_resolve_lot_mismatch_alert(alert_id):
+    """Mark a lot mismatch alert as resolved"""
+    try:
+        data = request.get_json() or {}
+        resolved_by = data.get('resolved_by', 'manual')
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE lot_mismatch_alerts
+            SET resolved_at = CURRENT_TIMESTAMP,
+                resolved_by = %s
+            WHERE id = %s AND resolved_at IS NULL
+        """, (resolved_by, alert_id))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Alert not found or already resolved'
+            }), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Lot mismatch alert marked as resolved'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/update_lot_in_shipstation', methods=['PUT'])
+def api_update_lot_in_shipstation():
+    """Update SKU-Lot in ShipStation order"""
+    try:
+        from src.services.api.shipstation_api_client import get_shipstation_credentials
+        from utils.api_utils import make_api_request
+        
+        data = request.get_json()
+        order_id = data.get('shipstation_order_id')
+        item_id = data.get('shipstation_item_id')
+        new_lot = data.get('new_lot')
+        base_sku = data.get('base_sku')
+        alert_id = data.get('alert_id')
+        
+        if not all([order_id, item_id, new_lot, base_sku]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required parameters'
+            }), 400
+        
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to get ShipStation credentials'
+            }), 500
+        
+        # Fetch current order from ShipStation
+        order_url = f'https://ssapi.shipstation.com/orders/{order_id}'
+        order_response = make_api_request(
+            'GET',
+            order_url,
+            auth=(api_key, api_secret)
+        )
+        
+        if not order_response:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch order from ShipStation'
+            }), 500
+        
+        # Update the item SKU to include new lot
+        new_sku = f"{base_sku} - {new_lot}"
+        
+        for item in order_response.get('items', []):
+            if str(item.get('orderItemId')) == str(item_id):
+                item['sku'] = new_sku
+                break
+        
+        # Update order in ShipStation
+        update_response = make_api_request(
+            'POST',
+            'https://ssapi.shipstation.com/orders/createorder',
+            auth=(api_key, api_secret),
+            json=order_response
+        )
+        
+        if not update_response:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to update order in ShipStation'
+            }), 500
+        
+        # Mark alert as resolved
+        if alert_id:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE lot_mismatch_alerts
+                SET resolved_at = CURRENT_TIMESTAMP,
+                    resolved_by = 'user_updated'
+                WHERE id = %s
+            """, (alert_id,))
+            conn.commit()
+            conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Updated SKU-Lot to {new_sku} in ShipStation',
+            'new_sku': new_sku
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/quantity_mismatch', methods=['GET'])
 def api_get_quantity_mismatch():
     """Check for quantity mismatch between ShipStation and Orders Inbox"""
