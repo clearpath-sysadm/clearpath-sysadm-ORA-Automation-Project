@@ -3822,8 +3822,40 @@ def api_recreate_manual_order(conflict_id):
         # Remove IDs so ShipStation creates a new order
         new_order.pop('orderId', None)
         new_order.pop('orderKey', None)
+        
+        # Replace old lot numbers with active lots from sku_lot table
+        from src.services.data_processing.sku_lot_parser import parse_sku_lot
+        
         for item in new_order.get('items', []):
             item.pop('orderItemId', None)
+            
+            # Extract base SKU and replace with active lot
+            current_sku = item.get('sku', '')
+            if current_sku:
+                # Parse to get base SKU
+                parsed = parse_sku_lot(current_sku)
+                base_sku = parsed.get('base_sku')
+                
+                if base_sku:
+                    # Look up active lot from database
+                    cursor.execute("""
+                        SELECT sku, lot 
+                        FROM sku_lot 
+                        WHERE sku = %s AND active = 1
+                        LIMIT 1
+                    """, (base_sku,))
+                    
+                    active_lot = cursor.fetchone()
+                    if active_lot:
+                        active_sku = active_lot[0]
+                        active_lot_num = active_lot[1]
+                        new_sku = f"{active_sku} - {active_lot_num}"
+                        
+                        # Only log if we're actually changing the lot
+                        if new_sku != current_sku:
+                            logger.info(f"Replacing lot: {current_sku} → {new_sku}")
+                        
+                        item['sku'] = new_sku
         
         # Create new order in ShipStation
         create_resp = make_api_request(
