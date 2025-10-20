@@ -88,29 +88,30 @@ def api_dashboard_stats():
         """)
         benco_orders = cursor.fetchone()[0] or 0
         
-        # Hawaiian orders (ship to Hawaii) - awaiting shipment only
+        # Hawaiian orders (ship to Hawaii) - all orders from today
+        today = datetime.now().strftime('%Y-%m-%d')
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status = 'awaiting_shipment'
+            WHERE order_date = %s
             AND ship_state = 'HI'
-        """)
+        """, (today,))
         hawaiian_orders = cursor.fetchone()[0] or 0
         
-        # Canadian orders (ship to Canada) - awaiting shipment only
+        # Canadian orders (ship to Canada) - all orders from today
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status = 'awaiting_shipment'
+            WHERE order_date = %s
             AND (ship_country = 'CA' OR ship_country = 'Canada')
-        """)
+        """, (today,))
         canadian_orders = cursor.fetchone()[0] or 0
         
-        # Other international orders (not US or Canada) - awaiting shipment only
+        # Other international orders (not US or Canada) - all orders from today
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE status = 'awaiting_shipment'
+            WHERE order_date = %s
             AND ship_country IS NOT NULL
             AND ship_country NOT IN ('US', 'USA', 'United States', 'CA', 'Canada')
-        """)
+        """, (today,))
         other_international_orders = cursor.fetchone()[0] or 0
         
         # System status (check recent workflow health)
