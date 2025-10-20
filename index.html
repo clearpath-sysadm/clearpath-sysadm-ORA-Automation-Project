@@ -942,22 +942,23 @@
             duplicateAlertsData.forEach((alert, idx) => {
                 html += '<div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #f97316;">';
                 html += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">`;
-                html += `<div><strong style="font-size: 16px;">Order #${alert.order_number}</strong><br>`;
+                html += `<div><strong style="font-size: 16px;">Order #${alert.order_number} + SKU ${alert.base_sku || 'N/A'}</strong><br>`;
                 html += `<span style="color: var(--text-tertiary); font-size: 13px;">Found ${alert.duplicate_count} duplicate records</span></div>`;
-                html += `<button onclick="resolveDuplicateAlert(${alert.id}, '${alert.order_number}')" style="padding: 6px 12px; background: #22c55e; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Mark Resolved</button>`;
+                html += `<button onclick="resolveDuplicateAlert(${alert.id}, '${alert.order_number}', '${alert.base_sku || 'N/A'}')" style="padding: 6px 12px; background: #22c55e; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Mark Resolved</button>`;
                 html += '</div>';
                 
                 // Show details of each duplicate
                 if (alert.details && alert.details.length > 0) {
                     html += '<table style="width: 100%; font-size: 13px; margin-top: 12px; border-collapse: collapse;">';
-                    html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Total</th><th style="padding: 8px;">Created</th></tr></thead>';
+                    html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
                         html += '<tr style="border-bottom: 1px solid var(--border-color);">';
                         html += `<td style="padding: 8px;">${detail.shipstation_id}</td>`;
+                        html += `<td style="padding: 8px;">${detail.full_sku || detail.base_sku || 'N/A'}</td>`;
+                        html += `<td style="padding: 8px;">${detail.quantity || 0}</td>`;
                         html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${detail.order_status}</td>`;
-                        html += `<td style="padding: 8px;">$${(detail.order_total || 0).toFixed(2)}</td>`;
                         html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleString()}</td>`;
                         html += '</tr>';
                     });
@@ -983,8 +984,11 @@
             });
         }
         
-        async function resolveDuplicateAlert(alertId, orderNumber) {
-            if (!confirm(`Mark order #${orderNumber} duplicate alert as resolved?`)) {
+        async function resolveDuplicateAlert(alertId, orderNumber, baseSku) {
+            const displayText = baseSku && baseSku !== 'N/A' 
+                ? `order #${orderNumber} + SKU ${baseSku}` 
+                : `order #${orderNumber}`;
+            if (!confirm(`Mark ${displayText} duplicate alert as resolved?`)) {
                 return;
             }
             

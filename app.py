@@ -3406,6 +3406,7 @@ def api_get_duplicate_alerts():
             SELECT 
                 id,
                 order_number,
+                base_sku,
                 duplicate_count,
                 shipstation_ids,
                 details,
@@ -3423,12 +3424,13 @@ def api_get_duplicate_alerts():
             alerts.append({
                 'id': row[0],
                 'order_number': row[1],
-                'duplicate_count': row[2],
-                'shipstation_ids': json.loads(row[3]) if row[3] else [],
-                'details': json.loads(row[4]) if row[4] else [],
-                'first_detected': row[5],
-                'last_seen': row[6],
-                'status': row[7]
+                'base_sku': row[2],
+                'duplicate_count': row[3],
+                'shipstation_ids': json.loads(row[4]) if row[4] else [],
+                'details': json.loads(row[5]) if row[5] else [],
+                'first_detected': row[6],
+                'last_seen': row[7],
+                'status': row[8]
             })
         
         conn.close()

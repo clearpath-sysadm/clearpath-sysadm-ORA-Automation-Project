@@ -105,29 +105,51 @@ def fetch_recent_shipstation_orders(api_key, api_secret, days_back=90):
 
 def identify_duplicates(orders):
     """
-    Identify duplicate order numbers in ShipStation
+    Identify duplicate orders in ShipStation
+    
+    DUPLICATE DEFINITION: Two or more orders with the same order_number AND base_sku
     
     Returns:
-        dict: {order_number: [list of order details]}
+        dict: {(order_number, base_sku): [list of order details]}
     """
-    order_map = defaultdict(list)
+    # Group by (order_number, base_sku) - each item in an order creates a separate entry
+    order_sku_map = defaultdict(list)
     
     for order in orders:
         order_number = order.get('orderNumber', '')
         if not order_number:
             continue
         
-        order_map[order_number].append({
-            'shipstation_id': order.get('orderId'),
-            'order_status': order.get('orderStatus'),
-            'create_date': order.get('createDate'),
-            'customer_name': order.get('shipTo', {}).get('name', 'N/A'),
-            'customer_company': order.get('shipTo', {}).get('company', ''),
-            'order_total': order.get('orderTotal', 0)
-        })
+        # Extract all items from the order
+        items = order.get('items', [])
+        
+        # Process each item separately to detect SKU-level duplicates
+        for item in items:
+            sku = item.get('sku', '')
+            if not sku:
+                continue
+            
+            # Extract base SKU (remove lot number suffix like " - 250300")
+            base_sku = normalize_sku(sku)
+            
+            # Key is (order_number, base_sku) tuple
+            key = (order_number, base_sku)
+            
+            order_sku_map[key].append({
+                'shipstation_id': order.get('orderId'),
+                'order_number': order_number,
+                'base_sku': base_sku,
+                'full_sku': sku,
+                'quantity': item.get('quantity', 0),
+                'order_status': order.get('orderStatus'),
+                'create_date': order.get('createDate'),
+                'customer_name': order.get('shipTo', {}).get('name', 'N/A'),
+                'customer_company': order.get('shipTo', {}).get('company', ''),
+                'order_total': order.get('orderTotal', 0)
+            })
     
-    # Filter to only duplicates (count > 1)
-    duplicates = {k: v for k, v in order_map.items() if len(v) > 1}
+    # Filter to only duplicates (count > 1 for same order_number + base_sku)
+    duplicates = {k: v for k, v in order_sku_map.items() if len(v) > 1}
     
     return duplicates
 
@@ -136,7 +158,7 @@ def update_duplicate_alerts(duplicates):
     Update the duplicate_order_alerts table with current duplicates
     
     Args:
-        duplicates: dict of {order_number: [list of duplicate records]}
+        duplicates: dict of {(order_number, base_sku): [list of duplicate records]}
     
     Note:
         Auto-resolution is intentionally disabled to prevent data loss.
@@ -148,23 +170,25 @@ def update_duplicate_alerts(duplicates):
     try:
         # Get currently active alerts
         cursor.execute("""
-            SELECT order_number, shipstation_ids
+            SELECT order_number, base_sku, shipstation_ids
             FROM duplicate_order_alerts
             WHERE status = 'active'
         """)
         
-        existing_alerts = {row[0]: row[1] for row in cursor.fetchall()}
+        existing_alerts = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
         
         new_count = 0
         updated_count = 0
         resolved_count = 0
         
         # Process current duplicates
-        for order_number, dup_list in duplicates.items():
+        for (order_number, base_sku), dup_list in duplicates.items():
             shipstation_ids = json.dumps([d['shipstation_id'] for d in dup_list])
             details = json.dumps(dup_list)
             
-            if order_number in existing_alerts:
+            key = (order_number, base_sku)
+            
+            if key in existing_alerts:
                 # Update existing alert
                 cursor.execute("""
                     UPDATE duplicate_order_alerts
@@ -172,21 +196,21 @@ def update_duplicate_alerts(duplicates):
                         shipstation_ids = %s,
                         details = %s,
                         last_seen = CURRENT_TIMESTAMP
-                    WHERE order_number = %s AND status = 'active'
-                """, (len(dup_list), shipstation_ids, details, order_number))
+                    WHERE order_number = %s AND base_sku = %s AND status = 'active'
+                """, (len(dup_list), shipstation_ids, details, order_number, base_sku))
                 updated_count += 1
             else:
                 # Create new alert
                 cursor.execute("""
                     INSERT INTO duplicate_order_alerts 
-                        (order_number, duplicate_count, shipstation_ids, details, status)
-                    VALUES (%s, %s, %s, %s, 'active')
-                    ON CONFLICT (order_number, status) DO UPDATE
+                        (order_number, base_sku, duplicate_count, shipstation_ids, details, status)
+                    VALUES (%s, %s, %s, %s, %s, 'active')
+                    ON CONFLICT (order_number, base_sku, status) DO UPDATE
                     SET duplicate_count = EXCLUDED.duplicate_count,
                         shipstation_ids = EXCLUDED.shipstation_ids,
                         details = EXCLUDED.details,
                         last_seen = CURRENT_TIMESTAMP
-                """, (order_number, len(dup_list), shipstation_ids, details))
+                """, (order_number, base_sku, len(dup_list), shipstation_ids, details))
                 new_count += 1
         
         # SAFETY DECISION: Auto-resolution disabled to prevent data loss
@@ -240,9 +264,9 @@ def scan_for_duplicates():
         duplicates = identify_duplicates(orders)
         
         if duplicates:
-            logger.warning(f"⚠️  Found {len(duplicates)} duplicate order numbers in ShipStation!")
-            for order_num, dup_list in list(duplicates.items())[:10]:  # Log first 10
-                logger.warning(f"  Order {order_num}: {len(dup_list)} records")
+            logger.warning(f"⚠️  Found {len(duplicates)} duplicate order+SKU combinations in ShipStation!")
+            for (order_num, base_sku), dup_list in list(duplicates.items())[:10]:  # Log first 10
+                logger.warning(f"  Order #{order_num} + SKU {base_sku}: {len(dup_list)} records")
             if len(duplicates) > 10:
                 logger.warning(f"  ... and {len(duplicates) - 10} more duplicates")
         else:
