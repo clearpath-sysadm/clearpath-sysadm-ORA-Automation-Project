@@ -88,30 +88,33 @@ def api_dashboard_stats():
         """)
         benco_orders = cursor.fetchone()[0] or 0
         
-        # Hawaiian orders (ship to Hawaii) - all orders from today
-        today = datetime.now().strftime('%Y-%m-%d')
+        # Hawaiian orders (ship to Hawaii) - unshipped from last 5 days (handles weekend backlog)
+        five_days_ago = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE order_date = %s
+            WHERE order_date >= %s
             AND ship_state = 'HI'
-        """, (today,))
+            AND status IN ('awaiting_shipment', 'uploaded')
+        """, (five_days_ago,))
         hawaiian_orders = cursor.fetchone()[0] or 0
         
-        # Canadian orders (ship to Canada) - all orders from today
+        # Canadian orders (ship to Canada) - unshipped from last 5 days
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE order_date = %s
+            WHERE order_date >= %s
             AND (ship_country = 'CA' OR ship_country = 'Canada')
-        """, (today,))
+            AND status IN ('awaiting_shipment', 'uploaded')
+        """, (five_days_ago,))
         canadian_orders = cursor.fetchone()[0] or 0
         
-        # Other international orders (not US or Canada) - all orders from today
+        # Other international orders (not US or Canada) - unshipped from last 5 days
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
-            WHERE order_date = %s
+            WHERE order_date >= %s
             AND ship_country IS NOT NULL
             AND ship_country NOT IN ('US', 'USA', 'United States', 'CA', 'Canada')
-        """, (today,))
+            AND status IN ('awaiting_shipment', 'uploaded')
+        """, (five_days_ago,))
         other_international_orders = cursor.fetchone()[0] or 0
         
         # System status (check recent workflow health)
