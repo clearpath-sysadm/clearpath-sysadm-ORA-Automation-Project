@@ -3395,6 +3395,95 @@ def api_resolve_violation(violation_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/duplicate_alerts', methods=['GET'])
+def api_get_duplicate_alerts():
+    """Get all active duplicate order alerts from ShipStation monitoring"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                id,
+                order_number,
+                duplicate_count,
+                shipstation_ids,
+                details,
+                first_detected,
+                last_seen,
+                status
+            FROM duplicate_order_alerts
+            WHERE status = 'active'
+            ORDER BY last_seen DESC
+        """)
+        
+        alerts = []
+        for row in cursor.fetchall():
+            import json
+            alerts.append({
+                'id': row[0],
+                'order_number': row[1],
+                'duplicate_count': row[2],
+                'shipstation_ids': json.loads(row[3]) if row[3] else [],
+                'details': json.loads(row[4]) if row[4] else [],
+                'first_detected': row[5],
+                'last_seen': row[6],
+                'status': row[7]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'alerts': alerts,
+            'count': len(alerts)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/duplicate_alerts/<int:alert_id>/resolve', methods=['PUT'])
+def api_resolve_duplicate_alert(alert_id):
+    """Mark a duplicate alert as resolved"""
+    try:
+        from flask import request
+        data = request.get_json() or {}
+        notes = data.get('notes', 'Manually resolved')
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE duplicate_order_alerts
+            SET status = 'resolved',
+                resolved_at = CURRENT_TIMESTAMP,
+                resolved_by = 'manual',
+                notes = %s
+            WHERE id = %s AND status = 'active'
+        """, (notes, alert_id))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Alert not found or already resolved'
+            }), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Duplicate alert marked as resolved'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/quantity_mismatch', methods=['GET'])
 def api_get_quantity_mismatch():
     """Check for quantity mismatch between ShipStation and Orders Inbox"""
