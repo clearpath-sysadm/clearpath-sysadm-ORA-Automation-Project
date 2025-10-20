@@ -1209,8 +1209,11 @@
             manualOrderConflictsData.forEach((conflict, index) => {
                 html += `<div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px;">`;
                 html += `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">`;
-                html += `<div><strong style="font-size: 16px;">Order #${conflict.conflicting_order_number}</strong><br>`;
-                html += `<span style="color: var(--text-tertiary); font-size: 13px;">Customer: ${conflict.customer_name || 'N/A'}</span></div>`;
+                html += `<div><strong style="font-size: 16px;">Order #${conflict.conflicting_order_number}</strong>`;
+                if (conflict.proposed_new_order_number) {
+                    html += ` <span style="color: var(--accent-orange); font-size: 14px;">→ Will become #${conflict.proposed_new_order_number}</span>`;
+                }
+                html += `<br><span style="color: var(--text-tertiary); font-size: 13px;">Customer: ${conflict.customer_name || 'N/A'}</span></div>`;
                 html += `<button onclick="dismissConflict(${conflict.id}, '${conflict.conflicting_order_number}')" style="padding: 6px 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Dismiss</button>`;
                 html += `</div>`;
                 

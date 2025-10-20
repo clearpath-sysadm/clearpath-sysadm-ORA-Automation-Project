@@ -3669,6 +3669,17 @@ def api_get_manual_order_conflicts():
         conn = get_connection()
         cursor = conn.cursor()
         
+        # Calculate proposed new order number from local database
+        cursor.execute("""
+            SELECT MAX(CAST(order_number AS INTEGER))
+            FROM shipped_orders
+            WHERE order_number ~ '^[0-9]+$'
+            AND CAST(order_number AS INTEGER) < 200000
+        """)
+        max_row = cursor.fetchone()
+        max_order_num = max_row[0] if max_row and max_row[0] else 100000
+        proposed_new_order_number = str(max_order_num + 1)
+        
         cursor.execute("""
             SELECT 
                 id,
@@ -3700,7 +3711,8 @@ def api_get_manual_order_conflicts():
                 'original_company': row[7],
                 'original_items': row[8] if row[8] else [],
                 'duplicate_company': row[9],
-                'duplicate_items': row[10] if row[10] else []
+                'duplicate_items': row[10] if row[10] else [],
+                'proposed_new_order_number': proposed_new_order_number
             })
         
         conn.close()
