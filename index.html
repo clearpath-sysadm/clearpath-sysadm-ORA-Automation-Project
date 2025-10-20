@@ -206,6 +206,13 @@
                     <a href="#" onclick="showDuplicateDetails(); return false;" style="text-decoration: underline; margin-left: 10px;">View Details</a>
                 </div>
 
+                <!-- Lot Mismatch Alert -->
+                <div id="lot-mismatch-alert" style="display: none;">
+                    <strong>🔢 Lot Number Mismatches Detected</strong><br>
+                    <span id="lot-mismatch-count">0</span> order(s) have incorrect lot numbers in ShipStation.
+                    <a href="#" onclick="showLotMismatchDetails(); return false;" style="text-decoration: underline; margin-left: 10px;">View Details</a>
+                </div>
+
                 <!-- Operational Pulse Section -->
                 <section>
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Operational Pulse</h2>
@@ -771,6 +778,9 @@
                 // Check for duplicate order alerts
                 await checkDuplicateAlerts();
                 
+                // Check for lot mismatch alerts
+                await checkLotMismatchAlerts();
+                
                 // Update automation status
                 if (automation.success && automation.data.length > 0) {
                     const autoList = document.getElementById('automation-list');
@@ -1015,6 +1025,142 @@
             } catch (error) {
                 console.error('Error resolving duplicate alert:', error);
                 alert('Error resolving alert: ' + error.message);
+            }
+        }
+
+        // Lot Mismatch Alert Functions
+        let lotMismatchAlertsData = [];
+        
+        async function checkLotMismatchAlerts() {
+            try {
+                const response = await fetch('/api/lot_mismatch_alerts');
+                const data = await response.json();
+                
+                if (data.success && data.count > 0) {
+                    lotMismatchAlertsData = data.alerts;
+                    const lotMismatchAlert = document.getElementById('lot-mismatch-alert');
+                    const lotMismatchCount = document.getElementById('lot-mismatch-count');
+                    lotMismatchCount.textContent = data.count;
+                    lotMismatchAlert.style.display = 'block';
+                } else {
+                    document.getElementById('lot-mismatch-alert').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking lot mismatch alerts:', error);
+            }
+        }
+        
+        function showLotMismatchDetails() {
+            if (lotMismatchAlertsData.length === 0) {
+                alert('No lot mismatch alerts to display');
+                return;
+            }
+            
+            let html = '<div style="max-width: 800px; max-height: 70vh; overflow-y: auto;">';
+            html += '<h3 style="margin-top: 0;">Lot Number Mismatches</h3>';
+            html += '<p style="color: var(--text-secondary); margin-bottom: 20px;">These orders have incorrect lot numbers in ShipStation and need to be updated.</p>';
+            
+            lotMismatchAlertsData.forEach((alert, index) => {
+                html += `<div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px;">`;
+                html += `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">`;
+                html += `<div><strong>Order #${alert.order_number}</strong> - SKU ${alert.base_sku}</div>`;
+                html += `<button onclick="resolveLotMismatchAlert(${alert.id}, '${alert.order_number}', '${alert.base_sku}')" style="padding: 6px 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Mark Resolved</button>`;
+                html += `</div>`;
+                
+                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">';
+                html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">Field</th><th style="padding: 8px;">Value</th></tr></thead>';
+                html += '<tbody>';
+                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">ShipStation Lot</td><td style="padding: 8px; color: #f44336;">${alert.shipstation_lot || 'NONE'}</td></tr>`;
+                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">Active Lot (Correct)</td><td style="padding: 8px; color: #4caf50;">${alert.active_lot}</td></tr>`;
+                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">Order Status</td><td style="padding: 8px;">${alert.order_status}</td></tr>`;
+                html += `<tr><td style="padding: 8px; font-weight: 600;">Detected</td><td style="padding: 8px;">${new Date(alert.detected_at).toLocaleString()}</td></tr>`;
+                html += '</tbody></table>';
+                
+                html += `<button onclick="updateLotInShipStation(${alert.id}, '${alert.shipstation_order_id}', '${alert.shipstation_item_id}', '${alert.base_sku}', '${alert.active_lot}')" style="width: 100%; padding: 10px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔧 Update Lot to ${alert.active_lot} in ShipStation</button>`;
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
+            modal.innerHTML = `<div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 900px; width: 100%;">${html}<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary-navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button></div>`;
+            document.body.appendChild(modal);
+            
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        async function resolveLotMismatchAlert(alertId, orderNumber, baseSku) {
+            if (!confirm(`Mark lot mismatch for order #${orderNumber} SKU ${baseSku} as resolved?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/lot_mismatch_alerts/${alertId}/resolve`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({resolved_by: 'manual'})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Lot mismatch alert resolved');
+                    await checkLotMismatchAlerts();
+                    const modal = document.querySelector('div[style*="z-index: 9999"]');
+                    if (modal) modal.remove();
+                } else {
+                    throw new Error(result.error || 'Failed to resolve alert');
+                }
+            } catch (error) {
+                console.error('Error resolving lot mismatch alert:', error);
+                alert('Error resolving alert: ' + error.message);
+            }
+        }
+        
+        async function updateLotInShipStation(alertId, orderId, itemId, baseSku, newLot) {
+            if (!confirm(`Update lot number to ${newLot} for SKU ${baseSku} in ShipStation order ${orderId}?`)) {
+                return;
+            }
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+            
+            try {
+                const response = await fetch('/api/update_lot_in_shipstation', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        shipstation_order_id: orderId,
+                        shipstation_item_id: itemId,
+                        base_sku: baseSku,
+                        new_lot: newLot,
+                        alert_id: alertId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ ${result.message}`);
+                    await checkLotMismatchAlerts();
+                    const modal = document.querySelector('div[style*="z-index: 9999"]');
+                    if (modal) modal.remove();
+                } else {
+                    throw new Error(result.error || 'Failed to update lot');
+                }
+            } catch (error) {
+                console.error('Error updating lot in ShipStation:', error);
+                alert('Error updating lot: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = `🔧 Update Lot to ${newLot} in ShipStation`;
             }
         }
 
