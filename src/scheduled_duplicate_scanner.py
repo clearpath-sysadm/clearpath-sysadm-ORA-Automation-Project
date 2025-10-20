@@ -109,15 +109,25 @@ def identify_duplicates(orders):
     
     DUPLICATE DEFINITION: Two or more orders with the same order_number AND base_sku
     
+    FILTERS:
+    - Excludes cancelled orders (orderStatus == 'cancelled')
+    
     Returns:
         dict: {(order_number, base_sku): [list of order details]}
     """
     # Group by (order_number, base_sku) - each item in an order creates a separate entry
     order_sku_map = defaultdict(list)
+    cancelled_count = 0
     
     for order in orders:
         order_number = order.get('orderNumber', '')
         if not order_number:
+            continue
+        
+        # FILTER: Skip cancelled orders
+        order_status = order.get('orderStatus', '')
+        if order_status.lower() == 'cancelled':
+            cancelled_count += 1
             continue
         
         # Extract all items from the order
@@ -150,6 +160,9 @@ def identify_duplicates(orders):
     
     # Filter to only duplicates (count > 1 for same order_number + base_sku)
     duplicates = {k: v for k, v in order_sku_map.items() if len(v) > 1}
+    
+    if cancelled_count > 0:
+        logger.info(f"🚫 Filtered out {cancelled_count} cancelled orders from duplicate detection")
     
     return duplicates
 
