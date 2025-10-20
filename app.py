@@ -3689,7 +3689,6 @@ def api_get_manual_order_conflicts():
         
         conflicts = []
         for row in cursor.fetchall():
-            import json
             conflicts.append({
                 'id': row[0],
                 'conflicting_order_number': row[1],
@@ -3699,9 +3698,9 @@ def api_get_manual_order_conflicts():
                 'detected_at': row[5].strftime('%Y-%m-%d %H:%M:%S') if row[5] else None,
                 'resolution_status': row[6],
                 'original_company': row[7],
-                'original_items': json.loads(row[8]) if row[8] else [],
+                'original_items': row[8] if row[8] else [],
                 'duplicate_company': row[9],
-                'duplicate_items': json.loads(row[10]) if row[10] else []
+                'duplicate_items': row[10] if row[10] else []
             })
         
         conn.close()
