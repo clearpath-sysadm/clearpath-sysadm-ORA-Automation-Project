@@ -632,11 +632,39 @@ def upload_pending_orders():
 def run_scheduled_upload():
     """Main loop with efficient change detection (Phase 1 optimized polling)"""
     
+    # ============================================
+    # SAFETY: Prevent dev from uploading to production ShipStation
+    # ============================================
+    repl_slug = os.getenv('REPL_SLUG', '').lower()
+    environment = os.getenv('ENVIRONMENT', '').lower()
+    
+    # Detect development environment
+    is_dev = (repl_slug == 'workspace' or environment == 'development')
+    
+    if is_dev:
+        logger.warning("=" * 80)
+        logger.warning("🛑 UPLOAD SERVICE DISABLED IN DEVELOPMENT ENVIRONMENT")
+        logger.warning("=" * 80)
+        logger.warning("Reason: Prevents creating duplicate orders in production ShipStation")
+        logger.warning("")
+        logger.warning("This environment shares ShipStation credentials with production,")
+        logger.warning("but has a separate database. Uploading would create duplicates.")
+        logger.warning("")
+        logger.warning("To enable uploads (NOT recommended):")
+        logger.warning("  - Set ENVIRONMENT=production in Replit Secrets")
+        logger.warning("  - Or deploy this code to production where uploads are safe")
+        logger.warning("=" * 80)
+        logger.info("💤 Upload service sleeping indefinitely (sync service still active)")
+        
+        # Sleep forever - don't upload anything
+        while True:
+            time.sleep(3600)
+    
     # Get config
     enabled = get_feature_flag('fast_polling_enabled', 'true') == 'true'
     interval = int(get_feature_flag('fast_polling_interval', '300'))
     
-    logger.info(f"🚀 Upload workflow started (fast_polling={enabled}, interval={interval}s)")
+    logger.info(f"🚀 Upload workflow started in PRODUCTION (fast_polling={enabled}, interval={interval}s)")
     
     last_count = 0
     error_count = 0
