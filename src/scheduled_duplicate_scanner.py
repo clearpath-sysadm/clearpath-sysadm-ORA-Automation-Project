@@ -38,17 +38,18 @@ def normalize_sku(sku):
         return sku.split(' - ')[0].strip()
     return sku
 
-def fetch_recent_shipstation_orders(api_key, api_secret, days_back=30):
+def fetch_recent_shipstation_orders(api_key, api_secret, days_back=90):
     """
     Fetch recent orders from ShipStation for duplicate detection
     
     Args:
         api_key: ShipStation API key
         api_secret: ShipStation API secret
-        days_back: Number of days to look back (default 30)
+        days_back: Number of days to look back (default 90 for comprehensive coverage)
         
     Returns:
-        List of order dictionaries from ShipStation
+        Tuple of (list of orders, scan_successful boolean)
+        scan_successful is False if any API errors or incomplete pagination
     """
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days_back)
@@ -57,6 +58,7 @@ def fetch_recent_shipstation_orders(api_key, api_secret, days_back=30):
     
     all_orders = []
     page = 1
+    scan_successful = True
     
     while True:
         params = {
@@ -87,11 +89,19 @@ def fetch_recent_shipstation_orders(api_key, api_secret, days_back=30):
                 break
             page += 1
         else:
-            logger.error(f"Failed to fetch ShipStation orders: {response.status_code if response else 'No response'}")
+            logger.error(f"❌ Failed to fetch ShipStation orders: {response.status_code if response else 'No response'}")
+            scan_successful = False
             break
     
-    logger.info(f"✅ Fetched {len(all_orders)} total orders from ShipStation")
-    return all_orders
+    if scan_successful and all_orders:
+        logger.info(f"✅ Scan successful: Fetched {len(all_orders)} total orders from ShipStation")
+    elif not scan_successful:
+        logger.error(f"⚠️  Scan FAILED: API error during fetch - will NOT auto-resolve existing alerts")
+    else:
+        logger.warning(f"⚠️  Scan returned 0 orders - possible API issue - will NOT auto-resolve existing alerts")
+        scan_successful = False
+    
+    return all_orders, scan_successful
 
 def identify_duplicates(orders):
     """
@@ -127,6 +137,10 @@ def update_duplicate_alerts(duplicates):
     
     Args:
         duplicates: dict of {order_number: [list of duplicate records]}
+    
+    Note:
+        Auto-resolution is intentionally disabled to prevent data loss.
+        All alerts require manual resolution via the dashboard.
     """
     conn = get_connection()
     cursor = conn.cursor()
@@ -175,23 +189,22 @@ def update_duplicate_alerts(duplicates):
                 """, (order_number, len(dup_list), shipstation_ids, details))
                 new_count += 1
         
-        # Auto-resolve alerts that are no longer duplicates
-        current_duplicate_orders = set(duplicates.keys())
-        for order_number in existing_alerts.keys():
-            if order_number not in current_duplicate_orders:
-                cursor.execute("""
-                    UPDATE duplicate_order_alerts
-                    SET status = 'resolved',
-                        resolved_at = CURRENT_TIMESTAMP,
-                        resolved_by = 'auto',
-                        notes = 'Auto-resolved: No longer duplicate in ShipStation'
-                    WHERE order_number = %s AND status = 'active'
-                """, (order_number,))
-                resolved_count += 1
+        # SAFETY DECISION: Auto-resolution disabled to prevent data loss
+        # 
+        # Auto-resolution is fundamentally unsafe because:
+        # 1. Any limited-window query (30/90/N days) will eventually age out old duplicates
+        # 2. API failures, pagination errors, or auth issues could return empty results
+        # 3. ShipStation rate limits could cause incomplete scans
+        # 4. False negatives are worse than false positives for duplicate detection
+        #
+        # DESIGN: All duplicate alerts require MANUAL resolution via dashboard
+        # This ensures operators verify duplicates are truly resolved before clearing alerts
+        # Operators can use the "View Details" modal to inspect ShipStation records
+        # and mark alerts as resolved only after confirming duplicates are cleaned up
+        
+        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated (auto-resolution disabled - manual review required)")
         
         conn.commit()
-        
-        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated, {resolved_count} auto-resolved")
         
         return len(duplicates)
         
@@ -208,23 +221,30 @@ def scan_for_duplicates():
         # Get ShipStation credentials
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
-            logger.error('ShipStation API credentials not found')
-            return
+            logger.error('❌ ShipStation API credentials not found - cannot scan')
+            return False
         
-        # Fetch recent orders
-        orders = fetch_recent_shipstation_orders(api_key, api_secret, days_back=30)
+        # Fetch recent orders (90-day lookback for comprehensive coverage)
+        orders, scan_successful = fetch_recent_shipstation_orders(api_key, api_secret, days_back=90)
+        
+        # SAFETY: If scan failed, skip alert updates entirely to preserve existing alerts
+        if not scan_successful:
+            logger.error('❌ Scan failed - preserving existing alerts without updates')
+            return False
         
         if not orders:
-            logger.warning('No orders fetched from ShipStation')
-            return
+            logger.warning('⚠️  Scan returned 0 orders - skipping alert updates to preserve existing alerts')
+            return False
         
         # Identify duplicates
         duplicates = identify_duplicates(orders)
         
         if duplicates:
             logger.warning(f"⚠️  Found {len(duplicates)} duplicate order numbers in ShipStation!")
-            for order_num, dup_list in duplicates.items():
+            for order_num, dup_list in list(duplicates.items())[:10]:  # Log first 10
                 logger.warning(f"  Order {order_num}: {len(dup_list)} records")
+            if len(duplicates) > 10:
+                logger.warning(f"  ... and {len(duplicates) - 10} more duplicates")
         else:
             logger.info("✅ No duplicate orders found in ShipStation")
         
@@ -232,9 +252,11 @@ def scan_for_duplicates():
         active_count = update_duplicate_alerts(duplicates)
         
         logger.info(f"🎯 Active duplicate alerts: {active_count}")
+        return True
         
     except Exception as e:
-        logger.error(f"Error during duplicate scan: {e}", exc_info=True)
+        logger.error(f"❌ Error during duplicate scan: {e}", exc_info=True)
+        return False
 
 def run_scheduled_scanner():
     """Main loop - runs every 15 minutes"""
@@ -249,10 +271,14 @@ def run_scheduled_scanner():
                 continue
             
             # Run scan
-            scan_for_duplicates()
+            scan_succeeded = scan_for_duplicates()
             
-            # Update workflow timestamp
-            update_workflow_last_run('duplicate-scanner')
+            # SAFETY: Only update workflow timestamp on successful scans
+            # This allows monitoring systems to detect scan failures
+            if scan_succeeded:
+                update_workflow_last_run('duplicate-scanner')
+            else:
+                logger.error("❌ Scan failed - workflow timestamp NOT updated (monitoring will detect failure)")
             
             # Sleep until next scan
             logger.info(f"😴 Next scan in {SCAN_INTERVAL_SECONDS // 60} minutes")
