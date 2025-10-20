@@ -213,6 +213,13 @@
                     <a href="#" onclick="showLotMismatchDetails(); return false;" style="text-decoration: underline; margin-left: 10px;">View Details</a>
                 </div>
 
+                <!-- Manual Order Conflicts Alert -->
+                <div id="manual-order-conflict-alert" style="display: none;">
+                    <strong>🔄 Manual Order Conflicts Detected</strong><br>
+                    <span id="manual-order-conflict-count">0</span> manual order(s) use previously shipped order numbers.
+                    <a href="#" onclick="showManualOrderConflictDetails(); return false;" style="text-decoration: underline; margin-left: 10px;">View Details</a>
+                </div>
+
                 <!-- Operational Pulse Section -->
                 <section>
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Operational Pulse</h2>
@@ -781,6 +788,9 @@
                 // Check for lot mismatch alerts
                 await checkLotMismatchAlerts();
                 
+                // Check for manual order conflicts
+                await checkManualOrderConflicts();
+                
                 // Update automation status
                 if (automation.success && automation.data.length > 0) {
                     const autoList = document.getElementById('automation-list');
@@ -1161,6 +1171,182 @@
                 alert('Error updating lot: ' + error.message);
                 btn.disabled = false;
                 btn.textContent = `🔧 Update Lot to ${newLot} in ShipStation`;
+            }
+        }
+
+        // Manual Order Conflicts Functions
+        let manualOrderConflictsData = [];
+        
+        async function checkManualOrderConflicts() {
+            try {
+                const response = await fetch('/api/manual_order_conflicts');
+                const data = await response.json();
+                
+                if (data.success && data.count > 0) {
+                    manualOrderConflictsData = data.conflicts;
+                    const conflictAlert = document.getElementById('manual-order-conflict-alert');
+                    const conflictCount = document.getElementById('manual-order-conflict-count');
+                    conflictCount.textContent = data.count;
+                    conflictAlert.style.display = 'block';
+                } else {
+                    document.getElementById('manual-order-conflict-alert').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking manual order conflicts:', error);
+            }
+        }
+        
+        function showManualOrderConflictDetails() {
+            if (manualOrderConflictsData.length === 0) {
+                alert('No manual order conflicts to display');
+                return;
+            }
+            
+            let html = '<div style="max-width: 800px; max-height: 70vh; overflow-y: auto;">';
+            html += '<h3 style="margin-top: 0;">Manual Order Conflicts</h3>';
+            html += '<p style="color: var(--text-secondary); margin-bottom: 20px;">These manual orders use order numbers that were previously shipped. Recreate them with new order numbers.</p>';
+            
+            manualOrderConflictsData.forEach((conflict, index) => {
+                html += `<div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px;">`;
+                html += `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">`;
+                html += `<div><strong style="font-size: 16px;">Order #${conflict.conflicting_order_number}</strong><br>`;
+                html += `<span style="color: var(--text-tertiary); font-size: 13px;">Customer: ${conflict.customer_name || 'N/A'}</span></div>`;
+                html += `<button onclick="dismissConflict(${conflict.id}, '${conflict.conflicting_order_number}')" style="padding: 6px 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Dismiss</button>`;
+                html += `</div>`;
+                
+                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 13px;">';
+                html += '<tbody>';
+                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">Original Ship Date</td><td style="padding: 8px;">${conflict.original_ship_date || 'N/A'}</td></tr>`;
+                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">ShipStation Order ID</td><td style="padding: 8px; font-family: monospace; font-size: 11px;">${conflict.shipstation_order_id}</td></tr>`;
+                html += `<tr><td style="padding: 8px; font-weight: 600;">Detected</td><td style="padding: 8px;">${conflict.detected_at}</td></tr>`;
+                html += '</tbody></table>';
+                
+                html += `<button onclick="recreateManualOrder(${conflict.id}, '${conflict.conflicting_order_number}')" style="width: 100%; padding: 10px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄 Recreate with New Order Number</button>`;
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.id = 'manual-conflict-modal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
+            modal.innerHTML = `<div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 900px; width: 100%;">${html}<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary-navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button></div>`;
+            document.body.appendChild(modal);
+            
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        async function recreateManualOrder(conflictId, oldOrderNumber) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Creating new order...';
+            
+            try {
+                const response = await fetch(`/api/manual_order_conflicts/${conflictId}/recreate`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Close the details modal
+                    const modal = document.getElementById('manual-conflict-modal');
+                    if (modal) modal.remove();
+                    
+                    // Show confirmation dialog
+                    showConfirmationDialog(conflictId, oldOrderNumber, result.new_order_number);
+                } else {
+                    throw new Error(result.error || 'Failed to recreate order');
+                }
+            } catch (error) {
+                console.error('Error recreating order:', error);
+                alert('Error recreating order: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = '🔄 Recreate with New Order Number';
+            }
+        }
+        
+        function showConfirmationDialog(conflictId, oldOrderNumber, newOrderNumber) {
+            let html = '<div style="max-width: 600px;">';
+            html += '<h3 style="margin-top: 0; color: #22c55e;">✅ New Order Created Successfully</h3>';
+            html += '<div style="background: var(--bg-secondary); border-radius: 8px; padding: 20px; margin: 20px 0;">';
+            html += `<p style="font-size: 16px; margin-bottom: 12px;">Old Order: <strong style="text-decoration: line-through; color: var(--text-tertiary);">${oldOrderNumber}</strong></p>`;
+            html += `<p style="font-size: 18px; margin-bottom: 12px;">New Order: <strong style="color: var(--accent-orange); font-size: 22px;">${newOrderNumber}</strong></p>`;
+            html += '</div>';
+            html += '<p style="color: var(--text-secondary); margin: 20px 0;">Please verify the new order was created properly in ShipStation before proceeding.</p>';
+            html += '<div style="display: flex; gap: 12px; margin-top: 24px;">';
+            html += `<button onclick="confirmDeleteOldOrder(${conflictId}, '${oldOrderNumber}', '${newOrderNumber}')" style="flex: 1; padding: 12px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Confirm & Delete Old Order</button>`;
+            html += `<button onclick="this.closest('[id=confirmation-modal]').remove(); checkManualOrderConflicts();" style="flex: 1; padding: 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>`;
+            html += '</div>';
+            html += '</div>';
+            
+            const modal = document.createElement('div');
+            modal.id = 'confirmation-modal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+            modal.innerHTML = `<div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">${html}</div>`;
+            document.body.appendChild(modal);
+        }
+        
+        async function confirmDeleteOldOrder(conflictId, oldOrderNumber, newOrderNumber) {
+            const modal = document.getElementById('confirmation-modal');
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Deleting old order...';
+            
+            try {
+                const response = await fetch(`/api/manual_order_conflicts/${conflictId}/confirm_delete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ ${result.message}`);
+                    modal.remove();
+                    await checkManualOrderConflicts();
+                } else {
+                    throw new Error(result.error || 'Failed to delete old order');
+                }
+            } catch (error) {
+                console.error('Error deleting old order:', error);
+                alert('Error deleting old order: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Confirm & Delete Old Order';
+            }
+        }
+        
+        async function dismissConflict(conflictId, orderNumber) {
+            if (!confirm(`Dismiss conflict for order #${orderNumber}? This will not recreate the order.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/manual_order_conflicts/${conflictId}/dismiss`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Conflict dismissed');
+                    await checkManualOrderConflicts();
+                    const modal = document.getElementById('manual-conflict-modal');
+                    if (modal) modal.remove();
+                } else {
+                    throw new Error(result.error || 'Failed to dismiss conflict');
+                }
+            } catch (error) {
+                console.error('Error dismissing conflict:', error);
+                alert('Error dismissing conflict: ' + error.message);
             }
         }
 

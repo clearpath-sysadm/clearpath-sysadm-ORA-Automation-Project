@@ -3662,6 +3662,317 @@ def api_update_lot_in_shipstation():
             'error': str(e)
         }), 500
 
+@app.route('/api/manual_order_conflicts', methods=['GET'])
+def api_get_manual_order_conflicts():
+    """Get all pending manual order conflicts (order numbers that were previously shipped)"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                id,
+                conflicting_order_number,
+                shipstation_order_id,
+                customer_name,
+                original_ship_date,
+                detected_at,
+                resolution_status
+            FROM manual_order_conflicts
+            WHERE resolution_status = 'pending'
+            ORDER BY detected_at DESC
+        """)
+        
+        conflicts = []
+        for row in cursor.fetchall():
+            conflicts.append({
+                'id': row[0],
+                'conflicting_order_number': row[1],
+                'shipstation_order_id': row[2],
+                'customer_name': row[3],
+                'original_ship_date': row[4].strftime('%Y-%m-%d') if row[4] else None,
+                'detected_at': row[5].strftime('%Y-%m-%d %H:%M:%S') if row[5] else None,
+                'resolution_status': row[6]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'conflicts': conflicts,
+            'count': len(conflicts)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/manual_order_conflicts/<int:conflict_id>/recreate', methods=['POST'])
+def api_recreate_manual_order(conflict_id):
+    """
+    Recreate a conflicting manual order with a new order number.
+    Steps:
+    1. Find max order number < 200000 in ShipStation
+    2. Increment by 1 to get new order number
+    3. Copy all order data from conflicting order
+    4. Create new order in ShipStation
+    5. Return new order details for user confirmation
+    """
+    try:
+        from src.services.shipstation.api_client import get_shipstation_credentials
+        from utils.api_utils import make_api_request
+        
+        # Get conflict details
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT shipstation_order_id, conflicting_order_number
+            FROM manual_order_conflicts
+            WHERE id = %s AND resolution_status = 'pending'
+        """, (conflict_id,))
+        
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Conflict not found or already resolved'
+            }), 404
+        
+        shipstation_order_id = row[0]
+        old_order_number = row[1]
+        
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Failed to get ShipStation credentials'
+            }), 500
+        
+        # Get proper headers for ShipStation API
+        from src.services.shipstation.api_client import get_shipstation_headers
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        # Find max order number < 200000 in ShipStation
+        max_order_response = make_api_request(
+            url='https://ssapi.shipstation.com/orders',
+            method='GET',
+            headers=headers,
+            params={
+                'sortBy': 'OrderNumber',
+                'sortDir': 'DESC',
+                'pageSize': 500
+            },
+            timeout=30
+        )
+        
+        if not max_order_response:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch orders from ShipStation'
+            }), 500
+        
+        # Find highest order number < 200000
+        max_order_num = 100000  # Default starting point
+        for order in max_order_response.get('orders', []):
+            try:
+                order_num = int(order.get('orderNumber', '0'))
+                if order_num < 200000 and order_num > max_order_num:
+                    max_order_num = order_num
+            except:
+                continue
+        
+        new_order_number = str(max_order_num + 1)
+        
+        # Fetch the conflicting order details
+        order_url = f'https://ssapi.shipstation.com/orders/{shipstation_order_id}'
+        order_response = make_api_request(
+            url=order_url,
+            method='GET',
+            headers=headers,
+            timeout=30
+        )
+        
+        if not order_response:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch order details from ShipStation'
+            }), 500
+        
+        # Create new order with updated order number
+        new_order = order_response.copy()
+        new_order['orderNumber'] = new_order_number
+        # Remove IDs so ShipStation creates a new order
+        new_order.pop('orderId', None)
+        new_order.pop('orderKey', None)
+        for item in new_order.get('items', []):
+            item.pop('orderItemId', None)
+        
+        # Create new order in ShipStation
+        create_response = make_api_request(
+            url='https://ssapi.shipstation.com/orders/createorder',
+            method='POST',
+            headers=headers,
+            json=new_order,
+            timeout=30
+        )
+        
+        if not create_response:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create new order in ShipStation'
+            }), 500
+        
+        new_shipstation_order_id = create_response.get('orderId')
+        
+        # Update conflict record with new order details
+        cursor.execute("""
+            UPDATE manual_order_conflicts
+            SET new_order_number = %s,
+                new_shipstation_order_id = %s
+            WHERE id = %s
+        """, (new_order_number, str(new_shipstation_order_id), conflict_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'New order {new_order_number} created in ShipStation',
+            'old_order_number': old_order_number,
+            'new_order_number': new_order_number,
+            'new_shipstation_order_id': str(new_shipstation_order_id),
+            'old_shipstation_order_id': shipstation_order_id
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/manual_order_conflicts/<int:conflict_id>/confirm_delete', methods=['POST'])
+def api_confirm_delete_conflicting_order(conflict_id):
+    """
+    Confirm deletion of the old conflicting order from ShipStation.
+    This should only be called after user verifies the new order was created properly.
+    """
+    try:
+        from src.services.shipstation.api_client import get_shipstation_credentials
+        from utils.api_utils import make_api_request
+        
+        # Get conflict details
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT shipstation_order_id, new_order_number, new_shipstation_order_id
+            FROM manual_order_conflicts
+            WHERE id = %s AND resolution_status = 'pending'
+        """, (conflict_id,))
+        
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Conflict not found or already resolved'
+            }), 404
+        
+        old_shipstation_order_id = row[0]
+        new_order_number = row[1]
+        new_shipstation_order_id = row[2]
+        
+        if not new_order_number or not new_shipstation_order_id:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'New order must be created before deleting old order'
+            }), 400
+        
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Failed to get ShipStation credentials'
+            }), 500
+        
+        # Get proper headers for ShipStation API
+        from src.services.shipstation.api_client import get_shipstation_headers
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        # Delete old order from ShipStation
+        delete_url = f'https://ssapi.shipstation.com/orders/{old_shipstation_order_id}'
+        delete_response = make_api_request(
+            url=delete_url,
+            method='DELETE',
+            headers=headers,
+            timeout=30
+        )
+        
+        # Mark conflict as resolved
+        cursor.execute("""
+            UPDATE manual_order_conflicts
+            SET resolution_status = 'recreated',
+                resolved_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (conflict_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Old order deleted and conflict resolved. New order: {new_order_number}'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/manual_order_conflicts/<int:conflict_id>/dismiss', methods=['POST'])
+def api_dismiss_manual_order_conflict(conflict_id):
+    """Dismiss a manual order conflict without taking action"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE manual_order_conflicts
+            SET resolution_status = 'dismissed',
+                resolved_at = CURRENT_TIMESTAMP
+            WHERE id = %s AND resolution_status = 'pending'
+        """, (conflict_id,))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Conflict not found or already resolved'
+            }), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Conflict dismissed'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/quantity_mismatch', methods=['GET'])
 def api_get_quantity_mismatch():
     """Check for quantity mismatch between ShipStation and Orders Inbox"""

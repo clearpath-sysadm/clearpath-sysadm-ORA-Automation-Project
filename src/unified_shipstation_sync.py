@@ -251,6 +251,9 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
     Import a NEW manual ShipStation order into the local database.
     Creates entries in orders_inbox, order_items_inbox, and potentially shipped_orders/shipped_items.
     
+    CONFLICT DETECTION: If the order_number already exists in shipped_orders (previously shipped),
+    create a conflict alert instead of importing.
+    
     Args:
         order: ShipStation order dict
         conn: Database connection (transaction context)
@@ -267,6 +270,41 @@ def import_new_manual_order(order: Dict[Any, Any], conn) -> bool:
         if not order_number:
             logger.warning(f"⚠️ Skipping order without order_number: {order_id}")
             return False
+        
+        # CONFLICT DETECTION: Check if order_number already exists in shipped_orders
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT ship_date FROM shipped_orders WHERE order_number = %s
+        """, (order_number,))
+        conflict_row = cursor.fetchone()
+        
+        if conflict_row:
+            # Order number was previously shipped - create conflict alert
+            original_ship_date = conflict_row[0]
+            ship_to = order.get('shipTo') or {}
+            customer_name = (ship_to.get('name') or '').strip() or None
+            
+            logger.warning(f"⚠️ CONFLICT DETECTED: Order {order_number} already shipped on {original_ship_date}")
+            
+            # Check if conflict already exists to avoid duplicates
+            cursor.execute("""
+                SELECT id FROM manual_order_conflicts 
+                WHERE shipstation_order_id = %s AND resolution_status = 'pending'
+            """, (str(order_id),))
+            
+            if not cursor.fetchone():
+                # Create new conflict alert
+                cursor.execute("""
+                    INSERT INTO manual_order_conflicts (
+                        conflicting_order_number, shipstation_order_id, customer_name, original_ship_date
+                    )
+                    VALUES (%s, %s, %s, %s)
+                """, (order_number, str(order_id), customer_name, original_ship_date))
+                logger.info(f"🚨 Created conflict alert for order {order_number}")
+            else:
+                logger.debug(f"  Conflict alert already exists for order {order_number}")
+            
+            return False  # Do not import the order
         
         # Extract carrier/service info
         carrier_info = extract_carrier_service_info(order)
