@@ -1221,6 +1221,43 @@
                 html += `<tr><td style="padding: 8px; font-weight: 600;">Detected</td><td style="padding: 8px;">${conflict.detected_at}</td></tr>`;
                 html += '</tbody></table>';
                 
+                // Side-by-side comparison of orders
+                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
+                
+                // Original (Shipped) Order
+                html += '<div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border-left: 3px solid #22c55e;">';
+                html += '<strong style="color: #22c55e;">✅ Original (Shipped)</strong>';
+                html += `<div style="margin-top: 8px; font-size: 12px;"><strong>Company:</strong> ${conflict.original_company || 'None'}</div>`;
+                html += '<div style="margin-top: 8px;"><strong>Items:</strong></div>';
+                if (conflict.original_items && conflict.original_items.length > 0) {
+                    conflict.original_items.forEach(item => {
+                        html += `<div style="font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border-color);">`;
+                        html += `<span style="font-family: monospace;">${item.sku}</span> × ${item.quantity}`;
+                        html += `</div>`;
+                    });
+                } else {
+                    html += '<div style="font-size: 12px; color: var(--text-tertiary);">No items</div>';
+                }
+                html += '</div>';
+                
+                // Duplicate (Manual) Order
+                html += '<div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border-left: 3px solid #f97316;">';
+                html += '<strong style="color: #f97316;">⚠️ Duplicate (Manual)</strong>';
+                html += `<div style="margin-top: 8px; font-size: 12px;"><strong>Company:</strong> ${conflict.duplicate_company || 'None'}</div>`;
+                html += '<div style="margin-top: 8px;"><strong>Items:</strong></div>';
+                if (conflict.duplicate_items && conflict.duplicate_items.length > 0) {
+                    conflict.duplicate_items.forEach(item => {
+                        html += `<div style="font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border-color);">`;
+                        html += `<span style="font-family: monospace;">${item.sku}</span> × ${item.quantity}`;
+                        html += `</div>`;
+                    });
+                } else {
+                    html += '<div style="font-size: 12px; color: var(--text-tertiary);">No items</div>';
+                }
+                html += '</div>';
+                
+                html += '</div>';
+                
                 html += `<button onclick="recreateManualOrder(${conflict.id}, '${conflict.conflicting_order_number}')" style="width: 100%; padding: 10px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄 Recreate with New Order Number</button>`;
                 html += '</div>';
             });

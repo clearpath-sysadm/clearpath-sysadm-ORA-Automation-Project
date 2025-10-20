@@ -331,6 +331,27 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             ship_to = order.get('shipTo') or {}
             customer_name = (ship_to.get('name') or '').strip() or None
             
+            # Extract item details from both orders
+            import json
+            
+            # Original order items
+            original_ship_to = original_order.get('shipTo') or {}
+            original_company = (original_ship_to.get('company') or '').strip() or None
+            original_items = []
+            for item in original_order.get('items', []):
+                sku = item.get('sku', '')
+                qty = item.get('quantity', 0)
+                original_items.append({'sku': sku, 'quantity': qty})
+            
+            # Duplicate order items
+            duplicate_ship_to = order.get('shipTo') or {}
+            duplicate_company = (duplicate_ship_to.get('company') or '').strip() or None
+            duplicate_items = []
+            for item in order.get('items', []):
+                sku = item.get('sku', '')
+                qty = item.get('quantity', 0)
+                duplicate_items.append({'sku': sku, 'quantity': qty})
+            
             logger.warning(f"⚠️ CONFLICT DETECTED: Order {order_number} already exists in ShipStation as shipped")
             
             # Check if conflict already exists to avoid duplicates
@@ -341,13 +362,15 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             """, (str(order_id),))
             
             if not cursor.fetchone():
-                # Create new conflict alert
+                # Create new conflict alert with detailed information
                 cursor.execute("""
                     INSERT INTO manual_order_conflicts (
-                        conflicting_order_number, shipstation_order_id, customer_name, original_ship_date
+                        conflicting_order_number, shipstation_order_id, customer_name, original_ship_date,
+                        original_company, original_items, duplicate_company, duplicate_items
                     )
-                    VALUES (%s, %s, %s, %s)
-                """, (order_number, str(order_id), customer_name, original_ship_date))
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (order_number, str(order_id), customer_name, original_ship_date,
+                      original_company, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items)))
                 logger.info(f"🚨 Created conflict alert for order {order_number}")
             else:
                 logger.debug(f"  Conflict alert already exists for order {order_number}")
