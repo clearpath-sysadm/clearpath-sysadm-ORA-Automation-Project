@@ -672,14 +672,16 @@
                     </table>
                 `;
                 
-                const plainHeader = 'SKU | Product | Current Inventory | 12-Month Rolling Average';
-                const plainSeparator = '-'.repeat(75);
+                const plainHeader = 'SKU | Product | Current Inventory | 52-Week Avg | Days Left';
+                const plainSeparator = '-'.repeat(90);
                 const plainRows = result.data.map(item => {
                     const sku = String(item.sku).padEnd(6);
                     const product = String(item.product_name).padEnd(25);
                     const current = String(item.current_quantity).padStart(17);
-                    const avg = String(item.rolling_avg_52_weeks).padStart(28);
-                    return `${sku}| ${product}| ${current} | ${avg}`;
+                    const avg = String(item.rolling_avg_52_weeks).padStart(13);
+                    const daysLeft = item.days_left >= 999 ? '∞' : String(item.days_left);
+                    const daysLeftPadded = daysLeft.padStart(10);
+                    return `${sku}| ${product}| ${current} | ${avg} | ${daysLeftPadded}`;
                 }).join('\n');
                 const plainText = `${plainHeader}\n${plainSeparator}\n${plainRows}`;
                 
