@@ -3883,11 +3883,13 @@ def api_recreate_manual_order(conflict_id):
         create_response = create_resp.json()
         new_shipstation_order_id = create_response.get('orderId')
         
-        # Update conflict record with new order details
+        # Auto-resolve: Mark conflict as resolved after successful recreation
         cursor.execute("""
             UPDATE manual_order_conflicts
             SET new_order_number = %s,
-                new_shipstation_order_id = %s
+                new_shipstation_order_id = %s,
+                resolution_status = 'resolved',
+                resolved_at = NOW()
             WHERE id = %s
         """, (new_order_number, str(new_shipstation_order_id), conflict_id))
         
@@ -3896,11 +3898,12 @@ def api_recreate_manual_order(conflict_id):
         
         return jsonify({
             'success': True,
-            'message': f'New order {new_order_number} created in ShipStation',
+            'message': f'New order {new_order_number} created successfully. Old conflict auto-resolved.',
             'old_order_number': old_order_number,
             'new_order_number': new_order_number,
             'new_shipstation_order_id': str(new_shipstation_order_id),
-            'old_shipstation_order_id': shipstation_order_id
+            'old_shipstation_order_id': shipstation_order_id,
+            'auto_resolved': True
         })
         
     except Exception as e:
