@@ -1524,7 +1524,10 @@ def api_run_eod():
     """EOD - End of Day: Sync shipped items and update inventory"""
     import datetime
     import subprocess
+    import logging
     from src.services.database.pg_utils import log_report_run
+    
+    logger = logging.getLogger(__name__)
     
     # Concurrency guard: prevent duplicate EOD runs
     if _report_locks['EOD']:
@@ -1545,6 +1548,12 @@ def api_run_eod():
         )
         
         if result.returncode == 0:
+            # Log subprocess output for debugging
+            if result.stderr:
+                logger.warning(f"EOD subprocess stderr (despite success): {result.stderr[:500]}")
+            if result.stdout:
+                logger.info(f"EOD subprocess stdout: {result.stdout[-500:]}")
+            
             # Log success
             log_report_run('EOD', datetime.date.today(), 'success', 'Daily inventory updated successfully')
             

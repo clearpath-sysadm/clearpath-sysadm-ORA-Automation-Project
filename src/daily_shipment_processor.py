@@ -38,6 +38,8 @@ from src.services.reporting_logic.week_utils import (
     is_week_complete,
     get_prior_complete_week_boundaries
 )
+from src.services.reporting_logic.inventory_calculations import calculate_current_inventory
+from src.services.reporting_logic.average_calculations import calculate_12_month_rolling_average
 
 
 
@@ -512,8 +514,98 @@ def run_daily_shipment_pull(request=None):
         
         history_saved = save_weekly_history_to_db(updated_history_df)
         
-        # --- 7. Update Workflow Status ---
-        total_records = items_saved + orders_saved + history_saved
+        # --- 7. Calculate and Update Current Inventory ---
+        logger.info("Calculating current inventory...")
+        
+        # Get initial inventory from configuration
+        initial_inventory_rows = execute_query("""
+            SELECT sku, value 
+            FROM configuration_params 
+            WHERE category = 'InitialInventory'
+        """)
+        initial_inventory = {str(row[0]): int(row[1]) for row in initial_inventory_rows} if initial_inventory_rows else {}
+        logger.info(f"Loaded initial inventory for {len(initial_inventory)} SKUs")
+        
+        # Get inventory transactions
+        transactions_rows = execute_query("""
+            SELECT date as Date, sku as SKU, quantity as Quantity, transaction_type as TransactionType
+            FROM inventory_transactions
+            ORDER BY date
+        """)
+        transactions_df = pd.DataFrame(transactions_rows, columns=['Date', 'SKU', 'Quantity', 'TransactionType']) if transactions_rows else pd.DataFrame(columns=['Date', 'SKU', 'Quantity', 'TransactionType'])
+        if not transactions_df.empty:
+            transactions_df['Date'] = pd.to_datetime(transactions_df['Date']).dt.date
+        
+        # Get all shipped items
+        shipped_items_rows = execute_query("""
+            SELECT ship_date as Date, base_sku as SKU, quantity_shipped as Quantity_Shipped
+            FROM shipped_items
+            ORDER BY ship_date
+        """)
+        shipped_items_df = pd.DataFrame(shipped_items_rows, columns=['Date', 'SKU', 'Quantity_Shipped']) if shipped_items_rows else pd.DataFrame(columns=['Date', 'SKU', 'Quantity_Shipped'])
+        if not shipped_items_df.empty:
+            shipped_items_df['Date'] = pd.to_datetime(shipped_items_df['Date']).dt.date
+        
+        # Get current week boundaries for the calculation
+        current_week_start, current_week_end = get_current_week_boundaries()
+        
+        # Calculate current inventory
+        current_inventory_df = calculate_current_inventory(
+            initial_inventory=initial_inventory,
+            inventory_transactions_df=transactions_df,
+            shipped_items_df=shipped_items_df,
+            key_skus=target_skus,
+            current_week_start_date=current_week_start,
+            current_week_end_date=current_week_end
+        )
+        
+        # Calculate rolling averages
+        rolling_avg_df = calculate_12_month_rolling_average(existing_history_df)
+        
+        # Merge inventory and averages
+        if not current_inventory_df.empty and not rolling_avg_df.empty:
+            inventory_with_avg = current_inventory_df.merge(
+                rolling_avg_df,
+                on='SKU',
+                how='left'
+            )
+            inventory_with_avg['12-Month Rolling Average'] = inventory_with_avg['12-Month Rolling Average'].fillna(0).astype(int)
+        else:
+            inventory_with_avg = current_inventory_df.copy()
+            inventory_with_avg['12-Month Rolling Average'] = 0
+        
+        # Save to inventory_current table
+        inventory_saved = 0
+        with transaction() as conn:
+            cursor = conn.cursor()
+            for _, row in inventory_with_avg.iterrows():
+                sku = str(row['SKU'])
+                qty = int(row['Quantity'])
+                weekly_avg = int(row.get('12-Month Rolling Average', 0))
+                
+                # Determine alert level
+                if qty <= 50:
+                    alert_level = 'critical'
+                elif qty <= 100:
+                    alert_level = 'low'
+                else:
+                    alert_level = 'normal'
+                
+                cursor.execute("""
+                    INSERT INTO inventory_current (sku, current_quantity, weekly_avg_cents, alert_level, reorder_point, last_updated)
+                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (sku) DO UPDATE SET
+                        current_quantity = EXCLUDED.current_quantity,
+                        weekly_avg_cents = EXCLUDED.weekly_avg_cents,
+                        alert_level = EXCLUDED.alert_level,
+                        last_updated = CURRENT_TIMESTAMP
+                """, (sku, qty, weekly_avg, alert_level, 50))
+                inventory_saved += 1
+        
+        logger.info(f"Updated inventory_current table with {inventory_saved} SKUs")
+        
+        # --- 8. Update Workflow Status ---
+        total_records = items_saved + orders_saved + history_saved + inventory_saved
         duration = (datetime.datetime.now() - workflow_start_time).total_seconds()
         
         with transaction() as conn:
@@ -523,12 +615,12 @@ def run_daily_shipment_pull(request=None):
                 UPDATE workflows 
                 SET status = 'completed',
                     records_processed = %s,
-                    duration_seconds = CAST(? AS INTEGER)
+                    duration_seconds = CAST(%s AS INTEGER)
                 WHERE name = 'daily_shipment_processor'
-            """, (total_records, duration))
+            """, (total_records, int(duration)))
         
         logger.info(f"--- Daily Shipment Processor finished successfully! ---")
-        logger.info(f"Total records processed: {total_records} (items: {items_saved}, orders: {orders_saved}, history: {history_saved})")
+        logger.info(f"Total records processed: {total_records} (items: {items_saved}, orders: {orders_saved}, history: {history_saved}, inventory: {inventory_saved})")
         return "Process completed successfully", 200
 
     except Exception as e:
