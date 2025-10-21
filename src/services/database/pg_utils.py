@@ -174,7 +174,7 @@ def is_workflow_enabled(workflow_name: str, cache_seconds: int = 45) -> bool:
 
 def update_workflow_last_run(workflow_name: str):
     """
-    Update the last_run_at timestamp for a workflow
+    Update the last_run_at timestamp for a workflow in both tables
     
     Args:
         workflow_name: Name of the workflow to update
@@ -182,15 +182,22 @@ def update_workflow_last_run(workflow_name: str):
     try:
         conn = get_connection()
         cursor = conn.cursor()
+        # Update both tables to ensure consistency
+        cursor.execute(
+            "UPDATE workflows SET last_run_at = CURRENT_TIMESTAMP WHERE name = %s",
+            (workflow_name,)
+        )
+        workflows_updated = cursor.rowcount
         cursor.execute(
             "UPDATE workflow_controls SET last_run_at = CURRENT_TIMESTAMP WHERE workflow_name = %s",
             (workflow_name,)
         )
+        controls_updated = cursor.rowcount
         conn.commit()
         conn.close()
-        logger.debug(f"Updated last_run_at for workflow: {workflow_name}")
+        logger.info(f"✅ Updated last_run_at for {workflow_name} (workflows: {workflows_updated}, controls: {controls_updated})")
     except Exception as e:
-        logger.error(f"Failed to update last_run_at for {workflow_name}: {e}")
+        logger.error(f"❌ Failed to update last_run_at for {workflow_name}: {e}")
 
 
 def eod_done_today() -> bool:
