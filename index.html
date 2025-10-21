@@ -240,6 +240,7 @@
                         <div class="skeleton skeleton-card" id="stat-skeleton-5"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-6"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-7"></div>
+                        <div class="skeleton skeleton-card" id="stat-skeleton-8"></div>
 
                         <!-- Actual Stats -->
                         <!-- ShipStation Count -->
@@ -312,6 +313,13 @@
                             <div class="stat-value"><span class="status-indicator status-green"></span> Online</div>
                             <div class="stat-label">System Status</div>
                             <div class="stat-change">All services operational</div>
+                        </div>
+                        <div class="stat-card hidden" data-stat-card id="production-health-card" style="cursor: pointer;" onclick="window.open('/health', '_blank')">
+                            <div class="stat-value" id="prod-health-status">
+                                <span class="status-indicator status-gray"></span> Checking...
+                            </div>
+                            <div class="stat-label">Production Health</div>
+                            <div class="stat-change" id="prod-health-detail">Loading...</div>
                         </div>
                     </div>
                 </section>
@@ -493,7 +501,7 @@
 
         // Show/hide skeletons
         function showSkeletons() {
-            for (let i = 1; i <= 7; i++) {
+            for (let i = 1; i <= 8; i++) {
                 document.getElementById(`stat-skeleton-${i}`).classList.remove('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.add('hidden'));
@@ -504,7 +512,7 @@
         }
 
         function hideSkeletons() {
-            for (let i = 1; i <= 7; i++) {
+            for (let i = 1; i <= 8; i++) {
                 document.getElementById(`stat-skeleton-${i}`).classList.add('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.remove('hidden'));
@@ -702,6 +710,44 @@
             return then.toLocaleDateString();
         }
 
+        // Update production health card
+        async function updateProductionHealth() {
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                
+                const statusEl = document.getElementById('prod-health-status');
+                const detailEl = document.getElementById('prod-health-detail');
+                
+                const isProd = health.environment === 'PRODUCTION';
+                const workflowsOk = health.workflows && health.workflows.some(w => w.enabled && w.age_minutes < 30);
+                
+                let statusHTML, detailText, statusClass;
+                
+                if (isProd && workflowsOk) {
+                    statusHTML = '<span class="status-indicator status-green"></span> Healthy';
+                    detailText = 'Production workflows running';
+                    statusClass = 'status-green';
+                } else if (isProd && !workflowsOk) {
+                    statusHTML = '<span class="status-indicator status-red"></span> Warning';
+                    detailText = 'Workflows may be stale';
+                    statusClass = 'status-red';
+                } else {
+                    statusHTML = '<span class="status-indicator status-yellow"></span> Dev Mode';
+                    detailText = 'Development environment';
+                    statusClass = 'status-yellow';
+                }
+                
+                statusEl.innerHTML = statusHTML;
+                detailEl.textContent = detailText;
+            } catch (error) {
+                console.error('Failed to fetch production health:', error);
+                document.getElementById('prod-health-status').innerHTML = 
+                    '<span class="status-indicator status-gray"></span> Unknown';
+                document.getElementById('prod-health-detail').textContent = 'Click to check';
+            }
+        }
+
         // Load dashboard data
         async function loadDashboardData() {
             try {
@@ -710,7 +756,8 @@
                     fetch('/api/inventory_alerts'),
                     fetch('/api/automation_status'),
                     fetch('/api/shipstation/units_to_ship'),
-                    fetch('/api/local/awaiting_shipment_count')
+                    fetch('/api/local/awaiting_shipment_count'),
+                    updateProductionHealth()  // Add production health check
                 ]);
                 
                 const stats = await statsRes.json();
