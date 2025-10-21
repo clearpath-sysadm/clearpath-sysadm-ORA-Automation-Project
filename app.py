@@ -49,6 +49,66 @@ def serve_page(filename):
     else:
         return "Not found", 404
 
+# Production Health Check
+@app.route('/health')
+def health_check():
+    """Production health check - shows environment and workflow status"""
+    try:
+        is_production = os.getenv('REPLIT_DEPLOYMENT') == '1'
+        repl_slug = os.getenv('REPL_SLUG', 'unknown')
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get workflow status from database
+        cursor.execute("""
+            SELECT name, last_run_at, enabled, status, records_processed
+            FROM workflows
+            ORDER BY name
+        """)
+        workflows = cursor.fetchall()
+        
+        workflow_status = []
+        now = datetime.now()
+        
+        for name, last_run_at, enabled, status, records_processed in workflows:
+            if last_run_at:
+                if isinstance(last_run_at, str):
+                    last_run_dt = datetime.fromisoformat(last_run_at.replace('Z', '+00:00'))
+                else:
+                    last_run_dt = last_run_at
+                age_minutes = int((now.timestamp() - last_run_dt.timestamp()) / 60)
+                last_run_str = f"{age_minutes} min ago"
+            else:
+                last_run_str = "Never"
+                age_minutes = 999999
+            
+            workflow_status.append({
+                'name': name,
+                'enabled': bool(enabled),
+                'last_run': last_run_str,
+                'age_minutes': age_minutes,
+                'status': status,
+                'records_processed': records_processed
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'environment': 'PRODUCTION' if is_production else 'DEVELOPMENT',
+            'repl_slug': repl_slug,
+            'timestamp': datetime.now().isoformat(),
+            'workflows': workflow_status,
+            'database_connected': True
+        })
+    except Exception as e:
+        return jsonify({
+            'environment': 'PRODUCTION' if os.getenv('REPLIT_DEPLOYMENT') == '1' else 'DEVELOPMENT',
+            'error': str(e),
+            'database_connected': False
+        }), 500
+
 # API Endpoints
 
 @app.route('/api/dashboard_stats')
