@@ -71,6 +71,19 @@ def api_dashboard_stats():
         fedex_pickup_needed = units_to_ship >= 185
         fedex_phone = '651-846-0590'
         
+        # Check if today's FedEx pickup has been marked completed
+        today = datetime.now().strftime('%Y-%m-%d')
+        cursor.execute("""
+            SELECT completed_at, units_count 
+            FROM fedex_pickup_log 
+            WHERE pickup_date = %s
+            ORDER BY completed_at DESC
+            LIMIT 1
+        """, (today,))
+        pickup_log = cursor.fetchone()
+        fedex_pickup_completed = pickup_log is not None
+        fedex_pickup_completed_at = pickup_log[0] if pickup_log else None
+        
         # Pending uploads from orders_inbox
         cursor.execute("SELECT COUNT(*) FROM orders_inbox WHERE status = 'pending'")
         pending_uploads = cursor.fetchone()[0] or 0
@@ -154,6 +167,8 @@ def api_dashboard_stats():
             'data': {
                 'units_to_ship': units_to_ship,
                 'fedex_pickup_needed': fedex_pickup_needed,
+                'fedex_pickup_completed': fedex_pickup_completed,
+                'fedex_pickup_completed_at': fedex_pickup_completed_at.isoformat() if fedex_pickup_completed_at else None,
                 'fedex_phone': fedex_phone,
                 'pending_uploads': pending_uploads,
                 'recent_shipments': recent_shipments,
@@ -964,6 +979,61 @@ def api_sync_manual_orders():
             'success': True,
             'message': 'Manual order sync started (checking last 7 days)'
         })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/fedex_pickup/mark_completed', methods=['POST'])
+def api_mark_fedex_pickup_completed():
+    """Mark today's FedEx pickup as completed and log the action"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Get current units_to_ship for logging
+        cursor.execute("""
+            SELECT metric_value
+            FROM shipstation_metrics
+            WHERE metric_name = 'units_to_ship'
+        """)
+        result = cursor.fetchone()
+        units_count = result[0] if result else 0
+        
+        # Check if already marked completed today
+        cursor.execute("""
+            SELECT id FROM fedex_pickup_log 
+            WHERE pickup_date = %s
+        """, (today,))
+        
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'FedEx pickup already marked complete for today'
+            }), 400
+        
+        # Insert completion log
+        cursor.execute("""
+            INSERT INTO fedex_pickup_log (pickup_date, units_count, completed_at)
+            VALUES (%s, %s, CURRENT_TIMESTAMP)
+            RETURNING completed_at
+        """, (today, units_count))
+        
+        completed_at = cursor.fetchone()[0]
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'FedEx pickup marked as completed',
+            'completed_at': completed_at.isoformat(),
+            'units_count': units_count
+        })
+        
     except Exception as e:
         return jsonify({
             'success': False,

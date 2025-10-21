@@ -195,8 +195,15 @@
 
                 <!-- FedEx Alert -->
                 <div id="fedex-alert">
-                    <strong>🚚 FedEx Trailer Pickup Needed</strong><br>
-                    185+ units ready for shipment. Call FedEx depot to schedule trailer pickup: <a href="tel:651-846-0590">651-846-0590</a>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                        <div>
+                            <strong id="fedex-alert-title">🚚 FedEx Trailer Pickup Needed</strong><br>
+                            <span id="fedex-alert-message">185+ units ready for shipment. Call FedEx depot to schedule trailer pickup: <a href="tel:651-846-0590">651-846-0590</a></span>
+                        </div>
+                        <button id="fedex-complete-btn" onclick="markFedExPickupComplete()" style="padding: 10px 20px; background: #78350f; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">
+                            Mark Completed
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Duplicate Order Alert -->
@@ -775,7 +782,27 @@
                     }
                     
                     const fedexAlert = document.getElementById('fedex-alert');
+                    const fedexTitle = document.getElementById('fedex-alert-title');
+                    const fedexMessage = document.getElementById('fedex-alert-message');
+                    const fedexBtn = document.getElementById('fedex-complete-btn');
+                    
                     if (stats.data.fedex_pickup_needed) {
+                        if (stats.data.fedex_pickup_completed) {
+                            // Show completion status
+                            fedexTitle.textContent = '✅ FedEx Pickup Completed';
+                            const completedTime = new Date(stats.data.fedex_pickup_completed_at);
+                            fedexMessage.textContent = `Pickup scheduled at ${completedTime.toLocaleTimeString()}`;
+                            fedexBtn.style.display = 'none';
+                            fedexAlert.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                            fedexAlert.style.color = 'white';
+                        } else {
+                            // Show pending status
+                            fedexTitle.textContent = '🚚 FedEx Trailer Pickup Needed';
+                            fedexMessage.innerHTML = '185+ units ready for shipment. Call FedEx depot to schedule trailer pickup: <a href="tel:651-846-0590" style="color: #78350f; font-weight: 600; text-decoration: underline;">651-846-0590</a>';
+                            fedexBtn.style.display = 'block';
+                            fedexAlert.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
+                            fedexAlert.style.color = '#78350f';
+                        }
                         fedexAlert.style.display = 'block';
                     } else {
                         fedexAlert.style.display = 'none';
@@ -1387,6 +1414,33 @@
             } catch (error) {
                 console.error('Error dismissing conflict:', error);
                 alert('Error dismissing conflict: ' + error.message);
+            }
+        }
+
+        // FedEx Pickup Completion Handler
+        async function markFedExPickupComplete() {
+            if (!confirm('Mark FedEx pickup as completed? This will log the completion timestamp.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/fedex_pickup/mark_completed', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ FedEx pickup marked as completed');
+                    // Refresh dashboard to show completion status
+                    await loadDashboardData();
+                } else {
+                    throw new Error(result.error || 'Failed to mark pickup as complete');
+                }
+            } catch (error) {
+                console.error('Error marking FedEx pickup complete:', error);
+                alert('Error: ' + error.message);
             }
         }
 
