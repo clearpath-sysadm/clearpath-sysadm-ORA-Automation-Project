@@ -790,8 +790,14 @@
                         if (stats.data.fedex_pickup_completed) {
                             // Show completion status
                             fedexTitle.textContent = '✅ FedEx Pickup Completed';
-                            const completedTime = new Date(stats.data.fedex_pickup_completed_at);
-                            fedexMessage.textContent = `Pickup scheduled at ${completedTime.toLocaleTimeString()}`;
+                            // Parse UTC timestamp and convert to local time
+                            const completedTime = new Date(stats.data.fedex_pickup_completed_at + 'Z');
+                            const localTime = completedTime.toLocaleTimeString('en-US', { 
+                                hour: 'numeric', 
+                                minute: '2-digit',
+                                hour12: true 
+                            });
+                            fedexMessage.textContent = `Pickup scheduled at ${localTime}`;
                             fedexBtn.style.display = 'none';
                             fedexAlert.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
                             fedexAlert.style.color = 'white';
