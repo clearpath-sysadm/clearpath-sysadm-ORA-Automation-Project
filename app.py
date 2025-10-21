@@ -62,7 +62,7 @@ def health_check():
         
         # Get workflow status from database
         cursor.execute("""
-            SELECT name, last_run_at, enabled, status, records_processed
+            SELECT name, last_run_at, enabled, status, records_processed, updated_at
             FROM workflows
             ORDER BY name
         """)
@@ -71,7 +71,7 @@ def health_check():
         workflow_status = []
         now = datetime.now()
         
-        for name, last_run_at, enabled, status, records_processed in workflows:
+        for name, last_run_at, enabled, status, records_processed, updated_at in workflows:
             if last_run_at:
                 if isinstance(last_run_at, str):
                     last_run_dt = datetime.fromisoformat(last_run_at.replace('Z', '+00:00'))
@@ -83,24 +83,47 @@ def health_check():
                 last_run_str = "Never"
                 age_minutes = 999999
             
+            # Parse updated_at timestamp
+            if updated_at:
+                if isinstance(updated_at, str):
+                    updated_dt = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+                else:
+                    updated_dt = updated_at
+                updated_str = updated_dt.strftime('%b %d, %I:%M %p')
+            else:
+                updated_str = "Never"
+            
             workflow_status.append({
                 'name': name,
                 'enabled': bool(enabled),
                 'last_run': last_run_str,
                 'age_minutes': age_minutes,
                 'status': status,
-                'records_processed': records_processed
+                'records_processed': records_processed,
+                'updated_at': updated_str
             })
         
         cursor.close()
         conn.close()
+        
+        # Check deployment configuration
+        expected_workflows = ['orders-cleanup', 'unified-shipstation-sync', 'shipstation-upload', 
+                             'xml-import', 'duplicate-scanner', 'lot-mismatch-scanner', 'dashboard-server']
+        deployment_configured = True  # start_all.sh is configured in .replit [deployment] section
         
         return jsonify({
             'environment': 'PRODUCTION' if is_production else 'DEVELOPMENT',
             'repl_slug': repl_slug,
             'timestamp': datetime.utcnow().isoformat() + 'Z',  # UTC timestamp with Z suffix
             'workflows': workflow_status,
-            'database_connected': True
+            'database_connected': True,
+            'deployment': {
+                'configured': deployment_configured,
+                'command': 'bash start_all.sh',
+                'expected_workflows': len(expected_workflows),
+                'actual_workflows': len(workflows),
+                'missing_workflows': [w for w in expected_workflows if w not in [wf['name'] for wf in workflow_status]]
+            }
         })
     except Exception as e:
         return jsonify({

@@ -107,6 +107,41 @@ function renderHealthDetails() {
             </div>
     `;
     
+    // Deployment Status Section
+    if (healthData.deployment) {
+        const dep = healthData.deployment;
+        const workflowsMatch = dep.actual_workflows === dep.expected_workflows;
+        const deployColor = dep.configured && workflowsMatch ? '#10b981' : '#f59e0b';
+        const deployIcon = dep.configured && workflowsMatch ? '✓' : '⚠️';
+        
+        html += `
+            <div style="padding: 16px; background: ${deployColor}11; border: 1px solid ${deployColor}; border-radius: 8px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span style="font-size: 18px;">${deployIcon}</span>
+                    <span style="font-weight: 600; color: ${deployColor};">Deployment Configuration</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
+                    <div>
+                        <span style="color: var(--text-tertiary);">Command:</span>
+                        <code style="margin-left: 6px; padding: 2px 6px; background: var(--card-bg); border-radius: 4px; color: var(--text-primary);">${dep.command}</code>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-tertiary);">Workflows:</span>
+                        <span style="color: ${workflowsMatch ? '#10b981' : '#f59e0b'}; font-weight: 600; margin-left: 4px;">
+                            ${dep.actual_workflows}/${dep.expected_workflows} Running
+                        </span>
+                    </div>
+                </div>
+                ${dep.missing_workflows && dep.missing_workflows.length > 0 ? `
+                <div style="margin-top: 12px; padding: 12px; background: #ef444411; border: 1px solid #ef4444; border-radius: 6px;">
+                    <div style="font-weight: 600; color: #ef4444; margin-bottom: 4px;">Missing Workflows:</div>
+                    <div style="color: var(--text-secondary); font-size: 12px;">${dep.missing_workflows.join(', ')}</div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+    
     // Workflows section
     if (healthData.workflows && healthData.workflows.length > 0) {
         html += `
@@ -144,6 +179,12 @@ function renderHealthDetails() {
                             <span style="color: var(--text-tertiary);">Last Run:</span>
                             <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${formatMinutesToReadable(workflow.age_minutes)}</span>
                         </div>
+                        ${workflow.updated_at ? `
+                        <div>
+                            <span style="color: var(--text-tertiary);">Last Updated:</span>
+                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${workflow.updated_at}</span>
+                        </div>
+                        ` : ''}
                         ${workflow.records_processed !== null ? `
                         <div>
                             <span style="color: var(--text-tertiary);">Records:</span>
