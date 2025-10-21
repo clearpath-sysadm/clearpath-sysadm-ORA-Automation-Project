@@ -21,7 +21,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.services.database.pg_utils import transaction_with_retry, is_workflow_enabled, update_workflow_last_run
-from src.services.shipstation.api_client import get_shipstation_credentials
+from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from utils.api_utils import make_api_request
 
 SHIPSTATION_ORDERS_ENDPOINT = 'https://ssapi.shipstation.com/orders'
@@ -93,22 +93,29 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
             all_orders = []
             page = 1
             
+            # Get authentication headers
+            headers = get_shipstation_headers(api_key, api_secret)
+            
             while True:
                 params['page'] = page
                 response = make_api_request(
-                    'GET',
-                    SHIPSTATION_ORDERS_ENDPOINT,
-                    auth=(api_key, api_secret),
-                    params=params
+                    url=SHIPSTATION_ORDERS_ENDPOINT,
+                    method='GET',
+                    headers=headers,
+                    params=params,
+                    timeout=30
                 )
                 
-                if not response or 'orders' not in response:
+                # Parse JSON response
+                data = response.json()
+                
+                if not data or 'orders' not in data:
                     break
                 
-                orders = response['orders']
+                orders = data['orders']
                 all_orders.extend(orders)
                 
-                total_pages = response.get('pages', 1)
+                total_pages = data.get('pages', 1)
                 logger.info(f"📄 Page {page}/{total_pages}: {len(orders)} orders")
                 
                 if page >= total_pages:
