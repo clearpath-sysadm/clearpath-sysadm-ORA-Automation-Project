@@ -3998,7 +3998,7 @@ def api_confirm_delete_conflicting_order(conflict_id):
         cursor.execute("""
             SELECT shipstation_order_id, new_order_number, new_shipstation_order_id
             FROM manual_order_conflicts
-            WHERE id = %s AND resolution_status = 'pending'
+            WHERE id = %s
         """, (conflict_id,))
         
         row = cursor.fetchone()
@@ -4006,7 +4006,7 @@ def api_confirm_delete_conflicting_order(conflict_id):
             conn.close()
             return jsonify({
                 'success': False,
-                'error': 'Conflict not found or already resolved'
+                'error': 'Conflict not found'
             }), 404
         
         old_shipstation_order_id = row[0]
