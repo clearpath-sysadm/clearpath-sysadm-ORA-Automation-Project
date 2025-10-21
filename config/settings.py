@@ -36,10 +36,13 @@ else:
 def get_environment():
     """
     Returns a string representing the current environment: 'cloud', 'local', or 'unknown'.
-    - 'cloud': Running in Google Cloud Functions or App Engine
+    - 'cloud': Running in Replit (workspace or deployment), Google Cloud Functions, or App Engine
     - 'local': Running on a developer machine or local server
     - 'unknown': Could not determine
     """
+    # Replit environment (both development workspace and production deployment)
+    if os.environ.get('REPL_SLUG') or os.environ.get('REPLIT_DEPLOYMENT'):
+        return 'cloud'
     # Google Cloud Functions
     if os.environ.get('K_SERVICE') or os.environ.get('FUNCTION_TARGET'):
         return 'cloud'
