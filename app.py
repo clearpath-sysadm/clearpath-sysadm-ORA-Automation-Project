@@ -98,7 +98,7 @@ def health_check():
         return jsonify({
             'environment': 'PRODUCTION' if is_production else 'DEVELOPMENT',
             'repl_slug': repl_slug,
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.utcnow().isoformat() + 'Z',  # UTC timestamp with Z suffix
             'workflows': workflow_status,
             'database_connected': True
         })
