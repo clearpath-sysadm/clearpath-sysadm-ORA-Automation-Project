@@ -20,6 +20,9 @@
     <!-- Contextual Help Tooltips -->
     <link rel="stylesheet" href="/static/tooltips.css">
     
+    <!-- Health Check Modal -->
+    <script src="/static/health-check-modal.js" defer></script>
+    
 </head>
 <body>
     <!-- Shipping Violations Alert Banner -->
@@ -46,6 +49,19 @@
             </div>
             <div id="violations-list">
                 <p style="text-align: center; color: var(--text-tertiary);">Loading violations...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Production Health Modal -->
+    <div class="violations-modal" id="health-modal" onclick="closeModalOnBackdrop(event)">
+        <div class="violations-modal-content">
+            <div class="violations-modal-header">
+                <h2 class="violations-modal-title">🏥 Production Health Check</h2>
+                <button class="btn-close-modal" onclick="closeHealthModal()">×</button>
+            </div>
+            <div id="health-details">
+                <p style="text-align: center; color: var(--text-tertiary);">Loading health data...</p>
             </div>
         </div>
     </div>
@@ -314,7 +330,7 @@
                             <div class="stat-label">System Status</div>
                             <div class="stat-change">All services operational</div>
                         </div>
-                        <div class="stat-card hidden" data-stat-card id="production-health-card" style="cursor: pointer;" onclick="window.open('/health', '_blank')">
+                        <div class="stat-card hidden" data-stat-card id="production-health-card" style="cursor: pointer;" onclick="openHealthModal()">
                             <div class="stat-value" id="prod-health-status">
                                 <span class="status-indicator status-gray"></span> Checking...
                             </div>
