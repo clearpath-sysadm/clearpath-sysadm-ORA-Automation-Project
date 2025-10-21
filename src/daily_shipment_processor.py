@@ -380,7 +380,7 @@ def get_weekly_history_from_db(target_skus):
             FROM weekly_shipped_history
             WHERE sku IN ({})
             ORDER BY start_date, sku
-        """.format(','.join('?' * len(target_skus))), tuple(target_skus))
+        """.format(','.join(['%s'] * len(target_skus))), tuple(target_skus))
         
         if not rows:
             logger.warning("No weekly history found in database")
