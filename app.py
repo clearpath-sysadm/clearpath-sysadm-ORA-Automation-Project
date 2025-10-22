@@ -23,7 +23,7 @@ app.config['JSON_SORT_KEYS'] = False
 DB_PATH = os.path.join(project_root, 'ora.db')
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'help.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html']
 
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
@@ -4855,6 +4855,175 @@ def update_workflow_control(workflow_name):
         return jsonify({'success': True, 'workflow': workflow_name, 'enabled': enabled})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/incidents', methods=['GET'])
+def get_incidents():
+    """Get all production incidents with optional filtering"""
+    try:
+        status_filter = request.args.get('status')
+        severity_filter = request.args.get('severity')
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT id, title, description, severity, status, reported_by, created_at, updated_at
+            FROM production_incidents
+            WHERE 1=1
+        """
+        params = []
+        
+        if status_filter:
+            query += " AND status = %s"
+            params.append(status_filter)
+        
+        if severity_filter:
+            query += " AND severity = %s"
+            params.append(severity_filter)
+        
+        query += " ORDER BY created_at DESC"
+        
+        cursor.execute(query, params)
+        incidents = cursor.fetchall()
+        
+        result = []
+        for inc in incidents:
+            cursor.execute("""
+                SELECT id, note_type, note, created_by, created_at
+                FROM incident_notes
+                WHERE incident_id = %s
+                ORDER BY created_at DESC
+            """, (inc[0],))
+            notes = cursor.fetchall()
+            
+            result.append({
+                'id': inc[0],
+                'title': inc[1],
+                'description': inc[2],
+                'severity': inc[3],
+                'status': inc[4],
+                'reported_by': inc[5],
+                'created_at': inc[6].isoformat() if inc[6] else None,
+                'updated_at': inc[7].isoformat() if inc[7] else None,
+                'notes': [{
+                    'id': n[0],
+                    'note_type': n[1],
+                    'note': n[2],
+                    'created_by': n[3],
+                    'created_at': n[4].isoformat() if n[4] else None
+                } for n in notes]
+            })
+        
+        conn.close()
+        return jsonify({'success': True, 'incidents': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/incidents', methods=['POST'])
+def create_incident():
+    """Create a new production incident"""
+    try:
+        data = request.json
+        title = data.get('title', '').strip()
+        description = data.get('description', '').strip()
+        severity = data.get('severity', 'medium').lower()
+        reported_by = data.get('reported_by', 'Dashboard User')
+        
+        if not title or not description:
+            return jsonify({'success': False, 'error': 'Title and description required'}), 400
+        
+        if severity not in ['low', 'medium', 'high', 'critical']:
+            return jsonify({'success': False, 'error': 'Invalid severity level'}), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO production_incidents (title, description, severity, status, reported_by)
+            VALUES (%s, %s, %s, 'new', %s)
+            RETURNING id, created_at
+        """, (title, description, severity, reported_by))
+        
+        incident_id, created_at = cursor.fetchone()
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'incident_id': incident_id,
+            'created_at': created_at.isoformat() if created_at else None
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/incidents/<int:incident_id>', methods=['PUT'])
+def update_incident(incident_id):
+    """Update incident status or details"""
+    try:
+        data = request.json
+        status = data.get('status')
+        
+        if not status or status not in ['new', 'in_progress', 'resolved', 'closed']:
+            return jsonify({'success': False, 'error': 'Invalid status'}), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE production_incidents
+            SET status = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (status, incident_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'incident_id': incident_id, 'status': status})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/incidents/<int:incident_id>/notes', methods=['POST'])
+def add_incident_note(incident_id):
+    """Add a note/update to an incident"""
+    try:
+        data = request.json
+        note = data.get('note', '').strip()
+        note_type = data.get('note_type', 'system')
+        created_by = data.get('created_by', 'System')
+        
+        if not note:
+            return jsonify({'success': False, 'error': 'Note content required'}), 400
+        
+        if note_type not in ['user', 'system']:
+            note_type = 'system'
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO incident_notes (incident_id, note_type, note, created_by)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id, created_at
+        """, (incident_id, note_type, note, created_by))
+        
+        note_id, created_at = cursor.fetchone()
+        
+        cursor.execute("""
+            UPDATE production_incidents
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (incident_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'note_id': note_id,
+            'created_at': created_at.isoformat() if created_at else None
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
