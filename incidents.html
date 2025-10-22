@@ -46,6 +46,11 @@
         .severity-high { background: #FFE5CC; color: #E67E22; }
         .severity-critical { background: var(--error-bg); color: var(--error-color); }
         
+        .status-badge-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
         .status-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
@@ -53,7 +58,6 @@
             font-size: 0.75rem;
             font-weight: 500;
             cursor: pointer;
-            position: relative;
             transition: transform 0.2s, box-shadow 0.2s;
             user-select: none;
         }
@@ -801,7 +805,7 @@
                     <td>${incident.id}</td>
                     <td><strong>${escapeHtml(incident.title)}</strong></td>
                     <td><span class="severity-badge severity-${incident.severity}">${incident.severity}</span></td>
-                    <td><span class="status-badge status-${incident.status}" onclick="showStatusDropdown(event, ${incident.id}, '${incident.status}')">${formatStatus(incident.status)}</span></td>
+                    <td><div class="status-badge-wrapper"><span class="status-badge status-${incident.status}" onclick="showStatusDropdown(event, ${incident.id}, '${incident.status}')">${formatStatus(incident.status)}</span></div></td>
                     <td>${escapeHtml(incident.reported_by)}</td>
                     <td>${formatDate(incident.created_at)}</td>
                     <td>
@@ -821,7 +825,7 @@
                     </div>
                     <div class="incident-card-badges">
                         <span class="severity-badge severity-${incident.severity}">${incident.severity}</span>
-                        <span class="status-badge status-${incident.status}" onclick="showStatusDropdown(event, ${incident.id}, '${incident.status}')">${formatStatus(incident.status)}</span>
+                        <div class="status-badge-wrapper"><span class="status-badge status-${incident.status}" onclick="showStatusDropdown(event, ${incident.id}, '${incident.status}')">${formatStatus(incident.status)}</span></div>
                     </div>
                     <div class="incident-card-meta">
                         <div class="incident-card-meta-item">
@@ -1261,10 +1265,10 @@
                 </div>
             `;
             
-            // Position dropdown relative to clicked badge
+            // Append dropdown to wrapper (parent of badge)
             const badge = event.target;
-            badge.style.position = 'relative';
-            badge.appendChild(dropdown);
+            const wrapper = badge.parentElement;
+            wrapper.appendChild(dropdown);
             
             activeDropdown = dropdown;
         }
