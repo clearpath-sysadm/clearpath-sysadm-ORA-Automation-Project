@@ -4975,6 +4975,10 @@ def update_incident(incident_id):
             WHERE id = %s
         """, (status, incident_id))
         
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({'success': False, 'error': f'Incident {incident_id} not found'}), 404
+        
         conn.commit()
         conn.close()
         
@@ -4999,6 +5003,14 @@ def add_incident_note(incident_id):
         
         conn = get_connection()
         cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id FROM production_incidents WHERE id = %s
+        """, (incident_id,))
+        
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'success': False, 'error': f'Incident {incident_id} not found'}), 404
         
         cursor.execute("""
             INSERT INTO incident_notes (incident_id, note_type, note, created_by)
