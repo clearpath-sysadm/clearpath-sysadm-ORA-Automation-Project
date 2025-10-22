@@ -349,40 +349,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     }
 
-    // Check for first-time user
-    const hasSeenWelcome = localStorage.getItem('hasSeenWelcomeTour');
-    if (!hasSeenWelcome && window.location.pathname === '/') {
-        localStorage.setItem('hasSeenWelcomeTour', 'true');
-        
-        // Show welcome modal
-        const welcomeModal = document.createElement('div');
-        welcomeModal.id = 'welcome-tour-modal';
-        welcomeModal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-        `;
-        welcomeModal.innerHTML = `
-            <div style="background: white; border-radius: 16px; padding: 40px; max-width: 500px; text-align: center;">
-                <h2 style="font-size: 24px; margin-bottom: 16px; color: #222;">👋 Welcome to ORA Automation!</h2>
-                <p style="font-size: 16px; line-height: 1.6; color: #555; margin-bottom: 24px;">
-                    This system handles your fulfillment operations automatically. Would you like a quick 3-minute tour to get started?
-                </p>
-                <div style="display: flex; gap: 12px; justify-content: center;">
-                    <button onclick="document.getElementById('welcome-tour-modal').remove()" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Skip for now</button>
-                    <button onclick="document.getElementById('welcome-tour-modal').remove(); window.tour = new GuidedTour(TOURS.welcome); window.tour.start();" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Start Tour →</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(welcomeModal);
-    }
+    // Welcome tour disabled - users can access from Help & Training page
+    // const hasSeenWelcome = localStorage.getItem('hasSeenWelcomeTour');
+    // if (!hasSeenWelcome && window.location.pathname === '/') {
+    //     localStorage.setItem('hasSeenWelcomeTour', 'true');
+    //     
+    //     // Show welcome modal
+    //     const welcomeModal = document.createElement('div');
+    //     welcomeModal.id = 'welcome-tour-modal';
+    //     welcomeModal.style.cssText = `
+    //         position: fixed;
+    //         top: 0;
+    //         left: 0;
+    //         width: 100%;
+    //         height: 100%;
+    //         background-color: rgba(0, 0, 0, 0.8);
+    //         display: flex;
+    //         align-items: center;
+    //         justify-content: center;
+    //         z-index: 10000;
+    //     `;
+    //     welcomeModal.innerHTML = `
+    //         <div style="background: white; border-radius: 16px; padding: 40px; max-width: 500px; text-align: center;">
+    //             <h2 style="font-size: 24px; margin-bottom: 16px; color: #222;">👋 Welcome to ORA Automation!</h2>
+    //             <p style="font-size: 16px; line-height: 1.6; color: #555; margin-bottom: 24px;">
+    //                 This system handles your fulfillment operations automatically. Would you like a quick 3-minute tour to get started?
+    //             </p>
+    //             <div style="display: flex; gap: 12px; justify-content: center;">
+    //                 <button onclick="document.getElementById('welcome-tour-modal').remove()" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Skip for now</button>
+    //                 <button onclick="document.getElementById('welcome-tour-modal').remove(); window.tour = new GuidedTour(TOURS.welcome); window.tour.start();" style="background: white; border: 1px solid #D1D5DB; color: #374151; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">Start Tour →</button>
+    //             </div>
+    //         </div>
+    //     `;
+    //     document.body.appendChild(welcomeModal);
+    // }
 });
 
 // Global function to start tours
