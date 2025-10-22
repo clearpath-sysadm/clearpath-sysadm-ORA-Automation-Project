@@ -1,134 +1,185 @@
 # ORA Automation Documentation
 
-This directory contains all project documentation organized into 5 main categories for easy navigation.
+This directory uses the **Diataxis documentation framework** - an industry-standard system for organizing technical documentation by user needs.
+
+## 📐 The Diataxis Framework
+
+Documentation is organized into 4 categories based on **what users need to do**:
+
+| Category | Purpose | When to Use |
+|----------|---------|-------------|
+| **📚 Guides** | Learning & doing tasks | "How do I...?" |
+| **📖 Reference** | Technical specifications | "What does this do?" |
+| **🏛️ Explanation** | Understanding concepts | "Why does it work this way?" |
+| **📜 History** | Historical records | "What happened?" |
+
+```
+Learn a skill → guides/          Need specifics → reference/
+Understand why → explanation/    Past events → history/
+```
+
+---
 
 ## 📁 Directory Structure
 
 ### Root-Level Documents
-- **[PROJECT_JOURNAL.md](PROJECT_JOURNAL.md)** - Chronological log of all development work and milestones
-- **[PRODUCTION_INCIDENT_LOG.md](PRODUCTION_INCIDENT_LOG.md)** - Critical issues, root cause analysis, and resolutions
+- **[PROJECT_JOURNAL.md](PROJECT_JOURNAL.md)** - Chronological log of all development milestones
+- **[PRODUCTION_INCIDENT_LOG.md](PRODUCTION_INCIDENT_LOG.md)** - Critical issues and resolutions
 - **README.md** (this file) - Documentation organization guide
 
 ---
 
-### 1. 🎯 [features/](features/)
-**Feature planning and implementation documentation**
+## 📚 [guides/](guides/)
+**Learning-oriented & task-oriented documentation**
 
-Contains design documents, implementation plans, and technical specifications for system features:
-- EOD/EOW/EOM button system design
-- Optimized polling implementation plans
-- Unified ShipStation sync architecture
-- Lot number validation and auto-update logic
-- Workflow control system design
-- Bug fix documentation
+Step-by-step instructions for accomplishing specific tasks. These are practical tutorials that teach you how to use the system.
 
-**Key Files:**
-- `EOD_EOW_EOM_BUTTON_SYSTEM.md` - Physical inventory controls design
-- `UNIFIED_SHIPSTATION_SYNC_PLAN.md` - Status sync and manual order import
-- `OPTIMIZED_POLLING_IMPLEMENTATION_PLAN_V3_FINAL.md` - Latest polling optimization
-- `WORKFLOW_CONTROL_IMPLEMENTATION_PLAN.md` - Workflow management system
+**When to use:** "How do I configure workflows?" "How do I manage orders?"
+
+**Contents:**
+- `user-manual.md` - Complete system user guide for daily operations
+- `workflow-controls.md` - How to enable/disable and monitor workflows
+- `database-operations.md` - How to maintain and operate the database
+
+**Target Audience:** New users, operators, anyone learning to use the system
 
 ---
 
-### 2. 🏗️ [architecture/](architecture/)
-**System architecture, database design, and project planning**
+## 📖 [reference/](reference/)
+**Information-oriented technical specifications**
 
-Contains high-level system design, database schemas, and project requirements:
-- Database schema and normalization
-- Project requirements and specifications
-- System architecture decisions
+Precise technical descriptions of how the system works. Dry, accurate, comprehensive reference material.
 
-**Key Files:**
-- `DATABASE_SCHEMA.md` - Complete database structure documentation
-- `PROJECT_PLAN.md` - Overall project roadmap
-- `REQUIREMENTS.md` - System requirements specification
-- `database-normalization-v2-0.md` - Database normalization work
+**When to use:** "What's the database schema?" "What are the API endpoints?"
 
----
+**Contents:**
+- `database-schema.md` - Complete database structure and relationships
+- `requirements.md` - System requirements and specifications
+- `api-integration.md` - External API integration specifications
+- `authentication-analysis.md` - Authentication system specifications
+- `authentication-questionnaire.md` - Auth implementation requirements
 
-### 3. 🔧 [operations/](operations/)
-**User manuals and operational guides**
-
-Contains documentation for system operators and end users:
-- User manuals for dashboard and features
-- Workflow control guides
-- Database operations reference
-
-**Key Files:**
-- `USER_MANUAL.md` - Complete system user guide
-- `WORKFLOW_CONTROLS_USER_MANUAL.md` - Workflow management instructions
-- `DATABASE_OPERATIONS.md` - Database maintenance and operations
+**Target Audience:** Developers, architects, anyone who needs precise technical details
 
 ---
 
-### 4. 🔌 [integrations/](integrations/)
-**API and authentication integration documentation**
+## 🏛️ [explanation/](explanation/)
+**Understanding-oriented conceptual documentation**
 
-Contains integration guides for external services and APIs:
-- ShipStation API integration
-- Google Drive integration
-- Authentication requirements and analysis
+Big-picture explanations of why the system is designed the way it is. Helps you understand context and rationale.
 
-**Key Files:**
-- `API_INTEGRATION.md` - External API integration guide
-- `auth-requirements-analysis.md` - Authentication system analysis
-- `auth-requirements-questionnaire.md` - Auth implementation questionnaire
+**When to use:** "Why use PostgreSQL?" "How does the architecture work?"
 
----
+**Contents:**
+- `project-plan.md` - Overall project strategy and roadmap
+- `database-normalization.md` - Why and how the database is normalized
+- **`features/`** - Design documents explaining feature architecture:
+  - `EOD_EOW_EOM_BUTTON_SYSTEM.md` - Physical inventory control design
+  - `UNIFIED_SHIPSTATION_SYNC_PLAN.md` - Sync architecture explanation
+  - `OPTIMIZED_POLLING_IMPLEMENTATION_PLAN_V3_FINAL.md` - Polling strategy
+  - `WORKFLOW_CONTROL_IMPLEMENTATION_PLAN.md` - Workflow system design
+  - And 10 more feature design documents
 
-### 5. 📜 [historical/](historical/)
-**Historical remediation and fix documentation**
-
-Contains documentation of past issues, migrations, and remediation efforts:
-- SQLite to PostgreSQL migration (October 2025)
-- Manual orders remediation (October 2025)
-- Duplicate order detection and cleanup
-- Historical bug fixes and corrections
-- Legacy planning documents
-
-**Key Files:**
-- `SQLITE_TO_POSTGRESQL_REMEDIATION_PLAN.md` - Database migration documentation
-- `MANUAL_ORDERS_COMPLETE_HISTORY.md` - Manual orders fix history
-- `REMEDIATION_PLAN.md` - Duplicate order remediation
-- `DUPLICATE_DETECTION_FIX.md` - Duplicate detection system fixes
-- `PLAN_CORRECTIONS.md` - Historical plan corrections
+**Target Audience:** Developers, architects, anyone making design decisions
 
 ---
 
-## 🔍 Quick Reference
+## 📜 [history/](history/)
+**Historical records and past remediation**
 
-### For New Team Members
-1. Start with `PROJECT_JOURNAL.md` for project history
-2. Review `architecture/REQUIREMENTS.md` for system requirements
-3. Read `operations/USER_MANUAL.md` for system usage
-4. Check `PRODUCTION_INCIDENT_LOG.md` for known issues
+Documentation of past issues, migrations, and fixes. Preserved for learning and reference.
 
-### For Developers
-1. `features/` - Feature specifications before implementation
-2. `architecture/DATABASE_SCHEMA.md` - Database structure
-3. `integrations/` - API integration guides
-4. `historical/` - Learn from past issues and fixes
+**When to use:** "How did we migrate to PostgreSQL?" "What was the manual orders issue?"
 
-### For Operators
-1. `operations/USER_MANUAL.md` - Daily operation guide
-2. `operations/WORKFLOW_CONTROLS_USER_MANUAL.md` - System controls
-3. `PRODUCTION_INCIDENT_LOG.md` - Production issue tracking
+**Contents:**
+- `SQLITE_TO_POSTGRESQL_REMEDIATION_PLAN.md` - Database migration (Oct 2025)
+- `MANUAL_ORDERS_COMPLETE_HISTORY.md` - Manual orders remediation
+- `REMEDIATION_PLAN.md` - Duplicate order cleanup
+- `DUPLICATE_DETECTION_FIX.md` - Detection system fixes
+- 11 more historical remediation documents
 
-### For Database Work
-- See `architecture/DATABASE_SCHEMA.md` for schema reference
-- Check `operations/DATABASE_OPERATIONS.md` for procedures
-- Review `historical/SQLITE_TO_POSTGRESQL_REMEDIATION_PLAN.md` for migration history
+**Target Audience:** Anyone troubleshooting similar issues, learning from past fixes
+
+---
+
+## 🔍 Quick Navigation
+
+### "I need to learn how to use the system"
+→ Start with **`guides/user-manual.md`**
+
+### "I need technical specifications"
+→ Check **`reference/`** (database schema, API specs, requirements)
+
+### "I need to understand why it works this way"
+→ Read **`explanation/`** (architecture, feature designs, rationale)
+
+### "I need to know what happened in the past"
+→ Review **`history/`** (migrations, remediations, incidents)
+
+### "I'm joining the team - where do I start?"
+1. `PROJECT_JOURNAL.md` - Project history overview
+2. `guides/user-manual.md` - Learn to use the system
+3. `reference/requirements.md` - Understand what it does
+4. `explanation/project-plan.md` - Understand the strategy
+5. `PRODUCTION_INCIDENT_LOG.md` - Learn from past issues
 
 ---
 
 ## 📝 Documentation Standards
 
-- **Active Documentation:** Keep root-level docs (PROJECT_JOURNAL, PRODUCTION_INCIDENT_LOG) up to date
-- **Historical Preservation:** Old remediation docs go to `historical/` for reference
-- **Feature Planning:** New features start in `features/` with implementation plans
-- **Incident Tracking:** All production issues documented in PRODUCTION_INCIDENT_LOG.md
-- **Naming Convention:** Use UPPERCASE with underscores for filenames (e.g., `FEATURE_NAME.md`)
+### Where to Put New Docs
+
+| Type of Document | Where It Goes | Example |
+|-----------------|---------------|---------|
+| How-to guide | `guides/` | "How to configure EOD workflows" |
+| API specification | `reference/` | "ShipStation API endpoints" |
+| Feature design | `explanation/features/` | "Why we chose watermark-based sync" |
+| Bug fix history | `history/` | "October 2025 duplicate order fix" |
+
+### Naming Conventions
+- Use lowercase with hyphens for file names: `feature-name.md`
+- Exception: Root-level docs use UPPERCASE: `PROJECT_JOURNAL.md`
+- Be descriptive: `workflow-controls.md` not `workflows.md`
+
+### Maintenance
+- **Active Documentation:** Keep root-level docs up to date
+- **Historical Preservation:** Don't delete old docs, move to `history/`
+- **Cross-Reference:** Link related documents across categories
+- **Update This README:** When adding new major documents
 
 ---
 
+## 🎯 The Diataxis Decision Tree
+
+```
+What do you need?
+
+├─ Learn to use it → guides/
+│  └─ Step-by-step tutorials
+│
+├─ Look up specifics → reference/
+│  └─ Technical specifications
+│
+├─ Understand concepts → explanation/
+│  └─ Architecture & design rationale
+│
+└─ Review history → history/
+   └─ Past issues & migrations
+```
+
+---
+
+## 📚 Further Reading on Diataxis
+
+The Diataxis framework is used by:
+- Google Cloud Documentation
+- Stripe Developer Docs
+- Django Documentation
+- Many enterprise projects
+
+Learn more: https://diataxis.fr/
+
+---
+
+*Documentation framework: Diataxis*  
 *Last Updated: October 2025*
