@@ -5053,6 +5053,25 @@ def update_incident(incident_id):
             if not status or status not in ['new', 'in_progress', 'resolved', 'closed']:
                 return jsonify({'success': False, 'error': 'Invalid status'}), 400
             
+            # WORKFLOW RULE: Definition of Done - Can't mark as "resolved" without proof
+            if status == 'resolved':
+                cursor.execute("""
+                    SELECT resolution FROM production_incidents WHERE id = %s
+                """, (incident_id,))
+                result = cursor.fetchone()
+                
+                if not result:
+                    conn.close()
+                    return jsonify({'success': False, 'error': 'Incident not found'}), 404
+                
+                resolution = result[0]
+                if not resolution or not resolution.strip():
+                    conn.close()
+                    return jsonify({
+                        'success': False, 
+                        'error': '❌ Definition of Done: Can\'t mark as "Resolved" without proof.\n\nPlease add Resolution with:\n1. Fix Applied\n2. Verified Working\n3. Evidence Captured'
+                    }), 400
+            
             cursor.execute("""
                 UPDATE production_incidents
                 SET status = %s, updated_at = CURRENT_TIMESTAMP

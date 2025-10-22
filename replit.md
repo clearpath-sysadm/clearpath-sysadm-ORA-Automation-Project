@@ -2,7 +2,7 @@
 
 > **📓 Project Journal:** For a chronological log of all development work and milestones, see [`/docs/PROJECT_JOURNAL.md`](docs/PROJECT_JOURNAL.md)
 >
-> **🚨 Production Incidents:** For critical issues, root cause analysis, and resolutions, see [`/docs/PRODUCTION_INCIDENT_LOG.md`](docs/PRODUCTION_INCIDENT_LOG.md)
+> **🚨 Production Incidents:** For critical issues, root cause analysis, and resolutions, see [`/docs/PRODUCTION_INCIDENT_LOG.md`](docs/PRODUCTION_INCIDENT_LOG.md) or use the **Production Incidents Tracker** (`/incidents.html`)
 >
 > **🧪 Test Suite:** For automated tests verifying critical functionality, see [`/tests/`](tests/)
 
@@ -51,6 +51,7 @@ A single centralized `global-styles.css` (25KB) defines the premium corporate de
 - **Lot Inventory Management (`lot_inventory.html`):** Auto-calculated FIFO inventory tracking per lot, based on initial quantities, manual adjustments, and shipped quantities.
 - **Workflow Controls System:** A programmatic system allowing on/off toggling for all automation workflows via the `workflow_controls` database table and a UI (`workflow_controls.html`). Changes persist and workflows respond within 60 seconds.
 - **Shipping Validation System:** An alert-only system that compares actual carrier/service information from ShipStation against expected rules (e.g., Hawaiian orders → FedEx 2Day). Violations are stored in `shipping_violations` and displayed on the dashboard with resolution capabilities.
+- **Production Incident Tracker (`incidents.html`):** Full-featured bug tracking system with severity levels, status management, cause/resolution documentation, screenshot attachments, and workflow enforcement. **Definition of Done Rule:** Incidents cannot be marked "Resolved" without a resolution documenting: (1) Fix Applied, (2) Verified Working, (3) Evidence Captured. This ensures accountability and prevents premature closure.
 - **Deployment:** The system is deployed as a continuous VM in Replit, using `start_all.sh` to launch the dashboard server and all 7 background automation workflows in parallel.
 
 ## External Dependencies

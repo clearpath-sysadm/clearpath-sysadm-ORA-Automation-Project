@@ -1000,6 +1000,15 @@
         async function handleStatusChange(newStatus) {
             if (!currentIncident || currentIncident.status === newStatus) return;
             
+            // WORKFLOW RULE: Definition of Done - Can't mark as "resolved" without proof
+            if (newStatus === 'resolved') {
+                if (!currentIncident.resolution || !currentIncident.resolution.trim()) {
+                    showError('❌ Definition of Done: Can\'t mark as "Resolved" without proof.\n\nPlease edit this incident and add a Resolution documenting:\n1. Fix Applied\n2. Verified Working\n3. Evidence Captured');
+                    document.getElementById('status-dropdown').value = currentIncident.status;
+                    return;
+                }
+            }
+            
             // Confirm status change
             const statusLabels = {
                 'new': 'New',
