@@ -644,7 +644,11 @@ def run_scheduled_upload():
     environment = os.getenv('ENVIRONMENT', '').lower()
     
     # Detect development environment
-    is_dev = (repl_slug == 'workspace' or environment == 'development')
+    # ENVIRONMENT=production explicitly overrides REPL_SLUG check
+    if environment == 'production':
+        is_dev = False
+    else:
+        is_dev = (repl_slug == 'workspace' or environment == 'development')
     
     if is_dev:
         logger.warning("=" * 80)
