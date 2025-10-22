@@ -4961,28 +4961,57 @@ def update_incident(incident_id):
     """Update incident status or details"""
     try:
         data = request.json
-        status = data.get('status')
-        
-        if not status or status not in ['new', 'in_progress', 'resolved', 'closed']:
-            return jsonify({'success': False, 'error': 'Invalid status'}), 400
         
         conn = get_connection()
         cursor = conn.cursor()
         
-        cursor.execute("""
-            UPDATE production_incidents
-            SET status = %s, updated_at = CURRENT_TIMESTAMP
-            WHERE id = %s
-        """, (status, incident_id))
-        
-        if cursor.rowcount == 0:
+        # Check if this is a status-only update or a full edit
+        if 'status' in data and len(data) == 1:
+            # Status-only update
+            status = data.get('status')
+            if not status or status not in ['new', 'in_progress', 'resolved', 'closed']:
+                return jsonify({'success': False, 'error': 'Invalid status'}), 400
+            
+            cursor.execute("""
+                UPDATE production_incidents
+                SET status = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """, (status, incident_id))
+            
+            if cursor.rowcount == 0:
+                conn.close()
+                return jsonify({'success': False, 'error': f'Incident {incident_id} not found'}), 404
+            
+            conn.commit()
             conn.close()
-            return jsonify({'success': False, 'error': f'Incident {incident_id} not found'}), 404
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({'success': True, 'incident_id': incident_id, 'status': status})
+            
+            return jsonify({'success': True, 'incident_id': incident_id, 'status': status})
+        else:
+            # Full edit update (title, description, severity)
+            title = data.get('title')
+            description = data.get('description')
+            severity = data.get('severity')
+            
+            if not title or not description or not severity:
+                return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+            
+            if severity not in ['low', 'medium', 'high', 'critical']:
+                return jsonify({'success': False, 'error': 'Invalid severity'}), 400
+            
+            cursor.execute("""
+                UPDATE production_incidents
+                SET title = %s, description = %s, severity = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """, (title, description, severity, incident_id))
+            
+            if cursor.rowcount == 0:
+                conn.close()
+                return jsonify({'success': False, 'error': f'Incident {incident_id} not found'}), 404
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'success': True, 'incident_id': incident_id})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

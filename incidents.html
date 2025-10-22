@@ -568,6 +568,7 @@
                     <td>
                         <div class="incident-actions">
                             <button class="btn btn-sm btn-secondary" onclick="viewIncident(${incident.id})">View</button>
+                            <button class="btn btn-sm btn-primary" onclick="showEditModal(${incident.id})">Edit</button>
                         </div>
                     </td>
                 </tr>
@@ -597,7 +598,10 @@
                             <div class="incident-card-meta-value">${formatDate(incident.created_at)}</div>
                         </div>
                     </div>
-                    <button class="btn btn-secondary" onclick="viewIncident(${incident.id})" style="width: 100%;">View Details</button>
+                    <div style="display: flex; gap: calc(var(--spacing-unit)); margin-top: calc(var(--spacing-unit));">
+                        <button class="btn btn-secondary" onclick="viewIncident(${incident.id})" style="flex: 1;">View</button>
+                        <button class="btn btn-primary" onclick="showEditModal(${incident.id})" style="flex: 1;">Edit</button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -768,6 +772,52 @@
         function hideDetailModal() {
             document.getElementById('detail-modal').style.display = 'none';
             currentIncident = null;
+        }
+
+        function showEditModal(incidentId) {
+            const incident = allIncidents.find(inc => inc.id === incidentId);
+            if (!incident) return;
+            
+            document.getElementById('edit-incident-id').value = incident.id;
+            document.getElementById('edit-incident-title').value = incident.title;
+            document.getElementById('edit-incident-description').value = incident.description;
+            document.getElementById('edit-incident-severity').value = incident.severity;
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function hideEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            document.getElementById('edit-form').reset();
+        }
+
+        async function saveIncidentEdit(event) {
+            event.preventDefault();
+            
+            const incidentId = document.getElementById('edit-incident-id').value;
+            const title = document.getElementById('edit-incident-title').value;
+            const description = document.getElementById('edit-incident-description').value;
+            const severity = document.getElementById('edit-incident-severity').value;
+            
+            try {
+                const response = await fetch(`/api/incidents/${incidentId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, severity })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    hideEditModal();
+                    await loadIncidents();
+                    showSuccess('Incident updated successfully');
+                } else {
+                    showError(data.error || 'Failed to update incident');
+                }
+            } catch (error) {
+                console.error('Error updating incident:', error);
+                showError('Error updating incident');
+            }
         }
 
         // Utility functions
