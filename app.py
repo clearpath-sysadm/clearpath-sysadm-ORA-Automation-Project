@@ -4,8 +4,10 @@ Serves the dashboard UI and provides API endpoints for real-time data.
 """
 import os
 import sys
+import uuid
 from flask import Flask, jsonify, render_template, send_from_directory, request
 from datetime import datetime, timedelta
+from werkzeug.utils import secure_filename
 
 # Add project root to path
 project_root = os.path.abspath(os.path.dirname(__file__))
@@ -18,6 +20,14 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # Configure Flask
 app.config['JSON_SORT_KEYS'] = False
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['UPLOAD_FOLDER'] = os.path.join(project_root, 'uploads', 'incident_screenshots')
+
+# Allowed file extensions for screenshots
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Database path
 DB_PATH = os.path.join(project_root, 'ora.db')
@@ -5065,6 +5075,158 @@ def add_incident_note(incident_id):
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# Screenshot Management Endpoints
+@app.route('/api/incidents/<int:incident_id>/screenshots', methods=['POST'])
+def upload_incident_screenshot(incident_id):
+    """Upload a screenshot for an incident"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'Invalid file type. Allowed: png, jpg, jpeg, gif, webp'}), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Verify incident exists
+        cursor.execute("SELECT id FROM production_incidents WHERE id = %s", (incident_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'success': False, 'error': 'Incident not found'}), 404
+        
+        # Generate unique filename
+        original_filename = secure_filename(file.filename)
+        file_ext = original_filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"{uuid.uuid4()}.{file_ext}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        
+        # Save file
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        file.save(file_path)
+        
+        # Get file size
+        file_size = os.path.getsize(file_path)
+        
+        # Save to database
+        uploaded_by = request.form.get('uploaded_by', 'Dashboard User')
+        cursor.execute("""
+            INSERT INTO production_incident_screenshots 
+            (incident_id, file_path, original_filename, file_size, uploaded_by)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, uploaded_at
+        """, (incident_id, unique_filename, original_filename, file_size, uploaded_by))
+        
+        screenshot_id, uploaded_at = cursor.fetchone()
+        
+        # Update incident timestamp
+        cursor.execute("""
+            UPDATE production_incidents
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (incident_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'screenshot': {
+                'id': screenshot_id,
+                'file_path': unique_filename,
+                'original_filename': original_filename,
+                'file_size': file_size,
+                'uploaded_by': uploaded_by,
+                'uploaded_at': uploaded_at.isoformat() if uploaded_at else None
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/incidents/<int:incident_id>/screenshots', methods=['GET'])
+def get_incident_screenshots(incident_id):
+    """Get all screenshots for an incident"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, file_path, original_filename, file_size, uploaded_by, uploaded_at
+            FROM production_incident_screenshots
+            WHERE incident_id = %s
+            ORDER BY uploaded_at DESC
+        """, (incident_id,))
+        
+        screenshots = []
+        for row in cursor.fetchall():
+            screenshots.append({
+                'id': row[0],
+                'file_path': row[1],
+                'original_filename': row[2],
+                'file_size': row[3],
+                'uploaded_by': row[4],
+                'uploaded_at': row[5].isoformat() if row[5] else None,
+                'url': f'/uploads/incident_screenshots/{row[1]}'
+            })
+        
+        conn.close()
+        return jsonify({'success': True, 'screenshots': screenshots})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/incidents/screenshots/<int:screenshot_id>', methods=['DELETE'])
+def delete_incident_screenshot(screenshot_id):
+    """Delete a screenshot"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get screenshot info
+        cursor.execute("""
+            SELECT file_path, incident_id
+            FROM production_incident_screenshots
+            WHERE id = %s
+        """, (screenshot_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Screenshot not found'}), 404
+        
+        file_path, incident_id = result
+        
+        # Delete from database
+        cursor.execute("DELETE FROM production_incident_screenshots WHERE id = %s", (screenshot_id,))
+        
+        # Update incident timestamp
+        cursor.execute("""
+            UPDATE production_incidents
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (incident_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        # Delete physical file
+        full_path = os.path.join(app.config['UPLOAD_FOLDER'], file_path)
+        if os.path.exists(full_path):
+            os.remove(full_path)
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/uploads/incident_screenshots/<path:filename>')
+def serve_screenshot(filename):
+    """Serve uploaded screenshot files"""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
