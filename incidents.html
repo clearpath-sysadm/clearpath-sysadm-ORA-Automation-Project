@@ -134,6 +134,97 @@
             padding-top: calc(var(--spacing-unit) * 2);
             border-top: 1px solid var(--border-color);
         }
+        
+        /* Mobile Cards */
+        .incidents-mobile-cards {
+            display: none;
+        }
+        
+        .incident-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .incident-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: calc(var(--spacing-unit) * 2);
+            gap: calc(var(--spacing-unit) * 2);
+        }
+        
+        .incident-card-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-primary);
+            flex: 1;
+        }
+        
+        .incident-card-badges {
+            display: flex;
+            gap: calc(var(--spacing-unit));
+            margin-bottom: calc(var(--spacing-unit) * 1.5);
+        }
+        
+        .incident-card-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: calc(var(--spacing-unit) * 1.5);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+        
+        .incident-card-meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .incident-card-meta-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .incident-card-meta-value {
+            color: var(--text-primary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .incidents-mobile-cards {
+                display: block;
+            }
+            
+            .table-container {
+                display: none;
+            }
+            
+            .filters-bar {
+                flex-direction: column;
+                gap: calc(var(--spacing-unit) * 1.5);
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .filter-group select {
+                flex: 1;
+            }
+            
+            .incident-meta {
+                flex-direction: column;
+                gap: calc(var(--spacing-unit) * 1.5);
+            }
+        }
     </style>
 </head>
 <body>
@@ -274,7 +365,7 @@
                     </button>
                 </div>
 
-                <!-- Incidents Table -->
+                <!-- Incidents Table (Desktop) -->
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">All Incidents</h2>
@@ -302,6 +393,13 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Incidents Cards (Mobile) -->
+                <div class="incidents-mobile-cards" id="incidents-mobile-cards">
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        Loading incidents...
                     </div>
                 </div>
             </div>
@@ -409,12 +507,15 @@
 
         function renderIncidents() {
             const tbody = document.getElementById('incidents-tbody');
+            const mobileCards = document.getElementById('incidents-mobile-cards');
             
             if (allIncidents.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No incidents found</td></tr>';
+                mobileCards.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No incidents found</div>';
                 return;
             }
             
+            // Render desktop table
             tbody.innerHTML = allIncidents.map(incident => `
                 <tr>
                     <td>${incident.id}</td>
@@ -429,6 +530,34 @@
                         </div>
                     </td>
                 </tr>
+            `).join('');
+            
+            // Render mobile cards
+            mobileCards.innerHTML = allIncidents.map(incident => `
+                <div class="incident-card">
+                    <div class="incident-card-header">
+                        <div class="incident-card-title">${escapeHtml(incident.title)}</div>
+                    </div>
+                    <div class="incident-card-badges">
+                        <span class="severity-badge severity-${incident.severity}">${incident.severity}</span>
+                        <span class="status-badge status-${incident.status}">${formatStatus(incident.status)}</span>
+                    </div>
+                    <div class="incident-card-meta">
+                        <div class="incident-card-meta-item">
+                            <div class="incident-card-meta-label">ID</div>
+                            <div class="incident-card-meta-value">#${incident.id}</div>
+                        </div>
+                        <div class="incident-card-meta-item">
+                            <div class="incident-card-meta-label">Reported By</div>
+                            <div class="incident-card-meta-value">${escapeHtml(incident.reported_by)}</div>
+                        </div>
+                        <div class="incident-card-meta-item">
+                            <div class="incident-card-meta-label">Created</div>
+                            <div class="incident-card-meta-value">${formatDate(incident.created_at)}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="viewIncident(${incident.id})" style="width: 100%;">View Details</button>
+                </div>
             `).join('');
         }
 
