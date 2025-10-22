@@ -163,6 +163,22 @@ def upload_pending_orders():
     RACE CONDITION FIX: Uses atomic claiming with run-specific identifier to prevent
     duplicate uploads when multiple upload runs execute concurrently.
     """
+    # ============================================
+    # CRITICAL SAFETY CHECK: Prevent dev uploads
+    # ============================================
+    # Belt-and-suspenders approach: Check environment INSIDE upload function
+    # This prevents accidental uploads even if workflow-level checks fail
+    repl_slug = os.getenv('REPL_SLUG', '').lower()
+    environment = os.getenv('ENVIRONMENT', '').lower()
+    
+    # Block workspace environments - REPL_SLUG takes priority over ENVIRONMENT
+    # This prevents accidental uploads even if ENVIRONMENT=production is set in dev
+    if 'workspace' in repl_slug:
+        logger.warning(f"🛑 UPLOAD BLOCKED: Workspace environment detected (REPL_SLUG={repl_slug})")
+        logger.warning("   Uploads are only allowed in production deployments, not workspaces")
+        logger.warning("   Deploy this code to enable uploads safely")
+        return 0
+    
     # Generate unique run identifier for this upload batch (outside try block for exception handler)
     run_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
     
@@ -644,11 +660,14 @@ def run_scheduled_upload():
     environment = os.getenv('ENVIRONMENT', '').lower()
     
     # Detect development environment
-    # ENVIRONMENT=production explicitly overrides REPL_SLUG check
-    if environment == 'production':
-        is_dev = False
+    # CRITICAL FIX: REPL_SLUG takes priority - if it contains "workspace", block uploads
+    # This prevents accidental uploads even if ENVIRONMENT=production is incorrectly set in dev
+    if 'workspace' in repl_slug:
+        is_dev = True  # Always block workspace environments
+    elif environment == 'production':
+        is_dev = False  # Only trust ENVIRONMENT=production if REPL_SLUG is not workspace
     else:
-        is_dev = (repl_slug == 'workspace' or environment == 'development')
+        is_dev = True  # Default to blocking (safe default)
     
     if is_dev:
         logger.warning("=" * 80)

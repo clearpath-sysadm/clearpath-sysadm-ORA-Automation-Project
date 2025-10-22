@@ -3434,12 +3434,12 @@ def api_refresh_units_to_ship():
 
 @app.route('/api/local/awaiting_shipment_count', methods=['GET'])
 def api_get_local_awaiting_shipment_count():
-    """Get count of items in local DB that are not shipped or cancelled"""
+    """Get count of items in local DB that are ready to ship (excludes shipped, cancelled, on_hold)"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Count total units for all non-shipped, non-cancelled orders
+        # Count total units for all orders ready to ship (exclude shipped, cancelled, on_hold)
         cursor.execute("""
             SELECT 
                 COUNT(DISTINCT o.id) as order_count,
@@ -3447,7 +3447,49 @@ def api_get_local_awaiting_shipment_count():
                 MAX(o.created_at) as last_updated
             FROM orders_inbox o
             LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
-            WHERE o.status NOT IN ('shipped', 'cancelled')
+            WHERE o.status NOT IN ('shipped', 'cancelled', 'on_hold')
+        """)
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            order_count, total_units, last_updated = result
+            return jsonify({
+                'success': True,
+                'total_units': total_units or 0,
+                'order_count': order_count or 0,
+                'last_updated': last_updated
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'total_units': 0,
+                'order_count': 0,
+                'last_updated': None
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/local/on_hold_count', methods=['GET'])
+def api_get_on_hold_count():
+    """Get count of items in local DB that are on hold"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Count total units for all on-hold orders
+        cursor.execute("""
+            SELECT 
+                COUNT(DISTINCT o.id) as order_count,
+                COALESCE(SUM(oi.quantity), 0) as total_units,
+                MAX(o.created_at) as last_updated
+            FROM orders_inbox o
+            LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
+            WHERE o.status = 'on_hold'
         """)
         
         result = cursor.fetchone()
