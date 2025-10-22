@@ -914,12 +914,17 @@
 
         function hideReportModal() {
             document.getElementById('report-modal').style.display = 'none';
+            document.getElementById('report-form').reset();
+            document.getElementById('report-screenshots-preview').innerHTML = '';
         }
 
         function hideDetailModal() {
             document.getElementById('detail-modal').style.display = 'none';
             currentIncident = null;
         }
+
+        // Track original values for edit modal
+        let originalEditValues = {};
 
         function showEditModal(incidentId) {
             const incident = allIncidents.find(inc => inc.id === incidentId);
@@ -929,12 +934,40 @@
             document.getElementById('edit-incident-title').value = incident.title;
             document.getElementById('edit-incident-description').value = incident.description;
             document.getElementById('edit-incident-severity').value = incident.severity;
+            
+            // Store original values for change detection
+            originalEditValues = {
+                title: incident.title,
+                description: incident.description,
+                severity: incident.severity
+            };
+            
             document.getElementById('edit-modal').style.display = 'flex';
         }
 
-        function hideEditModal() {
+        function hasEditChanges() {
+            const currentTitle = document.getElementById('edit-incident-title').value;
+            const currentDescription = document.getElementById('edit-incident-description').value;
+            const currentSeverity = document.getElementById('edit-incident-severity').value;
+            const fileInput = document.getElementById('edit-screenshot-input');
+            
+            return currentTitle !== originalEditValues.title ||
+                   currentDescription !== originalEditValues.description ||
+                   currentSeverity !== originalEditValues.severity ||
+                   fileInput.files.length > 0;
+        }
+
+        function hideEditModal(force = false) {
+            if (!force && hasEditChanges()) {
+                if (!confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+                    return;
+                }
+            }
+            
             document.getElementById('edit-modal').style.display = 'none';
             document.getElementById('edit-form').reset();
+            document.getElementById('edit-screenshots-preview').innerHTML = '';
+            originalEditValues = {};
         }
 
         async function saveIncidentEdit(event) {
@@ -961,8 +994,7 @@
                         await attachScreenshotsToIncident(incidentId, fileInput.files, 'Dashboard User');
                     }
                     
-                    hideEditModal();
-                    document.getElementById('edit-screenshots-preview').innerHTML = '';
+                    hideEditModal(true); // Force close without confirmation after successful save
                     await loadIncidents();
                     showSuccess('Incident updated successfully' + (fileInput.files.length > 0 ? ` with ${fileInput.files.length} screenshot(s)` : ''));
                 } else {
@@ -1388,6 +1420,24 @@
                     }
                 });
             }
+
+            // Global ESC key handler for modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const reportModal = document.getElementById('report-modal');
+                    const editModal = document.getElementById('edit-modal');
+                    const detailModal = document.getElementById('detail-modal');
+
+                    // Check which modal is open and close it
+                    if (reportModal && reportModal.style.display === 'flex') {
+                        hideReportModal();
+                    } else if (editModal && editModal.style.display === 'flex') {
+                        hideEditModal(); // Will show confirmation if there are changes
+                    } else if (detailModal && detailModal.style.display === 'flex') {
+                        hideDetailModal();
+                    }
+                }
+            });
 
             // Global paste event handler for clipboard screenshots
             document.addEventListener('paste', (e) => {
