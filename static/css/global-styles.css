@@ -1943,6 +1943,90 @@ body.dark-mode .order-card-expand-btn:hover {
     font-size: 14px;
 }
 
+.incident-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.incident-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: calc(var(--spacing-unit) * 2);
+    padding: calc(var(--spacing-unit) * 2);
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.incident-meta > div {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.incident-meta strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.notes-section,
+.add-note-section {
+    margin-top: calc(var(--spacing-unit) * 3);
+}
+
+.notes-section h4,
+.add-note-section h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.note-item {
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    padding: calc(var(--spacing-unit) * 2);
+    margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: calc(var(--spacing-unit));
+    padding-bottom: calc(var(--spacing-unit));
+    border-bottom: 1px solid var(--border-color);
+}
+
+.note-author {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.note-time {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.note-content {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.status-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--spacing-unit) * 2);
+    margin-top: calc(var(--spacing-unit) * 4);
+    padding-top: calc(var(--spacing-unit) * 3);
+    border-top: 1px solid var(--border-color);
+}
+
 @media (max-width: 768px) {
     .modal-dialog {
         max-width: 100%;
@@ -1959,6 +2043,18 @@ body.dark-mode .order-card-expand-btn:hover {
     }
     
     .modal-actions .btn {
+        width: 100%;
+    }
+    
+    .incident-meta {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-actions {
+        flex-direction: column;
+    }
+    
+    .status-actions .btn {
         width: 100%;
     }
 }
