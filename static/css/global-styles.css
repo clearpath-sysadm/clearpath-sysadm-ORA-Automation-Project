@@ -716,6 +716,29 @@ textarea::placeholder {
     }
 }
 
+/* Smooth modal content resize animation */
+.modal-dialog {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-content {
+    overflow: hidden;
+}
+
+.modal-body {
+    transition: opacity 0.2s ease;
+}
+
+/* Animation for smooth height changes */
+@keyframes smoothResize {
+    from {
+        opacity: 0.7;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 /* ========================================
    6. BUTTONS - GLOBAL UNIFIED STYLE
    ======================================== */

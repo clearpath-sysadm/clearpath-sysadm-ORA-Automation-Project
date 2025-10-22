@@ -525,6 +525,9 @@
                         </div>
                         
                         <div class="form-group">
+                            <button type="button" class="btn btn-secondary" onclick="attachFromClipboard('report')" style="width: 100%; margin-bottom: 12px; justify-content: center;">
+                                📋 Attach from Clipboard
+                            </button>
                             <label>Attach Screenshots (Optional)</label>
                             <div class="screenshot-upload-area" onclick="document.getElementById('report-screenshot-input').click()" 
                                  ondragover="handleDragOver(event)" ondrop="handleDropReport(event)" ondragleave="handleDragLeave(event)">
@@ -598,6 +601,9 @@
                         </div>
                         
                         <div class="form-group">
+                            <button type="button" class="btn btn-secondary" onclick="attachFromClipboard('edit')" style="width: 100%; margin-bottom: 12px; justify-content: center;">
+                                📋 Attach from Clipboard
+                            </button>
                             <label>Attach Screenshots (Optional)</label>
                             <div class="screenshot-upload-area" onclick="document.getElementById('edit-screenshot-input').click()" 
                                  ondragover="handleDragOver(event)" ondrop="handleDropEdit(event)" ondragleave="handleDragLeave(event)">
@@ -1185,14 +1191,24 @@
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
-        // Preview screenshots in report modal
+        // Preview screenshots in report modal with smooth resize
         function previewReportScreenshots(files) {
             const preview = document.getElementById('report-screenshots-preview');
+            const modalDialog = document.getElementById('report-modal').querySelector('.modal-dialog');
+            
             preview.innerHTML = '';
+            
+            // Track animation count
+            if (!modalDialog._animCount) modalDialog._animCount = 0;
+            const totalFiles = files.length;
+            let processedFiles = 0;
             
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
+                    // Capture height before adding
+                    const beforeHeight = modalDialog.offsetHeight;
+                    
                     const div = document.createElement('div');
                     div.style.cssText = 'position: relative; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden;';
                     div.innerHTML = `
@@ -1200,19 +1216,52 @@
                         <button type="button" onclick="removeReportScreenshot(${index})" style="position: absolute; top: 2px; right: 2px; background: var(--critical-red); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 14px; line-height: 1;">×</button>
                     `;
                     preview.appendChild(div);
+                    
+                    processedFiles++;
+                    
+                    // Smooth resize animation for each thumbnail
+                    requestAnimationFrame(() => {
+                        const afterHeight = modalDialog.offsetHeight;
+                        if (afterHeight !== beforeHeight) {
+                            modalDialog._animCount++;
+                            modalDialog.style.height = beforeHeight + 'px';
+                            requestAnimationFrame(() => {
+                                modalDialog.style.transition = 'height 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+                                modalDialog.style.height = afterHeight + 'px';
+                                setTimeout(() => {
+                                    modalDialog._animCount--;
+                                    // Only cleanup when all animations complete
+                                    if (modalDialog._animCount === 0 && processedFiles === totalFiles) {
+                                        modalDialog.style.height = '';
+                                        modalDialog.style.transition = '';
+                                    }
+                                }, 250);
+                            });
+                        }
+                    });
                 };
                 reader.readAsDataURL(file);
             });
         }
 
-        // Preview screenshots in edit modal
+        // Preview screenshots in edit modal with smooth resize
         function previewEditScreenshots(files) {
             const preview = document.getElementById('edit-screenshots-preview');
+            const modalDialog = document.getElementById('edit-modal').querySelector('.modal-dialog');
+            
             preview.innerHTML = '';
+            
+            // Track animation count
+            if (!modalDialog._animCount) modalDialog._animCount = 0;
+            const totalFiles = files.length;
+            let processedFiles = 0;
             
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
+                    // Capture height before adding
+                    const beforeHeight = modalDialog.offsetHeight;
+                    
                     const div = document.createElement('div');
                     div.style.cssText = 'position: relative; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden;';
                     div.innerHTML = `
@@ -1220,6 +1269,29 @@
                         <button type="button" onclick="removeEditScreenshot(${index})" style="position: absolute; top: 2px; right: 2px; background: var(--critical-red); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 14px; line-height: 1;">×</button>
                     `;
                     preview.appendChild(div);
+                    
+                    processedFiles++;
+                    
+                    // Smooth resize animation for each thumbnail
+                    requestAnimationFrame(() => {
+                        const afterHeight = modalDialog.offsetHeight;
+                        if (afterHeight !== beforeHeight) {
+                            modalDialog._animCount++;
+                            modalDialog.style.height = beforeHeight + 'px';
+                            requestAnimationFrame(() => {
+                                modalDialog.style.transition = 'height 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+                                modalDialog.style.height = afterHeight + 'px';
+                                setTimeout(() => {
+                                    modalDialog._animCount--;
+                                    // Only cleanup when all animations complete
+                                    if (modalDialog._animCount === 0 && processedFiles === totalFiles) {
+                                        modalDialog.style.height = '';
+                                        modalDialog.style.transition = '';
+                                    }
+                                }, 250);
+                            });
+                        }
+                    });
                 };
                 reader.readAsDataURL(file);
             });
@@ -1243,6 +1315,58 @@
             });
             input.files = dt.files;
             previewEditScreenshots(input.files);
+        }
+
+        // Attach from clipboard button handler
+        async function attachFromClipboard(modalType) {
+            try {
+                const clipboardItems = await navigator.clipboard.read();
+                let imageFound = false;
+                
+                for (const clipboardItem of clipboardItems) {
+                    for (const type of clipboardItem.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await clipboardItem.getType(type);
+                            const file = new File([blob], `clipboard-${Date.now()}.png`, { type: blob.type });
+                            
+                            let targetInput, previewFunction;
+                            
+                            if (modalType === 'report') {
+                                targetInput = document.getElementById('report-screenshot-input');
+                                previewFunction = previewReportScreenshots;
+                            } else if (modalType === 'edit') {
+                                targetInput = document.getElementById('edit-screenshot-input');
+                                previewFunction = previewEditScreenshots;
+                            }
+                            
+                            if (targetInput && previewFunction) {
+                                const dt = new DataTransfer();
+                                // Add existing files
+                                Array.from(targetInput.files).forEach(f => dt.items.add(f));
+                                // Add clipboard file
+                                dt.items.add(file);
+                                
+                                targetInput.files = dt.files;
+                                previewFunction(targetInput.files);
+                                imageFound = true;
+                            }
+                        }
+                    }
+                }
+                
+                if (imageFound) {
+                    showMessage('Screenshot attached from clipboard', 'success');
+                } else {
+                    showMessage('No image found in clipboard', 'info');
+                }
+            } catch (error) {
+                console.error('Clipboard error:', error);
+                if (error.name === 'NotAllowedError') {
+                    showError('Permission denied. Please allow clipboard access or use Ctrl+V to paste.');
+                } else {
+                    showError('Could not read from clipboard. Try using Ctrl+V to paste instead.');
+                }
+            }
         }
 
         // Setup file input change handlers and clipboard paste
