@@ -89,9 +89,18 @@ def health_check():
                     last_run_dt = last_run_at
                 age_minutes = int((now.timestamp() - last_run_dt.timestamp()) / 60)
                 last_run_str = f"{age_minutes} min ago"
+                
+                # Health indicator based on age
+                if age_minutes <= 10:
+                    health = '🟢 Healthy'
+                elif age_minutes <= 30:
+                    health = '🟡 Warning'
+                else:
+                    health = '🔴 Stale'
             else:
                 last_run_str = "Never"
                 age_minutes = 999999
+                health = '⚪ Inactive'
             
             # Parse updated_at timestamp
             if updated_at:
@@ -108,10 +117,56 @@ def health_check():
                 'enabled': bool(enabled),
                 'last_run': last_run_str,
                 'age_minutes': age_minutes,
+                'health': health,
                 'status': status,
                 'records_processed': records_processed,
                 'updated_at': updated_str
             })
+        
+        # Check ShipStation sync watermark freshness
+        cursor.execute("""
+            SELECT last_sync_timestamp 
+            FROM sync_watermark 
+            WHERE workflow_name = 'unified-shipstation-sync'
+        """)
+        watermark_result = cursor.fetchone()
+        
+        if watermark_result and watermark_result[0]:
+            watermark_ts = watermark_result[0]
+            if isinstance(watermark_ts, str):
+                watermark_dt = datetime.fromisoformat(watermark_ts.replace('Z', '+00:00'))
+            else:
+                watermark_dt = watermark_ts
+            
+            watermark_age_minutes = int((now.timestamp() - watermark_dt.timestamp()) / 60)
+            watermark_str = f"{watermark_age_minutes} min ago"
+            
+            # Determine watermark health
+            if watermark_age_minutes <= 10:
+                watermark_health = '🟢 Healthy'
+                watermark_status = 'Syncing orders successfully'
+            elif watermark_age_minutes <= 30:
+                watermark_health = '🟡 Warning'
+                watermark_status = 'Sync may be delayed'
+            else:
+                watermark_health = '🔴 Critical'
+                watermark_status = 'Sync is stalled - orders not updating'
+            
+            sync_health = {
+                'watermark_age': watermark_str,
+                'watermark_age_minutes': watermark_age_minutes,
+                'health': watermark_health,
+                'status': watermark_status,
+                'last_watermark': watermark_dt.strftime('%b %d, %I:%M %p')
+            }
+        else:
+            sync_health = {
+                'watermark_age': 'Unknown',
+                'watermark_age_minutes': 999999,
+                'health': '⚪ Not Started',
+                'status': 'No sync watermark found',
+                'last_watermark': 'Never'
+            }
         
         cursor.close()
         conn.close()
@@ -121,10 +176,23 @@ def health_check():
                              'xml-import', 'duplicate-scanner', 'lot-mismatch-scanner', 'dashboard-server']
         deployment_configured = True  # start_all.sh is configured in .replit [deployment] section
         
+        # Overall system health
+        all_healthy = all(wf['health'] == '🟢 Healthy' for wf in workflow_status if wf['enabled'])
+        sync_healthy = sync_health['health'] == '🟢 Healthy'
+        
+        if all_healthy and sync_healthy:
+            overall_health = '🟢 All Systems Operational'
+        elif sync_health['health'] == '🔴 Critical':
+            overall_health = '🔴 Critical - Sync Stalled'
+        else:
+            overall_health = '🟡 Some Issues Detected'
+        
         return jsonify({
             'environment': 'PRODUCTION' if is_production else 'DEVELOPMENT',
             'repl_slug': repl_slug,
-            'timestamp': datetime.utcnow().isoformat() + 'Z',  # UTC timestamp with Z suffix
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'overall_health': overall_health,
+            'sync_health': sync_health,
             'workflows': workflow_status,
             'database_connected': True,
             'deployment': {
@@ -139,7 +207,8 @@ def health_check():
         return jsonify({
             'environment': 'PRODUCTION' if os.getenv('REPLIT_DEPLOYMENT') == '1' else 'DEVELOPMENT',
             'error': str(e),
-            'database_connected': False
+            'database_connected': False,
+            'overall_health': '🔴 Error'
         }), 500
 
 # API Endpoints
