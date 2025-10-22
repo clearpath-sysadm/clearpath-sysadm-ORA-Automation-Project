@@ -80,6 +80,46 @@
             border-bottom: 1px solid var(--border-color);
         }
         
+        .incident-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+        
+        .incident-header-top h3 {
+            flex: 1;
+            margin: 0;
+        }
+        
+        .status-selector {
+            min-width: 180px;
+        }
+        
+        .status-selector select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .status-selector select:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .status-selector select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(242, 153, 74, 0.1);
+        }
+        
         .incident-meta {
             display: flex;
             gap: calc(var(--spacing-unit) * 3);
@@ -783,11 +823,20 @@
             const content = document.getElementById('incident-detail-content');
             content.innerHTML = `
                 <div class="incident-header">
-                    <h3>${escapeHtml(currentIncident.title)}</h3>
+                    <div class="incident-header-top">
+                        <h3>${escapeHtml(currentIncident.title)}</h3>
+                        <div class="status-selector">
+                            <select id="status-dropdown" onchange="handleStatusChange(this.value)">
+                                <option value="new" ${currentIncident.status === 'new' ? 'selected' : ''}>🆕 New</option>
+                                <option value="in_progress" ${currentIncident.status === 'in_progress' ? 'selected' : ''}>⏳ In Progress</option>
+                                <option value="resolved" ${currentIncident.status === 'resolved' ? 'selected' : ''}>✅ Resolved</option>
+                                <option value="closed" ${currentIncident.status === 'closed' ? 'selected' : ''}>🔒 Closed</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="incident-meta">
                         <div><strong>ID:</strong> ${currentIncident.id}</div>
                         <div><strong>Severity:</strong> <span class="severity-badge severity-${currentIncident.severity}">${currentIncident.severity}</span></div>
-                        <div><strong>Status:</strong> <span class="status-badge status-${currentIncident.status}">${formatStatus(currentIncident.status)}</span></div>
                         <div><strong>Reported by:</strong> ${escapeHtml(currentIncident.reported_by)}</div>
                         <div><strong>Created:</strong> ${formatDate(currentIncident.created_at)}</div>
                     </div>
@@ -841,19 +890,55 @@
                         <button type="submit" class="btn btn-secondary">Add Note</button>
                     </form>
                 </div>
-                
-                <div class="status-actions">
-                    <h4 style="width: 100%; margin-bottom: calc(var(--spacing-unit) * 2);">Update Status</h4>
-                    ${currentIncident.status !== 'in_progress' ? '<button class="btn btn-warning" onclick="updateStatus(\'in_progress\')">Mark In Progress</button>' : ''}
-                    ${currentIncident.status !== 'resolved' ? '<button class="btn btn-success" onclick="updateStatus(\'resolved\')">Mark Resolved</button>' : ''}
-                    ${currentIncident.status !== 'closed' ? '<button class="btn btn-secondary" onclick="updateStatus(\'closed\')">Close</button>' : ''}
-                </div>
             `;
             
             document.getElementById('detail-modal').style.display = 'flex';
             
             // Load screenshots for this incident
             loadScreenshots();
+        }
+
+        async function handleStatusChange(newStatus) {
+            if (!currentIncident || currentIncident.status === newStatus) return;
+            
+            // Confirm status change
+            const statusLabels = {
+                'new': 'New',
+                'in_progress': 'In Progress',
+                'resolved': 'Resolved',
+                'closed': 'Closed'
+            };
+            
+            if (!confirm(`Change status to "${statusLabels[newStatus]}"?`)) {
+                // Reset dropdown to current status
+                document.getElementById('status-dropdown').value = currentIncident.status;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/incidents/${currentIncident.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentIncident.status = newStatus;
+                    loadIncidents();
+                    showSuccess(`Status updated to ${statusLabels[newStatus]}`);
+                } else {
+                    showError(data.error || 'Failed to update status');
+                    // Reset dropdown on error
+                    document.getElementById('status-dropdown').value = currentIncident.status;
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showError('Error updating status');
+                // Reset dropdown on error
+                document.getElementById('status-dropdown').value = currentIncident.status;
+            }
         }
 
         async function updateStatus(newStatus) {
