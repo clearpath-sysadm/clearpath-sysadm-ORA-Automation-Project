@@ -5117,6 +5117,46 @@ def update_incident(incident_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/incidents/<int:incident_id>', methods=['DELETE'])
+def delete_incident(incident_id):
+    """Delete an incident and all associated data"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Check if incident exists
+        cursor.execute("SELECT id FROM production_incidents WHERE id = %s", (incident_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'success': False, 'error': 'Incident not found'}), 404
+        
+        # Delete associated screenshots from filesystem
+        cursor.execute("SELECT file_path FROM production_incident_screenshots WHERE incident_id = %s", (incident_id,))
+        screenshots = cursor.fetchall()
+        for screenshot in screenshots:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], screenshot[0])
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    print(f"Warning: Could not delete screenshot file {file_path}: {e}")
+        
+        # Delete screenshots from database (CASCADE should handle this, but being explicit)
+        cursor.execute("DELETE FROM production_incident_screenshots WHERE incident_id = %s", (incident_id,))
+        
+        # Delete notes (CASCADE should handle this, but being explicit)
+        cursor.execute("DELETE FROM incident_notes WHERE incident_id = %s", (incident_id,))
+        
+        # Delete the incident
+        cursor.execute("DELETE FROM production_incidents WHERE id = %s", (incident_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/incidents/<int:incident_id>/notes', methods=['POST'])
 def add_incident_note(incident_id):
     """Add a note/update to an incident"""

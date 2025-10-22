@@ -817,6 +817,7 @@
                         <div class="incident-actions">
                             <button class="btn btn-sm btn-secondary" onclick="viewIncident(${incident.id})">View</button>
                             <button class="btn btn-sm btn-primary" onclick="showEditModal(${incident.id})">Edit</button>
+                            <button class="btn btn-sm" onclick="deleteIncident(${incident.id})" style="background: var(--critical-red); color: white; border-color: var(--critical-red);">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -849,6 +850,7 @@
                     <div style="display: flex; gap: calc(var(--spacing-unit)); margin-top: calc(var(--spacing-unit));">
                         <button class="btn btn-secondary" onclick="viewIncident(${incident.id})" style="flex: 1;">View</button>
                         <button class="btn btn-primary" onclick="showEditModal(${incident.id})" style="flex: 1;">Edit</button>
+                        <button class="btn" onclick="deleteIncident(${incident.id})" style="flex: 1; background: var(--critical-red); color: white; border-color: var(--critical-red);">Delete</button>
                     </div>
                 </div>
             `).join('');
@@ -1104,6 +1106,38 @@
             } catch (error) {
                 console.error('Error adding note:', error);
                 showError('Error adding note');
+            }
+        }
+
+        async function deleteIncident(incidentId) {
+            const incident = allIncidents.find(i => i.id === incidentId);
+            if (!incident) return;
+            
+            if (!confirm(`⚠️ Delete Incident #${incidentId}?\n\n"${incident.title}"\n\nThis will permanently delete the incident and all associated screenshots and notes. This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/incidents/${incidentId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close detail modal if open
+                    if (currentIncident && currentIncident.id === incidentId) {
+                        hideDetailModal();
+                    }
+                    
+                    await loadIncidents();
+                    showSuccess('Incident deleted successfully');
+                } else {
+                    showError(data.error || 'Failed to delete incident');
+                }
+            } catch (error) {
+                console.error('Error deleting incident:', error);
+                showError('Error deleting incident');
             }
         }
 
