@@ -4946,7 +4946,7 @@ def get_incidents():
         cursor = conn.cursor()
         
         query = """
-            SELECT id, title, description, severity, status, reported_by, created_at, updated_at
+            SELECT id, title, description, severity, status, reported_by, created_at, updated_at, cause, resolution
             FROM production_incidents
             WHERE 1=1
         """
@@ -4984,6 +4984,8 @@ def get_incidents():
                 'reported_by': inc[5],
                 'created_at': inc[6].isoformat() if inc[6] else None,
                 'updated_at': inc[7].isoformat() if inc[7] else None,
+                'cause': inc[8],
+                'resolution': inc[9],
                 'notes': [{
                     'id': n[0],
                     'note_type': n[1],
@@ -5066,10 +5068,12 @@ def update_incident(incident_id):
             
             return jsonify({'success': True, 'incident_id': incident_id, 'status': status})
         else:
-            # Full edit update (title, description, severity)
+            # Full edit update (title, description, severity, cause, resolution)
             title = data.get('title')
             description = data.get('description')
             severity = data.get('severity')
+            cause = data.get('cause', '').strip() or None
+            resolution = data.get('resolution', '').strip() or None
             
             if not title or not description or not severity:
                 return jsonify({'success': False, 'error': 'Missing required fields'}), 400
@@ -5079,9 +5083,9 @@ def update_incident(incident_id):
             
             cursor.execute("""
                 UPDATE production_incidents
-                SET title = %s, description = %s, severity = %s, updated_at = CURRENT_TIMESTAMP
+                SET title = %s, description = %s, severity = %s, cause = %s, resolution = %s, updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s
-            """, (title, description, severity, incident_id))
+            """, (title, description, severity, cause, resolution, incident_id))
             
             if cursor.rowcount == 0:
                 conn.close()
