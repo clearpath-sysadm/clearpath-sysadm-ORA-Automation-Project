@@ -560,7 +560,22 @@ def run_daily_shipment_pull(request=None):
         )
         
         # Calculate rolling averages using the UPDATED history (includes today's shipments)
-        rolling_avg_df = calculate_12_month_rolling_average(updated_history_df)
+        # Transform wide-format history to long-format for rolling average calculation
+        if not updated_history_df.empty:
+            # Melt the wide format into long format: (Start Date, SKU, Quantity)
+            history_long = updated_history_df.melt(
+                id_vars=['Start Date', 'Stop Date'],
+                var_name='SKU',
+                value_name='ShippedQuantity'
+            )
+            # Rename 'Start Date' to 'Date' for compatibility with rolling average function
+            history_long.rename(columns={'Start Date': 'Date'}, inplace=True)
+            
+            # Calculate rolling averages
+            rolling_avg_df = calculate_12_month_rolling_average(history_long[['Date', 'SKU', 'ShippedQuantity']])
+        else:
+            # No history data - create empty rolling average dataframe
+            rolling_avg_df = pd.DataFrame(columns=['SKU', '12-Month Rolling Average'])
         
         # Merge inventory and averages
         if not current_inventory_df.empty and not rolling_avg_df.empty:
