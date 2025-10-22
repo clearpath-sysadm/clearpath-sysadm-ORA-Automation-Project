@@ -135,6 +135,89 @@
             border-top: 1px solid var(--border-color);
         }
         
+        /* Screenshot Section */
+        .screenshots-section {
+            margin-top: calc(var(--spacing-unit) * 3);
+        }
+        
+        .screenshots-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: calc(var(--spacing-unit) * 2);
+            margin-top: calc(var(--spacing-unit) * 2);
+        }
+        
+        .screenshot-item {
+            position: relative;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+        
+        .screenshot-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .screenshot-item img:hover {
+            transform: scale(1.05);
+        }
+        
+        .screenshot-delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: var(--critical-red);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+        
+        .screenshot-delete:hover {
+            opacity: 1;
+        }
+        
+        .screenshot-info {
+            padding: calc(var(--spacing-unit));
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .screenshot-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: calc(var(--spacing-unit) * 3);
+            text-align: center;
+            margin-top: calc(var(--spacing-unit) * 2);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .screenshot-upload-area:hover {
+            border-color: var(--accent-orange);
+        }
+        
+        .screenshot-upload-area.dragging {
+            border-color: var(--accent-orange);
+            background: rgba(242, 153, 74, 0.05);
+        }
+        
+        #screenshot-file-input {
+            display: none;
+        }
+        
         /* Mobile Cards */
         .incidents-mobile-cards {
             display: none;
@@ -441,6 +524,21 @@
                             <input type="text" id="reported-by" value="Dashboard User" placeholder="Your name">
                         </div>
                         
+                        <div class="form-group">
+                            <label>Attach Screenshots (Optional)</label>
+                            <div class="screenshot-upload-area" onclick="document.getElementById('report-screenshot-input').click()" 
+                                 ondragover="handleDragOver(event)" ondrop="handleDropReport(event)" ondragleave="handleDragLeave(event)">
+                                <input type="file" id="report-screenshot-input" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" multiple style="display: none;">
+                                <p style="color: var(--text-secondary); margin: 0;">
+                                    📎 Click to attach or drag & drop screenshots
+                                </p>
+                                <p style="color: var(--text-tertiary); font-size: 12px; margin-top: 8px;">
+                                    PNG, JPG, GIF, WEBP (max 16MB each)
+                                </p>
+                            </div>
+                            <div id="report-screenshots-preview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 12px;"></div>
+                        </div>
+                        
                         <div class="modal-actions">
                             <button type="button" class="btn btn-secondary" onclick="hideReportModal()">Cancel</button>
                             <button type="submit" class="btn btn-primary">Submit Issue</button>
@@ -497,6 +595,21 @@
                                 <option value="high">High - Major impact, affecting operations</option>
                                 <option value="critical">Critical - System down or data loss</option>
                             </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Attach Screenshots (Optional)</label>
+                            <div class="screenshot-upload-area" onclick="document.getElementById('edit-screenshot-input').click()" 
+                                 ondragover="handleDragOver(event)" ondrop="handleDropEdit(event)" ondragleave="handleDragLeave(event)">
+                                <input type="file" id="edit-screenshot-input" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" multiple style="display: none;">
+                                <p style="color: var(--text-secondary); margin: 0;">
+                                    📎 Click to attach or drag & drop screenshots
+                                </p>
+                                <p style="color: var(--text-tertiary); font-size: 12px; margin-top: 8px;">
+                                    PNG, JPG, GIF, WEBP (max 16MB each)
+                                </p>
+                            </div>
+                            <div id="edit-screenshots-preview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 12px;"></div>
                         </div>
                         
                         <div class="modal-actions">
@@ -628,10 +741,19 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    const incidentId = data.incident_id;
+                    
+                    // Attach screenshots if any
+                    const fileInput = document.getElementById('report-screenshot-input');
+                    if (fileInput.files.length > 0) {
+                        await attachScreenshotsToIncident(incidentId, fileInput.files, reportedBy);
+                    }
+                    
                     hideReportModal();
                     document.getElementById('report-form').reset();
+                    document.getElementById('report-screenshots-preview').innerHTML = '';
                     loadIncidents();
-                    showSuccess('Issue reported successfully');
+                    showSuccess('Issue reported successfully' + (fileInput.files.length > 0 ? ` with ${fileInput.files.length} screenshot(s)` : ''));
                 } else {
                     showError(data.error || 'Failed to submit issue');
                 }
@@ -681,6 +803,22 @@
                     </div>
                 </div>
                 
+                <div class="screenshots-section">
+                    <h4>Screenshots</h4>
+                    <div id="screenshots-gallery" class="screenshots-gallery"></div>
+                    <div class="screenshot-upload-area" onclick="document.getElementById('screenshot-file-input').click()" 
+                         ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+                        <input type="file" id="screenshot-file-input" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" 
+                               onchange="uploadScreenshot(event)" multiple>
+                        <p style="color: var(--text-secondary); margin: 0;">
+                            📎 Click to attach or drag & drop screenshots
+                        </p>
+                        <p style="color: var(--text-tertiary); font-size: 12px; margin-top: 8px;">
+                            PNG, JPG, GIF, WEBP (max 16MB each)
+                        </p>
+                    </div>
+                </div>
+                
                 <div class="add-note-section">
                     <h4>Add Note</h4>
                     <form onsubmit="addNote(event)">
@@ -700,6 +838,9 @@
             `;
             
             document.getElementById('detail-modal').style.display = 'flex';
+            
+            // Load screenshots for this incident
+            loadScreenshots();
         }
 
         async function updateStatus(newStatus) {
@@ -808,9 +949,16 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Attach screenshots if any
+                    const fileInput = document.getElementById('edit-screenshot-input');
+                    if (fileInput.files.length > 0) {
+                        await attachScreenshotsToIncident(incidentId, fileInput.files, 'Dashboard User');
+                    }
+                    
                     hideEditModal();
+                    document.getElementById('edit-screenshots-preview').innerHTML = '';
                     await loadIncidents();
-                    showSuccess('Incident updated successfully');
+                    showSuccess('Incident updated successfully' + (fileInput.files.length > 0 ? ` with ${fileInput.files.length} screenshot(s)` : ''));
                 } else {
                     showError(data.error || 'Failed to update incident');
                 }
@@ -852,6 +1000,294 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Screenshot Management
+        async function loadScreenshots() {
+            if (!currentIncident) return;
+            
+            try {
+                const response = await fetch(`/api/incidents/${currentIncident.id}/screenshots`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayScreenshots(data.screenshots);
+                }
+            } catch (error) {
+                console.error('Error loading screenshots:', error);
+            }
+        }
+
+        function displayScreenshots(screenshots) {
+            const gallery = document.getElementById('screenshots-gallery');
+            
+            if (screenshots.length === 0) {
+                gallery.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No screenshots yet</p>';
+                return;
+            }
+            
+            gallery.innerHTML = screenshots.map(screenshot => `
+                <div class="screenshot-item">
+                    <img src="${screenshot.url}" alt="${screenshot.original_filename}" 
+                         onclick="viewScreenshot('${screenshot.url}', '${screenshot.original_filename}')">
+                    <button class="screenshot-delete" onclick="deleteScreenshot(${screenshot.id})" title="Delete screenshot">×</button>
+                    <div class="screenshot-info">
+                        ${screenshot.original_filename.length > 20 
+                            ? screenshot.original_filename.substring(0, 17) + '...' 
+                            : screenshot.original_filename}
+                        <br><small>${formatFileSize(screenshot.file_size)}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function uploadScreenshot(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            
+            for (let file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('uploaded_by', 'Dashboard User');
+                
+                try {
+                    showMessage(`Attaching ${file.name}...`, 'info');
+                    
+                    const response = await fetch(`/api/incidents/${currentIncident.id}/screenshots`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showMessage(`${file.name} attached successfully`, 'success');
+                        await loadScreenshots();
+                    } else {
+                        showError(data.error || `Failed to attach ${file.name}`);
+                    }
+                } catch (error) {
+                    console.error('Attach error:', error);
+                    showError(`Error attaching ${file.name}`);
+                }
+            }
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        // Helper function to attach multiple screenshots to an incident
+        async function attachScreenshotsToIncident(incidentId, files, uploadedBy) {
+            for (let file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('uploaded_by', uploadedBy);
+                
+                try {
+                    const response = await fetch(`/api/incidents/${incidentId}/screenshots`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    if (!data.success) {
+                        console.error(`Failed to attach ${file.name}:`, data.error);
+                    }
+                } catch (error) {
+                    console.error(`Error attaching ${file.name}:`, error);
+                }
+            }
+        }
+
+        async function deleteScreenshot(screenshotId) {
+            if (!confirm('Are you sure you want to delete this screenshot?')) return;
+            
+            try {
+                const response = await fetch(`/api/incidents/screenshots/${screenshotId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('Screenshot deleted successfully', 'success');
+                    await loadScreenshots();
+                } else {
+                    showError(data.error || 'Failed to delete screenshot');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showError('Error deleting screenshot');
+            }
+        }
+
+        function viewScreenshot(url, filename) {
+            window.open(url, '_blank');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.classList.add('dragging');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.classList.remove('dragging');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.classList.remove('dragging');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                // Trigger upload with dropped files
+                const fileInput = document.getElementById('screenshot-file-input');
+                fileInput.files = files;
+                uploadScreenshot({ target: fileInput });
+            }
+        }
+
+        // Handle drag & drop for report modal
+        function handleDropReport(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.classList.remove('dragging');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById('report-screenshot-input');
+                fileInput.files = files;
+                previewReportScreenshots(files);
+            }
+        }
+
+        // Handle drag & drop for edit modal
+        function handleDropEdit(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.classList.remove('dragging');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById('edit-screenshot-input');
+                fileInput.files = files;
+                previewEditScreenshots(files);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Preview screenshots in report modal
+        function previewReportScreenshots(files) {
+            const preview = document.getElementById('report-screenshots-preview');
+            preview.innerHTML = '';
+            
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'position: relative; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden;';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" style="width: 100%; height: 80px; object-fit: cover;">
+                        <button type="button" onclick="removeReportScreenshot(${index})" style="position: absolute; top: 2px; right: 2px; background: var(--critical-red); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 14px; line-height: 1;">×</button>
+                    `;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Preview screenshots in edit modal
+        function previewEditScreenshots(files) {
+            const preview = document.getElementById('edit-screenshots-preview');
+            preview.innerHTML = '';
+            
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'position: relative; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden;';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" style="width: 100%; height: 80px; object-fit: cover;">
+                        <button type="button" onclick="removeEditScreenshot(${index})" style="position: absolute; top: 2px; right: 2px; background: var(--critical-red); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 14px; line-height: 1;">×</button>
+                    `;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeReportScreenshot(index) {
+            const input = document.getElementById('report-screenshot-input');
+            const dt = new DataTransfer();
+            Array.from(input.files).forEach((file, i) => {
+                if (i !== index) dt.items.add(file);
+            });
+            input.files = dt.files;
+            previewReportScreenshots(input.files);
+        }
+
+        function removeEditScreenshot(index) {
+            const input = document.getElementById('edit-screenshot-input');
+            const dt = new DataTransfer();
+            Array.from(input.files).forEach((file, i) => {
+                if (i !== index) dt.items.add(file);
+            });
+            input.files = dt.files;
+            previewEditScreenshots(input.files);
+        }
+
+        // Setup file input change handlers
+        document.addEventListener('DOMContentLoaded', () => {
+            const reportInput = document.getElementById('report-screenshot-input');
+            if (reportInput) {
+                reportInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        previewReportScreenshots(e.target.files);
+                    }
+                });
+            }
+
+            const editInput = document.getElementById('edit-screenshot-input');
+            if (editInput) {
+                editInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        previewEditScreenshots(e.target.files);
+                    }
+                });
+            }
+        });
+
+        function showMessage(message, type) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                background: ${type === 'success' ? 'var(--success-teal)' : type === 'info' ? 'var(--accent-orange)' : 'var(--critical-red)'};
+                color: white;
+                border-radius: var(--border-radius-md);
+                box-shadow: var(--shadow-lg);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         function showSuccess(message) {
