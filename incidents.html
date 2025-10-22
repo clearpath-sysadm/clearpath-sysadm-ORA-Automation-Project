@@ -1245,7 +1245,7 @@
             previewEditScreenshots(input.files);
         }
 
-        // Setup file input change handlers
+        // Setup file input change handlers and clipboard paste
         document.addEventListener('DOMContentLoaded', () => {
             const reportInput = document.getElementById('report-screenshot-input');
             if (reportInput) {
@@ -1264,6 +1264,82 @@
                     }
                 });
             }
+
+            // Global paste event handler for clipboard screenshots
+            document.addEventListener('paste', (e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+
+                // Find image items in clipboard
+                const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'));
+                if (imageItems.length === 0) return;
+
+                // Determine which modal is open
+                const reportModal = document.getElementById('report-modal');
+                const editModal = document.getElementById('edit-modal');
+                const detailModal = document.getElementById('detail-modal');
+
+                let targetInput = null;
+                let previewFunction = null;
+
+                if (reportModal && reportModal.style.display === 'flex') {
+                    targetInput = document.getElementById('report-screenshot-input');
+                    previewFunction = previewReportScreenshots;
+                } else if (editModal && editModal.style.display === 'flex') {
+                    targetInput = document.getElementById('edit-screenshot-input');
+                    previewFunction = previewEditScreenshots;
+                } else if (detailModal && detailModal.style.display === 'flex') {
+                    // For detail modal, upload immediately
+                    imageItems.forEach(item => {
+                        const file = item.getAsFile();
+                        if (file && currentIncident) {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('uploaded_by', 'Dashboard User');
+                            
+                            showMessage(`Attaching clipboard image...`, 'info');
+                            
+                            fetch(`/api/incidents/${currentIncident.id}/screenshots`, {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    showMessage('Clipboard image attached successfully', 'success');
+                                    loadScreenshots();
+                                } else {
+                                    showError(data.error || 'Failed to attach clipboard image');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Attach error:', error);
+                                showError('Error attaching clipboard image');
+                            });
+                        }
+                    });
+                    return;
+                }
+
+                // Handle paste for report/edit modals
+                if (targetInput && previewFunction) {
+                    e.preventDefault();
+                    
+                    const dt = new DataTransfer();
+                    // Add existing files
+                    Array.from(targetInput.files).forEach(file => dt.items.add(file));
+                    // Add pasted images
+                    imageItems.forEach(item => {
+                        const file = item.getAsFile();
+                        if (file) dt.items.add(file);
+                    });
+                    
+                    targetInput.files = dt.files;
+                    previewFunction(targetInput.files);
+                    
+                    showMessage(`Pasted ${imageItems.length} image(s) from clipboard`, 'success');
+                }
+            });
         });
 
         function showMessage(message, type) {
