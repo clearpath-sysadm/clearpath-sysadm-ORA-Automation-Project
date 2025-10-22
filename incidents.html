@@ -407,7 +407,7 @@
     </div>
 
     <!-- Report Issue Modal -->
-    <div class="modal-overlay" id="report-modal">
+    <div class="modal-overlay" id="report-modal" style="display: none;">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -452,7 +452,7 @@
     </div>
 
     <!-- Incident Detail Modal -->
-    <div class="modal-overlay" id="detail-modal">
+    <div class="modal-overlay" id="detail-modal" style="display: none;">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -463,6 +463,47 @@
                     <div id="incident-detail-content">
                         <!-- Content loaded dynamically -->
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Incident Modal -->
+    <div class="modal-overlay" id="edit-modal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Edit Incident</h3>
+                    <button class="modal-close" onclick="hideEditModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-form" onsubmit="saveIncidentEdit(event)">
+                        <input type="hidden" id="edit-incident-id">
+                        <div class="form-group">
+                            <label for="edit-incident-title">Title *</label>
+                            <input type="text" id="edit-incident-title" required maxlength="500">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-incident-description">Description *</label>
+                            <textarea id="edit-incident-description" required rows="6"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-incident-severity">Severity *</label>
+                            <select id="edit-incident-severity" required>
+                                <option value="low">Low - Minor issue, workaround available</option>
+                                <option value="medium">Medium - Moderate impact, no workaround</option>
+                                <option value="high">High - Major impact, affecting operations</option>
+                                <option value="critical">Critical - System down or data loss</option>
+                            </select>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" onclick="hideEditModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
