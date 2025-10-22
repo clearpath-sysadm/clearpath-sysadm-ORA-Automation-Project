@@ -1,0 +1,97 @@
+<div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Incident Details</h3>
+                    <button class="modal-close" onclick="hideDetailModal()">×</button>
+                </div>
+                <div class="modal-body incident-detail-modal">
+                    <div id="incident-detail-content">
+                <div class="incident-header">
+                    <h3>Environment Detection Bypass - Upload Service Running in Dev</h3>
+                    <div class="incident-meta">
+                        <div><strong>ID:</strong> 2</div>
+                        <div><strong>Severity:</strong> <span class="severity-badge severity-critical">critical</span></div>
+                        <div><strong>Status:</strong> <span class="status-badge status-resolved">Resolved</span></div>
+                        <div><strong>Reported by:</strong> DevOps Team</div>
+                        <div><strong>Created:</strong> 10/22/2025, 10:09:31 AM</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><strong>Description</strong></label>
+                    <div style="white-space: pre-wrap; line-height: 1.6;">CRITICAL: ShipStation upload workflow was running in development workspace despite environment protection checks, creating risk of duplicate orders in production.
+
+ROOT CAUSE:
+1. Incorrect priority ordering: ENVIRONMENT variable checked before REPL_SLUG
+2. User configuration error: ENVIRONMENT=production mistakenly set in dev workspace secrets
+
+IMPACT:
+- Actual: NONE (all 7 orders detected as duplicates and skipped)
+- Potential: HIGH RISK (could have created duplicate orders in production)
+
+RESOLUTION:
+Implemented belt-and-suspenders two-layer protection:
+- Layer 1: REPL_SLUG now takes absolute priority over ENVIRONMENT
+- Layer 2: Function-level failsafe blocks uploads if workspace detected
+- Safe defaults: System defaults to blocking when uncertain
+
+VERIFICATION:
+✅ Upload service now sleeps indefinitely in dev workspace
+✅ Dual protection at workflow and function levels
+✅ Production deployments unaffected</div>
+                </div>
+                
+                <div class="notes-section">
+                    <h4>Notes &amp; Updates</h4>
+                    <div id="notes-list">
+                        
+                                <div class="note-item">
+                                    <div class="note-header">
+                                        <span class="note-author">DevOps Team</span>
+                                        <span class="note-time">10/22/2025, 10:09:47 AM</span>
+                                    </div>
+                                    <div class="note-content">Prevention measures implemented:
+1. REPL_SLUG now takes absolute priority over ENVIRONMENT
+2. Dual protection at workflow level AND function level
+3. Safe defaults - system blocks uploads when uncertain
+4. Clear messaging in logs
+5. Documentation updated in replit.md
+
+Files modified: src/scheduled_shipstation_upload.py</div>
+                                </div>
+                            
+                                <div class="note-item">
+                                    <div class="note-header">
+                                        <span class="note-author">System</span>
+                                        <span class="note-time">10/22/2025, 10:09:43 AM</span>
+                                    </div>
+                                    <div class="note-content">Timeline:
+- 14:15 UTC - Upload service detected running in dev workspace
+- 14:16 UTC - Service processed 7 orders but correctly identified all as duplicates (no actual uploads)
+- 14:22 UTC - Root cause identified: ENVIRONMENT=production set in dev workspace secrets
+- 14:24 UTC - Fix deployed and verified</div>
+                                </div>
+                            
+                    </div>
+                </div>
+                
+                <div class="add-note-section">
+                    <h4>Add Note</h4>
+                    <form onsubmit="addNote(event)">
+                        <div class="form-group">
+                            <textarea id="new-note" rows="3" placeholder="Add a note or update..." required=""></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Add Note</button>
+                    </form>
+                </div>
+                
+                <div class="status-actions">
+                    <h4 style="width: 100%; margin-bottom: calc(var(--spacing-unit) * 2);">Update Status</h4>
+                    <button class="btn btn-warning" onclick="updateStatus('in_progress')">Mark In Progress</button>
+                    
+                    <button class="btn btn-secondary" onclick="updateStatus('closed')">Close</button>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div>
