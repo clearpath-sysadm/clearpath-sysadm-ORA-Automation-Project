@@ -559,8 +559,8 @@ def run_daily_shipment_pull(request=None):
             current_week_end_date=current_week_end
         )
         
-        # Calculate rolling averages
-        rolling_avg_df = calculate_12_month_rolling_average(existing_history_df)
+        # Calculate rolling averages using the UPDATED history (includes today's shipments)
+        rolling_avg_df = calculate_12_month_rolling_average(updated_history_df)
         
         # Merge inventory and averages
         if not current_inventory_df.empty and not rolling_avg_df.empty:
