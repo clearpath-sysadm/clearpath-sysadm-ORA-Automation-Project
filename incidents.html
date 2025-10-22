@@ -823,8 +823,25 @@
         // Utility functions
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
-            const date = new Date(dateString);
-            return date.toLocaleString();
+            
+            // Ensure the timestamp is treated as UTC by appending 'Z' if not present
+            let isoString = dateString;
+            if (!isoString.endsWith('Z') && !isoString.includes('+')) {
+                isoString = isoString + 'Z';
+            }
+            
+            const date = new Date(isoString);
+            
+            // Return in user's local timezone
+            return date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
         }
 
         function formatStatus(status) {
