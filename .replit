@@ -163,10 +163,6 @@ localPort = 40221
 externalPort = 8008
 
 [[ports]]
-localPort = 40505
-externalPort = 8099
-
-[[ports]]
 localPort = 40963
 externalPort = 4200
 
@@ -185,6 +181,10 @@ externalPort = 3003
 [[ports]]
 localPort = 45775
 externalPort = 6800
+
+[[ports]]
+localPort = 46759
+externalPort = 8099
 
 [env]
 TZ = "America/Chicago"

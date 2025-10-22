@@ -52,12 +52,75 @@
             border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+        
+        .status-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .status-badge:after {
+            content: ' ▾';
+            font-size: 0.6rem;
+            opacity: 0.6;
         }
         
         .status-new { background: #E3F2FD; color: #1976D2; }
         .status-in_progress { background: #FFF3E0; color: #F57C00; }
         .status-resolved { background: #E8F5E9; color: #388E3C; }
         .status-closed { background: #F5F5F5; color: #757575; }
+        
+        /* Status dropdown menu */
+        .status-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 180px;
+            display: none;
+        }
+        
+        .status-dropdown-menu.show {
+            display: block;
+        }
+        
+        .status-dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .status-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-dropdown-item:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .status-dropdown-item.active {
+            background: var(--bg-secondary);
+            font-weight: 600;
+        }
+        
+        .status-dropdown-item.active:before {
+            content: '✓';
+            color: var(--success-green);
+        }
         
         .incident-actions {
             display: flex;
@@ -738,7 +801,7 @@
                     <td>${incident.id}</td>
                     <td><strong>${escapeHtml(incident.title)}</strong></td>
                     <td><span class="severity-badge severity-${incident.severity}">${incident.severity}</span></td>
-                    <td><span class="status-badge status-${incident.status}">${formatStatus(incident.status)}</span></td>
+                    <td><span class="status-badge status-${incident.status}" onclick="showStatusDropdown(event, ${incident.id}, '${incident.status}')">${formatStatus(incident.status)}</span></td>
                     <td>${escapeHtml(incident.reported_by)}</td>
                     <td>${formatDate(incident.created_at)}</td>
                     <td>
@@ -758,7 +821,7 @@
                     </div>
                     <div class="incident-card-badges">
                         <span class="severity-badge severity-${incident.severity}">${incident.severity}</span>
-                        <span class="status-badge status-${incident.status}">${formatStatus(incident.status)}</span>
+                        <span class="status-badge status-${incident.status}" onclick="showStatusDropdown(event, ${incident.id}, '${incident.status}')">${formatStatus(incident.status)}</span>
                     </div>
                     <div class="incident-card-meta">
                         <div class="incident-card-meta-item">
@@ -1168,6 +1231,92 @@
             div.textContent = text;
             return div.innerHTML;
         }
+        
+        // Status dropdown functionality
+        let activeDropdown = null;
+        
+        function showStatusDropdown(event, incidentId, currentStatus) {
+            event.stopPropagation();
+            
+            // Close existing dropdown
+            if (activeDropdown) {
+                activeDropdown.remove();
+            }
+            
+            // Create dropdown menu
+            const dropdown = document.createElement('div');
+            dropdown.className = 'status-dropdown-menu show';
+            dropdown.innerHTML = `
+                <div class="status-dropdown-item ${currentStatus === 'new' ? 'active' : ''}" onclick="changeIncidentStatus(event, ${incidentId}, 'new')">
+                    🆕 New
+                </div>
+                <div class="status-dropdown-item ${currentStatus === 'in_progress' ? 'active' : ''}" onclick="changeIncidentStatus(event, ${incidentId}, 'in_progress')">
+                    ⏳ In Progress
+                </div>
+                <div class="status-dropdown-item ${currentStatus === 'resolved' ? 'active' : ''}" onclick="changeIncidentStatus(event, ${incidentId}, 'resolved')">
+                    ✅ Resolved
+                </div>
+                <div class="status-dropdown-item ${currentStatus === 'closed' ? 'active' : ''}" onclick="changeIncidentStatus(event, ${incidentId}, 'closed')">
+                    🔒 Closed
+                </div>
+            `;
+            
+            // Position dropdown relative to clicked badge
+            const badge = event.target;
+            badge.style.position = 'relative';
+            badge.appendChild(dropdown);
+            
+            activeDropdown = dropdown;
+        }
+        
+        async function changeIncidentStatus(event, incidentId, newStatus) {
+            event.stopPropagation();
+            
+            // Close dropdown
+            if (activeDropdown) {
+                activeDropdown.remove();
+                activeDropdown = null;
+            }
+            
+            const statusLabels = {
+                'new': 'New',
+                'in_progress': 'In Progress',
+                'resolved': 'Resolved',
+                'closed': 'Closed'
+            };
+            
+            if (!confirm(`Change status to "${statusLabels[newStatus]}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/incidents/${incidentId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    await loadIncidents();
+                    showSuccess(`Status updated to ${statusLabels[newStatus]}`);
+                } else {
+                    showError(data.error || 'Failed to update status');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showError('Error updating status');
+            }
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (activeDropdown && !event.target.closest('.status-badge')) {
+                activeDropdown.remove();
+                activeDropdown = null;
+            }
+        });
 
         // Screenshot Management
         async function loadScreenshots() {
