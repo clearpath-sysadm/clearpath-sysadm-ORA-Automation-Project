@@ -636,6 +636,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadIncidents();
             initDarkMode();
+            
+            // Auto-open report modal if URL hash is #report
+            if (window.location.hash === '#report') {
+                showReportModal();
+                // Clear the hash without affecting history
+                history.replaceState(null, null, ' ');
+            }
         });
 
         async function loadIncidents() {
