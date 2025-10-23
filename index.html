@@ -1230,15 +1230,30 @@
                 return;
             }
             
-            let html = '<div style="max-width: 800px; max-height: 70vh; overflow-y: auto;">';
-            html += '<h3 style="margin-top: 0;">Lot Number Mismatches</h3>';
-            html += '<p style="color: var(--text-secondary); margin-bottom: 20px;">These orders have incorrect lot numbers in ShipStation and need to be updated.</p>';
+            let html = '<div style="max-width: 900px; max-height: 75vh; overflow-y: auto;">';
+            html += '<div style="position: sticky; top: 0; background: var(--bg-primary); z-index: 10; padding-bottom: 16px; border-bottom: 2px solid var(--border-color); margin-bottom: 20px;">';
+            html += '<h3 style="margin-top: 0; margin-bottom: 8px;">Lot Number Mismatches</h3>';
+            html += '<p style="color: var(--text-secondary); margin-bottom: 16px;">Select multiple orders to update at once.</p>';
+            
+            // Bulk action header
+            html += '<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">';
+            html += '<label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">';
+            html += '<input type="checkbox" id="select-all-lots" onchange="toggleAllLotCheckboxes()" style="width: 18px; height: 18px; cursor: pointer;">';
+            html += '<span>Select All</span>';
+            html += '</label>';
+            html += '<span id="selected-count" style="color: var(--text-tertiary); font-size: 14px;">0 selected</span>';
+            html += '<button id="bulk-update-btn" onclick="bulkUpdateLots()" disabled style="padding: 10px 20px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; opacity: 0.5;">🔧 Update Selected</button>';
+            html += '<button id="bulk-resolve-btn" onclick="bulkResolveLots()" disabled style="padding: 10px 20px; background: var(--text-tertiary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; opacity: 0.5;">✓ Resolve Selected</button>';
+            html += '</div>';
+            html += '</div>';
             
             lotMismatchAlertsData.forEach((alert, index) => {
-                html += `<div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px;">`;
+                html += `<div class="lot-alert-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px;">`;
                 html += `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">`;
+                html += `<label style="display: flex; align-items: center; gap: 12px; cursor: pointer; flex: 1;">`;
+                html += `<input type="checkbox" class="lot-checkbox" data-alert-id="${alert.id}" data-order-id="${alert.shipstation_order_id}" data-item-id="${alert.shipstation_item_id}" data-base-sku="${alert.base_sku}" data-active-lot="${alert.active_lot}" data-order-number="${alert.order_number}" onchange="updateLotSelectionCount()" style="width: 18px; height: 18px; cursor: pointer;">`;
                 html += `<div><strong>Order #${alert.order_number}</strong> - SKU ${alert.base_sku}</div>`;
-                html += `<button onclick="resolveLotMismatchAlert(${alert.id}, '${alert.order_number}', '${alert.base_sku}')" style="padding: 6px 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Mark Resolved</button>`;
+                html += `</label>`;
                 html += `</div>`;
                 
                 html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">';
@@ -1259,7 +1274,7 @@
             // Create modal
             const modal = document.createElement('div');
             modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
-            modal.innerHTML = `<div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 900px; width: 100%;">${html}<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary-navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button></div>`;
+            modal.innerHTML = `<div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 950px; width: 100%;">${html}<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary-navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button></div>`;
             document.body.appendChild(modal);
             
             // Close on background click
@@ -1336,6 +1351,155 @@
                 btn.disabled = false;
                 btn.textContent = `🔧 Update Lot to ${newLot} in ShipStation`;
             }
+        }
+        
+        function toggleAllLotCheckboxes() {
+            const selectAll = document.getElementById('select-all-lots');
+            const checkboxes = document.querySelectorAll('.lot-checkbox');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateLotSelectionCount();
+        }
+        
+        function updateLotSelectionCount() {
+            const checkboxes = document.querySelectorAll('.lot-checkbox:checked');
+            const count = checkboxes.length;
+            const countSpan = document.getElementById('selected-count');
+            const updateBtn = document.getElementById('bulk-update-btn');
+            const resolveBtn = document.getElementById('bulk-resolve-btn');
+            const selectAll = document.getElementById('select-all-lots');
+            
+            countSpan.textContent = `${count} selected`;
+            
+            if (count > 0) {
+                updateBtn.disabled = false;
+                resolveBtn.disabled = false;
+                updateBtn.style.opacity = '1';
+                resolveBtn.style.opacity = '1';
+                updateBtn.style.cursor = 'pointer';
+                resolveBtn.style.cursor = 'pointer';
+            } else {
+                updateBtn.disabled = true;
+                resolveBtn.disabled = true;
+                updateBtn.style.opacity = '0.5';
+                resolveBtn.style.opacity = '0.5';
+                updateBtn.style.cursor = 'not-allowed';
+                resolveBtn.style.cursor = 'not-allowed';
+            }
+            
+            // Update select-all checkbox state
+            const totalCheckboxes = document.querySelectorAll('.lot-checkbox').length;
+            selectAll.checked = count === totalCheckboxes && count > 0;
+            selectAll.indeterminate = count > 0 && count < totalCheckboxes;
+        }
+        
+        async function bulkUpdateLots() {
+            const checkboxes = document.querySelectorAll('.lot-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('No items selected');
+                return;
+            }
+            
+            const count = checkboxes.length;
+            if (!confirm(`Update ${count} lot number(s) in ShipStation? This will correct the SKU-Lot format for all selected orders.`)) {
+                return;
+            }
+            
+            const updateBtn = document.getElementById('bulk-update-btn');
+            updateBtn.disabled = true;
+            updateBtn.textContent = `Updating ${count}...`;
+            
+            let successCount = 0;
+            let failureCount = 0;
+            
+            for (const checkbox of checkboxes) {
+                const alertId = checkbox.dataset.alertId;
+                const orderId = checkbox.dataset.orderId;
+                const itemId = checkbox.dataset.itemId;
+                const baseSku = checkbox.dataset.baseSku;
+                const activeLot = checkbox.dataset.activeLot;
+                
+                try {
+                    const response = await fetch('/api/update_lot_in_shipstation', {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            shipstation_order_id: orderId,
+                            shipstation_item_id: itemId,
+                            base_sku: baseSku,
+                            new_lot: activeLot,
+                            alert_id: alertId
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        failureCount++;
+                        console.error(`Failed to update order ${checkbox.dataset.orderNumber}:`, result.error);
+                    }
+                } catch (error) {
+                    failureCount++;
+                    console.error(`Error updating order ${checkbox.dataset.orderNumber}:`, error);
+                }
+                
+                updateBtn.textContent = `Updated ${successCount}/${count}...`;
+            }
+            
+            alert(`✅ Bulk update complete!\nSuccessful: ${successCount}\nFailed: ${failureCount}`);
+            await checkLotMismatchAlerts();
+            const modal = document.querySelector('div[style*="z-index: 9999"]');
+            if (modal) modal.remove();
+        }
+        
+        async function bulkResolveLots() {
+            const checkboxes = document.querySelectorAll('.lot-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('No items selected');
+                return;
+            }
+            
+            const count = checkboxes.length;
+            if (!confirm(`Mark ${count} lot mismatch alert(s) as resolved?`)) {
+                return;
+            }
+            
+            const resolveBtn = document.getElementById('bulk-resolve-btn');
+            resolveBtn.disabled = true;
+            resolveBtn.textContent = `Resolving ${count}...`;
+            
+            let successCount = 0;
+            let failureCount = 0;
+            
+            for (const checkbox of checkboxes) {
+                const alertId = checkbox.dataset.alertId;
+                
+                try {
+                    const response = await fetch(`/api/lot_mismatch_alerts/${alertId}/resolve`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({resolved_by: 'bulk_manual'})
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        failureCount++;
+                        console.error(`Failed to resolve alert ${alertId}:`, result.error);
+                    }
+                } catch (error) {
+                    failureCount++;
+                    console.error(`Error resolving alert ${alertId}:`, error);
+                }
+                
+                resolveBtn.textContent = `Resolved ${successCount}/${count}...`;
+            }
+            
+            alert(`✅ Bulk resolve complete!\nSuccessful: ${successCount}\nFailed: ${failureCount}`);
+            await checkLotMismatchAlerts();
+            const modal = document.querySelector('div[style*="z-index: 9999"]');
+            if (modal) modal.remove();
         }
 
         // Manual Order Conflicts Functions
