@@ -1247,27 +1247,61 @@
             html += '</div>';
             html += '</div>';
             
+            // Consolidated Table View
+            html += '<div style="overflow-x: auto;">';
+            html += '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
+            html += '<thead>';
+            html += '<tr style="background: var(--bg-tertiary); border-bottom: 2px solid var(--border-color);">';
+            html += '<th style="padding: 12px 8px; text-align: center; width: 40px;"></th>';
+            html += '<th style="padding: 12px 8px; text-align: left; font-weight: 600;">Order #</th>';
+            html += '<th style="padding: 12px 8px; text-align: left; font-weight: 600;">SKU</th>';
+            html += '<th style="padding: 12px 8px; text-align: left; font-weight: 600;">ShipStation Lot</th>';
+            html += '<th style="padding: 12px 8px; text-align: left; font-weight: 600;">Active Lot</th>';
+            html += '<th style="padding: 12px 8px; text-align: left; font-weight: 600;">Status</th>';
+            html += '<th style="padding: 12px 8px; text-align: left; font-weight: 600;">Detected</th>';
+            html += '<th style="padding: 12px 8px; text-align: center; font-weight: 600; width: 120px;">Action</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+            
             lotMismatchAlertsData.forEach((alert, index) => {
-                html += `<div class="lot-alert-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px;">`;
-                html += `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">`;
-                html += `<label style="display: flex; align-items: center; gap: 12px; cursor: pointer; flex: 1;">`;
+                const rowStyle = index % 2 === 0 ? 'background: var(--bg-primary);' : 'background: var(--bg-secondary);';
+                html += `<tr style="${rowStyle} border-bottom: 1px solid var(--border-color);">`;
+                
+                // Checkbox
+                html += '<td style="padding: 12px 8px; text-align: center;">';
                 html += `<input type="checkbox" class="lot-checkbox" data-alert-id="${alert.id}" data-order-id="${alert.shipstation_order_id}" data-item-id="${alert.shipstation_item_id}" data-base-sku="${alert.base_sku}" data-active-lot="${alert.active_lot}" data-order-number="${alert.order_number}" onchange="updateLotSelectionCount()" style="width: 18px; height: 18px; cursor: pointer;">`;
-                html += `<div><strong>Order #${alert.order_number}</strong> - SKU ${alert.base_sku}</div>`;
-                html += `</label>`;
-                html += `</div>`;
+                html += '</td>';
                 
-                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">';
-                html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">Field</th><th style="padding: 8px;">Value</th></tr></thead>';
-                html += '<tbody>';
-                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">ShipStation Lot</td><td style="padding: 8px; color: #f44336;">${alert.shipstation_lot || 'NONE'}</td></tr>`;
-                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">Active Lot (Correct)</td><td style="padding: 8px; color: #4caf50;">${alert.active_lot}</td></tr>`;
-                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">Order Status</td><td style="padding: 8px;">${alert.order_status}</td></tr>`;
-                html += `<tr><td style="padding: 8px; font-weight: 600;">Detected</td><td style="padding: 8px;">${new Date(alert.detected_at).toLocaleString()}</td></tr>`;
-                html += '</tbody></table>';
+                // Order Number
+                html += `<td style="padding: 12px 8px;"><strong>${alert.order_number}</strong></td>`;
                 
-                html += `<button onclick="updateLotInShipStation(${alert.id}, '${alert.shipstation_order_id}', '${alert.shipstation_item_id}', '${alert.base_sku}', '${alert.active_lot}')" style="width: 100%; padding: 10px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔧 Update Lot to ${alert.active_lot} in ShipStation</button>`;
-                html += '</div>';
+                // SKU
+                html += `<td style="padding: 12px 8px; font-family: monospace;">${alert.base_sku}</td>`;
+                
+                // ShipStation Lot (wrong - red)
+                html += `<td style="padding: 12px 8px; color: #f44336; font-weight: 600;">${alert.shipstation_lot || 'NONE'}</td>`;
+                
+                // Active Lot (correct - green)
+                html += `<td style="padding: 12px 8px; color: #4caf50; font-weight: 600;">${alert.active_lot}</td>`;
+                
+                // Order Status
+                html += `<td style="padding: 12px 8px; font-size: 12px;">${alert.order_status}</td>`;
+                
+                // Detected
+                html += `<td style="padding: 12px 8px; font-size: 12px; color: var(--text-tertiary);">${new Date(alert.detected_at).toLocaleDateString()}</td>`;
+                
+                // Action Button
+                html += '<td style="padding: 12px 8px; text-align: center;">';
+                html += `<button onclick="updateLotInShipStation(${alert.id}, '${alert.shipstation_order_id}', '${alert.shipstation_item_id}', '${alert.base_sku}', '${alert.active_lot}')" style="padding: 6px 12px; background: var(--accent-orange); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; white-space: nowrap;">🔧 Update</button>`;
+                html += '</td>';
+                
+                html += '</tr>';
             });
+            
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
             
             html += '</div>';
             
