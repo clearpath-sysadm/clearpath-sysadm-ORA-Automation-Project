@@ -202,8 +202,8 @@ def fetch_shipments_batch(api_key: str, api_secret: str, start_date: str, end_da
         shipments_endpoint = "https://ssapi.shipstation.com/shipments"
         
         params = {
-            'shipDateStart': start_date,
-            'shipDateEnd': end_date,
+            'createDateStart': start_date,
+            'createDateEnd': end_date,
             'pageSize': 500  # Max allowed by API
         }
         
