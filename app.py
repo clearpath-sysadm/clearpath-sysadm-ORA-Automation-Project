@@ -54,6 +54,14 @@ def favicon():
     from flask import Response
     return Response(status=204)
 
+@app.route('/scratch/<path:filename>')
+def serve_scratch(filename):
+    """Serve scratch test files (temporary testing only)"""
+    from flask import make_response
+    response = make_response(send_from_directory(os.path.join(project_root, 'scratch'), filename))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
+
 @app.route('/<path:filename>')
 def serve_page(filename):
     """Serve HTML pages only (security: whitelist approach)"""

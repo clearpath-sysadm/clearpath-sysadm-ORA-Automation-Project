@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iframe Modal Test</title>
+    <style>
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            padding: 40px;
+            background: #f5f7fa;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: #f2994a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+        
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+        
+        .modal-body {
+            padding: 0;
+        }
+        
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            background: #f9f9f9;
+        }
+        
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+        }
+        
+        .error-message {
+            padding: 40px;
+            text-align: center;
+            color: #e74c3c;
+        }
+        
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .result-box {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Iframe Modal Test</h1>
+    
+    <div class="info-box">
+        <strong>⚠️ Test Purpose:</strong> Check if different websites allow iframe embedding (X-Frame-Options policy)
+    </div>
+    
+    <div class="test-buttons">
+        <button onclick="testFedExTracking()">Test FedEx Tracking</button>
+        <button onclick="testGoogleMaps()">Test Google Maps</button>
+        <button onclick="testLocalPage()">Test Local HTML</button>
+        <button onclick="testYouTube()">Test YouTube Embed</button>
+    </div>
+    
+    <div class="result-box">
+        <h3>Results:</h3>
+        <div id="results">
+            <p style="color: #999;">Click buttons above to test iframe embedding...</p>
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal" onclick="if(event.target === this) closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modal-title">Testing Iframe</h2>
+                <button class="btn-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="iframe-container">
+                    <div class="loading" id="loading">Loading...</div>
+                    <iframe id="test-iframe" style="display: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function openModal(title, url) {
+            const modal = document.getElementById('modal');
+            const iframe = document.getElementById('test-iframe');
+            const loading = document.getElementById('loading');
+            const titleEl = document.getElementById('modal-title');
+            
+            titleEl.textContent = title;
+            loading.style.display = 'block';
+            iframe.style.display = 'none';
+            
+            // Reset iframe
+            iframe.src = '';
+            
+            // Set new URL
+            setTimeout(() => {
+                iframe.src = url;
+                
+                // Show iframe after short delay
+                setTimeout(() => {
+                    iframe.style.display = 'block';
+                    loading.style.display = 'none';
+                }, 1000);
+                
+                // Check if iframe loaded or was blocked
+                iframe.onerror = function() {
+                    logResult(title, '❌ BLOCKED - Failed to load', 'error');
+                    loading.innerHTML = '<div class="error-message">❌ Site blocked iframe embedding</div>';
+                };
+                
+                iframe.onload = function() {
+                    try {
+                        // Try to access iframe content (will fail if blocked)
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        logResult(title, '✅ SUCCESS - Loaded in iframe', 'success');
+                    } catch (e) {
+                        // X-Frame-Options likely blocked it
+                        logResult(title, '⚠️ LOADED BUT RESTRICTED - May have X-Frame-Options', 'warning');
+                    }
+                };
+            }, 100);
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            const iframe = document.getElementById('test-iframe');
+            modal.style.display = 'none';
+            iframe.src = '';
+        }
+        
+        function logResult(title, message, type) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                success: '#27ae60',
+                warning: '#f39c12',
+                error: '#e74c3c'
+            };
+            
+            const resultHTML = `
+                <div style="border-left: 4px solid ${colors[type]}; padding-left: 12px; margin-bottom: 12px;">
+                    <strong style="color: ${colors[type]};">[${timestamp}] ${title}:</strong><br>
+                    <span style="color: #666;">${message}</span>
+                </div>
+            `;
+            
+            results.innerHTML = resultHTML + results.innerHTML;
+        }
+        
+        function testFedExTracking() {
+            const trackingNumber = '394575293100';
+            const url = `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`;
+            openModal('FedEx Tracking Test', url);
+        }
+        
+        function testGoogleMaps() {
+            const url = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2970.3!2d-87.6298!3d41.8781!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDUyJzQxLjIiTiA4N8KwMzcnNDcuMyJX!5e0!3m2!1sen!2sus!4v1234567890';
+            openModal('Google Maps Test', url);
+        }
+        
+        function testLocalPage() {
+            const url = '/xml_import.html';
+            openModal('Local Page Test (Orders Inbox)', url);
+        }
+        
+        function testYouTube() {
+            const url = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+            openModal('YouTube Embed Test', url);
+        }
+        
+        // Close modal on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>
