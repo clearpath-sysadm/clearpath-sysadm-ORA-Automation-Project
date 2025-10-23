@@ -7,6 +7,7 @@ import sys
 import uuid
 from flask import Flask, jsonify, render_template, send_from_directory, request
 from datetime import datetime, timedelta
+import pytz
 from werkzeug.utils import secure_filename
 
 # Add project root to path
@@ -111,15 +112,21 @@ def health_check():
                 else:
                     health = '🔴 Never ran'  # Red for never ran and not running
             
-            # Parse updated_at timestamp
+            # Parse updated_at timestamp - send as ISO format for client-side timezone conversion
             if updated_at:
                 if isinstance(updated_at, str):
                     updated_dt = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
                 else:
                     updated_dt = updated_at
-                updated_str = updated_dt.strftime('%b %d, %I:%M %p')
+                
+                # Ensure timezone-aware (UTC)
+                if updated_dt.tzinfo is None:
+                    updated_dt = pytz.UTC.localize(updated_dt)
+                
+                # Send as ISO string for JavaScript to convert to user's local time
+                updated_str = updated_dt.isoformat()
             else:
-                updated_str = "Never"
+                updated_str = None
             
             workflow_status.append({
                 'name': name,
@@ -148,7 +155,13 @@ def health_check():
                 watermark_dt = watermark_ts
             
             watermark_age_minutes = int((now.timestamp() - watermark_dt.timestamp()) / 60)
+            
+            # Ensure timezone-aware (UTC) for client-side conversion
+            if watermark_dt.tzinfo is None:
+                watermark_dt = pytz.UTC.localize(watermark_dt)
+            
             watermark_str = f"{watermark_age_minutes} min ago"
+            watermark_formatted = watermark_dt.isoformat()
             
             # Determine watermark health
             if watermark_age_minutes <= 10:

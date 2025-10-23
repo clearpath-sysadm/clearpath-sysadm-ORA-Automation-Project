@@ -2,11 +2,17 @@
 // This file provides timezone-aware date formatting across all pages
 
 /**
- * Get the user's selected timezone from localStorage
- * @returns {string} The timezone identifier (e.g., 'America/New_York')
+ * Get the user's timezone - auto-detected from browser
+ * @returns {string} The timezone identifier (e.g., 'America/Chicago')
  */
 function getUserTimezone() {
-    return localStorage.getItem('userTimezone') || 'America/New_York';
+    // Auto-detect from browser, fallback to localStorage, then default
+    try {
+        const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        return localStorage.getItem('userTimezone') || browserTimezone || 'America/New_York';
+    } catch (e) {
+        return localStorage.getItem('userTimezone') || 'America/New_York';
+    }
 }
 
 /**
@@ -194,4 +200,34 @@ function showTimezoneIndicator() {
     };
     
     return tzNames[timezone] || timezone;
+}
+
+/**
+ * Format workflow timestamp (for Last Updated field)
+ * Returns format like "Oct 23, 7:48 AM" in user's timezone
+ * @param {string|Date|null} dateInput - The datetime to format (ISO string or Date object)
+ * @returns {string} Formatted datetime string or "Never"
+ */
+function formatWorkflowTimestamp(dateInput) {
+    if (!dateInput || dateInput === null) {
+        return 'Never';
+    }
+    
+    const timezone = getUserTimezone();
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    
+    if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+    }
+    
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+    
+    return formatter.format(date);
 }
