@@ -3741,6 +3741,37 @@ def api_get_duplicate_alerts():
             'error': str(e)
         }), 500
 
+@app.route('/api/lot_mismatch_count', methods=['GET'])
+def api_get_lot_mismatch_count():
+    """Get count of orders with unresolved lot mismatches"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT COUNT(DISTINCT order_number) as mismatch_count
+            FROM lot_mismatch_alerts
+            WHERE resolved_at IS NULL
+        """)
+        
+        row = cursor.fetchone()
+        count = row[0] if row else 0
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'count': count
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching lot mismatch count: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/duplicate_alerts/<int:alert_id>/resolve', methods=['PUT'])
 def api_resolve_duplicate_alert(alert_id):
     """Mark a duplicate alert as resolved"""
