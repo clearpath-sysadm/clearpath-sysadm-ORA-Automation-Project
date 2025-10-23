@@ -245,9 +245,12 @@ def upload_pending_orders():
         if not sku_lot_map:
             logger.warning('⚠️ No active lot numbers found in sku_lot table! Orders will upload without lot numbers.')
         else:
-            logger.info(f'✅ Loaded {len(sku_lot_map)} active lot mappings from sku_lot table:')
+            logger.info('=' * 60)
+            logger.info(f'🗂️  ACTIVE LOT MAPPINGS LOADED: {len(sku_lot_map)} SKUs')
+            logger.info('=' * 60)
             for sku, lot in sku_lot_map.items():
                 logger.info(f'   📦 SKU {sku} → Active Lot {lot}')
+            logger.info('=' * 60)
         
         # Fetch Product Name mappings
         cursor.execute("""
@@ -299,19 +302,22 @@ def upload_pending_orders():
                 base_sku = normalized_sku.split(' - ')[0].strip() if ' - ' in normalized_sku else normalized_sku
                 
                 # LOG: Show SKU transformation pipeline
-                logger.info(f"🔍 Order #{order_number} - Processing item:")
-                logger.info(f"   ├─ Raw SKU from DB: '{sku}'")
-                logger.info(f"   ├─ After normalize: '{normalized_sku}'")
-                logger.info(f"   ├─ Extracted base SKU: '{base_sku}'")
+                logger.info('─' * 60)
+                logger.info(f"🔍 SKU TRANSFORMATION | Order #{order_number}")
+                logger.info('─' * 60)
+                logger.info(f"   1️⃣ Raw SKU from DB: '{sku}'")
+                logger.info(f"   2️⃣ After normalize: '{normalized_sku}'")
+                logger.info(f"   3️⃣ Extracted base SKU: '{base_sku}'")
                 
                 # Replace with active lot if available (handles both new orders and manual orders with stale lots)
                 if base_sku in sku_lot_map:
                     active_lot = sku_lot_map[base_sku]
                     normalized_sku = f"{base_sku} - {active_lot}"
-                    logger.info(f"   ├─ Found in sku_lot_map: Active lot = {active_lot}")
-                    logger.info(f"   └─ ✅ FINAL SKU: '{normalized_sku}'")
+                    logger.info(f"   4️⃣ Found in sku_lot_map → Active lot = {active_lot}")
+                    logger.info(f"   ✅ FINAL SKU: '{normalized_sku}'")
                 else:
-                    logger.warning(f"   └─ ⚠️ SKU '{base_sku}' NOT in sku_lot_map - no lot will be appended!")
+                    logger.warning(f"   ❌ SKU '{base_sku}' NOT in sku_lot_map - no lot will be appended!")
+                logger.info('─' * 60)
                 
                 # Accumulate quantities for same FULL SKU (base + lot)
                 consolidated_items[normalized_sku]['qty'] += qty
@@ -345,8 +351,12 @@ def upload_pending_orders():
                     })
                     
                     # LOG: Show what's actually being sent to ShipStation
-                    logger.info(f"📤 Order #{order_number} - Adding line item to ShipStation payload:")
-                    logger.info(f"   SKU sent to ShipStation: '{full_sku}' (qty: {qty})")
+                    logger.info('╔' + '═' * 58 + '╗')
+                    logger.info(f"║ 📤 SHIPSTATION API PAYLOAD | Order #{order_number:<24} ║")
+                    logger.info('╠' + '═' * 58 + '╣')
+                    logger.info(f"║ SKU Sent: '{full_sku:<45}' ║")
+                    logger.info(f"║ Quantity: {qty:<46} ║")
+                    logger.info('╚' + '═' * 58 + '╝')
                     
                     total_amount += (unit_price_cents * qty / 100) if unit_price_cents else 0
                     all_skus.append(base_sku)
