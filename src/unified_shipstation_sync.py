@@ -30,6 +30,13 @@ from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
 from src.services.database import execute_query, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+from src.services.shipstation.tracking_service import (
+    is_business_hours,
+    should_track_order,
+    fetch_tracking_status,
+    update_order_tracking_status,
+    map_carrier_to_code
+)
 from utils.api_utils import make_api_request
 
 # Logging setup with comprehensive output
@@ -763,6 +770,107 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         return False
 
 
+def sync_tracking_statuses(conn, api_key: str, api_secret: str) -> int:
+    """
+    Fetch and update tracking statuses for active (non-delivered) orders.
+    Only runs during business hours (6 AM Pacific to 5 PM Eastern).
+    
+    Args:
+        conn: Database connection (transaction context)
+        api_key: ShipStation API key
+        api_secret: ShipStation API secret
+    
+    Returns:
+        int: Number of tracking statuses updated
+    """
+    cursor = conn.cursor()
+    
+    # Get orders that need tracking status updates
+    # Rules:
+    # - Has tracking number
+    # - Status NOT 'delivered' (or NULL)
+    # - Last checked > 5 minutes ago (or never checked)
+    cursor.execute("""
+        SELECT 
+            order_number, 
+            tracking_number, 
+            shipping_carrier_name, 
+            tracking_status,
+            tracking_last_checked
+        FROM orders_inbox
+        WHERE tracking_number IS NOT NULL
+          AND tracking_number != ''
+          AND (tracking_status IS NULL OR tracking_status != 'DE')
+          AND (tracking_last_checked IS NULL 
+               OR tracking_last_checked < NOW() - INTERVAL '5 minutes')
+        ORDER BY tracking_last_checked NULLS FIRST
+        LIMIT 50
+    """)
+    
+    orders_to_check = cursor.fetchall()
+    
+    if not orders_to_check:
+        logger.debug("📭 No orders need tracking status updates")
+        return 0
+    
+    logger.info(f"🔍 Checking tracking status for {len(orders_to_check)} orders...")
+    
+    updated = 0
+    for order_number, tracking_number, carrier, current_status, last_checked in orders_to_check:
+        try:
+            # Handle multiple tracking numbers (comma-separated)
+            tracking_nums = [t.strip() for t in tracking_number.split(',')]
+            primary_tracking = tracking_nums[0]
+            
+            # Map carrier to code
+            carrier_code = map_carrier_to_code(carrier) if carrier else 'fedex'
+            
+            # Fetch status from ShipStation
+            tracking_data = fetch_tracking_status(primary_tracking, carrier_code, api_key, api_secret)
+            
+            if tracking_data.get('success'):
+                # Update database
+                update_order_tracking_status(order_number, tracking_data, conn)
+                updated += 1
+                
+                # Log status changes
+                new_status = tracking_data.get('status_code')
+                if new_status != current_status:
+                    logger.info(f"📊 Order {order_number}: {current_status or 'NEW'} → {new_status}")
+                    
+                    # Alert on exceptions
+                    if new_status == 'EX':
+                        exception_desc = tracking_data.get('exception_description', 'Unknown exception')
+                        logger.warning(f"⚠️ EXCEPTION for order {order_number}: {exception_desc}")
+            else:
+                error_msg = tracking_data.get('error', 'Unknown error')
+                logger.warning(f"⚠️ Failed to fetch tracking for {order_number}: {error_msg}")
+                
+                # Still update last_checked timestamp even on failure
+                cursor.execute("""
+                    UPDATE orders_inbox
+                    SET tracking_last_checked = NOW()
+                    WHERE order_number = %s
+                """, (order_number,))
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to update tracking for {order_number}: {e}", exc_info=True)
+            
+            # CRITICAL: Update last_checked even on exception to prevent retry storm
+            try:
+                cursor.execute("""
+                    UPDATE orders_inbox
+                    SET tracking_last_checked = NOW()
+                    WHERE order_number = %s
+                """, (order_number,))
+            except:
+                pass  # If this fails, let it fail silently to avoid cascading errors
+            continue
+    
+    logger.info(f"✅ Updated tracking status for {updated}/{len(orders_to_check)} orders")
+    return updated
+
+
 def run_unified_sync():
     """
     Main unified sync function.
@@ -928,6 +1036,21 @@ def run_unified_sync():
                 logger.warning(f"⚠️ Failed to fetch/update tracking numbers (non-fatal): {e}")
                 stats['tracking_updates'] = 0
             
+            # Fetch and update tracking statuses (only during business hours)
+            # This runs AFTER tracking number updates, within the same transaction
+            try:
+                if is_business_hours():
+                    logger.info("🔍 Checking tracking statuses (business hours active)...")
+                    tracking_status_updates = sync_tracking_statuses(conn, api_key, api_secret)
+                    stats['tracking_status_updates'] = tracking_status_updates
+                else:
+                    logger.info("⏰ Outside business hours - skipping tracking status updates")
+                    stats['tracking_status_updates'] = 0
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to update tracking statuses (non-fatal): {e}")
+                stats['tracking_status_updates'] = 0
+            
             # CRITICAL: Only update watermark if NO errors occurred (per architect)
             # This prevents data loss - failed orders will be reprocessed on next run
             if stats['errors'] == 0:
@@ -951,6 +1074,7 @@ def run_unified_sync():
         logger.info(f"   ✅ New manual orders imported: {stats['new_manual_imported']}")
         logger.info(f"   🔄 Existing orders updated: {stats['existing_updated']}")
         logger.info(f"   📍 Tracking numbers updated: {stats.get('tracking_updates', 0)}")
+        logger.info(f"   🔍 Tracking statuses updated: {stats.get('tracking_status_updates', 0)}")
         logger.info(f"   ⏭️ Skipped (not manual): {stats['skipped_not_manual']}")
         logger.info(f"   ⏭️ Skipped (local origin): {stats['skipped_local_origin']}")
         logger.info(f"   ⏭️ Skipped (no key SKUs): {stats['skipped_no_key_skus']}")

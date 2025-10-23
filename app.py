@@ -2129,11 +2129,14 @@ def api_orders_inbox():
                 o.is_flagged,
                 o.flag_reason,
                 o.notes,
-                o.flagged_at
+                o.flagged_at,
+                o.tracking_status,
+                o.tracking_status_description,
+                o.exception_description
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.tracking_number, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.tracking_number, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at, o.tracking_status, o.tracking_status_description, o.exception_description
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
@@ -2183,7 +2186,10 @@ def api_orders_inbox():
                 'is_flagged': row[18] or False,
                 'flag_reason': row[19] or '',
                 'notes': row[20] or '',
-                'flagged_at': row[21]
+                'flagged_at': row[21],
+                'tracking_status': row[22] or None,
+                'tracking_status_description': row[23] or None,
+                'exception_description': row[24] or None
             })
         
         return jsonify({

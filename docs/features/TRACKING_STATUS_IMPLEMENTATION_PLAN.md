@@ -17,6 +17,7 @@ Add visual tracking status indicators to the Orders Inbox by fetching real-time 
 - ✅ Alert on exceptions that need attention
 - ✅ Minimize API calls to stay within rate limits
 - ✅ Stop tracking delivered orders automatically
+- ✅ Poll only during business hours (6 AM Pacific to 5 PM Eastern)
 
 ### Non-Goals
 - ❌ Full tracking timeline/events (too complex for MVP)
@@ -133,13 +134,13 @@ def should_track_order(order: dict) -> bool:
     Rules:
     - Has tracking number
     - Status not 'delivered' (DE)
-    - During business hours (9 AM - 5 PM CT)
+    - During business hours (6 AM Pacific to 5 PM Eastern)
     - Last checked > 5 minutes ago
     """
     pass
 
 def is_business_hours() -> bool:
-    """Check if current time is 9 AM - 5 PM Central Time."""
+    """Check if current time is 6 AM Pacific to 5 PM Eastern."""
     pass
 
 def update_order_tracking_status(order_number: str, tracking_data: dict, conn):
@@ -153,11 +154,25 @@ import pytz
 from datetime import datetime
 
 def is_business_hours() -> bool:
-    ct = pytz.timezone('America/Chicago')
-    now_ct = datetime.now(ct)
-    hour = now_ct.hour
-    # 9 AM to 5 PM Central Time
-    return 9 <= hour < 17
+    """
+    Check if current time is during business hours.
+    Business hours: 6 AM Pacific to 5 PM Eastern
+    - Pacific: 6 AM - 2 PM
+    - Central: 8 AM - 4 PM
+    - Eastern: 9 AM - 5 PM
+    """
+    # Check against Pacific time (6 AM - 2 PM)
+    pacific = pytz.timezone('America/Los_Angeles')
+    now_pacific = datetime.now(pacific)
+    pacific_hour = now_pacific.hour
+    
+    # Check against Eastern time (9 AM - 5 PM)
+    eastern = pytz.timezone('America/New_York')
+    now_eastern = datetime.now(eastern)
+    eastern_hour = now_eastern.hour
+    
+    # Must be after 6 AM Pacific AND before 5 PM Eastern
+    return pacific_hour >= 6 and eastern_hour < 17
 ```
 
 **Files to create:**
@@ -361,7 +376,7 @@ def get_tracking_exceptions():
 ## 🧪 Testing Plan
 
 ### Unit Tests
-1. ✅ Business hours detection (9 AM - 5 PM CT)
+1. ✅ Business hours detection (6 AM Pacific to 5 PM Eastern)
 2. ✅ Status code mapping (UN, AC, IT, EX, DE)
 3. ✅ Should track logic (filters delivered orders)
 4. ✅ Multiple tracking numbers handling
@@ -374,8 +389,8 @@ def get_tracking_exceptions():
 ### Manual Testing Checklist
 - [ ] Create test order with tracking number
 - [ ] Verify status appears in UI
-- [ ] Test during business hours (9 AM - 5 PM CT)
-- [ ] Test outside business hours (no updates)
+- [ ] Test during business hours (6 AM Pacific to 5 PM Eastern)
+- [ ] Test outside business hours (no updates should occur)
 - [ ] Simulate delivered status (stops tracking)
 - [ ] Simulate exception status (shows alert)
 - [ ] Test with multiple tracking numbers
@@ -393,7 +408,7 @@ def get_tracking_exceptions():
 
 ### After Implementation
 - Active orders tracking: ~10-20 orders
-- Business hours only: 96 cycles/day (9 AM - 5 PM = 480 min ÷ 5)
+- Business hours only: 132 cycles/day (6 AM Pacific to 5 PM Eastern = 11 hours = 660 min ÷ 5)
 - **Additional: 10-20 calls per cycle = 2-4 calls/minute**
 
 ### Total Projected Usage
@@ -523,7 +538,7 @@ If rate limit exceeded (HTTP 429):
 
 ### After Implementation
 **Message to user:**
-> ✅ Tracking status is now live! Look for status icons in the Orders Inbox. Delivered orders show ✅, active shipments show 🚚, and any problems show ⚠️. Updates happen every 5 minutes during business hours (9 AM - 5 PM).
+> ✅ Tracking status is now live! Look for status icons in the Orders Inbox. Delivered orders show ✅, active shipments show 🚚, and any problems show ⚠️. Updates happen every 5 minutes during business hours (6 AM Pacific to 5 PM Eastern).
 
 ---
 

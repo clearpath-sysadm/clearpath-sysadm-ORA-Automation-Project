@@ -763,6 +763,30 @@
             return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: ${badgeColor}; background-color: ${bgColor}; border: 1px solid ${badgeColor};">${serviceName}</span>`;
         }
 
+        // Helper: Get tracking status icon
+        function getTrackingStatusIcon(statusCode) {
+            const icons = {
+                'DE': '✅',  // Delivered
+                'IT': '🚚',  // In Transit
+                'EX': '⚠️',  // Exception
+                'AC': '📋',  // Accepted
+                'UN': '❓'   // Unknown
+            };
+            return icons[statusCode] || '📦';
+        }
+
+        // Helper: Format tracking status description
+        function getTrackingStatusDescription(statusCode) {
+            const descriptions = {
+                'DE': 'Delivered',
+                'IT': 'In Transit',
+                'EX': 'Exception',
+                'AC': 'Accepted',
+                'UN': 'Not Scanned'
+            };
+            return descriptions[statusCode] || 'Unknown';
+        }
+
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('orders-tbody');
             const mobileCards = document.getElementById('orders-mobile-cards');
@@ -875,10 +899,28 @@
                 const serviceBadge = getServiceBadge(order.shipping_service_name);
                 const carrierAcctBadge = getCarrierAccountBadge(order);
                 
-                // Format tracking number
-                const trackingCell = order.tracking_number 
-                    ? `<button onclick='openTrackingModal(${JSON.stringify(order).replace(/'/g, "&apos;")})' style="color: var(--primary-blue); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; font-size: inherit;" title="View tracking details">📦 View</button>`
-                    : '<span style="color: var(--text-tertiary);">-</span>';
+                // Format tracking number with status icon
+                let trackingCell = '<span style="color: var(--text-tertiary);">-</span>';
+                if (order.tracking_number) {
+                    const statusIcon = getTrackingStatusIcon(order.tracking_status);
+                    const statusDesc = getTrackingStatusDescription(order.tracking_status);
+                    const trackingNums = order.tracking_number.split(',').map(t => t.trim());
+                    const primaryTracking = trackingNums[0];
+                    
+                    // Build tracking display with status icon and number
+                    const tooltip = order.tracking_status ? 
+                        `${statusDesc}\\nClick to view details` : 
+                        'Click to view tracking details';
+                    
+                    trackingCell = `
+                        <button onclick='openTrackingModal(${JSON.stringify(order).replace(/'/g, "&apos;")})' 
+                                style="color: var(--text-primary); background: none; border: none; cursor: pointer; padding: 0; font-size: inherit; display: flex; align-items: center; gap: 6px; font-family: monospace;" 
+                                title="${tooltip}">
+                            <span style="font-size: 18px;">${statusIcon}</span>
+                            <span style="color: var(--text-secondary); font-size: 0.9em;">${primaryTracking}</span>
+                            ${order.tracking_status === 'EX' ? '<span style="color: var(--critical-red); font-size: 11px; font-weight: 600; margin-left: 4px;">ALERT</span>' : ''}
+                        </button>`;
+                }
                 
                 const flaggedStyle = order.is_flagged ? 'background-color: rgba(255, 193, 7, 0.15);' : '';
                 
@@ -970,7 +1012,16 @@
                         ${order.tracking_number ? `
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Tracking:</span>
-                            <span class="order-card-detail-value"><button onclick='openTrackingModal(${JSON.stringify(order).replace(/'/g, "&apos;")})' style="color: var(--primary-blue); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; font-size: inherit;" title="View tracking details">📦 View Details</button></span>
+                            <span class="order-card-detail-value">
+                                <button onclick='openTrackingModal(${JSON.stringify(order).replace(/'/g, "&apos;")})' 
+                                        style="color: var(--text-primary); background: none; border: none; cursor: pointer; padding: 0; font-size: inherit; display: flex; align-items: center; gap: 6px; font-family: monospace; flex-wrap: wrap;" 
+                                        title="${order.tracking_status ? getTrackingStatusDescription(order.tracking_status) + '\\nClick for details' : 'Click for tracking details'}">
+                                    <span style="font-size: 18px;">${getTrackingStatusIcon(order.tracking_status)}</span>
+                                    <span style="color: var(--text-secondary); font-size: 0.9em;">${order.tracking_number.split(',')[0].trim()}</span>
+                                    ${order.tracking_status === 'EX' ? '<span style="color: var(--critical-red); font-size: 11px; font-weight: 600;">ALERT</span>' : ''}
+                                </button>
+                                ${order.exception_description ? `<br><span style="color: var(--critical-red); font-size: 11px;">${order.exception_description}</span>` : ''}
+                            </span>
                         </div>
                         ` : ''}
                         ${order.shipping_carrier_id ? `
