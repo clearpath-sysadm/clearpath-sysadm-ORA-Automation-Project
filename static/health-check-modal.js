@@ -71,6 +71,23 @@ async function loadHealthDetails() {
     }
 }
 
+async function refreshHealthData() {
+    const icon = document.getElementById('health-refresh-icon');
+    const btn = document.querySelector('.btn-refresh-health');
+    
+    if (btn.disabled) return;
+    
+    btn.disabled = true;
+    icon.style.animation = 'spin 1s linear infinite';
+    
+    try {
+        await loadHealthDetails();
+    } finally {
+        btn.disabled = false;
+        icon.style.animation = '';
+    }
+}
+
 function renderHealthDetails() {
     const container = document.getElementById('health-details');
     if (!container || !healthData) return;
