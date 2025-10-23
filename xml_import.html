@@ -221,19 +221,26 @@
                         </div>
                     </div>
                     
-                    <div class="stats-grid">
-                        <div class="stat-card" onclick="filterByStatus('pending')" style="cursor: pointer;" title="Click to filter pending orders">
-                            <div class="stat-value" id="stat-pending">0</div>
-                            <div class="stat-label">Pending Upload</div>
-                        </div>
-                        <div class="stat-card" onclick="filterByStatus('awaiting_shipment')" style="cursor: pointer;" title="Click to filter awaiting shipment">
-                            <div class="stat-value" id="stat-uploaded">0</div>
-                            <div class="stat-label">Units to Ship (Local DB)</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="stat-failed">0</div>
-                            <div class="stat-label">Failed</div>
-                        </div>
+                    <!-- Filter Tabs -->
+                    <div class="filter-tabs" style="display: flex; gap: 8px; margin-bottom: 24px; padding: 16px; background: var(--bg-secondary); border-radius: 8px; flex-wrap: wrap;">
+                        <button class="filter-tab active" data-filter="all" style="padding: 8px 16px; background: var(--accent-orange); border: 1px solid var(--accent-orange); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: white; transition: all 0.2s;">
+                            All <span class="filter-badge" id="badge-all" style="display: inline-block; padding: 2px 8px; margin-left: 6px; background: rgba(255,255,255,0.3); border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                        </button>
+                        <button class="filter-tab" data-filter="pending" style="padding: 8px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: all 0.2s;">
+                            Pending <span class="filter-badge" id="badge-pending" style="display: inline-block; padding: 2px 8px; margin-left: 6px; background: var(--text-tertiary); color: white; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                        </button>
+                        <button class="filter-tab" data-filter="failed" style="padding: 8px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: all 0.2s;">
+                            Failed <span class="filter-badge warning" id="badge-failed" style="display: inline-block; padding: 2px 8px; margin-left: 6px; background: var(--critical-red); color: white; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                        </button>
+                        <button class="filter-tab" data-filter="hold" style="padding: 8px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: all 0.2s;">
+                            On Hold <span class="filter-badge" id="badge-hold" style="display: inline-block; padding: 2px 8px; margin-left: 6px; background: var(--text-tertiary); color: white; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                        </button>
+                        <button class="filter-tab" data-filter="benco" style="padding: 8px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: all 0.2s;">
+                            Benco <span class="filter-badge info" id="badge-benco" style="display: inline-block; padding: 2px 8px; margin-left: 6px; background: var(--primary-navy); color: white; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                        </button>
+                        <button class="filter-tab" data-filter="hawaiian" style="padding: 8px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: all 0.2s;">
+                            Hawaiian <span class="filter-badge info" id="badge-hawaiian" style="display: inline-block; padding: 2px 8px; margin-left: 6px; background: var(--primary-navy); color: white; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                        </button>
                     </div>
 
                     <div style="margin-bottom: 20px;">
