@@ -499,7 +499,7 @@
         const alertContainer = document.getElementById('alert-container');
         
         // Filter state - controlled by filter tabs
-        let filterMode = 'all'; // 'all', 'pending', 'failed', 'flagged', 'hold', 'benco', 'hawaiian', 'canadian', 'international'
+        let activeFilters = new Set(); // Set of active filter names (toggle mode)
         let searchTerm = '';
         
         // Track current order for flagging
@@ -734,32 +734,26 @@
             // Store all orders for sorting
             currentOrders = orders;
 
-            // Filter based on selected filter tab
+            // Filter based on active filter tabs (toggle mode - show orders matching ANY active filter)
             let filteredOrders = orders;
-            if (filterMode === 'pending') {
-                filteredOrders = orders.filter(o => o.status === 'pending');
-            } else if (filterMode === 'awaiting_shipment') {
-                filteredOrders = orders.filter(o => o.status === 'uploaded' || o.status === 'awaiting_shipment');
-            } else if (filterMode === 'failed') {
-                filteredOrders = orders.filter(o => o.status === 'failed');
-            } else if (filterMode === 'flagged') {
-                filteredOrders = orders.filter(o => o.is_flagged);
-            } else if (filterMode === 'hold') {
-                filteredOrders = orders.filter(o => o.on_hold);
-            } else if (filterMode === 'benco') {
-                filteredOrders = orders.filter(o => 
-                    o.company_name && o.company_name.toLowerCase().includes('benco')
-                );
-            } else if (filterMode === 'hawaiian') {
-                filteredOrders = orders.filter(o => 
-                    o.state && o.state.toUpperCase() === 'HI'
-                );
-            } else if (filterMode === 'canadian') {
-                filteredOrders = orders.filter(o => o.is_canadian);
-            } else if (filterMode === 'international') {
-                filteredOrders = orders.filter(o => o.is_international);
+            if (activeFilters.size > 0) {
+                filteredOrders = orders.filter(order => {
+                    // Check if order matches ANY of the active filters
+                    for (const filter of activeFilters) {
+                        if (filter === 'pending' && order.status === 'pending') return true;
+                        if (filter === 'awaiting_shipment' && (order.status === 'uploaded' || order.status === 'awaiting_shipment')) return true;
+                        if (filter === 'failed' && order.status === 'failed') return true;
+                        if (filter === 'flagged' && order.is_flagged) return true;
+                        if (filter === 'hold' && order.on_hold) return true;
+                        if (filter === 'benco' && order.company_name && order.company_name.toLowerCase().includes('benco')) return true;
+                        if (filter === 'hawaiian' && order.state && order.state.toUpperCase() === 'HI') return true;
+                        if (filter === 'canadian' && order.is_canadian) return true;
+                        if (filter === 'international' && order.is_international) return true;
+                    }
+                    return false; // Order doesn't match any active filter
+                });
             }
-            // filterMode === 'all' shows all orders (no filtering)
+            // No active filters = show all orders
             
             // Apply search filter if search term exists
             if (searchTerm.trim()) {
@@ -776,7 +770,7 @@
                 // Enhanced empty state with helpful context
                 let emptyStateHTML = '';
                 
-                if (filterMode === 'all' && orders.length === 0) {
+                if (activeFilters.size === 0 && orders.length === 0) {
                     // True empty inbox - show helpful message with Dashboard link
                     emptyStateHTML = `
                         <div style="text-align: center; padding: 60px 20px; background: var(--bg-secondary); border-radius: 12px; margin: 20px;">
@@ -800,20 +794,8 @@
                         </div>
                     `;
                 } else {
-                    // Filter-specific empty states
-                    const filterMessages = {
-                        'pending': 'No pending orders',
-                        'failed': 'No failed orders',
-                        'flagged': 'No flagged orders',
-                        'hold': 'No orders on hold',
-                        'benco': 'No Benco orders',
-                        'hawaiian': 'No Hawaiian orders',
-                        'canadian': 'No Canadian orders',
-                        'international': 'No international orders',
-                        'awaiting_shipment': 'No orders awaiting shipment'
-                    };
-                    const message = filterMessages[filterMode] || 'No orders match this filter';
-                    emptyStateHTML = `<div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary);">${message}</div>`;
+                    // Filter-specific empty state
+                    emptyStateHTML = `<div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary);">No orders match the selected filters</div>`;
                 }
                 
                 tbody.innerHTML = `<tr><td colspan="14" style="padding: 0;">${emptyStateHTML}</td></tr>`;
@@ -1288,12 +1270,25 @@
                 return;
             }
 
-            // Determine which orders to export based on current filter
+            // Export currently visible/filtered orders
             let ordersToExport = currentOrders;
-            if (filterMode === 'pending') {
-                ordersToExport = currentOrders.filter(order => order.status === 'pending');
-            } else if (filterMode === 'awaiting_shipment') {
-                ordersToExport = currentOrders.filter(order => order.status === 'uploaded' || order.status === 'awaiting_shipment');
+            
+            // Apply same filtering logic as renderOrdersTable
+            if (activeFilters.size > 0) {
+                ordersToExport = currentOrders.filter(order => {
+                    for (const filter of activeFilters) {
+                        if (filter === 'pending' && order.status === 'pending') return true;
+                        if (filter === 'awaiting_shipment' && (order.status === 'uploaded' || order.status === 'awaiting_shipment')) return true;
+                        if (filter === 'failed' && order.status === 'failed') return true;
+                        if (filter === 'flagged' && order.is_flagged) return true;
+                        if (filter === 'hold' && order.on_hold) return true;
+                        if (filter === 'benco' && order.company_name && order.company_name.toLowerCase().includes('benco')) return true;
+                        if (filter === 'hawaiian' && order.state && order.state.toUpperCase() === 'HI') return true;
+                        if (filter === 'canadian' && order.is_canadian) return true;
+                        if (filter === 'international' && order.is_international) return true;
+                    }
+                    return false;
+                });
             }
 
             if (ordersToExport.length === 0) {
@@ -1336,8 +1331,8 @@
             const link = document.createElement('a');
             link.href = url;
             
-            const filterText = filterMode === 'pending' ? '_pending' : 
-                              filterMode === 'awaiting_shipment' ? '_awaiting_shipment' : '_all';
+            // Build filter text from active filters
+            const filterText = activeFilters.size === 0 ? '_all' : `_${Array.from(activeFilters).join('_')}`;
             const timestamp = new Date().toISOString().split('T')[0];
             link.download = `orders_inbox${filterText}_${timestamp}.csv`;
             
@@ -1352,17 +1347,36 @@
         // CSV Export button handler
         document.getElementById('btn-export-csv').addEventListener('click', exportToCSV);
 
-        // Filter tab click handlers
+        // Filter tab click handlers (toggle mode)
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const filter = this.getAttribute('data-filter');
                 
-                // Update active state (CSS classes handle all styling)
-                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
+                if (filter === 'all') {
+                    // "All" button clears all filters and deactivates all tabs
+                    activeFilters.clear();
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                } else {
+                    // Remove "All" tab active state when selecting any other filter
+                    document.querySelector('.filter-tab[data-filter="all"]').classList.remove('active');
+                    
+                    // Toggle this filter on/off
+                    if (activeFilters.has(filter)) {
+                        activeFilters.delete(filter);
+                        this.classList.remove('active');
+                    } else {
+                        activeFilters.add(filter);
+                        this.classList.add('active');
+                    }
+                    
+                    // If no filters active, activate "All" button
+                    if (activeFilters.size === 0) {
+                        document.querySelector('.filter-tab[data-filter="all"]').classList.add('active');
+                    }
+                }
                 
-                // Apply filter
-                filterMode = filter;
+                // Re-render table with new filters
                 if (currentOrders.length > 0) {
                     renderOrdersTable(currentOrders);
                 }
