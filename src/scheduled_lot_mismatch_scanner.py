@@ -216,8 +216,7 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
             
             auto_resolved = cursor.rowcount
             
-            # Commit all database changes
-            conn.commit()
+            # transaction_with_retry() handles commit automatically
             
         # Update workflow last run (after transaction completes)
         update_workflow_last_run(WORKFLOW_NAME)
