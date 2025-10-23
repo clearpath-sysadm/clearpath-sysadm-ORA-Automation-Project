@@ -181,6 +181,124 @@ def has_key_product_skus(order: Dict[Any, Any]) -> bool:
     return False
 
 
+def fetch_shipments_batch(api_key: str, api_secret: str, start_date: str, end_date: str) -> List[Dict[Any, Any]]:
+    """
+    Fetch shipments from ShipStation for a date range.
+    Uses the /shipments endpoint which contains tracking numbers.
+    
+    Args:
+        api_key: ShipStation API key
+        api_secret: ShipStation API secret
+        start_date: Start date in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+        end_date: End date in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+    
+    Returns:
+        List of shipment dictionaries
+    """
+    try:
+        from src.services.shipstation.api_client import get_shipstation_headers
+        
+        headers = get_shipstation_headers(api_key, api_secret)
+        shipments_endpoint = "https://ssapi.shipstation.com/shipments"
+        
+        params = {
+            'shipDateStart': start_date,
+            'shipDateEnd': end_date,
+            'pageSize': 500  # Max allowed by API
+        }
+        
+        all_shipments = []
+        page = 1
+        
+        while True:
+            params['page'] = page
+            
+            logger.debug(f"🚢 Fetching shipments page {page} (date range: {start_date} to {end_date})")
+            
+            response = make_api_request(
+                url=shipments_endpoint,
+                method='GET',
+                headers=headers,
+                params=params,
+                timeout=30
+            )
+            
+            if not response:
+                logger.warning(f"⚠️ No response from shipments endpoint (page {page})")
+                break
+            
+            shipments = response.get('shipments', [])
+            if not shipments:
+                logger.debug(f"📭 No more shipments on page {page}")
+                break
+            
+            all_shipments.extend(shipments)
+            logger.debug(f"📦 Retrieved {len(shipments)} shipments from page {page}")
+            
+            # Check if there are more pages
+            total_pages = response.get('pages', 1)
+            if page >= total_pages:
+                break
+            
+            page += 1
+        
+        logger.info(f"✅ Retrieved {len(all_shipments)} total shipments")
+        return all_shipments
+        
+    except Exception as e:
+        logger.error(f"❌ Error fetching shipments: {e}", exc_info=True)
+        return []
+
+
+def update_tracking_numbers(shipments: List[Dict[Any, Any]], conn) -> int:
+    """
+    Update tracking numbers in orders_inbox based on shipment data.
+    Matches shipments to orders by order_number.
+    
+    Args:
+        shipments: List of shipment dictionaries from ShipStation
+        conn: Database connection (transaction context)
+    
+    Returns:
+        Number of orders updated with tracking numbers
+    """
+    if not shipments:
+        return 0
+    
+    try:
+        cursor = conn.cursor()
+        updated_count = 0
+        
+        for shipment in shipments:
+            order_number = shipment.get('orderNumber', '').strip()
+            tracking_number = shipment.get('trackingNumber', '').strip()
+            
+            if not order_number or not tracking_number:
+                continue
+            
+            # Update tracking number for this order
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET tracking_number = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_number = %s
+                  AND (tracking_number IS NULL OR tracking_number = '')
+            """, (tracking_number, order_number))
+            
+            if cursor.rowcount > 0:
+                updated_count += 1
+                logger.debug(f"📍 Updated tracking for order {order_number}: {tracking_number}")
+        
+        if updated_count > 0:
+            logger.info(f"✅ Updated {updated_count} orders with tracking numbers")
+        
+        return updated_count
+        
+    except Exception as e:
+        logger.error(f"❌ Error updating tracking numbers: {e}", exc_info=True)
+        return 0
+
+
 def order_exists_locally(order_number: str, conn) -> Tuple[bool, int]:
     """
     Check if order already exists in local database.
@@ -783,6 +901,30 @@ def run_unified_sync():
             
             cursor.close()
             
+            # Fetch and update tracking numbers (uses /shipments endpoint)
+            # This runs AFTER order processing, within the same transaction
+            try:
+                logger.info("🚢 Fetching shipments to update tracking numbers...")
+                
+                # Use the same date range as order fetch (last_sync to now)
+                shipments = fetch_shipments_batch(
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    start_date=last_sync,
+                    end_date=datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+                )
+                
+                if shipments:
+                    tracking_updates = update_tracking_numbers(shipments, conn)
+                    stats['tracking_updates'] = tracking_updates
+                else:
+                    logger.info("📭 No shipments found for tracking number updates")
+                    stats['tracking_updates'] = 0
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to fetch/update tracking numbers (non-fatal): {e}")
+                stats['tracking_updates'] = 0
+            
             # CRITICAL: Only update watermark if NO errors occurred (per architect)
             # This prevents data loss - failed orders will be reprocessed on next run
             if stats['errors'] == 0:
@@ -805,6 +947,7 @@ def run_unified_sync():
         logger.info("📊 SYNC SUMMARY:")
         logger.info(f"   ✅ New manual orders imported: {stats['new_manual_imported']}")
         logger.info(f"   🔄 Existing orders updated: {stats['existing_updated']}")
+        logger.info(f"   📍 Tracking numbers updated: {stats.get('tracking_updates', 0)}")
         logger.info(f"   ⏭️ Skipped (not manual): {stats['skipped_not_manual']}")
         logger.info(f"   ⏭️ Skipped (local origin): {stats['skipped_local_origin']}")
         logger.info(f"   ⏭️ Skipped (no key SKUs): {stats['skipped_no_key_skus']}")
