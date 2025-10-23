@@ -3913,7 +3913,7 @@ def api_resolve_lot_mismatch_alert(alert_id):
 def api_update_lot_in_shipstation():
     """Update SKU-Lot in ShipStation order"""
     try:
-        from src.services.shipstation.api_client import get_shipstation_credentials
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
         from utils.api_utils import make_api_request
         
         data = request.get_json()
@@ -3937,37 +3937,45 @@ def api_update_lot_in_shipstation():
                 'error': 'Failed to get ShipStation credentials'
             }), 500
         
+        # Get headers with auth
+        headers = get_shipstation_headers(api_key, api_secret)
+        headers['Content-Type'] = 'application/json'
+        
         # Fetch current order from ShipStation
         order_url = f'https://ssapi.shipstation.com/orders/{order_id}'
-        order_response = make_api_request(
-            'GET',
+        order_response_obj = make_api_request(
             order_url,
-            auth=(api_key, api_secret)
+            method='GET',
+            headers=headers
         )
         
-        if not order_response:
+        if not order_response_obj:
             return jsonify({
                 'success': False,
                 'error': 'Failed to fetch order from ShipStation'
             }), 500
         
+        # Parse JSON response
+        order_data = order_response_obj.json()
+        
         # Update the item SKU to include new lot
         new_sku = f"{base_sku} - {new_lot}"
         
-        for item in order_response.get('items', []):
+        for item in order_data.get('items', []):
             if str(item.get('orderItemId')) == str(item_id):
                 item['sku'] = new_sku
                 break
         
         # Update order in ShipStation
-        update_response = make_api_request(
-            'POST',
+        import json as json_module
+        update_response_obj = make_api_request(
             'https://ssapi.shipstation.com/orders/createorder',
-            auth=(api_key, api_secret),
-            json=order_response
+            method='POST',
+            headers=headers,
+            data=order_data
         )
         
-        if not update_response:
+        if not update_response_obj:
             return jsonify({
                 'success': False,
                 'error': 'Failed to update order in ShipStation'
