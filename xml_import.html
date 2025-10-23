@@ -564,9 +564,23 @@
                 .filter(o => o.status !== 'shipped' && o.status !== 'cancelled')
                 .reduce((sum, o) => sum + (o.quantity || 0), 0);
 
-            document.getElementById('stat-pending').textContent = pending;
-            document.getElementById('stat-uploaded').textContent = awaitingShipmentUnits;
-            document.getElementById('stat-failed').textContent = failed;
+            // Update filter badge counts
+            document.getElementById('badge-all').textContent = orders.length;
+            document.getElementById('badge-pending').textContent = pending;
+            document.getElementById('badge-failed').textContent = failed;
+            
+            // Count hold, benco, hawaiian
+            const holdOrders = orders.filter(o => o.on_hold).length;
+            const bencoOrders = orders.filter(o => 
+                o.company_name && o.company_name.toLowerCase().includes('benco')
+            ).length;
+            const hawaiianOrders = orders.filter(o => 
+                o.state && o.state.toUpperCase() === 'HI'
+            ).length;
+            
+            document.getElementById('badge-hold').textContent = holdOrders;
+            document.getElementById('badge-benco').textContent = bencoOrders;
+            document.getElementById('badge-hawaiian').textContent = hawaiianOrders;
             
             // Show retry button if there are failed orders
             const retryBtn = document.getElementById('btn-retry-failed');
