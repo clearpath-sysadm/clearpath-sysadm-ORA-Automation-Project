@@ -223,11 +223,14 @@ def fetch_shipments_batch(api_key: str, api_secret: str, start_date: str, end_da
                 timeout=30
             )
             
-            if not response:
+            if not response or response.status_code != 200:
                 logger.warning(f"⚠️ No response from shipments endpoint (page {page})")
                 break
             
-            shipments = response.get('shipments', [])
+            # Parse JSON response
+            data = response.json()
+            shipments = data.get('shipments', [])
+            
             if not shipments:
                 logger.debug(f"📭 No more shipments on page {page}")
                 break
@@ -236,7 +239,7 @@ def fetch_shipments_batch(api_key: str, api_secret: str, start_date: str, end_da
             logger.debug(f"📦 Retrieved {len(shipments)} shipments from page {page}")
             
             # Check if there are more pages
-            total_pages = response.get('pages', 1)
+            total_pages = data.get('pages', 1)
             if page >= total_pages:
                 break
             
