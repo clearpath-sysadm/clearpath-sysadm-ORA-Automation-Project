@@ -103,6 +103,47 @@
     </div>
 </div>
 
+<!-- Flag Order Modal -->
+<div class="modal-overlay" id="flag-modal" style="display: none;" onclick="if(event.target === this) closeFlagModal()">
+    <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2 style="margin: 0; font-size: 20px; color: var(--text-primary);">
+                <span id="flag-modal-icon">🚩</span> <span id="flag-modal-title">Flag Order</span>
+            </h2>
+            <button class="btn-close-modal" onclick="closeFlagModal()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--text-secondary); padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">×</button>
+        </div>
+        <div class="modal-body" style="padding: 24px;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Order Number:</label>
+                <div id="flag-order-number" style="font-size: 16px; color: var(--text-secondary); padding: 8px; background: var(--bg-secondary); border-radius: 4px;"></div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label for="flag-reason" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Quick Reason (optional):</label>
+                <select id="flag-reason" class="form-control" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px;">
+                    <option value="">Select a reason...</option>
+                    <option value="Wrong Address">Wrong Address</option>
+                    <option value="Customer Request">Customer Request</option>
+                    <option value="Payment Issue">Payment Issue</option>
+                    <option value="Inventory Issue">Inventory Issue</option>
+                    <option value="Shipping Issue">Shipping Issue</option>
+                    <option value="Needs Review">Needs Review</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label for="flag-notes" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Notes (optional):</label>
+                <textarea id="flag-notes" rows="4" placeholder="Add any additional details..." style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="closeFlagModal()" class="btn" style="background: var(--bg-secondary); color: var(--text-primary);">Cancel</button>
+                <button id="btn-save-flag" onclick="saveFlagData()" class="btn" style="background: var(--accent-orange); color: white; font-weight: 600;">Save Flag</button>
+            </div>
+        </div>
+    </div>
+</div>
 
     <!-- Mobile Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
@@ -290,6 +331,9 @@
                         <button class="filter-tab" data-filter="failed">
                             Failed <span class="filter-badge badge-warning" id="badge-failed">0</span>
                         </button>
+                        <button class="filter-tab" data-filter="flagged">
+                            🚩 Flagged <span class="filter-badge badge-warning" id="badge-flagged">0</span>
+                        </button>
                         <button class="filter-tab" data-filter="hold">
                             On Hold <span class="filter-badge" id="badge-hold">0</span>
                         </button>
@@ -298,6 +342,12 @@
                         </button>
                         <button class="filter-tab" data-filter="hawaiian">
                             Hawaiian <span class="filter-badge badge-info" id="badge-hawaiian">0</span>
+                        </button>
+                        <button class="filter-tab" data-filter="canadian">
+                            🍁 Canadian <span class="filter-badge badge-info" id="badge-canadian">0</span>
+                        </button>
+                        <button class="filter-tab" data-filter="international">
+                            🌐 International <span class="filter-badge badge-info" id="badge-international">0</span>
                         </button>
                     </div>
 
@@ -320,6 +370,7 @@
                             <thead>
                                 <tr>
                                     <th style="width: 40px;"><input type="checkbox" id="select-all" title="Select all pending orders"></th>
+                                    <th style="width: 50px;">Flag</th>
                                     <th class="sortable" data-sort="order_number">Order #</th>
                                     <th class="sortable" data-sort="order_date">Order Date</th>
                                     <th class="sortable" data-sort="company_name">Company Name</th>
@@ -448,8 +499,11 @@
         const alertContainer = document.getElementById('alert-container');
         
         // Filter state - controlled by filter tabs
-        let filterMode = 'all'; // 'all', 'pending', 'failed', 'hold', 'benco', 'hawaiian'
+        let filterMode = 'all'; // 'all', 'pending', 'failed', 'flagged', 'hold', 'benco', 'hawaiian', 'canadian', 'international'
         let searchTerm = '';
+        
+        // Track current order for flagging
+        let currentFlagOrderNumber = null;
         
         // Sorting state
         let currentOrders = [];
@@ -555,7 +609,8 @@
             document.getElementById('badge-pending').textContent = pending;
             document.getElementById('badge-failed').textContent = failed;
             
-            // Count hold, benco, hawaiian
+            // Count flagged, hold, benco, hawaiian, canadian, international
+            const flaggedOrders = orders.filter(o => o.is_flagged).length;
             const holdOrders = orders.filter(o => o.on_hold).length;
             const bencoOrders = orders.filter(o => 
                 o.company_name && o.company_name.toLowerCase().includes('benco')
@@ -563,10 +618,15 @@
             const hawaiianOrders = orders.filter(o => 
                 o.state && o.state.toUpperCase() === 'HI'
             ).length;
+            const canadianOrders = orders.filter(o => o.is_canadian).length;
+            const internationalOrders = orders.filter(o => o.is_international).length;
             
+            document.getElementById('badge-flagged').textContent = flaggedOrders;
             document.getElementById('badge-hold').textContent = holdOrders;
             document.getElementById('badge-benco').textContent = bencoOrders;
             document.getElementById('badge-hawaiian').textContent = hawaiianOrders;
+            document.getElementById('badge-canadian').textContent = canadianOrders;
+            document.getElementById('badge-international').textContent = internationalOrders;
             
             // Show retry button if there are failed orders
             const retryBtn = document.getElementById('btn-retry-failed');
@@ -682,6 +742,8 @@
                 filteredOrders = orders.filter(o => o.status === 'uploaded' || o.status === 'awaiting_shipment');
             } else if (filterMode === 'failed') {
                 filteredOrders = orders.filter(o => o.status === 'failed');
+            } else if (filterMode === 'flagged') {
+                filteredOrders = orders.filter(o => o.is_flagged);
             } else if (filterMode === 'hold') {
                 filteredOrders = orders.filter(o => o.on_hold);
             } else if (filterMode === 'benco') {
@@ -692,6 +754,10 @@
                 filteredOrders = orders.filter(o => 
                     o.state && o.state.toUpperCase() === 'HI'
                 );
+            } else if (filterMode === 'canadian') {
+                filteredOrders = orders.filter(o => o.is_canadian);
+            } else if (filterMode === 'international') {
+                filteredOrders = orders.filter(o => o.is_international);
             }
             // filterMode === 'all' shows all orders (no filtering)
             
@@ -738,16 +804,19 @@
                     const filterMessages = {
                         'pending': 'No pending orders',
                         'failed': 'No failed orders',
+                        'flagged': 'No flagged orders',
                         'hold': 'No orders on hold',
                         'benco': 'No Benco orders',
                         'hawaiian': 'No Hawaiian orders',
+                        'canadian': 'No Canadian orders',
+                        'international': 'No international orders',
                         'awaiting_shipment': 'No orders awaiting shipment'
                     };
                     const message = filterMessages[filterMode] || 'No orders match this filter';
                     emptyStateHTML = `<div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary);">${message}</div>`;
                 }
                 
-                tbody.innerHTML = `<tr><td colspan="13" style="padding: 0;">${emptyStateHTML}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="14" style="padding: 0;">${emptyStateHTML}</td></tr>`;
                 
                 // Update mobile cards list
                 const mobileCardsList = document.getElementById('mobile-cards-list');
@@ -792,11 +861,27 @@
                     ? `<a href="https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(order.tracking_number)}&trkqual=12029~${encodeURIComponent(order.tracking_number)}~FDEG" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a>`
                     : '<span style="color: var(--text-tertiary);">-</span>';
                 
+                const flaggedStyle = order.is_flagged ? 'background-color: rgba(255, 193, 7, 0.15);' : '';
+                
+                // Build detailed tooltip for flagged orders
+                let flagTooltip = 'Flag this order';
+                if (order.is_flagged) {
+                    const parts = [];
+                    if (order.flag_reason) parts.push(`Reason: ${order.flag_reason}`);
+                    if (order.notes) parts.push(`Notes: ${order.notes}`);
+                    flagTooltip = parts.length > 0 ? parts.join('\n') : 'Flagged (no details)';
+                }
+                
+                const flagButton = order.is_flagged 
+                    ? `<button onclick="openFlagModal('${order.order_number}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;" title="${flagTooltip}">🚩</button>`
+                    : `<button onclick="openFlagModal('${order.order_number}')" style="background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; opacity: 0.3;" title="${flagTooltip}">⚑</button>`;
+                
                 return `
-                <tr data-order-id="${order.id}" class="order-row">
+                <tr data-order-id="${order.id}" class="order-row" style="${flaggedStyle}">
                     <td>
                         ${order.status === 'pending' ? `<input type="checkbox" class="order-checkbox" data-order-id="${order.id}">` : ''}
                     </td>
+                    <td>${flagButton}</td>
                     <td><strong>${order.order_number}</strong>${iconHtml}</td>
                     <td>${order.order_date}</td>
                     <td>${order.company_name || '-'}</td>
@@ -1283,6 +1368,104 @@
                 }
             });
         });
+
+        // Flag Modal Functions
+        function openFlagModal(orderNumber) {
+            currentFlagOrderNumber = orderNumber;
+            
+            // Find the order to see if it's already flagged
+            const order = currentOrders.find(o => o.order_number === orderNumber);
+            
+            const modal = document.getElementById('flag-modal');
+            const modalIcon = document.getElementById('flag-modal-icon');
+            const modalTitle = document.getElementById('flag-modal-title');
+            const orderNumberEl = document.getElementById('flag-order-number');
+            const reasonSelect = document.getElementById('flag-reason');
+            const notesTextarea = document.getElementById('flag-notes');
+            const saveBtn = document.getElementById('btn-save-flag');
+            
+            orderNumberEl.textContent = orderNumber;
+            
+            if (order && order.is_flagged) {
+                // Editing existing flag
+                modalIcon.textContent = '🚩';
+                modalTitle.textContent = 'Edit Flag';
+                reasonSelect.value = order.flag_reason || '';
+                notesTextarea.value = order.notes || '';
+                saveBtn.textContent = 'Update Flag';
+            } else {
+                // New flag
+                modalIcon.textContent = '🚩';
+                modalTitle.textContent = 'Flag Order';
+                reasonSelect.value = '';
+                notesTextarea.value = '';
+                saveBtn.textContent = 'Save Flag';
+            }
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeFlagModal() {
+            const modal = document.getElementById('flag-modal');
+            modal.style.display = 'none';
+            currentFlagOrderNumber = null;
+        }
+        
+        async function saveFlagData() {
+            if (!currentFlagOrderNumber) return;
+            
+            const reason = document.getElementById('flag-reason').value;
+            const notes = document.getElementById('flag-notes').value;
+            const saveBtn = document.getElementById('btn-save-flag');
+            const originalText = saveBtn.textContent;
+            
+            try {
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+                
+                const response = await fetch(`/api/orders_inbox/flag/${currentFlagOrderNumber}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ flag_reason: reason, notes: notes })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✅ ${result.message}`, 'success');
+                    closeFlagModal();
+                    loadOrdersInbox();
+                } else {
+                    showAlert(`❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+            }
+        }
+        
+        async function unflagOrder(orderNumber) {
+            if (!confirm(`Remove flag from order ${orderNumber}?`)) return;
+            
+            try {
+                const response = await fetch(`/api/orders_inbox/unflag/${orderNumber}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✅ ${result.message}`, 'success');
+                    loadOrdersInbox();
+                } else {
+                    showAlert(`❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            }
+        }
 
         // Load orders on page load
         loadOrdersInbox();

@@ -2116,11 +2116,15 @@ def api_orders_inbox():
                 o.ship_country,
                 o.source_system,
                 o.shipping_service_name,
-                o.shipping_carrier_id
+                o.shipping_carrier_id,
+                o.is_flagged,
+                o.flag_reason,
+                o.notes,
+                o.flagged_at
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
@@ -2165,13 +2169,79 @@ def api_orders_inbox():
                 'is_international': is_international,
                 'is_manual': is_manual,
                 'shipping_service_name': shipping_service_name,
-                'shipping_carrier_id': shipping_carrier_id
+                'shipping_carrier_id': shipping_carrier_id,
+                'is_flagged': row[17] or False,
+                'flag_reason': row[18] or '',
+                'notes': row[19] or '',
+                'flagged_at': row[20]
             })
         
         return jsonify({
             'success': True,
             'data': orders,
             'count': len(orders)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/orders_inbox/flag/<order_number>', methods=['POST'])
+def api_flag_order(order_number):
+    """Flag an order with optional reason and notes"""
+    try:
+        data = request.get_json() or {}
+        flag_reason = data.get('flag_reason', '')
+        notes = data.get('notes', '')
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE orders_inbox 
+            SET is_flagged = TRUE,
+                flag_reason = %s,
+                notes = %s,
+                flagged_at = CURRENT_TIMESTAMP
+            WHERE order_number = %s
+        """, (flag_reason, notes, order_number))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Order {order_number} flagged successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/orders_inbox/unflag/<order_number>', methods=['POST'])
+def api_unflag_order(order_number):
+    """Remove flag from an order"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE orders_inbox 
+            SET is_flagged = FALSE,
+                flag_reason = NULL,
+                notes = NULL,
+                flagged_at = NULL
+            WHERE order_number = %s
+        """, (order_number,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Order {order_number} unflagged successfully'
         })
     except Exception as e:
         return jsonify({
