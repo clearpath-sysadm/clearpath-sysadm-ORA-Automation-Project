@@ -721,15 +721,55 @@
             }
 
             if (filteredOrders.length === 0) {
-                const message = filterMode === 'pending' ? 'No pending orders' : 
-                               filterMode === 'awaiting_shipment' ? 'No orders awaiting shipment' :
-                               'No orders in inbox';
-                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</td></tr>`;
+                // Enhanced empty state with helpful context
+                let emptyStateHTML = '';
                 
-                // Update mobile cards list (not the entire container)
+                if (filterMode === 'all' && orders.length === 0) {
+                    // True empty inbox - show helpful message with Dashboard link
+                    emptyStateHTML = `
+                        <div style="text-align: center; padding: 60px 20px; background: var(--bg-secondary); border-radius: 12px; margin: 20px;">
+                            <div style="font-size: 64px; margin-bottom: 16px;">✅</div>
+                            <h3 style="font-size: 24px; color: var(--text-primary); margin-bottom: 8px; font-weight: 600;">All Clear! No Pending Orders</h3>
+                            <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 24px;">Your inbox is empty - all orders have been processed.</p>
+                            
+                            <div style="padding: 16px; background: var(--bg-primary); border-radius: 8px; margin-bottom: 24px; display: inline-block;">
+                                <div style="color: var(--text-secondary); font-size: 14px; margin-bottom: 8px;">
+                                    <strong style="color: var(--text-primary);">Automation Status:</strong> 
+                                    <span style="color: var(--success-teal); font-weight: 600;">✓ Running</span>
+                                </div>
+                                <div style="color: var(--text-tertiary); font-size: 13px;">Next XML scan in ~5 minutes</div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px;">
+                                <a href="/" style="display: inline-block; padding: 12px 24px; background: var(--accent-orange); color: white; border-radius: 8px; font-weight: 600; text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                                    📊 View Dashboard
+                                </a>
+                                <button onclick="document.getElementById('btn-manual-import').click()" style="padding: 12px 24px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--border-color)'" onmouseout="this.style.background='var(--bg-tertiary)'">
+                                    📥 Import Manual Order
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Filter-specific empty states
+                    const filterMessages = {
+                        'pending': 'No pending orders',
+                        'failed': 'No failed orders',
+                        'hold': 'No orders on hold',
+                        'benco': 'No Benco orders',
+                        'hawaiian': 'No Hawaiian orders',
+                        'awaiting_shipment': 'No orders awaiting shipment'
+                    };
+                    const message = filterMessages[filterMode] || 'No orders match this filter';
+                    emptyStateHTML = `<div style="text-align: center; padding: 40px 20px; color: var(--text-tertiary);">${message}</div>`;
+                }
+                
+                tbody.innerHTML = `<tr><td colspan="13" style="padding: 0;">${emptyStateHTML}</td></tr>`;
+                
+                // Update mobile cards list
                 const mobileCardsList = document.getElementById('mobile-cards-list');
                 if (mobileCardsList) {
-                    mobileCardsList.innerHTML = `<p style="text-align: center; color: var(--text-tertiary); padding: 2rem;">${message}</p>`;
+                    mobileCardsList.innerHTML = emptyStateHTML;
                 }
                 
                 // Hide mobile select-all container
