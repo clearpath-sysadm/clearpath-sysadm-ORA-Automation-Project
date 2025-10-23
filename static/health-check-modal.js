@@ -167,29 +167,23 @@ function renderHealthDetails() {
                              isRecent ? 'Healthy' : 'Stale';
             
             html += `
-                <div style="padding: 16px; background: var(--card-bg); border-left: 4px solid ${statusColor}; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                        <div style="font-weight: 600; color: var(--text-primary);">${workflow.name}</div>
-                        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: ${statusColor}22; border-radius: 6px;">
-                            <span style="font-size: 14px;">${statusIcon}</span>
-                            <span style="font-size: 12px; font-weight: 600; color: ${statusColor};">${statusText}</span>
+                <div style="padding: 20px; background: var(--card-bg); border-left: 4px solid ${statusColor}; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <div style="font-weight: 600; font-size: 15px; color: var(--text-primary);">${workflow.name}</div>
+                        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: ${statusColor}22; border-radius: 6px;">
+                            <span style="font-size: 16px;">${statusIcon}</span>
+                            <span style="font-size: 13px; font-weight: 600; color: ${statusColor};">${statusText}</span>
                         </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; font-size: 13px;">
-                        <div>
-                            <span style="color: var(--text-tertiary);">Last Run:</span>
-                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${workflow.last_run_at ? formatWorkflowTimestamp(workflow.last_run_at) : 'Never'}</span>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
+                            <span style="color: var(--text-tertiary); font-size: 13px; min-width: 70px;">Last Run:</span>
+                            <span style="color: var(--text-primary); font-weight: 500; font-size: 14px;">${workflow.last_run_at ? formatWorkflowTimestamp(workflow.last_run_at) : 'Never'}</span>
                         </div>
-                        ${workflow.records_processed !== null ? `
-                        <div>
-                            <span style="color: var(--text-tertiary);">Records:</span>
-                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${workflow.records_processed}</span>
-                        </div>
-                        ` : ''}
                         ${workflow.status ? `
-                        <div>
-                            <span style="color: var(--text-tertiary);">Status:</span>
-                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${workflow.status}</span>
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
+                            <span style="color: var(--text-tertiary); font-size: 13px; min-width: 70px;">Status:</span>
+                            <span style="color: var(--text-secondary); font-weight: 500; font-size: 14px;">${workflow.status}</span>
                         </div>
                         ` : ''}
                     </div>
