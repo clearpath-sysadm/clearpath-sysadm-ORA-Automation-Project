@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Production Incidents - ORA Business Automation</title>
+    <title>Production Bugs - ORA Business Automation</title>
     
     <!-- Premium Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
@@ -522,7 +522,7 @@
                             <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                     </button>
-                    <h1 class="page-title">Production Incidents</h1>
+                    <h1 class="page-title">Production Bugs</h1>
                 </div>
                 <div class="top-bar-actions">
                     <button class="btn btn-primary" onclick="showReportModal()">Report Issue</button>
@@ -594,7 +594,7 @@
                 <!-- Incidents Cards (Mobile) -->
                 <div class="incidents-mobile-cards" id="incidents-mobile-cards">
                     <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                        Loading incidents...
+                        Loading bugs...
                     </div>
                 </div>
             </div>
@@ -669,7 +669,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title">Incident Details</h3>
+                    <h3 class="modal-title">Bug Details</h3>
                     <button class="modal-close" onclick="hideDetailModal()">&times;</button>
                 </div>
                 <div class="modal-body incident-detail-modal">
@@ -686,7 +686,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title">Edit Incident</h3>
+                    <h3 class="modal-title">Edit Bug</h3>
                     <button class="modal-close" onclick="hideEditModal()">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -714,12 +714,12 @@
                         
                         <div class="form-group">
                             <label for="edit-incident-cause">Root Cause (Optional)</label>
-                            <textarea id="edit-incident-cause" rows="3" placeholder="What caused this incident?"></textarea>
+                            <textarea id="edit-incident-cause" rows="3" placeholder="What caused this bug?"></textarea>
                         </div>
                         
                         <div class="form-group">
                             <label for="edit-incident-resolution">Resolution (Optional)</label>
-                            <textarea id="edit-incident-resolution" rows="3" placeholder="How was this incident resolved?"></textarea>
+                            <textarea id="edit-incident-resolution" rows="3" placeholder="How was this bug resolved?"></textarea>
                         </div>
                         
                         <div class="form-group">
@@ -785,8 +785,8 @@
                     allIncidents = data.incidents;
                     renderIncidents();
                 } else {
-                    console.error('Failed to load incidents:', data.error);
-                    showError('Failed to load incidents');
+                    console.error('Failed to load bugs:', data.error);
+                    showError('Failed to load bugs');
                 }
             } catch (error) {
                 console.error('Error loading incidents:', error);
@@ -799,8 +799,8 @@
             const mobileCards = document.getElementById('incidents-mobile-cards');
             
             if (allIncidents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No incidents found</td></tr>';
-                mobileCards.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No incidents found</div>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No bugs found</td></tr>';
+                mobileCards.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No bugs found</div>';
                 return;
             }
             
@@ -1133,7 +1133,7 @@
                     await loadIncidents();
                     showSuccess('Incident deleted successfully');
                 } else {
-                    showError(data.error || 'Failed to delete incident');
+                    showError(data.error || 'Failed to delete bug');
                 }
             } catch (error) {
                 console.error('Error deleting incident:', error);
@@ -1242,7 +1242,7 @@
                     await loadIncidents();
                     showSuccess('Incident updated successfully' + (fileInput.files.length > 0 ? ` with ${fileInput.files.length} screenshot(s)` : ''));
                 } else {
-                    showError(data.error || 'Failed to update incident');
+                    showError(data.error || 'Failed to update bug');
                 }
             } catch (error) {
                 console.error('Error updating incident:', error);
