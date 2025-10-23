@@ -688,12 +688,24 @@
             // Store all orders for sorting
             currentOrders = orders;
 
-            // Filter based on toggle state and search term
+            // Filter based on selected filter tab
             let filteredOrders = orders;
             if (filterMode === 'pending') {
                 filteredOrders = orders.filter(o => o.status === 'pending');
             } else if (filterMode === 'awaiting_shipment') {
                 filteredOrders = orders.filter(o => o.status === 'uploaded' || o.status === 'awaiting_shipment');
+            } else if (filterMode === 'failed') {
+                filteredOrders = orders.filter(o => o.status === 'failed');
+            } else if (filterMode === 'hold') {
+                filteredOrders = orders.filter(o => o.on_hold);
+            } else if (filterMode === 'benco') {
+                filteredOrders = orders.filter(o => 
+                    o.company_name && o.company_name.toLowerCase().includes('benco')
+                );
+            } else if (filterMode === 'hawaiian') {
+                filteredOrders = orders.filter(o => 
+                    o.state && o.state.toUpperCase() === 'HI'
+                );
             }
             // filterMode === 'all' shows all orders (no filtering)
             
@@ -1231,6 +1243,32 @@
 
         // CSV Export button handler
         document.getElementById('btn-export-csv').addEventListener('click', exportToCSV);
+
+        // Filter tab click handlers
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const filter = this.getAttribute('data-filter');
+                
+                // Update active state
+                document.querySelectorAll('.filter-tab').forEach(t => {
+                    t.classList.remove('active');
+                    t.style.background = 'var(--bg-primary)';
+                    t.style.borderColor = 'var(--border-color)';
+                    t.style.color = 'var(--text-secondary)';
+                });
+                
+                this.classList.add('active');
+                this.style.background = 'var(--accent-orange)';
+                this.style.borderColor = 'var(--accent-orange)';
+                this.style.color = 'white';
+                
+                // Apply filter
+                filterMode = filter;
+                if (currentOrders.length > 0) {
+                    renderOrdersTable(currentOrders);
+                }
+            });
+        });
 
         // Load orders on page load
         loadOrdersInbox();
