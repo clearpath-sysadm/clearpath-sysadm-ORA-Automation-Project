@@ -2109,6 +2109,7 @@ def api_orders_inbox():
                 SUM(oi.quantity) as total_quantity,
                 sl.lot,
                 o.shipstation_order_id,
+                o.tracking_number,
                 o.created_at,
                 o.failure_reason,
                 o.ship_company,
@@ -2124,7 +2125,7 @@ def api_orders_inbox():
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.tracking_number, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
@@ -2136,12 +2137,12 @@ def api_orders_inbox():
             lot = row[7]
             sku_lot_display = f"{sku} - {lot}" if lot else sku
             
-            company_name = row[11] or ''
-            ship_state = (row[12] or '').strip().upper()
-            ship_country = (row[13] or 'US').strip().upper()
-            source_system = row[14] or 'X-Cart'
-            shipping_service_name = row[15] or ''
-            shipping_carrier_id = row[16]
+            company_name = row[12] or ''
+            ship_state = (row[13] or '').strip().upper()
+            ship_country = (row[14] or 'US').strip().upper()
+            source_system = row[15] or 'X-Cart'
+            shipping_service_name = row[16] or ''
+            shipping_carrier_id = row[17]
             
             # Determine order type flags
             is_hawaiian = ship_state == 'HI'
@@ -2160,8 +2161,9 @@ def api_orders_inbox():
                 'sku_lot_display': sku_lot_display,
                 'quantity': row[6],
                 'shipstation_order_id': row[8] or '',
-                'created_at': row[9],
-                'failure_reason': row[10] or '',
+                'tracking_number': row[9] or '',
+                'created_at': row[10],
+                'failure_reason': row[11] or '',
                 'company_name': company_name,
                 'is_hawaiian': is_hawaiian,
                 'is_canadian': is_canadian,
@@ -2170,10 +2172,10 @@ def api_orders_inbox():
                 'is_manual': is_manual,
                 'shipping_service_name': shipping_service_name,
                 'shipping_carrier_id': shipping_carrier_id,
-                'is_flagged': row[17] or False,
-                'flag_reason': row[18] or '',
-                'notes': row[19] or '',
-                'flagged_at': row[20]
+                'is_flagged': row[18] or False,
+                'flag_reason': row[19] or '',
+                'notes': row[20] or '',
+                'flagged_at': row[21]
             })
         
         return jsonify({
