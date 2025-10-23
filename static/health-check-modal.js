@@ -178,14 +178,8 @@ function renderHealthDetails() {
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; font-size: 13px;">
                         <div>
                             <span style="color: var(--text-tertiary);">Last Run:</span>
-                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${formatMinutesToReadable(workflow.age_minutes)}</span>
+                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${workflow.last_run_at ? formatWorkflowTimestamp(workflow.last_run_at) : 'Never'}</span>
                         </div>
-                        ${workflow.updated_at ? `
-                        <div>
-                            <span style="color: var(--text-tertiary);">Last Updated:</span>
-                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${formatWorkflowTimestamp(workflow.updated_at)}</span>
-                        </div>
-                        ` : ''}
                         ${workflow.records_processed !== null ? `
                         <div>
                             <span style="color: var(--text-tertiary);">Records:</span>

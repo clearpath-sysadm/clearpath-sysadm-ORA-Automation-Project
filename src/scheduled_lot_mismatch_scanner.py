@@ -216,8 +216,11 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
             
             auto_resolved = cursor.rowcount
             
-            # Update workflow last run
-            update_workflow_last_run(WORKFLOW_NAME, conn)
+            # Commit all database changes
+            conn.commit()
+            
+        # Update workflow last run (after transaction completes)
+        update_workflow_last_run(WORKFLOW_NAME)
         
         elapsed = (datetime.datetime.now() - scan_start).total_seconds()
         

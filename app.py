@@ -83,13 +83,19 @@ def health_check():
         now = datetime.now()
         
         for name, last_run_at, enabled, status, records_processed, updated_at in workflows:
+            # Parse last_run_at timestamp
             if last_run_at:
                 if isinstance(last_run_at, str):
                     last_run_dt = datetime.fromisoformat(last_run_at.replace('Z', '+00:00'))
                 else:
                     last_run_dt = last_run_at
+                    
+                # Ensure timezone-aware (UTC)
+                if last_run_dt.tzinfo is None:
+                    last_run_dt = pytz.UTC.localize(last_run_dt)
+                    
                 age_minutes = int((now.timestamp() - last_run_dt.timestamp()) / 60)
-                last_run_str = f"{age_minutes} min ago"
+                last_run_iso = last_run_dt.isoformat()  # Send as ISO for client timezone conversion
                 
                 # Health indicator based on age and status
                 # Orange for "running but stale", Red only for "stopped" or "never ran"
@@ -104,7 +110,7 @@ def health_check():
                     else:
                         health = '🔴 Stale'  # Red for stopped and stale
             else:
-                last_run_str = "Never"
+                last_run_iso = None
                 age_minutes = 999999
                 # Never ran: Red if stopped/not running, otherwise Orange
                 if status == 'running':
@@ -112,31 +118,14 @@ def health_check():
                 else:
                     health = '🔴 Never ran'  # Red for never ran and not running
             
-            # Parse updated_at timestamp - send as ISO format for client-side timezone conversion
-            if updated_at:
-                if isinstance(updated_at, str):
-                    updated_dt = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
-                else:
-                    updated_dt = updated_at
-                
-                # Ensure timezone-aware (UTC)
-                if updated_dt.tzinfo is None:
-                    updated_dt = pytz.UTC.localize(updated_dt)
-                
-                # Send as ISO string for JavaScript to convert to user's local time
-                updated_str = updated_dt.isoformat()
-            else:
-                updated_str = None
-            
             workflow_status.append({
                 'name': name,
                 'enabled': bool(enabled),
-                'last_run': last_run_str,
-                'age_minutes': age_minutes,
+                'last_run_at': last_run_iso,  # ISO timestamp for client-side formatting
+                'age_minutes': age_minutes,  # For health calculations
                 'health': health,
                 'status': status,
-                'records_processed': records_processed,
-                'updated_at': updated_str
+                'records_processed': records_processed
             })
         
         # Check ShipStation sync watermark freshness
