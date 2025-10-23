@@ -3913,7 +3913,7 @@ def api_resolve_lot_mismatch_alert(alert_id):
 def api_update_lot_in_shipstation():
     """Update SKU-Lot in ShipStation order"""
     try:
-        from src.services.api.shipstation_api_client import get_shipstation_credentials
+        from src.services.shipstation.api_client import get_shipstation_credentials
         from utils.api_utils import make_api_request
         
         data = request.get_json()
