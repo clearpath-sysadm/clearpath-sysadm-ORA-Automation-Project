@@ -1,5 +1,6 @@
 // Production Health Check Modal
 // Displays environment and workflow status
+// Requires: timezone-utils.js for formatWorkflowTimestamp()
 
 let healthData = null;
 
@@ -182,7 +183,7 @@ function renderHealthDetails() {
                         ${workflow.updated_at ? `
                         <div>
                             <span style="color: var(--text-tertiary);">Last Updated:</span>
-                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${workflow.updated_at}</span>
+                            <span style="color: var(--text-secondary); font-weight: 500; margin-left: 4px;">${formatWorkflowTimestamp(workflow.updated_at)}</span>
                         </div>
                         ` : ''}
                         ${workflow.records_processed !== null ? `
