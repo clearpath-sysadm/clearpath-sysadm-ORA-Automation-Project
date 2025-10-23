@@ -18,7 +18,7 @@ if project_root not in sys.path:
 
 from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
-from src.services.database.db_utils import execute_query, transaction
+from src.services.database.pg_utils import execute_query, transaction
 from src.services.shipstation.api_client import get_shipstation_credentials, fetch_shipstation_orders_by_order_numbers
 
 log_dir = os.path.join(project_root, 'logs')
