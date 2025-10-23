@@ -848,14 +848,18 @@
                 }
                 
                 // Update Lot Mismatch card independently
+                console.log('🔍 Lot Mismatch Response:', lotMismatch);
                 if (lotMismatch.success) {
                     const lotMismatchCount = lotMismatch.count || 0;
-                    console.log('Lot Mismatch Count:', lotMismatchCount);
+                    console.log('📊 Lot Mismatch Count:', lotMismatchCount);
                     const lotMismatchElement = document.getElementById('lot-mismatch-orders');
+                    console.log('🎯 Element found:', lotMismatchElement);
+                    console.log('🎯 Current element text:', lotMismatchElement ? lotMismatchElement.textContent : 'null');
                     if (lotMismatchElement) {
                         lotMismatchElement.textContent = lotMismatchCount;
+                        console.log('✅ Updated element text to:', lotMismatchElement.textContent);
                     } else {
-                        console.error('lot-mismatch-orders element not found');
+                        console.error('❌ lot-mismatch-orders element not found');
                     }
                     
                     // Show/hide card based on count
@@ -864,15 +868,16 @@
                         if (lotMismatchCount > 0) {
                             lotMismatchCard.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
                             lotMismatchCard.style.borderLeft = '4px solid #f59e0b';
+                            console.log('🟧 Applied orange highlight to card');
                         } else {
                             lotMismatchCard.style.backgroundColor = '';
                             lotMismatchCard.style.borderLeft = '';
                         }
                     } else {
-                        console.error('lot-mismatch-card element not found');
+                        console.error('❌ lot-mismatch-card element not found');
                     }
                 } else {
-                    console.error('Lot mismatch API failed:', lotMismatch);
+                    console.error('❌ Lot mismatch API failed:', lotMismatch);
                 }
                 
                 // Mismatch detection only if BOTH APIs succeeded

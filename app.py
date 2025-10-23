@@ -41,7 +41,12 @@ _report_locks = {'EOD': False, 'EOW': False, 'EOM': False}
 @app.route('/')
 def index():
     """Serve the main dashboard"""
-    return send_from_directory(project_root, 'index.html')
+    from flask import make_response
+    response = make_response(send_from_directory(project_root, 'index.html'))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/favicon.ico')
 def favicon():
@@ -53,7 +58,12 @@ def favicon():
 def serve_page(filename):
     """Serve HTML pages only (security: whitelist approach)"""
     if filename in ALLOWED_PAGES:
-        return send_from_directory(project_root, filename)
+        from flask import make_response
+        response = make_response(send_from_directory(project_root, filename))
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
     else:
         return "Not found", 404
 
