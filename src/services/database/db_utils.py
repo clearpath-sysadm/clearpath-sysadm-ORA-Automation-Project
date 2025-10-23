@@ -113,7 +113,7 @@ def is_workflow_enabled(workflow_name: str, cache_seconds: int = 45) -> bool:
     try:
         conn = get_connection()
         cursor = conn.execute(
-            "SELECT enabled FROM workflow_controls WHERE workflow_name = ?",
+            "SELECT enabled FROM workflow_controls WHERE workflow_name = %s",
             (workflow_name,)
         )
         result = cursor.fetchone()
@@ -147,7 +147,7 @@ def update_workflow_last_run(workflow_name: str):
     try:
         conn = get_connection()
         conn.execute(
-            "UPDATE workflow_controls SET last_run_at = CURRENT_TIMESTAMP WHERE workflow_name = ?",
+            "UPDATE workflow_controls SET last_run_at = CURRENT_TIMESTAMP WHERE workflow_name = %s",
             (workflow_name,)
         )
         conn.commit()

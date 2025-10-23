@@ -90,17 +90,26 @@ def health_check():
                 age_minutes = int((now.timestamp() - last_run_dt.timestamp()) / 60)
                 last_run_str = f"{age_minutes} min ago"
                 
-                # Health indicator based on age
+                # Health indicator based on age and status
+                # Orange for "running but stale", Red only for "stopped" or "never ran"
                 if age_minutes <= 10:
                     health = '🟢 Healthy'
                 elif age_minutes <= 30:
                     health = '🟡 Warning'
                 else:
-                    health = '🔴 Stale'
+                    # Stale: Orange if running, Red if stopped
+                    if status == 'running':
+                        health = '🟠 Stale'  # Orange for running but stale
+                    else:
+                        health = '🔴 Stale'  # Red for stopped and stale
             else:
                 last_run_str = "Never"
                 age_minutes = 999999
-                health = '⚪ Inactive'
+                # Never ran: Red if stopped/not running, otherwise Orange
+                if status == 'running':
+                    health = '🟠 Never ran'  # Orange (shouldn't happen but handle it)
+                else:
+                    health = '🔴 Never ran'  # Red for never ran and not running
             
             # Parse updated_at timestamp
             if updated_at:
