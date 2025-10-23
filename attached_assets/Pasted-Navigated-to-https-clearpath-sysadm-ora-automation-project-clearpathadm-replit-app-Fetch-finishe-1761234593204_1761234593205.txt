@@ -1,0 +1,95 @@
+Navigated to https://clearpath-sysadm-ora-automation-project-clearpathadm.replit.app/
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+(index):484 📊 Workflows updated - fetching fresh data
+(index):490  Timestamp check failed: TypeError: Failed to fetch
+    at checkWorkflowTimestamps ((index):466:40)
+    at (index):1010:17
+checkWorkflowTimestamps @ (index):490
+await in checkWorkflowTimestamps
+(anonymous) @ (index):1010
+setInterval
+(anonymous) @ (index):1008
+Fetch failed loading: GET "https://clearpath-sysadm-ora-automation-project-clearpathadm.replit.app/api/workflow_timestamps".
+Navigated to https://clearpath-sysadm-ora-automation-project-clearpathadm.replit.app/
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+Fetch finished loading: GET "<URL>".
+(index):484 📊 Workflows updated - fetching fresh data
+(index):1168   PUT https://clearpath-sysadm-ora-automation-project-clearpathadm.replit.app/api/duplicate_alerts/189/resolve 500 (Internal Server Error)
+resolveDuplicateAlert @ (index):1168
+onclick @ (index):1
+(index):1187  Error resolving duplicate alert: 
+resolveDuplicateAlert @ (index):1187
+await in resolveDuplicateAlert
+onclick @ (index):1
+(index):1168 Fetch failed loading: PUT "https://clearpath-sysadm-ora-automation-project-clearpathadm.replit.app/api/duplicate_alerts/189/resolve".
+resolveDuplicateAlert @ (index):1168
+onclick @ (index):1
