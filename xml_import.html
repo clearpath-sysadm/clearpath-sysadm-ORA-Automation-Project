@@ -225,11 +225,6 @@
                         
                         <!-- Desktop Actions -->
                         <div class="desktop-actions" style="display: flex; gap: 8px; align-items: center;">
-                            <!-- Primary Action -->
-                            <button class="btn" id="btn-manual-import" style="background: var(--accent-orange); color: white; font-weight: 600;">
-                                📥 Import Order
-                            </button>
-                            
                             <!-- More Actions Dropdown -->
                             <div style="position: relative;">
                                 <button class="btn" id="desktop-more-actions-toggle" style="display: flex; align-items: center; gap: 6px;">
@@ -270,9 +265,6 @@
                                 </button>
                                 <button id="mobile-btn-retry-failed" class="is-hidden" onclick="document.getElementById('btn-retry-failed').click(); toggleActionsDropdown();">
                                     🔄 Retry Failed
-                                </button>
-                                <button onclick="document.getElementById('btn-manual-import').click(); toggleActionsDropdown();">
-                                    📥 Import Order
                                 </button>
                                 <button onclick="document.getElementById('btn-validate-orders').click(); toggleActionsDropdown();">
                                     ✓ Validate Orders
@@ -454,7 +446,6 @@
 
         // Orders Inbox Functionality
         const alertContainer = document.getElementById('alert-container');
-        const btnManualImport = document.getElementById('btn-manual-import');
         
         // Filter state - controlled by filter tabs
         let filterMode = 'all'; // 'all', 'pending', 'failed', 'hold', 'benco', 'hawaiian'
@@ -464,51 +455,6 @@
         let currentOrders = [];
         let sortColumn = null;
         let sortDirection = 'asc';
-
-        // Shared import function
-        async function importFromDrive(triggerButton) {
-            const originalText = triggerButton.textContent;
-            triggerButton.disabled = true;
-            triggerButton.textContent = '⏳ Importing...';
-
-            try {
-                // First, find orders.xml file
-                const listResponse = await fetch('/api/google_drive/list_files');
-                const listResult = await listResponse.json();
-
-                if (!listResult.success) {
-                    throw new Error(listResult.error || 'Failed to list files');
-                }
-
-                // Find orders.xml
-                const ordersFile = listResult.data.find(f => f.name === 'orders.xml');
-                
-                if (!ordersFile) {
-                    throw new Error('orders.xml not found in Google Drive');
-                }
-
-                // Import the file
-                const importResponse = await fetch(`/api/google_drive/import_file/${ordersFile.id}`, {
-                    method: 'POST'
-                });
-                const importResult = await importResponse.json();
-
-                if (importResult.success) {
-                    showAlert(`✅ ${importResult.message}`, 'success');
-                    loadOrdersInbox();
-                } else {
-                    showAlert('❌ Import failed: ' + importResult.error, 'error');
-                }
-            } catch (error) {
-                showAlert('❌ Error: ' + error.message, 'error');
-            } finally {
-                triggerButton.disabled = false;
-                triggerButton.textContent = originalText;
-            }
-        }
-
-        // Import from Google Drive - Manual button
-        btnManualImport.addEventListener('click', () => importFromDrive(btnManualImport));
 
         // Sync Manual Orders button
         const btnSyncManualOrders = document.getElementById('btn-sync-manual-orders');
@@ -784,9 +730,6 @@
                                 <a href="/" style="display: inline-block; padding: 12px 24px; background: var(--accent-orange); color: white; border-radius: 8px; font-weight: 600; text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
                                     📊 View Dashboard
                                 </a>
-                                <button onclick="document.getElementById('btn-manual-import').click()" style="padding: 12px 24px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--border-color)'" onmouseout="this.style.background='var(--bg-tertiary)'">
-                                    📥 Import Manual Order
-                                </button>
                             </div>
                         </div>
                     `;
