@@ -145,6 +145,43 @@
     </div>
 </div>
 
+<!-- Tracking Info Modal -->
+<div class="modal-overlay" id="tracking-modal" style="display: none;" onclick="if(event.target === this) closeTrackingModal()">
+    <div class="modal-content" style="max-width: 600px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2 style="margin: 0; font-size: 20px; color: var(--text-primary);">
+                <span>📦</span> Tracking Information
+            </h2>
+            <button class="btn-close-modal" onclick="closeTrackingModal()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--text-secondary); padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">×</button>
+        </div>
+        <div class="modal-body" style="padding: 24px;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Order Number:</label>
+                <div id="tracking-order-number" style="font-size: 18px; color: var(--text-secondary); padding: 12px; background: var(--bg-secondary); border-radius: 6px; font-weight: 600;"></div>
+            </div>
+            
+            <div id="tracking-numbers-container" style="margin-bottom: 20px;">
+                <!-- Tracking numbers will be populated here -->
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Carrier:</label>
+                    <div id="tracking-carrier" style="font-size: 14px; color: var(--text-secondary); padding: 10px; background: var(--bg-secondary); border-radius: 6px;"></div>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Service:</label>
+                    <div id="tracking-service" style="font-size: 14px; color: var(--text-secondary); padding: 10px; background: var(--bg-secondary); border-radius: 6px;"></div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="closeTrackingModal()" class="btn" style="background: var(--bg-secondary); color: var(--text-primary);">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <!-- Mobile Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
@@ -840,7 +877,7 @@
                 
                 // Format tracking number
                 const trackingCell = order.tracking_number 
-                    ? `<a href="https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(order.tracking_number)}&trkqual=12029~${encodeURIComponent(order.tracking_number)}~FDEG" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a>`
+                    ? `<button onclick='openTrackingModal(${JSON.stringify(order).replace(/'/g, "&apos;")})' style="color: var(--primary-blue); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; font-size: inherit;" title="View tracking details">📦 View</button>`
                     : '<span style="color: var(--text-tertiary);">-</span>';
                 
                 const flaggedStyle = order.is_flagged ? 'background-color: rgba(255, 193, 7, 0.15);' : '';
@@ -933,7 +970,7 @@
                         ${order.tracking_number ? `
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Tracking:</span>
-                            <span class="order-card-detail-value"><a href="https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(order.tracking_number)}&trkqual=12029~${encodeURIComponent(order.tracking_number)}~FDEG" target="_blank" style="color: var(--primary-blue); text-decoration: none;" title="Track shipment">${order.tracking_number}</a></span>
+                            <span class="order-card-detail-value"><button onclick='openTrackingModal(${JSON.stringify(order).replace(/'/g, "&apos;")})' style="color: var(--primary-blue); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; font-size: inherit;" title="View tracking details">📦 View Details</button></span>
                         </div>
                         ` : ''}
                         ${order.shipping_carrier_id ? `
@@ -1479,6 +1516,76 @@
             } catch (error) {
                 showAlert(`❌ Error: ${error.message}`, 'error');
             }
+        }
+
+        // Tracking Modal Functions
+        function openTrackingModal(order) {
+            const modal = document.getElementById('tracking-modal');
+            const orderNumberEl = document.getElementById('tracking-order-number');
+            const carrierEl = document.getElementById('tracking-carrier');
+            const serviceEl = document.getElementById('tracking-service');
+            const trackingNumbersContainer = document.getElementById('tracking-numbers-container');
+            
+            // Set order number
+            orderNumberEl.textContent = order.order_number || 'N/A';
+            
+            // Set carrier and service
+            carrierEl.textContent = formatCarrierName(order.shipping_carrier_name) || 'N/A';
+            serviceEl.textContent = formatServiceName(order.shipping_service_name) || 'N/A';
+            
+            // Handle multiple tracking numbers (separated by comma)
+            const trackingNumbers = order.tracking_number ? order.tracking_number.split(',').map(t => t.trim()) : [];
+            
+            if (trackingNumbers.length > 0) {
+                trackingNumbersContainer.innerHTML = trackingNumbers.map((tracking, index) => {
+                    const fedexUrl = `https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(tracking)}&trkqual=12029~${encodeURIComponent(tracking)}~FDEG`;
+                    
+                    return `
+                        <div style="margin-bottom: ${index < trackingNumbers.length - 1 ? '16px' : '0'};">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                Tracking Number${trackingNumbers.length > 1 ? ` #${index + 1}` : ''}:
+                            </label>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <div style="flex: 1; font-size: 16px; color: var(--text-secondary); padding: 12px; background: var(--bg-secondary); border-radius: 6px; font-family: monospace; font-weight: 600;">
+                                    ${tracking}
+                                </div>
+                                <a href="${fedexUrl}" target="_blank" class="btn" style="background: var(--accent-orange); color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; white-space: nowrap;">
+                                    Track on FedEx →
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                trackingNumbersContainer.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 6px;">
+                        No tracking numbers available
+                    </div>
+                `;
+            }
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeTrackingModal() {
+            const modal = document.getElementById('tracking-modal');
+            modal.style.display = 'none';
+        }
+        
+        // Helper functions for formatting
+        function formatCarrierName(carrier) {
+            if (!carrier) return null;
+            const formatted = carrier.replace(/_/g, ' ');
+            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+        }
+        
+        function formatServiceName(service) {
+            if (!service) return null;
+            return service
+                .replace(/_/g, ' ')
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
         }
 
         // Load orders on page load
