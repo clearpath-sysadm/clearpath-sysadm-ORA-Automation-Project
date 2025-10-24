@@ -4142,7 +4142,16 @@ def api_update_lot_in_shipstation():
         if not update_response_obj:
             return jsonify({
                 'success': False,
-                'error': 'Failed to update order in ShipStation'
+                'error': 'Failed to update order in ShipStation - no response from API'
+            }), 500
+        
+        # Check if ShipStation returned an error
+        if update_response_obj.status_code != 200:
+            error_text = update_response_obj.text if update_response_obj else 'Unknown error'
+            logging.error(f"ShipStation API error (status {update_response_obj.status_code}): {error_text}")
+            return jsonify({
+                'success': False,
+                'error': f'ShipStation API error ({update_response_obj.status_code}): {error_text}'
             }), 500
         
         # Mark alert as resolved
