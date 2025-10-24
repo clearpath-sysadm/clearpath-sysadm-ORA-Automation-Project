@@ -869,23 +869,31 @@
                     
                     if (contactsData.success && contactsData.data && contactsData.data.length > 0) {
                         // Get all email addresses
-                        const emailList = contactsData.data.map(c => c.email).join('; ');
+                        const emailList = contactsData.data.map(c => c.email).join(',');
                         
                         btn.textContent = '📧 Ready!';
                         
-                        // Show modal with email instructions
-                        const message = `EMAIL READY TO SEND\n\n` +
-                            `BCC Recipients (${contactsData.data.length}):\n${emailList}\n\n` +
-                            `The report has been copied to your clipboard.\n` +
-                            `Open your email client, add the BCC recipients above, paste the report, and send!`;
+                        // Open email client with BCC recipients (no body due to size limits)
+                        const subject = 'Weekly Inventory Report - Oracare';
+                        const mailtoLink = `mailto:?bcc=${encodeURIComponent(emailList)}&subject=${encodeURIComponent(subject)}`;
                         
-                        alert(message);
+                        const link = document.createElement('a');
+                        link.href = mailtoLink;
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        // Show instructions popup
+                        setTimeout(() => {
+                            alert(`✅ Email client opened!\n\nThe report has been copied to your clipboard.\n\nNow:\n1. Your email client should have opened with ${contactsData.data.length} BCC recipients\n2. Paste the report into the email body (Ctrl+V or Cmd+V)\n3. Send!`);
+                        }, 500);
                         
                         // Reset button
                         setTimeout(() => {
                             btn.textContent = originalText;
                             btn.disabled = false;
-                        }, 1000);
+                        }, 2000);
                     } else {
                         alert('⚠️ No email contacts found. Please add contacts in the Email Contacts page first.');
                         setTimeout(() => {
