@@ -5,10 +5,12 @@ Serves the dashboard UI and provides API endpoints for real-time data.
 import os
 import sys
 import uuid
+import logging
 from flask import Flask, jsonify, render_template, send_from_directory, request
 from datetime import datetime, timedelta
 import pytz
 from werkzeug.utils import secure_filename
+import psycopg2
 
 # Add project root to path
 project_root = os.path.abspath(os.path.dirname(__file__))
@@ -16,6 +18,9 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.services.database.pg_utils import get_connection, execute_query
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
@@ -1088,90 +1093,9 @@ def api_sync_shipstation():
             'error': str(e)
         }), 500
 
-@app.route('/api/sync_manual_orders', methods=['POST'])
-def api_sync_manual_orders():
-    """Trigger manual ShipStation order sync (ignores watermark, fetches last 7 days)"""
-    try:
-        from src.manual_shipstation_sync import (
-            get_shipstation_credentials,
-            fetch_shipstation_orders_since_watermark,
-            is_order_from_local_system,
-            has_key_product_skus,
-            import_manual_order
-        )
-        from datetime import datetime, timedelta
-        import threading
-        
-        def run_manual_sync():
-            """Run manual order sync in background thread"""
-            try:
-                print("Starting manual order sync...")
-                
-                # Get credentials
-                api_key, api_secret = get_shipstation_credentials()
-                if not api_key or not api_secret:
-                    print("ERROR: Failed to get ShipStation credentials")
-                    return
-                
-                # Fetch orders from last 7 days (ignoring watermark)
-                seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%dT00:00:00Z')
-                orders = fetch_shipstation_orders_since_watermark(api_key, api_secret, seven_days_ago)
-                
-                print(f"Fetched {len(orders)} orders from ShipStation (last 7 days)")
-                
-                # Filter to manual orders
-                manual_orders = []
-                for order in orders:
-                    order_id = order.get('orderId') or order.get('orderKey')
-                    order_number = order.get('orderNumber', 'UNKNOWN')
-                    
-                    # CRITICAL: Only process orders starting with "10" (manual orders)
-                    if not order_number.startswith('10'):
-                        continue
-                    
-                    if is_order_from_local_system(str(order_id)):
-                        continue
-                    
-                    if not has_key_product_skus(order):
-                        continue
-                    
-                    manual_orders.append(order)
-                
-                print(f"Found {len(manual_orders)} manual orders to sync")
-                
-                # Import manual orders in batch transaction
-                from src.services.database.pg_utils import transaction
-                imported = 0
-                with transaction() as conn:
-                    for order in manual_orders:
-                        order_number = order.get('orderNumber', 'UNKNOWN')
-                        try:
-                            if import_manual_order(order, conn):
-                                imported += 1
-                                print(f"Imported manual order: {order_number}")
-                        except Exception as e:
-                            print(f"Failed to import order {order_number}: {e}")
-                
-                print(f"Manual sync complete: {imported} orders imported")
-                
-            except Exception as e:
-                print(f"Manual sync error: {e}")
-                import traceback
-                traceback.print_exc()
-        
-        # Start sync in background thread
-        thread = threading.Thread(target=run_manual_sync, daemon=True)
-        thread.start()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Manual order sync started (checking last 7 days)'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# DEPRECATED: Removed api_sync_manual_orders endpoint
+# Functionality replaced by unified_shipstation_sync.py service
+# Legacy code archived to src/legacy_archived/manual_shipstation_sync.py
 
 @app.route('/api/fedex_pickup/mark_completed', methods=['POST'])
 def api_mark_fedex_pickup_completed():
@@ -2585,7 +2509,6 @@ def api_validate_orders():
             }), 500
         
         conn = get_connection()
-        conn.row_factory = sqlite3.Row
         
         stats = {
             'total_checked': 0,
@@ -3425,7 +3348,7 @@ def api_create_sku_lot():
             'sku_lot_id': sku_lot_id,
             'message': 'SKU-Lot created successfully'
         })
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         return jsonify({
             'success': False,
             'error': 'This SKU-Lot combination already exists'
@@ -3466,7 +3389,7 @@ def api_update_sku_lot(sku_lot_id):
             'success': True,
             'message': 'SKU-Lot updated successfully'
         })
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         return jsonify({
             'success': False,
             'error': 'This SKU-Lot combination already exists'
@@ -4617,7 +4540,7 @@ def api_create_lot_inventory():
             'message': 'Lot inventory created successfully',
             'id': lot_id
         })
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         return jsonify({
             'success': False,
             'error': 'This SKU-Lot combination already exists'
