@@ -23,6 +23,105 @@
     <!-- Health Check Modal -->
     <script src="/static/health-check-modal.js" defer></script>
     
+    <style>
+        /* User Widget Styles */
+        .user-widget {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 2) 0;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--accent-orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-avatar-initials {
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .user-role-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .user-role-badge.admin {
+            background: rgba(242, 153, 74, 0.15);
+            color: var(--accent-orange);
+        }
+
+        .user-role-badge.viewer {
+            background: rgba(147, 197, 253, 0.15);
+            color: #60A5FA;
+        }
+
+        .user-logout-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .user-logout-btn:hover {
+            background: var(--bg-hover);
+            color: var(--accent-orange);
+            border-color: var(--accent-orange);
+        }
+
+        .user-logout-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+    
 </head>
 <body>
     <!-- Shipping Violations Alert Banner -->
@@ -161,6 +260,26 @@
                         <span class="nav-item-icon">⚙️</span>
                         Settings
                     </a>
+                </div>
+
+                <!-- User Widget -->
+                <div class="user-widget" id="user-widget" style="display: none;">
+                    <div class="user-avatar" id="user-avatar">
+                        <img id="user-avatar-img" src="" alt="User" style="display: none;">
+                        <div id="user-avatar-initials" class="user-avatar-initials"></div>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name" id="user-name">Loading...</div>
+                        <div class="user-role-badge" id="user-role-badge">
+                            <span id="user-role-text">Viewer</span>
+                        </div>
+                    </div>
+                    <button class="user-logout-btn" onclick="logout()" title="Logout">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M11 11L14 8M14 8L11 5M14 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
             </nav>
         </aside>
@@ -1908,12 +2027,68 @@
             }
         }
 
+        // Populate User Widget
+        async function populateUserWidget() {
+            const widget = document.getElementById('user-widget');
+            const authStatus = await window.auth.getAuthStatus();
+            
+            if (authStatus.authenticated && authStatus.user) {
+                const user = authStatus.user;
+                
+                // Show widget
+                widget.style.display = 'flex';
+                
+                // Set user name
+                const userName = user.first_name && user.last_name 
+                    ? `${user.first_name} ${user.last_name}`
+                    : user.email || 'User';
+                document.getElementById('user-name').textContent = userName;
+                
+                // Set avatar
+                const avatarImg = document.getElementById('user-avatar-img');
+                const avatarInitials = document.getElementById('user-avatar-initials');
+                
+                if (user.profile_image_url) {
+                    avatarImg.src = user.profile_image_url;
+                    avatarImg.style.display = 'block';
+                    avatarInitials.style.display = 'none';
+                } else {
+                    // Generate initials
+                    let initials = 'U';
+                    if (user.first_name && user.last_name) {
+                        initials = user.first_name[0] + user.last_name[0];
+                    } else if (user.email) {
+                        initials = user.email[0].toUpperCase();
+                    }
+                    avatarInitials.textContent = initials.toUpperCase();
+                    avatarInitials.style.display = 'flex';
+                    avatarImg.style.display = 'none';
+                }
+                
+                // Set role badge
+                const roleBadge = document.getElementById('user-role-badge');
+                const roleText = document.getElementById('user-role-text');
+                const role = user.role || 'viewer';
+                
+                roleText.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+                roleBadge.className = `user-role-badge ${role}`;
+            } else {
+                widget.style.display = 'none';
+            }
+        }
+
+        // Logout function
+        function logout() {
+            window.auth.logout();
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             checkAutoShipDay();
             loadDashboardData();
             loadWeeklyReport();
             loadReportStatus();
+            populateUserWidget();
         });
     </script>
     
