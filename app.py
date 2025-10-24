@@ -1,5 +1,5 @@
 """
-ORA Automation Dashboard - Flask Application
+Oracare Fulfillment Dashboard - Flask Application
 Serves the dashboard UI and provides API endpoints for real-time data.
 """
 import os

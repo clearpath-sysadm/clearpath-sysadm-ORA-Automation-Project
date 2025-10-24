@@ -1,4 +1,4 @@
-// Timezone utility functions for ORA Business Dashboard
+// Timezone utility functions for Oracare Fulfillment Dashboard
 // This file provides timezone-aware date formatting across all pages
 
 /**

@@ -1,8 +1,8 @@
 #!/bin/bash
-# ORA Business Automation - Startup Script
+# Oracare Fulfillment - Startup Script
 # Launches all automation workflows and dashboard server
 
-echo "🚀 Starting ORA Business Automation System..."
+echo "🚀 Starting Oracare Fulfillment System..."
 echo "================================================"
 
 # Start background automation workflows

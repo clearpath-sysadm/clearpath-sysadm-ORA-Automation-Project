@@ -1,5 +1,5 @@
 /**
- * ORA Automation - Interactive Guided Tour System
+ * Oracare Fulfillment - Interactive Guided Tour System
  * Provides step-by-step walkthroughs with spotlight overlays
  */
 
@@ -192,7 +192,7 @@ const TOURS = {
     welcome: [
         {
             element: '.page-title',
-            title: 'Welcome to ORA Automation!',
+            title: 'Welcome to Oracare Fulfillment!',
             content: 'This dashboard shows your fulfillment operations in real-time. Let\'s take a quick tour of the key features.',
             position: 'bottom'
         },
@@ -371,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
     //     `;
     //     welcomeModal.innerHTML = `
     //         <div style="background: white; border-radius: 16px; padding: 40px; max-width: 500px; text-align: center;">
-    //             <h2 style="font-size: 24px; margin-bottom: 16px; color: #222;">👋 Welcome to ORA Automation!</h2>
+    //             <h2 style="font-size: 24px; margin-bottom: 16px; color: #222;">👋 Welcome to Oracare Fulfillment!</h2>
     //             <p style="font-size: 16px; line-height: 1.6; color: #555; margin-bottom: 24px;">
     //                 This system handles your fulfillment operations automatically. Would you like a quick 3-minute tour to get started?
     //             </p>

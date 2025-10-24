@@ -62,7 +62,7 @@ def admin_required(f):
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Access Denied - ORA Automation</title>
+                    <title>Access Denied - Oracare Fulfillment</title>
                     <link rel="stylesheet" href="/static/css/global-styles.css">
                 </head>
                 <body>
