@@ -1660,8 +1660,8 @@ def api_weekly_inventory_report():
             current_qty = row[2] or 0
             weekly_avg_cents = row[3] or 0
             
-            # Calculate rolling average in units (convert from cents)
-            weekly_avg = round(weekly_avg_cents / 100.0, 2) if weekly_avg_cents else 0.0
+            # Note: Despite the column name, values are stored as whole units, not cents
+            weekly_avg = float(weekly_avg_cents) if weekly_avg_cents else 0.0
             
             # Calculate estimated days left
             if weekly_avg > 0:
