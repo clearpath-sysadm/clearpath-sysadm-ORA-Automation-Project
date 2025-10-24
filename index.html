@@ -867,15 +867,15 @@
                     const contactsResponse = await fetch('/api/email_contacts');
                     const contactsData = await contactsResponse.json();
                     
-                    if (contactsData.success && contactsData.contacts.length > 0) {
+                    if (contactsData.success && contactsData.data && contactsData.data.length > 0) {
                         // Get all email addresses
-                        const emailList = contactsData.contacts.map(c => c.email).join('; ');
+                        const emailList = contactsData.data.map(c => c.email).join('; ');
                         
                         btn.textContent = '📧 Ready!';
                         
                         // Show modal with email instructions
                         const message = `EMAIL READY TO SEND\n\n` +
-                            `BCC Recipients (${contactsData.contacts.length}):\n${emailList}\n\n` +
+                            `BCC Recipients (${contactsData.data.length}):\n${emailList}\n\n` +
                             `The report has been copied to your clipboard.\n` +
                             `Open your email client, add the BCC recipients above, paste the report, and send!`;
                         
