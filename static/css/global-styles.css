@@ -2129,7 +2129,7 @@ body.dark-mode .order-card-expand-btn:hover {
 .user-name {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #E3E9F5;
 }
 
 .user-role {
@@ -2145,21 +2145,24 @@ body.dark-mode .order-card-expand-btn:hover {
 }
 
 .badge-viewer {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.15);
+    color: #A5B4CD;
+    font-weight: 500;
 }
 
 .logout-btn {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0.625rem;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
-    color: var(--text-primary);
+    color: #E3E9F5;
     text-decoration: none;
     font-size: 0.875rem;
+    font-weight: 500;
     transition: all 0.2s;
 }
 
@@ -2227,10 +2230,10 @@ body.dark-mode .order-card-expand-btn:hover {
 
 .dropdown-value {
     font-size: 0.875rem;
-    color: var(--text-primary);
+    color: #E3E9F5;
     font-weight: 400;
     text-align: right;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 .profile-section:hover {

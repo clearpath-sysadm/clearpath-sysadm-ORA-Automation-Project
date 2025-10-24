@@ -37,7 +37,7 @@ class AuthManager {
     }
     
     renderUserWidget() {
-        const sidebar = document.querySelector('.sidebar-header');
+        const sidebar = document.querySelector('.sidebar');
         if (!sidebar) return;
         
         const widget = document.createElement('div');
