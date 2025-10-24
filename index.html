@@ -918,13 +918,13 @@
                 const response = await fetch('/api/email_contacts');
                 const data = await response.json();
                 
-                if (!data.success || data.contacts.length === 0) {
+                if (!data.success || !data.data || data.data.length === 0) {
                     alert('⚠️ No email contacts found. Please add contacts in the Email Contacts page first.');
                     return;
                 }
                 
                 // Get all email addresses
-                const emailList = data.contacts.map(c => c.email).join(',');
+                const emailList = data.data.map(c => c.email).join(',');
                 
                 // Create a simple test mailto link
                 const subject = 'Test Email - Weekly Inventory Report';
@@ -943,7 +943,7 @@
                 
                 // Show success message
                 setTimeout(() => {
-                    alert(`✅ Email client test initiated!\n\nIf your email client opened with ${data.contacts.length} contacts in BCC, the feature works!\n\nIf nothing happened, your browser may be blocking mailto: links or you don't have a default email client configured.`);
+                    alert(`✅ Email client test initiated!\n\nIf your email client opened with ${data.data.length} contacts in BCC, the feature works!\n\nIf nothing happened, your browser may be blocking mailto: links or you don't have a default email client configured.`);
                 }, 500);
                 
             } catch (error) {
