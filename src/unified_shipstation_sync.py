@@ -794,7 +794,7 @@ def sync_tracking_statuses(conn, api_key: str, api_secret: str) -> int:
         SELECT 
             order_number, 
             tracking_number, 
-            shipping_carrier_name, 
+            shipping_carrier_code, 
             tracking_status,
             tracking_last_checked
         FROM orders_inbox
