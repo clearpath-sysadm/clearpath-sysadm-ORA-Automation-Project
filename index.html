@@ -806,12 +806,10 @@
                 
                 const htmlRows = result.data.map(item => {
                     const daysLeft = item.days_left >= 999 ? '∞' : item.days_left;
-                    const palletBreakdown = `${item.full_pallets} full + ${item.partial_units} units`;
                     return `
                     <tr>
                         <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(String(item.sku))}</td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(String(item.current_quantity))}</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(palletBreakdown)}</td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${escapeHtml(String(item.rolling_avg_52_weeks))}</td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(String(daysLeft))}</td>
                     </tr>
@@ -823,7 +821,6 @@
                             <tr style="background-color: #f3f4f6;">
                                 <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">SKU</th>
                                 <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Current Qty</th>
-                                <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Pallet Breakdown</th>
                                 <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">52-Week Avg</th>
                                 <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Days Left</th>
                             </tr>
@@ -834,16 +831,15 @@
                     </table>
                 `;
                 
-                const plainHeader = 'SKU    | Current Qty | Pallet Breakdown      | 52-Week Avg | Days Left';
-                const plainSeparator = '-'.repeat(80);
+                const plainHeader = 'SKU    | Current Qty | 52-Week Avg | Days Left';
+                const plainSeparator = '-'.repeat(60);
                 const plainRows = result.data.map(item => {
                     const sku = String(item.sku).padEnd(6);
                     const current = String(item.current_quantity).padStart(11);
-                    const palletBreakdown = `${item.full_pallets} full + ${item.partial_units} units`.padEnd(21);
                     const avg = String(item.rolling_avg_52_weeks).padStart(11);
                     const daysLeft = item.days_left >= 999 ? '∞' : String(item.days_left);
                     const daysLeftPadded = daysLeft.padStart(9);
-                    return `${sku} | ${current} | ${palletBreakdown} | ${avg} | ${daysLeftPadded}`;
+                    return `${sku} | ${current} | ${avg} | ${daysLeftPadded}`;
                 }).join('\n');
                 const plainText = `${plainHeader}\n${plainSeparator}\n${plainRows}`;
                 
