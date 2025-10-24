@@ -401,28 +401,42 @@
                 let clipboardText = '';
                 try {
                     clipboardText = await navigator.clipboard.readText();
+                    console.log('Clipboard read successfully, length:', clipboardText.length);
                 } catch (clipboardError) {
-                    console.log('Could not read clipboard:', clipboardError);
+                    console.warn('Could not read clipboard:', clipboardError);
                     const useEmpty = confirm('Could not access clipboard. Continue with empty email body?');
                     if (!useEmpty) return;
                 }
 
-                // Get all email addresses and encode them
+                // Get all email addresses
                 const emailList = contacts.map(c => c.email).join(',');
-                const encodedBccList = encodeURIComponent(emailList);
+                console.log(`Composing email to ${contacts.length} contacts`);
                 
-                // Encode the clipboard text for URL
+                // Encode the email list and body for URL
+                const encodedBccList = encodeURIComponent(emailList);
                 const encodedBody = encodeURIComponent(clipboardText);
                 
                 // Create mailto link with all emails in BCC and clipboard in body
                 const mailtoLink = `mailto:?bcc=${encodedBccList}&body=${encodedBody}`;
                 
-                // Open email client
-                window.location.href = mailtoLink;
+                console.log('Opening mailto link...');
+                
+                // Create a temporary link element and click it (more reliable than window.location.href)
+                const link = document.createElement('a');
+                link.href = mailtoLink;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success message
+                setTimeout(() => {
+                    alert(`✅ Email client should open with ${contacts.length} contacts in BCC`);
+                }, 500);
                 
             } catch (error) {
                 console.error('Error composing email:', error);
-                alert('Error composing email: ' + error.message);
+                alert('Error composing email: ' + error.message + '\n\nPlease check your browser console for details.');
             }
         }
     </script>

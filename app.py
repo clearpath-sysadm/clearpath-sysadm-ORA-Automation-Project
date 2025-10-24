@@ -196,6 +196,13 @@ def serve_scratch(filename):
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return response
 
+@app.route('/email_contacts')
+@login_required
+def email_contacts_redirect():
+    """Redirect /email_contacts to /email_contacts.html for convenience"""
+    from flask import redirect
+    return redirect('/email_contacts.html')
+
 @app.route('/<path:filename>')
 def serve_page(filename):
     """Serve HTML pages only (security: whitelist approach)"""
