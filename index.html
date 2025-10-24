@@ -1557,15 +1557,37 @@
             updateBtn.disabled = true;
             updateBtn.textContent = `Updating ${count}...`;
             
+            // Create progress message element
+            const progressDiv = document.createElement('div');
+            progressDiv.style.cssText = 'margin-top: 15px; padding: 15px; background: #1e293b; border-radius: 8px; font-family: monospace;';
+            progressDiv.innerHTML = `
+                <div style="color: #94a3b8; margin-bottom: 8px;">⏳ Processing orders (rate-limited to 1 per 1.5 seconds)...</div>
+                <div id="progress-status" style="color: #10b981; font-weight: 500;"></div>
+                <div style="margin-top: 8px; background: #334155; height: 20px; border-radius: 10px; overflow: hidden;">
+                    <div id="progress-bar" style="height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); transition: width 0.3s; width: 0%;"></div>
+                </div>
+            `;
+            updateBtn.parentElement.appendChild(progressDiv);
+            
             let successCount = 0;
             let failureCount = 0;
+            const checkboxArray = Array.from(checkboxes);
             
-            for (const checkbox of checkboxes) {
+            for (let i = 0; i < checkboxArray.length; i++) {
+                const checkbox = checkboxArray[i];
                 const alertId = checkbox.dataset.alertId;
                 const orderId = checkbox.dataset.orderId;
                 const itemId = checkbox.dataset.itemId;
                 const baseSku = checkbox.dataset.baseSku;
                 const activeLot = checkbox.dataset.activeLot;
+                const orderNumber = checkbox.dataset.orderNumber;
+                
+                // Update progress indicator
+                const progressPercent = Math.round(((i + 1) / count) * 100);
+                document.getElementById('progress-status').textContent = 
+                    `Order ${i + 1}/${count}: #${orderNumber} (SKU ${baseSku}) - ${successCount} ✅ ${failureCount} ❌`;
+                document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+                updateBtn.textContent = `Updating ${i + 1}/${count} (${progressPercent}%)`;
                 
                 try {
                     const response = await fetch('/api/update_lot_in_shipstation', {
@@ -1585,18 +1607,21 @@
                         successCount++;
                     } else {
                         failureCount++;
-                        console.error(`Failed to update order ${checkbox.dataset.orderNumber}:`, result.error);
+                        console.error(`Failed to update order ${orderNumber}:`, result.error);
                     }
                 } catch (error) {
                     failureCount++;
-                    console.error(`Error updating order ${checkbox.dataset.orderNumber}:`, error);
+                    console.error(`Error updating order ${orderNumber}:`, error);
                 }
                 
-                updateBtn.textContent = `Updated ${successCount}/${count}...`;
-                
                 // Add 1.5 second delay between requests to avoid ShipStation rate limiting (40 req/min)
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                if (i < checkboxArray.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                }
             }
+            
+            // Remove progress indicator
+            progressDiv.remove();
             
             alert(`✅ Bulk update complete!\nSuccessful: ${successCount}\nFailed: ${failureCount}`);
             await checkLotMismatchAlerts();
