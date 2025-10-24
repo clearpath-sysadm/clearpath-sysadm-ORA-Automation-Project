@@ -2101,6 +2101,7 @@ body.dark-mode .order-card-expand-btn:hover {
     padding: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     margin-top: auto;
+    position: relative;
 }
 
 .profile-section {
@@ -2165,6 +2166,77 @@ body.dark-mode .order-card-expand-btn:hover {
 .logout-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: var(--accent-blue);
+}
+
+/* Profile Dropdown */
+.profile-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 1rem;
+    right: 1rem;
+    margin-bottom: 0.5rem;
+    background: rgba(27, 42, 74, 0.98);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    animation: slideUpFade 0.2s ease-out;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--accent-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-label {
+    font-size: 0.813rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    min-width: 100px;
+}
+
+.dropdown-value {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: 400;
+    text-align: right;
+    word-break: break-all;
+}
+
+.profile-section:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: background 0.2s;
 }
 
 /* ========================================
