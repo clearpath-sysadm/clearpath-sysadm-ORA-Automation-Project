@@ -5,6 +5,11 @@
 > **🚨 Production Incidents:** For critical issues, root cause analysis, and resolutions, see [`/docs/PRODUCTION_INCIDENT_LOG.md`](docs/PRODUCTION_INCIDENT_LOG.md) or use the **Production Incidents Tracker** (`/incidents.html`)
 >
 > **🧪 Test Suite:** For automated tests verifying critical functionality, see [`/tests/`](tests/)
+>
+> **🔐 Authentication Planning:** For Replit Auth implementation plan, gap analysis, and efficiency optimizations, see [`/docs/features/`](docs/features/)
+>   - [Replit Auth Implementation Plan (REVISED)](docs/features/REPLIT_AUTH_IMPLEMENTATION_PLAN_REVISED.md) - **Ready for implementation (21-36 hours)**
+>   - [Gap Analysis](docs/features/REPLIT_AUTH_GAP_ANALYSIS.md) - Architectural considerations and risk assessment
+>   - [Efficiency Analysis](docs/features/REPLIT_AUTH_EFFICIENCY_ANALYSIS.md) - Optimizations reducing effort by 49%
 
 ## Overview
 The ORA Automation Project replaces Google Sheets with a PostgreSQL database for managing inventory, shipments, and automation workflows. Its core purpose is to provide a production-ready, zero-data-loss solution that fully deprecates the legacy Google Sheets system, transforming manual processes into automated, database-driven workflows. This project delivers a robust, real-time operational dashboard for Oracare, offering improved visibility and efficiency in business automation.
