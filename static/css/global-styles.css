@@ -25,11 +25,15 @@
     --text-secondary: #5A6B8C;
     --text-tertiary: #8A98B3;
     
-    /* Accent Colors */
-    --accent-orange: #F2994A;
+    /* Accent Colors - Oracare Brand Blue */
+    --accent-blue: #2B7DE9;
+    --accent-blue-hover: #2369CC;
     --success-teal: #3CAEA3;
     --warning-gold: #F2C14E;
     --critical-red: #E15554;
+    
+    /* Legacy orange reference (for backwards compatibility) */
+    --accent-blue: #2B7DE9;
     
     /* Elevation Shadows */
     --shadow-sm: 0 1px 3px rgba(9, 23, 42, 0.08);
@@ -167,9 +171,9 @@ h3, .text-title {
 }
 
 .sidebar-logo {
-    width: 32px;
+    width: 48px;
     height: 32px;
-    background: linear-gradient(135deg, var(--primary-navy), var(--accent-orange));
+    background: transparent;
     border-radius: var(--border-radius-md);
     display: flex;
     align-items: center;
@@ -299,7 +303,7 @@ body.dark-mode .sidebar-header {
 }
 
 body.dark-mode .sidebar-logo {
-    background: linear-gradient(135deg, var(--accent-orange), #FFB366);
+    background: linear-gradient(135deg, var(--accent-blue), #FFB366);
 }
 
 body.dark-mode .sidebar-title {
@@ -322,7 +326,7 @@ body.dark-mode .nav-item:hover {
 body.dark-mode .nav-item.active {
     background-color: rgba(242, 153, 74, 0.2);
     color: white;
-    border-left: 3px solid var(--accent-orange);
+    border-left: 3px solid var(--accent-blue);
 }
 
 body.dark-mode .admin-section {
@@ -478,7 +482,7 @@ body.dark-mode .admin-toggle:hover {
 }
 
 .toggle-switch.active {
-    background-color: var(--accent-orange);
+    background-color: var(--accent-blue);
 }
 
 .toggle-switch-handle {
@@ -524,7 +528,7 @@ body.dark-mode .admin-toggle:hover {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary-navy), var(--accent-orange));
+    background: linear-gradient(90deg, var(--primary-navy), var(--accent-blue));
 }
 
 .stat-card:hover {
@@ -1456,7 +1460,7 @@ body.dark-mode .alert-critical {
 
 .order-card-expand-btn:hover {
     background: var(--bg-tertiary);
-    color: var(--accent-orange);
+    color: var(--accent-blue);
 }
 
 .order-card-expand-btn:active {
@@ -1470,7 +1474,7 @@ body.dark-mode .order-card {
 }
 
 body.dark-mode .order-card:hover {
-    border-color: var(--accent-orange);
+    border-color: var(--accent-blue);
     box-shadow: 0 4px 12px rgba(242, 153, 74, 0.15);
 }
 
@@ -2111,7 +2115,7 @@ body.dark-mode .order-card-expand-btn:hover {
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid var(--accent-orange);
+    border: 2px solid var(--accent-blue);
 }
 
 .user-info {
@@ -2135,7 +2139,7 @@ body.dark-mode .order-card-expand-btn:hover {
 }
 
 .badge-admin {
-    background: var(--accent-orange);
+    background: var(--accent-blue);
     color: white;
 }
 
@@ -2160,7 +2164,7 @@ body.dark-mode .order-card-expand-btn:hover {
 
 .logout-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: var(--accent-orange);
+    border-color: var(--accent-blue);
 }
 
 /* ========================================
