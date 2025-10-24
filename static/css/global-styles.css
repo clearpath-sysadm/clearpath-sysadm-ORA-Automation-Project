@@ -2242,6 +2242,19 @@ body.dark-mode .order-card-expand-btn:hover {
     transition: background 0.2s;
 }
 
+/* Physical Count Adjustment Difference Indicators */
+.difference-positive {
+    color: var(--success-teal);
+}
+
+.difference-negative {
+    color: var(--critical-red);
+}
+
+.difference-neutral {
+    color: var(--text-tertiary);
+}
+
 /* ========================================
    ANIMATIONS
    ======================================== */

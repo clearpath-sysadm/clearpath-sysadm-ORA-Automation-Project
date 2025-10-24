@@ -103,6 +103,7 @@ def enforce_api_auth():
     # Viewer-allowed write operations (POST allowed for authenticated users)
     VIEWER_ALLOWED_WRITE_ROUTES = {
         '/api/incidents',  # Viewers can report bugs (POST)
+        '/api/physical_count_adjustment',  # Viewers can adjust inventory up to ±4 units (admin threshold enforced in handler)
     }
     
     # Viewer-allowed write routes with dynamic paths (POST only - PUT/PATCH/DELETE still require admin)
@@ -1610,6 +1611,116 @@ def api_get_skus():
         results = execute_query(query)
         skus = [row[0] for row in results]
         return jsonify(skus)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/physical_count_adjustment', methods=['POST'])
+def api_physical_count_adjustment():
+    """
+    Create inventory adjustment from physical count.
+    Tracks user, timezone, and requires admin for adjustments > 4 units.
+    """
+    try:
+        from datetime import datetime
+        from pytz import timezone as pytz_timezone
+        
+        data = request.get_json()
+        sku = data.get('sku')
+        physical_count = data.get('physical_count')
+        reason = data.get('reason', '').strip()
+        user_timezone = data.get('user_timezone', 'UTC')
+        
+        if not all([sku, physical_count is not None, reason]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields: sku, physical_count, reason'
+            }), 400
+        
+        physical_count = int(physical_count)
+        if physical_count < 0:
+            return jsonify({
+                'success': False,
+                'error': 'Physical count cannot be negative'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT current_quantity FROM inventory_current WHERE sku = %s
+        """, (sku,))
+        result = cursor.fetchone()
+        
+        if not result:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f'SKU {sku} not found in inventory'
+            }), 404
+        
+        system_quantity = result[0]
+        difference = physical_count - system_quantity
+        
+        if difference == 0:
+            conn.close()
+            return jsonify({
+                'success': True,
+                'message': 'No adjustment needed - counts match',
+                'difference': 0
+            })
+        
+        if abs(difference) > 4 and current_user.role != 'admin':
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Adjustments greater than 4 units require admin approval',
+                'requires_admin': True,
+                'difference': difference
+            }), 403
+        
+        transaction_type = 'Adjust Up' if difference > 0 else 'Adjust Down'
+        quantity = abs(difference)
+        
+        try:
+            tz = pytz_timezone(user_timezone)
+            local_time = datetime.now(tz)
+            formatted_time = local_time.strftime('%Y-%m-%d %I:%M %p %Z')
+        except:
+            formatted_time = datetime.now().strftime('%Y-%m-%d %I:%M %p UTC')
+        
+        user_name = f"{current_user.first_name} {current_user.last_name}".strip() or current_user.email
+        detailed_notes = f"Physical count adjustment: {reason} | Adjusted by: {user_name} | Time: {formatted_time} | System: {system_quantity} → Physical: {physical_count} (Δ{difference:+d})"
+        
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        cursor.execute("""
+            INSERT INTO inventory_transactions 
+            (date, sku, quantity, transaction_type, notes, created_at)
+            VALUES (%s, %s, %s, %s, %s, NOW())
+        """, (today, sku, quantity, transaction_type, detailed_notes))
+        
+        cursor.execute("""
+            UPDATE inventory_current 
+            SET current_quantity = %s, 
+                last_updated = NOW()
+            WHERE sku = %s
+        """, (physical_count, sku))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Inventory adjusted: {system_quantity} → {physical_count} ({difference:+d} units)',
+            'difference': difference,
+            'transaction_type': transaction_type,
+            'adjusted_by': user_name,
+            'timestamp': formatted_time
+        })
+        
     except Exception as e:
         return jsonify({
             'success': False,
