@@ -133,7 +133,10 @@
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">Email Contacts</h2>
-                            <button class="btn" id="addContactBtn" data-action="write">+ Add Contact</button>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn" onclick="composeEmailToAll()" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue);">📧 Compose Email to All</button>
+                                <button class="btn" id="addContactBtn" data-action="write">+ Add Contact</button>
+                            </div>
                         </div>
 
                         <table id="contactsTable">
@@ -383,6 +386,43 @@
             } catch (error) {
                 console.error('Error deleting contact:', error);
                 alert('Error deleting contact: ' + error.message);
+            }
+        }
+
+        // Compose email to all contacts with clipboard contents
+        async function composeEmailToAll() {
+            if (contacts.length === 0) {
+                alert('No contacts available. Please add contacts first.');
+                return;
+            }
+
+            try {
+                // Read clipboard contents
+                let clipboardText = '';
+                try {
+                    clipboardText = await navigator.clipboard.readText();
+                } catch (clipboardError) {
+                    console.log('Could not read clipboard:', clipboardError);
+                    const useEmpty = confirm('Could not access clipboard. Continue with empty email body?');
+                    if (!useEmpty) return;
+                }
+
+                // Get all email addresses and encode them
+                const emailList = contacts.map(c => c.email).join(',');
+                const encodedBccList = encodeURIComponent(emailList);
+                
+                // Encode the clipboard text for URL
+                const encodedBody = encodeURIComponent(clipboardText);
+                
+                // Create mailto link with all emails in BCC and clipboard in body
+                const mailtoLink = `mailto:?bcc=${encodedBccList}&body=${encodedBody}`;
+                
+                // Open email client
+                window.location.href = mailtoLink;
+                
+            } catch (error) {
+                console.error('Error composing email:', error);
+                alert('Error composing email: ' + error.message);
             }
         }
     </script>
