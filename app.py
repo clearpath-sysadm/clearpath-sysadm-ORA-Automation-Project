@@ -6,11 +6,15 @@ import os
 import sys
 import uuid
 import logging
-from flask import Flask, jsonify, render_template, send_from_directory, request
+from flask import Flask, jsonify, render_template, send_from_directory, request, session, g
 from datetime import datetime, timedelta
 import pytz
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 import psycopg2
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
+from flask_login import current_user
 
 # Add project root to path
 project_root = os.path.abspath(os.path.dirname(__file__))
@@ -24,6 +28,48 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
+# Session and auth configuration
+app.secret_key = os.environ.get("SESSION_SECRET")
+if not app.secret_key:
+    raise RuntimeError("SESSION_SECRET environment variable not set!")
+
+# ProxyFix for correct HTTPS redirects behind Replit proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Flask-SQLAlchemy for auth tables ONLY (business logic continues using psycopg2)
+class Base(DeclarativeBase):
+    pass
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    'pool_size': 10,
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
+
+db = SQLAlchemy(app, model_class=Base)
+
+# Create auth models
+from models.auth_models import create_auth_models
+User, OAuth = create_auth_models(db)
+
+# Initialize Flask-Login
+from src.auth.replit_auth import init_login_manager, make_replit_blueprint
+init_login_manager(app, User)
+
+# Register auth blueprint
+replit_bp = make_replit_blueprint(app, db, User, OAuth)
+app.register_blueprint(replit_bp, url_prefix="/auth")
+
+# Make session permanent (7-day duration)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+@app.before_request
+def make_session_permanent():
+    """Make Flask sessions last 7 days"""
+    session.permanent = True
+
 # Configure Flask
 app.config['JSON_SORT_KEYS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -36,7 +82,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html']
 
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
@@ -241,6 +287,28 @@ def health_check():
             'database_connected': False,
             'overall_health': '🔴 Error'
         }), 500
+
+# Auth Status API Endpoint
+@app.route('/api/auth/status')
+def auth_status():
+    """Return current user auth status for JavaScript"""
+    if current_user.is_authenticated:
+        return jsonify({
+            'authenticated': True,
+            'user': {
+                'id': current_user.id,
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'profile_image_url': current_user.profile_image_url,
+                'role': current_user.role
+            }
+        })
+    else:
+        return jsonify({
+            'authenticated': False,
+            'user': None
+        })
 
 # API Endpoints
 
