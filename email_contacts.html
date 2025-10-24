@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Email Contacts - Oracare Fulfillment Dashboard</title>
+    
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+    
+    <!-- Global Premium Design System -->
+    <link rel="stylesheet" href="/static/css/global-styles.css">
+    
+</head>
+<body>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><img src="/static/images/oracare-logo.png" alt="Oracare" style="width: 100%; height: 100%; object-fit: contain;"></div>
+                <div class="sidebar-title">Oracare Fulfillment</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
+                    </a>
+                </div>
+
+                <!-- Admin Section -->
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                        <a href="/email_contacts.html" class="nav-item active">
+                            <span class="nav-item-icon">📧</span>
+                            Email Contacts
+                        </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/help.html" class="nav-item">
+                        <span class="nav-item-icon">📚</span>
+                        Help & Training
+                    </a>
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">📧 Email Contacts</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <div class="container">
+                    <!-- Email Contacts Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Email Contacts</h2>
+                            <button class="btn" id="addContactBtn" data-action="write">+ Add Contact</button>
+                        </div>
+
+                        <table id="contactsTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Added</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsTableBody">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--text-tertiary);">Loading contacts...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Contact Modal -->
+    <div class="modal-overlay" id="contactModal" style="display: none;" onclick="if(event.target === this) closeModal()">
+        <div class="modal-dialog" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Email Contact</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="contactForm" onsubmit="saveContact(event)">
+                    <input type="hidden" id="contactId">
+                    
+                    <div class="form-group">
+                        <label>Email Address <span style="color: var(--critical-red);">*</span></label>
+                        <input type="email" id="contactEmail" required placeholder="name@example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Name (optional)</label>
+                        <input type="text" id="contactName" placeholder="Contact name">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveContact(event)" id="saveBtn">Save Contact</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/dark-mode.js"></script>
+    <script src="/static/js/auth.js"></script>
+
+    <script>
+        let contacts = [];
+        let editingContactId = null;
+
+        // Toggle admin section
+        function toggleAdmin() {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            toggle.classList.toggle('expanded');
+            items.classList.toggle('expanded');
+        }
+
+        // Auto-expand admin section
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.querySelector('.admin-toggle');
+            const items = document.getElementById('admin-items');
+            if (toggle && items) {
+                toggle.classList.add('expanded');
+                items.classList.add('expanded');
+            }
+            loadContacts();
+            window.auth.populateUserWidget();
+        });
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        // Close mobile menu
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+
+        // Close mobile menu on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMobileMenu();
+                closeModal();
+            }
+        });
+
+        // Load contacts from API
+        async function loadContacts() {
+            try {
+                const response = await fetch('/api/email_contacts', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    contacts = data.data;
+                    renderContacts();
+                } else {
+                    console.error('Failed to load contacts:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+            }
+        }
+
+        // Render contacts table
+        function renderContacts() {
+            const tbody = document.getElementById('contactsTableBody');
+            
+            if (contacts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-tertiary);">No contacts found. Click "Add Contact" to get started.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = contacts.map(contact => {
+                const createdDate = contact.created_at ? new Date(contact.created_at).toLocaleDateString() : 'N/A';
+                return `
+                    <tr>
+                        <td>${contact.email}</td>
+                        <td>${contact.name || '<span style="color: var(--text-tertiary);">—</span>'}</td>
+                        <td>${createdDate}</td>
+                        <td>
+                            <button class="btn btn-sm" onclick="editContact(${contact.id})" data-action="write" style="margin-right: 8px;">Edit</button>
+                            <button class="btn btn-sm" onclick="deleteContact(${contact.id})" data-action="write">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Open add contact modal
+        document.getElementById('addContactBtn').addEventListener('click', () => {
+            editingContactId = null;
+            document.getElementById('modalTitle').textContent = 'Add Email Contact';
+            document.getElementById('contactId').value = '';
+            document.getElementById('contactEmail').value = '';
+            document.getElementById('contactName').value = '';
+            document.getElementById('contactModal').style.display = 'flex';
+        });
+
+        // Edit contact
+        function editContact(id) {
+            const contact = contacts.find(c => c.id === id);
+            if (!contact) return;
+            
+            editingContactId = id;
+            document.getElementById('modalTitle').textContent = 'Edit Email Contact';
+            document.getElementById('contactId').value = contact.id;
+            document.getElementById('contactEmail').value = contact.email;
+            document.getElementById('contactName').value = contact.name || '';
+            document.getElementById('contactModal').style.display = 'flex';
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('contactModal').style.display = 'none';
+            editingContactId = null;
+        }
+
+        // Save contact
+        async function saveContact(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('contactEmail').value.trim();
+            const name = document.getElementById('contactName').value.trim();
+            const saveBtn = document.getElementById('saveBtn');
+            
+            if (!email) {
+                alert('Email is required');
+                return;
+            }
+            
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            
+            try {
+                const url = editingContactId 
+                    ? `/api/email_contacts/${editingContactId}`
+                    : '/api/email_contacts';
+                const method = editingContactId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({ email, name })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeModal();
+                    await loadContacts();
+                    alert(`✅ ${data.message}`);
+                } else {
+                    alert(`❌ ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error saving contact:', error);
+                alert('Error saving contact: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Contact';
+            }
+        }
+
+        // Delete contact
+        async function deleteContact(id) {
+            const contact = contacts.find(c => c.id === id);
+            if (!contact) return;
+            
+            if (!confirm(`Are you sure you want to delete ${contact.email}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/email_contacts/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    await loadContacts();
+                    alert(`✅ ${data.message}`);
+                } else {
+                    alert(`❌ ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error deleting contact:', error);
+                alert('Error deleting contact: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

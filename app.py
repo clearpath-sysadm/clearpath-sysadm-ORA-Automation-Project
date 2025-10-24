@@ -164,7 +164,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html']
 
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
@@ -3681,6 +3681,164 @@ def api_delete_sku_lot(sku_lot_id):
         return jsonify({
             'success': True,
             'message': 'SKU-Lot deleted successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Email Contacts Management Endpoints
+@app.route('/api/email_contacts', methods=['GET'])
+def api_get_email_contacts():
+    """Get all email contacts"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, email, name, created_at, updated_at 
+            FROM email_contacts 
+            ORDER BY email
+        """)
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        contacts = []
+        for row in rows:
+            contacts.append({
+                'id': row[0],
+                'email': row[1],
+                'name': row[2] if row[2] else '',
+                'created_at': row[3].isoformat() if row[3] else None,
+                'updated_at': row[4].isoformat() if row[4] else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': contacts,
+            'count': len(contacts)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/email_contacts', methods=['POST'])
+def api_create_email_contact():
+    """Create a new email contact"""
+    try:
+        data = request.json
+        
+        email = data.get('email', '').strip()
+        name = data.get('name', '').strip()
+        
+        if not email:
+            return jsonify({
+                'success': False,
+                'error': 'Email is required'
+            }), 400
+        
+        if '@' not in email:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid email format'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO email_contacts (email, name)
+            VALUES (%s, %s)
+            RETURNING id
+        """, (email, name if name else None))
+        
+        contact_id = cursor.fetchone()[0]
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Email contact created successfully',
+            'id': contact_id
+        })
+    except psycopg2.IntegrityError:
+        return jsonify({
+            'success': False,
+            'error': 'This email already exists'
+        }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/email_contacts/<int:contact_id>', methods=['PUT'])
+def api_update_email_contact(contact_id):
+    """Update an email contact"""
+    try:
+        data = request.json
+        
+        email = data.get('email', '').strip()
+        name = data.get('name', '').strip()
+        
+        if not email:
+            return jsonify({
+                'success': False,
+                'error': 'Email is required'
+            }), 400
+        
+        if '@' not in email:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid email format'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE email_contacts 
+            SET email = %s, name = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (email, name if name else None, contact_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Email contact updated successfully'
+        })
+    except psycopg2.IntegrityError:
+        return jsonify({
+            'success': False,
+            'error': 'This email already exists'
+        }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/email_contacts/<int:contact_id>', methods=['DELETE'])
+def api_delete_email_contact(contact_id):
+    """Delete an email contact"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM email_contacts WHERE id = %s", (contact_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Email contact deleted successfully'
         })
     except Exception as e:
         return jsonify({
