@@ -504,6 +504,9 @@
                                 <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
                                     📧 Compose Email
                                 </button>
+                                <button class="btn" onclick="testEmailClient()" style="background: var(--bg-tertiary); color: var(--text-secondary);">
+                                    🧪 Test Email Client
+                                </button>
                                 <button class="btn" onclick="runEOD()" id="btn-eod">
                                     📦 EOD
                                     <div class="btn-status" id="eod-status"></div>
@@ -905,6 +908,47 @@
                     btn.textContent = originalText;
                     btn.disabled = false;
                 }, 2000);
+            }
+        }
+
+        // Test email client functionality
+        async function testEmailClient() {
+            try {
+                // Fetch email contacts
+                const response = await fetch('/api/email_contacts');
+                const data = await response.json();
+                
+                if (!data.success || data.contacts.length === 0) {
+                    alert('⚠️ No email contacts found. Please add contacts in the Email Contacts page first.');
+                    return;
+                }
+                
+                // Get all email addresses
+                const emailList = data.contacts.map(c => c.email).join(',');
+                
+                // Create a simple test mailto link
+                const subject = 'Test Email - Weekly Inventory Report';
+                const body = 'This is a test email from the Oracare Fulfillment System.';
+                const mailtoLink = `mailto:?bcc=${encodeURIComponent(emailList)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                
+                console.log('Opening mailto link:', mailtoLink);
+                
+                // Try to open email client
+                const link = document.createElement('a');
+                link.href = mailtoLink;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success message
+                setTimeout(() => {
+                    alert(`✅ Email client test initiated!\n\nIf your email client opened with ${data.contacts.length} contacts in BCC, the feature works!\n\nIf nothing happened, your browser may be blocking mailto: links or you don't have a default email client configured.`);
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error testing email client:', error);
+                alert('❌ Failed to test email client: ' + error.message);
             }
         }
 
