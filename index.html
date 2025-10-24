@@ -843,6 +843,7 @@
                 }).join('\n');
                 const plainText = `${plainHeader}\n${plainSeparator}\n${plainRows}`;
                 
+                // First, copy to clipboard (must complete before opening mailto)
                 try {
                     const htmlBlob = new Blob([htmlTable], { type: 'text/html' });
                     const plainBlob = new Blob([plainText], { type: 'text/plain' });
@@ -853,10 +854,18 @@
                     await navigator.clipboard.write([clipboardItem]);
                 } catch (htmlError) {
                     console.warn('HTML clipboard not supported, falling back to plain text:', htmlError);
-                    await navigator.clipboard.writeText(plainText);
+                    try {
+                        await navigator.clipboard.writeText(plainText);
+                    } catch (textError) {
+                        console.error('Clipboard write failed:', textError);
+                        throw new Error('Failed to copy to clipboard. Please try again.');
+                    }
                 }
                 
                 btn.textContent = '✅ Copied!';
+                
+                // Wait a moment to ensure clipboard is ready
+                await new Promise(resolve => setTimeout(resolve, 100));
                 
                 // Fetch email contacts and compose email
                 try {
@@ -867,12 +876,16 @@
                         // Get all email addresses
                         const emailList = contactsData.data.map(c => c.email).join(',');
                         
-                        btn.textContent = '📧 Ready!';
+                        btn.textContent = '📧 Opening...';
                         
                         // Open email client with BCC recipients (no body due to size limits)
                         const subject = 'Weekly Inventory Report - Oracare';
                         const mailtoLink = `mailto:?bcc=${encodeURIComponent(emailList)}&subject=${encodeURIComponent(subject)}`;
                         
+                        // Show instructions first (before losing focus)
+                        alert(`✅ Email client will open!\n\nThe report has been copied to your clipboard.\n\nNext steps:\n1. Your email client will open with ${contactsData.data.length} BCC recipients\n2. Paste the report into the email body (Ctrl+V or Cmd+V)\n3. Send!`);
+                        
+                        // Then open email client
                         const link = document.createElement('a');
                         link.href = mailtoLink;
                         link.target = '_blank';
@@ -880,16 +893,11 @@
                         link.click();
                         document.body.removeChild(link);
                         
-                        // Show instructions popup
-                        setTimeout(() => {
-                            alert(`✅ Email client opened!\n\nThe report has been copied to your clipboard.\n\nNow:\n1. Your email client should have opened with ${contactsData.data.length} BCC recipients\n2. Paste the report into the email body (Ctrl+V or Cmd+V)\n3. Send!`);
-                        }, 500);
-                        
                         // Reset button
                         setTimeout(() => {
                             btn.textContent = originalText;
                             btn.disabled = false;
-                        }, 2000);
+                        }, 1000);
                     } else {
                         alert('⚠️ No email contacts found. Please add contacts in the Email Contacts page first.');
                         setTimeout(() => {
