@@ -1593,6 +1593,9 @@
                 }
                 
                 updateBtn.textContent = `Updated ${successCount}/${count}...`;
+                
+                // Add 1.5 second delay between requests to avoid ShipStation rate limiting (40 req/min)
+                await new Promise(resolve => setTimeout(resolve, 1500));
             }
             
             alert(`✅ Bulk update complete!\nSuccessful: ${successCount}\nFailed: ${failureCount}`);
