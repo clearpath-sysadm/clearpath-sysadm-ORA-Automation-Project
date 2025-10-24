@@ -1475,6 +1475,7 @@
                 const response = await fetch('/api/update_lot_in_shipstation', {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
                     body: JSON.stringify({
                         shipstation_order_id: orderId,
                         shipstation_item_id: itemId,
@@ -1593,6 +1594,7 @@
                     const response = await fetch('/api/update_lot_in_shipstation', {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
                         body: JSON.stringify({
                             shipstation_order_id: orderId,
                             shipstation_item_id: itemId,
