@@ -948,7 +948,8 @@
                 
             } catch (error) {
                 console.error('Error testing email client:', error);
-                alert('❌ Failed to test email client: ' + error.message);
+                const errorMsg = error?.message || error?.toString() || 'Unknown error';
+                alert('❌ Failed to test email client: ' + errorMsg);
             }
         }
 
