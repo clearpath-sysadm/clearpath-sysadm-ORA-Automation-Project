@@ -56,6 +56,7 @@ User, OAuth = create_auth_models(db)
 
 # Initialize Flask-Login
 from src.auth.replit_auth import init_login_manager, make_replit_blueprint
+from src.auth.middleware import login_required, admin_required
 init_login_manager(app, User)
 
 # Register auth blueprint
@@ -69,6 +70,68 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 def make_session_permanent():
     """Make Flask sessions last 7 days"""
     session.permanent = True
+
+@app.before_request
+def enforce_api_auth():
+    """
+    Centralized authentication guard for all /api/* routes.
+    
+    Default policy:
+    - GET/HEAD/OPTIONS requests → require viewer role (login_required)
+    - POST/PUT/PATCH/DELETE requests → require admin role (admin_required)
+    
+    Override map below for exceptions (public routes, special cases).
+    """
+    # Only apply to /api/* routes
+    if not request.path.startswith('/api/'):
+        return None
+    
+    # Public API routes (no authentication required)
+    PUBLIC_ROUTES = {
+        '/api/auth/status',  # Required for login flow - landing page checks auth state
+    }
+    
+    # Admin-only routes regardless of method
+    ADMIN_ONLY_ROUTES = {
+        '/api/sync_shipstation',
+        '/api/fedex_pickup/mark_completed',
+        '/api/reports/eod',
+        '/api/reports/eow',
+        '/api/reports/eom',
+    }
+    
+    # Check if route is public
+    if request.path in PUBLIC_ROUTES:
+        return None
+    
+    # Determine required role based on method and overrides
+    safe_methods = {'GET', 'HEAD', 'OPTIONS'}
+    modifying_methods = {'POST', 'PUT', 'PATCH', 'DELETE'}
+    
+    if request.path in ADMIN_ONLY_ROUTES or request.method in modifying_methods:
+        # Require admin role
+        if not current_user.is_authenticated:
+            return jsonify({
+                'error': 'Authentication required',
+                'authenticated': False
+            }), 401
+        
+        if current_user.role != 'admin':
+            return jsonify({
+                'error': 'Admin access required',
+                'authenticated': True,
+                'role': current_user.role
+            }), 403
+    
+    elif request.method in safe_methods:
+        # Require any authenticated user (viewer or admin)
+        if not current_user.is_authenticated:
+            return jsonify({
+                'error': 'Authentication required',
+                'authenticated': False
+            }), 401
+    
+    return None
 
 # Configure Flask
 app.config['JSON_SORT_KEYS'] = False
@@ -90,6 +153,7 @@ ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'cha
 _report_locks = {'EOD': False, 'EOW': False, 'EOM': False}
 
 @app.route('/')
+@login_required
 def index():
     """Serve the main dashboard"""
     from flask import make_response
@@ -117,6 +181,11 @@ def serve_scratch(filename):
 def serve_page(filename):
     """Serve HTML pages only (security: whitelist approach)"""
     if filename in ALLOWED_PAGES:
+        # landing.html is public - all other pages require authentication
+        if filename != 'landing.html' and not current_user.is_authenticated:
+            from flask import redirect
+            return redirect('/landing.html')
+        
         from flask import make_response
         response = make_response(send_from_directory(project_root, filename))
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
