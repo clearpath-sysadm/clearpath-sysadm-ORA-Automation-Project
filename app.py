@@ -100,6 +100,16 @@ def enforce_api_auth():
         '/api/reports/eom',
     }
     
+    # Viewer-allowed write operations (POST allowed for authenticated users)
+    VIEWER_ALLOWED_WRITE_ROUTES = {
+        '/api/incidents',  # Viewers can report bugs (POST)
+    }
+    
+    # Viewer-allowed write routes with dynamic paths (POST only - PUT/PATCH/DELETE still require admin)
+    VIEWER_ALLOWED_WRITE_PATTERNS = [
+        '/api/incidents/',  # Viewers can add notes/screenshots to incidents
+    ]
+    
     # Check if route is public
     if request.path in PUBLIC_ROUTES:
         return None
@@ -108,7 +118,15 @@ def enforce_api_auth():
     safe_methods = {'GET', 'HEAD', 'OPTIONS'}
     modifying_methods = {'POST', 'PUT', 'PATCH', 'DELETE'}
     
-    if request.path in ADMIN_ONLY_ROUTES or request.method in modifying_methods:
+    # Check if this is a viewer-allowed write operation
+    # Only POST is allowed for patterns (PUT/PATCH/DELETE still require admin)
+    is_viewer_allowed_write = (
+        request.method == 'POST' and 
+        (request.path in VIEWER_ALLOWED_WRITE_ROUTES or
+         any(request.path.startswith(pattern) for pattern in VIEWER_ALLOWED_WRITE_PATTERNS))
+    )
+    
+    if request.path in ADMIN_ONLY_ROUTES or (request.method in modifying_methods and not is_viewer_allowed_write):
         # Require admin role
         if not current_user.is_authenticated:
             return jsonify({
