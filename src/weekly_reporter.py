@@ -197,11 +197,11 @@ def save_inventory_to_db(inventory_df, rolling_average_df, product_names_map):
                 current_quantity = int(row['Quantity']) if pd.notna(row['Quantity']) else 0
                 rolling_avg = row.get('12-Month Rolling Average', None)
                 
-                # Convert rolling average to cents if it exists
+                # Convert rolling average to integer (it's a quantity, not money)
                 weekly_avg_cents = None
                 if pd.notna(rolling_avg) and rolling_avg != 'Insufficient Data':
                     try:
-                        weekly_avg_cents = int(float(rolling_avg) * 100)
+                        weekly_avg_cents = int(float(rolling_avg))
                     except (ValueError, TypeError):
                         weekly_avg_cents = None
                 
