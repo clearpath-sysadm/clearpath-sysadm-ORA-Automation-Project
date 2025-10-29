@@ -978,77 +978,102 @@ def run_unified_sync():
                             else:
                                 stats['errors'] += 1
                         else:
-                            # CONFLICT! Same order number but DIFFERENT ShipStation ID
+                            # COLLISION DETECTED! Same order number but different/missing ShipStation ID
                             logger.warning(f"⚠️ ORDER COLLISION DETECTED: Order {order_number} exists with different ShipStation ID")
                             logger.warning(f"   Local ShipStation ID: {local_shipstation_id}, New ShipStation ID: {current_shipstation_id}")
                             
-                            # FIX: Only create manual_order_conflicts alerts for MANUAL orders (10xxxx pattern)
-                            # Manual orders MUST start with '10' and be in range 100000-109999
-                            if order_number.startswith('10') and order_number.isdigit() and 100000 <= int(order_number) <= 109999:
-                                # This is a MANUAL order conflict - create alert for dashboard
+                            # CASE 1: Local order has NULL shipstation_order_id → LINK IT!
+                            # This happens when orders are imported from XML but not yet uploaded to ShipStation
+                            # OR when upload service created them but didn't capture the ShipStation ID
+                            if local_shipstation_id is None:
+                                logger.info(f"🔗 LINKING order {order_number}: Local order exists but not linked to ShipStation")
+                                logger.info(f"   Setting shipstation_order_id = {current_shipstation_id}")
+                                
                                 cursor = conn.cursor()
-                                
-                                # Get original order details from local database
                                 cursor.execute("""
-                                    SELECT ship_name, created_at 
-                                    FROM orders_inbox 
+                                    UPDATE orders_inbox
+                                    SET shipstation_order_id = %s,
+                                        updated_at = CURRENT_TIMESTAMP
                                     WHERE id = %s
-                                """, (local_order_id,))
-                                original_data = cursor.fetchone()
-                                original_ship_name = original_data[0] if original_data else None
-                                original_created_at = original_data[1] if original_data else None
+                                """, (current_shipstation_id, local_order_id))
                                 
-                                # Get items from both orders
-                                import json
+                                logger.info(f"✅ Linked order {order_number} to ShipStation ID {current_shipstation_id}")
                                 
-                                # Original order items (from local DB)
-                                cursor.execute("""
-                                    SELECT sku, quantity 
-                                    FROM order_items_inbox 
-                                    WHERE order_inbox_id = %s
-                                """, (local_order_id,))
-                                original_items = []
-                                for item_row in cursor.fetchall():
-                                    original_items.append({'sku': item_row[0], 'quantity': item_row[1]})
-                                
-                                # New/duplicate order items (from ShipStation)
-                                ship_to = order.get('shipTo') or {}
-                                duplicate_ship_name = (ship_to.get('name') or '').strip() or None
-                                duplicate_company = (ship_to.get('company') or '').strip() or None
-                                duplicate_items = []
-                                for item in order.get('items', []):
-                                    sku = item.get('sku', '')
-                                    qty = item.get('quantity', 0)
-                                    duplicate_items.append({'sku': sku, 'quantity': qty})
-                                
-                                # Check if conflict already exists
-                                cursor.execute("""
-                                    SELECT id FROM manual_order_conflicts 
-                                    WHERE shipstation_order_id = %s AND resolution_status = 'pending'
-                                """, (current_shipstation_id,))
-                                
-                                if not cursor.fetchone():
-                                    # Create new conflict alert
-                                    cursor.execute("""
-                                        INSERT INTO manual_order_conflicts (
-                                            conflicting_order_number, shipstation_order_id, customer_name, original_ship_date,
-                                            original_company, original_items, duplicate_company, duplicate_items
-                                        )
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                                    """, (order_number, current_shipstation_id, duplicate_ship_name, original_created_at,
-                                          None, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items)))
-                                    logger.info(f"🚨 Created manual order conflict alert for order {order_number}")
+                                # Now update the order's status
+                                if update_existing_order_status(order, local_order_id, conn):
+                                    stats['existing_updated'] += 1
                                 else:
-                                    logger.debug(f"  Conflict alert already exists for order {order_number}")
-                            else:
-                                # Non-manual order collision - log but don't create manual_order_conflicts alert
-                                logger.warning(f"⚠️ NON-MANUAL order collision detected for {order_number}")
-                                logger.warning(f"   This order number has multiple ShipStation IDs but is NOT a manual order (doesn't match 10xxxx pattern)")
-                                logger.warning(f"   RECOMMENDATION: Investigate this order - possible data corruption or external system issue")
+                                    stats['errors'] += 1
                             
-                            # Don't import or update this conflicting order
-                            cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
-                            continue
+                            # CASE 2: Local order has DIFFERENT non-NULL shipstation_order_id → TRUE CONFLICT
+                            else:
+                                # FIX: Only create manual_order_conflicts alerts for MANUAL orders (10xxxx pattern)
+                                # Manual orders MUST start with '10' and be in range 100000-109999
+                                if order_number.startswith('10') and order_number.isdigit() and 100000 <= int(order_number) <= 109999:
+                                    # This is a MANUAL order conflict - create alert for dashboard
+                                    cursor = conn.cursor()
+                                    
+                                    # Get original order details from local database
+                                    cursor.execute("""
+                                        SELECT ship_name, created_at 
+                                        FROM orders_inbox 
+                                        WHERE id = %s
+                                    """, (local_order_id,))
+                                    original_data = cursor.fetchone()
+                                    original_ship_name = original_data[0] if original_data else None
+                                    original_created_at = original_data[1] if original_data else None
+                                    
+                                    # Get items from both orders
+                                    import json
+                                    
+                                    # Original order items (from local DB)
+                                    cursor.execute("""
+                                        SELECT sku, quantity 
+                                        FROM order_items_inbox 
+                                        WHERE order_inbox_id = %s
+                                    """, (local_order_id,))
+                                    original_items = []
+                                    for item_row in cursor.fetchall():
+                                        original_items.append({'sku': item_row[0], 'quantity': item_row[1]})
+                                    
+                                    # New/duplicate order items (from ShipStation)
+                                    ship_to = order.get('shipTo') or {}
+                                    duplicate_ship_name = (ship_to.get('name') or '').strip() or None
+                                    duplicate_company = (ship_to.get('company') or '').strip() or None
+                                    duplicate_items = []
+                                    for item in order.get('items', []):
+                                        sku = item.get('sku', '')
+                                        qty = item.get('quantity', 0)
+                                        duplicate_items.append({'sku': sku, 'quantity': qty})
+                                    
+                                    # Check if conflict already exists
+                                    cursor.execute("""
+                                        SELECT id FROM manual_order_conflicts 
+                                        WHERE shipstation_order_id = %s AND resolution_status = 'pending'
+                                    """, (current_shipstation_id,))
+                                    
+                                    if not cursor.fetchone():
+                                        # Create new conflict alert
+                                        cursor.execute("""
+                                            INSERT INTO manual_order_conflicts (
+                                                conflicting_order_number, shipstation_order_id, customer_name, original_ship_date,
+                                                original_company, original_items, duplicate_company, duplicate_items
+                                            )
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                                        """, (order_number, current_shipstation_id, duplicate_ship_name, original_created_at,
+                                              None, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items)))
+                                        logger.info(f"🚨 Created manual order conflict alert for order {order_number}")
+                                    else:
+                                        logger.debug(f"  Conflict alert already exists for order {order_number}")
+                                else:
+                                    # Non-manual order collision - log but don't create manual_order_conflicts alert
+                                    logger.warning(f"⚠️ NON-MANUAL order collision detected for {order_number}")
+                                    logger.warning(f"   This order number has multiple ShipStation IDs but is NOT a manual order (doesn't match 10xxxx pattern)")
+                                    logger.warning(f"   RECOMMENDATION: Investigate this order - possible data corruption or external system issue")
+                                
+                                # Don't import or update this TRUE conflicting order
+                                cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
+                                continue
                     else:
                         # POTENTIALLY NEW MANUAL ORDER → Apply filters
                         
