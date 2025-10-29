@@ -37,6 +37,7 @@ from src.services.shipstation.tracking_service import (
     update_order_tracking_status,
     map_carrier_to_code
 )
+from src.services.ghost_order_backfill import backfill_ghost_orders
 from utils.api_utils import make_api_request
 
 # Logging setup with comprehensive output
@@ -1051,6 +1052,25 @@ def run_unified_sync():
                 logger.warning(f"⚠️ Failed to update tracking statuses (non-fatal): {e}")
                 stats['tracking_status_updates'] = 0
             
+            # Backfill ghost orders (orders with 0 items)
+            # This runs AFTER all sync processing, BEFORE watermark update
+            # Uses per-order transactions for fault tolerance
+            try:
+                logger.info("👻 Checking for ghost orders (0 items)...")
+                ghost_metrics = backfill_ghost_orders(conn, api_key, api_secret)
+                stats['ghost_backfilled'] = ghost_metrics.get('backfilled', 0)
+                stats['ghost_work_in_progress'] = ghost_metrics.get('work_in_progress', 0)
+                stats['ghost_errors'] = ghost_metrics.get('errors', 0)
+                
+                if ghost_metrics.get('rate_limited'):
+                    logger.warning("⚠️ Backfill hit rate limit - remaining orders will retry next cycle")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to backfill ghost orders (non-fatal): {e}")
+                stats['ghost_backfilled'] = 0
+                stats['ghost_work_in_progress'] = 0
+                stats['ghost_errors'] = 0
+            
             # CRITICAL: Only update watermark if NO errors occurred (per architect)
             # This prevents data loss - failed orders will be reprocessed on next run
             if stats['errors'] == 0:
@@ -1075,6 +1095,8 @@ def run_unified_sync():
         logger.info(f"   🔄 Existing orders updated: {stats['existing_updated']}")
         logger.info(f"   📍 Tracking numbers updated: {stats.get('tracking_updates', 0)}")
         logger.info(f"   🔍 Tracking statuses updated: {stats.get('tracking_status_updates', 0)}")
+        logger.info(f"   👻 Ghost orders backfilled: {stats.get('ghost_backfilled', 0)}")
+        logger.info(f"   ⏳ Ghost orders (WIP): {stats.get('ghost_work_in_progress', 0)}")
         logger.info(f"   ⏭️ Skipped (not manual): {stats['skipped_not_manual']}")
         logger.info(f"   ⏭️ Skipped (local origin): {stats['skipped_local_origin']}")
         logger.info(f"   ⏭️ Skipped (no key SKUs): {stats['skipped_no_key_skus']}")
