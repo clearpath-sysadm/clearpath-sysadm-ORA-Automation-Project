@@ -407,8 +407,8 @@ def check_order_conflict_in_shipstation(order_number: str, current_order_id: str
             existing_id = str(existing_order.get('orderId', ''))
             existing_status = existing_order.get('orderStatus', '').lower()
             
-            # Found a different order with same number (exclude cancelled orders)
-            if existing_id != str(current_order_id) and existing_status != 'cancelled':
+            # Found a different order with same number (includes cancelled orders)
+            if existing_id != str(current_order_id):
                 logger.warning(f"⚠️ CONFLICT: Order {order_number} already exists in ShipStation (ID: {existing_id}, status: {existing_status})")
                 return True, existing_order
         
