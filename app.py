@@ -5869,3 +5869,27 @@ def serve_screenshot(filename):
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
+
+@app.route('/api/duplicate_alerts/delete_order/<int:shipstation_order_id>', methods=['DELETE'])
+def api_delete_duplicate_order(shipstation_order_id):
+    """Delete a duplicate order from ShipStation"""
+    try:
+        from src.services.shipstation.api_client import delete_order_from_shipstation
+        
+        # Delete from ShipStation
+        result = delete_order_from_shipstation(shipstation_order_id)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': f'Order {shipstation_order_id} deleted from ShipStation'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Failed to delete order')
+            }), 400
+            
+    except Exception as e:
+        logger.error(f'Error deleting duplicate order {shipstation_order_id}: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500

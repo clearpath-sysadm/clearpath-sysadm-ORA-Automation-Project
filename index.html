@@ -1354,7 +1354,7 @@
                 // Show details of each duplicate
                 if (alert.details && alert.details.length > 0) {
                     html += '<table style="width: 100%; font-size: 13px; margin-top: 12px; border-collapse: collapse;">';
-                    html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th></tr></thead>';
+                    html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
                         html += '<tr style="border-bottom: 1px solid var(--border-color);">';
@@ -1365,6 +1365,7 @@
                         html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${detail.order_status}</td>`;
                         html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleString()}</td>`;
+                        html += `<td style="padding: 8px;"><button onclick="deleteDuplicateOrder(event, ${detail.shipstation_id}, '${alert.order_number}', ${alert.id})" style="padding: 4px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Delete</button></td>`;
                         html += '</tr>';
                     });
                     html += '</tbody></table>';
@@ -1387,6 +1388,46 @@
                     modal.remove();
                 }
             });
+        }
+        
+        async function deleteDuplicateOrder(event, shipstationOrderId, orderNumber, alertId) {
+            if (!confirm(`⚠️ Delete order #${orderNumber} (ShipStation ID: ${shipstationOrderId}) from ShipStation?\n\nThis action cannot be undone!`)) {
+                return;
+            }
+            
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Deleting...';
+            
+            try {
+                const response = await fetch(`/api/duplicate_alerts/delete_order/${shipstationOrderId}`, {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ ${result.message}\n\nPlease verify in ShipStation and then mark this alert as resolved.`);
+                    // Refresh alerts to show updated count
+                    await checkDuplicateAlerts();
+                    // Close and reopen modal to show updated data
+                    const modal = document.querySelector('div[style*="z-index: 9999"]');
+                    if (modal) {
+                        modal.remove();
+                        // Wait for alert data to refresh
+                        setTimeout(() => showDuplicateDetails(), 500);
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to delete order');
+                }
+            } catch (error) {
+                console.error('Error deleting duplicate order:', error);
+                alert('❌ Error deleting order: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
         
         async function resolveDuplicateAlert(alertId, orderNumber, baseSku) {
