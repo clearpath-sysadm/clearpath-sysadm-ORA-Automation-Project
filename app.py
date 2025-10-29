@@ -164,7 +164,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html', 'order-management.html']
 
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
@@ -5866,10 +5866,6 @@ def serve_screenshot(filename):
     """Serve uploaded screenshot files"""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-if __name__ == '__main__':
-    # Bind to 0.0.0.0:5000 for Replit
-    app.run(host='0.0.0.0', port=5000, debug=False)
-
 @app.route('/api/duplicate_alerts/delete_order/<int:shipstation_order_id>', methods=['DELETE'])
 def api_delete_duplicate_order(shipstation_order_id):
     """Delete a duplicate order from ShipStation"""
@@ -5893,3 +5889,141 @@ def api_delete_duplicate_order(shipstation_order_id):
     except Exception as e:
         logger.error(f'Error deleting duplicate order {shipstation_order_id}: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/delete_order', methods=['POST'])
+@login_required
+@admin_required
+def api_admin_delete_order():
+    """Admin endpoint to delete a single order from ShipStation by ID"""
+    try:
+        data = request.get_json()
+        shipstation_order_id = data.get('shipstation_order_id')
+        order_number = data.get('order_number')  # Optional for logging
+        
+        if not shipstation_order_id:
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation Order ID is required'
+            }), 400
+        
+        # Convert to int
+        try:
+            shipstation_order_id = int(shipstation_order_id)
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation Order ID must be a number'
+            }), 400
+        
+        from src.services.shipstation.api_client import delete_order_from_shipstation
+        
+        # Delete from ShipStation
+        logger.info(f"Admin order deletion requested: ShipStation ID {shipstation_order_id}, Order Number: {order_number or 'Not provided'}")
+        result = delete_order_from_shipstation(shipstation_order_id)
+        
+        if result['success']:
+            logger.info(f"✅ Successfully deleted order {shipstation_order_id} from ShipStation")
+            return jsonify({
+                'success': True,
+                'message': f'Order {shipstation_order_id} successfully deleted from ShipStation',
+                'shipstation_order_id': shipstation_order_id,
+                'order_number': order_number
+            })
+        else:
+            error_msg = result.get('error', 'Failed to delete order')
+            logger.error(f"❌ Failed to delete order {shipstation_order_id}: {error_msg}")
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 400
+            
+    except Exception as e:
+        logger.error(f'Error in admin order deletion: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/lookup_order', methods=['GET'])
+@login_required
+@admin_required
+def api_admin_lookup_order():
+    """Look up order details by order number to get ShipStation IDs"""
+    try:
+        order_number = request.args.get('order_number')
+        
+        if not order_number:
+            return jsonify({
+                'success': False,
+                'error': 'Order number is required'
+            }), 400
+        
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        from utils.api_utils import make_api_request
+        from config.settings import settings
+        
+        api_key, api_secret = get_shipstation_credentials()
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        params = {'orderNumber': order_number}
+        response = make_api_request(
+            url=settings.SHIPSTATION_ORDERS_ENDPOINT,
+            method='GET',
+            headers=headers,
+            params=params,
+            timeout=30
+        )
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            orders = data.get('orders', [])
+            
+            if not orders:
+                return jsonify({
+                    'success': False,
+                    'error': f'No orders found with number {order_number}'
+                }), 404
+            
+            # Format order details
+            order_details = []
+            for order in orders:
+                ship_to = order.get('shipTo', {})
+                items = order.get('items', [])
+                
+                order_details.append({
+                    'shipstation_order_id': order.get('orderId'),
+                    'order_number': order.get('orderNumber'),
+                    'order_status': order.get('orderStatus'),
+                    'customer_name': ship_to.get('name'),
+                    'company': ship_to.get('company'),
+                    'create_date': order.get('createDate'),
+                    'order_total': order.get('orderTotal'),
+                    'items': [{
+                        'sku': item.get('sku'),
+                        'name': item.get('name'),
+                        'quantity': item.get('quantity')
+                    } for item in items]
+                })
+            
+            return jsonify({
+                'success': True,
+                'order_count': len(orders),
+                'orders': order_details
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'ShipStation API error: {response.status_code if response else "No response"}'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f'Error looking up order {order_number}: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/order-management.html')
+@login_required
+@admin_required
+def order_management_page():
+    """Serve the order management admin page"""
+    return send_from_directory('.', 'order-management.html')
+
+if __name__ == '__main__':
+    # Bind to 0.0.0.0:5000 for Replit
+    app.run(host='0.0.0.0', port=5000, debug=False)

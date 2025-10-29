@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Order Management - Oracare Fulfillment</title>
+    
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+    
+    <!-- Global Premium Design System -->
+    <link rel="stylesheet" href="/static/css/global-styles.css">
+    
+    <style>
+        .order-lookup-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: calc(var(--spacing-unit) * 4);
+            margin-bottom: calc(var(--spacing-unit) * 3);
+        }
+        
+        .order-results {
+            display: grid;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+        
+        .order-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: calc(var(--spacing-unit) * 3);
+            transition: all 0.2s ease;
+        }
+        
+        .order-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 4px 12px rgba(43, 125, 233, 0.15);
+        }
+        
+        .order-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: calc(var(--spacing-unit) * 2);
+            padding-bottom: calc(var(--spacing-unit) * 2);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .order-card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .order-card-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
+            margin-top: calc(var(--spacing-unit) * 0.5);
+        }
+        
+        .order-status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-awaiting_shipment {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-shipped {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .order-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+        
+        .order-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--spacing-unit) * 0.5);
+        }
+        
+        .order-detail-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .order-detail-value {
+            font-size: 0.938rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .order-items-list {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: calc(var(--spacing-unit) * 2);
+            margin-top: calc(var(--spacing-unit) * 2);
+        }
+        
+        .order-item {
+            display: grid;
+            grid-template-columns: 3fr 1fr auto;
+            gap: calc(var(--spacing-unit) * 2);
+            padding: calc(var(--spacing-unit) * 1.5);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .btn-danger {
+            background: var(--danger-primary);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+        
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .confirmation-modal.active {
+            display: flex;
+        }
+        
+        .confirmation-content {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: calc(var(--spacing-unit) * 4);
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .confirmation-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+        
+        .confirmation-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+        
+        .confirmation-message {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: calc(var(--spacing-unit) * 3);
+            line-height: 1.6;
+        }
+        
+        .confirmation-actions {
+            display: flex;
+            gap: calc(var(--spacing-unit) * 2);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: calc(var(--spacing-unit) * 6);
+            color: var(--text-tertiary);
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: calc(var(--spacing-unit) * 2);
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><img src="/static/images/oracare-logo.png" alt="Oracare" style="width: 100%; height: 100%; object-fit: contain;"></div>
+                <div class="sidebar-title">Oracare Fulfillment</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Primary Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
+                    </a>
+                </div>
+
+                <!-- Admin Section -->
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/order-management.html" class="nav-item active">
+                            <span class="nav-item-icon">🗑️</span>
+                            Order Management
+                        </a>
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                    <a href="/help.html" class="nav-item">
+                        <span class="nav-item-icon">❓</span>
+                        Help
+                    </a>
+                    <a href="/incidents.html" class="nav-item">
+                        <span class="nav-item-icon">🐛</span>
+                        Incidents
+                    </a>
+                    <a href="/email_contacts.html" class="nav-item">
+                        <span class="nav-item-icon">📧</span>
+                        Email Contacts
+                    </a>
+                    <div class="nav-item" id="user-info" style="margin-top: calc(var(--spacing-unit) * 2); opacity: 0.7; cursor: default;">
+                        <span class="nav-item-icon">👤</span>
+                        <span id="user-name">Loading...</span>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="content-header">
+                <div class="header-left">
+                    <button class="btn-icon mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+                    <h1 class="header-title">Order Management</h1>
+                </div>
+                <div class="header-right">
+                    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content-body">
+                <!-- Order Lookup Card -->
+                <div class="order-lookup-card">
+                    <h2 style="margin: 0 0 calc(var(--spacing-unit) * 2) 0; font-size: 1.25rem; font-weight: 600;">Lookup Order</h2>
+                    <p style="margin: 0 0 calc(var(--spacing-unit) * 3) 0; color: var(--text-secondary);">
+                        Search for orders by order number to view details and manage duplicate orders in ShipStation.
+                    </p>
+                    
+                    <form onsubmit="lookupOrder(event)" style="display: flex; gap: calc(var(--spacing-unit) * 2);">
+                        <div style="flex: 1;">
+                            <input 
+                                type="text" 
+                                id="order-number-input" 
+                                class="form-input" 
+                                placeholder="Enter order number (e.g., 100533)" 
+                                required
+                                style="width: 100%;"
+                            >
+                        </div>
+                        <button type="submit" class="btn-primary" id="lookup-btn">
+                            Search Orders
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Results Container -->
+                <div id="results-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="confirmation-modal" id="confirmation-modal">
+        <div class="confirmation-content">
+            <div class="confirmation-icon">⚠️</div>
+            <h2 class="confirmation-title">Confirm Order Deletion</h2>
+            <p class="confirmation-message" id="confirmation-message">
+                Are you sure you want to delete this order from ShipStation? This action cannot be undone.
+            </p>
+            <div class="confirmation-actions">
+                <button class="btn-secondary" onclick="closeConfirmation()" style="flex: 1;">
+                    Cancel
+                </button>
+                <button class="btn-danger" onclick="confirmDelete()" style="flex: 1;">
+                    Delete Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/dark-mode.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script>
+        let pendingDeletion = null;
+
+        // Toggle admin section
+        function toggleAdmin() {
+            const adminItems = document.getElementById('admin-items');
+            const toggleIcon = document.querySelector('.admin-toggle-icon');
+            
+            if (adminItems.style.display === 'block') {
+                adminItems.style.display = 'none';
+                toggleIcon.textContent = '▶';
+                localStorage.setItem('adminExpanded', 'false');
+            } else {
+                adminItems.style.display = 'block';
+                toggleIcon.textContent = '▼';
+                localStorage.setItem('adminExpanded', 'true');
+            }
+        }
+
+        // Restore admin state
+        if (localStorage.getItem('adminExpanded') === 'true') {
+            document.getElementById('admin-items').style.display = 'block';
+            document.querySelector('.admin-toggle-icon').textContent = '▼';
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('mobile-overlay').classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('mobile-overlay').classList.remove('active');
+        }
+
+        // Lookup order
+        async function lookupOrder(event) {
+            event.preventDefault();
+            
+            const orderNumber = document.getElementById('order-number-input').value.trim();
+            const resultsContainer = document.getElementById('results-container');
+            const lookupBtn = document.getElementById('lookup-btn');
+            
+            if (!orderNumber) {
+                showToast('Please enter an order number', 'error');
+                return;
+            }
+            
+            // Loading state
+            lookupBtn.disabled = true;
+            lookupBtn.textContent = 'Searching...';
+            resultsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Searching for orders...</p></div>';
+            
+            try {
+                const response = await fetch(`/api/admin/lookup_order?order_number=${encodeURIComponent(orderNumber)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayOrderResults(data.orders, orderNumber);
+                } else {
+                    resultsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">❌</div>
+                            <p>${data.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Lookup error:', error);
+                showToast('Failed to lookup order', 'error');
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Failed to lookup order. Please try again.</p>
+                    </div>
+                `;
+            } finally {
+                lookupBtn.disabled = false;
+                lookupBtn.textContent = 'Search Orders';
+            }
+        }
+
+        // Display order results
+        function displayOrderResults(orders, orderNumber) {
+            const resultsContainer = document.getElementById('results-container');
+            
+            if (!orders || orders.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <p>No orders found with number ${orderNumber}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const multipleOrders = orders.length > 1;
+            const warningBanner = multipleOrders ? `
+                <div class="alert-card warning-alert" style="margin-bottom: calc(var(--spacing-unit) * 3);">
+                    <span class="alert-icon">⚠️</span>
+                    <div class="alert-content">
+                        <strong>Duplicate Orders Detected</strong>
+                        <p>Found ${orders.length} orders with the same order number. Review each order carefully before deleting.</p>
+                    </div>
+                </div>
+            ` : '';
+            
+            const orderCards = orders.map(order => createOrderCard(order)).join('');
+            
+            resultsContainer.innerHTML = `
+                ${warningBanner}
+                <h2 style="margin: 0 0 calc(var(--spacing-unit) * 2) 0; font-size: 1.25rem; font-weight: 600;">
+                    Found ${orders.length} Order${orders.length > 1 ? 's' : ''}
+                </h2>
+                <div class="order-results">
+                    ${orderCards}
+                </div>
+            `;
+        }
+
+        // Create order card HTML
+        function createOrderCard(order) {
+            const statusClass = `status-${order.order_status.replace(' ', '_')}`;
+            const itemsList = order.items.map(item => `
+                <div class="order-item">
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary);">${item.name || item.sku}</div>
+                        <div style="font-size: 0.875rem; color: var(--text-tertiary); margin-top: 4px;">SKU: ${item.sku}</div>
+                    </div>
+                    <div style="text-align: right; font-weight: 600; color: var(--text-primary);">
+                        Qty: ${item.quantity}
+                    </div>
+                </div>
+            `).join('');
+            
+            return `
+                <div class="order-card">
+                    <div class="order-card-header">
+                        <div>
+                            <div class="order-card-title">Order #${order.order_number}</div>
+                            <div class="order-card-subtitle">ShipStation ID: ${order.shipstation_order_id}</div>
+                        </div>
+                        <span class="order-status-badge ${statusClass}">${order.order_status}</span>
+                    </div>
+                    
+                    <div class="order-details-grid">
+                        <div class="order-detail-item">
+                            <div class="order-detail-label">Customer</div>
+                            <div class="order-detail-value">${order.customer_name || 'N/A'}</div>
+                        </div>
+                        <div class="order-detail-item">
+                            <div class="order-detail-label">Company</div>
+                            <div class="order-detail-value">${order.company || 'N/A'}</div>
+                        </div>
+                        <div class="order-detail-item">
+                            <div class="order-detail-label">Created</div>
+                            <div class="order-detail-value">${new Date(order.create_date).toLocaleDateString()}</div>
+                        </div>
+                        <div class="order-detail-item">
+                            <div class="order-detail-label">Order Total</div>
+                            <div class="order-detail-value">$${parseFloat(order.order_total).toFixed(2)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="order-items-list">
+                        <div style="font-weight: 600; margin-bottom: calc(var(--spacing-unit) * 1.5); color: var(--text-primary);">
+                            Order Items (${order.items.length})
+                        </div>
+                        ${itemsList}
+                    </div>
+                    
+                    <div style="margin-top: calc(var(--spacing-unit) * 3); display: flex; justify-content: flex-end;">
+                        <button 
+                            class="btn-danger" 
+                            onclick="initiateDelete(${order.shipstation_order_id}, '${order.order_number}', '${order.customer_name}')"
+                        >
+                            Delete Order
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initiate deletion
+        function initiateDelete(shipstationOrderId, orderNumber, customerName) {
+            pendingDeletion = { shipstationOrderId, orderNumber };
+            
+            document.getElementById('confirmation-message').innerHTML = `
+                Are you sure you want to delete order <strong>#${orderNumber}</strong> (${customerName}) from ShipStation?<br><br>
+                <strong>ShipStation ID:</strong> ${shipstationOrderId}<br><br>
+                This action cannot be undone.
+            `;
+            
+            document.getElementById('confirmation-modal').classList.add('active');
+        }
+
+        // Close confirmation
+        function closeConfirmation() {
+            document.getElementById('confirmation-modal').classList.remove('active');
+            pendingDeletion = null;
+        }
+
+        // Confirm delete
+        async function confirmDelete() {
+            if (!pendingDeletion) return;
+            
+            const { shipstationOrderId, orderNumber } = pendingDeletion;
+            
+            try {
+                const response = await fetch('/api/admin/delete_order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        shipstation_order_id: shipstationOrderId,
+                        order_number: orderNumber
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`Order ${orderNumber} deleted successfully`, 'success');
+                    closeConfirmation();
+                    
+                    // Refresh the search
+                    setTimeout(() => {
+                        document.getElementById('order-number-input').value = orderNumber;
+                        lookupOrder({ preventDefault: () => {} });
+                    }, 1000);
+                } else {
+                    showToast(data.error || 'Failed to delete order', 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Failed to delete order', 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                font-weight: 600;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
