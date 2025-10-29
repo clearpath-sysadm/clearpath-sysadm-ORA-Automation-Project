@@ -3085,7 +3085,9 @@ def api_link_unlinked_orders():
                     logger.info(f"✅ Linked order {order_number} to ShipStation ID {shipstation_order_id}")
                     
                 except Exception as e:
-                    logger.error(f"Error processing order {order_number}: {e}")
+                    error_msg = f"Error processing order {order_number}: {str(e)}"
+                    logger.error(error_msg, exc_info=True)
+                    print(f"❌ {error_msg}")  # Also print to stdout
                     stats['errors'] += 1
                     continue
             
