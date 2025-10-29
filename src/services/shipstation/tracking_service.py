@@ -333,6 +333,9 @@ def update_order_tracking_status(order_number: str, tracking_data: dict, conn):
     """
     Update order tracking status in database.
     
+    SAFETY: Only updates orders that have a ShipStation ID synced.
+    Orders without ShipStation IDs (NULL) are blocked from updates to prevent data integrity issues.
+    
     Args:
         order_number: Order number to update
         tracking_data: Dictionary with status_code, status_description, exception_description
@@ -345,8 +348,8 @@ def update_order_tracking_status(order_number: str, tracking_data: dict, conn):
         status_description = tracking_data.get('status_description')
         exception_description = tracking_data.get('exception_description')
         
-        # Update tracking_last_checked regardless of success
-        # Update tracking_last_updated only if status actually changed
+        # SAFETY CHECK: Only update if shipstation_order_id IS NOT NULL
+        # This prevents updates on orders that haven't been synced to ShipStation yet
         cursor.execute("""
             UPDATE orders_inbox
             SET tracking_status = %s,
@@ -358,7 +361,11 @@ def update_order_tracking_status(order_number: str, tracking_data: dict, conn):
                     ELSE tracking_last_updated
                 END
             WHERE order_number = %s
+              AND shipstation_order_id IS NOT NULL
         """, (status_code, status_description, exception_description, status_code, order_number))
+        
+        if cursor.rowcount == 0:
+            logger.warning(f"⚠️ Skipped tracking update for order {order_number} - ShipStation ID not synced yet (NULL)")
         
         conn.commit()
         cursor.close()

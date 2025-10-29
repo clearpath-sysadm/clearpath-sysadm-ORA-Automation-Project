@@ -288,12 +288,14 @@ def update_tracking_numbers(shipments: List[Dict[Any, Any]], conn) -> int:
                 continue
             
             # Update tracking number for this order
+            # SAFETY: Only update orders with synced ShipStation ID
             cursor.execute("""
                 UPDATE orders_inbox
                 SET tracking_number = %s,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE order_number = %s
                   AND (tracking_number IS NULL OR tracking_number = '')
+                  AND shipstation_order_id IS NOT NULL
             """, (tracking_number, order_number))
             
             if cursor.rowcount > 0:
@@ -848,21 +850,25 @@ def sync_tracking_statuses(conn, api_key: str, api_secret: str) -> int:
                 logger.warning(f"⚠️ Failed to fetch tracking for {order_number}: {error_msg}")
                 
                 # Still update last_checked timestamp even on failure
+                # SAFETY: Only update orders with synced ShipStation ID
                 cursor.execute("""
                     UPDATE orders_inbox
                     SET tracking_last_checked = NOW()
                     WHERE order_number = %s
+                      AND shipstation_order_id IS NOT NULL
                 """, (order_number,))
                 
         except Exception as e:
             logger.error(f"❌ Failed to update tracking for {order_number}: {e}", exc_info=True)
             
             # CRITICAL: Update last_checked even on exception to prevent retry storm
+            # SAFETY: Only update orders with synced ShipStation ID
             try:
                 cursor.execute("""
                     UPDATE orders_inbox
                     SET tracking_last_checked = NOW()
                     WHERE order_number = %s
+                      AND shipstation_order_id IS NOT NULL
                 """, (order_number,))
             except:
                 pass  # If this fails, let it fail silently to avoid cascading errors
