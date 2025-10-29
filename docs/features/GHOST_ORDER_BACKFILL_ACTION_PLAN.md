@@ -66,10 +66,12 @@ ShipStation Reality:
 #### 1. **Detection Logic**
 ```sql
 -- Find ghost orders (0 items AND not shipped/cancelled)
+-- INCLUDES on_hold orders (user confirmed - they still need accurate data)
 SELECT o.id, o.order_number, o.shipstation_order_id
 FROM orders_inbox o
 LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
 WHERE o.status NOT IN ('shipped', 'cancelled')
+  AND o.shipstation_order_id IS NOT NULL  -- Skip orders without ShipStation ID
 GROUP BY o.id, o.order_number, o.shipstation_order_id
 HAVING COUNT(oi.id) = 0
 ```
@@ -85,52 +87,213 @@ For each ghost order:
 #### 3. **Edge Case Handling**
 - **Order not found (404):** Mark as `cancelled` (orphaned order)
 - **Order cancelled in ShipStation:** Update local status to `cancelled`
-- **Order has 0 items in ShipStation:** Keep as-is, log warning
-- **API error:** Skip and retry on next cycle
+- **Order has 0 items in ShipStation:** Keep as-is, log warning (may be work-in-progress)
+- **Missing shipstation_order_id:** Skip order, log warning (cannot query ShipStation)
+- **API rate limit (429):** Stop processing immediately, retry next cycle
+- **API error (500):** Skip order and retry on next cycle
+- **Transaction failure:** Individual order rollback (not entire batch)
+
+---
+
+---
+
+## 🚨 Critical Implementation Notes
+
+### **BLOCKER: Duplicate SKU Constraint Issue**
+
+**Problem:** The `order_items_inbox` table has a UNIQUE constraint on `(order_inbox_id, sku)`. If a ShipStation order has the same SKU on multiple line items (e.g., different lots), only ONE line will be inserted, causing **data loss**.
+
+**Database Constraint:**
+```sql
+UNIQUE (order_inbox_id, sku)
+```
+
+**Scenario:**
+```
+ShipStation Order 123:
+  - Line 1: SKU 17612, Qty 3, Lot A
+  - Line 2: SKU 17612, Qty 2, Lot B
+
+Backfill Result:
+  - Only Line 1 OR Line 2 inserted (last one wins)
+  - Missing 3 or 2 units in database
+```
+
+**REQUIRED ACTION BEFORE IMPLEMENTATION:**
+1. Query ShipStation to check if any orders have duplicate SKUs on multiple lines
+2. If YES: Either aggregate quantities OR redesign table constraint
+3. If NO: Proceed with implementation as-is, but add validation to detect and log this scenario
+
+**Test Query (to be run during Phase 0):**
+```python
+# Check if any ShipStation orders have duplicate SKUs
+for order in recent_orders:
+    skus = [item['sku'] for item in order['items']]
+    if len(skus) != len(set(skus)):
+        print(f"⚠️ ALERT: Order {order['orderNumber']} has duplicate SKUs!")
+```
+
+### **Transaction Strategy: Per-Order Isolation**
+
+**Architecture:** Each ghost order is backfilled in its own transaction, independent of others.
+
+**Rationale:**
+- One backfill failure doesn't block others
+- Partial success is acceptable (3 of 5 orders backfilled is progress)
+- Main sync watermark advancement is independent of backfill success
+
+**Implementation:**
+```python
+def backfill_ghost_orders(main_conn) -> dict:
+    """
+    Main conn is READ-ONLY for detection query.
+    Each order gets its own WRITE transaction.
+    """
+    # Read ghost orders using main connection
+    ghost_orders = detect_ghost_orders(main_conn)
+    
+    # Process each in independent transaction
+    for order in ghost_orders:
+        try:
+            with transaction() as order_conn:  # New transaction per order
+                backfill_single_order(order, order_conn)
+                # Auto-commits on success
+        except Exception as e:
+            # Rollback happens automatically
+            # Continue to next order
+            errors += 1
+```
+
+**Benefits:**
+- ✅ Isolated failures (one bad order doesn't poison batch)
+- ✅ Watermark can advance even if some backfills fail
+- ✅ Retry failed orders on next cycle (5 min later)
+
+### **Bundle SKU Clarification**
+
+**USER CONFIRMED:** Bundle SKUs are NOT entered in ShipStation. Manual orders use individual SKUs only.
+
+**Impact:** No bundle expansion logic needed in backfill. This is a non-issue.
+
+### **On-Hold Orders**
+
+**USER CONFIRMED:** Include `on_hold` orders in backfill. They still need accurate item data.
+
+**Implementation:** Detection query does NOT exclude `on_hold` status.
+
+### **Work-In-Progress Orders (0 Items)**
+
+**USER CONFIRMED:** Do NOT auto-cancel orders with 0 items in ShipStation.
+
+**Scenario:** User creates order shell in ShipStation, saves it, will add items later.
+
+**Implementation:**
+- Keep order as-is (don't change status)
+- Log warning for visibility
+- Consider adding warning system to dashboard (future enhancement)
+
+```python
+if len(items) == 0:
+    logger.warning(f"⚠️ Order {order_number} has 0 items in ShipStation - may be work-in-progress")
+    # Do NOT update status to cancelled
+    # Do NOT insert any items
+    work_in_progress_count += 1
+```
+
+**Future Enhancement:** Add dashboard alert for orders with 0 items > 24 hours old.
 
 ---
 
 ## 📐 Implementation Plan
 
-### Phase 1: Create Standalone Module (30 min)
+### Phase 0: Pre-Implementation Validation (15 min)
+
+**CRITICAL:** Test for duplicate SKU scenario before writing code.
+
+**Test Script:**
+```python
+# Check recent 500 ShipStation orders for duplicate SKUs on same order
+from src.services.shipstation.api_client import get_shipstation_credentials
+import requests
+from requests.auth import HTTPBasicAuth
+
+api_key, api_secret = get_shipstation_credentials()
+url = 'https://ssapi.shipstation.com/orders'
+params = {'pageSize': 500, 'page': 1}
+response = requests.get(url, auth=HTTPBasicAuth(api_key, api_secret), params=params)
+
+if response.status_code == 200:
+    orders = response.json().get('orders', [])
+    for order in orders:
+        skus = [item['sku'] for item in order.get('items', [])]
+        if len(skus) != len(set(skus)):
+            print(f"⚠️ DUPLICATE SKU ALERT: Order {order['orderNumber']} has duplicate SKUs!")
+            print(f"   Items: {[(i['sku'], i['quantity']) for i in order['items']]}")
+```
+
+**Decision Point:**
+- **If duplicates found:** STOP - Need to redesign constraint or aggregation logic
+- **If no duplicates:** PROCEED with implementation as-is
+
+### Phase 1: Create Standalone Module (45 min)
 
 **File:** `src/services/ghost_order_backfill.py`
 
 ```python
-def backfill_ghost_orders(conn) -> dict:
+def backfill_ghost_orders(read_conn) -> dict:
     """
     Detect and fix ghost orders by backfilling items from ShipStation.
+    
+    Uses per-order transaction isolation for fault tolerance.
+    
+    Args:
+        read_conn: Database connection for read-only detection query
     
     Returns:
         dict: {
             'ghost_orders_found': int,
             'backfilled': int,
             'cancelled': int,
-            'errors': int
+            'work_in_progress': int,
+            'errors': int,
+            'rate_limited': bool
         }
     """
 ```
 
 **Key Features:**
 - Self-contained, testable function
-- Accepts database connection as parameter
+- Per-order transaction isolation (not batch)
 - Returns metrics for logging/monitoring
 - Comprehensive error handling
 - ON CONFLICT safety for idempotency
+- Rate limit detection and stop behavior
+- NULL shipstation_order_id validation
+- Work-in-progress order detection (0 items)
 
 ### Phase 2: Integrate with Unified Sync (15 min)
 
 **File:** `src/unified_shipstation_sync.py`
 
-Add to end of main sync loop:
+Add to end of main sync loop (BEFORE watermark update):
 ```python
-# After tracking status updates, before final summary
+# After tracking status updates, BEFORE watermark update
 from src.services.ghost_order_backfill import backfill_ghost_orders
 
-# Backfill ghost orders
-ghost_metrics = backfill_ghost_orders(conn)
-logger.info(f"👻 Ghost order backfill: {ghost_metrics['backfilled']} fixed, {ghost_metrics['errors']} errors")
+# Backfill ghost orders (uses per-order transactions)
+ghost_metrics = backfill_ghost_orders(conn)  # conn used for read-only detection
+logger.info(f"👻 Ghost order backfill: {ghost_metrics['backfilled']} fixed, "
+            f"{ghost_metrics['work_in_progress']} WIP, {ghost_metrics['errors']} errors")
+
+if ghost_metrics.get('rate_limited'):
+    logger.warning("⚠️ Backfill hit rate limit - remaining orders will retry next cycle")
 ```
+
+**Integration Points:**
+- Runs AFTER main sync processing (order status updates)
+- Runs BEFORE watermark update (backfill failures don't block watermark)
+- Uses main connection for read-only detection
+- Creates new transactions per order for writes
 
 ### Phase 3: Testing (60 min)
 
@@ -191,15 +354,18 @@ GROUP BY o.order_number, o.total_items;
 ### Function Signature
 ```python
 def backfill_ghost_orders(
-    conn: psycopg2.extensions.connection,
+    read_conn: psycopg2.extensions.connection,
     api_key: str = None,
     api_secret: str = None
 ) -> dict:
     """
     Detect orders with 0 items and backfill from ShipStation.
     
+    Uses per-order transaction isolation for fault tolerance.
+    Stops immediately on rate limit (429) to preserve API quota.
+    
     Args:
-        conn: Active database connection (with transaction support)
+        read_conn: Database connection for read-only detection query
         api_key: ShipStation API key (optional, uses environment if not provided)
         api_secret: ShipStation API secret (optional, uses environment if not provided)
     
@@ -207,28 +373,57 @@ def backfill_ghost_orders(
         dict: Metrics about backfill operation
             - ghost_orders_found: Number of ghost orders detected
             - backfilled: Number successfully backfilled with items
-            - cancelled: Number marked as cancelled
+            - cancelled: Number marked as cancelled (404 errors)
+            - work_in_progress: Number with 0 items in ShipStation
             - errors: Number of API/database errors
+            - rate_limited: Boolean, True if 429 encountered
     
     Raises:
         None: All errors are caught, logged, and counted in metrics
+    
+    Transaction Strategy:
+        - Detection query uses read_conn (read-only)
+        - Each order backfill uses new transaction (write isolation)
+        - Failures in one order don't affect others
     """
 ```
 
 ### Database Operations
 
-#### Insert Items (Idempotent)
+#### Detection Query (Read-Only)
 ```python
+cursor = read_conn.cursor()
 cursor.execute("""
-    INSERT INTO order_items_inbox 
-    (order_inbox_id, sku, quantity, name, unit_price_cents)
-    VALUES (%s, %s, %s, %s, %s)
-    ON CONFLICT (order_inbox_id, sku) 
-    DO UPDATE SET 
-        quantity = EXCLUDED.quantity,
-        name = EXCLUDED.name,
-        unit_price_cents = EXCLUDED.unit_price_cents
-""", (order_id, sku, quantity, name, price_cents))
+    SELECT o.id, o.order_number, o.shipstation_order_id
+    FROM orders_inbox o
+    LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
+    WHERE o.status NOT IN ('shipped', 'cancelled')
+      AND o.shipstation_order_id IS NOT NULL
+    GROUP BY o.id, o.order_number, o.shipstation_order_id
+    HAVING COUNT(oi.id) = 0
+""")
+ghost_orders = cursor.fetchall()
+```
+
+#### Insert Items (Idempotent, Per-Order Transaction)
+```python
+# Each order gets its own transaction
+with transaction() as order_conn:
+    cursor = order_conn.cursor()
+    
+    for item in items:
+        cursor.execute("""
+            INSERT INTO order_items_inbox 
+            (order_inbox_id, sku, quantity, name, unit_price_cents)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (order_inbox_id, sku) 
+            DO UPDATE SET 
+                quantity = EXCLUDED.quantity,
+                name = EXCLUDED.name,
+                unit_price_cents = EXCLUDED.unit_price_cents
+        """, (order_id, sku, quantity, name, price_cents))
+    
+    # Auto-commits on context exit
 ```
 
 #### Update Order Metadata
@@ -256,29 +451,40 @@ response = requests.get(
 
 #### Response Handling
 - **200 OK:** Extract items, backfill database
-- **404 Not Found:** Mark order as cancelled (orphaned)
-- **429 Rate Limit:** Log warning, skip (will retry next cycle)
-- **500 Server Error:** Log error, skip (transient failure)
+- **404 Not Found:** Mark order as cancelled (orphaned order)
+- **429 Rate Limit:** STOP IMMEDIATELY (set rate_limited=True, break loop)
+- **500 Server Error:** Log error, skip order, continue to next
+- **Timeout:** Log error, skip order, continue to next
+
+#### Special Cases
+- **0 Items in Response:** Log warning as work-in-progress, increment counter
+- **NULL shipstation_order_id:** Skip during detection (WHERE clause filters these out)
+- **Duplicate SKUs in Response:** Log critical warning (constraint violation risk)
 
 ---
 
 ## ✅ Success Criteria
 
 ### Functional Requirements
-- ✅ Detects all ghost orders (0 items) in `orders_inbox`
+- ✅ Detects all ghost orders (0 items, valid shipstation_order_id) in `orders_inbox`
+- ✅ Includes on_hold orders in detection (user confirmed)
 - ✅ Fetches complete order details from ShipStation
 - ✅ Backfills items into `order_items_inbox`
 - ✅ Updates `total_items` count accurately
 - ✅ Syncs order status from ShipStation
 - ✅ Handles cancelled/not-found orders gracefully
+- ✅ Detects work-in-progress orders (0 items in ShipStation)
+- ✅ Validates shipstation_order_id is not NULL before querying
+- ✅ Stops immediately on rate limit (429)
 - ✅ Runs automatically every 5 minutes
 - ✅ Zero manual intervention required
 
 ### Data Integrity
 - ✅ No duplicate items (ON CONFLICT handling)
 - ✅ No orphaned records
-- ✅ Transaction safety (rollback on error)
+- ✅ Per-order transaction isolation (partial failures acceptable)
 - ✅ Preserves existing correct data
+- ✅ Detects duplicate SKU constraint violations (logs critical warning)
 
 ### Monitoring
 - ✅ Logs ghost order detection count
@@ -314,14 +520,15 @@ Expected:
   - Function returns {'backfilled': 1, 'errors': 0}
 ```
 
-#### Test Case 2: Cancelled Order
+#### Test Case 2: Work-In-Progress Order
 ```
-Precondition: Ghost order with cancelled status in ShipStation
+Precondition: Ghost order with 0 items in ShipStation (being created)
 Action: Run backfill function
 Expected:
-  - orders_inbox.status = 'cancelled'
-  - No items added (order has 0 items)
-  - Function returns {'cancelled': 1, 'errors': 0}
+  - orders_inbox.status unchanged
+  - No items added (none to add)
+  - Function returns {'work_in_progress': 1, 'errors': 0}
+  - Log warning: "Order X has 0 items - may be work-in-progress"
 ```
 
 #### Test Case 3: Order Not Found (404)
@@ -342,6 +549,28 @@ Expected:
   - Order skipped (not detected as ghost)
   - No changes to database
   - Function returns {'ghost_orders_found': 0}
+```
+
+#### Test Case 5: Rate Limit (429)
+```
+Precondition: 5 ghost orders, API returns 429 on 3rd request
+Action: Run backfill function
+Expected:
+  - First 2 orders backfilled successfully
+  - 3rd order triggers 429
+  - Processing STOPS (remaining 2 orders NOT attempted)
+  - Function returns {'backfilled': 2, 'rate_limited': True}
+  - Log warning: "Hit rate limit - stopping backfill"
+```
+
+#### Test Case 6: NULL shipstation_order_id
+```
+Precondition: Ghost order with shipstation_order_id = NULL
+Action: Run backfill function
+Expected:
+  - Order excluded by detection query (WHERE shipstation_order_id IS NOT NULL)
+  - Not counted in ghost_orders_found
+  - No API call attempted
 ```
 
 ### End-to-End Test
@@ -405,8 +634,11 @@ Expected:
 ```
 👻 Found X ghost orders with 0 items
 ✅ Backfilled order 100528: 2 items (SKU 17612), status: shipped
-⚠️ Order 100529 not found in ShipStation - marked as cancelled
-❌ Error backfilling order 100530: API timeout
+⚠️ Order 100529 has 0 items in ShipStation - may be work-in-progress
+⚠️ Order 100530 not found in ShipStation (404) - marked as cancelled
+⚠️ Hit rate limit (429) - stopping backfill, will retry next cycle
+🚨 CRITICAL: Order 100531 has duplicate SKUs - constraint violation risk!
+❌ Error backfilling order 100532: API timeout
 ```
 
 ### Success Indicators
@@ -424,11 +656,20 @@ Expected:
 
 ## 📝 Implementation Checklist
 
+### Pre-Implementation (Phase 0)
+- [ ] Run duplicate SKU detection script on ShipStation data
+- [ ] Verify no orders have duplicate SKUs on multiple lines
+- [ ] If duplicates found: STOP and redesign approach
+
 ### Development
 - [ ] Create `src/services/ghost_order_backfill.py`
-- [ ] Implement `backfill_ghost_orders()` function
-- [ ] Add comprehensive logging
-- [ ] Add error handling for API failures
+- [ ] Implement `backfill_ghost_orders()` function with per-order transactions
+- [ ] Add shipstation_order_id NULL validation in detection query
+- [ ] Add rate limit (429) detection and STOP behavior
+- [ ] Add work-in-progress (0 items) detection and logging
+- [ ] Add duplicate SKU warning for constraint violation detection
+- [ ] Add comprehensive logging for all edge cases
+- [ ] Add error handling for API failures (per-order isolation)
 - [ ] Add ON CONFLICT safety for idempotency
 
 ### Integration
@@ -484,27 +725,71 @@ Expected:
 - ✅ **Where to integrate:** unified_shipstation_sync (runs every 5 minutes)
 - ✅ **Module structure:** Standalone function in separate file
 - ✅ **Backfill scope:** Items + status + total_items count
-- ✅ **Edge case handling:** Cancel orphaned orders, sync statuses
+- ✅ **Edge case handling:** Cancel orphaned orders (404), sync statuses, WIP detection
+- ✅ **Transaction strategy:** Per-order isolation (not batch)
+- ✅ **Bundle SKUs:** NOT applicable (bundles not entered in ShipStation)
+- ✅ **On-hold orders:** INCLUDE in backfill (user confirmed)
+- ✅ **0-item orders:** Keep as-is, log warning (may be work-in-progress)
+- ✅ **Rate limiting:** STOP immediately on 429, retry next cycle
+- ✅ **NULL shipstation_order_id:** Skip via WHERE clause in detection
 
 ### Open Questions
 - ⏳ Should we add ghost order count to dashboard UI?
-- ⏳ Should we alert if ghost order count exceeds threshold?
+- ⏳ Should we add warning system for orders with 0 items > 24 hours old?
 - ⏳ Should we log backfill metrics to `system_kpis` table?
+- ⏳ Should we add duplicate SKU detection to prevent constraint violations?
+
+---
+
+---
+
+## 🔍 Gap Analysis Summary
+
+### Critical Gaps Addressed
+
+| Gap | Severity | Status | Solution |
+|-----|----------|--------|----------|
+| **Duplicate SKU constraint** | HIGH | Mitigated | Phase 0 validation test required |
+| **NULL shipstation_order_id** | Medium | Fixed | WHERE clause filters in detection query |
+| **Partial failure handling** | Medium | Fixed | Per-order transaction isolation |
+| **Rate limit cascade** | Medium | Fixed | STOP on 429, retry next cycle |
+| **Bundle SKU expansion** | Low | N/A | Bundles not used in ShipStation |
+| **On-hold orders** | Low | Fixed | Included in backfill (user confirmed) |
+| **0-item orders (WIP)** | Low | Fixed | Log warning, don't cancel (user confirmed) |
+| **Watermark timing** | Low | Fixed | Backfill runs BEFORE watermark update |
+
+### Architectural Improvements
+
+1. **Per-Order Transactions:** Each ghost order backfills in isolated transaction (fault tolerance)
+2. **Rate Limit Protection:** Immediate stop on 429 (preserves API quota for main sync)
+3. **Work-In-Progress Detection:** Logs 0-item orders without cancelling (user workflow support)
+4. **Validation Layer:** NULL checks, duplicate SKU warnings, comprehensive error handling
+
+### Risk Assessment
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Duplicate SKU data loss | Low | High | Phase 0 validation test |
+| Rate limit exhaustion | Low | Medium | STOP on 429 behavior |
+| Partial backfill failures | Medium | Low | Per-order transactions |
+| ShipStation API downtime | Low | Low | Skip and retry next cycle |
 
 ---
 
 ## 🎯 Next Steps
 
-1. **Review this action plan** for completeness
-2. **Approve implementation** approach
-3. **Execute Phase 1:** Create `ghost_order_backfill.py` module
-4. **Execute Phase 2:** Integrate with unified sync
-5. **Execute Phase 3:** Test with order 100528
-6. **Execute Phase 4:** Monitor and validate
-7. **Update documentation** and mark complete
+1. ✅ **Review this updated action plan** for completeness
+2. **Execute Phase 0:** Run duplicate SKU validation test (BLOCKER)
+3. **Approve implementation** approach (if Phase 0 passes)
+4. **Execute Phase 1:** Create `ghost_order_backfill.py` module
+5. **Execute Phase 2:** Integrate with unified sync
+6. **Execute Phase 3:** Test with order 100528
+7. **Execute Phase 4:** Monitor and validate
+8. **Update documentation** and mark complete
 
 ---
 
 **Prepared by:** Replit Agent  
-**Last Updated:** October 29, 2025  
-**Status:** Ready for Implementation
+**Last Updated:** October 29, 2025 (Revision 2 - Gap Analysis Complete)  
+**Status:** Ready for Phase 0 Validation, Then Implementation  
+**Blockers:** Duplicate SKU test must pass before proceeding
