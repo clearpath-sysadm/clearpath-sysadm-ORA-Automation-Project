@@ -155,6 +155,67 @@ def identify_duplicates(orders):
     
     return duplicates
 
+def identify_order_number_collisions(orders):
+    """
+    Identify ORDER NUMBER COLLISIONS in ShipStation
+    
+    COLLISION DEFINITION: Same order_number appears with DIFFERENT ShipStation IDs
+    (regardless of SKU differences)
+    
+    This catches cases where:
+    - Same order number was manually created multiple times
+    - Order number reused for different customers
+    - Data corruption or external system issues
+    
+    Returns:
+        dict: {order_number: [list of order details with different ShipStation IDs]}
+    """
+    # Group by order_number only (not SKU)
+    order_map = defaultdict(lambda: defaultdict(dict))
+    
+    for order in orders:
+        order_number = order.get('orderNumber', '')
+        shipstation_id = order.get('orderId')
+        
+        if not order_number or not shipstation_id:
+            continue
+        
+        # Store unique ShipStation IDs per order number
+        if shipstation_id not in order_map[order_number]:
+            ship_to = order.get('shipTo') or {}
+            
+            # Collect all items for this ShipStation order
+            items = []
+            for item in order.get('items', []):
+                sku = item.get('sku', '')
+                if sku:
+                    base_sku = normalize_sku(sku)
+                    items.append({
+                        'base_sku': base_sku,
+                        'full_sku': sku,
+                        'quantity': item.get('quantity', 0)
+                    })
+            
+            order_map[order_number][shipstation_id] = {
+                'shipstation_id': shipstation_id,
+                'order_number': order_number,
+                'order_status': order.get('orderStatus'),
+                'create_date': order.get('createDate'),
+                'customer_name': ship_to.get('name', 'N/A'),
+                'customer_company': ship_to.get('company', ''),
+                'order_total': order.get('orderTotal', 0),
+                'items': items
+            }
+    
+    # Filter to only collisions (same order_number with multiple ShipStation IDs)
+    collisions = {}
+    for order_number, shipstation_dict in order_map.items():
+        if len(shipstation_dict) > 1:
+            # Convert to list of order details
+            collisions[order_number] = list(shipstation_dict.values())
+    
+    return collisions
+
 def update_duplicate_alerts(duplicates):
     """
     Update the duplicate_order_alerts table with current duplicates
@@ -262,7 +323,7 @@ def scan_for_duplicates():
             logger.warning('⚠️  Scan returned 0 orders - skipping alert updates to preserve existing alerts')
             return False
         
-        # Identify duplicates
+        # Identify duplicates (same order number + same SKU)
         duplicates = identify_duplicates(orders)
         
         if duplicates:
@@ -274,10 +335,24 @@ def scan_for_duplicates():
         else:
             logger.info("✅ No duplicate orders found in ShipStation")
         
+        # Identify order number collisions (same order number with different ShipStation IDs)
+        collisions = identify_order_number_collisions(orders)
+        
+        if collisions:
+            logger.warning(f"🚨 Found {len(collisions)} ORDER NUMBER COLLISIONS in ShipStation!")
+            for order_num, collision_list in list(collisions.items())[:10]:  # Log first 10
+                shipstation_ids = [c['shipstation_id'] for c in collision_list]
+                logger.warning(f"  Order #{order_num}: {len(collision_list)} different ShipStation IDs: {shipstation_ids}")
+            if len(collisions) > 10:
+                logger.warning(f"  ... and {len(collisions) - 10} more collisions")
+        else:
+            logger.info("✅ No order number collisions found")
+        
         # Update alerts database
         active_count = update_duplicate_alerts(duplicates)
         
         logger.info(f"🎯 Active duplicate alerts: {active_count}")
+        logger.info(f"🚨 Order number collisions detected: {len(collisions)}")
         return True
         
     except Exception as e:
