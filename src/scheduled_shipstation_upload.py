@@ -754,9 +754,9 @@ def run_scheduled_upload():
             # Run existing upload logic (all safeguards preserved)
             uploaded_count = upload_pending_orders()
             
-            # ONLY update timestamp when we actually uploaded something
-            if uploaded_count > 0:
-                update_workflow_last_run('shipstation-upload')
+            # Update timestamp on every successful run (not just when uploading)
+            # This prevents "stale" status in health check when queue is empty
+            update_workflow_last_run('shipstation-upload')
             
             error_count = 0
             
