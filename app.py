@@ -2991,6 +2991,8 @@ def api_link_unlinked_orders():
     One-time backfill operation to link local orders with NULL shipstation_order_id to ShipStation.
     Queries ShipStation API for each unlinked order and updates the local database.
     """
+    print("🔥🔥🔥 API ROUTE HIT: /api/orders/link_unlinked")
+    logger.info("🔥🔥🔥 API ROUTE HIT: /api/orders/link_unlinked")
     try:
         from src.services.shipstation.api_client import (
             get_shipstation_credentials,
