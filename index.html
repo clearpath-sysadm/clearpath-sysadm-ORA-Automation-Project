@@ -531,7 +531,7 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>SKU</th>
+                                        <th>Product</th>
                                         <th style="text-align: right;">Current Qty</th>
                                         <th style="text-align: center;">Pallet Breakdown</th>
                                         <th style="text-align: right;">52-Week Avg</th>
@@ -739,7 +739,10 @@
                     
                     return `
                         <tr>
-                            <td><strong>${item.sku}</strong></td>
+                            <td>
+                                <strong>${item.product_name || item.sku}</strong>
+                                <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 2px;">SKU: ${item.sku}</div>
+                            </td>
                             <td style="text-align: right;"><strong>${item.current_quantity}</strong></td>
                             <td style="text-align: center;">
                                 <span style="font-family: monospace; color: var(--text-secondary);">
@@ -810,9 +813,13 @@
                 
                 const htmlRows = result.data.map(item => {
                     const daysLeft = item.days_left >= 999 ? '∞' : item.days_left;
+                    const productName = item.product_name || item.sku;
                     return `
                     <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(String(item.sku))}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <strong>${escapeHtml(String(productName))}</strong><br>
+                            <span style="font-size: 0.85em; color: #666;">SKU: ${escapeHtml(String(item.sku))}</span>
+                        </td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(String(item.current_quantity))}</td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${escapeHtml(String(item.rolling_avg_52_weeks))}</td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(String(daysLeft))}</td>
@@ -823,7 +830,7 @@
                     <table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px;">
                         <thead>
                             <tr style="background-color: #f3f4f6;">
-                                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">SKU</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Product</th>
                                 <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Current Qty</th>
                                 <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">52-Week Avg</th>
                                 <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Days Left</th>
@@ -835,15 +842,16 @@
                     </table>
                 `;
                 
-                const plainHeader = 'SKU    | Current Qty | 52-Week Avg | Days Left';
-                const plainSeparator = '-'.repeat(60);
+                const plainHeader = 'Product                    | SKU   | Current Qty | 52-Week Avg | Days Left';
+                const plainSeparator = '-'.repeat(80);
                 const plainRows = result.data.map(item => {
+                    const productName = (item.product_name || item.sku).padEnd(25);
                     const sku = String(item.sku).padEnd(6);
                     const current = String(item.current_quantity).padStart(11);
                     const avg = String(item.rolling_avg_52_weeks).padStart(11);
                     const daysLeft = item.days_left >= 999 ? '∞' : String(item.days_left);
                     const daysLeftPadded = daysLeft.padStart(9);
-                    return `${sku} | ${current} | ${avg} | ${daysLeftPadded}`;
+                    return `${productName} | ${sku} | ${current} | ${avg} | ${daysLeftPadded}`;
                 }).join('\n');
                 const plainText = `${plainHeader}\n${plainSeparator}\n${plainRows}`;
                 
