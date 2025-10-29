@@ -317,6 +317,9 @@
                                     <button class="dropdown-item" id="btn-validate-orders" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; color: var(--text-primary); transition: background 0.2s;">
                                         ✓ Validate Orders
                                     </button>
+                                    <button class="dropdown-item" id="btn-link-unlinked" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; color: var(--text-primary); transition: background 0.2s;">
+                                        🔗 Link Unlinked Orders
+                                    </button>
                                     <button class="dropdown-item" id="btn-sync-manual-orders" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; color: var(--text-primary); transition: background 0.2s;">
                                         🔄 Sync Manual Orders
                                     </button>
@@ -350,6 +353,9 @@
                                 </button>
                                 <button onclick="document.getElementById('btn-validate-orders').click(); toggleActionsDropdown();">
                                     ✓ Validate Orders
+                                </button>
+                                <button onclick="document.getElementById('btn-link-unlinked').click(); toggleActionsDropdown();">
+                                    🔗 Link Unlinked Orders
                                 </button>
                                 <button onclick="document.getElementById('btn-sync-manual-orders').click(); toggleActionsDropdown();">
                                     🔄 Sync Manual Orders
@@ -1356,6 +1362,58 @@
         }
         
         document.getElementById('btn-validate-orders').addEventListener('click', validateOrders);
+
+        // Link Unlinked Orders function
+        async function linkUnlinkedOrders() {
+            const linkBtn = document.getElementById('btn-link-unlinked');
+            const originalText = linkBtn.textContent;
+            
+            if (!confirm('This will query ShipStation for all unlinked orders and link them to their ShipStation IDs. This may take a few minutes. Continue?')) {
+                return;
+            }
+            
+            try {
+                linkBtn.disabled = true;
+                linkBtn.textContent = '⏳ Linking...';
+                
+                const response = await fetch('/api/orders/link_unlinked', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    let message = `✅ ${data.message}\n\n`;
+                    
+                    if (stats.total_unlinked > 0) {
+                        message += `Details:\n` +
+                            `• Total unlinked: ${stats.total_unlinked}\n` +
+                            `• Successfully linked: ${stats.successfully_linked}\n` +
+                            `• Not found in ShipStation: ${stats.not_found_in_shipstation}\n` +
+                            `• Errors: ${stats.errors}`;
+                    }
+                    
+                    alert(message);
+                    
+                    if (stats.successfully_linked > 0) {
+                        // Reload orders to show updated data
+                        await loadOrdersInbox();
+                    }
+                } else {
+                    throw new Error(data.error || 'Link operation failed');
+                }
+            } catch (error) {
+                console.error('Link unlinked orders error:', error);
+                showAlert(`Link operation failed: ${error.message}`, 'error');
+            } finally {
+                linkBtn.disabled = false;
+                linkBtn.textContent = originalText;
+            }
+        }
+        
+        document.getElementById('btn-link-unlinked').addEventListener('click', linkUnlinkedOrders);
 
         // CSV Export function
         function exportToCSV() {

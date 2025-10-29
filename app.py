@@ -2985,6 +2985,142 @@ def api_validate_orders():
             'error': str(e)
         }), 500
 
+@app.route('/api/orders/link_unlinked', methods=['POST'])
+def api_link_unlinked_orders():
+    """
+    One-time backfill operation to link local orders with NULL shipstation_order_id to ShipStation.
+    Queries ShipStation API for each unlinked order and updates the local database.
+    """
+    try:
+        from src.services.shipstation.api_client import (
+            get_shipstation_credentials,
+            get_shipstation_headers
+        )
+        from config.settings import SHIPSTATION_ORDERS_ENDPOINT
+        from utils.api_utils import make_api_request
+        
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation API credentials not found'
+            }), 500
+        
+        conn = get_connection()
+        
+        stats = {
+            'total_unlinked': 0,
+            'successfully_linked': 0,
+            'not_found_in_shipstation': 0,
+            'errors': 0,
+            'skipped_manual': 0
+        }
+        
+        try:
+            # Get all orders with NULL shipstation_order_id (excluding manual orders 10xxxx)
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, order_number
+                FROM orders_inbox
+                WHERE shipstation_order_id IS NULL
+                  AND status NOT IN ('shipped', 'cancelled')
+                  AND order_number NOT LIKE '10%'
+                ORDER BY id
+            """)
+            unlinked_orders = cursor.fetchall()
+            
+            stats['total_unlinked'] = len(unlinked_orders)
+            
+            if stats['total_unlinked'] == 0:
+                return jsonify({
+                    'success': True,
+                    'message': 'No unlinked orders found',
+                    'stats': stats
+                })
+            
+            # Get ShipStation headers
+            headers = get_shipstation_headers(api_key, api_secret)
+            
+            # Process each unlinked order
+            for order_id, order_number in unlinked_orders:
+                try:
+                    # Query ShipStation API for this order number
+                    response = make_api_request(
+                        url=SHIPSTATION_ORDERS_ENDPOINT,
+                        method='GET',
+                        headers=headers,
+                        params={'orderNumber': order_number},
+                        timeout=30
+                    )
+                    
+                    if not response or 'orders' not in response:
+                        logger.warning(f"Failed to query ShipStation for order {order_number}")
+                        stats['errors'] += 1
+                        continue
+                    
+                    orders = response.get('orders', [])
+                    
+                    if not orders:
+                        # Order not found in ShipStation
+                        stats['not_found_in_shipstation'] += 1
+                        logger.info(f"Order {order_number} not found in ShipStation (may not be uploaded yet)")
+                        continue
+                    
+                    # Use the first matching order's ShipStation ID
+                    # NOTE: ShipStation may return multiple orders with same order_number (one per SKU)
+                    # We link to the first one we find - the sync will handle the rest
+                    shipstation_order = orders[0]
+                    shipstation_order_id = str(shipstation_order.get('orderId'))
+                    
+                    # Update local database with ShipStation ID
+                    cursor.execute("""
+                        UPDATE orders_inbox
+                        SET shipstation_order_id = %s,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = %s
+                    """, (shipstation_order_id, order_id))
+                    
+                    stats['successfully_linked'] += 1
+                    logger.info(f"✅ Linked order {order_number} to ShipStation ID {shipstation_order_id}")
+                    
+                except Exception as e:
+                    logger.error(f"Error processing order {order_number}: {e}")
+                    stats['errors'] += 1
+                    continue
+            
+            # Commit all updates
+            conn.commit()
+            
+            # Build success message
+            message = f"Linked {stats['successfully_linked']} of {stats['total_unlinked']} unlinked orders to ShipStation"
+            if stats['not_found_in_shipstation'] > 0:
+                message += f" ({stats['not_found_in_shipstation']} not found in ShipStation)"
+            
+            return jsonify({
+                'success': True,
+                'message': message,
+                'stats': stats
+            })
+        
+        except Exception as outer_e:
+            # Rollback any uncommitted changes on failure
+            try:
+                conn.rollback()
+            except:
+                pass
+            raise outer_e
+        
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        logger.error(f"Link unlinked orders failed: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/upload_orders_to_shipstation', methods=['POST'])
 def api_upload_orders_to_shipstation():
     """Upload pending orders from inbox to ShipStation with SKU-Lot mapping"""
