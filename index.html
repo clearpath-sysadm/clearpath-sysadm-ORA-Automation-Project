@@ -1372,12 +1372,23 @@
                 
                 // Show details of each duplicate from ShipStation
                 if (alert.details && alert.details.length > 0) {
+                    // Build a set of ShipStation IDs that exist in Local DB for matching
+                    const localDbShipstationIds = new Set();
+                    if (alert.local_matches && alert.local_matches.length > 0) {
+                        alert.local_matches.forEach(local => {
+                            if (local.shipstation_order_id) {
+                                localDbShipstationIds.add(local.shipstation_order_id);
+                            }
+                        });
+                    }
+                    
                     html += '<div style="margin-bottom: 12px;"><strong style="font-size: 14px;">ShipStation Records:</strong></div>';
                     html += '<table style="width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse;">';
                     html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Company</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Items</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Actions</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
                         const isDeleted = detail.deleted;
+                        const hasMatch = localDbShipstationIds.has(detail.shipstation_id);
                         const rowStyle = isDeleted 
                             ? 'border-bottom: 1px solid var(--border-color); background: #fee2e2; opacity: 0.6; text-decoration: line-through;'
                             : 'border-bottom: 1px solid var(--border-color); background: #eff6ff;';
@@ -1388,7 +1399,7 @@
                             : (detail.base_sku ? `${detail.base_sku} (${detail.quantity || 0})` : 'N/A');
                         
                         html += `<tr style="${rowStyle}">`;
-                        html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span></td>`;
+                        html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span> ${hasMatch ? '<span style="color: #22c55e; font-size: 16px; margin-left: 4px;" title="Linked to Local DB">✓</span>' : ''}</td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;"><span style="cursor: pointer; color: #2563eb; text-decoration: underline;" title="Click to link this ShipStation ID to local DB">${detail.shipstation_id}</span></td>`;
                         html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
@@ -1414,11 +1425,23 @@
                 
                 // Show local database matches
                 if (alert.local_matches && alert.local_matches.length > 0) {
+                    // Build a set of ShipStation IDs from ShipStation records for matching
+                    const shipstationRecordIds = new Set();
+                    if (alert.details && alert.details.length > 0) {
+                        alert.details.forEach(detail => {
+                            if (detail.shipstation_id) {
+                                shipstationRecordIds.add(detail.shipstation_id);
+                            }
+                        });
+                    }
+                    
                     html += '<div style="margin-top: 16px; margin-bottom: 8px;"><strong style="font-size: 14px;">Local Database Records:</strong></div>';
                     html += '<table style="width: 100%; font-size: 13px; border-collapse: collapse;">';
                     html += '<thead><tr style="background: #f0fdf4; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Company</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Items</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
                     html += '<tbody>';
                     alert.local_matches.forEach(match => {
+                        const hasMatch = match.shipstation_order_id && shipstationRecordIds.has(match.shipstation_order_id);
+                        
                         const items = match.items.map(item => {
                             const lot = item.sku_lot ? ` - ${item.sku_lot}` : '';
                             return `${item.sku}${lot} (${item.quantity})`;
@@ -1429,7 +1452,7 @@
                         const itemsDisplay = hasItems ? items : '<span style="color: #dc2626; font-weight: 600;">No items</span>';
                         
                         html += '<tr style="border-bottom: 1px solid var(--border-color); background: #f0fdf4;">';
-                        html += `<td style="padding: 8px;"><span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Local DB</span></td>`;
+                        html += `<td style="padding: 8px;"><span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Local DB</span> ${hasMatch ? '<span style="color: #22c55e; font-size: 16px; margin-left: 4px;" title="Linked to ShipStation">✓</span>' : ''}</td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${match.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;">${ssIdDisplay}</td>`;
                         html += `<td style="padding: 8px;">${match.ship_name || 'N/A'}</td>`;
