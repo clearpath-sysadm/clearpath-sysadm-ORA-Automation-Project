@@ -1400,7 +1400,7 @@
                             : (detail.base_sku ? `${detail.base_sku} (${detail.quantity || 0})` : 'N/A');
                         
                         html += `<tr style="${rowStyle}">`;
-                        html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block;">ShipStation</span>${hasMatch ? '<span style="color: #22c55e; font-size: 16px; margin-left: 6px; vertical-align: middle;" title="Linked to Local DB">✓</span>' : ''}</td>`;
+                        html += `<td style="padding: 8px;"><div style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span>${hasMatch ? '<span style="color: #22c55e; font-size: 16px;" title="Linked to Local DB">✓</span>' : ''}</div></td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;"><span style="cursor: pointer; color: #2563eb; text-decoration: underline;" title="Click to link this ShipStation ID to local DB">${detail.shipstation_id}</span></td>`;
                         html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
@@ -1456,7 +1456,7 @@
                         const itemsDisplay = hasItems ? items : '<span style="color: #dc2626; font-weight: 600;">No items</span>';
                         
                         html += '<tr style="border-bottom: 1px solid var(--border-color); background: #f0fdf4;">';
-                        html += `<td style="padding: 8px;"><span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block;">Local DB</span>${hasMatch ? '<span style="color: #22c55e; font-size: 16px; margin-left: 6px; vertical-align: middle;" title="Linked to ShipStation">✓</span>' : ''}</td>`;
+                        html += `<td style="padding: 8px;"><div style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Local DB</span>${hasMatch ? '<span style="color: #22c55e; font-size: 16px;" title="Linked to ShipStation">✓</span>' : ''}</div></td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${match.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;">${ssIdDisplay}</td>`;
                         html += `<td style="padding: 8px;">${match.ship_name || 'N/A'}</td>`;
