@@ -1359,25 +1359,60 @@
                 html += '<div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #f97316;">';
                 html += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">`;
                 html += `<div><strong style="font-size: 16px;">Order #${alert.order_number} + SKU ${alert.base_sku || 'N/A'}</strong><br>`;
-                html += `<span style="color: var(--text-tertiary); font-size: 13px;">Found ${alert.duplicate_count} duplicate records</span></div>`;
+                html += `<span style="color: var(--text-tertiary); font-size: 13px;">Found ${alert.duplicate_count} duplicate records</span><br>`;
+                
+                // Show ShipStation IDs in header
+                if (alert.shipstation_ids && alert.shipstation_ids.length > 0) {
+                    html += `<span style="color: var(--text-tertiary); font-size: 12px; font-family: monospace;">ShipStation IDs: ${alert.shipstation_ids.join(', ')}</span>`;
+                }
+                
+                html += `</div>`;
                 html += `<button onclick="resolveDuplicateAlert(${alert.id}, '${alert.order_number}', '${alert.base_sku || 'N/A'}')" style="padding: 6px 12px; background: #22c55e; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Mark Resolved</button>`;
                 html += '</div>';
                 
-                // Show details of each duplicate
+                // Show details of each duplicate from ShipStation
                 if (alert.details && alert.details.length > 0) {
-                    html += '<table style="width: 100%; font-size: 13px; margin-top: 12px; border-collapse: collapse;">';
-                    html += '<thead><tr style="background: var(--bg-tertiary); text-align: left;"><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
+                    html += '<div style="margin-bottom: 12px;"><strong style="font-size: 14px;">ShipStation Records:</strong></div>';
+                    html += '<table style="width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse;">';
+                    html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
-                        html += '<tr style="border-bottom: 1px solid var(--border-color);">';
+                        html += '<tr style="border-bottom: 1px solid var(--border-color); background: #eff6ff;">';
                         html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
-                        html += `<td style="padding: 8px;">${detail.shipstation_id}</td>`;
+                        html += `<td style="padding: 8px; font-family: monospace;">${detail.shipstation_id}</td>`;
                         html += `<td style="padding: 8px;">${detail.full_sku || detail.base_sku || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${detail.quantity || 0}</td>`;
                         html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${detail.order_status}</td>`;
                         html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleString()}</td>`;
                         html += `<td style="padding: 8px;"><button onclick="deleteDuplicateOrder(event, ${detail.shipstation_id}, '${alert.order_number}', ${alert.id})" style="padding: 4px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Delete</button></td>`;
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+                
+                // Show local database matches
+                if (alert.local_matches && alert.local_matches.length > 0) {
+                    html += '<div style="margin-top: 16px; margin-bottom: 8px;"><strong style="font-size: 14px;">Local Database Records:</strong></div>';
+                    html += '<table style="width: 100%; font-size: 13px; border-collapse: collapse;">';
+                    html += '<thead><tr style="background: #f0fdf4; text-align: left;"><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Company</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Items</th><th style="padding: 8px;">Created</th></tr></thead>';
+                    html += '<tbody>';
+                    alert.local_matches.forEach(match => {
+                        const items = match.items.map(item => {
+                            const lot = item.sku_lot ? ` - ${item.sku_lot}` : '';
+                            return `${item.sku}${lot} (${item.quantity})`;
+                        }).join(', ');
+                        
+                        const ssIdDisplay = match.shipstation_order_id || '<span style="color: var(--text-tertiary); font-style: italic;">Not Linked</span>';
+                        
+                        html += '<tr style="border-bottom: 1px solid var(--border-color); background: #f0fdf4;">';
+                        html += `<td style="padding: 8px; font-weight: 600;">${match.order_number}</td>`;
+                        html += `<td style="padding: 8px; font-family: monospace;">${ssIdDisplay}</td>`;
+                        html += `<td style="padding: 8px;">${match.ship_name || 'N/A'}</td>`;
+                        html += `<td style="padding: 8px;">${match.ship_company || 'N/A'}</td>`;
+                        html += `<td style="padding: 8px;">${match.status}</td>`;
+                        html += `<td style="padding: 8px; font-size: 11px;">${items || 'No items'}</td>`;
+                        html += `<td style="padding: 8px;">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>`;
                         html += '</tr>';
                     });
                     html += '</tbody></table>';

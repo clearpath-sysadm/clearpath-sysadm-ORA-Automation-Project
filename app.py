@@ -4274,8 +4274,9 @@ def api_resolve_violation(violation_id):
 
 @app.route('/api/duplicate_alerts', methods=['GET'])
 def api_get_duplicate_alerts():
-    """Get all active duplicate order alerts from ShipStation monitoring"""
+    """Get all active duplicate order alerts from ShipStation monitoring with local DB matches"""
     try:
+        import json
         conn = get_connection()
         cursor = conn.cursor()
         
@@ -4297,8 +4298,7 @@ def api_get_duplicate_alerts():
         
         alerts = []
         for row in cursor.fetchall():
-            import json
-            alerts.append({
+            alert_data = {
                 'id': row[0],
                 'order_number': row[1],
                 'base_sku': row[2],
@@ -4307,8 +4307,62 @@ def api_get_duplicate_alerts():
                 'details': json.loads(row[5]) if row[5] else [],
                 'first_detected': row[6],
                 'last_seen': row[7],
-                'status': row[8]
-            })
+                'status': row[8],
+                'local_matches': []
+            }
+            
+            # Fetch local database matches for this order number
+            order_number = row[1]
+            if order_number:
+                cursor.execute("""
+                    SELECT 
+                        id,
+                        order_number,
+                        shipstation_order_id,
+                        ship_name,
+                        ship_company,
+                        status,
+                        created_at
+                    FROM orders_inbox
+                    WHERE order_number = %s
+                    ORDER BY created_at DESC
+                """, (order_number,))
+                
+                local_matches = []
+                for local_row in cursor.fetchall():
+                    local_id, local_order_num, local_ss_id, ship_name, ship_company, status, created_at = local_row
+                    
+                    # Get items for this order
+                    cursor.execute("""
+                        SELECT sku, sku_lot, quantity
+                        FROM order_items_inbox
+                        WHERE order_inbox_id = %s
+                        ORDER BY sku
+                    """, (local_id,))
+                    
+                    items = []
+                    for item_row in cursor.fetchall():
+                        sku, sku_lot, qty = item_row
+                        items.append({
+                            'sku': sku,
+                            'sku_lot': sku_lot,
+                            'quantity': qty
+                        })
+                    
+                    local_matches.append({
+                        'id': local_id,
+                        'order_number': local_order_num,
+                        'shipstation_order_id': local_ss_id,
+                        'ship_name': ship_name,
+                        'ship_company': ship_company,
+                        'status': status,
+                        'created_at': created_at.isoformat() if created_at else None,
+                        'items': items
+                    })
+                
+                alert_data['local_matches'] = local_matches
+            
+            alerts.append(alert_data)
         
         conn.close()
         
