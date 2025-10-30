@@ -567,55 +567,71 @@
                     <span class="alert-icon">⚠️</span>
                     <div class="alert-content">
                         <strong>Duplicate Orders Detected</strong>
-                        <p>Found ${orders.length} orders with the same order number. Review each order carefully before deleting.</p>
+                        <p>Found ${orders.length} ShipStation orders with the same order number. Review each order carefully before deleting.</p>
                     </div>
-                </div>
-            ` : '';
-            
-            const orderCards = orders.map(order => createOrderCard(order)).join('');
-            
-            // Build local database section
-            const localDbSection = localMatches && localMatches.length > 0 ? `
-                <div class="local-db-section">
-                    <h2 style="margin: 0 0 calc(var(--spacing-unit) * 2) 0; font-size: 1.25rem; font-weight: 600;">
-                        Local Database Matches (${localMatches.length})
-                    </h2>
-                    <p style="color: var(--text-secondary); margin-bottom: calc(var(--spacing-unit) * 2);">
-                        Orders in local database with matching order number or ShipStation ID
-                    </p>
-                    ${createLocalDbTable(localMatches)}
                 </div>
             ` : '';
             
             resultsContainer.innerHTML = `
                 ${warningBanner}
-                <h2 style="margin: 0 0 calc(var(--spacing-unit) * 2) 0; font-size: 1.25rem; font-weight: 600;">
-                    ShipStation Results (${orders.length})
+                <h2 style="margin: 0 0 calc(var(--spacing-unit) * 3) 0; font-size: 1.25rem; font-weight: 600;">
+                    Search Results
                 </h2>
-                <div class="order-results">
-                    ${orderCards}
-                </div>
-                ${localDbSection}
+                ${createUnifiedTable(orders, localMatches)}
             `;
         }
         
-        // Create local database table
-        function createLocalDbTable(localMatches) {
-            const rows = localMatches.map(match => {
+        // Create unified table combining ShipStation and Local DB results
+        function createUnifiedTable(shipstationOrders, localMatches) {
+            // ShipStation rows
+            const shipstationRows = shipstationOrders.map(order => {
+                const items = order.items.map(item => {
+                    return `${item.sku} (${item.quantity})`;
+                }).join(', ');
+                
+                return `
+                    <tr>
+                        <td style="background: #eff6ff;"><strong>ShipStation</strong></td>
+                        <td style="font-weight: 600; background: #eff6ff;">${order.order_number}</td>
+                        <td style="font-family: monospace; background: #eff6ff;">${order.shipstation_order_id}</td>
+                        <td style="background: #eff6ff;">${order.customer_name || 'N/A'}</td>
+                        <td style="background: #eff6ff;">${order.company || 'N/A'}</td>
+                        <td style="background: #eff6ff;"><span class="status-badge-small status-${order.order_status.replace(' ', '_')}">${order.order_status}</span></td>
+                        <td style="font-size: 0.75rem; background: #eff6ff;">${items || 'No items'}</td>
+                        <td style="font-size: 0.75rem; color: var(--text-tertiary); background: #eff6ff;">${order.create_date ? new Date(order.create_date).toLocaleDateString() : 'N/A'}</td>
+                        <td style="background: #eff6ff;">
+                            <button 
+                                class="btn-danger" 
+                                onclick="initiateDelete(${order.shipstation_order_id}, '${order.order_number}', '${order.customer_name}')"
+                                style="padding: 4px 12px; font-size: 0.75rem;"
+                            >
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Local DB rows
+            const localRows = localMatches.map(match => {
                 const items = match.items.map(item => {
                     const skuLot = item.sku_lot ? ` - ${item.sku_lot}` : '';
                     return `${item.sku}${skuLot} (${item.quantity})`;
                 }).join(', ');
                 
+                const ssIdDisplay = match.shipstation_order_id || '<span style="color: var(--text-tertiary); font-style: italic;">Not Linked</span>';
+                
                 return `
                     <tr>
-                        <td style="font-weight: 600;">${match.order_number || 'N/A'}</td>
-                        <td style="font-family: monospace;">${match.shipstation_order_id || '<span style="color: var(--text-tertiary);">Not Linked</span>'}</td>
-                        <td>${match.ship_name || 'N/A'}</td>
-                        <td>${match.ship_company || 'N/A'}</td>
-                        <td><span class="status-badge-small status-${match.status}">${match.status}</span></td>
-                        <td style="font-size: 0.75rem;">${items || 'No items'}</td>
-                        <td style="font-size: 0.75rem; color: var(--text-tertiary);">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>
+                        <td style="background: #f0fdf4;"><strong>Local DB</strong></td>
+                        <td style="font-weight: 600; background: #f0fdf4;">${match.order_number || 'N/A'}</td>
+                        <td style="font-family: monospace; background: #f0fdf4;">${ssIdDisplay}</td>
+                        <td style="background: #f0fdf4;">${match.ship_name || 'N/A'}</td>
+                        <td style="background: #f0fdf4;">${match.ship_company || 'N/A'}</td>
+                        <td style="background: #f0fdf4;"><span class="status-badge-small status-${match.status}">${match.status}</span></td>
+                        <td style="font-size: 0.75rem; background: #f0fdf4;">${items || 'No items'}</td>
+                        <td style="font-size: 0.75rem; color: var(--text-tertiary); background: #f0fdf4;">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>
+                        <td style="background: #f0fdf4;">-</td>
                     </tr>
                 `;
             }).join('');
@@ -625,17 +641,20 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>Source</th>
                                 <th>Order #</th>
-                                <th>SS ID</th>
+                                <th>ShipStation ID</th>
                                 <th>Customer</th>
                                 <th>Company</th>
                                 <th>Status</th>
                                 <th>Items</th>
                                 <th>Created</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${rows}
+                            ${shipstationRows}
+                            ${localRows}
                         </tbody>
                     </table>
                 </div>
