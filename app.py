@@ -4296,8 +4296,17 @@ def api_get_duplicate_alerts():
             ORDER BY last_seen DESC
         """)
         
+        alert_rows = cursor.fetchall()
+        
+        # Get list of deleted ShipStation orders
+        cursor.execute("""
+            SELECT shipstation_order_id, deleted_at 
+            FROM deleted_shipstation_orders
+        """)
+        deleted_orders = {row[0]: row[1] for row in cursor.fetchall()}
+        
         alerts = []
-        for row in cursor.fetchall():
+        for row in alert_rows:
             alert_data = {
                 'id': row[0],
                 'order_number': row[1],
@@ -4310,6 +4319,15 @@ def api_get_duplicate_alerts():
                 'status': row[8],
                 'local_matches': []
             }
+            
+            # Mark deleted orders in details
+            for detail in alert_data['details']:
+                ss_id = detail.get('shipstation_id')
+                if ss_id and ss_id in deleted_orders:
+                    detail['deleted'] = True
+                    detail['deleted_at'] = deleted_orders[ss_id].isoformat()
+                else:
+                    detail['deleted'] = False
             
             # Fetch local database matches for this order number
             order_number = row[1]
@@ -6054,19 +6072,48 @@ def serve_screenshot(filename):
 
 @app.route('/api/duplicate_alerts/delete_order/<int:shipstation_order_id>', methods=['DELETE'])
 def api_delete_duplicate_order(shipstation_order_id):
-    """Delete a duplicate order from ShipStation"""
+    """Delete a duplicate order from ShipStation and track it"""
     try:
         from src.services.shipstation.api_client import delete_order_from_shipstation
+        
+        # Check if already deleted
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT deleted_at FROM deleted_shipstation_orders 
+            WHERE shipstation_order_id = %s
+        """, (shipstation_order_id,))
+        
+        existing = cursor.fetchone()
+        if existing:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'already_deleted': True,
+                'error': f'Order already deleted on {existing[0].strftime("%Y-%m-%d %H:%M")}'
+            }), 400
         
         # Delete from ShipStation
         result = delete_order_from_shipstation(shipstation_order_id)
         
         if result['success']:
+            # Track the deletion
+            cursor.execute("""
+                INSERT INTO deleted_shipstation_orders 
+                (shipstation_order_id, order_number, deleted_at, deleted_by)
+                VALUES (%s, %s, CURRENT_TIMESTAMP, 'dashboard')
+                ON CONFLICT (shipstation_order_id) DO NOTHING
+            """, (shipstation_order_id, result.get('order_number')))
+            
+            conn.commit()
+            conn.close()
+            
             return jsonify({
                 'success': True,
                 'message': f'Order {shipstation_order_id} deleted from ShipStation'
             })
         else:
+            conn.close()
             return jsonify({
                 'success': False,
                 'error': result.get('error', 'Failed to delete order')

@@ -1377,7 +1377,12 @@
                     html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Actions</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
-                        html += '<tr style="border-bottom: 1px solid var(--border-color); background: #eff6ff;">';
+                        const isDeleted = detail.deleted;
+                        const rowStyle = isDeleted 
+                            ? 'border-bottom: 1px solid var(--border-color); background: #fee2e2; opacity: 0.6; text-decoration: line-through;'
+                            : 'border-bottom: 1px solid var(--border-color); background: #eff6ff;';
+                        
+                        html += `<tr style="${rowStyle}">`;
                         html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span></td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;"><span style="cursor: pointer; color: #2563eb; text-decoration: underline;" title="Click to link this ShipStation ID to local DB">${detail.shipstation_id}</span></td>`;
@@ -1387,8 +1392,15 @@
                         html += `<td style="padding: 8px;">${detail.order_status}</td>`;
                         html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleString()}</td>`;
                         html += `<td style="padding: 8px; display: flex; gap: 4px;">`;
-                        html += `<button onclick="relinkToLocalDB(event, '${alert.order_number}', ${detail.shipstation_id})" style="padding: 4px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🔗 Link to DB</button>`;
-                        html += `<button onclick="deleteDuplicateOrder(event, ${detail.shipstation_id}, '${alert.order_number}', ${alert.id})" style="padding: 4px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Delete</button>`;
+                        
+                        if (isDeleted) {
+                            const deletedDate = detail.deleted_at ? new Date(detail.deleted_at).toLocaleDateString() : '';
+                            html += `<span style="padding: 4px 10px; background: #6b7280; color: white; border-radius: 4px; font-size: 12px; font-weight: 600;">✅ Deleted ${deletedDate}</span>`;
+                        } else {
+                            html += `<button onclick="relinkToLocalDB(event, '${alert.order_number}', ${detail.shipstation_id})" style="padding: 4px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🔗 Link to DB</button>`;
+                            html += `<button onclick="deleteDuplicateOrder(event, ${detail.shipstation_id}, '${alert.order_number}', ${alert.id})" style="padding: 4px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Delete</button>`;
+                        }
+                        
                         html += `</td>`;
                         html += '</tr>';
                     });
