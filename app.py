@@ -6076,6 +6076,52 @@ def api_delete_duplicate_order(shipstation_order_id):
         logger.error(f'Error deleting duplicate order {shipstation_order_id}: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/duplicate_alerts/relink_order', methods=['POST'])
+def api_relink_order():
+    """Update local DB record to use a different ShipStation ID"""
+    try:
+        data = request.get_json()
+        order_number = data.get('order_number')
+        new_shipstation_id = data.get('shipstation_id')
+        
+        if not order_number or not new_shipstation_id:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required parameters'
+            }), 400
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Update the local DB record
+        cursor.execute("""
+            UPDATE orders_inbox
+            SET shipstation_order_id = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_number = %s
+        """, (new_shipstation_id, order_number))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f'No local record found for order {order_number}'
+            }), 404
+        
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"Relinked order {order_number} to ShipStation ID {new_shipstation_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Local DB record updated to ShipStation ID {new_shipstation_id}'
+        })
+        
+    except Exception as e:
+        logger.error(f'Error relinking order: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/duplicate_alerts/sync_items/<int:order_inbox_id>', methods=['POST'])
 def api_sync_order_items(order_inbox_id):
     """Sync items from ShipStation for a specific order with missing items"""

@@ -1374,19 +1374,22 @@
                 if (alert.details && alert.details.length > 0) {
                     html += '<div style="margin-bottom: 12px;"><strong style="font-size: 14px;">ShipStation Records:</strong></div>';
                     html += '<table style="width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse;">';
-                    html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
+                    html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Actions</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
                         html += '<tr style="border-bottom: 1px solid var(--border-color); background: #eff6ff;">';
                         html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span></td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
-                        html += `<td style="padding: 8px; font-family: monospace;">${detail.shipstation_id}</td>`;
+                        html += `<td style="padding: 8px; font-family: monospace;"><span style="cursor: pointer; color: #2563eb; text-decoration: underline;" title="Click to link this ShipStation ID to local DB">${detail.shipstation_id}</span></td>`;
                         html += `<td style="padding: 8px;">${detail.full_sku || detail.base_sku || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${detail.quantity || 0}</td>`;
                         html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${detail.order_status}</td>`;
                         html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleString()}</td>`;
-                        html += `<td style="padding: 8px;"><button onclick="deleteDuplicateOrder(event, ${detail.shipstation_id}, '${alert.order_number}', ${alert.id})" style="padding: 4px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Delete</button></td>`;
+                        html += `<td style="padding: 8px; display: flex; gap: 4px;">`;
+                        html += `<button onclick="relinkToLocalDB(event, '${alert.order_number}', ${detail.shipstation_id})" style="padding: 4px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🔗 Link to DB</button>`;
+                        html += `<button onclick="deleteDuplicateOrder(event, ${detail.shipstation_id}, '${alert.order_number}', ${alert.id})" style="padding: 4px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Delete</button>`;
+                        html += `</td>`;
                         html += '</tr>';
                     });
                     html += '</tbody></table>';
@@ -1573,6 +1576,66 @@
             } catch (error) {
                 console.error('Error syncing order items:', error);
                 alert('❌ Error syncing items: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+        
+        async function relinkToLocalDB(event, orderNumber, shipstationId) {
+            if (!confirm(`🔗 Link local DB record for order #${orderNumber} to ShipStation ID ${shipstationId}?\n\nThis will update the local database to use this ShipStation ID.`)) {
+                return;
+            }
+            
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Linking...';
+            
+            try {
+                const response = await fetch(`/api/duplicate_alerts/relink_order`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        order_number: orderNumber,
+                        shipstation_id: shipstationId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success toast
+                    const statusMsg = document.createElement('div');
+                    statusMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #8b5cf6; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; font-weight: 600;';
+                    statusMsg.textContent = `✅ ${result.message}`;
+                    document.body.appendChild(statusMsg);
+                    
+                    setTimeout(() => {
+                        statusMsg.style.transition = 'opacity 0.3s';
+                        statusMsg.style.opacity = '0';
+                        setTimeout(() => statusMsg.remove(), 300);
+                    }, 3000);
+                    
+                    // Mark button as linked
+                    btn.innerHTML = '✅ Linked';
+                    btn.style.background = '#6b7280';
+                    btn.style.cursor = 'default';
+                    
+                    // Refresh alerts to show updated data
+                    await checkDuplicateAlerts();
+                    
+                    // Close and reopen modal to show updated link
+                    const modal = document.querySelector('div[style*="z-index: 9999"]');
+                    if (modal) {
+                        modal.remove();
+                        setTimeout(() => showDuplicateDetails(), 500);
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to relink order');
+                }
+            } catch (error) {
+                console.error('Error relinking order:', error);
+                alert('❌ Error relinking order: ' + error.message);
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
