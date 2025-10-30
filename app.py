@@ -6078,8 +6078,11 @@ def api_delete_duplicate_order(shipstation_order_id):
 
 @app.route('/api/duplicate_alerts/relink_order', methods=['POST'])
 def api_relink_order():
-    """Update local DB record to use a different ShipStation ID"""
+    """Update local DB record to use a different ShipStation ID and sync status/items"""
     try:
+        from src.services.ghost_order_backfill import _fetch_order_from_shipstation, _backfill_order_items
+        from src.services.shipstation.api_client import get_shipstation_credentials
+        
         data = request.get_json()
         order_number = data.get('order_number')
         new_shipstation_id = data.get('shipstation_id')
@@ -6093,29 +6096,76 @@ def api_relink_order():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Update the local DB record
+        # Get the local order record
         cursor.execute("""
-            UPDATE orders_inbox
-            SET shipstation_order_id = %s,
-                updated_at = CURRENT_TIMESTAMP
+            SELECT id FROM orders_inbox
             WHERE order_number = %s
-        """, (new_shipstation_id, order_number))
+        """, (order_number,))
         
-        if cursor.rowcount == 0:
+        result = cursor.fetchone()
+        if not result:
             conn.close()
             return jsonify({
                 'success': False,
                 'error': f'No local record found for order {order_number}'
             }), 404
         
+        order_inbox_id = result[0]
+        
+        # Fetch order details from ShipStation
+        api_key, api_secret = get_shipstation_credentials()
+        order_data = _fetch_order_from_shipstation(new_shipstation_id, api_key, api_secret)
+        
+        if order_data.get('rate_limited'):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation API rate limit reached - please try again later'
+            }), 429
+        
+        if order_data.get('not_found'):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation order not found'
+            }), 404
+        
+        if order_data.get('error'):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f"ShipStation API error: {order_data['error']}"
+            }), 500
+        
+        items = order_data.get('items', [])
+        new_status = order_data.get('status', 'awaiting_shipment')
+        
+        # Update the local DB record with new ShipStation ID and status
+        cursor.execute("""
+            UPDATE orders_inbox
+            SET shipstation_order_id = %s,
+                status = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_number = %s
+        """, (new_shipstation_id, new_status, order_number))
+        
         conn.commit()
         conn.close()
         
-        logger.info(f"Relinked order {order_number} to ShipStation ID {new_shipstation_id}")
+        # Backfill items if available
+        items_synced = 0
+        if len(items) > 0:
+            success = _backfill_order_items(order_inbox_id, order_number, items, new_status)
+            if success:
+                items_synced = len(items)
+        
+        logger.info(f"Relinked order {order_number} to ShipStation ID {new_shipstation_id}, status: {new_status}, items: {items_synced}")
         
         return jsonify({
             'success': True,
-            'message': f'Local DB record updated to ShipStation ID {new_shipstation_id}'
+            'message': f'Linked to SS ID {new_shipstation_id}, status: {new_status}, synced {items_synced} items',
+            'status': new_status,
+            'items_synced': items_synced
         })
         
     except Exception as e:
