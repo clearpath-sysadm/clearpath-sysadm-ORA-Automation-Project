@@ -6140,14 +6140,82 @@ def api_relink_order():
         items = order_data.get('items', [])
         new_status = order_data.get('status', 'awaiting_shipment')
         
-        # Update the local DB record with new ShipStation ID and status
-        cursor.execute("""
-            UPDATE orders_inbox
-            SET shipstation_order_id = %s,
-                status = %s,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE order_number = %s
-        """, (new_shipstation_id, new_status, order_number))
+        # Fetch full order details from ShipStation API to get complete customer/shipping info
+        from src.services.shipstation.api_client import get_shipstation_headers
+        from utils.api_utils import make_api_request
+        
+        url = f"https://ssapi.shipstation.com/orders/{new_shipstation_id}"
+        headers = get_shipstation_headers(api_key, api_secret)
+        response = make_api_request(url=url, method='GET', headers=headers, timeout=10)
+        
+        if response and response.status_code == 200:
+            full_order_data = response.json()
+            
+            # Extract all customer and shipping information
+            ship_to = full_order_data.get('shipTo', {})
+            bill_to = full_order_data.get('billTo', {})
+            
+            # Update the local DB record with complete order information
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET shipstation_order_id = %s,
+                    status = %s,
+                    ship_name = %s,
+                    ship_company = %s,
+                    ship_street1 = %s,
+                    ship_street2 = %s,
+                    ship_street3 = %s,
+                    ship_city = %s,
+                    ship_state = %s,
+                    ship_postal_code = %s,
+                    ship_country = %s,
+                    ship_phone = %s,
+                    bill_name = %s,
+                    bill_company = %s,
+                    bill_street1 = %s,
+                    bill_street2 = %s,
+                    bill_street3 = %s,
+                    bill_city = %s,
+                    bill_state = %s,
+                    bill_postal_code = %s,
+                    bill_country = %s,
+                    bill_phone = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_number = %s
+            """, (
+                new_shipstation_id,
+                new_status,
+                ship_to.get('name'),
+                ship_to.get('company'),
+                ship_to.get('street1'),
+                ship_to.get('street2'),
+                ship_to.get('street3'),
+                ship_to.get('city'),
+                ship_to.get('state'),
+                ship_to.get('postalCode'),
+                ship_to.get('country'),
+                ship_to.get('phone'),
+                bill_to.get('name'),
+                bill_to.get('company'),
+                bill_to.get('street1'),
+                bill_to.get('street2'),
+                bill_to.get('street3'),
+                bill_to.get('city'),
+                bill_to.get('state'),
+                bill_to.get('postalCode'),
+                bill_to.get('country'),
+                bill_to.get('phone'),
+                order_number
+            ))
+        else:
+            # Fallback: just update ShipStation ID and status if full fetch fails
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET shipstation_order_id = %s,
+                    status = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_number = %s
+            """, (new_shipstation_id, new_status, order_number))
         
         conn.commit()
         conn.close()
@@ -6159,11 +6227,11 @@ def api_relink_order():
             if success:
                 items_synced = len(items)
         
-        logger.info(f"Relinked order {order_number} to ShipStation ID {new_shipstation_id}, status: {new_status}, items: {items_synced}")
+        logger.info(f"Relinked order {order_number} to ShipStation ID {new_shipstation_id}, status: {new_status}, items: {items_synced}, full sync: complete")
         
         return jsonify({
             'success': True,
-            'message': f'Linked to SS ID {new_shipstation_id}, status: {new_status}, synced {items_synced} items',
+            'message': f'Linked to SS ID {new_shipstation_id}, status: {new_status}, synced {items_synced} items + full customer/address data',
             'status': new_status,
             'items_synced': items_synced
         })
