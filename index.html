@@ -1374,7 +1374,7 @@
                 if (alert.details && alert.details.length > 0) {
                     html += '<div style="margin-bottom: 12px;"><strong style="font-size: 14px;">ShipStation Records:</strong></div>';
                     html += '<table style="width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse;">';
-                    html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Actions</th></tr></thead>';
+                    html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Company</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Items</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Actions</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
                         const isDeleted = detail.deleted;
@@ -1382,15 +1382,20 @@
                             ? 'border-bottom: 1px solid var(--border-color); background: #fee2e2; opacity: 0.6; text-decoration: line-through;'
                             : 'border-bottom: 1px solid var(--border-color); background: #eff6ff;';
                         
+                        // Format items display
+                        const itemsDisplay = detail.full_sku 
+                            ? `${detail.full_sku} (${detail.quantity || 0})`
+                            : (detail.base_sku ? `${detail.base_sku} (${detail.quantity || 0})` : 'N/A');
+                        
                         html += `<tr style="${rowStyle}">`;
                         html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span></td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;"><span style="cursor: pointer; color: #2563eb; text-decoration: underline;" title="Click to link this ShipStation ID to local DB">${detail.shipstation_id}</span></td>`;
-                        html += `<td style="padding: 8px;">${detail.full_sku || detail.base_sku || 'N/A'}</td>`;
-                        html += `<td style="padding: 8px;">${detail.quantity || 0}</td>`;
                         html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
+                        html += `<td style="padding: 8px;">${detail.company_name || '-'}</td>`;
                         html += `<td style="padding: 8px;">${detail.order_status}</td>`;
-                        html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleString()}</td>`;
+                        html += `<td style="padding: 8px;">${itemsDisplay}</td>`;
+                        html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleDateString()}</td>`;
                         html += `<td style="padding: 8px; display: flex; gap: 4px;">`;
                         
                         if (isDeleted) {
