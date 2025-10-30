@@ -1400,7 +1400,7 @@
                             : (detail.base_sku ? `${detail.base_sku} (${detail.quantity || 0})` : 'N/A');
                         
                         html += `<tr style="${rowStyle}">`;
-                        html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span> ${hasMatch ? '<span style="color: #22c55e; font-size: 16px; margin-left: 4px;" title="Linked to Local DB">✓</span>' : ''}</td>`;
+                        html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block;">ShipStation</span>${hasMatch ? '<span style="color: #22c55e; font-size: 16px; margin-left: 6px; vertical-align: middle;" title="Linked to Local DB">✓</span>' : ''}</td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;"><span style="cursor: pointer; color: #2563eb; text-decoration: underline;" title="Click to link this ShipStation ID to local DB">${detail.shipstation_id}</span></td>`;
                         html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
@@ -1408,14 +1408,16 @@
                         html += `<td style="padding: 8px;">${detail.order_status}</td>`;
                         html += `<td style="padding: 8px;">${itemsDisplay}</td>`;
                         html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleDateString()}</td>`;
-                        html += `<td style="padding: 8px; display: flex; gap: 4px;">`;
+                        html += `<td style="padding: 8px;">`;
                         
                         if (isDeleted) {
                             const deletedDate = detail.deleted_at ? new Date(detail.deleted_at).toLocaleDateString() : '';
-                            html += `<span style="padding: 4px 10px; background: #6b7280; color: white; border-radius: 4px; font-size: 12px; font-weight: 600;">✅ Deleted ${deletedDate}</span>`;
+                            html += `<span style="padding: 6px 12px; background: #e5e7eb; color: #6b7280; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block;">✓ Deleted ${deletedDate}</span>`;
                         } else {
-                            html += `<button onclick="relinkToLocalDB(event, '${alert.order_number}', ${detail.shipstation_id})" style="padding: 4px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🔗 Link to DB</button>`;
-                            html += `<button onclick="deleteDuplicateOrder(event, ${detail.shipstation_id}, '${alert.order_number}', ${alert.id})" style="padding: 4px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑️ Delete</button>`;
+                            html += `<div style="display: flex; gap: 6px;">`;
+                            html += `<button onclick="relinkToLocalDB(event, '${alert.order_number}', ${detail.shipstation_id})" style="padding: 6px 12px; background: white; color: #2563eb; border: 1px solid #2563eb; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">Link to DB</button>`;
+                            html += `<button onclick="deleteDuplicateOrder(event, ${detail.shipstation_id}, '${alert.order_number}', ${alert.id})" style="padding: 6px 12px; background: #dc2626; color: white; border: 1px solid #dc2626; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">Delete</button>`;
+                            html += `</div>`;
                         }
                         
                         html += `</td>`;
@@ -1454,7 +1456,7 @@
                         const itemsDisplay = hasItems ? items : '<span style="color: #dc2626; font-weight: 600;">No items</span>';
                         
                         html += '<tr style="border-bottom: 1px solid var(--border-color); background: #f0fdf4;">';
-                        html += `<td style="padding: 8px;"><span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Local DB</span> ${hasMatch ? '<span style="color: #22c55e; font-size: 16px; margin-left: 4px;" title="Linked to ShipStation">✓</span>' : ''}</td>`;
+                        html += `<td style="padding: 8px;"><span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block;">Local DB</span>${hasMatch ? '<span style="color: #22c55e; font-size: 16px; margin-left: 6px; vertical-align: middle;" title="Linked to ShipStation">✓</span>' : ''}</td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${match.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;">${ssIdDisplay}</td>`;
                         html += `<td style="padding: 8px;">${match.ship_name || 'N/A'}</td>`;
@@ -1465,7 +1467,7 @@
                         
                         // Add Sync Items button if no items
                         if (!hasItems && match.shipstation_order_id) {
-                            html += `<td style="padding: 8px;"><button onclick="syncOrderItems(event, ${match.id}, '${match.order_number}')" style="padding: 4px 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🔄 Sync Items</button></td>`;
+                            html += `<td style="padding: 8px;"><button onclick="syncOrderItems(event, ${match.id}, '${match.order_number}')" style="padding: 6px 12px; background: #2563eb; color: white; border: 1px solid #2563eb; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">Sync Items</button></td>`;
                         } else {
                             html += `<td style="padding: 8px;">-</td>`;
                         }
