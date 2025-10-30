@@ -1373,11 +1373,12 @@
                 // Show details of each duplicate from ShipStation
                 if (alert.details && alert.details.length > 0) {
                     // Build a set of ShipStation IDs that exist in Local DB for matching
+                    // Convert to strings to ensure type consistency
                     const localDbShipstationIds = new Set();
                     if (alert.local_matches && alert.local_matches.length > 0) {
                         alert.local_matches.forEach(local => {
                             if (local.shipstation_order_id) {
-                                localDbShipstationIds.add(local.shipstation_order_id);
+                                localDbShipstationIds.add(String(local.shipstation_order_id));
                             }
                         });
                     }
@@ -1388,7 +1389,7 @@
                     html += '<tbody>';
                     alert.details.forEach(detail => {
                         const isDeleted = detail.deleted;
-                        const hasMatch = localDbShipstationIds.has(detail.shipstation_id);
+                        const hasMatch = localDbShipstationIds.has(String(detail.shipstation_id));
                         const rowStyle = isDeleted 
                             ? 'border-bottom: 1px solid var(--border-color); background: #fee2e2; opacity: 0.6; text-decoration: line-through;'
                             : 'border-bottom: 1px solid var(--border-color); background: #eff6ff;';
@@ -1426,11 +1427,12 @@
                 // Show local database matches
                 if (alert.local_matches && alert.local_matches.length > 0) {
                     // Build a set of ShipStation IDs from ShipStation records for matching
+                    // Convert to strings to ensure type consistency
                     const shipstationRecordIds = new Set();
                     if (alert.details && alert.details.length > 0) {
                         alert.details.forEach(detail => {
                             if (detail.shipstation_id) {
-                                shipstationRecordIds.add(detail.shipstation_id);
+                                shipstationRecordIds.add(String(detail.shipstation_id));
                             }
                         });
                     }
@@ -1440,7 +1442,7 @@
                     html += '<thead><tr style="background: #f0fdf4; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Company</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Items</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
                     html += '<tbody>';
                     alert.local_matches.forEach(match => {
-                        const hasMatch = match.shipstation_order_id && shipstationRecordIds.has(match.shipstation_order_id);
+                        const hasMatch = match.shipstation_order_id && shipstationRecordIds.has(String(match.shipstation_order_id));
                         
                         const items = match.items.map(item => {
                             const lot = item.sku_lot ? ` - ${item.sku_lot}` : '';
