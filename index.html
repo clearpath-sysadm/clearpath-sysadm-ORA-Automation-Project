@@ -1455,6 +1455,7 @@
             }
             
             const btn = event.target;
+            const row = btn.closest('tr');
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '⏳ Deleting...';
@@ -1468,16 +1469,31 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert(`✅ ${result.message}\n\nPlease verify in ShipStation and then mark this alert as resolved.`);
-                    // Refresh alerts to show updated count
+                    // Update the row to show it's been deleted
+                    row.style.opacity = '0.5';
+                    row.style.textDecoration = 'line-through';
+                    row.style.background = '#fee2e2';
+                    
+                    // Replace Delete button with Deleted status
+                    btn.innerHTML = '✅ Deleted';
+                    btn.style.background = '#6b7280';
+                    btn.style.cursor = 'default';
+                    btn.disabled = true;
+                    
+                    // Show brief success message
+                    const statusMsg = document.createElement('div');
+                    statusMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; font-weight: 600;';
+                    statusMsg.textContent = `✅ Order ${shipstationOrderId} deleted from ShipStation`;
+                    document.body.appendChild(statusMsg);
+                    
+                    setTimeout(() => {
+                        statusMsg.style.transition = 'opacity 0.3s';
+                        statusMsg.style.opacity = '0';
+                        setTimeout(() => statusMsg.remove(), 300);
+                    }, 3000);
+                    
+                    // Refresh alert count in background
                     await checkDuplicateAlerts();
-                    // Close and reopen modal to show updated data
-                    const modal = document.querySelector('div[style*="z-index: 9999"]');
-                    if (modal) {
-                        modal.remove();
-                        // Wait for alert data to refresh
-                        setTimeout(() => showDuplicateDetails(), 500);
-                    }
                 } else {
                     throw new Error(result.error || 'Failed to delete order');
                 }
