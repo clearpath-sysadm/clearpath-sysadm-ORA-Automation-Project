@@ -6077,7 +6077,7 @@ def api_admin_delete_order():
 @login_required
 @admin_required
 def api_admin_lookup_order():
-    """Look up order details by order number to get ShipStation IDs"""
+    """Look up order details by order number to get ShipStation IDs and local database matches"""
     try:
         order_number = request.args.get('order_number')
         
@@ -6090,7 +6090,9 @@ def api_admin_lookup_order():
         from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
         from utils.api_utils import make_api_request
         from config.settings import settings
+        from src.services.database.pg_utils import get_connection
         
+        # Step 1: Query ShipStation
         api_key, api_secret = get_shipstation_credentials()
         headers = get_shipstation_headers(api_key, api_secret)
         
@@ -6103,47 +6105,114 @@ def api_admin_lookup_order():
             timeout=30
         )
         
-        if response and response.status_code == 200:
-            data = response.json()
-            orders = data.get('orders', [])
-            
-            if not orders:
-                return jsonify({
-                    'success': False,
-                    'error': f'No orders found with number {order_number}'
-                }), 404
-            
-            # Format order details
-            order_details = []
-            for order in orders:
-                ship_to = order.get('shipTo', {})
-                items = order.get('items', [])
-                
-                order_details.append({
-                    'shipstation_order_id': order.get('orderId'),
-                    'order_number': order.get('orderNumber'),
-                    'order_status': order.get('orderStatus'),
-                    'customer_name': ship_to.get('name'),
-                    'company': ship_to.get('company'),
-                    'create_date': order.get('createDate'),
-                    'order_total': order.get('orderTotal'),
-                    'items': [{
-                        'sku': item.get('sku'),
-                        'name': item.get('name'),
-                        'quantity': item.get('quantity')
-                    } for item in items]
-                })
-            
-            return jsonify({
-                'success': True,
-                'order_count': len(orders),
-                'orders': order_details
-            })
-        else:
+        if not response or response.status_code != 200:
             return jsonify({
                 'success': False,
                 'error': f'ShipStation API error: {response.status_code if response else "No response"}'
             }), 500
+        
+        data = response.json()
+        orders = data.get('orders', [])
+        
+        if not orders:
+            return jsonify({
+                'success': False,
+                'error': f'No orders found with number {order_number}'
+            }), 404
+        
+        # Format ShipStation order details
+        order_details = []
+        shipstation_ids = []
+        for order in orders:
+            ship_to = order.get('shipTo', {})
+            items = order.get('items', [])
+            ss_id = order.get('orderId')
+            shipstation_ids.append(str(ss_id))
+            
+            order_details.append({
+                'shipstation_order_id': ss_id,
+                'order_number': order.get('orderNumber'),
+                'order_status': order.get('orderStatus'),
+                'customer_name': ship_to.get('name'),
+                'company': ship_to.get('company'),
+                'create_date': order.get('createDate'),
+                'order_total': order.get('orderTotal'),
+                'items': [{
+                    'sku': item.get('sku'),
+                    'name': item.get('name'),
+                    'quantity': item.get('quantity')
+                } for item in items]
+            })
+        
+        # Step 2: Query local database for matches
+        # Find orders with same order_number OR matching shipstation_order_id
+        local_matches = []
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            
+            # Build query to find orders with matching order number OR shipstation IDs
+            cursor.execute("""
+                SELECT 
+                    id,
+                    order_number,
+                    shipstation_order_id,
+                    ship_name,
+                    ship_company,
+                    status,
+                    created_at,
+                    updated_at
+                FROM orders_inbox
+                WHERE order_number = %s 
+                   OR shipstation_order_id = ANY(%s)
+                ORDER BY order_number, created_at
+            """, (order_number, shipstation_ids))
+            
+            for row in cursor.fetchall():
+                local_id, local_order_num, local_ss_id, ship_name, ship_company, status, created_at, updated_at = row
+                
+                # Get items for this order
+                cursor.execute("""
+                    SELECT sku, sku_lot, quantity
+                    FROM order_items_inbox
+                    WHERE order_inbox_id = %s
+                    ORDER BY sku
+                """, (local_id,))
+                
+                items = []
+                for item_row in cursor.fetchall():
+                    sku, sku_lot, qty = item_row
+                    items.append({
+                        'sku': sku,
+                        'sku_lot': sku_lot,
+                        'quantity': qty
+                    })
+                
+                local_matches.append({
+                    'id': local_id,
+                    'order_number': local_order_num,
+                    'shipstation_order_id': local_ss_id,
+                    'ship_name': ship_name,
+                    'ship_company': ship_company,
+                    'status': status,
+                    'created_at': created_at.isoformat() if created_at else None,
+                    'updated_at': updated_at.isoformat() if updated_at else None,
+                    'items': items
+                })
+            
+            conn.close()
+            
+        except Exception as db_error:
+            logger.error(f'Error querying local database: {db_error}', exc_info=True)
+            # Continue even if DB query fails - we still have ShipStation data
+        
+        return jsonify({
+            'success': True,
+            'order_count': len(orders),
+            'orders': order_details,
+            'local_matches': local_matches,
+            'local_match_count': len(local_matches)
+        })
             
     except Exception as e:
         logger.error(f'Error looking up order {order_number}: {e}', exc_info=True)

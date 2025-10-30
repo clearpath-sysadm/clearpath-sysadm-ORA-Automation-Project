@@ -212,6 +212,81 @@
             margin-bottom: calc(var(--spacing-unit) * 2);
             opacity: 0.5;
         }
+        
+        .local-db-section {
+            margin-top: calc(var(--spacing-unit) * 4);
+            padding-top: calc(var(--spacing-unit) * 3);
+            border-top: 2px solid var(--border-color);
+        }
+        
+        .local-db-table {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        
+        .local-db-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .local-db-table th {
+            background: var(--bg-secondary);
+            padding: calc(var(--spacing-unit) * 2);
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .local-db-table td {
+            padding: calc(var(--spacing-unit) * 2);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+        
+        .local-db-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .local-db-table tr:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .status-badge-small {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-shipped {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-synced_manual {
+            background: #dbeafe;
+            color: #1e40af;
+        }
     </style>
 </head>
 <body>
@@ -446,7 +521,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    displayOrderResults(data.orders, orderNumber);
+                    displayOrderResults(data, orderNumber);
                 } else {
                     resultsContainer.innerHTML = `
                         <div class="empty-state">
@@ -471,8 +546,10 @@
         }
 
         // Display order results
-        function displayOrderResults(orders, orderNumber) {
+        function displayOrderResults(data, orderNumber) {
             const resultsContainer = document.getElementById('results-container');
+            const orders = data.orders || [];
+            const localMatches = data.local_matches || [];
             
             if (!orders || orders.length === 0) {
                 resultsContainer.innerHTML = `
@@ -497,13 +574,70 @@
             
             const orderCards = orders.map(order => createOrderCard(order)).join('');
             
+            // Build local database section
+            const localDbSection = localMatches && localMatches.length > 0 ? `
+                <div class="local-db-section">
+                    <h2 style="margin: 0 0 calc(var(--spacing-unit) * 2) 0; font-size: 1.25rem; font-weight: 600;">
+                        Local Database Matches (${localMatches.length})
+                    </h2>
+                    <p style="color: var(--text-secondary); margin-bottom: calc(var(--spacing-unit) * 2);">
+                        Orders in local database with matching order number or ShipStation ID
+                    </p>
+                    ${createLocalDbTable(localMatches)}
+                </div>
+            ` : '';
+            
             resultsContainer.innerHTML = `
                 ${warningBanner}
                 <h2 style="margin: 0 0 calc(var(--spacing-unit) * 2) 0; font-size: 1.25rem; font-weight: 600;">
-                    Found ${orders.length} Order${orders.length > 1 ? 's' : ''}
+                    ShipStation Results (${orders.length})
                 </h2>
                 <div class="order-results">
                     ${orderCards}
+                </div>
+                ${localDbSection}
+            `;
+        }
+        
+        // Create local database table
+        function createLocalDbTable(localMatches) {
+            const rows = localMatches.map(match => {
+                const items = match.items.map(item => {
+                    const skuLot = item.sku_lot ? ` - ${item.sku_lot}` : '';
+                    return `${item.sku}${skuLot} (${item.quantity})`;
+                }).join(', ');
+                
+                return `
+                    <tr>
+                        <td style="font-weight: 600;">${match.order_number || 'N/A'}</td>
+                        <td style="font-family: monospace;">${match.shipstation_order_id || '<span style="color: var(--text-tertiary);">Not Linked</span>'}</td>
+                        <td>${match.ship_name || 'N/A'}</td>
+                        <td>${match.ship_company || 'N/A'}</td>
+                        <td><span class="status-badge-small status-${match.status}">${match.status}</span></td>
+                        <td style="font-size: 0.75rem;">${items || 'No items'}</td>
+                        <td style="font-size: 0.75rem; color: var(--text-tertiary);">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            return `
+                <div class="local-db-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>SS ID</th>
+                                <th>Customer</th>
+                                <th>Company</th>
+                                <th>Status</th>
+                                <th>Items</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
                 </div>
             `;
         }
