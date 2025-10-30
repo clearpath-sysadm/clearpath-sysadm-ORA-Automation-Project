@@ -6076,6 +6076,96 @@ def api_delete_duplicate_order(shipstation_order_id):
         logger.error(f'Error deleting duplicate order {shipstation_order_id}: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/duplicate_alerts/sync_items/<int:order_inbox_id>', methods=['POST'])
+def api_sync_order_items(order_inbox_id):
+    """Sync items from ShipStation for a specific order with missing items"""
+    try:
+        from src.services.ghost_order_backfill import _fetch_order_from_shipstation, _backfill_order_items
+        from src.services.shipstation.api_client import get_shipstation_credentials
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get order details
+        cursor.execute("""
+            SELECT id, order_number, shipstation_order_id, status
+            FROM orders_inbox
+            WHERE id = %s
+        """, (order_inbox_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Order not found'
+            }), 404
+        
+        order_id, order_number, shipstation_order_id, status = result
+        
+        if not shipstation_order_id:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Order does not have a ShipStation ID'
+            }), 400
+        
+        # Fetch from ShipStation
+        api_key, api_secret = get_shipstation_credentials()
+        order_data = _fetch_order_from_shipstation(shipstation_order_id, api_key, api_secret)
+        
+        if order_data.get('rate_limited'):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation API rate limit reached - please try again later'
+            }), 429
+        
+        if order_data.get('not_found'):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Order not found in ShipStation'
+            }), 404
+        
+        if order_data.get('error'):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f"ShipStation API error: {order_data['error']}"
+            }), 500
+        
+        items = order_data.get('items', [])
+        order_status = order_data.get('status', status)
+        
+        if len(items) == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Order has no items in ShipStation'
+            }), 400
+        
+        # Backfill the items
+        success = _backfill_order_items(order_id, order_number, items, order_status)
+        
+        conn.close()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Successfully synced {len(items)} items from ShipStation',
+                'items_count': len(items)
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to sync items to database'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f'Error syncing items for order {order_inbox_id}: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/admin/delete_order', methods=['POST'])
 @login_required
 @admin_required

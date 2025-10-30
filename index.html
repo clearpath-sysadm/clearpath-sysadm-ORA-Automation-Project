@@ -1374,10 +1374,11 @@
                 if (alert.details && alert.details.length > 0) {
                     html += '<div style="margin-bottom: 12px;"><strong style="font-size: 14px;">ShipStation Records:</strong></div>';
                     html += '<table style="width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse;">';
-                    html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
+                    html += '<thead><tr style="background: #eff6ff; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">SKU</th><th style="padding: 8px;">Qty</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
                     html += '<tbody>';
                     alert.details.forEach(detail => {
                         html += '<tr style="border-bottom: 1px solid var(--border-color); background: #eff6ff;">';
+                        html += `<td style="padding: 8px;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span></td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;">${detail.shipstation_id}</td>`;
                         html += `<td style="padding: 8px;">${detail.full_sku || detail.base_sku || 'N/A'}</td>`;
@@ -1395,7 +1396,7 @@
                 if (alert.local_matches && alert.local_matches.length > 0) {
                     html += '<div style="margin-top: 16px; margin-bottom: 8px;"><strong style="font-size: 14px;">Local Database Records:</strong></div>';
                     html += '<table style="width: 100%; font-size: 13px; border-collapse: collapse;">';
-                    html += '<thead><tr style="background: #f0fdf4; text-align: left;"><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Company</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Items</th><th style="padding: 8px;">Created</th></tr></thead>';
+                    html += '<thead><tr style="background: #f0fdf4; text-align: left;"><th style="padding: 8px;">Data Source</th><th style="padding: 8px;">Order #</th><th style="padding: 8px;">SS ID</th><th style="padding: 8px;">Customer</th><th style="padding: 8px;">Company</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Items</th><th style="padding: 8px;">Created</th><th style="padding: 8px;">Action</th></tr></thead>';
                     html += '<tbody>';
                     alert.local_matches.forEach(match => {
                         const items = match.items.map(item => {
@@ -1404,15 +1405,26 @@
                         }).join(', ');
                         
                         const ssIdDisplay = match.shipstation_order_id || '<span style="color: var(--text-tertiary); font-style: italic;">Not Linked</span>';
+                        const hasItems = match.items && match.items.length > 0;
+                        const itemsDisplay = hasItems ? items : '<span style="color: #dc2626; font-weight: 600;">No items</span>';
                         
                         html += '<tr style="border-bottom: 1px solid var(--border-color); background: #f0fdf4;">';
+                        html += `<td style="padding: 8px;"><span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Local DB</span></td>`;
                         html += `<td style="padding: 8px; font-weight: 600;">${match.order_number}</td>`;
                         html += `<td style="padding: 8px; font-family: monospace;">${ssIdDisplay}</td>`;
                         html += `<td style="padding: 8px;">${match.ship_name || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${match.ship_company || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${match.status}</td>`;
-                        html += `<td style="padding: 8px; font-size: 11px;">${items || 'No items'}</td>`;
+                        html += `<td style="padding: 8px; font-size: 11px;">${itemsDisplay}</td>`;
                         html += `<td style="padding: 8px;">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>`;
+                        
+                        // Add Sync Items button if no items
+                        if (!hasItems && match.shipstation_order_id) {
+                            html += `<td style="padding: 8px;"><button onclick="syncOrderItems(event, ${match.id}, '${match.order_number}')" style="padding: 4px 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">🔄 Sync Items</button></td>`;
+                        } else {
+                            html += `<td style="padding: 8px;">-</td>`;
+                        }
+                        
                         html += '</tr>';
                     });
                     html += '</tbody></table>';
@@ -1507,6 +1519,46 @@
             } catch (error) {
                 console.error('Error resolving duplicate alert:', error);
                 alert('Error resolving alert: ' + error.message);
+            }
+        }
+        
+        async function syncOrderItems(event, orderInboxId, orderNumber) {
+            if (!confirm(`🔄 Sync items from ShipStation for order #${orderNumber}?\n\nThis will fetch the order's items from ShipStation and update your local database.`)) {
+                return;
+            }
+            
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Syncing...';
+            
+            try {
+                const response = await fetch(`/api/duplicate_alerts/sync_items/${orderInboxId}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ ${result.message}`);
+                    // Refresh alerts to show updated data
+                    await checkDuplicateAlerts();
+                    // Close and reopen modal to show updated items
+                    const modal = document.querySelector('div[style*="z-index: 9999"]');
+                    if (modal) {
+                        modal.remove();
+                        // Wait for alert data to refresh
+                        setTimeout(() => showDuplicateDetails(), 500);
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to sync items');
+                }
+            } catch (error) {
+                console.error('Error syncing order items:', error);
+                alert('❌ Error syncing items: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         }
 
