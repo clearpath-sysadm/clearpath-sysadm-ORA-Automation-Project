@@ -1538,12 +1538,32 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Duplicate alert resolved');
-                    // Refresh alerts
+                    // Show success toast
+                    const statusMsg = document.createElement('div');
+                    statusMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #22c55e; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; font-weight: 600;';
+                    statusMsg.textContent = `✅ ${displayText} marked as resolved`;
+                    document.body.appendChild(statusMsg);
+                    
+                    setTimeout(() => {
+                        statusMsg.style.transition = 'opacity 0.3s';
+                        statusMsg.style.opacity = '0';
+                        setTimeout(() => statusMsg.remove(), 300);
+                    }, 3000);
+                    
+                    // Refresh alerts data
                     await checkDuplicateAlerts();
-                    // Close modal if exists
+                    
+                    // Close and reopen modal with updated data
                     const modal = document.querySelector('div[style*="z-index: 9999"]');
-                    if (modal) modal.remove();
+                    if (modal) {
+                        modal.remove();
+                        // Wait for data to refresh
+                        setTimeout(() => {
+                            if (duplicateAlertsData.length > 0) {
+                                showDuplicateDetails();
+                            }
+                        }, 300);
+                    }
                 } else {
                     throw new Error(result.error || 'Failed to resolve alert');
                 }
