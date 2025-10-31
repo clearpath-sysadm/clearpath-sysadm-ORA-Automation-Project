@@ -48,7 +48,7 @@ def get_key_skus_from_db():
     logger.info("Loading key SKUs from database...")
     try:
         rows = execute_query("""
-            SELECT sku, value as product_name
+            SELECT sku, parameter_name as product_name
             FROM configuration_params
             WHERE category = 'Key Products'
             ORDER BY sku
