@@ -1404,8 +1404,9 @@
                         const isDeleted = detail.deleted;
                         const hasMatch = localDbShipstationIds.has(String(detail.shipstation_id));
                         const rowStyle = isDeleted 
-                            ? 'border-bottom: 1px solid var(--border-color); background: #fee2e2; opacity: 0.6; text-decoration: line-through;'
+                            ? 'border-bottom: 1px solid #fca5a5; background: #fef2f2; opacity: 0.75;'
                             : 'border-bottom: 1px solid var(--border-color); background: #eff6ff;';
+                        const textStyle = isDeleted ? 'text-decoration: line-through; color: #9ca3af;' : '';
                         
                         // Format items display
                         const itemsDisplay = detail.full_sku 
@@ -1413,19 +1414,26 @@
                             : (detail.base_sku ? `${detail.base_sku} (${detail.quantity || 0})` : 'N/A');
                         
                         html += `<tr style="${rowStyle}">`;
-                        html += `<td style="padding: 8px;"><div style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span>${hasMatch ? '<span style="color: #22c55e; font-size: 16px;" title="Linked to Local DB">✓</span>' : ''}</div></td>`;
-                        html += `<td style="padding: 8px; font-weight: 600;">${alert.order_number}</td>`;
-                        html += `<td style="padding: 8px; font-family: monospace;"><span style="cursor: pointer; color: #2563eb; text-decoration: underline;" title="Click to link this ShipStation ID to local DB">${detail.shipstation_id}</span></td>`;
-                        html += `<td style="padding: 8px;">${detail.customer_name || 'N/A'}</td>`;
-                        html += `<td style="padding: 8px;">${detail.customer_company || '-'}</td>`;
-                        html += `<td style="padding: 8px;">${detail.order_status}</td>`;
-                        html += `<td style="padding: 8px;">${itemsDisplay}</td>`;
-                        html += `<td style="padding: 8px;">${new Date(detail.create_date).toLocaleDateString()}</td>`;
+                        
+                        // Data Source column with deleted badge if applicable
+                        if (isDeleted) {
+                            html += `<td style="padding: 8px;"><div style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="background: #ef4444; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">🗑️ Deleted</span></div></td>`;
+                        } else {
+                            html += `<td style="padding: 8px;"><div style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;"><span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ShipStation</span>${hasMatch ? '<span style="color: #22c55e; font-size: 16px;" title="Linked to Local DB">✓</span>' : ''}</div></td>`;
+                        }
+                        
+                        html += `<td style="padding: 8px; font-weight: 600; ${textStyle}">${alert.order_number}</td>`;
+                        html += `<td style="padding: 8px; font-family: monospace; ${textStyle}">${detail.shipstation_id}</td>`;
+                        html += `<td style="padding: 8px; ${textStyle}">${detail.customer_name || 'N/A'}</td>`;
+                        html += `<td style="padding: 8px; ${textStyle}">${detail.customer_company || '-'}</td>`;
+                        html += `<td style="padding: 8px; ${textStyle}">${detail.order_status}</td>`;
+                        html += `<td style="padding: 8px; ${textStyle}">${itemsDisplay}</td>`;
+                        html += `<td style="padding: 8px; ${textStyle}">${new Date(detail.create_date).toLocaleDateString()}</td>`;
                         html += `<td style="padding: 8px;">`;
                         
                         if (isDeleted) {
                             const deletedDate = detail.deleted_at ? new Date(detail.deleted_at).toLocaleDateString() : '';
-                            html += `<span style="padding: 6px 12px; background: #e5e7eb; color: #6b7280; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block;">✓ Deleted ${deletedDate}</span>`;
+                            html += `<div style="display: flex; flex-direction: column; gap: 4px;"><span style="padding: 6px 10px; background: #dc2626; color: white; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; text-align: center;">DELETED FROM SHIPSTATION</span><span style="font-size: 11px; color: #6b7280; text-align: center;">${deletedDate}</span></div>`;
                         } else {
                             html += `<div style="display: flex; gap: 6px;">`;
                             html += `<button onclick="relinkToLocalDB(event, '${alert.order_number}', ${detail.shipstation_id})" style="padding: 6px 12px; background: white; color: #2563eb; border: 1px solid #2563eb; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">Link to DB</button>`;
