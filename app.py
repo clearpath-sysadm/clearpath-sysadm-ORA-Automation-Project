@@ -6772,6 +6772,7 @@ def api_admin_sync_order_from_shipstation():
         # Extract order data
         shipstation_order_id = ss_order.get('orderId')
         order_status = ss_order.get('orderStatus', 'unknown')
+        order_date = ss_order.get('orderDate')  # Get order date from ShipStation
         ship_to = ss_order.get('shipTo', {})
         customer_name = ship_to.get('name', '')
         company_name = ship_to.get('company', '')
@@ -6812,15 +6813,16 @@ def api_admin_sync_order_from_shipstation():
             # Update/insert into orders_inbox
             cursor.execute("""
                 INSERT INTO orders_inbox (
-                    order_number, shipstation_order_id, status,
+                    order_number, shipstation_order_id, status, order_date,
                     ship_name, ship_company,
                     tracking_number, shipping_carrier_code, shipping_service_code,
                     created_at, updated_at
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ON CONFLICT (order_number) DO UPDATE SET
                     shipstation_order_id = EXCLUDED.shipstation_order_id,
                     status = EXCLUDED.status,
+                    order_date = EXCLUDED.order_date,
                     ship_name = EXCLUDED.ship_name,
                     ship_company = EXCLUDED.ship_company,
                     tracking_number = EXCLUDED.tracking_number,
@@ -6828,7 +6830,7 @@ def api_admin_sync_order_from_shipstation():
                     shipping_service_code = EXCLUDED.shipping_service_code,
                     updated_at = CURRENT_TIMESTAMP
             """, (
-                order_number, shipstation_order_id, db_status,
+                order_number, shipstation_order_id, db_status, order_date,
                 customer_name, company_name,
                 tracking_number, carrier_code, service_code
             ))
