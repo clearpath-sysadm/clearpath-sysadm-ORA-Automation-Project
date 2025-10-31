@@ -615,8 +615,10 @@
             // Local DB rows
             const localRows = localMatches.map(match => {
                 const items = match.items.map(item => {
-                    const skuLot = item.sku_lot ? ` - ${item.sku_lot}` : '';
-                    return `${item.sku}${skuLot} (${item.quantity})`;
+                    // If sku_lot exists, use it directly (it already contains the SKU)
+                    // Otherwise, just use the sku
+                    const displaySku = item.sku_lot || item.sku;
+                    return `${displaySku} (${item.quantity})`;
                 }).join(', ');
                 
                 const ssIdDisplay = match.shipstation_order_id || '<span style="color: var(--text-tertiary); font-style: italic;">Not Linked</span>';
