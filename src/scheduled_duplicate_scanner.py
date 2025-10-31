@@ -216,24 +216,23 @@ def identify_order_number_collisions(orders):
     
     return collisions
 
-def check_and_auto_resolve_deleted_duplicates(cursor):
+def check_and_auto_resolve_deleted_duplicates(cursor, current_duplicates):
     """
-    Auto-resolve duplicate alerts when ALL ShipStation IDs are marked as deleted.
+    Auto-resolve duplicate alerts when remaining records (after deletions) no longer constitute duplicates.
     
-    CRITICAL LOGIC:
-    1. Reads FRESH shipstation_ids from database (just updated by update_duplicate_alerts)
-    2. Checks if ALL those IDs exist in deleted_shipstation_orders table
-    3. If yes, auto-resolves the alert
+    BUSINESS RULE:
+    An alert should only auto-resolve if AFTER user deletions, the remaining active 
+    (non-deleted) ShipStation records no longer represent a duplicate/mismatch issue.
     
-    This is called AFTER update_duplicate_alerts updates all alerts with fresh scan data,
-    so shipstation_ids in database reflect the current state from ShipStation API.
-    
-    This handles two scenarios:
-    A) Duplicates still in ShipStation: Alert stays active until they're deleted
-    B) Duplicates deleted from ShipStation: IDs updated in DB, then checked against deleted table
+    This means:
+    1. If ALL records are deleted → Auto-resolve
+    2. If some records remain → Check if they still appear as duplicates in current scan
+       - If YES (still in current_duplicates dict) → Keep alert active
+       - If NO (no longer duplicates) → Auto-resolve
     
     Args:
         cursor: Database cursor
+        current_duplicates: dict of {(order_number, base_sku): [list of current duplicate records]}
     
     Returns:
         int: Number of alerts auto-resolved
@@ -256,28 +255,60 @@ def check_and_auto_resolve_deleted_duplicates(cursor):
             if not shipstation_ids:
                 continue
             
-            # Check if ALL ShipStation IDs are in the deleted table
+            # Get which of these IDs have been marked as deleted by user
             placeholders = ','.join(['%s'] * len(shipstation_ids))
             cursor.execute(f"""
-                SELECT COUNT(DISTINCT shipstation_order_id)
+                SELECT shipstation_order_id
                 FROM deleted_shipstation_orders
                 WHERE shipstation_order_id IN ({placeholders})
             """, shipstation_ids)
             
-            deleted_count = cursor.fetchone()[0]
+            deleted_ids = {row[0] for row in cursor.fetchall()}
             
-            # If ALL duplicates are deleted, auto-resolve the alert
-            if deleted_count == len(shipstation_ids):
+            # Calculate REMAINING (non-deleted) ShipStation IDs
+            remaining_ids = [sid for sid in shipstation_ids if sid not in deleted_ids]
+            
+            # If ALL duplicates are deleted, auto-resolve
+            if len(remaining_ids) == 0:
                 cursor.execute("""
                     UPDATE duplicate_order_alerts
                     SET status = 'resolved',
                         resolved_at = CURRENT_TIMESTAMP,
-                        resolution_notes = 'Auto-resolved: All duplicate ShipStation records deleted'
+                        resolution_notes = 'Auto-resolved: All duplicate ShipStation records deleted by user'
                     WHERE id = %s
                 """, (alert_id,))
                 
                 auto_resolved_count += 1
-                logger.info(f"✅ Auto-resolved alert for Order #{order_number} + SKU {base_sku} (all {len(shipstation_ids)} duplicates deleted from ShipStation)")
+                logger.info(f"✅ Auto-resolved alert {alert_id} for Order #{order_number} + SKU {base_sku} (all {len(shipstation_ids)} duplicates deleted)")
+                continue
+            
+            # Check if remaining records still appear as duplicates in current scan
+            # This validates that the remaining non-deleted records are clean
+            alert_key = (order_number, base_sku)
+            
+            if alert_key not in current_duplicates:
+                # This alert no longer appears in the current scan - handled by main auto-resolution
+                continue
+            
+            # Get the current duplicate ShipStation IDs from the scan
+            current_dup_ids = {d['shipstation_id'] for d in current_duplicates[alert_key]}
+            
+            # Check if ANY of the remaining (non-deleted) IDs still appear in current duplicates
+            remaining_still_duplicated = any(rid in current_dup_ids for rid in remaining_ids)
+            
+            if not remaining_still_duplicated:
+                # Remaining records are no longer showing as duplicates in scan
+                # This means after deletions, the issue is resolved
+                cursor.execute("""
+                    UPDATE duplicate_order_alerts
+                    SET status = 'resolved',
+                        resolved_at = CURRENT_TIMESTAMP,
+                        resolution_notes = 'Auto-resolved: Remaining records after deletion no longer duplicates'
+                    WHERE id = %s
+                """, (alert_id,))
+                
+                auto_resolved_count += 1
+                logger.info(f"✅ Auto-resolved alert {alert_id} for Order #{order_number} + SKU {base_sku} (remaining {len(remaining_ids)} record(s) no longer duplicated)")
         
         except Exception as e:
             logger.error(f"Error checking deleted status for alert {alert_id}: {e}")
@@ -355,9 +386,9 @@ def update_duplicate_alerts(duplicates):
                 no_longer_duplicates += 1
                 logger.info(f"✅ Auto-resolved alert for Order #{order_number} + SKU {base_sku} (no longer a duplicate)")
         
-        # Auto-resolve alerts where ALL ShipStation IDs are deleted
+        # Auto-resolve alerts where remaining records (after deletions) no longer constitute duplicates
         # Called AFTER alerts are updated with fresh scan data, so IDs in DB are current
-        auto_resolved_deleted = check_and_auto_resolve_deleted_duplicates(cursor)
+        auto_resolved_deleted = check_and_auto_resolve_deleted_duplicates(cursor, duplicates)
         
         total_auto_resolved = no_longer_duplicates + auto_resolved_deleted
         
