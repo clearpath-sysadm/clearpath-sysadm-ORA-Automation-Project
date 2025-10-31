@@ -6814,7 +6814,7 @@ def api_admin_sync_order_from_shipstation():
                 INSERT INTO orders_inbox (
                     order_number, shipstation_order_id, status,
                     ship_name, ship_company,
-                    tracking_number, carrier, service_code,
+                    tracking_number, shipping_carrier_code, shipping_service_code,
                     created_at, updated_at
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -6824,8 +6824,8 @@ def api_admin_sync_order_from_shipstation():
                     ship_name = EXCLUDED.ship_name,
                     ship_company = EXCLUDED.ship_company,
                     tracking_number = EXCLUDED.tracking_number,
-                    carrier = EXCLUDED.carrier,
-                    service_code = EXCLUDED.service_code,
+                    shipping_carrier_code = EXCLUDED.shipping_carrier_code,
+                    shipping_service_code = EXCLUDED.shipping_service_code,
                     updated_at = CURRENT_TIMESTAMP
             """, (
                 order_number, shipstation_order_id, db_status,
