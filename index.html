@@ -1563,8 +1563,57 @@
                         setTimeout(() => statusMsg.remove(), 300);
                     }, 3000);
                     
-                    // Refresh alert count in background
+                    // Refresh alert data from backend
                     await checkDuplicateAlerts();
+                    
+                    // Check if this alert still exists (may be auto-resolved if only 1 record remains)
+                    const alertStillExists = duplicateAlertsData.some(alert => alert.id === alertId);
+                    
+                    if (!alertStillExists) {
+                        // Alert was auto-resolved! Remove it from modal with animation
+                        const alertCard = document.querySelector(`[data-alert-id="${alertId}"]`);
+                        if (alertCard) {
+                            // Show auto-resolution message
+                            const autoResolveMsg = document.createElement('div');
+                            autoResolveMsg.style.cssText = 'position: fixed; top: 80px; right: 20px; background: #8b5cf6; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; font-weight: 600;';
+                            autoResolveMsg.textContent = `🎯 Order #${orderNumber} auto-resolved (no longer duplicate)`;
+                            document.body.appendChild(autoResolveMsg);
+                            
+                            setTimeout(() => {
+                                autoResolveMsg.style.transition = 'opacity 0.3s';
+                                autoResolveMsg.style.opacity = '0';
+                                setTimeout(() => autoResolveMsg.remove(), 300);
+                            }, 4000);
+                            
+                            // Animate card removal
+                            alertCard.style.transition = 'all 0.3s ease-out';
+                            alertCard.style.opacity = '0';
+                            alertCard.style.transform = 'translateX(20px)';
+                            
+                            setTimeout(() => {
+                                alertCard.remove();
+                                
+                                // Update the count badge
+                                const badge = document.getElementById('duplicate-alerts-badge');
+                                if (badge) {
+                                    badge.textContent = duplicateAlertsData.length;
+                                    if (duplicateAlertsData.length === 0) {
+                                        badge.style.display = 'none';
+                                    }
+                                }
+                                
+                                // If no alerts remain, close modal
+                                if (duplicateAlertsData.length === 0) {
+                                    const modal = document.querySelector('div[style*="z-index: 9999"]');
+                                    if (modal) {
+                                        modal.style.transition = 'opacity 0.3s';
+                                        modal.style.opacity = '0';
+                                        setTimeout(() => modal.remove(), 300);
+                                    }
+                                }
+                            }, 300);
+                        }
+                    }
                 } else {
                     throw new Error(result.error || 'Failed to delete order');
                 }
