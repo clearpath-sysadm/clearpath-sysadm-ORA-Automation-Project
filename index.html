@@ -1619,6 +1619,24 @@
                 }
             } catch (error) {
                 console.error('Error deleting duplicate order:', error);
+                
+                // Refresh alert data to show current state
+                await checkDuplicateAlerts();
+                
+                // Check if order is already deleted
+                const currentAlert = duplicateAlertsData.find(a => a.id === alertId);
+                if (currentAlert) {
+                    const detail = currentAlert.details.find(d => d.shipstation_id === shipstationOrderId);
+                    if (detail && detail.deleted) {
+                        // Order was already deleted - close modal and reopen to show updated state
+                        const modal = document.querySelector('div[style*="z-index: 9999"]');
+                        if (modal) modal.remove();
+                        showDuplicateDetails();
+                        alert('ℹ️ This order was already deleted. The modal has been refreshed to show the current state.');
+                        return;
+                    }
+                }
+                
                 alert('❌ Error deleting order: ' + error.message);
                 btn.disabled = false;
                 btn.innerHTML = originalText;
