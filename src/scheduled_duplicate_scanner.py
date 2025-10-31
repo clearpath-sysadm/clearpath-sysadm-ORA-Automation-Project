@@ -341,9 +341,21 @@ def update_duplicate_alerts(duplicates):
         
         existing_alerts = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
         
+        # Get recently manually-resolved alerts (within last 30 days) to prevent re-creation
+        cursor.execute("""
+            SELECT order_number, base_sku, resolved_at
+            FROM duplicate_order_alerts
+            WHERE status = 'resolved'
+            AND resolution_notes LIKE '%manually resolved%'
+            AND resolved_at > CURRENT_TIMESTAMP - INTERVAL '30 days'
+        """)
+        
+        manually_resolved = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
+        
         new_count = 0
         updated_count = 0
         resolved_count = 0
+        skipped_count = 0
         
         # Process current duplicates
         for (order_number, base_sku), dup_list in duplicates.items():
@@ -363,6 +375,11 @@ def update_duplicate_alerts(duplicates):
                     WHERE order_number = %s AND base_sku = %s AND status = 'active'
                 """, (len(dup_list), shipstation_ids, details, order_number, base_sku))
                 updated_count += 1
+            elif key in manually_resolved:
+                # Skip re-creating alerts that were manually resolved within last 30 days
+                resolved_date = manually_resolved[key]
+                logger.info(f"⏭️ Skipping Order #{order_number} + SKU {base_sku} - manually resolved on {resolved_date}")
+                skipped_count += 1
             else:
                 # Create new alert (simple INSERT since we already checked it doesn't exist)
                 cursor.execute("""
@@ -395,7 +412,10 @@ def update_duplicate_alerts(duplicates):
         if total_auto_resolved > 0:
             logger.info(f"✅ Total auto-resolved: {total_auto_resolved} alerts ({no_longer_duplicates} no longer duplicates, {auto_resolved_deleted} all deleted)")
         
-        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated, {total_auto_resolved} auto-resolved")
+        if skipped_count > 0:
+            logger.info(f"⏭️ Skipped {skipped_count} manually resolved alert(s)")
+        
+        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated, {total_auto_resolved} auto-resolved, {skipped_count} skipped")
         
         conn.commit()
         
