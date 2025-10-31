@@ -5021,6 +5021,287 @@ def api_dismiss_manual_order_conflict(conflict_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/manual_order_conflicts/<int:conflict_id>/sync', methods=['POST'])
+def api_sync_manual_order_from_shipstation(conflict_id):
+    """
+    Sync a manual order conflict by pulling the original order data from ShipStation
+    and updating the local database to match ShipStation's truth.
+    
+    This endpoint:
+    1. Fetches the original (shipped) order from ShipStation
+    2. Updates or creates the order in orders_inbox
+    3. If shipped, also updates shipped_orders table
+    4. Marks the conflict as resolved
+    
+    Safety: Uses transactions, requires admin authentication, logs before/after state
+    """
+    try:
+        from src.services.shipstation.api_client import get_shipstation_credentials, fetch_order_by_id
+        import json as json_lib
+        
+        # Get conflict details
+        conn = get_connection()
+        conn.autocommit = False  # Ensure explicit transaction control
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT shipstation_order_id, conflicting_order_number, original_ship_date
+            FROM manual_order_conflicts
+            WHERE id = %s AND resolution_status = 'pending'
+        """, (conflict_id,))
+        
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Conflict not found or already resolved'
+            }), 404
+        
+        shipstation_order_id = row[0]
+        order_number = row[1]
+        original_ship_date = row[2]
+        
+        logger.info(f"🔄 Syncing Order #{order_number} from ShipStation ID {shipstation_order_id}")
+        
+        # Fetch order from ShipStation
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Failed to get ShipStation credentials'
+            }), 500
+        
+        result = fetch_order_by_id(shipstation_order_id, api_key, api_secret)
+        
+        if not result['success']:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f"Failed to fetch order from ShipStation: {result.get('error', 'Unknown error')}"
+            }), 500
+        
+        ss_order = result['order']
+        
+        # Validate the order number matches
+        if ss_order.get('orderNumber', '').strip() != str(order_number):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f"Order number mismatch: ShipStation shows {ss_order.get('orderNumber')}, expected {order_number}"
+            }), 400
+        
+        # Extract order data from ShipStation
+        order_status = ss_order.get('orderStatus', '').lower()
+        status_mapping = {
+            'awaiting_payment': 'awaiting_payment',
+            'awaiting_shipment': 'awaiting_shipment',
+            'shipped': 'shipped',
+            'on_hold': 'on_hold',
+            'cancelled': 'cancelled'
+        }
+        db_status = status_mapping.get(order_status, order_status)
+        
+        # Extract carrier/service info
+        adv_opts = ss_order.get('advancedOptions', {}) or {}
+        carrier_code = adv_opts.get('carrierCode') or ss_order.get('carrierCode')
+        service_code = adv_opts.get('serviceCode') or ss_order.get('serviceCode')
+        
+        # Get tracking from shipments if available
+        tracking_number = None
+        if 'shipments' in ss_order and ss_order['shipments']:
+            tracking_number = ss_order['shipments'][0].get('trackingNumber')
+        
+        # Get items
+        items = ss_order.get('items', [])
+        total_items = sum(item.get('quantity', 0) for item in items)
+        
+        # Get customer info
+        ship_to = ss_order.get('shipTo', {}) or {}
+        customer_name = ship_to.get('name', '')
+        company_name = ship_to.get('company', '')
+        
+        logger.info(f"📥 ShipStation data: Status={db_status}, Items={total_items}, Carrier={carrier_code}, Service={service_code}")
+        
+        # BEGIN TRANSACTION
+        try:
+            # Check if order exists in orders_inbox
+            cursor.execute("""
+                SELECT id, status, total_items
+                FROM orders_inbox
+                WHERE order_number = %s
+            """, (order_number,))
+            
+            existing_order = cursor.fetchone()
+            
+            if existing_order:
+                local_order_id = existing_order[0]
+                old_status = existing_order[1]
+                old_items = existing_order[2]
+                
+                logger.info(f"📝 Updating existing local order: {order_number} (ID: {local_order_id}) | Old: {old_status}/{old_items} items → New: {db_status}/{total_items} items")
+                
+                # Update orders_inbox
+                cursor.execute("""
+                    UPDATE orders_inbox
+                    SET status = %s,
+                        shipping_carrier_code = %s,
+                        shipping_service_code = %s,
+                        tracking_number = %s,
+                        total_items = %s,
+                        shipstation_order_id = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (
+                    db_status,
+                    carrier_code,
+                    service_code,
+                    tracking_number,
+                    total_items,
+                    shipstation_order_id,
+                    local_order_id
+                ))
+                
+                # Update items if they exist in ShipStation
+                if items:
+                    # Delete existing items
+                    cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = %s", (local_order_id,))
+                    
+                    # Insert fresh items from ShipStation
+                    for item in items:
+                        sku = item.get('sku', '').strip()
+                        quantity = item.get('quantity', 0)
+                        if sku and quantity > 0:
+                            cursor.execute("""
+                                INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                                VALUES (%s, %s, %s)
+                            """, (local_order_id, sku, quantity))
+                    
+                    logger.info(f"✅ Updated {len(items)} items for order {order_number}")
+                
+            else:
+                # Create new order in orders_inbox
+                logger.info(f"➕ Creating NEW local order: {order_number} | Status: {db_status}, Items: {total_items}")
+                
+                cursor.execute("""
+                    INSERT INTO orders_inbox 
+                        (order_number, order_date, customer_name, company_name, status, 
+                         shipping_carrier_code, shipping_service_code, tracking_number,
+                         total_items, shipstation_order_id, created_at, updated_at, data_source)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'shipstation_sync')
+                    RETURNING id
+                """, (
+                    order_number,
+                    ss_order.get('orderDate', original_ship_date),
+                    customer_name,
+                    company_name,
+                    db_status,
+                    carrier_code,
+                    service_code,
+                    tracking_number,
+                    total_items,
+                    shipstation_order_id
+                ))
+                
+                local_order_id = cursor.fetchone()[0]
+                
+                # Insert items
+                if items:
+                    for item in items:
+                        sku = item.get('sku', '').strip()
+                        quantity = item.get('quantity', 0)
+                        if sku and quantity > 0:
+                            cursor.execute("""
+                                INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                                VALUES (%s, %s, %s)
+                            """, (local_order_id, sku, quantity))
+                    
+                    logger.info(f"✅ Created order with {len(items)} items")
+            
+            # If order is shipped, ensure it's in shipped_orders table
+            if db_status == 'shipped':
+                ship_date = ss_order.get('shipDate') or original_ship_date
+                
+                # Check if already in shipped_orders
+                cursor.execute("""
+                    SELECT COUNT(*) FROM shipped_orders
+                    WHERE order_number = %s AND shipstation_order_id = %s
+                """, (order_number, shipstation_order_id))
+                
+                if cursor.fetchone()[0] == 0:
+                    # Insert into shipped_orders
+                    for item in items:
+                        sku = item.get('sku', '').strip()
+                        quantity = item.get('quantity', 0)
+                        if sku and quantity > 0:
+                            cursor.execute("""
+                                INSERT INTO shipped_orders 
+                                    (order_number, shipstation_order_id, order_date, ship_date,
+                                     customer_name, company_name, sku, quantity, tracking_number,
+                                     shipping_carrier_code, shipping_service_code, created_at)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                                ON CONFLICT (order_number, shipstation_order_id, sku) DO UPDATE
+                                SET quantity = EXCLUDED.quantity,
+                                    tracking_number = EXCLUDED.tracking_number,
+                                    shipping_carrier_code = EXCLUDED.shipping_carrier_code,
+                                    shipping_service_code = EXCLUDED.shipping_service_code
+                            """, (
+                                order_number,
+                                shipstation_order_id,
+                                ss_order.get('orderDate', original_ship_date),
+                                ship_date,
+                                customer_name,
+                                company_name,
+                                sku,
+                                quantity,
+                                tracking_number,
+                                carrier_code,
+                                service_code
+                            ))
+                    
+                    logger.info(f"✅ Synced shipped order to shipped_orders table")
+            
+            # Mark conflict as resolved
+            cursor.execute("""
+                UPDATE manual_order_conflicts
+                SET resolution_status = 'synced',
+                    resolved_at = CURRENT_TIMESTAMP,
+                    resolution_notes = %s
+                WHERE id = %s
+            """, (f"Synced from ShipStation: Status={db_status}, Items={total_items}", conflict_id))
+            
+            # COMMIT TRANSACTION
+            conn.commit()
+            
+            logger.info(f"✅ Successfully synced Order #{order_number} from ShipStation")
+            
+            conn.close()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Order #{order_number} synced successfully from ShipStation',
+                'order_status': db_status,
+                'total_items': total_items
+            })
+            
+        except Exception as db_error:
+            # ROLLBACK on error
+            conn.rollback()
+            logger.error(f"❌ Database error syncing order: {db_error}", exc_info=True)
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f'Database error: {str(db_error)}'
+            }), 500
+        
+    except Exception as e:
+        logger.error(f"❌ Error syncing manual order conflict {conflict_id}: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/quantity_mismatch', methods=['GET'])
 def api_get_quantity_mismatch():
     """Check for quantity mismatch between ShipStation and Orders Inbox"""

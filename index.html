@@ -2278,7 +2278,12 @@
                 
                 html += '</div>';
                 
-                html += `<button onclick="recreateManualOrder(${conflict.id}, '${conflict.conflicting_order_number}')" style="width: 100%; padding: 10px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄 Recreate with New Order Number</button>`;
+                // Action buttons
+                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">';
+                html += `<button onclick="syncManualOrderFromShipStation(${conflict.id}, '${conflict.conflicting_order_number}')" style="padding: 10px; background: var(--accent-green); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄 Sync from ShipStation</button>`;
+                html += `<button onclick="recreateManualOrder(${conflict.id}, '${conflict.conflicting_order_number}')" style="padding: 10px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">➕ Recreate with New Order Number</button>`;
+                html += '</div>';
+                
                 html += '</div>';
             });
             
@@ -2404,6 +2409,40 @@
             } catch (error) {
                 console.error('Error dismissing conflict:', error);
                 alert('Error dismissing conflict: ' + error.message);
+            }
+        }
+        
+        async function syncManualOrderFromShipStation(conflictId, orderNumber) {
+            if (!confirm(`Sync Order #${orderNumber} from ShipStation?\n\nThis will update the local database with ShipStation's data (status, tracking, items, etc.). ShipStation is the source of truth.\n\nThis action cannot be undone.`)) {
+                return;
+            }
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Syncing from ShipStation...';
+            
+            try {
+                const response = await fetch(`/api/manual_order_conflicts/${conflictId}/sync`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ ${result.message}\n\nStatus: ${result.order_status}\nItems: ${result.total_items}`);
+                    await checkManualOrderConflicts();
+                    const modal = document.getElementById('manual-conflict-modal');
+                    if (modal) modal.remove();
+                } else {
+                    throw new Error(result.error || 'Failed to sync order from ShipStation');
+                }
+            } catch (error) {
+                console.error('Error syncing order from ShipStation:', error);
+                alert('Error syncing order: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         }
 

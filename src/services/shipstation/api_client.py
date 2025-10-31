@@ -341,6 +341,49 @@ def fetch_shipstation_orders_by_order_numbers(
     logger.info(f"Retrieved {len(all_orders)} existing orders (filtered from bulk query)")
     return all_orders
 
+def fetch_order_by_id(order_id: int, api_key: str = None, api_secret: str = None) -> dict:
+    """
+    Fetch a single order from ShipStation by order ID.
+    
+    Args:
+        order_id: The ShipStation order ID to fetch
+        api_key: Optional ShipStation API key (will retrieve if not provided)
+        api_secret: Optional ShipStation API secret (will retrieve if not provided)
+        
+    Returns:
+        dict: {'success': bool, 'order': dict, 'error': str (optional)}
+    """
+    try:
+        if not api_key or not api_secret:
+            api_key, api_secret = get_shipstation_credentials()
+            if not api_key or not api_secret:
+                return {'success': False, 'error': 'ShipStation credentials not found'}
+        
+        headers = get_shipstation_headers(api_key, api_secret)
+        url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}/{order_id}"
+        
+        logger.info(f"Fetching order from ShipStation: Order ID {order_id}")
+        
+        response = make_api_request(
+            url=url,
+            method='GET',
+            headers=headers,
+            timeout=30
+        )
+        
+        if response and response.status_code == 200:
+            order = response.json()
+            logger.info(f"✅ Successfully fetched order {order_id}: Order #{order.get('orderNumber')}, Status: {order.get('orderStatus')}")
+            return {'success': True, 'order': order}
+        else:
+            error_msg = f"Failed to fetch order {order_id}: HTTP {response.status_code if response else 'No response'}"
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+            
+    except Exception as e:
+        logger.error(f"Error fetching order {order_id} from ShipStation: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
 def delete_order_from_shipstation(order_id: int) -> dict:
     """
     Delete an order from ShipStation by order ID.
