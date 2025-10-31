@@ -333,16 +333,11 @@ def update_duplicate_alerts(duplicates):
                 """, (len(dup_list), shipstation_ids, details, order_number, base_sku))
                 updated_count += 1
             else:
-                # Create new alert
+                # Create new alert (simple INSERT since we already checked it doesn't exist)
                 cursor.execute("""
                     INSERT INTO duplicate_order_alerts 
                         (order_number, base_sku, duplicate_count, shipstation_ids, details, status)
                     VALUES (%s, %s, %s, %s, %s, 'active')
-                    ON CONFLICT (order_number, base_sku, status) DO UPDATE
-                    SET duplicate_count = EXCLUDED.duplicate_count,
-                        shipstation_ids = EXCLUDED.shipstation_ids,
-                        details = EXCLUDED.details,
-                        last_seen = CURRENT_TIMESTAMP
                 """, (order_number, base_sku, len(dup_list), shipstation_ids, details))
                 new_count += 1
         
