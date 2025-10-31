@@ -6837,42 +6837,45 @@ def api_admin_sync_order_from_shipstation():
             
             logger.info(f"✅ Updated orders_inbox for Order #{order_number}")
             
-            # If shipped, also update shipped_orders
-            if db_status == 'shipped' and items:
-                original_ship_date = ss_order.get('orderDate')
+            # If shipped, also update shipped_orders and shipped_items
+            if db_status == 'shipped':
+                # Update shipped_orders with basic order info
+                cursor.execute("""
+                    INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (order_number) DO UPDATE 
+                    SET ship_date = EXCLUDED.ship_date,
+                        shipstation_order_id = EXCLUDED.shipstation_order_id
+                """, (ship_date, order_number, str(shipstation_order_id)))
                 
+                # Update shipped_items for each item
                 for item in items:
-                    sku = item.get('sku', '')
+                    sku_raw = str(item.get('sku', '')).strip()
                     quantity = item.get('quantity', 0)
                     
-                    if not sku:
+                    if not sku_raw or quantity <= 0:
                         continue
                     
+                    # Parse SKU - LOT format (e.g., "17612 - 250237")
+                    if ' - ' in sku_raw:
+                        sku_parts = sku_raw.split(' - ')
+                        base_sku = sku_parts[0].strip()
+                        sku_lot = sku_raw  # Store full format
+                    else:
+                        base_sku = sku_raw
+                        sku_lot = sku_raw
+                    
                     cursor.execute("""
-                        INSERT INTO shipped_orders (
-                            order_number, shipstation_order_id,
-                            original_ship_date, ship_date,
-                            ship_name, ship_company,
-                            sku, quantity,
-                            tracking_number, carrier, service_code
+                        INSERT INTO shipped_items (
+                            ship_date, sku_lot, base_sku, quantity_shipped, order_number
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (order_number, sku) DO UPDATE SET
-                            shipstation_order_id = EXCLUDED.shipstation_order_id,
-                            ship_date = EXCLUDED.ship_date,
-                            quantity = EXCLUDED.quantity,
-                            tracking_number = EXCLUDED.tracking_number,
-                            carrier = EXCLUDED.carrier,
-                            service_code = EXCLUDED.service_code
-                    """, (
-                        order_number, shipstation_order_id,
-                        original_ship_date, ship_date,
-                        customer_name, company_name,
-                        sku, quantity,
-                        tracking_number, carrier_code, service_code
-                    ))
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
+                        SET quantity_shipped = EXCLUDED.quantity_shipped,
+                            ship_date = EXCLUDED.ship_date
+                    """, (ship_date, sku_lot, base_sku, quantity, order_number))
                 
-                logger.info(f"✅ Updated shipped_orders for Order #{order_number}")
+                logger.info(f"✅ Updated shipped_orders and shipped_items for Order #{order_number}")
             
             conn.commit()
             logger.info(f"✅ Successfully synced Order #{order_number} from ShipStation")
