@@ -6809,6 +6809,10 @@ def api_admin_sync_order_from_shipstation():
                     carrier_code = shipment.get('carrierCode')
                     service_code = shipment.get('serviceCode')
                     ship_date = shipment.get('shipDate')
+                
+                # Use order_date as fallback if no shipment date
+                if not ship_date:
+                    ship_date = order_date
             
             # Update/insert into orders_inbox
             cursor.execute("""
