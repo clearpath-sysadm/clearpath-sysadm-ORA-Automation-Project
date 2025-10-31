@@ -346,14 +346,30 @@ def update_duplicate_alerts(duplicates):
                 """, (order_number, base_sku, len(dup_list), shipstation_ids, details))
                 new_count += 1
         
+        # Auto-resolve alerts that NO LONGER appear in current scan (no longer duplicates)
+        no_longer_duplicates = 0
+        for (order_number, base_sku) in existing_alerts.keys():
+            if (order_number, base_sku) not in duplicates:
+                cursor.execute("""
+                    UPDATE duplicate_order_alerts
+                    SET status = 'resolved',
+                        resolved_at = CURRENT_TIMESTAMP,
+                        resolution_notes = 'Auto-resolved: No longer appears as duplicate in ShipStation scan'
+                    WHERE order_number = %s AND base_sku = %s AND status = 'active'
+                """, (order_number, base_sku))
+                no_longer_duplicates += 1
+                logger.info(f"✅ Auto-resolved alert for Order #{order_number} + SKU {base_sku} (no longer a duplicate)")
+        
         # Auto-resolve alerts where ALL ShipStation IDs are deleted
         # Called AFTER alerts are updated with fresh scan data, so IDs in DB are current
-        auto_resolved = check_and_auto_resolve_deleted_duplicates(cursor)
+        auto_resolved_deleted = check_and_auto_resolve_deleted_duplicates(cursor)
         
-        if auto_resolved > 0:
-            logger.info(f"✅ Auto-resolved {auto_resolved} alerts (all duplicates deleted from ShipStation)")
+        total_auto_resolved = no_longer_duplicates + auto_resolved_deleted
         
-        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated, {auto_resolved} auto-resolved (all duplicates deleted)")
+        if total_auto_resolved > 0:
+            logger.info(f"✅ Total auto-resolved: {total_auto_resolved} alerts ({no_longer_duplicates} no longer duplicates, {auto_resolved_deleted} all deleted)")
+        
+        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated, {total_auto_resolved} auto-resolved")
         
         conn.commit()
         
