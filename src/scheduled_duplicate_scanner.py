@@ -216,6 +216,64 @@ def identify_order_number_collisions(orders):
     
     return collisions
 
+def check_and_auto_resolve_deleted_duplicates(cursor):
+    """
+    Auto-resolve duplicate alerts when ALL ShipStation IDs are marked as deleted.
+    
+    This is safe because:
+    1. We verify ALL duplicates are explicitly deleted (not just missing from scan)
+    2. Deletion is an intentional operator action, not an API failure
+    3. Reduces manual work and keeps alerts relevant
+    
+    Returns:
+        int: Number of alerts auto-resolved
+    """
+    # Get all active alerts
+    cursor.execute("""
+        SELECT id, order_number, base_sku, shipstation_ids
+        FROM duplicate_order_alerts
+        WHERE status = 'active'
+    """)
+    
+    active_alerts = cursor.fetchall()
+    auto_resolved_count = 0
+    
+    for alert_id, order_number, base_sku, shipstation_ids_json in active_alerts:
+        try:
+            shipstation_ids = json.loads(shipstation_ids_json) if shipstation_ids_json else []
+            
+            if not shipstation_ids:
+                continue
+            
+            # Check if ALL ShipStation IDs are in the deleted table
+            placeholders = ','.join(['%s'] * len(shipstation_ids))
+            cursor.execute(f"""
+                SELECT COUNT(DISTINCT shipstation_order_id)
+                FROM deleted_shipstation_orders
+                WHERE shipstation_order_id IN ({placeholders})
+            """, shipstation_ids)
+            
+            deleted_count = cursor.fetchone()[0]
+            
+            # If ALL duplicates are deleted, auto-resolve the alert
+            if deleted_count == len(shipstation_ids):
+                cursor.execute("""
+                    UPDATE duplicate_order_alerts
+                    SET status = 'resolved',
+                        resolved_at = CURRENT_TIMESTAMP,
+                        resolution_notes = 'Auto-resolved: All duplicate ShipStation records deleted'
+                    WHERE id = %s
+                """, (alert_id,))
+                
+                auto_resolved_count += 1
+                logger.info(f"✅ Auto-resolved alert for Order #{order_number} + SKU {base_sku} (all {len(shipstation_ids)} duplicates deleted)")
+        
+        except Exception as e:
+            logger.error(f"Error checking deleted status for alert {alert_id}: {e}")
+            continue
+    
+    return auto_resolved_count
+
 def update_duplicate_alerts(duplicates):
     """
     Update the duplicate_order_alerts table with current duplicates
@@ -224,8 +282,9 @@ def update_duplicate_alerts(duplicates):
         duplicates: dict of {(order_number, base_sku): [list of duplicate records]}
     
     Note:
-        Auto-resolution is intentionally disabled to prevent data loss.
-        All alerts require manual resolution via the dashboard.
+        Auto-resolution now enabled for deleted duplicates ONLY.
+        When ALL ShipStation IDs for an alert are marked as deleted, 
+        the alert is automatically resolved to reduce manual work.
     """
     conn = get_connection()
     cursor = conn.cursor()
@@ -276,20 +335,14 @@ def update_duplicate_alerts(duplicates):
                 """, (order_number, base_sku, len(dup_list), shipstation_ids, details))
                 new_count += 1
         
-        # SAFETY DECISION: Auto-resolution disabled to prevent data loss
-        # 
-        # Auto-resolution is fundamentally unsafe because:
-        # 1. Any limited-window query (30/90/N days) will eventually age out old duplicates
-        # 2. API failures, pagination errors, or auth issues could return empty results
-        # 3. ShipStation rate limits could cause incomplete scans
-        # 4. False negatives are worse than false positives for duplicate detection
-        #
-        # DESIGN: All duplicate alerts require MANUAL resolution via dashboard
-        # This ensures operators verify duplicates are truly resolved before clearing alerts
-        # Operators can use the "View Details" modal to inspect ShipStation records
-        # and mark alerts as resolved only after confirming duplicates are cleaned up
+        # Auto-resolve alerts where ALL ShipStation IDs are deleted
+        # This is safe because we're checking explicit deletion records, not scan gaps
+        auto_resolved = check_and_auto_resolve_deleted_duplicates(cursor)
         
-        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated (auto-resolution disabled - manual review required)")
+        if auto_resolved > 0:
+            logger.info(f"✅ Auto-resolved {auto_resolved} alerts (all duplicates deleted)")
+        
+        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated, {auto_resolved} auto-resolved (all duplicates deleted)")
         
         conn.commit()
         
