@@ -631,7 +631,16 @@
                         <td style="background: #f0fdf4;"><span class="status-badge-small status-${match.status}">${match.status}</span></td>
                         <td style="font-size: 0.75rem; background: #f0fdf4;">${items || 'No items'}</td>
                         <td style="font-size: 0.75rem; color: var(--text-tertiary); background: #f0fdf4;">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>
-                        <td style="background: #f0fdf4;">-</td>
+                        <td style="background: #f0fdf4;">
+                            <button 
+                                class="btn-secondary" 
+                                onclick="syncLocalOrderFromShipStation('${match.order_number}', ${match.shipstation_order_id || 'null'})"
+                                style="padding: 4px 12px; font-size: 0.75rem; white-space: nowrap;"
+                                title="Update local database with ShipStation data"
+                            >
+                                🔄 Sync from SS
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -776,6 +785,41 @@
             } catch (error) {
                 console.error('Delete error:', error);
                 showToast('Failed to delete order', 'error');
+            }
+        }
+
+        // Sync local order from ShipStation
+        async function syncLocalOrderFromShipStation(orderNumber, shipstationOrderId) {
+            if (!confirm(`Sync Order #${orderNumber} from ShipStation?\n\nThis will update your local database with ShipStation's current data (status, tracking, items, etc.).\n\nShipStation is the source of truth.\n\nThis action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/sync_order_from_shipstation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_number: orderNumber,
+                        shipstation_order_id: shipstationOrderId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`✅ ${data.message}`, 'success');
+                    
+                    // Refresh the search
+                    setTimeout(() => {
+                        document.getElementById('order-number-input').value = orderNumber;
+                        lookupOrder({ preventDefault: () => {} });
+                    }, 1000);
+                } else {
+                    showToast(data.error || 'Failed to sync order from ShipStation', 'error');
+                }
+            } catch (error) {
+                console.error('Sync error:', error);
+                showToast('Failed to sync order from ShipStation', 'error');
             }
         }
 
