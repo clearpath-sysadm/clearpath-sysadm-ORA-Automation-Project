@@ -425,7 +425,45 @@
             }
             
             try {
-                // Create formatted text table matching weekly report style
+                // Helper function to escape HTML
+                const escapeHtml = (text) => {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                };
+                
+                // Create HTML table (for pasting into email/rich text)
+                const htmlRows = allTransactions.map(t => {
+                    const notes = (t.notes || '-').substring(0, 50);
+                    return `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <strong>${escapeHtml(String(t.date))}</strong><br>
+                            <span style="font-size: 0.85em; color: #666;">SKU: ${escapeHtml(String(t.sku))}</span>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${escapeHtml(String(t.quantity))}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(String(t.transaction_type))}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(notes)}</td>
+                    </tr>
+                `;}).join('');
+                
+                const htmlTable = `
+                    <table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px;">
+                        <thead>
+                            <tr style="background-color: #f3f4f6;">
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Date</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Quantity</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Type</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${htmlRows}
+                        </tbody>
+                    </table>
+                `;
+                
+                // Create plain text fallback
                 const plainHeader = 'Date       | SKU   | Quantity | Type        | Notes';
                 const plainSeparator = '-'.repeat(80);
                 const plainRows = allTransactions.map(t => {
@@ -437,14 +475,23 @@
                     return `${date} | ${sku} | ${qty} | ${type} | ${notes}`;
                 }).join('\n');
                 
-                // Add summary
                 const receiveCount = allTransactions.filter(t => t.transaction_type === 'Receive').length;
                 const summary = `\nTotal: ${allTransactions.length} transactions${receiveCount > 0 ? ` (${receiveCount} Receive)` : ''}`;
-                
                 const plainText = `${plainHeader}\n${plainSeparator}\n${plainRows}${summary}`;
                 
-                // Copy to clipboard
-                await navigator.clipboard.writeText(plainText);
+                // Copy both HTML and plain text to clipboard
+                try {
+                    const htmlBlob = new Blob([htmlTable], { type: 'text/html' });
+                    const plainBlob = new Blob([plainText], { type: 'text/plain' });
+                    const clipboardItem = new ClipboardItem({
+                        'text/html': htmlBlob,
+                        'text/plain': plainBlob
+                    });
+                    await navigator.clipboard.write([clipboardItem]);
+                } catch (htmlError) {
+                    console.warn('HTML clipboard not supported, falling back to plain text:', htmlError);
+                    await navigator.clipboard.writeText(plainText);
+                }
                 
                 // Show success feedback
                 const originalText = buttonElement.textContent;
