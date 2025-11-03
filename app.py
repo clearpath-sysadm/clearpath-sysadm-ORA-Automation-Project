@@ -3884,7 +3884,7 @@ def api_update_sku_lot(sku_lot_id):
         # Update SKU-Lot
         cursor.execute("""
             UPDATE sku_lot 
-            SET sku = %s, lot = %s, active = %s, updated_at = datetime('now')
+            SET sku = %s, lot = %s, active = %s, updated_at = NOW()
             WHERE id = %s
         """, (data['sku'], data['lot'], data.get('active', 1), sku_lot_id))
         
@@ -5598,7 +5598,7 @@ def api_update_lot_inventory(lot_id):
                 received_date = %s,
                 status = %s,
                 notes = %s,
-                updated_at = datetime('now')
+                updated_at = NOW()
             WHERE id = %s
         """, (int(initial_qty), int(manual_adjustment), received_date, status, notes, lot_id))
         
