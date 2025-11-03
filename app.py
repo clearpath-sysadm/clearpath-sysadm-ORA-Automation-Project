@@ -886,7 +886,7 @@ def api_charge_report():
                     space_rental_rate = float(value)
             elif category == 'PalletConfig' and param == 'PalletCount' and sku:
                 pallet_config[str(sku)] = int(value)
-            elif category == 'InitialInventory' and param == 'EOD_Prior_Week' and sku:
+            elif category == 'Inventory' and param == 'EomPreviousMonth' and sku:
                 bom_inventory[str(sku)] = int(value)
         
         # Get all inventory transactions and shipments for the month
