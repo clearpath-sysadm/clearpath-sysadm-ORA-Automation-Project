@@ -52,3 +52,88 @@ A single centralized `global-styles.css` defines the premium corporate design sy
 - **Google Drive:** Integrated for XML file imports.
 - **SendGrid:** (Optional) For email notifications.
 - **Google Cloud Secret Manager:** For secure management of production credentials.
+
+## Documentation Standards & Maintenance
+
+### Core Documentation Files
+
+The following documentation files **must be kept up to date** with every significant change to the system:
+
+1. **`docs/UI_SPECIFICATIONS.md`** - Complete UI/UX design system
+   - Update when: Adding new components, changing colors/fonts/spacing, modifying interaction patterns, adding new pages
+   - Review frequency: After UI changes or quarterly
+   - Owner: Design/Frontend lead
+
+2. **`docs/FUNCTIONAL_REQUIREMENTS.md`** - Authoritative functional specifications
+   - Update when: New features added, business rules change, workflows modified, API integrations change
+   - Review frequency: After feature releases or quarterly
+   - Owner: Product Manager/Business Analyst
+
+3. **`docs/CHANGELOG.md`** - Version history following [Keep a Changelog](https://keepachangelog.com/) format
+   - Update when: **ALWAYS** - Every feature, bug fix, change, or security update
+   - Update timing: **Before** merging PRs, deploying to production, or creating releases
+   - Owner: All developers
+
+4. **`replit.md`** (this file) - System architecture and development guidelines
+   - Update when: Architecture changes, new integrations, development philosophy changes, major technical decisions
+   - Review frequency: Monthly or after major releases
+   - Owner: Technical lead
+
+### Documentation Update Workflow
+
+**For Every Code Change:**
+1. **Implementation:** Make your code changes
+2. **Documentation Update:** Update relevant docs (UI specs, FRD, changelog)
+3. **Review:** Verify docs accurately reflect the changes
+4. **Deploy:** Merge and deploy with synchronized code + docs
+
+**For CHANGELOG.md Specifically:**
+- Add entries to `[Unreleased]` section during development
+- Use standard categories: Added, Changed, Deprecated, Removed, Fixed, Security
+- On release: Rename `[Unreleased]` to version number + date, create new empty `[Unreleased]`
+- Write for humans, not machines (clear, user-focused descriptions)
+- Follow Semantic Versioning: MAJOR.MINOR.PATCH
+
+### Documentation Quality Standards
+
+**All documentation must:**
+- Be written in clear, plain language (avoid jargon)
+- Include examples where helpful
+- Stay synchronized with code (never outdated)
+- Follow industry standards (Keep a Changelog, IEEE for requirements, etc.)
+- Be version-controlled and reviewed like code
+
+**Red Flags (Fix Immediately):**
+- ❌ Documentation contradicts actual system behavior
+- ❌ New features not documented
+- ❌ Changelog missing entries for recent releases
+- ❌ UI specs don't match actual component library
+
+### Quarterly Documentation Review
+
+**Every 3 months, conduct full documentation audit:**
+1. Review all four core docs for accuracy
+2. Update screenshots and examples
+3. Remove deprecated/obsolete content
+4. Verify all links work
+5. Check for consistency across documents
+6. Update version numbers and dates
+
+**Checklist:**
+- [ ] UI specs match current design system
+- [ ] FRD reflects all implemented features
+- [ ] Changelog is complete and accurate
+- [ ] replit.md architecture section is current
+- [ ] Database schema docs synchronized with actual schema
+- [ ] User manual covers all features
+
+### Emergency Documentation Updates
+
+**Critical situations requiring immediate doc updates:**
+- Security vulnerabilities fixed
+- Breaking changes to APIs or database schema
+- Major business rule changes
+- Data loss incidents or rollbacks
+- Production outages with lessons learned
+
+**Process:** Update docs within 24 hours of incident resolution, include root cause and preventive measures.

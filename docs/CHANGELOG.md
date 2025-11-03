@@ -1,0 +1,287 @@
+# Changelog
+
+All notable changes to the Oracare Fulfillment System will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [Unreleased]
+
+### Planned
+- Customer-facing order tracking portal
+- Barcode scanning for inventory adjustments
+- Mobile app for warehouse operations
+- QuickBooks integration for accounting sync
+
+---
+
+## [1.4.0] - 2025-11-03
+
+### Added
+- **Order Management Sync from ShipStation:** Added "🔄 Sync from SS" feature in two locations:
+  - Manual Order Conflicts modal for syncing conflicting orders
+  - Order Management table Actions column for refreshing local data with ShipStation as source of truth
+- Comprehensive industry-standard documentation:
+  - `docs/UI_SPECIFICATIONS.md` - Complete design system, component library, and UI standards
+  - `docs/FUNCTIONAL_REQUIREMENTS.md` - Full FRD with business rules and acceptance criteria
+  - `docs/CHANGELOG.md` - Version history following Keep a Changelog format
+- Documentation maintenance guidelines in `replit.md`
+
+### Fixed
+- **Critical Bug:** Weekly inventory report product names now display correctly
+  - Root cause: Query was selecting wrong column (`value` instead of `parameter_name`)
+  - Fixed in `src/weekly_reporter.py` line 54
+  - Product names now properly show: "PT Kit", "Travel Kit", "PPR Kit", "Ortho Protect", "OraPro Paste Peppermint"
+- **Display Bug:** Order items in Order Management table no longer show duplicate SKU numbers
+  - Fixed `sku_lot` display to use lot value directly (already contains "SKU - LOT" format)
+  - Changed from concatenating `sku + sku_lot` to using `sku_lot` directly
+- **Database Schema:** Sync from ShipStation endpoint now correctly maps columns:
+  - `orders_inbox`: Uses `shipping_carrier_code` and `shipping_service_code` (not `carrier_code`/`service_code`)
+  - `shipped_orders`: Correctly populates only 3 columns (ship_date, order_number, shipstation_order_id)
+  - `shipped_items`: Properly tracks individual SKUs with lot information
+- **NULL Constraint Violation:** Added `ship_date` fallback to `order_date` when shipment data unavailable
+  - Prevents database errors for recently shipped orders without shipment records
+
+### Changed
+- Enhanced Order Management tool with real-time sync capability from ShipStation API
+- Improved transaction handling in sync operations with explicit commit/rollback
+- Updated Order Management UI to show cleaner item display without SKU duplication
+
+---
+
+## [1.3.0] - 2025-10-31
+
+### Added
+- **Manual Order Conflicts Detection:** System now identifies when the same order number appears with different ShipStation IDs
+  - Separate alert type in duplicate detection system
+  - Displays all conflicting records with ShipStation IDs in modal
+  - Provides sync and resolution options
+- **Duplicate Order Auto-Resolution Enhancements:** Intelligent evaluation of remaining records after deletions
+  - Auto-resolves when duplicates no longer appear in scans
+  - Auto-resolves when all duplicate records are deleted
+  - Auto-resolves when remaining records no longer constitute duplicates
+- **Real-Time Modal Updates:** Dashboard modals update asynchronously without page refresh
+  - Deleted orders show red "🗑️ DELETED" badges
+  - Actions disabled for deleted orders
+  - Smooth animations for state changes
+
+### Changed
+- Duplicate scanner now runs auto-resolution logic every 15 minutes during scan cycle
+- Enhanced error handling in duplicate detection modal with automatic refresh on errors
+
+---
+
+## [1.2.0] - 2025-10-30
+
+### Added
+- **Order Management Admin Tool:** New comprehensive interface at `order-management.html`
+  - Order lookup by order number with detailed display
+  - Shows customer, company, items, status, and dates
+  - Side-by-side comparison of ShipStation and local database records
+  - Safe deletion with confirmation dialogs
+  - Warnings for duplicate order numbers
+  - Admin authentication required for all operations
+  - Full operation logging
+- **Order Update Safety Measures:** All order updates blocked until `shipstation_order_id` is synced
+  - Prevents data integrity issues with XML-imported orders
+  - Ensures orders uploaded to ShipStation before tracking updates applied
+
+### Security
+- Order deletion requires admin role verification
+- All operations logged with user ID and timestamp
+
+---
+
+## [1.1.0] - 2025-10-25
+
+### Added
+- **Duplicate Order Detection System:** Automated monitoring for duplicate order numbers in ShipStation
+  - Scans every 15 minutes for orders with same order number but different ShipStation IDs
+  - Dashboard displays alert badge with duplicate count
+  - Modal interface for viewing and managing duplicates
+  - Manual resolution: admins can delete incorrect duplicate orders
+  - Intelligent auto-resolution: alerts automatically resolve when conditions met
+- **Ghost Order Backfill System:** Repairs orders missing item details due to sync timing issues
+  - Automatically detects orders in ShipStation without items
+  - Backfills item data from `orders_inbox` table
+  - Runs during unified ShipStation sync process
+
+### Changed
+- Enhanced duplicate detection to differentiate between true duplicates and manual order conflicts
+- Improved modal UI with real-time updates and smooth animations
+
+---
+
+## [1.0.0] - 2025-10-15
+
+### Added
+- **Core System Launch:** Production deployment of Oracare Fulfillment System replacing Google Sheets
+- **PostgreSQL Database:** Complete schema with 15+ tables for orders, inventory, workflows
+  - STRICT tables with proper constraints
+  - Foreign keys for data integrity
+  - Transaction handling with SAVEPOINT pattern
+- **Replit Authentication:** Role-based access control (Admin/Viewer)
+  - OAuth integration supporting Google, GitHub, email
+  - Dual database architecture (psycopg2 + SQLAlchemy)
+  - Centralized API authentication middleware protecting ~80 endpoints
+- **Order Processing Workflows:**
+  - XML import from Google Drive every 5 minutes
+  - Automatic bundle SKU expansion
+  - ShipStation upload service (every 5 minutes)
+  - Unified ShipStation sync (status + manual orders)
+  - Order cleanup service (60-day retention)
+- **Inventory Management:**
+  - FIFO inventory tracking at lot level
+  - Real-time current inventory calculations
+  - 52-week rolling average consumption
+  - Low stock alerts with reorder points
+  - Manual inventory adjustments with audit trail
+- **Physical Inventory Controls:**
+  - EOD (End of Day): Daily shipment sync
+  - EOW (End of Week): Weekly report with 52-week averages
+  - EOM (End of Month): Monthly charge report generation
+- **Dashboard & Reporting:**
+  - Real-time KPIs with 30-second auto-refresh
+  - Workflow status monitoring
+  - Inventory risk table with days-left calculations
+  - Shipping validation alerts
+  - Production incident tracker
+- **Premium UI/UX:**
+  - Enterprise-grade dashboard with Oracare branding
+  - Responsive design (mobile/tablet/desktop)
+  - Light/dark mode with navy glass sidebar
+  - IBM Plex Sans + Source Serif 4 typography
+  - Skeleton loaders and smooth animations
+  - WCAG 2.1 Level AA accessibility compliance
+- **Bundle & SKU Management:**
+  - Database-driven bundle SKU definitions
+  - CRUD interfaces for bundle components
+  - SKU-Lot mapping for order fulfillment
+  - Lot inventory auto-calculations
+- **Workflow Controls:**
+  - Programmatic on/off toggles for all automation
+  - Real-time status display
+  - Error logging and monitoring
+
+### Security
+- Dual-layer environment protection for ShipStation uploads
+- API credentials in environment secrets
+- Replit-managed database backups with rollback support
+- Role-based endpoint protection
+
+### Business Rules Implemented
+- Manual orders (100000-109999) NEVER uploaded by system
+- Initial inventory baseline (Sept 19, 2025) protected from modification
+- FIFO lot consumption for inventory tracking
+- Order update safety requiring shipstation_order_id sync
+- Idempotent operations using UPSERT patterns
+
+### External Integrations
+- **ShipStation API:** Order upload, status sync, manual order import
+- **Google Drive:** XML file polling and import
+- **SendGrid:** Email notifications (optional)
+- **Google Cloud Secret Manager:** Production credential management
+
+---
+
+## [0.9.0] - 2025-09-19 (Beta)
+
+### Added
+- Initial beta deployment with core database schema
+- Basic order import from XML files
+- Manual ShipStation upload workflow
+- Simple inventory tracking without lot-level detail
+- Prototype dashboard with basic KPIs
+
+### Changed
+- Database schema refinements based on beta testing
+- ShipStation API integration improvements
+
+### Fixed
+- XML parsing errors for malformed order files
+- Database connection pooling issues
+
+---
+
+## [0.5.0] - 2025-09-01 (Alpha)
+
+### Added
+- Proof of concept: PostgreSQL database replacing Google Sheets
+- Basic authentication (email/password only)
+- Minimal order management interface
+- SQLite-based development environment
+
+### Deprecated
+- SQLite database (migrated to PostgreSQL in 0.9.0)
+
+---
+
+## Version Numbering
+
+This project uses [Semantic Versioning](https://semver.org/):
+- **MAJOR** version (1.x.x): Incompatible API/database schema changes
+- **MINOR** version (x.1.x): New features, backward-compatible
+- **PATCH** version (x.x.1): Bug fixes, backward-compatible
+
+---
+
+## Maintenance Guidelines
+
+### When to Update This Changelog
+
+**Always update when:**
+- Adding new features or functionality
+- Fixing bugs or errors
+- Changing existing behavior
+- Deprecating features
+- Removing features
+- Improving security
+- Making breaking changes
+
+**Update before:**
+- Merging pull requests
+- Deploying to production
+- Creating release tags
+
+### How to Write Entries
+
+1. **Add to [Unreleased] section first**
+2. **Use standard categories:**
+   - `Added` for new features
+   - `Changed` for changes in existing functionality
+   - `Deprecated` for soon-to-be removed features
+   - `Removed` for now removed features
+   - `Fixed` for bug fixes
+   - `Security` for vulnerability patches
+3. **Write clear, user-focused descriptions:**
+   - ✅ Good: "Fixed weekly inventory report product names displaying as blank"
+   - ❌ Bad: "Updated query in weekly_reporter.py line 54"
+4. **Link to issues/PRs when applicable**
+5. **On release, rename [Unreleased] to version number + date**
+6. **Create new empty [Unreleased] section**
+
+### Format Rules
+
+- **Date format:** YYYY-MM-DD (ISO 8601)
+- **Newest entries first** (reverse chronological)
+- **Bullet points** for all entries
+- **Bold** for feature names or emphasis
+- **Code blocks** for technical details when necessary
+
+---
+
+## Links
+
+- [Project Documentation](./README.md)
+- [UI Specifications](./UI_SPECIFICATIONS.md)
+- [Functional Requirements](./FUNCTIONAL_REQUIREMENTS.md)
+- [Database Schema](./reference/database-schema.md)
+- [User Manual](./guides/user-manual.md)
+
+---
+
+**Maintained by:** Oracare Development Team  
+**Review Frequency:** Before each release  
+**Format Standard:** [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/)
