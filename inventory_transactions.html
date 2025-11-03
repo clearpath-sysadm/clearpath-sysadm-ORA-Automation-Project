@@ -172,7 +172,7 @@
                     </select>
                     <button class="btn" onclick="applyFilters()">🔍 Filter</button>
                     <button class="btn" onclick="clearFilters()">✖️ Clear</button>
-                    <button class="btn" onclick="copyToClipboard(event)">📋 Copy to Clipboard</button>
+                    <button class="btn" onclick="copyToClipboard(this)">📋 Copy to Clipboard</button>
                     <button class="btn" onclick="openAddModal()">➕ Add Transaction</button>
                 </div>
 
@@ -418,7 +418,7 @@
             applyFilters();
         }
         
-        async function copyToClipboard() {
+        async function copyToClipboard(buttonElement) {
             if (allTransactions.length === 0) {
                 alert('No transactions to copy. Please apply filters or load data first.');
                 return;
@@ -443,14 +443,13 @@
                 await navigator.clipboard.writeText(tsvData);
                 
                 // Show success feedback
-                const button = event.target;
-                const originalText = button.textContent;
-                button.textContent = '✅ Copied!';
-                button.style.backgroundColor = 'var(--success)';
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = '✅ Copied!';
+                buttonElement.style.backgroundColor = 'var(--success)';
                 
                 setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.backgroundColor = '';
+                    buttonElement.textContent = originalText;
+                    buttonElement.style.backgroundColor = '';
                 }, 2000);
                 
                 // Show count of records copied

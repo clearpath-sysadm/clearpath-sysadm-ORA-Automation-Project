@@ -1,0 +1,38 @@
+Unchecked runtime.lastError: Cannot create item with duplicate id LastPass https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id LastPass https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id separator https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id separator https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Item https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Item https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Password https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Address https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Payment Card https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id Add other item https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id Save all entered data https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Password https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Address https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Payment Card https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id Add other item https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id Save all entered data https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id Generate Secure Password https://replit.com/@ClearPathAdm/Oracare-Fulfillment
+Unchecked runtime.lastError: Cannot create item with duplicate id Generate Secure Password https://abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/
+Unchecked runtime.lastError: Cannot create item with duplicate id LastPass https://replit.com/@ClearPathAdm/FilterShippingCalc
+Unchecked runtime.lastError: Cannot create item with duplicate id separator https://replit.com/@ClearPathAdm/FilterShippingCalc
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Item https://replit.com/@ClearPathAdm/FilterShippingCalc
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Password https://replit.com/@ClearPathAdm/FilterShippingCalc
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Address https://replit.com/@ClearPathAdm/FilterShippingCalc
+Unchecked runtime.lastError: Cannot create item with duplicate id Add Payment Card https://replit.com/@ClearPathAdm/FilterShippingCalc
+Unchecked runtime.lastError: Cannot create item with duplicate id Add other item https://replit.com/@ClearPathAdm/FilterShippingCalc
+Unchecked runtime.lastError: Cannot create item with duplicate id Save all entered data https://replit.com/@ClearPathAdm/FilterShippingCalc
+Unchecked runtime.lastError: Cannot create item with duplicate id Generate Secure Password https://replit.com/@ClearPathAdm/FilterShippingCalc
+auth.js:1  Uncaught SyntaxError: Identifier 'AuthManager' has already been declared (at auth.js:1:1)
+auth.js:1  Uncaught SyntaxError: Identifier 'AuthManager' has already been declared (at auth.js:1:1)
+auth.js:1  Uncaught SyntaxError: Identifier 'AuthManager' has already been declared (at auth.js:1:1)
+inventory_transactions.html:463  Failed to copy to clipboard: TypeError: Cannot read properties of undefined (reading 'target')
+    at copyToClipboard (inventory_transactions.html:446:38)
+copyToClipboard @ inventory_transactions.html:463
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
