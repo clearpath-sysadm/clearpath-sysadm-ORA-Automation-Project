@@ -1998,7 +1998,7 @@ def api_run_eom():
             FROM shipped_orders
             WHERE ship_date >= %s AND ship_date <= %s
         """
-        orders_result = execute_query(orders_query, (month_start, month_end))
+        orders_result = execute_query(orders_query, (str(month_start), str(month_end)))
         total_orders = orders_result[0][0] if orders_result else 0
         
         # Get total shipping units (packages) for the month
@@ -2007,7 +2007,7 @@ def api_run_eom():
             FROM shipped_items
             WHERE ship_date >= %s AND ship_date <= %s
         """
-        packages_result = execute_query(packages_query, (month_start, month_end))
+        packages_result = execute_query(packages_query, (str(month_start), str(month_end)))
         total_packages = packages_result[0][0] if packages_result else 0
         
         # Get configuration for charge rates and pallet config
