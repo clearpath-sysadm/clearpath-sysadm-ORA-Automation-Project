@@ -425,48 +425,26 @@
             }
             
             try {
-                // Create formatted text table for chat/email
-                const data = allTransactions.map(t => ({
-                    date: t.date,
-                    sku: t.sku,
-                    qty: String(t.quantity),
-                    type: t.transaction_type,
-                    notes: (t.notes || '-').substring(0, 40) // Truncate long notes
-                }));
-                
-                // Calculate column widths
-                const colWidths = {
-                    date: Math.max(10, ...data.map(r => r.date.length)),
-                    sku: Math.max(6, ...data.map(r => r.sku.length)),
-                    qty: Math.max(3, ...data.map(r => r.qty.length)),
-                    type: Math.max(11, ...data.map(r => r.type.length)),
-                    notes: Math.max(20, ...data.map(r => r.notes.length))
-                };
-                
-                // Build table
-                const pad = (str, width) => str.padEnd(width);
-                const divider = `+${'-'.repeat(colWidths.date + 2)}+${'-'.repeat(colWidths.sku + 2)}+${'-'.repeat(colWidths.qty + 2)}+${'-'.repeat(colWidths.type + 2)}+${'-'.repeat(colWidths.notes + 2)}+`;
-                
-                let table = [];
-                table.push(divider);
-                table.push(`| ${pad('Date', colWidths.date)} | ${pad('SKU', colWidths.sku)} | ${pad('Qty', colWidths.qty)} | ${pad('Type', colWidths.type)} | ${pad('Notes', colWidths.notes)} |`);
-                table.push(divider);
-                
-                data.forEach(row => {
-                    table.push(`| ${pad(row.date, colWidths.date)} | ${pad(row.sku, colWidths.sku)} | ${pad(row.qty, colWidths.qty)} | ${pad(row.type, colWidths.type)} | ${pad(row.notes, colWidths.notes)} |`);
-                });
-                
-                table.push(divider);
+                // Create formatted text table matching weekly report style
+                const plainHeader = 'Date       | SKU   | Quantity | Type        | Notes';
+                const plainSeparator = '-'.repeat(80);
+                const plainRows = allTransactions.map(t => {
+                    const date = String(t.date).padEnd(10);
+                    const sku = String(t.sku).padEnd(6);
+                    const qty = String(t.quantity).padStart(8);
+                    const type = String(t.transaction_type).padEnd(11);
+                    const notes = (t.notes || '-').substring(0, 30);
+                    return `${date} | ${sku} | ${qty} | ${type} | ${notes}`;
+                }).join('\n');
                 
                 // Add summary
-                const receiveCount = data.filter(r => r.type === 'Receive').length;
-                table.push('');
-                table.push(`Total: ${data.length} transactions${receiveCount > 0 ? ` (${receiveCount} Receive)` : ''}`);
+                const receiveCount = allTransactions.filter(t => t.transaction_type === 'Receive').length;
+                const summary = `\nTotal: ${allTransactions.length} transactions${receiveCount > 0 ? ` (${receiveCount} Receive)` : ''}`;
                 
-                const textTable = table.join('\n');
+                const plainText = `${plainHeader}\n${plainSeparator}\n${plainRows}${summary}`;
                 
                 // Copy to clipboard
-                await navigator.clipboard.writeText(textTable);
+                await navigator.clipboard.writeText(plainText);
                 
                 // Show success feedback
                 const originalText = buttonElement.textContent;
@@ -478,7 +456,7 @@
                     buttonElement.style.backgroundColor = '';
                 }, 2000);
                 
-                console.log(`📋 Copied ${data.length} transactions to clipboard (${receiveCount} Receive transactions)`);
+                console.log(`📋 Copied ${allTransactions.length} transactions to clipboard (${receiveCount} Receive transactions)`);
                 
             } catch (error) {
                 console.error('Failed to copy to clipboard:', error);
