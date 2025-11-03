@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **EOM Button Error** - Fixed crash when calculating monthly charge report
+  - Root cause: SQL `SUM()` returns NULL when no rows match, causing `None * float` TypeError
+  - Impact: EOM button failed with "unsupported operand type(s) for +: 'NoneType' and 'float'"
+  - Solution: Added NULL handling with `or 0` for SQL aggregate results in `/api/reports/eom`
+  - Also fixed incorrect column references (`carrier`/`service` → `shipping_carrier_code`/`shipping_service_code`)
+  - Changed EOM purpose from carrier/service breakdown to order/package/space rental calculation
 - **CRITICAL: Monthly Charge Report Baseline Discrepancy** - Fixed 10-pallet ($4.50) billing overcharge
   - Root cause: Monthly report used Sept 30 baseline while weekly inventory used Sept 19 baseline
   - Impact: October report showed 107 pallets ($48.15) vs. actual 97 pallets ($43.65)
