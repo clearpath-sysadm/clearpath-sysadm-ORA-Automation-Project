@@ -444,6 +444,7 @@
             const month = document.getElementById('monthSelect');
             const year = document.getElementById('yearSelect').value;
             const monthName = month.options[month.selectedIndex].text;
+            const monthAbbr = monthName.substring(0, 3); // Get 3-letter abbreviation (e.g., "Oct")
 
             // Color scheme matching user's screenshot
             const purpleHeader = [186, 148, 255];      // Purple for Quantity Shipped
@@ -559,7 +560,7 @@
                 margin: { left: 10, right: 10, top: 10, bottom: 10 }
             });
 
-            doc.save(`charge_report_${monthName}_${year}.pdf`);
+            doc.save(`Charge Report ${monthAbbr} ${year}.pdf`);
         }
 
         function exportToCSV() {
