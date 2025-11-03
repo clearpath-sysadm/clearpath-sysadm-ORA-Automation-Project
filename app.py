@@ -927,6 +927,14 @@ def api_charge_report():
                     for date_str in daily_inventory:
                         if date_str >= trans_date:
                             daily_inventory[date_str][str(sku)] += qty
+                elif trans_type == 'Adjust Up':
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date:
+                            daily_inventory[date_str][str(sku)] += qty
+                elif trans_type == 'Adjust Down':
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date:
+                            daily_inventory[date_str][str(sku)] -= qty
         
         # Apply shipments (at EOD)
         for ship_date, sku, qty in shipments:
