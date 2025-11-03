@@ -1963,7 +1963,13 @@ def api_run_eow():
 
 @app.route('/api/reports/eom', methods=['POST'])
 def api_run_eom():
-    """EOM - End of Month: Generate monthly ShipStation charge report"""
+    """EOM - End of Month: Pre-calculate/refresh charge report data
+    
+    Calculates monthly totals for:
+    - Order charges ($4.25 per order)
+    - Packaging charges ($0.75 per shipping unit)
+    - Space rental ($0.45 per pallet)
+    """
     import datetime
     from src.services.database.pg_utils import log_report_run, execute_query
     
@@ -1976,7 +1982,7 @@ def api_run_eom():
     
     _report_locks['EOM'] = True
     try:
-        # Calculate month boundaries
+        # Calculate month boundaries (previous month)
         today = datetime.date.today()
         month_start = today.replace(day=1)
         
@@ -1986,52 +1992,127 @@ def api_run_eom():
         else:
             month_end = (today.replace(month=today.month + 1, day=1) - datetime.timedelta(days=1))
         
-        # Query shipped_orders for monthly charges with proper aggregation
-        query = """
-            SELECT 
-                shipping_carrier_code,
-                shipping_service_code,
-                COUNT(*) as order_count,
-                SUM(shipping_cost_cents) as total_cents
+        # Get total orders for the month
+        orders_query = """
+            SELECT COUNT(DISTINCT order_number) as total_orders
             FROM shipped_orders
             WHERE ship_date >= %s AND ship_date <= %s
-            GROUP BY shipping_carrier_code, shipping_service_code
-            ORDER BY shipping_carrier_code, shipping_service_code
         """
+        orders_result = execute_query(orders_query, (month_start, month_end))
+        total_orders = orders_result[0][0] if orders_result else 0
         
-        results = execute_query(query, (month_start, month_end))
+        # Get total shipping units (packages) for the month
+        packages_query = """
+            SELECT SUM(quantity_shipped) as total_units
+            FROM shipped_items
+            WHERE ship_date >= %s AND ship_date <= %s
+        """
+        packages_result = execute_query(packages_query, (month_start, month_end))
+        total_packages = packages_result[0][0] if packages_result else 0
         
-        # Calculate totals from aggregated results
-        total_charges_cents = 0
-        breakdown_list = []
+        # Get configuration for charge rates and pallet config
+        config_query = """
+            SELECT category, parameter_name, sku, value
+            FROM configuration_params
+            WHERE category IN ('Rates', 'PalletConfig', 'Inventory')
+        """
+        config_results = execute_query(config_query)
         
-        for row in results:
-            carrier = row[0] or 'Unknown'
-            service = row[1] or 'Unknown'
-            order_count = row[2] or 0
-            total_cents = row[3] or 0
-            
-            total_charges_cents += total_cents
-            
-            breakdown_list.append({
-                'carrier_service': f"{carrier} - {service}",
-                'order_count': order_count,
-                'total': f"${total_cents / 100.0:,.2f}"
-            })
+        # Parse configuration
+        order_charge = 4.25
+        package_charge = 0.75
+        space_rental_rate = 0.45
+        pallet_config = {}
+        bom_inventory = {}
         
-        total_dollars = total_charges_cents / 100.0
+        for row in config_results:
+            category, param, sku, value = row
+            if category == 'Rates':
+                if param == 'OrderCharge':
+                    order_charge = float(value)
+                elif param == 'PackageCharge':
+                    package_charge = float(value)
+                elif param == 'SpaceRentalRate':
+                    space_rental_rate = float(value)
+            elif category == 'PalletConfig' and param == 'PalletCount' and sku:
+                pallet_config[str(sku)] = int(value)
+            elif category == 'Inventory' and param == 'EomPreviousMonth' and sku:
+                bom_inventory[str(sku)] = int(value)
+        
+        # Calculate order and package charges
+        orders_total = total_orders * order_charge
+        packages_total = total_packages * package_charge
+        
+        # Calculate space rental by summing daily pallet charges
+        # Get inventory transactions and shipments
+        transactions_query = """
+            SELECT date, sku, transaction_type, quantity
+            FROM inventory_transactions
+            WHERE date >= %s AND date <= %s
+        """
+        transactions = execute_query(transactions_query, (str(month_start), str(month_end)))
+        
+        shipments_query = """
+            SELECT ship_date, base_sku, SUM(quantity_shipped)
+            FROM shipped_items
+            WHERE ship_date >= %s AND ship_date <= %s
+            GROUP BY ship_date, base_sku
+        """
+        shipments = execute_query(shipments_query, (str(month_start), str(month_end)))
+        
+        # Calculate daily inventory for space rental
+        import math
+        daily_inventory = {}
+        current_inv = bom_inventory.copy()
+        
+        # Generate all calendar days
+        current_date = month_start
+        while current_date <= month_end:
+            date_str = str(current_date)
+            daily_inventory[date_str] = current_inv.copy()
+            current_date += datetime.timedelta(days=1)
+        
+        # Apply receives/adjustments
+        for trans_date, sku, trans_type, qty in transactions:
+            if trans_date in daily_inventory and str(sku) in daily_inventory[trans_date]:
+                if trans_type in ['Receive', 'Repack']:
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date:
+                            daily_inventory[date_str][str(sku)] += qty
+        
+        # Apply shipments
+        for ship_date, sku, qty in shipments:
+            if ship_date in daily_inventory and str(sku) in daily_inventory[ship_date]:
+                for date_str in daily_inventory:
+                    if date_str >= ship_date:
+                        daily_inventory[date_str][str(sku)] -= qty
+        
+        # Calculate total space rental across all days
+        space_rental_total = 0.0
+        for date_str, inventory in daily_inventory.items():
+            total_pallets = 0
+            for sku, inventory_qty in inventory.items():
+                if sku in pallet_config and inventory_qty > 0:
+                    pallets = math.ceil(inventory_qty / pallet_config[sku])
+                    total_pallets += pallets
+            space_rental_total += total_pallets * space_rental_rate
+        
+        grand_total = orders_total + packages_total + space_rental_total
         
         # Log success
-        log_report_run('EOM', month_start, 'success', f'Monthly charges calculated: ${total_dollars:,.2f}')
+        log_report_run('EOM', month_start, 'success', f'Monthly charges: ${grand_total:,.2f}')
         
         return jsonify({
             'success': True,
-            'message': f'✅ Monthly charge report generated - Total: ${total_dollars:,.2f}',
+            'message': f'✅ Monthly charge report calculated - Total: ${grand_total:,.2f}',
             'data': {
                 'month': month_start.strftime('%B %Y'),
-                'total': f'${total_dollars:,.2f}',
-                'breakdown': breakdown_list,
-                'order_count': len(results)
+                'total_orders': total_orders,
+                'total_packages': total_packages,
+                'orders_charge': f'${orders_total:,.2f}',
+                'packages_charge': f'${packages_total:,.2f}',
+                'space_rental_charge': f'${space_rental_total:,.2f}',
+                'grand_total': f'${grand_total:,.2f}'
             }
         })
             
