@@ -303,6 +303,33 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - BR-INV-007: Lots are consumed in FIFO order (oldest first)
 - BR-INV-008: Lot numbers follow format: SKU - LOT (e.g., "17612 - 250300")
 
+**Dependencies:** FR-SKU-002 (SKU-Lot Management)
+
+---
+
+#### FR-INV-005: Inventory Transaction Monitor
+**Priority:** Medium  
+**Description:** The system shall provide a comprehensive interface for viewing and exporting inventory transaction history with filtering capabilities.
+
+**Acceptance Criteria:**
+- Display all inventory transactions from `inventory_transactions` table
+- Filter by date range (start date, end date)
+- Filter by SKU
+- Filter by transaction type (Receive, Repack, Adjust Up, Adjust Down)
+- Show transaction details: Date, SKU, Quantity, Type, Notes
+- "Copy to Clipboard" exports filtered transactions in dual format:
+  - HTML table format for pasting into email clients, Word, Google Docs
+  - Plain text fallback for Notepad, Slack, chat applications
+- Export format matches weekly inventory report style
+- Summary displays total transaction count and "Receive" transaction count
+
+**Business Rules:**
+- BR-INV-009: Clipboard export copies only currently filtered data
+- BR-INV-010: HTML format includes styled table with borders and headers
+- BR-INV-011: Notes truncated to 50 characters in export for readability
+
+**Dependencies:** FR-INV-002 (Inventory Adjustments)
+
 **Dependencies:** FR-SKU-003 (SKU-Lot mapping)
 
 ---

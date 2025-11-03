@@ -388,6 +388,47 @@ This UI Specification defines the visual design, interaction patterns, component
 - **Low Stock Rows:** Yellow background (#FFFBEB)
 - **Out of Stock:** Red background (#FEE2E2)
 
+---
+
+### Inventory Transactions Monitor
+
+**Page:** `inventory_transactions.html`  
+**Purpose:** View and export inventory transaction history with filtering capabilities
+
+**Layout:**
+- **Header:** "Inventory Transaction Monitor" with real-time data display
+- **Filter Controls:** Date range (start/end), SKU search, transaction type dropdown
+- **Action Buttons:**
+  - 🔍 Filter - Apply current filters
+  - ✖️ Clear - Reset all filters
+  - 📋 Copy to Clipboard - Export filtered data
+  - ➕ Add Transaction - Admin only, opens add transaction modal
+
+**Data Display:**
+- Table with columns: Date, SKU, Quantity, Type, Notes
+- Shows all transactions by default, filtered view after applying filters
+- Empty state: "No transactions found" when no data matches filters
+
+**Clipboard Export:**
+- Dual-format clipboard copy (HTML table + plain text fallback)
+- HTML format: Styled table with borders, headers, formatted for email/Word/Google Docs
+- Plain text: Column-aligned format for chat/Slack/Notepad
+- Format matches weekly inventory report style
+- Summary line: Total transaction count and "Receive" transaction count
+- Button feedback: Changes to "✅ Copied!" for 2 seconds with green background
+
+**Modal - Add Transaction:**
+- Form fields: Date, SKU, Quantity, Transaction Type, Notes
+- Validation: All fields required except Notes
+- Submit creates new transaction and refreshes table
+
+**Business Rules:**
+- Export copies only currently filtered data
+- Notes truncated to 50 characters in export
+- Transaction types: Receive, Repack, Adjust Up, Adjust Down
+
+---
+
 ### Order Management Tool
 
 #### Search Bar

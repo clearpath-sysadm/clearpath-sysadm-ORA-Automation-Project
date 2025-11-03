@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Inventory Transactions Clipboard Export** - Added formatted clipboard copy functionality to Inventory Monitor
+  - "📋 Copy to Clipboard" button exports filtered transactions in dual format (HTML table + plain text)
+  - HTML format pastes as formatted table in email clients, Word, Google Docs
+  - Plain text fallback works in Notepad, Slack, chat applications
+  - Format matches weekly inventory report style for consistency
+  - Copies only filtered data (by date range, SKU, or transaction type)
+  - Summary includes total transaction count and "Receive" transaction count for billing reports
 - **PDF Export for Charge Report** - Added jsPDF and autoTable libraries to enable PDF export functionality
   - Added CDN links for jsPDF 2.5.1 and jsPDF-autoTable 3.5.31
   - PDF export button now functional with color-coded columns (purple for quantities, green for charges)
