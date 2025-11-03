@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Charge Report Date Display Bug** - Fixed timezone issue causing dates to shift back by 1 day
+  - Root cause: JavaScript `new Date(dateStr)` parsed dates as UTC, then converted to local timezone
+  - Impact: October report showed Sept 30-Oct 30 instead of Oct 1-Oct 31 (dates shifted back 1 day)
+  - Solution: Parse date components in local timezone to avoid UTC conversion
+  - Changed `formatChargeReportDate()` in charge_report.html to split date string and construct Date object locally
 - **CRITICAL: Charge Report Baseline Fixed** - Corrected October charge report to use Sept 19 baseline
   - Root cause: Charge report (`/api/charge_report`) and EOM endpoint (`/api/reports/eom`) were loading from wrong baseline
   - Both were querying `category='Inventory'`, `param='EomPreviousMonth'` (Sept 30 baseline)
