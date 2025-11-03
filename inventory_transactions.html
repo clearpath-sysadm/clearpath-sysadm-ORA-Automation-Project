@@ -172,6 +172,7 @@
                     </select>
                     <button class="btn" onclick="applyFilters()">🔍 Filter</button>
                     <button class="btn" onclick="clearFilters()">✖️ Clear</button>
+                    <button class="btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
                     <button class="btn" onclick="openAddModal()">➕ Add Transaction</button>
                 </div>
 
@@ -415,6 +416,53 @@
             document.getElementById('skuFilter').value = '';
             document.getElementById('typeFilter').value = '';
             applyFilters();
+        }
+        
+        async function copyToClipboard() {
+            if (allTransactions.length === 0) {
+                alert('No transactions to copy. Please apply filters or load data first.');
+                return;
+            }
+            
+            try {
+                // Create tab-separated format for easy Excel/spreadsheet pasting
+                const headers = ['Date', 'SKU', 'Quantity', 'Type', 'Notes'].join('\t');
+                const rows = allTransactions.map(t => {
+                    return [
+                        t.date,
+                        t.sku,
+                        t.quantity,
+                        t.transaction_type,
+                        t.notes || ''
+                    ].join('\t');
+                });
+                
+                const tsvData = [headers, ...rows].join('\n');
+                
+                // Copy to clipboard
+                await navigator.clipboard.writeText(tsvData);
+                
+                // Show success feedback
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✅ Copied!';
+                button.style.backgroundColor = 'var(--success)';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '';
+                }, 2000);
+                
+                // Show count of records copied
+                const receiveCount = allTransactions.filter(t => t.transaction_type === 'Receive').length;
+                const totalCount = allTransactions.length;
+                
+                console.log(`📋 Copied ${totalCount} transactions to clipboard (${receiveCount} Receive transactions)`);
+                
+            } catch (error) {
+                console.error('Failed to copy to clipboard:', error);
+                alert('Failed to copy to clipboard. Please try again.');
+            }
         }
         
         function openAddModal() {
