@@ -2044,7 +2044,7 @@ def api_run_eom():
                     space_rental_rate = float(value)
             elif category == 'PalletConfig' and param == 'PalletCount' and sku:
                 pallet_config[str(sku)] = int(value)
-            elif category == 'InitialInventory' and param == 'EOD_Prior_Week' and sku:
+            elif category == 'Inventory' and param == 'EomPreviousMonth' and sku:
                 bom_inventory[str(sku)] = int(value)
         
         # Calculate order and package charges
@@ -2083,10 +2083,22 @@ def api_run_eom():
         # Apply receives/adjustments
         for trans_date, sku, trans_type, qty in transactions:
             if trans_date in daily_inventory and str(sku) in daily_inventory[trans_date]:
-                if trans_type in ['Receive', 'Repack']:
+                if trans_type == 'Receive':
                     for date_str in daily_inventory:
                         if date_str >= trans_date:
                             daily_inventory[date_str][str(sku)] += qty
+                elif trans_type == 'Repack':
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date:
+                            daily_inventory[date_str][str(sku)] += qty
+                elif trans_type == 'Adjust Up':
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date:
+                            daily_inventory[date_str][str(sku)] += qty
+                elif trans_type == 'Adjust Down':
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date:
+                            daily_inventory[date_str][str(sku)] -= qty
         
         # Apply shipments
         for ship_date, sku, qty in shipments:

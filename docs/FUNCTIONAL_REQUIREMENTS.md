@@ -384,64 +384,81 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 
 #### FR-PHY-001: End of Day (EOD)
 **Priority:** High  
-**Description:** The system shall provide a user-triggered EOD process to sync shipped items and update inventory.
+**Description:** The system shall synchronize shipped items from ShipStation using a 32-day rolling window and update inventory with rolling averages.
 
 **Acceptance Criteria:**
 - User clicks "EOD" button on dashboard
-- System fetches all shipped orders from ShipStation since last EOD
+- System fetches shipment data from ShipStation for past 32 days (rolling window)
+- Filter out voided orders
 - Upsert records to `shipped_orders` and `shipped_items` tables
-- Recalculate `inventory_current`
-- Display success message with item count
+- Incrementally update 52-week shipped history
+- Calculate current inventory: InitialInventory (Sept 19, 2025) + Receives + Adjustments - Shipments
+- Calculate 12-month rolling average per SKU
+- Update `inventory_current` table with quantities, averages, and alert levels
+- Display success message with record count
 
 **Business Rules:**
-- BR-PHY-001: EOD can be run multiple times per day (idempotent)
+- BR-PHY-001: EOD can be run multiple times per day (idempotent upserts)
 - BR-PHY-002: EOD is prerequisite for EOW
+- BR-PHY-003: 32-day rolling window ensures recent data accuracy and captures late ShipStation updates
 
-**Dependencies:** ShipStation API, FR-INV-001
+**Dependencies:** ShipStation API, FR-INV-001, `configuration_params` (InitialInventory baseline)
 
 ---
 
 #### FR-PHY-002: End of Week (EOW)
 **Priority:** High  
-**Description:** The system shall generate weekly inventory report with 52-week rolling averages.
+**Description:** The system shall generate weekly inventory report with 12-month rolling averages.
 
 **Acceptance Criteria:**
 - User clicks "EOW" button on dashboard
 - System runs EOD if not already done today
-- Calculate 52-week rolling average per SKU
-- Generate weekly report with current qty, avg, days left
-- Store results in `inventory_current`
-- Display report on dashboard
+- Execute `weekly_reporter.py` script
+- Retrieve key SKUs and product names from database
+- Fetch 52-week shipped history
+- Get inventory transactions and shipped items
+- Calculate current inventory from InitialInventory (Sept 19, 2025) + transactions - shipments
+- Calculate 12-month rolling average per SKU
+- Update `inventory_current` table with results
+- Display success message
 
 **Business Rules:**
-- BR-PHY-003: EOW calculates weekly averages from `weekly_shipped_history`
-- BR-PHY-004: "Days left" = current_qty ÷ (weekly_avg ÷ 7)
+- BR-PHY-004: EOW uses InitialInventory baseline (Sept 19, 2025) for current inventory
+- BR-PHY-005: Rolling average calculated over 12 months of weekly shipped history
+- BR-PHY-006: "Days left" = current_qty ÷ (rolling_avg ÷ 7)
 
-**Dependencies:** FR-PHY-001, FR-REP-002
+**Dependencies:** FR-PHY-001, FR-REP-002, `weekly_reporter.py`
 
 ---
 
 #### FR-PHY-003: End of Month (EOM)
 **Priority:** Medium  
-**Description:** The system shall generate monthly charge report for billing purposes with daily breakdowns of order charges, package charges, and space rental.
+**Description:** The system shall calculate monthly charge summary for billing purposes (order charges, package charges, space rental).
 
 **Acceptance Criteria:**
-- User clicks "EOM" button on dashboard or views Charge Report page
-- System calculates daily order counts, SKU quantities, and charges for the month
-- Apply rates from `configuration_params` (category: Rates)
-- Calculate space rental based on daily EOD inventory converted to pallets
-- Generate charge report with date, order count, SKU quantities, order charges, package charges, space rental, and total
-- Display report summary with monthly totals
-- Support PDF export with color-coded columns
+- User clicks "EOM" button on dashboard
+- System calculates current month totals
+- Count total distinct orders shipped in month
+- Sum total shipping units (packages) in month
+- Retrieve rates from `configuration_params`:
+  - OrderCharge: $4.25 per order (default)
+  - PackageCharge: $0.75 per shipping unit (default)
+  - SpaceRentalRate: $0.45 per pallet per day (default)
+- Calculate daily inventory using EomPreviousMonth baseline from `configuration_params`
+- Apply all transaction types: Receive, Repack, Adjust Up, Adjust Down
+- Convert inventory to pallets (ceiling division by units_per_pallet)
+- Calculate space rental: sum of (daily_pallets × $0.45) across all days in month
+- Display summary with total charges
+- Return grand total
 
 **Business Rules:**
-- BR-PHY-005: Charge report uses end-of-previous-month baseline (e.g., October starts from Sept 30 inventory)
-- BR-PHY-006: Rates are configurable per SKU (Order Charge, Package Charge, Space Rental Rate)
-- BR-PHY-007: All transaction types applied: Receive, Repack, Adjust Up, Adjust Down
-- BR-PHY-008: Space rental calculated as: daily_pallets × $0.45/pallet/day (pallets = ceiling(inventory ÷ units_per_pallet))
-- BR-PHY-009: Inventory calculations use Sept 30 baseline + receives - shipments ± adjustments
+- BR-PHY-007: EOM uses Inventory/EomPreviousMonth baseline (end of previous month, e.g., Sept 30 for October)
+- BR-PHY-008: All transaction types applied: Receive (+), Repack (+), Adjust Up (+), Adjust Down (-)
+- BR-PHY-009: Space rental = Σ(ceiling(inventory_qty ÷ units_per_pallet) × $0.45) for each day
+- BR-PHY-010: Rates configurable in `configuration_params` (category: Rates)
+- BR-PHY-011: Pallet configuration in `configuration_params` (category: PalletConfig)
 
-**Dependencies:** FR-PHY-001, `configuration_params` table
+**Dependencies:** FR-PHY-001, `configuration_params` table, `inventory_transactions`, `shipped_items`
 
 ---
 
@@ -563,6 +580,38 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - BR-REP-002: Expected rules stored in `configuration_params`
 
 **Dependencies:** FR-ORD-004
+
+---
+
+#### FR-REP-004: Monthly Charge Report
+**Priority:** High  
+**Description:** The system shall provide a detailed monthly charge report page with daily breakdown and PDF export capability.
+
+**Acceptance Criteria:**
+- Dedicated `/charge_report.html` page accessible from dashboard
+- Month/year selector dropdown (defaults to current month)
+- Display daily breakdown table with columns:
+  - Date (MM/DD/YYYY format)
+  - Order Count
+  - SKU Quantities (17612, 17904, 17914, 18675, 18795)
+  - Order Charges ($4.25 per order)
+  - Package Charges ($0.75 per shipping unit)
+  - Space Rental (daily pallets × $0.45)
+  - Daily Total
+- Display totals row at bottom
+- PDF export button with filename format: "Charge Report MMM YYYY.pdf"
+- PDF uses color-coded columns: purple for quantities, green for charges
+- Include all calendar days (even if no shipments)
+- Real-time calculation on month selection change
+
+**Business Rules:**
+- BR-REP-003: Uses Inventory/EomPreviousMonth baseline (end of previous month, e.g., Sept 30 for October)
+- BR-REP-004: All transaction types applied: Receive (+), Repack (+), Adjust Up (+), Adjust Down (-)
+- BR-REP-005: Space rental = Σ(ceiling(inventory_qty ÷ units_per_pallet) × $0.45/day) for all days in month
+- BR-REP-006: Rates configurable in `configuration_params` (category: Rates)
+- BR-REP-007: Pallet configuration in `configuration_params` (category: PalletConfig, parameter: PalletCount)
+
+**Dependencies:** FR-PHY-003, `/api/charge_report` endpoint, jsPDF 2.5.1 + autoTable 3.5.31 libraries, `configuration_params` table
 
 ---
 

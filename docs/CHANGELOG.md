@@ -13,8 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PDF Export for Charge Report** - Added jsPDF and autoTable libraries to enable PDF export functionality
   - Added CDN links for jsPDF 2.5.1 and jsPDF-autoTable 3.5.31
   - PDF export button now functional with color-coded columns (purple for quantities, green for charges)
+  - Filename format: "Charge Report Oct 2025.pdf" (month abbreviation + year)
 
 ### Fixed
+- **CRITICAL: EOM Endpoint Fixed** - Applied same fixes as charge report to ensure consistency
+  - Changed baseline from InitialInventory/EOD_Prior_Week to Inventory/EomPreviousMonth (matches charge report)
+  - Added "Adjust Up" and "Adjust Down" transaction handling (was only processing Receive and Repack)
+  - EOM button now calculates space rental correctly using end-of-previous-month baseline
+  - Both charge report and EOM now use identical calculation logic
 - **CRITICAL: 7-Pallet Charge Report Discrepancy Resolved** - Fixed major inventory calculation error
   - **Root Cause:** Sept 30 baseline stored in database did not match actual inventory
     - SKU 17612 was off by +1,167 units, other SKUs had errors ranging from -1,244 to +390 units
