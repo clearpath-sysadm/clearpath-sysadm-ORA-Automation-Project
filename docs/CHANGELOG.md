@@ -9,19 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **PDF Export for Charge Report** - Added jsPDF and autoTable libraries to enable PDF export functionality
+  - Added CDN links for jsPDF 2.5.1 and jsPDF-autoTable 3.5.31
+  - PDF export button now functional with color-coded columns (purple for quantities, green for charges)
+
 ### Fixed
+- **CRITICAL: 7-Pallet Charge Report Discrepancy Resolved** - Fixed major inventory calculation error
+  - **Root Cause:** Sept 30 baseline stored in database did not match actual inventory
+    - SKU 17612 was off by +1,167 units, other SKUs had errors ranging from -1,244 to +390 units
+    - Charge report also ignored "Adjust Up" and "Adjust Down" transactions (physical count corrections)
+  - **Impact:** October charge report showed incorrect inventory levels and space rental charges
+    - Before fix: Discrepancy of 7-10 pallets between charge report and weekly inventory
+  - **Solution:** 
+    - Recalculated Sept 30 baseline by working backwards from correct Oct 31 inventory (weekly inventory as source of truth)
+    - Updated `configuration_params` with correct baseline: 326, 449, 1368, 714, 7704 (was: 1493, 59, 127, 738, 7799)
+    - Added "Adjust Up" and "Adjust Down" transaction handling to charge report calculation (app.py lines 933-940)
+  - **Result:** Both reports now show identical Oct 31 inventory: 11,276 units = 72.28 pallets = $32.53 space rental
+  - See `docs/RCA_7_Pallet_Discrepancy_Nov_3_2025.md` for complete root cause analysis
 - **Charge Report Date Display Bug** - Fixed timezone issue causing dates to shift back by 1 day
   - Root cause: JavaScript `new Date(dateStr)` parsed dates as UTC, then converted to local timezone
   - Impact: October report showed Sept 30-Oct 30 instead of Oct 1-Oct 31 (dates shifted back 1 day)
   - Solution: Parse date components in local timezone to avoid UTC conversion
   - Changed `formatChargeReportDate()` in charge_report.html to split date string and construct Date object locally
-- **CRITICAL: Charge Report Baseline Fixed** - Corrected October charge report to use Sept 19 baseline
-  - Root cause: Charge report (`/api/charge_report`) and EOM endpoint (`/api/reports/eom`) were loading from wrong baseline
-  - Both were querying `category='Inventory'`, `param='EomPreviousMonth'` (Sept 30 baseline)
-  - Impact: October report showed 107 pallets ($48.15) vs. actual 97 pallets ($43.65) - **$4.50 overcharge**
-  - Solution: Changed both endpoints to use `category='InitialInventory'`, `param='EOD_Prior_Week'` (Sept 19 baseline)
-  - Now matches weekly report baseline exactly (lines 889 and 2039 in app.py)
-  - See `docs/RCA_October_Charge_Report_Discrepancy.md` for full analysis
 - **EOM Button Error** - Fixed crash when calculating monthly charge report
   - Root cause: SQL `SUM()` returns NULL when no rows match, causing `None * float` TypeError
   - Impact: EOM button failed with "unsupported operand type(s) for +: 'NoneType' and 'float'"

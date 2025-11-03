@@ -423,20 +423,25 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 
 #### FR-PHY-003: End of Month (EOM)
 **Priority:** Medium  
-**Description:** The system shall generate monthly charge report for billing purposes.
+**Description:** The system shall generate monthly charge report for billing purposes with daily breakdowns of order charges, package charges, and space rental.
 
 **Acceptance Criteria:**
-- User clicks "EOM" button on dashboard
-- System calculates shipped quantities per SKU for the month
+- User clicks "EOM" button on dashboard or views Charge Report page
+- System calculates daily order counts, SKU quantities, and charges for the month
 - Apply rates from `configuration_params` (category: Rates)
-- Generate charge report with SKU, qty, rate, total
-- Display report summary
+- Calculate space rental based on daily EOD inventory converted to pallets
+- Generate charge report with date, order count, SKU quantities, order charges, package charges, space rental, and total
+- Display report summary with monthly totals
+- Support PDF export with color-coded columns
 
 **Business Rules:**
-- BR-PHY-005: EOM runs for previous month only
-- BR-PHY-006: Rates are configurable per SKU
+- BR-PHY-005: Charge report uses end-of-previous-month baseline (e.g., October starts from Sept 30 inventory)
+- BR-PHY-006: Rates are configurable per SKU (Order Charge, Package Charge, Space Rental Rate)
+- BR-PHY-007: All transaction types applied: Receive, Repack, Adjust Up, Adjust Down
+- BR-PHY-008: Space rental calculated as: daily_pallets × $0.45/pallet/day (pallets = ceiling(inventory ÷ units_per_pallet))
+- BR-PHY-009: Inventory calculations use Sept 30 baseline + receives - shipments ± adjustments
 
-**Dependencies:** FR-PHY-001
+**Dependencies:** FR-PHY-001, `configuration_params` table
 
 ---
 
