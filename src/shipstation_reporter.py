@@ -83,9 +83,9 @@ def run_reporter_logic():
     weekly_shipped_history_df = report_data_loader.load_weekly_shipped_history(settings.GOOGLE_SHEET_ID)
     product_names_map = report_data_loader.load_product_names_map(settings.GOOGLE_SHEET_ID)
 
-    # Convert SKUs in initial_inventory (for weekly) and eom_previous_month_data (for monthly) to string for consistency
+    # Convert SKUs in initial_inventory to string for consistency
     initial_inventory = {str(k): v for k, v in initial_inventory.items()}
-    eom_previous_month_data = {str(k): v for k, v in eom_previous_month_data.items()}
+    eom_previous_month_data = {str(k): v for k, v in eom_previous_month_data.items()}  # Still load for future use if needed
 
 
     # --- Monthly Charge Report Generation ---
@@ -101,7 +101,7 @@ def run_reporter_logic():
         monthly_report_df, monthly_totals_df = monthly_report_generator.generate_monthly_charge_report(
             rates,
             pallet_counts,
-            eom_previous_month_data, # IMPORTANT CHANGE: Pass eom_previous_month_data for monthly report initial inventory
+            initial_inventory, # FIX: Use Sept 19 baseline (same as weekly reports) instead of Sept 30 EOM baseline
             inventory_transactions_df,
             shipped_items_df,
             shipped_orders_df,

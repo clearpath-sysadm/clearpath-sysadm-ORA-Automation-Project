@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **CRITICAL: Monthly Charge Report Baseline Discrepancy** - Fixed 10-pallet ($4.50) billing overcharge
+  - Root cause: Monthly report used Sept 30 baseline while weekly inventory used Sept 19 baseline
+  - Impact: October report showed 107 pallets ($48.15) vs. actual 97 pallets ($43.65)
+  - Solution: Unified both reports to use Sept 19 baseline (`InitialInventory.EOD_Prior_Week`)
+  - Changed `src/shipstation_reporter.py` line 107 from `eom_previous_month_data` to `initial_inventory`
+  - See `docs/RCA_October_Charge_Report_Discrepancy.md` for full analysis
+
 ### Planned
 - Customer-facing order tracking portal
 - Barcode scanning for inventory adjustments
