@@ -1989,14 +1989,14 @@ def api_run_eom():
         # Query shipped_orders for monthly charges with proper aggregation
         query = """
             SELECT 
-                carrier,
-                service,
+                shipping_carrier_code,
+                shipping_service_code,
                 COUNT(*) as order_count,
                 SUM(shipping_cost_cents) as total_cents
             FROM shipped_orders
             WHERE ship_date >= %s AND ship_date <= %s
-            GROUP BY carrier, service
-            ORDER BY carrier, service
+            GROUP BY shipping_carrier_code, shipping_service_code
+            ORDER BY shipping_carrier_code, shipping_service_code
         """
         
         results = execute_query(query, (month_start, month_end))

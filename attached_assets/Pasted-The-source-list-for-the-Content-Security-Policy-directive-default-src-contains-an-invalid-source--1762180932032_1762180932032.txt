@@ -1,0 +1,304 @@
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Oracare-Fulfillment:1  The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+Oracare-Fulfillment:1  The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+Oracare-Fulfillment:1  The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+0c59a8afa45a8e04.js:2 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+0c59a8afa45a8e04.js:2 Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+0c59a8afa45a8e04.js:2 [LaunchDarkly] LaunchDarkly client initialized
+Oracare-Fulfillment:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+ed1e693c96a75807.js:2  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'ambient-light-sensor'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'battery'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'execution-while-not-rendered'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'execution-while-out-of-viewport'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'layout-animations'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'legacy-image-formats'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'navigation-override'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'oversized-images'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'publickey-credentials'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'speaker-selection'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'unoptimized-images'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'unsized-media'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Unrecognized feature: 'pointer-lock'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Allow attribute will take precedence over 'allowfullscreen'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2  Allow attribute will take precedence over 'allowpaymentrequest'.
+z @ ed1e693c96a75807.js:2
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Arfo%3A:32  Allow attribute will take precedence over 'allowpaymentrequest'.
+(index):2830  Blocked autofocusing on a <input> element in a cross-origin subframe.
+(index):2615  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'getAuthStatus')
+ 📊 Workflows updated - fetching fresh data
+auth.js:1  Uncaught SyntaxError: Identifier 'AuthManager' has already been declared
+auth.js:1  Uncaught SyntaxError: Identifier 'AuthManager' has already been declared
+auth.js:1  Uncaught SyntaxError: Identifier 'AuthManager' has already been declared
+(index):2830  Blocked autofocusing on a <input> element in a cross-origin subframe.
+(index):2615  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'getAuthStatus')
+    at populateUserWidget ((index):2615:50)
+    at HTMLDocument.<anonymous> ((index):2798:13)
+injected.js:27 📊 Workflows updated - fetching fresh data
+injected.js:27 📊 Workflows updated - fetching fresh data
+ba697728dee94038.js:2  Uncaught (in promise) ApolloError: Notification alert not found
+    at new t (ba697728dee94038.js:2:39654)
+    at 91d2fbaf2b67ac48.js:2:66718
+    at t (91d2fbaf2b67ac48.js:2:39052)
+    at 91d2fbaf2b67ac48.js:2:38978
+    at new Promise (<anonymous>)
+    at Object.then (91d2fbaf2b67ac48.js:2:38945)
+    at Object.next (91d2fbaf2b67ac48.js:2:39062)
+    at m (1b224bbc8db79db2.js:2:2609)
+    at _ (1b224bbc8db79db2.js:2:3131)
+    at r.next (1b224bbc8db79db2.js:2:3632)
+    at 91d2fbaf2b67ac48.js:2:39465
+    at Array.forEach (<anonymous>)
+    at H (91d2fbaf2b67ac48.js:2:39434)
+    at Object.next (91d2fbaf2b67ac48.js:2:39975)
+    at m (1b224bbc8db79db2.js:2:2609)
+    at _ (1b224bbc8db79db2.js:2:3131)
+    at r.next (1b224bbc8db79db2.js:2:3632)
+    at m (1b224bbc8db79db2.js:2:2609)
+    at _ (1b224bbc8db79db2.js:2:3131)
+    at r.next (1b224bbc8db79db2.js:2:3632)
+    at Object.onNext [as next] (91d2fbaf2b67ac48.js:2:139264)
+    at m (1b224bbc8db79db2.js:2:2609)
+    at _ (1b224bbc8db79db2.js:2:3131)
+    at r.next (1b224bbc8db79db2.js:2:3632)
+    at Object.next (91d2fbaf2b67ac48.js:2:138280)
+    at m (1b224bbc8db79db2.js:2:2609)
+    at _ (1b224bbc8db79db2.js:2:3131)
+    at r.next (1b224bbc8db79db2.js:2:3632)
+    at 91d2fbaf2b67ac48.js:2:134488
+    at Array.forEach (<anonymous>)
+    at 91d2fbaf2b67ac48.js:2:134461
+    at Array.forEach (<anonymous>)
+    at Object.next (91d2fbaf2b67ac48.js:2:134428)
+    at m (1b224bbc8db79db2.js:2:2609)
+    at _ (1b224bbc8db79db2.js:2:3131)
+    at r.next (1b224bbc8db79db2.js:2:3632)
+    at 91d2fbaf2b67ac48.js:2:137297
+injected.js:27 📊 Workflows updated - fetching fresh data
+injected.js:27 📊 Workflows updated - fetching fresh data
+injected.js:27 📊 Workflows updated - fetching fresh data
+injected.js:27 📊 Workflows updated - fetching fresh data
+injected.js:27 📊 Workflows updated - fetching fresh data
+injected.js:27 📊 Workflows updated - fetching fresh data
+abd2d114-530c-4909-97a2-f78de6b555ce-00-ysefegrgr59j.worf.replit.dev/api/reports/eom:1   Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+injected.js:27  Error running EOM: Error: column "carrier" does not exist
+LINE 3:                 carrier,
+                        ^
+
+    at runEOM ((index):2567:27)
+(anonymous) @ injected.js:27
+injected.js:27 📊 Workflows updated - fetching fresh data
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
