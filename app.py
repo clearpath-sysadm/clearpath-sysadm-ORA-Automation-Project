@@ -1929,12 +1929,41 @@ def api_run_eod():
             if result.stdout:
                 logger.info(f"EOD subprocess stdout: {result.stdout[-500:]}")
             
+            # RECONCILIATION: Sync orphaned orders with ShipStation
+            reconciliation_summary = None
+            try:
+                from src.services.order_reconciliation import reconcile_orphaned_orders
+                from src.services.database import get_connection
+                
+                logger.info("🔄 Starting order reconciliation...")
+                conn = get_connection()
+                try:
+                    reconciliation_summary = reconcile_orphaned_orders(conn)
+                    conn.commit()
+                    logger.info(f"✅ Reconciliation complete: {reconciliation_summary['updated_to_shipped']} shipped, "
+                              f"{reconciliation_summary['updated_to_cancelled']} cancelled")
+                except Exception as recon_error:
+                    conn.rollback()
+                    logger.error(f"Reconciliation error: {recon_error}")
+                    raise
+                finally:
+                    conn.close()
+            except Exception as e:
+                logger.error(f"Failed to reconcile orders: {e}", exc_info=True)
+                # Don't fail EOD if reconciliation fails - just log it
+            
+            # Build success message with reconciliation info
+            success_message = '✅ Daily inventory updated - Shipped items synced from ShipStation'
+            if reconciliation_summary and (reconciliation_summary['updated_to_shipped'] > 0 or reconciliation_summary['updated_to_cancelled'] > 0):
+                success_message += f"\n🔄 Reconciled {reconciliation_summary['updated_to_shipped']} shipped + {reconciliation_summary['updated_to_cancelled']} cancelled orders"
+            
             # Log success
             log_report_run('EOD', datetime.date.today(), 'success', 'Daily inventory updated successfully')
             
             return jsonify({
                 'success': True,
-                'message': '✅ Daily inventory updated - Shipped items synced from ShipStation'
+                'message': success_message,
+                'reconciliation': reconciliation_summary
             })
         else:
             # Log failure

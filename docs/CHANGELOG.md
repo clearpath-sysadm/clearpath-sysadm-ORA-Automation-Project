@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Order Reconciliation System**: Integrated into EOD button to automatically sync orphaned orders with ShipStation
+  - Catches orders that were uploaded/shipped but never synced back to local DB due to watermark timing windows
+  - Runs daily as part of EOD operation with detailed reporting
+  - Created `src/services/order_reconciliation.py` service
+  - Created `fix_orphaned_orders.py` one-time cleanup script
+  - Returns reconciliation summary showing orders updated to shipped/cancelled status
+
+### Fixed
+- **Local DB Units Card Accuracy**: Fixed long-standing issue where orders would get stuck in "awaiting_shipment" or "pending" status
+  - Root cause: Watermark-based sync only checks orders modified AFTER current watermark, missing orders that shipped before watermark advanced
+  - Solution: EOD reconciliation now checks ALL non-shipped orders against ShipStation daily
+  - Immediately reconciled 35+ orphaned orders dating back 6-19 days
+
 ## [1.2.3] - 2025-01-04
 
 ### Changed
