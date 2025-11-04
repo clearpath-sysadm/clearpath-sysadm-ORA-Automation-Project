@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Unified ShipStation Order Deletion Tracking** - Centralized deletion tracking for automatic duplicate alert resolution
+  - Created shared helper function `record_shipstation_order_deletion()` in app.py
+  - All deletion endpoints now record deletions in `deleted_shipstation_orders` table
+  - Order Management screen deletions now trigger duplicate alert auto-resolution (within 15 minutes)
+  - Duplicate alerts modal deletions continue to work as before
+  - Single source of truth for deletion tracking prevents data inconsistency
+  - Both endpoints track who deleted the order (user email) and when
+  - Eliminates bug where Order Management deletions didn't update duplicate alerts
+  - Technical implementation: Refactored duplicate `/api/admin/delete_order` and `/api/duplicate_alerts/delete_order` endpoints to use shared helper
+  - Business benefit: Users can delete duplicates from either screen and alerts auto-resolve consistently
 - **Permanent Duplicate Order Exclusion System** - Two-tier resolution system for duplicate alerts
   - "Mark Resolved" (green button): Temporarily dismisses alert without permanent exclusion
   - "Permanently Exclude" (red button): Forever excludes order+SKU from duplicate detection

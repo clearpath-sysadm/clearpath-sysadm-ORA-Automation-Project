@@ -215,7 +215,7 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 
 #### FR-ORD-006: Order Deletion (Admin Only)
 **Priority:** Medium  
-**Description:** Admins shall be able to delete duplicate or problematic orders from ShipStation.
+**Description:** Admins shall be able to delete duplicate or problematic orders from ShipStation via the Order Management screen or Duplicate Alerts modal. The system shall track all deletions to enable automatic duplicate alert resolution.
 
 **Acceptance Criteria:**
 - Delete button available only for Admin role
@@ -223,12 +223,22 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - Delete order from ShipStation via API
 - Mark local record as deleted (soft delete)
 - Log deletion action with user ID and timestamp
+- Record deletion in `deleted_shipstation_orders` table for duplicate alert tracking
+- Duplicate scanner auto-resolves alerts when all duplicate records are deleted (within 15 minutes)
+
+**Technical Implementation:**
+- Shared helper function `record_shipstation_order_deletion()` records all deletions
+- Both `/api/admin/delete_order` (Order Management) and `/api/duplicate_alerts/delete_order` endpoints use shared helper
+- Deletion tracking enables duplicate scanner's auto-resolution logic
+- Single source of truth for deletion tracking prevents data inconsistency
 
 **Business Rules:**
 - BR-ORD-010: Deletion is permanent and irreversible in ShipStation
 - BR-ORD-011: Deleted orders remain in local database with status "deleted"
+- BR-ORD-012: All ShipStation deletions MUST be recorded in `deleted_shipstation_orders` table
+- BR-ORD-013: Duplicate alerts auto-resolve within 15 minutes after all duplicate records are deleted
 
-**Dependencies:** FR-AUTH-002, ShipStation API
+**Dependencies:** FR-AUTH-002, ShipStation API, FR-DUP-001 (Duplicate Detection)
 
 ---
 
