@@ -31,16 +31,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - PDF export button now functional with color-coded columns (purple for quantities, green for charges)
   - Filename format: "Charge Report Oct 2025.pdf" (month abbreviation + year)
 
+### Removed
+- **"Mark Resolved" Button Removed from Duplicate Alerts** - Simplified duplicate resolution workflow
+  - Removed green "Mark Resolved" button due to bug and lack of value
+  - Root cause: Button only marked alert as resolved in current session; alert reappeared after scanner ran (15 min)
+  - Database bug: API set `notes` field, but scanner checked `resolution_notes` field (column mismatch)
+  - Rationale: If duplicates still exist in ShipStation, temporary dismissal doesn't solve the problem
+  - Users must now either "Permanently Exclude" the alert OR delete the duplicate order from ShipStation
+  - Removed API endpoint: `PUT /api/duplicate_alerts/{id}/resolve`
+  - Removed 30-day suppression logic from duplicate scanner
+  - Simplified user experience with clear action choices
+
 ### Changed
-- **FRD Documentation Updated to v1.1.0** - Documented two-tier duplicate resolution system
-  - Added FR-DUP-005: Temporary Duplicate Alert Resolution (Mark Resolved button)
-  - Added FR-DUP-006: Permanent Duplicate Alert Exclusion (Permanently Exclude button)
-  - Updated FR-DUP-002: Enhanced duplicate alert viewing with resolution options
-  - Updated FR-DUP-003: Auto-resolution now respects exclusion table
-  - Added 14 new business rules (BR-DUP-002 through BR-DUP-021)
-  - Documented Admin-only access control for resolution actions
-  - Corrected dependency mappings for clarity
-  - Included database schema and scanner integration details
+- **FRD Documentation Updated to v1.2.0** - Removed temporary resolution feature, documented permanent exclusion only
+  - Removed FR-DUP-005: Temporary Duplicate Alert Resolution (deprecated feature)
+  - Renumbered FR-DUP-006 → FR-DUP-005: Permanent Duplicate Alert Exclusion
+  - Updated FR-DUP-002: Single "Permanently Exclude" button only
+  - Updated FR-DUP-003: Auto-resolution no longer checks for manually-resolved alerts
+  - Renumbered business rules BR-DUP-008 through BR-DUP-016 (was BR-DUP-012 through BR-DUP-021)
+  - Simplified workflow: Delete duplicates OR permanently exclude them
 
 ### Fixed
 - **CRITICAL: EOM Endpoint Fixed** - Applied same fixes as charge report to ensure consistency
