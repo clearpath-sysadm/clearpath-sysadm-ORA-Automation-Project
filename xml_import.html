@@ -1702,6 +1702,24 @@
                 .join(' ');
         }
 
+        // Check URL parameters for pre-selected filter
+        const urlParams = new URLSearchParams(window.location.search);
+        const preselectedFilter = urlParams.get('filter');
+        if (preselectedFilter) {
+            // Add the filter to activeFilters
+            activeFilters.add(preselectedFilter);
+            
+            // Visually activate the filter tab after page loads
+            setTimeout(() => {
+                const filterTabs = document.querySelectorAll('.filter-tab');
+                filterTabs.forEach(tab => {
+                    if (tab.textContent.toLowerCase().includes(preselectedFilter.toLowerCase())) {
+                        tab.classList.add('active');
+                    }
+                });
+            }, 100);
+        }
+        
         // Load orders on page load
         loadOrdersInbox();
 
