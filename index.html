@@ -1193,12 +1193,34 @@
                     autoList.innerHTML = automation.data.map(item => {
                         const statusClass = item.status === 'success' ? 'success' : item.status === 'running' ? 'warning' : 'critical';
                         const icon = item.status === 'success' ? '✅' : item.status === 'running' ? '⏳' : '❌';
+                        
+                        // Format timestamp in user's local timezone
+                        let lastRunDisplay = 'Never';
+                        if (item.last_run) {
+                            const lastRunDate = new Date(item.last_run);
+                            const now = new Date();
+                            const diffMs = now - lastRunDate;
+                            const diffMins = Math.floor(diffMs / 60000);
+                            
+                            if (diffMins < 1) {
+                                lastRunDisplay = 'Just now';
+                            } else if (diffMins < 60) {
+                                lastRunDisplay = `${diffMins}m ago`;
+                            } else if (diffMins < 1440) { // Less than 24 hours
+                                const diffHours = Math.floor(diffMins / 60);
+                                lastRunDisplay = `${diffHours}h ago`;
+                            } else {
+                                // Show local date and time for older runs
+                                lastRunDisplay = lastRunDate.toLocaleString();
+                            }
+                        }
+                        
                         return `
                             <div style="padding: 16px; border-radius: 8px; background: var(--bg-tertiary); margin-bottom: 12px;">
                                 <div style="display: flex; align-items: center; justify-content: space-between;">
                                     <div>
                                         <strong>${item.name}</strong><br>
-                                        <span style="font-size: 13px; color: var(--text-secondary);">Last run: ${item.last_run || 'Never'}</span>
+                                        <span style="font-size: 13px; color: var(--text-secondary);">Last run: ${lastRunDisplay}</span>
                                     </div>
                                     <span class="badge badge-${statusClass}">
                                         <span>${icon}</span>
