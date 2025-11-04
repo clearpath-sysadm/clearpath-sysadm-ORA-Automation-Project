@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Permanent Duplicate Order Exclusion System** - Two-tier resolution system for duplicate alerts
+  - "Mark Resolved" (green button): Temporarily dismisses alert without permanent exclusion
+  - "Permanently Exclude" (red button): Forever excludes order+SKU from duplicate detection
+  - New `excluded_duplicate_orders` database table with UNIQUE constraint on (order_number, base_sku)
+  - Duplicate scanner checks exclusion table before creating alerts
+  - Strong confirmation dialog warns users of irreversible permanent exclusion
+  - Use case: Orders predating local database (e.g., #674715 from before Sept 19, 2025)
+  - Admin-only access for both resolution and exclusion actions
+  - API endpoints: PUT `/api/duplicate_alerts/{id}/resolve` and PUT `/api/duplicate_alerts/{id}/exclude`
 - **Inventory Transactions Clipboard Export** - Added formatted clipboard copy functionality to Inventory Monitor
   - "📋 Copy to Clipboard" button exports filtered transactions in dual format (HTML table + plain text)
   - HTML format pastes as formatted table in email clients, Word, Google Docs
@@ -21,6 +30,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added CDN links for jsPDF 2.5.1 and jsPDF-autoTable 3.5.31
   - PDF export button now functional with color-coded columns (purple for quantities, green for charges)
   - Filename format: "Charge Report Oct 2025.pdf" (month abbreviation + year)
+
+### Changed
+- **FRD Documentation Updated to v1.1.0** - Documented two-tier duplicate resolution system
+  - Added FR-DUP-005: Temporary Duplicate Alert Resolution (Mark Resolved button)
+  - Added FR-DUP-006: Permanent Duplicate Alert Exclusion (Permanently Exclude button)
+  - Updated FR-DUP-002: Enhanced duplicate alert viewing with resolution options
+  - Updated FR-DUP-003: Auto-resolution now respects exclusion table
+  - Added 14 new business rules (BR-DUP-002 through BR-DUP-021)
+  - Documented Admin-only access control for resolution actions
+  - Corrected dependency mappings for clarity
+  - Included database schema and scanner integration details
 
 ### Fixed
 - **CRITICAL: EOM Endpoint Fixed** - Applied same fixes as charge report to ensure consistency

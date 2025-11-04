@@ -1,8 +1,8 @@
 # Functional Requirements Document (FRD)
 ## Oracare Fulfillment System
 
-**Document Version:** 1.0.0  
-**Last Updated:** November 3, 2025  
+**Document Version:** 1.1.0  
+**Last Updated:** November 4, 2025  
 **Status:** Production Active  
 **Project Phase:** Post-Launch Operations & Enhancement
 
@@ -508,16 +508,25 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 
 ---
 
-#### FR-DUP-002: Manual Duplicate Resolution
+#### FR-DUP-002: Duplicate Alert Viewing & Management
 **Priority:** High  
-**Description:** Users shall be able to view duplicate alerts and delete incorrect orders.
+**Description:** Users shall be able to view duplicate alerts in a comprehensive modal interface showing all duplicate order details and resolution options.
 
 **Acceptance Criteria:**
 - Dashboard displays "Duplicate Alerts" badge with count
 - Click to open modal showing duplicate order groups
 - Display all orders with same order number side-by-side
+- Show ShipStation IDs, customer info, SKUs, and status for each duplicate
+- Highlight orders deleted from ShipStation with red badge
+- Display local database matches alongside ShipStation records
 - Provide "Delete" button for each order (Admin only)
-- Real-time UI update when order deleted
+- Provide two resolution options: "Mark Resolved" (temporary) and "Permanently Exclude" (permanent)
+- Real-time UI update when order deleted or alert resolved
+- Auto-refresh modal content on error to show current state
+
+**Business Rules:**
+- BR-DUP-002: Alert details must include both ShipStation and local database records for comparison
+- BR-DUP-003: Deleted orders remain visible in modal with "DELETED" badge until alert is resolved
 
 **Dependencies:** FR-DUP-001, FR-ORD-006
 
@@ -537,9 +546,11 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - Update dashboard badge count
 
 **Business Rules:**
-- BR-DUP-002: Auto-resolution runs after every duplicate scan (every 15 minutes)
+- BR-DUP-004: Auto-resolution runs after every duplicate scan (every 15 minutes)
+- BR-DUP-005: Auto-resolution evaluates only non-excluded, non-deleted records
+- BR-DUP-006: Alerts marked as "resolved" but not excluded can reappear if duplicates persist
 
-**Dependencies:** FR-DUP-001
+**Dependencies:** FR-DUP-001, FR-DUP-006
 
 ---
 
@@ -554,9 +565,104 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - Provide resolution options
 
 **Business Rules:**
-- BR-DUP-003: Conflicts indicate data integrity issue requiring manual review
+- BR-DUP-007: Conflicts indicate data integrity issue requiring manual review
 
 **Dependencies:** FR-DUP-001, FR-ORD-003
+
+---
+
+#### FR-DUP-005: Temporary Duplicate Alert Resolution
+**Priority:** High  
+**Description:** Admins shall be able to temporarily resolve duplicate alerts using the "Mark Resolved" button without permanently excluding the order from future detection.
+
+**Acceptance Criteria:**
+- Green "Mark Resolved" button displayed for each duplicate alert (Admin only)
+- Confirmation dialog shows order number and SKU before resolution
+- On confirmation, system calls `/api/duplicate_alerts/{id}/resolve` endpoint with Admin authentication
+- Alert status updated to "resolved" in `duplicate_order_alerts` table
+- Resolution timestamp and user recorded in database
+- Alert removed from dashboard immediately upon resolution
+- Alert may reappear in future scans if duplicates still exist in ShipStation
+- Success message displayed to user via toast notification
+- Viewer role users do not see resolution buttons
+
+**Use Cases:**
+- Temporary dismissal while investigating root cause
+- Known duplicates being actively resolved in ShipStation
+- Short-term suppression during cleanup operations
+
+**Business Rules:**
+- BR-DUP-008: Temporary resolution does not prevent alert from reappearing in future scans
+- BR-DUP-009: Resolved alerts removed from active alert count immediately
+- BR-DUP-010: Resolution action logged with timestamp and user ID for audit trail
+- BR-DUP-011: No persistent exclusion record created; alert can be recreated by scanner
+- BR-DUP-020: Only Admin role users can temporarily resolve alerts
+
+**Dependencies:** FR-DUP-002 (Viewing UI), FR-AUTH-002 (Admin role enforcement)
+
+**API Endpoint:** `PUT /api/duplicate_alerts/{alert_id}/resolve`
+
+**Database Impact:** Updates `duplicate_order_alerts.status`, `resolved_at`, `resolved_by`, `notes`
+
+---
+
+#### FR-DUP-006: Permanent Duplicate Alert Exclusion
+**Priority:** High  
+**Description:** Admins shall be able to permanently exclude duplicate alerts using the "Permanently Exclude" button, preventing the order+SKU combination from triggering future alerts indefinitely.
+
+**Acceptance Criteria:**
+- Red "Permanently Exclude" button displayed for each duplicate alert (Admin only)
+- Button tooltip explains permanent nature: "Permanently exclude this order from duplicate detection"
+- Strong confirmation dialog warns user of irreversible action
+- Confirmation text: "PERMANENTLY EXCLUDE order #XXXXX + SKU XXXXX? This order will NEVER trigger duplicate alerts again, even if duplicates still exist in ShipStation."
+- On confirmation, system calls `/api/duplicate_alerts/{id}/exclude` endpoint with Admin authentication
+- Exclusion record inserted into `excluded_duplicate_orders` table with UNIQUE constraint on (order_number, base_sku)
+- Original alert marked as "resolved" with notes: "Permanently excluded from future detection"
+- Duplicate scanner checks `excluded_duplicate_orders` before creating/updating alerts
+- Excluded order+SKU combinations never appear in duplicate alerts again
+- Success message displayed: "Order #XXXXX + SKU XXXXX permanently excluded from duplicate detection"
+- Viewer role users do not see exclusion buttons
+
+**Use Cases:**
+- Orders predating local database (e.g., order #674715 from before Sept 19, 2025)
+- Known legitimate duplicates that should be ignored (e.g., reshipments, replacements)
+- Permanent exceptions to duplicate detection rules
+
+**Business Rules:**
+- BR-DUP-012: Exclusion is permanent and survives system restarts
+- BR-DUP-013: Exclusion persists indefinitely unless manually removed from database
+- BR-DUP-014: Excluded order+SKU combinations skipped during duplicate scanning
+- BR-DUP-015: Exclusion reason stored for audit trail and future reference
+- BR-DUP-016: UNIQUE constraint prevents duplicate exclusion records for same order+SKU
+- BR-DUP-017: Default exclusion reason: "Order predates local database - permanent exclusion"
+- BR-DUP-018: Exclusion does NOT delete orders from ShipStation; duplicates may still exist
+- BR-DUP-019: Each exclusion tied to specific order number + SKU combination
+- BR-DUP-021: Only Admin role users can permanently exclude alerts
+
+**Dependencies:** FR-DUP-002 (Viewing UI), FR-AUTH-002 (Admin role enforcement), FR-DUP-001 (Scanner integration)
+
+**API Endpoint:** `PUT /api/duplicate_alerts/{alert_id}/exclude`
+
+**Database Impact:**
+- Inserts record into `excluded_duplicate_orders` table (order_number, base_sku, exclusion_reason, excluded_at)
+- Updates `duplicate_order_alerts.status`, `resolved_at`, `resolved_by`, `notes`, `resolution_notes`
+
+**Database Schema:**
+```sql
+CREATE TABLE excluded_duplicate_orders (
+    id SERIAL PRIMARY KEY,
+    order_number VARCHAR(50) NOT NULL,
+    base_sku VARCHAR(50),
+    exclusion_reason TEXT,
+    excluded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(order_number, base_sku)
+);
+```
+
+**Scanner Integration:**
+- Before creating alert, scanner queries: `SELECT 1 FROM excluded_duplicate_orders WHERE order_number = ? AND base_sku = ?`
+- If exclusion exists, scanner skips alert creation
+- Existing alerts for excluded combinations auto-resolve
 
 ---
 
