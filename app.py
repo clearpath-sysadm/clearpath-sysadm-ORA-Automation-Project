@@ -6880,6 +6880,13 @@ def api_admin_delete_order():
         
         if result['success']:
             logger.info(f"✅ Successfully deleted order {shipstation_order_id} from ShipStation")
+            
+            # Record deletion for duplicate alert auto-resolution
+            track_result = record_shipstation_order_deletion(shipstation_order_id, order_number)
+            if not track_result['success'] and not track_result.get('already_deleted'):
+                # Log warning but don't fail the whole operation since ShipStation deletion succeeded
+                logger.warning(f"⚠️  Failed to track deletion in database: {track_result.get('error')}")
+            
             return jsonify({
                 'success': True,
                 'message': f'Order {shipstation_order_id} successfully deleted from ShipStation',
