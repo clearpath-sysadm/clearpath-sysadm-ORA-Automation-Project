@@ -163,6 +163,79 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def record_shipstation_order_deletion(shipstation_order_id, order_number=None, deleted_by=None):
+    """
+    Record a ShipStation order deletion in the database for duplicate alert auto-resolution.
+    
+    This helper function is called by all deletion endpoints to ensure consistent tracking
+    of deleted orders. The duplicate scanner uses this table to auto-resolve alerts when
+    all duplicate records have been deleted.
+    
+    Args:
+        shipstation_order_id (int): The ShipStation order ID that was deleted
+        order_number (str, optional): The order number for logging purposes
+        deleted_by (str, optional): Username/email of who deleted the order (defaults to 'system')
+        
+    Returns:
+        dict: {'success': bool, 'message': str, 'already_deleted': bool, 'error': str (optional)}
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Check if already deleted
+        cursor.execute("""
+            SELECT deleted_at FROM deleted_shipstation_orders 
+            WHERE shipstation_order_id = %s
+        """, (shipstation_order_id,))
+        
+        existing = cursor.fetchone()
+        if existing:
+            conn.close()
+            return {
+                'success': False,
+                'already_deleted': True,
+                'error': f'Order already deleted on {existing[0].strftime("%Y-%m-%d %H:%M")}'
+            }
+        
+        # Determine who deleted this order
+        if deleted_by is None:
+            # Try to get current user email if available
+            try:
+                if current_user and current_user.is_authenticated:
+                    deleted_by = current_user.email
+                else:
+                    deleted_by = 'system'
+            except:
+                deleted_by = 'system'
+        
+        # Record the deletion
+        cursor.execute("""
+            INSERT INTO deleted_shipstation_orders 
+            (shipstation_order_id, order_number, deleted_at, deleted_by)
+            VALUES (%s, %s, CURRENT_TIMESTAMP, %s)
+            ON CONFLICT (shipstation_order_id) DO NOTHING
+        """, (shipstation_order_id, order_number, deleted_by))
+        
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"✅ Recorded deletion of order {shipstation_order_id} (Order #{order_number}) by {deleted_by}")
+        
+        return {
+            'success': True,
+            'already_deleted': False,
+            'message': f'Deletion recorded for order {shipstation_order_id}'
+        }
+        
+    except Exception as e:
+        logger.error(f"Error recording deletion for order {shipstation_order_id}: {e}", exc_info=True)
+        return {
+            'success': False,
+            'already_deleted': False,
+            'error': str(e)
+        }
+
 # List of allowed HTML files to serve (security: prevent directory traversal)
 ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html', 'order-management.html']
 
