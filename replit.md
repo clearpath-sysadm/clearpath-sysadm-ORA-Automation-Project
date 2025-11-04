@@ -68,6 +68,10 @@ The following documentation files **must be kept up to date** with every signifi
    - Update when: New features added, business rules change, workflows modified, API integrations change
    - Review frequency: After feature releases or quarterly
    - Owner: Product Manager/Business Analyst
+   - **Recent Update (v1.2.3 - January 4, 2025):** Comprehensive documentation of entire duplication management system
+     - FR-DUP-001: Regular duplicate detection (order# + SKU matching)
+     - FR-DUP-004: Manual order conflicts (10xxxx with multiple ShipStation IDs)
+     - System overview explaining TWO distinct alert types and overlap scenarios
 
 3. **`docs/CHANGELOG.md`** - Version history following [Keep a Changelog](https://keepachangelog.com/) format
    - Update when: **ALWAYS** - Every feature, bug fix, change, or security update

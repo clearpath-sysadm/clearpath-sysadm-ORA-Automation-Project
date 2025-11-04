@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2025-01-04
+
+### Changed
+- **[DOCS]** Completely rewrote FR-DUP-001 (Regular Duplicate Detection) with comprehensive implementation details
+  - Added system overview explaining TWO distinct duplication management systems
+  - Documented duplicate detection logic: (order_number, base_sku) tuple matching
+  - Explained base SKU normalization (e.g., "17612 - 250300" → "17612")
+  - Included database schema, business rules, and order number collision logging
+  - Documented 15-minute scan frequency, 90-day lookback period
+- **[DOCS]** Completely rewrote FR-DUP-004 (Manual Order Conflicts) with full technical specification
+  - Explained manual order definition (10xxxx range: 100000-109999)
+  - Documented two distinct conflict detection scenarios (new import vs. existing sync)
+  - Added resolution options: Recreate with new order number, or Dismiss
+  - Included database schema for `manual_order_conflicts` table
+  - Explained relationship to regular duplicate detection with overlap examples
+  - Documented non-manual order collision behavior (logged only, no alerts)
+- **[DOCS]** Added OVERLAP SCENARIOS section explaining when both alert systems fire simultaneously
+  - Example: Order #100123 with 2 ShipStation IDs triggers both Manual Conflict + Regular Duplicate
+  - Documented recommended resolution workflow (resolve conflict first, then delete duplicates)
+
+### Why This Matters
+- Users can now fully understand the difference between "Regular Duplicates" and "Manual Order Conflicts"
+- Eliminates confusion when both alerts appear for the same order
+- Provides clear resolution paths for each alert type
+- Documents implementation details for future maintenance and troubleshooting
+
+## [1.2.2] - 2025-01-03
+
 ### Added
 - **Unified ShipStation Order Deletion Tracking** - Centralized deletion tracking for automatic duplicate alert resolution
   - Created shared helper function `record_shipstation_order_deletion()` in app.py

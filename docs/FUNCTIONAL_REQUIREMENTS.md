@@ -1,8 +1,8 @@
 # Functional Requirements Document (FRD)
 ## Oracare Fulfillment System
 
-**Document Version:** 1.2.0  
-**Last Updated:** November 4, 2025  
+**Document Version:** 1.2.3  
+**Last Updated:** January 4, 2025  
 **Status:** Production Active  
 **Project Phase:** Post-Launch Operations & Enhancement
 
@@ -501,20 +501,103 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 
 ### 3.6 Duplicate Detection & Resolution
 
-#### FR-DUP-001: Duplicate Order Scanning
+**SYSTEM OVERVIEW:**
+
+The Oracare Fulfillment System implements TWO distinct but related duplication management systems:
+
+1. **Regular Duplicate Detection** (FR-DUP-001): Detects same order# + same SKU appearing multiple times in ShipStation
+   - **Problem:** "This order was uploaded/created multiple times"
+   - **Scope:** ALL orders (not limited to manual orders)
+   - **Detection:** Every 15 minutes via `scheduled_duplicate_scanner.py`
+   - **Resolution:** Delete duplicates via UI, auto-resolution when cleaned up
+   - **Storage:** `duplicate_order_alerts` table
+
+2. **Manual Order Conflicts** (FR-DUP-004): Detects same order# with DIFFERENT ShipStation IDs
+   - **Problem:** "This order number exists with 2+ different ShipStation IDs (data integrity issue)"
+   - **Scope:** ONLY manual orders (10xxxx range: 100000-109999)
+   - **Detection:** Real-time during sync via `unified_shipstation_sync.py`
+   - **Resolution:** Recreate with new order number, or dismiss conflict
+   - **Storage:** `manual_order_conflicts` table
+
+**OVERLAP SCENARIOS:**
+
+A single manual order (10xxxx) may trigger BOTH alerts simultaneously:
+- **Manual Order Conflict:** Order #100123 has ShipStation IDs 12345 AND 67890
+- **Regular Duplicate:** Order #100123 + SKU 17612 appears twice (once per ShipStation ID)
+
+Both systems operate independently with different resolution paths.
+
+---
+
+#### FR-DUP-001: Regular Duplicate Order Scanning
 **Priority:** High  
-**Description:** The system shall scan ShipStation every 15 minutes for duplicate order numbers.
+**Description:** The system shall continuously scan ShipStation for duplicate order+SKU combinations and create alerts for manual review and resolution.
+
+**Workflow Implementation:**
+- **Service:** `src/scheduled_duplicate_scanner.py`
+- **Frequency:** Every 15 minutes
+- **Lookback Period:** 90 days (comprehensive coverage)
+- **Detection Logic:** Same order_number AND same base_sku appearing 2+ times
+
+**Duplicate Definition:**
+```
+A duplicate is detected when:
+  (order_number, base_sku) appears with 2+ different ShipStation IDs
+
+Examples:
+  ✅ DUPLICATE: Order #674715 + SKU 17612 appears 3 times (IDs: 123, 456, 789)
+  ❌ NOT DUPLICATE: Order #674715 + SKU 17612 appears once (ID: 123)
+  ❌ NOT DUPLICATE: Order #674715 has SKUs 17612 AND 17904 (different SKUs)
+```
+
+**Base SKU Normalization:**
+- Input: `"17612 - 250300"` (SKU with lot number)
+- Normalized: `"17612"` (base SKU only)
+- Reason: Duplicates should be detected regardless of lot number variation
 
 **Acceptance Criteria:**
-- Query ShipStation for all active orders
-- Group by order number, identify duplicates (count > 1)
-- Store duplicate sets in `duplicate_order_alerts` table
+- Fetch all orders from ShipStation (90-day window, paginated)
+- Extract all items from each order (one alert per order+SKU combo)
+- Group by `(order_number, base_sku)` tuple
+- Create alert in `duplicate_order_alerts` if count > 1
+- Update existing alerts with fresh ShipStation IDs
+- Check `excluded_duplicate_orders` before creating alerts
+- Check `deleted_shipstation_orders` for auto-resolution
 - Display alert count on dashboard
 
-**Business Rules:**
-- BR-DUP-001: Duplicates are order numbers appearing multiple times with different ShipStation IDs
+**Database Schema:**
+```sql
+CREATE TABLE duplicate_order_alerts (
+    id SERIAL PRIMARY KEY,
+    order_number VARCHAR(50) NOT NULL,
+    base_sku VARCHAR(50),
+    duplicate_count INTEGER NOT NULL,
+    shipstation_ids JSONB,  -- Array of ShipStation IDs
+    details JSONB,          -- Full order details for each duplicate
+    status VARCHAR(20) DEFAULT 'active',  -- 'active' or 'resolved'
+    detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP,
+    resolved_by VARCHAR(100),
+    resolution_notes TEXT
+);
+```
 
-**Dependencies:** ShipStation API
+**Business Rules:**
+- BR-DUP-001: Duplicates detected by (order_number, base_sku) tuple, not just order number
+- BR-DUP-002: Includes ALL order statuses (awaiting_shipment, shipped, cancelled)
+- BR-DUP-003: Scanner skips alert creation for permanently excluded orders
+- BR-DUP-006: If scan fails (API error), existing alerts preserved without updates
+
+**Order Number Collision Detection (Logged Only):**
+
+The duplicate scanner ALSO identifies "Order Number Collisions" where:
+- Same order_number appears with multiple ShipStation IDs (regardless of SKU)
+- **LOGGED TO CONSOLE ONLY** - No database alerts created
+- Example: Order #100123 has IDs 12345 and 67890 → Logged as warning
+- **Rationale:** Manual order conflicts (FR-DUP-004) handle database alerts for these
+
+**Dependencies:** ShipStation API, FR-DUP-005 (Exclusion System), FR-ORD-006 (Deletion Tracking)
 
 ---
 
@@ -563,20 +646,138 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 
 ---
 
-#### FR-DUP-004: Manual Order Conflict Detection
+#### FR-DUP-004: Manual Order Conflict Detection & Resolution
 **Priority:** High  
-**Description:** The system shall detect when the same order number has different ShipStation IDs (manual order conflicts).
+**Description:** The system shall detect and manage manual order conflicts where the same order number exists with multiple ShipStation IDs, indicating data integrity issues from duplicate manual order creation in ShipStation.
+
+**Workflow Implementation:**
+- **Service:** `src/unified_shipstation_sync.py`
+- **Frequency:** Every 5 minutes (real-time detection during sync)
+- **Scope:** ONLY manual orders (10xxxx range: 100000-109999)
+- **Detection Points:** Two distinct scenarios
+
+**Manual Order Definition:**
+```
+Manual orders are identified by:
+  - Order number starts with "10"
+  - Order number is numeric
+  - Order number in range 100000-109999
+
+These orders are created DIRECTLY in ShipStation by operators,
+NOT imported from XML or uploaded by the automated system.
+
+The system will NEVER populate shipstation_order_id for these
+orders via the upload service - they are tracked locally for
+inventory purposes only.
+```
+
+**Conflict Detection Scenario 1: New Manual Order Import**
+
+When importing a NEW manual order from ShipStation:
+1. Order detected in ShipStation watermark sync (starts with "10", has key SKUs)
+2. System queries ShipStation: "Does this order_number already exist?"
+3. **CONFLICT FOUND:** Order #100123 exists as ShipStation ID 12345 (shipped status)
+4. **NEW ORDER:** Same order #100123 appears as ShipStation ID 67890 (awaiting_shipment)
+5. System creates alert in `manual_order_conflicts` table
+6. Order is NOT imported to avoid data corruption
+
+**Conflict Detection Scenario 2: Existing Local Order Sync**
+
+When syncing status for existing local order:
+1. Order #100123 exists in `orders_inbox` with `shipstation_order_id = NULL` (imported from XML)
+2. ShipStation sync finds order #100123 with ShipStation ID 67890
+3. System attempts to link: `UPDATE orders_inbox SET shipstation_order_id = 67890`
+4. **LINKING SUCCESS:** If local order has NULL ShipStation ID → Link and sync status
+5. **CONFLICT FOUND:** If local order already has DIFFERENT ShipStation ID (e.g., 12345) → Create alert
+6. Only creates alert if order is manual (10xxxx range)
+
+**Non-Manual Order Collisions:**
+
+If collision detected for NON-manual orders (e.g., order #674715):
+- **LOGGED TO CONSOLE:** Warning logged about data integrity issue
+- **NO ALERT CREATED:** `manual_order_conflicts` table not used
+- **RECOMMENDATION:** Manual investigation required (possible external corruption)
 
 **Acceptance Criteria:**
-- Identify order number appearing with multiple distinct ShipStation IDs
-- Display as separate alert type in dashboard
-- Show all conflicting records with ShipStation IDs
-- Provide resolution options
+- Detect conflicts in real-time during ShipStation sync (every 5 minutes)
+- Query ShipStation directly when importing new orders: `/orders?orderNumber={number}`
+- Compare local database `shipstation_order_id` with ShipStation current ID
+- Create alert in `manual_order_conflicts` ONLY for manual orders (10xxxx)
+- Check for existing pending alert before creating duplicate alerts
+- Display "Manual Order Conflicts Detected" badge on dashboard
+- Provide resolution options: Recreate with new order number, or Dismiss
+
+**Resolution Options:**
+
+1. **Recreate Order (Automated):**
+   - System queries max order number < 200000 from both `shipped_orders` AND `orders_inbox`
+   - Increments by 1 to generate new unique order number
+   - Fetches conflicting order details from ShipStation
+   - Creates NEW order in ShipStation with new order number
+   - Deletes old conflicting order from ShipStation
+   - Marks conflict as "resolved" in database
+   - **Use Case:** When you want to keep the order but fix the collision
+
+2. **Dismiss Conflict (Manual):**
+   - Marks conflict as "dismissed" without taking action
+   - Conflict remains in database for audit trail
+   - **Use Case:** When collision is benign or already resolved manually
+
+**Database Schema:**
+```sql
+CREATE TABLE manual_order_conflicts (
+    id SERIAL PRIMARY KEY,
+    conflicting_order_number VARCHAR(50) NOT NULL,
+    shipstation_order_id VARCHAR(50),  -- The conflicting ShipStation ID
+    customer_name VARCHAR(255),
+    original_ship_date DATE,
+    original_company VARCHAR(255),
+    original_items JSONB,              -- Original order item details
+    duplicate_company VARCHAR(255),
+    duplicate_items JSONB,             -- Conflicting order item details
+    detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolution_status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'resolved', 'dismissed'
+    resolved_at TIMESTAMP,
+    new_order_number VARCHAR(50),      -- If recreated, store new order number
+    new_shipstation_order_id VARCHAR(50)  -- If recreated, store new ShipStation ID
+);
+```
 
 **Business Rules:**
-- BR-DUP-007: Conflicts indicate data integrity issue requiring manual review
+- BR-DUP-007: Manual order conflicts indicate data integrity issue requiring manual review
+- BR-DUP-008: Only manual orders (10xxxx) trigger conflict alerts; non-manual collisions logged only
+- BR-DUP-009: System prevents importing conflicting orders to avoid data corruption
+- BR-DUP-010: Conflict resolution via order recreation generates next available order number
+- BR-DUP-011: Dismissed conflicts remain in database for audit trail
+- BR-DUP-012: No auto-resolution for manual order conflicts (requires human decision)
 
-**Dependencies:** FR-DUP-001, FR-ORD-003
+**Relationship to Regular Duplicate Detection (FR-DUP-001):**
+
+**OVERLAP EXAMPLE:**
+- Order #100123 has TWO ShipStation IDs: 12345 and 67890
+- Both orders contain SKU 17612
+
+**BOTH SYSTEMS FIRE:**
+1. **Manual Order Conflict (FR-DUP-004):**
+   - Alert: "Order #100123 has conflicting ShipStation IDs"
+   - Resolution: Recreate with new order number or dismiss
+   
+2. **Regular Duplicate (FR-DUP-001):**
+   - Alert: "Order #100123 + SKU 17612 appears 2 times"
+   - Resolution: Delete one of the duplicate ShipStation orders
+
+**Resolution Workflow:**
+1. User sees BOTH alerts on dashboard
+2. Resolve Manual Order Conflict first (recreate or dismiss)
+3. Regular duplicate alert may auto-resolve after conflict resolution
+4. If not, manually delete remaining duplicate from duplicate alerts modal
+
+**API Endpoints:**
+- `GET /api/manual_order_conflicts` - Fetch all pending conflicts
+- `POST /api/manual_order_conflicts/{id}/recreate` - Recreate order with new number
+- `POST /api/manual_order_conflicts/{id}/dismiss` - Dismiss conflict without action
+
+**Dependencies:** FR-ORD-003 (Order Management), Unified ShipStation Sync Service
 
 ---
 
