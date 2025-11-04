@@ -171,6 +171,9 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
     of deleted orders. The duplicate scanner uses this table to auto-resolve alerts when
     all duplicate records have been deleted.
     
+    IDEMPOTENT: Returns success=True even if deletion was already recorded (ON CONFLICT DO NOTHING).
+    This allows safe retries and consistent behavior across all deletion endpoints.
+    
     Args:
         shipstation_order_id (int): The ShipStation order ID that was deleted
         order_number (str, optional): The order number for logging purposes
@@ -183,21 +186,6 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Check if already deleted
-        cursor.execute("""
-            SELECT deleted_at FROM deleted_shipstation_orders 
-            WHERE shipstation_order_id = %s
-        """, (shipstation_order_id,))
-        
-        existing = cursor.fetchone()
-        if existing:
-            conn.close()
-            return {
-                'success': False,
-                'already_deleted': True,
-                'error': f'Order already deleted on {existing[0].strftime("%Y-%m-%d %H:%M")}'
-            }
-        
         # Determine who deleted this order
         if deleted_by is None:
             # Try to get current user email if available
@@ -209,24 +197,36 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
             except:
                 deleted_by = 'system'
         
-        # Record the deletion
+        # Record the deletion (idempotent with ON CONFLICT)
+        # RETURNING clause tells us if a new row was inserted or conflict occurred
         cursor.execute("""
             INSERT INTO deleted_shipstation_orders 
             (shipstation_order_id, order_number, deleted_at, deleted_by)
             VALUES (%s, %s, CURRENT_TIMESTAMP, %s)
             ON CONFLICT (shipstation_order_id) DO NOTHING
+            RETURNING shipstation_order_id
         """, (shipstation_order_id, order_number, deleted_by))
         
+        inserted = cursor.fetchone()
         conn.commit()
         conn.close()
         
-        logger.info(f"✅ Recorded deletion of order {shipstation_order_id} (Order #{order_number}) by {deleted_by}")
-        
-        return {
-            'success': True,
-            'already_deleted': False,
-            'message': f'Deletion recorded for order {shipstation_order_id}'
-        }
+        if inserted:
+            # New deletion record created
+            logger.info(f"✅ Recorded deletion of order {shipstation_order_id} (Order #{order_number}) by {deleted_by}")
+            return {
+                'success': True,
+                'already_deleted': False,
+                'message': f'Deletion recorded for order {shipstation_order_id}'
+            }
+        else:
+            # Record already exists (ON CONFLICT triggered) - still a success!
+            logger.debug(f"ℹ️  Deletion already tracked for order {shipstation_order_id} (Order #{order_number})")
+            return {
+                'success': True,
+                'already_deleted': True,
+                'message': f'Deletion already tracked for order {shipstation_order_id}'
+            }
         
     except Exception as e:
         logger.error(f"Error recording deletion for order {shipstation_order_id}: {e}", exc_info=True)
