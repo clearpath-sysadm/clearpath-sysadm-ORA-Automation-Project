@@ -347,7 +347,16 @@ def update_duplicate_alerts(duplicates):
             FROM excluded_duplicate_orders
         """)
         
-        permanently_excluded = {(row[0], row[1]) for row in cursor.fetchall()}
+        excluded_rows = cursor.fetchall()
+        permanently_excluded = {(str(row[0]), str(row[1])) for row in excluded_rows}
+        
+        # DEBUG: Log what's being excluded
+        if permanently_excluded:
+            logger.info(f"🚫 Loaded {len(permanently_excluded)} permanent exclusions from database")
+            for order_num, sku in list(permanently_excluded)[:5]:
+                logger.debug(f"   Excluded: {order_num} + {sku}")
+        else:
+            logger.warning("⚠️ No permanent exclusions found in database!")
         
         new_count = 0
         updated_count = 0
@@ -359,13 +368,18 @@ def update_duplicate_alerts(duplicates):
             shipstation_ids = json.dumps([d['shipstation_id'] for d in dup_list])
             details = json.dumps(dup_list)
             
-            key = (order_number, base_sku)
+            # Ensure consistent string types for comparison
+            key = (str(order_number), str(base_sku))
             
             # Check if permanently excluded first
             if key in permanently_excluded:
-                logger.debug(f"⛔ Skipping Order #{order_number} + SKU {base_sku} - permanently excluded")
+                logger.info(f"⛔ Skipping Order #{order_number} + SKU {base_sku} - permanently excluded")
                 excluded_count += 1
                 continue
+            
+            # DEBUG: Log when NOT excluded (for first few)
+            if excluded_count == 0 and len(duplicates) <= 10:
+                logger.debug(f"   Processing Order #{order_number} + SKU {base_sku} (not excluded)")
             
             if key in existing_alerts:
                 # Update existing alert
