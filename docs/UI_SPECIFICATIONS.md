@@ -1,7 +1,7 @@
 # UI Specifications - Oracare Fulfillment System
 
-**Document Version:** 1.0.0  
-**Last Updated:** November 3, 2025  
+**Document Version:** 1.1.0  
+**Last Updated:** November 4, 2025  
 **Status:** Active  
 **Format:** Based on [Keep a Changelog](https://keepachangelog.com/) and industry best practices
 
@@ -365,6 +365,14 @@ This UI Specification defines the visual design, interaction patterns, component
 - **Hero Number:** Source Serif 4 font, 36px, semibold
 - **Label:** 14px, gray text
 - **Trend Indicator:** Small arrow + percentage
+- **Interactive Cards:** Some cards are clickable and navigate to detail pages
+  - **Local DB Units Card:** Clicking navigates to Orders Inbox with "Pending" filter pre-selected (`/xml_import.html?filter=pending`)
+  - Visual feedback: Hover state shows pointer cursor + tooltip ("Click to view pending orders in Orders Inbox")
+  - Filter activates automatically on destination page with orange highlight
+- **Timestamp Display:** All workflow timestamps display in user's local timezone
+  - Relative time for recent runs: "5m ago", "2h ago", "3d ago"
+  - Full local date/time for older runs: "11/4/2025, 3:45:23 PM"
+  - Automatically adapts to browser timezone settings
 
 #### Workflow Status Cards
 - Display: Flex row, wrap on small screens

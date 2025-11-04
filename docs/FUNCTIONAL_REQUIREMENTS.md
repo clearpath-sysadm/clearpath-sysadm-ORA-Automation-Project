@@ -1,8 +1,8 @@
 # Functional Requirements Document (FRD)
 ## Oracare Fulfillment System
 
-**Document Version:** 1.2.3  
-**Last Updated:** January 4, 2025  
+**Document Version:** 1.3.0  
+**Last Updated:** November 4, 2025  
 **Status:** Production Active  
 **Project Phase:** Post-Launch Operations & Enhancement
 
@@ -440,6 +440,39 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - BR-PHY-003: 32-day rolling window ensures recent data accuracy and captures late ShipStation updates
 
 **Dependencies:** ShipStation API, FR-INV-001, `configuration_params` (InitialInventory baseline)
+
+---
+
+#### FR-PHY-001A: Order Reconciliation (Integrated with EOD)
+**Priority:** High  
+**Description:** The system shall automatically reconcile orphaned orders during EOD operations by syncing local database with ShipStation for orders that were uploaded/shipped but never synced back.
+
+**Acceptance Criteria:**
+- Runs automatically as part of EOD button operation
+- Queries all local orders with status "awaiting_shipment" or "pending"
+- For each order, queries ShipStation API to get current status
+- Updates local database with actual ShipStation status (shipped, cancelled, awaiting_shipment)
+- Records timestamp and tracking number if order has shipped
+- Returns reconciliation summary: total checked, updated to shipped, updated to cancelled
+- Displays results in EOD success message
+
+**Business Rules:**
+- BR-PHY-012: Reconciliation only checks orders NOT in "shipped" or "cancelled" status locally
+- BR-PHY-013: Watermark-based sync only looks forward; reconciliation fills gap by checking backward
+- BR-PHY-014: Orders missing from ShipStation remain unchanged in local database
+- BR-PHY-015: Reconciliation catches orders that shipped before watermark advanced
+
+**Root Cause Solved:**
+- **Problem:** Orders uploaded to ShipStation and shipped quickly (before next sync) remained stuck in "awaiting_shipment" status locally
+- **Solution:** Daily reconciliation checks ALL non-shipped orders against ShipStation, regardless of watermark timing
+- **Impact:** Local DB Units card now accurately reflects true pending workload
+
+**Technical Implementation:**
+- Service: `src/services/order_reconciliation.py`
+- One-time cleanup script: `fix_orphaned_orders.py`
+- Initial deployment reconciled 57+ orders (35 in first batch, 22 in second batch) dating back 6-19 days
+
+**Dependencies:** FR-PHY-001, ShipStation API, `orders_inbox` table
 
 ---
 
@@ -987,6 +1020,71 @@ CREATE TABLE excluded_duplicate_orders (
 - Show timeline of status changes
 
 **Dependencies:** FR-INC-001
+
+---
+
+### 3.10 Dashboard & User Interface Features
+
+#### FR-UI-001: KPI Card Click-to-Filter Navigation
+**Priority:** Medium  
+**Description:** The system shall enable direct navigation from dashboard KPI cards to filtered detail pages.
+
+**Acceptance Criteria:**
+- Local DB Units card is clickable
+- Clicking navigates to Orders Inbox page (`/xml_import.html?filter=pending`)
+- "Pending" filter automatically activates on destination page
+- Filter tab visually highlights with orange color
+- Hover state shows pointer cursor and tooltip
+- Tooltip text: "Click to view pending orders in Orders Inbox"
+
+**User Experience:**
+- Single-click navigation reduces workflow friction
+- Users can quickly drill down from summary to detail
+- Filter state persists via URL parameters
+- No need to manually select filter after navigation
+
+**Technical Implementation:**
+- Dashboard: `<a href="/xml_import.html?filter=pending">` wrapper on card
+- Orders Inbox: JavaScript reads URL parameter and activates filter on page load
+- Uses `URLSearchParams` to parse query string
+- `activeFilters.add('pending')` programmatically adds filter
+- Filter tab highlights after 100ms delay for visual feedback
+
+**Dependencies:** FR-REP-001, Orders Inbox page filter system
+
+---
+
+#### FR-UI-002: Local Timezone Display for Timestamps
+**Priority:** Medium  
+**Description:** The system shall display all workflow timestamps in the user's local timezone instead of UTC.
+
+**Acceptance Criteria:**
+- All "Last run" timestamps on dashboard display in browser's local timezone
+- Recent runs show relative time: "5m ago", "2h ago", "3d ago"
+- Older runs show full local date/time: "11/4/2025, 3:45:23 PM"
+- Automatically adapts to user's browser timezone settings
+- No manual timezone configuration required
+- Consistent timestamp format across all workflow cards
+
+**User Experience:**
+- Eliminates timezone confusion (previously showed raw UTC)
+- Users see familiar local time format
+- Relative time provides quick at-a-glance information
+- Full timestamp available for historical context
+
+**Technical Implementation:**
+- Server sends UTC timestamp (ISO 8601 format)
+- Client-side JavaScript converts to local timezone
+- Uses `new Date(utcTimestamp).toLocaleString()` for full timestamps
+- Custom relative time logic for recent runs (minutes, hours, days)
+- Applies to all workflow status cards on dashboard
+
+**Business Rules:**
+- BR-UI-001: Timestamps older than 24 hours show full date/time
+- BR-UI-002: Timestamps within 24 hours show relative time
+- BR-UI-003: All timestamps respect browser timezone (no server-side timezone detection)
+
+**Dependencies:** Workflow status API endpoints, dashboard JavaScript
 
 ---
 

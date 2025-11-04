@@ -16,12 +16,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created `src/services/order_reconciliation.py` service
   - Created `fix_orphaned_orders.py` one-time cleanup script
   - Returns reconciliation summary showing orders updated to shipped/cancelled status
+  - Successfully reconciled 57+ orders on initial run (35 in first batch, 22 in second batch)
+- **Local DB Units Card Click-to-Filter**: Added navigation shortcut from dashboard to Orders Inbox
+  - Clicking Local DB Units card now navigates to `/xml_import.html?filter=pending`
+  - Automatically activates "Pending" filter on Orders Inbox page
+  - Filter tab is visually highlighted when navigating from dashboard
+  - Provides quick access to view the orders represented by the card
+
+### Changed
+- **Workflow Timestamp Display**: All workflow "Last run" timestamps now display in user's local timezone
+  - Previously showed raw UTC timestamps from server
+  - Now shows relative time ("5m ago", "2h ago") for recent runs
+  - Shows full local date/time (e.g., "11/4/2025, 3:45:23 PM") for older runs
+  - Automatically adapts to browser timezone settings
 
 ### Fixed
 - **Local DB Units Card Accuracy**: Fixed long-standing issue where orders would get stuck in "awaiting_shipment" or "pending" status
   - Root cause: Watermark-based sync only checks orders modified AFTER current watermark, missing orders that shipped before watermark advanced
   - Solution: EOD reconciliation now checks ALL non-shipped orders against ShipStation daily
-  - Immediately reconciled 35+ orphaned orders dating back 6-19 days
+  - Initial cleanup: Reconciled 35 orders (6-19 days old), then 22 more orders in second pass
+  - Card now accurately reflects true pending workload (144 units vs previous 222 units)
+  - Mismatch resolved: ShipStation Units (143) ≈ Local DB Units (144)
 
 ## [1.2.3] - 2025-01-04
 
