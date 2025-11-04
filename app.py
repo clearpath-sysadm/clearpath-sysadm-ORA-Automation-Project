@@ -6550,44 +6550,26 @@ def api_delete_duplicate_order(shipstation_order_id):
     try:
         from src.services.shipstation.api_client import delete_order_from_shipstation
         
-        # Check if already deleted
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT deleted_at FROM deleted_shipstation_orders 
-            WHERE shipstation_order_id = %s
-        """, (shipstation_order_id,))
-        
-        existing = cursor.fetchone()
-        if existing:
-            conn.close()
-            return jsonify({
-                'success': False,
-                'already_deleted': True,
-                'error': f'Order already deleted on {existing[0].strftime("%Y-%m-%d %H:%M")}'
-            }), 400
-        
         # Delete from ShipStation
         result = delete_order_from_shipstation(shipstation_order_id)
         
         if result['success']:
-            # Track the deletion
-            cursor.execute("""
-                INSERT INTO deleted_shipstation_orders 
-                (shipstation_order_id, order_number, deleted_at, deleted_by)
-                VALUES (%s, %s, CURRENT_TIMESTAMP, 'dashboard')
-                ON CONFLICT (shipstation_order_id) DO NOTHING
-            """, (shipstation_order_id, result.get('order_number')))
+            # Record deletion for duplicate alert auto-resolution (shared helper)
+            track_result = record_shipstation_order_deletion(
+                shipstation_order_id, 
+                result.get('order_number'),
+                deleted_by='dashboard'
+            )
             
-            conn.commit()
-            conn.close()
+            if not track_result['success'] and not track_result.get('already_deleted'):
+                # Log warning but don't fail the whole operation since ShipStation deletion succeeded
+                logger.warning(f"⚠️  Failed to track deletion in database: {track_result.get('error')}")
             
             return jsonify({
                 'success': True,
                 'message': f'Order {shipstation_order_id} deleted from ShipStation'
             })
         else:
-            conn.close()
             return jsonify({
                 'success': False,
                 'error': result.get('error', 'Failed to delete order')
