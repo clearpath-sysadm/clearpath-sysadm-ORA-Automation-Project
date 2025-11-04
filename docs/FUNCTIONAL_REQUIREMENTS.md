@@ -1,7 +1,7 @@
 # Functional Requirements Document (FRD)
 ## Oracare Fulfillment System
 
-**Document Version:** 1.1.0  
+**Document Version:** 1.2.0  
 **Last Updated:** November 4, 2025  
 **Status:** Production Active  
 **Project Phase:** Post-Launch Operations & Enhancement
@@ -510,7 +510,7 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 
 #### FR-DUP-002: Duplicate Alert Viewing & Management
 **Priority:** High  
-**Description:** Users shall be able to view duplicate alerts in a comprehensive modal interface showing all duplicate order details and resolution options.
+**Description:** Admins shall be able to view duplicate alerts in a comprehensive modal interface showing all duplicate order details with permanent exclusion option.
 
 **Acceptance Criteria:**
 - Dashboard displays "Duplicate Alerts" badge with count
@@ -520,7 +520,7 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - Highlight orders deleted from ShipStation with red badge
 - Display local database matches alongside ShipStation records
 - Provide "Delete" button for each order (Admin only)
-- Provide two resolution options: "Mark Resolved" (temporary) and "Permanently Exclude" (permanent)
+- Provide "Permanently Exclude" button for permanent exclusion (Admin only)
 - Real-time UI update when order deleted or alert resolved
 - Auto-refresh modal content on error to show current state
 
@@ -528,7 +528,7 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - BR-DUP-002: Alert details must include both ShipStation and local database records for comparison
 - BR-DUP-003: Deleted orders remain visible in modal with "DELETED" badge until alert is resolved
 
-**Dependencies:** FR-DUP-001, FR-ORD-006
+**Dependencies:** FR-DUP-001, FR-ORD-006, FR-DUP-005
 
 ---
 
@@ -548,9 +548,8 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 **Business Rules:**
 - BR-DUP-004: Auto-resolution runs after every duplicate scan (every 15 minutes)
 - BR-DUP-005: Auto-resolution evaluates only non-excluded, non-deleted records
-- BR-DUP-006: Alerts marked as "resolved" but not excluded can reappear if duplicates persist
 
-**Dependencies:** FR-DUP-001, FR-DUP-006
+**Dependencies:** FR-DUP-001, FR-DUP-005
 
 ---
 
@@ -571,42 +570,7 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 
 ---
 
-#### FR-DUP-005: Temporary Duplicate Alert Resolution
-**Priority:** High  
-**Description:** Admins shall be able to temporarily resolve duplicate alerts using the "Mark Resolved" button without permanently excluding the order from future detection.
-
-**Acceptance Criteria:**
-- Green "Mark Resolved" button displayed for each duplicate alert (Admin only)
-- Confirmation dialog shows order number and SKU before resolution
-- On confirmation, system calls `/api/duplicate_alerts/{id}/resolve` endpoint with Admin authentication
-- Alert status updated to "resolved" in `duplicate_order_alerts` table
-- Resolution timestamp and user recorded in database
-- Alert removed from dashboard immediately upon resolution
-- Alert may reappear in future scans if duplicates still exist in ShipStation
-- Success message displayed to user via toast notification
-- Viewer role users do not see resolution buttons
-
-**Use Cases:**
-- Temporary dismissal while investigating root cause
-- Known duplicates being actively resolved in ShipStation
-- Short-term suppression during cleanup operations
-
-**Business Rules:**
-- BR-DUP-008: Temporary resolution does not prevent alert from reappearing in future scans
-- BR-DUP-009: Resolved alerts removed from active alert count immediately
-- BR-DUP-010: Resolution action logged with timestamp and user ID for audit trail
-- BR-DUP-011: No persistent exclusion record created; alert can be recreated by scanner
-- BR-DUP-020: Only Admin role users can temporarily resolve alerts
-
-**Dependencies:** FR-DUP-002 (Viewing UI), FR-AUTH-002 (Admin role enforcement)
-
-**API Endpoint:** `PUT /api/duplicate_alerts/{alert_id}/resolve`
-
-**Database Impact:** Updates `duplicate_order_alerts.status`, `resolved_at`, `resolved_by`, `notes`
-
----
-
-#### FR-DUP-006: Permanent Duplicate Alert Exclusion
+#### FR-DUP-005: Permanent Duplicate Alert Exclusion
 **Priority:** High  
 **Description:** Admins shall be able to permanently exclude duplicate alerts using the "Permanently Exclude" button, preventing the order+SKU combination from triggering future alerts indefinitely.
 
@@ -629,15 +593,15 @@ The Oracare Fulfillment System operates as a centralized hub connecting:
 - Permanent exceptions to duplicate detection rules
 
 **Business Rules:**
-- BR-DUP-012: Exclusion is permanent and survives system restarts
-- BR-DUP-013: Exclusion persists indefinitely unless manually removed from database
-- BR-DUP-014: Excluded order+SKU combinations skipped during duplicate scanning
-- BR-DUP-015: Exclusion reason stored for audit trail and future reference
-- BR-DUP-016: UNIQUE constraint prevents duplicate exclusion records for same order+SKU
-- BR-DUP-017: Default exclusion reason: "Order predates local database - permanent exclusion"
-- BR-DUP-018: Exclusion does NOT delete orders from ShipStation; duplicates may still exist
-- BR-DUP-019: Each exclusion tied to specific order number + SKU combination
-- BR-DUP-021: Only Admin role users can permanently exclude alerts
+- BR-DUP-008: Exclusion is permanent and survives system restarts
+- BR-DUP-009: Exclusion persists indefinitely unless manually removed from database
+- BR-DUP-010: Excluded order+SKU combinations skipped during duplicate scanning
+- BR-DUP-011: Exclusion reason stored for audit trail and future reference
+- BR-DUP-012: UNIQUE constraint prevents duplicate exclusion records for same order+SKU
+- BR-DUP-013: Default exclusion reason: "Order predates local database - permanent exclusion"
+- BR-DUP-014: Exclusion does NOT delete orders from ShipStation; duplicates may still exist
+- BR-DUP-015: Each exclusion tied to specific order number + SKU combination
+- BR-DUP-016: Only Admin role users can permanently exclude alerts
 
 **Dependencies:** FR-DUP-002 (Viewing UI), FR-AUTH-002 (Admin role enforcement), FR-DUP-001 (Scanner integration)
 
