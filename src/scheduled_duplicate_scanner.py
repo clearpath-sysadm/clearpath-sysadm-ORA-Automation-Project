@@ -341,6 +341,14 @@ def update_duplicate_alerts(duplicates):
         
         existing_alerts = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
         
+        # Get permanently excluded orders (never create alerts for these)
+        cursor.execute("""
+            SELECT order_number, base_sku
+            FROM excluded_duplicate_orders
+        """)
+        
+        permanently_excluded = {(row[0], row[1]) for row in cursor.fetchall()}
+        
         # Get recently manually-resolved alerts (within last 30 days) to prevent re-creation
         cursor.execute("""
             SELECT order_number, base_sku, resolved_at
@@ -356,6 +364,7 @@ def update_duplicate_alerts(duplicates):
         updated_count = 0
         resolved_count = 0
         skipped_count = 0
+        excluded_count = 0
         
         # Process current duplicates
         for (order_number, base_sku), dup_list in duplicates.items():
@@ -363,6 +372,12 @@ def update_duplicate_alerts(duplicates):
             details = json.dumps(dup_list)
             
             key = (order_number, base_sku)
+            
+            # Check if permanently excluded first
+            if key in permanently_excluded:
+                logger.debug(f"⛔ Skipping Order #{order_number} + SKU {base_sku} - permanently excluded")
+                excluded_count += 1
+                continue
             
             if key in existing_alerts:
                 # Update existing alert
@@ -415,7 +430,10 @@ def update_duplicate_alerts(duplicates):
         if skipped_count > 0:
             logger.info(f"⏭️ Skipped {skipped_count} manually resolved alert(s)")
         
-        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated, {total_auto_resolved} auto-resolved, {skipped_count} skipped")
+        if excluded_count > 0:
+            logger.info(f"⛔ Permanently excluded: {excluded_count} order+SKU combination(s)")
+        
+        logger.info(f"📊 Alert summary: {new_count} new, {updated_count} updated, {total_auto_resolved} auto-resolved, {skipped_count} skipped, {excluded_count} permanently excluded")
         
         conn.commit()
         

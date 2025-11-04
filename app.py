@@ -4567,6 +4567,65 @@ def api_resolve_duplicate_alert(alert_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/duplicate_alerts/<int:alert_id>/exclude', methods=['PUT'])
+def api_exclude_duplicate_alert(alert_id):
+    """Permanently exclude a duplicate alert from future detection"""
+    conn = None
+    try:
+        from flask import request
+        data = request.get_json() or {}
+        reason = data.get('reason', 'Order predates local database - permanent exclusion')
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT order_number, base_sku
+            FROM duplicate_order_alerts
+            WHERE id = %s
+        """, (alert_id,))
+        
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({
+                'success': False,
+                'error': 'Alert not found'
+            }), 404
+        
+        order_number, base_sku = row
+        
+        cursor.execute("""
+            INSERT INTO excluded_duplicate_orders 
+            (order_number, base_sku, exclusion_reason)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (order_number, base_sku) DO NOTHING
+        """, (order_number, base_sku, reason))
+        
+        cursor.execute("""
+            UPDATE duplicate_order_alerts
+            SET status = 'resolved',
+                resolved_at = CURRENT_TIMESTAMP,
+                resolved_by = 'manual',
+                notes = %s,
+                resolution_notes = 'Permanently excluded from future detection'
+            WHERE id = %s
+        """, (reason, alert_id))
+        
+        conn.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Order {order_number} + SKU {base_sku} permanently excluded from duplicate detection'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    finally:
+        if conn:
+            conn.close()
+
 @app.route('/api/lot_mismatch_alerts', methods=['GET'])
 def api_get_lot_mismatch_alerts():
     """Get all active lot number mismatch alerts"""

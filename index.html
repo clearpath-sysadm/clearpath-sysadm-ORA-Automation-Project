@@ -1379,7 +1379,10 @@
                 }
                 
                 html += `</div>`;
+                html += `<div style="display: flex; gap: 8px;">`;
+                html += `<button onclick="excludeDuplicateAlert(${alert.id}, '${alert.order_number}', '${alert.base_sku || 'N/A'}')" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; height: fit-content;" title="Permanently exclude this order from duplicate detection">Permanently Exclude</button>`;
                 html += `<button onclick="resolveDuplicateAlert(${alert.id}, '${alert.order_number}', '${alert.base_sku || 'N/A'}')" style="padding: 8px 16px; background: #22c55e; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; height: fit-content;">Mark Resolved</button>`;
+                html += `</div>`;
                 html += '</div>';
                 
                 // Show details of each duplicate from ShipStation
@@ -1724,6 +1727,104 @@
             } catch (error) {
                 console.error('Error resolving duplicate alert:', error);
                 alert('Error resolving alert: ' + error.message);
+            }
+        }
+        
+        async function excludeDuplicateAlert(alertId, orderNumber, baseSku) {
+            const displayText = baseSku && baseSku !== 'N/A' 
+                ? `order #${orderNumber} + SKU ${baseSku}` 
+                : `order #${orderNumber}`;
+            if (!confirm(`⛔ PERMANENTLY EXCLUDE ${displayText}?\n\nThis order will NEVER trigger duplicate alerts again, even if duplicates still exist in ShipStation.\n\nUse this for orders that predate your local database or other legitimate cases where duplicates should be ignored.\n\nAre you sure?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/duplicate_alerts/${alertId}/exclude`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({reason: 'Order predates local database - permanent exclusion via dashboard'})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success toast
+                    const statusMsg = document.createElement('div');
+                    statusMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #dc2626; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; font-weight: 600;';
+                    statusMsg.textContent = `⛔ ${displayText} permanently excluded`;
+                    document.body.appendChild(statusMsg);
+                    
+                    setTimeout(() => {
+                        statusMsg.style.transition = 'opacity 0.3s';
+                        statusMsg.style.opacity = '0';
+                        setTimeout(() => statusMsg.remove(), 300);
+                    }, 3000);
+                    
+                    // Find and remove the alert card from the modal with fade animation
+                    const alertCard = document.querySelector(`[data-alert-id="${alertId}"]`);
+                    if (alertCard) {
+                        alertCard.style.transition = 'all 0.3s ease-out';
+                        alertCard.style.opacity = '0';
+                        alertCard.style.transform = 'translateX(20px)';
+                        
+                        setTimeout(() => {
+                            alertCard.remove();
+                            
+                            // Update the duplicateAlertsData array
+                            duplicateAlertsData = duplicateAlertsData.filter(alert => alert.id !== alertId);
+                            
+                            // Update the count badge
+                            const badge = document.getElementById('duplicate-alerts-badge');
+                            if (badge) {
+                                badge.textContent = duplicateAlertsData.length;
+                                if (duplicateAlertsData.length === 0) {
+                                    badge.style.display = 'none';
+                                }
+                            }
+                            
+                            // Update the alert count in the banner
+                            const duplicateCount = document.getElementById('duplicate-count');
+                            if (duplicateCount) {
+                                duplicateCount.textContent = duplicateAlertsData.length;
+                            }
+                            
+                            // Hide the banner if no alerts remain
+                            if (duplicateAlertsData.length === 0) {
+                                const duplicateAlert = document.getElementById('duplicate-alert');
+                                if (duplicateAlert) {
+                                    duplicateAlert.style.display = 'none';
+                                }
+                            }
+                            
+                            // If no alerts remain, close modal
+                            if (duplicateAlertsData.length === 0) {
+                                const modal = document.querySelector('div[style*="z-index: 9999"]');
+                                if (modal) {
+                                    modal.style.transition = 'opacity 0.3s';
+                                    modal.style.opacity = '0';
+                                    setTimeout(() => modal.remove(), 300);
+                                }
+                            }
+                        }, 300);
+                    } else {
+                        // Fallback to full refresh if card not found
+                        await checkDuplicateAlerts();
+                        const modal = document.querySelector('div[style*="z-index: 9999"]');
+                        if (modal) {
+                            modal.remove();
+                            setTimeout(() => {
+                                if (duplicateAlertsData.length > 0) {
+                                    showDuplicateDetails();
+                                }
+                            }, 300);
+                        }
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to exclude alert');
+                }
+            } catch (error) {
+                console.error('Error excluding duplicate alert:', error);
+                alert('Error excluding alert: ' + error.message);
             }
         }
         
