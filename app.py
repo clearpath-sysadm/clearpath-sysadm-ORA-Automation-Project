@@ -4527,46 +4527,6 @@ def api_get_lot_mismatch_count():
             'error': str(e)
         }), 500
 
-@app.route('/api/duplicate_alerts/<int:alert_id>/resolve', methods=['PUT'])
-def api_resolve_duplicate_alert(alert_id):
-    """Mark a duplicate alert as resolved"""
-    try:
-        from flask import request
-        data = request.get_json() or {}
-        notes = data.get('notes', 'Manually resolved')
-        
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE duplicate_order_alerts
-            SET status = 'resolved',
-                resolved_at = CURRENT_TIMESTAMP,
-                resolved_by = 'manual',
-                notes = %s
-            WHERE id = %s AND status = 'active'
-        """, (notes, alert_id))
-        
-        if cursor.rowcount == 0:
-            conn.close()
-            return jsonify({
-                'success': False,
-                'error': 'Alert not found or already resolved'
-            }), 404
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Duplicate alert marked as resolved'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
 @app.route('/api/duplicate_alerts/<int:alert_id>/exclude', methods=['PUT'])
 def api_exclude_duplicate_alert(alert_id):
     """Permanently exclude a duplicate alert from future detection"""
