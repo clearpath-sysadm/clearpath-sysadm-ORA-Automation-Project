@@ -398,11 +398,12 @@ def check_order_conflict_in_shipstation(order_number: str, current_order_id: str
             timeout=30
         )
         
-        if not response or 'orders' not in response:
+        if not response or response.status_code != 200:
             logger.warning(f"⚠️ Failed to query ShipStation for order number {order_number}")
             return False, None
         
-        orders = response.get('orders', [])
+        data = response.json()
+        orders = data.get('orders', [])
         
         # Check if there are other orders with the same order number but different ShipStation ID
         for existing_order in orders:
@@ -920,11 +921,12 @@ def auto_resolve_manual_order_conflicts(api_key: str, api_secret: str) -> int:
                 endpoint = f"{SHIPSTATION_ORDERS_ENDPOINT}?orderNumber={order_number}"
                 response = make_api_request(endpoint, method='GET', headers=headers)
                 
-                if not response:
+                if not response or response.status_code != 200:
                     logger.warning(f"  ⚠️ Failed to query ShipStation for order {order_number}")
                     continue
                 
-                orders = response.get('orders', [])
+                data = response.json()
+                orders = data.get('orders', [])
                 
                 # Extract unique ShipStation IDs for this order number
                 shipstation_ids = list({str(o.get('orderId')) for o in orders if o.get('orderId')})
