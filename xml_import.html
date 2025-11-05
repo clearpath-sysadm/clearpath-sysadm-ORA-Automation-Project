@@ -644,42 +644,44 @@
         }
 
         function updateStats(orders) {
-            const pending = orders.filter(o => o.status === 'pending').length;
-            const failed = orders.filter(o => o.status === 'failed').length;
+            // Calculate UNIT COUNTS (not order/row counts) - units are the driving factor for fulfillment
+            const pendingUnits = orders.filter(o => o.status === 'pending').reduce((sum, o) => sum + (o.quantity || 0), 0);
+            const failedUnits = orders.filter(o => o.status === 'failed').reduce((sum, o) => sum + (o.quantity || 0), 0);
             
             // Calculate units from LOCAL DATABASE (all non-shipped, non-cancelled orders)
             const awaitingShipmentUnits = orders
                 .filter(o => o.status !== 'shipped' && o.status !== 'cancelled')
                 .reduce((sum, o) => sum + (o.quantity || 0), 0);
 
-            // Update filter badge counts
-            document.getElementById('badge-all').textContent = orders.length;
-            document.getElementById('badge-pending').textContent = pending;
-            document.getElementById('badge-failed').textContent = failed;
+            // Update filter badge counts - ALL SHOWING UNIT COUNTS
+            const allUnits = orders.reduce((sum, o) => sum + (o.quantity || 0), 0);
+            document.getElementById('badge-all').textContent = allUnits;
+            document.getElementById('badge-pending').textContent = pendingUnits;
+            document.getElementById('badge-failed').textContent = failedUnits;
             
-            // Count flagged, hold, benco, hawaiian, canadian, international
-            const flaggedOrders = orders.filter(o => o.is_flagged).length;
-            const holdOrders = orders.filter(o => o.status === 'on_hold').length;
-            const bencoOrders = orders.filter(o => 
+            // Count UNITS for flagged, hold, benco, hawaiian, canadian, international
+            const flaggedUnits = orders.filter(o => o.is_flagged).reduce((sum, o) => sum + (o.quantity || 0), 0);
+            const holdUnits = orders.filter(o => o.status === 'on_hold').reduce((sum, o) => sum + (o.quantity || 0), 0);
+            const bencoUnits = orders.filter(o => 
                 o.company_name && o.company_name.toLowerCase().includes('benco')
-            ).length;
-            const hawaiianOrders = orders.filter(o => 
+            ).reduce((sum, o) => sum + (o.quantity || 0), 0);
+            const hawaiianUnits = orders.filter(o => 
                 o.state && o.state.toUpperCase() === 'HI'
-            ).length;
-            const canadianOrders = orders.filter(o => o.is_canadian).length;
-            const internationalOrders = orders.filter(o => o.is_international).length;
+            ).reduce((sum, o) => sum + (o.quantity || 0), 0);
+            const canadianUnits = orders.filter(o => o.is_canadian).reduce((sum, o) => sum + (o.quantity || 0), 0);
+            const internationalUnits = orders.filter(o => o.is_international).reduce((sum, o) => sum + (o.quantity || 0), 0);
             
-            document.getElementById('badge-flagged').textContent = flaggedOrders;
-            document.getElementById('badge-hold').textContent = holdOrders;
-            document.getElementById('badge-benco').textContent = bencoOrders;
-            document.getElementById('badge-hawaiian').textContent = hawaiianOrders;
-            document.getElementById('badge-canadian').textContent = canadianOrders;
-            document.getElementById('badge-international').textContent = internationalOrders;
+            document.getElementById('badge-flagged').textContent = flaggedUnits;
+            document.getElementById('badge-hold').textContent = holdUnits;
+            document.getElementById('badge-benco').textContent = bencoUnits;
+            document.getElementById('badge-hawaiian').textContent = hawaiianUnits;
+            document.getElementById('badge-canadian').textContent = canadianUnits;
+            document.getElementById('badge-international').textContent = internationalUnits;
             
-            // Show retry button if there are failed orders
+            // Show retry button if there are failed UNITS
             const retryBtn = document.getElementById('btn-retry-failed');
             const mobileRetryBtn = document.getElementById('mobile-btn-retry-failed');
-            if (failed > 0) {
+            if (failedUnits > 0) {
                 retryBtn.classList.remove('is-hidden');
                 if (mobileRetryBtn) mobileRetryBtn.classList.remove('is-hidden');
             } else {
