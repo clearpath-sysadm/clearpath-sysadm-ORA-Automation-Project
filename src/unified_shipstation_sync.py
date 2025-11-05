@@ -918,7 +918,7 @@ def auto_resolve_manual_order_conflicts(api_key: str, api_secret: str) -> int:
             try:
                 # Query ShipStation for ALL orders with this order number
                 endpoint = f"{SHIPSTATION_ORDERS_ENDPOINT}?orderNumber={order_number}"
-                response = make_api_request(endpoint, headers)
+                response = make_api_request(endpoint, method='GET', headers=headers)
                 
                 if not response:
                     logger.warning(f"  ⚠️ Failed to query ShipStation for order {order_number}")
