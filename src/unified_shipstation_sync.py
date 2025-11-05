@@ -878,6 +878,100 @@ def sync_tracking_statuses(conn, api_key: str, api_secret: str) -> int:
     return updated
 
 
+def auto_resolve_manual_order_conflicts(api_key: str, api_secret: str) -> int:
+    """
+    Auto-resolve manual order conflicts that no longer exist in ShipStation.
+    
+    A conflict should be auto-resolved if:
+    - The conflict order number no longer has multiple ShipStation IDs
+    - One of the duplicate orders was deleted from ShipStation
+    
+    Returns:
+        int: Number of conflicts auto-resolved
+    """
+    import psycopg2
+    from src.services.database import get_connection
+    
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get all pending manual order conflicts
+        cursor.execute("""
+            SELECT id, conflicting_order_number, shipstation_order_id
+            FROM manual_order_conflicts
+            WHERE resolution_status = 'pending'
+        """)
+        
+        pending_conflicts = cursor.fetchall()
+        
+        if not pending_conflicts:
+            logger.debug("No pending manual order conflicts to check")
+            return 0
+        
+        logger.info(f"🔍 Checking {len(pending_conflicts)} pending manual order conflicts for auto-resolution")
+        
+        resolved_count = 0
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        for conflict_id, order_number, conflict_shipstation_id in pending_conflicts:
+            try:
+                # Query ShipStation for ALL orders with this order number
+                endpoint = f"{SHIPSTATION_ORDERS_ENDPOINT}?orderNumber={order_number}"
+                response = make_api_request(endpoint, headers)
+                
+                if not response:
+                    logger.warning(f"  ⚠️ Failed to query ShipStation for order {order_number}")
+                    continue
+                
+                orders = response.get('orders', [])
+                
+                # Extract unique ShipStation IDs for this order number
+                shipstation_ids = list({str(o.get('orderId')) for o in orders if o.get('orderId')})
+                
+                # Check if conflict still exists
+                if len(shipstation_ids) <= 1:
+                    # Conflict resolved! Only one (or zero) ShipStation ID found
+                    cursor.execute("""
+                        UPDATE manual_order_conflicts
+                        SET resolution_status = 'auto_resolved',
+                            resolved_at = NOW()
+                        WHERE id = %s
+                    """, (conflict_id,))
+                    
+                    logger.info(f"  ✅ Auto-resolved conflict for order {order_number} (only {len(shipstation_ids)} ShipStation ID(s) found)")
+                    resolved_count += 1
+                elif conflict_shipstation_id not in shipstation_ids:
+                    # The specific conflicting order was deleted from ShipStation
+                    cursor.execute("""
+                        UPDATE manual_order_conflicts
+                        SET resolution_status = 'auto_resolved',
+                            resolved_at = NOW()
+                        WHERE id = %s
+                    """, (conflict_id,))
+                    
+                    logger.info(f"  ✅ Auto-resolved conflict for order {order_number} (conflicting ShipStation ID {conflict_shipstation_id} no longer exists)")
+                    resolved_count += 1
+                else:
+                    logger.debug(f"  ⏳ Conflict still exists for order {order_number}: {len(shipstation_ids)} ShipStation IDs found")
+                    
+            except Exception as e:
+                logger.error(f"  ❌ Error checking conflict for order {order_number}: {e}")
+                continue
+        
+        conn.commit()
+        conn.close()
+        
+        if resolved_count > 0:
+            logger.info(f"🎯 Auto-resolved {resolved_count} manual order conflicts")
+        
+        return resolved_count
+        
+    except Exception as e:
+        logger.error(f"❌ Error in auto-resolve manual order conflicts: {e}", exc_info=True)
+        return 0
+
+
 def run_unified_sync():
     """
     Main unified sync function.
@@ -1210,6 +1304,14 @@ def run_unified_sync():
         logger.info(f"   ❌ Errors: {stats['errors']}")
         logger.info(f"   ⏱️ Duration: {elapsed:.1f}s")
         logger.info("=" * 80)
+        
+        # Auto-resolve manual order conflicts (independent operation after main sync)
+        try:
+            resolved = auto_resolve_manual_order_conflicts(api_key, api_secret)
+            if resolved > 0:
+                logger.info(f"🎯 Auto-resolved {resolved} manual order conflicts")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to auto-resolve conflicts (non-fatal): {e}")
         
     except Exception as e:
         logger.error(f"❌ FATAL ERROR in unified sync: {e}", exc_info=True)
