@@ -659,7 +659,7 @@
             
             // Count flagged, hold, benco, hawaiian, canadian, international
             const flaggedOrders = orders.filter(o => o.is_flagged).length;
-            const holdOrders = orders.filter(o => o.on_hold).length;
+            const holdOrders = orders.filter(o => o.status === 'on_hold').length;
             const bencoOrders = orders.filter(o => 
                 o.company_name && o.company_name.toLowerCase().includes('benco')
             ).length;
@@ -816,7 +816,7 @@
                         if (filter === 'awaiting_shipment' && (order.status === 'uploaded' || order.status === 'awaiting_shipment')) return true;
                         if (filter === 'failed' && order.status === 'failed') return true;
                         if (filter === 'flagged' && order.is_flagged) return true;
-                        if (filter === 'hold' && order.on_hold) return true;
+                        if (filter === 'hold' && order.status === 'on_hold') return true;
                         if (filter === 'benco' && order.company_name && order.company_name.toLowerCase().includes('benco')) return true;
                         if (filter === 'hawaiian' && order.state && order.state.toUpperCase() === 'HI') return true;
                         if (filter === 'canadian' && order.is_canadian) return true;
@@ -1432,7 +1432,7 @@
                         if (filter === 'awaiting_shipment' && (order.status === 'uploaded' || order.status === 'awaiting_shipment')) return true;
                         if (filter === 'failed' && order.status === 'failed') return true;
                         if (filter === 'flagged' && order.is_flagged) return true;
-                        if (filter === 'hold' && order.on_hold) return true;
+                        if (filter === 'hold' && order.status === 'on_hold') return true;
                         if (filter === 'benco' && order.company_name && order.company_name.toLowerCase().includes('benco')) return true;
                         if (filter === 'hawaiian' && order.state && order.state.toUpperCase() === 'HI') return true;
                         if (filter === 'canadian' && order.is_canadian) return true;
