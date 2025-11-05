@@ -11,6 +11,8 @@ The Oracare Fulfillment System replaces Google Sheets with a PostgreSQL database
     - Real-time visibility for business operations
     - Automated workflows with manual oversight capability
     - Zero data loss tolerance
+- **Business Rules:**
+    - **Unit-based metrics:** Display only unit counts (not order counts) throughout the system. Units are the driving factor for all fulfillment, shipping, and inventory workflows. Order counts are only relevant for charge reports.
 - **Technical Preferences:**
     - PostgreSQL with Replit-managed database (automatic backups, rollback support)
     - STRICT tables with proper constraints
