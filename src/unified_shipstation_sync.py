@@ -392,7 +392,10 @@ def check_order_conflict_in_shipstation(order_number: str, current_order: Dict[A
         from src.services.shipstation.api_client import get_shipstation_headers
         
         headers = get_shipstation_headers(api_key, api_secret)
-        current_order_id = str(current_order.get('orderId', ''))
+        
+        # Extract both orderId and orderKey for comparison (ShipStation returns different fields)
+        current_order_id = str(current_order.get('orderId') or '')
+        current_order_key = str(current_order.get('orderKey') or '')
         
         # Extract base SKUs from current order (normalize to handle "SKU - LOT" format)
         current_skus = set()
@@ -420,11 +423,12 @@ def check_order_conflict_in_shipstation(order_number: str, current_order: Dict[A
         
         # Check if there are other orders with the same order number AND overlapping SKUs
         for existing_order in orders:
-            existing_id = str(existing_order.get('orderId', ''))
+            existing_id = str(existing_order.get('orderId') or '')
+            existing_key = str(existing_order.get('orderKey') or '')
             existing_status = existing_order.get('orderStatus', '').lower()
             
-            # Skip if it's the same order
-            if existing_id == current_order_id:
+            # Skip if it's the same order (match on either orderId or orderKey)
+            if (existing_id and existing_id == current_order_id) or (existing_key and existing_key == current_order_key):
                 continue
             
             # Extract base SKUs from existing order
