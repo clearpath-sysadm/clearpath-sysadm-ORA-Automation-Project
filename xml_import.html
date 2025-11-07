@@ -677,29 +677,45 @@
             }
         }
 
+        // Helper: Check if order needs verification (5 scenarios)
+        function needsVerification(order) {
+            // Scenario 1: Canadian with wrong service (not FedEx International Ground)
+            const isCanadianWrongService = order.is_canadian && 
+                order.shipping_service_name && 
+                !order.shipping_service_name.toLowerCase().includes('international ground');
+            
+            // Scenario 2: Hawaiian with wrong service (not FedEx 2Day)
+            const isHawaiianWrongService = order.is_hawaiian && 
+                order.shipping_service_name && 
+                !order.shipping_service_name.toLowerCase().includes('2day') &&
+                !order.shipping_service_name.toLowerCase().includes('2 day');
+            
+            // Scenario 3: Flagged but not resolved
+            const isFlaggedUnresolved = order.is_flagged && !order.flag_resolved;
+            
+            // Scenario 4: On hold
+            const isOnHold = order.status === 'on_hold';
+            
+            // Scenario 5: Benco order without Benco FedEx account
+            const isBencoWrongAccount = order.is_benco && 
+                order.shipping_carrier_id && 
+                order.shipping_carrier_id !== '164030849';
+            
+            return isCanadianWrongService || isHawaiianWrongService || isFlaggedUnresolved || isOnHold || isBencoWrongAccount;
+        }
+        
         function updateStats(orders) {
             // Calculate UNIT COUNTS (not order/row counts) - units are the driving factor for fulfillment
             const failedUnits = orders.filter(o => o.status === 'failed').reduce((sum, o) => sum + (o.quantity || 0), 0);
             const shippedUnits = orders.filter(o => o.status === 'shipped').reduce((sum, o) => sum + (o.quantity || 0), 0);
             
-            // Needs Verification: Canadian OR Hawaiian OR Flagged OR On Hold
-            const needsVerificationUnits = orders.filter(o => {
-                const isCanadian = o.is_canadian;
-                const isHawaiian = o.state && o.state.toUpperCase() === 'HI';
-                const isFlagged = o.is_flagged;
-                const isOnHold = o.status === 'on_hold';
-                return isCanadian || isHawaiian || isFlagged || isOnHold;
-            }).reduce((sum, o) => sum + (o.quantity || 0), 0);
+            // Needs Verification: Use centralized helper function (5 scenarios)
+            const needsVerificationUnits = orders.filter(o => needsVerification(o)).reduce((sum, o) => sum + (o.quantity || 0), 0);
             
             // Ready to Ship: Awaiting shipment orders that are NOT in needs-verification category
             const readyToShipUnits = orders.filter(o => {
                 if (o.status !== 'awaiting_shipment') return false;
-                const isCanadian = o.is_canadian;
-                const isHawaiian = o.state && o.state.toUpperCase() === 'HI';
-                const isFlagged = o.is_flagged;
-                const isOnHold = o.status === 'on_hold';
-                const needsVerification = isCanadian || isHawaiian || isFlagged || isOnHold;
-                return !needsVerification;
+                return !needsVerification(o);
             }).reduce((sum, o) => sum + (o.quantity || 0), 0);
 
             // Update filter badge counts - ALL SHOWING UNIT COUNTS
@@ -886,23 +902,14 @@
             if (activeFilter !== 'all') {
                 filteredOrders = orders.filter(order => {
                     if (activeFilter === 'needs-verification') {
-                        // Canadian OR Hawaiian OR Flagged OR On Hold
-                        const isCanadian = order.is_canadian;
-                        const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
-                        const isFlagged = order.is_flagged;
-                        const isOnHold = order.status === 'on_hold';
-                        return isCanadian || isHawaiian || isFlagged || isOnHold;
+                        // Use centralized helper function (5 scenarios)
+                        return needsVerification(order);
                     }
                     
                     if (activeFilter === 'ready-to-ship') {
                         // Awaiting shipment orders that are NOT in needs-verification
                         if (order.status !== 'awaiting_shipment') return false;
-                        const isCanadian = order.is_canadian;
-                        const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
-                        const isFlagged = order.is_flagged;
-                        const isOnHold = order.status === 'on_hold';
-                        const needsVerification = isCanadian || isHawaiian || isFlagged || isOnHold;
-                        return !needsVerification;
+                        return !needsVerification(order);
                     }
                     
                     if (activeFilter === 'shipped') return order.status === 'shipped';
@@ -1549,20 +1556,12 @@
             if (activeFilter !== 'all') {
                 ordersToExport = currentOrders.filter(order => {
                     if (activeFilter === 'needs-verification') {
-                        const isCanadian = order.is_canadian;
-                        const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
-                        const isFlagged = order.is_flagged;
-                        const isOnHold = order.status === 'on_hold';
-                        return isCanadian || isHawaiian || isFlagged || isOnHold;
+                        // Use centralized helper function (5 scenarios)
+                        return needsVerification(order);
                     }
                     if (activeFilter === 'ready-to-ship') {
                         if (order.status !== 'awaiting_shipment') return false;
-                        const isCanadian = order.is_canadian;
-                        const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
-                        const isFlagged = order.is_flagged;
-                        const isOnHold = order.status === 'on_hold';
-                        const needsVerification = isCanadian || isHawaiian || isFlagged || isOnHold;
-                        return !needsVerification;
+                        return !needsVerification(order);
                     }
                     if (activeFilter === 'shipped') return order.status === 'shipped';
                     if (activeFilter === 'failed') return order.status === 'failed';
