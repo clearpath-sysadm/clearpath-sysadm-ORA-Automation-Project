@@ -49,21 +49,21 @@ def is_week_complete(week_end_date: datetime.date) -> bool:
     Determine if a week is complete for reporting purposes.
     
     BUSINESS RULE: Friday is the last shipping day. A week is considered complete
-    once Friday has passed, even though the calendar week runs Monday-Sunday.
+    on Friday or later, even though the calendar week runs Monday-Sunday.
     
     Args:
         week_end_date: The end date of the week (should be a Sunday)
         
     Returns:
-        True if the week is complete (Friday has passed), False otherwise
+        True if the week is complete (Friday or later), False otherwise
     """
     today = datetime.date.today()
     
     # Calculate Friday of that week (week_end_date is Sunday, so Friday is -2 days)
     friday_of_week = week_end_date - datetime.timedelta(days=2)
     
-    # Week is complete if we're past Friday (i.e., today is Saturday or later)
-    return today > friday_of_week
+    # Week is complete if today is Friday or later (includes Friday, Saturday, Sunday)
+    return today >= friday_of_week
 
 
 def get_prior_complete_week_boundaries() -> Tuple[datetime.date, datetime.date]:

@@ -101,8 +101,10 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     logger.info(f"Today: {today}")
     
     # Determine which week to process based on completeness
-    # If current week is complete (today is Saturday/Sunday after Friday), process current week
-    # Otherwise, process prior week
+    # BUSINESS RULE (as of Nov 2025): Friday is the last shipping day
+    # - If today is Friday, Saturday, or Sunday: process CURRENT week (week is complete)
+    # - If today is Monday, Tuesday, Wednesday, or Thursday: process PRIOR week (incomplete)
+    # This ensures EOW button on Friday processes THIS week's data
     if is_week_complete(current_sunday):
         processed_week_start = current_monday
         processed_week_end = current_sunday
