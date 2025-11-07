@@ -2657,6 +2657,42 @@ def api_unflag_order(order_number):
             'error': str(e)
         }), 500
 
+@app.route('/api/orders_inbox/resolve_flag/<order_number>', methods=['POST'])
+@login_required
+def api_resolve_flag(order_number):
+    """Mark a flagged order as resolved (keeps flag but marks as reviewed)"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE orders_inbox 
+            SET flag_resolved = TRUE,
+                flag_resolved_at = CURRENT_TIMESTAMP,
+                flag_resolved_by = %s
+            WHERE order_number = %s AND is_flagged = TRUE
+        """, (current_user.email if current_user else 'system', order_number))
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f'Order {order_number} not found or not flagged'
+            }), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Order {order_number} marked as resolved'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/order_items/<int:order_id>')
 def api_order_items(order_id):
     """Get order items with SKU-Lot format for a specific order"""
