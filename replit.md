@@ -11,6 +11,10 @@ The Oracare Fulfillment System replaces Google Sheets with a PostgreSQL database
     - Real-time visibility for business operations
     - Automated workflows with manual oversight capability
     - Zero data loss tolerance
+- **Operational Context:**
+    - **Environment:** When troubleshooting, issues are typically occurring in PRODUCTION, not development workspace
+    - **Production Logs:** Production logs are NOT visible in the development workspace. User must manually share production log file contents when troubleshooting production issues
+    - **Database Note:** The Replit "Development Database" IS the production database (only one database exists)
 - **Business Rules:**
     - **Unit-based metrics:** Display only unit counts (not order counts) throughout the system. Units are the driving factor for all fulfillment, shipping, and inventory workflows. Order counts are only relevant for charge reports.
 - **Fulfillment Workflow Context:**
