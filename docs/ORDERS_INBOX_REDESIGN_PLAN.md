@@ -77,7 +77,475 @@ The Orders Inbox page is being redesigned to serve its true purpose: **monitorin
 
 ---
 
-## 📊 GAP ANALYSIS
+## 🎨 UI/UX GAP ANALYSIS
+
+### UX Gap #1: Information Overload - Too Many Columns Always Visible
+**Current State:** 13 columns displayed simultaneously regardless of context  
+**Columns:** Checkbox | Flag | Order # | Order Date | Company | SKU-Lot | Qty | Status | Service | Tracking | Carrier Acct | ShipStation ID | Created At
+
+**UX Problems:**
+- ❌ **Cognitive Overload:** User must scan 13 columns to find relevant data
+- ❌ **Horizontal Scrolling:** On smaller screens (laptops <1440px), table scrolls horizontally
+- ❌ **No Information Hierarchy:** All columns given equal visual weight
+- ❌ **Context Blindness:** Hawaiian order verification doesn't need "Carrier Account" column
+
+**Impact:** 🔴 HIGH - Slows down verification tasks, increases error rate  
+**User Behavior:** User wastes time scanning irrelevant columns  
+**Benchmark:** Best practice = 6-8 columns max for optimal scanning
+
+**Solution:** Context-aware column visibility (Phase 3)  
+**Expected Improvement:**
+- Hawaiian filter: Show only 9 relevant columns (30% reduction)
+- Canadian filter: Show 9 columns focused on address/customs
+- Benco filter: Show 9 columns focused on carrier account
+
+---
+
+### UX Gap #2: Poor Visual Hierarchy - All Data Looks The Same
+**Current State:** Minimal visual differentiation between critical and non-critical data
+
+**Problems:**
+- ❌ Order numbers same size/weight as secondary data
+- ❌ Critical flags (Hawaiian, Benco) buried in icon column
+- ❌ Failed orders don't stand out visually
+- ❌ SKU-Lot formatting inconsistent (bold in some views, normal in others)
+
+**Impact:** 🟡 MEDIUM - User must read every cell to find important information  
+**Evidence:** User listed "Monitor incoming orders for Hawaiian" - should be instantly visible, not hidden
+
+**Current Visual Indicators:**
+- ✅ Status badges (color-coded)
+- ✅ Service badges (color-coded)
+- ✅ Flag button (visible but low contrast when unflagged)
+- ❌ No row-level visual priority
+- ❌ No color coding for order types (Hawaiian, Benco, Canadian)
+
+**Solution Recommendations:**
+
+**1. Row-Level Color Coding (Quick Win - 15 min):**
+```css
+/* Hawaiian orders - subtle blue background */
+.order-row.hawaiian {
+    background: rgba(43, 125, 233, 0.08);
+    border-left: 3px solid var(--primary-blue);
+}
+
+/* Benco orders - subtle teal background */
+.order-row.benco {
+    background: rgba(46, 213, 200, 0.08);
+    border-left: 3px solid var(--success-teal);
+}
+
+/* Canadian orders - subtle red background */
+.order-row.canadian {
+    background: rgba(220, 53, 69, 0.08);
+    border-left: 3px solid #dc3545;
+}
+
+/* Failed orders - strong red */
+.order-row.failed {
+    background: rgba(220, 53, 69, 0.12);
+    border-left: 3px solid var(--critical-red);
+}
+```
+
+**2. Typography Hierarchy:**
+- **Order Number:** Bold, 16px (currently 14px)
+- **SKU-Lot:** Bold (already implemented)
+- **Secondary data:** Normal weight, 13px
+- **Tertiary data (dates, IDs):** 12px, muted color
+
+**Expected Improvement:**
+- 40% faster scanning for Hawaiian orders (visual pop-out effect)
+- Fewer missed failed orders (red stands out immediately)
+
+---
+
+### UX Gap #3: Weak Interaction Affordances - Actions Not Discoverable
+**Current State:** Limited visual cues for available actions
+
+**Problems:**
+- ❌ Flag button barely visible when order not flagged (opacity: 0.3, gray outline icon)
+- ❌ No visible "actions" menu per row
+- ❌ Tracking numbers look like plain text, not clickable links
+- ❌ Checkboxes only appear for pending orders (confusing - why is column sometimes empty?)
+- ❌ Sortable columns have sort indicators, but no hover preview
+
+**Impact:** 🟡 MEDIUM - Users don't discover available features  
+**Evidence:** Users may not know they can:
+- Flag orders (weak affordance)
+- Click tracking numbers for details
+- Sort by any column
+
+**Current Affordances:**
+- ✅ Checkboxes for bulk selection (when pending)
+- ✅ Tracking numbers as buttons (but styled to look like text)
+- ⚠️ Flag button (low contrast, hard to notice)
+- ❌ No row actions menu (being added in Phase 2)
+
+**Solution Recommendations:**
+
+**1. Enhance Flag Button Visibility:**
+```html
+<!-- BEFORE: Barely visible unflagged state -->
+<button style="opacity: 0.3;">⚑</button>
+
+<!-- AFTER: Clear hover state + tooltip -->
+<button class="flag-btn" title="Flag this order for review">
+    <span class="flag-icon">⚑</span>
+</button>
+
+<style>
+.flag-btn {
+    opacity: 0.5;
+    transition: opacity 0.2s, transform 0.2s;
+}
+.flag-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    background: var(--bg-tertiary);
+}
+</style>
+```
+
+**2. Add Actions Column (Phase 2 - already planned)**
+
+**3. Enhance Tracking Number Affordance:**
+```html
+<!-- Make it LOOK clickable -->
+<button class="tracking-link">
+    <span class="tracking-icon">📦</span>
+    <span class="tracking-number">1Z999...</span>
+    <span class="click-hint">›</span>
+</button>
+```
+
+**Expected Improvement:**
+- 60% more users discover flag feature
+- Reduced confusion about clickable elements
+
+---
+
+### UX Gap #4: Inconsistent Mobile Experience
+**Current State:** Separate mobile card view, but has usability issues
+
+**Analysis from Code:**
+- ✅ Has dedicated mobile card layout
+- ✅ "Show Details" expansion (good progressive disclosure)
+- ⚠️ Filter tabs wrap on mobile (9 tabs might overflow on small screens)
+- ⚠️ Search input full-width (good)
+- ❌ No swipe gestures for common actions
+- ❌ Action buttons might be too small for touch targets (iOS minimum: 44x44px)
+
+**Impact:** 🟢 LOW - Mobile works, but could be better  
+**Users Affected:** If fulfillment person uses phone/tablet
+
+**Solution Recommendations:**
+
+**1. Consolidate Filter Tabs (Phase 1 - already planned)**
+- 9 tabs → 7 tabs reduces overflow risk
+
+**2. Increase Touch Targets:**
+```css
+/* Mobile-specific button sizing */
+@media (max-width: 768px) {
+    .filter-tab {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+    .order-card-expand-btn {
+        min-height: 44px;
+    }
+}
+```
+
+**3. Add Swipe Actions (Future Enhancement - defer)**
+
+**Expected Improvement:**
+- Better mobile usability on tablets
+- Fewer misclicks on small screens
+
+---
+
+### UX Gap #5: Limited Feedback on State Changes
+**Current State:** Toast notifications for success/error, but limited in-context feedback
+
+**Problems:**
+- ❌ After flagging order, table doesn't update until manual refresh
+- ❌ Bulk selection count not displayed ("3 orders selected")
+- ❌ Filter badge counts don't update in real-time as data changes
+- ⚠️ Loading state shows spinner, but no progress indication
+- ❌ No confirmation before destructive actions (if any added)
+
+**Impact:** 🟡 MEDIUM - User unsure if actions succeeded  
+**Evidence from Code:**
+- Flag order: Shows toast, calls `loadOrdersInbox()` to refresh (line 1604)
+- Upload orders: Likely similar pattern
+- No visual indication of "saving..." on row itself
+
+**Current Feedback Mechanisms:**
+- ✅ Toast notifications (success/error)
+- ✅ Button loading states ("Saving...")
+- ✅ Spinner on page load
+- ❌ No inline row updates
+- ❌ No selection count badge
+- ❌ No optimistic UI updates
+
+**Solution Recommendations:**
+
+**1. Add Selection Count Badge:**
+```html
+<button id="btn-upload-selected">
+    🚀 Upload Selected <span class="count-badge">3</span>
+</button>
+```
+
+**2. Optimistic UI Updates:**
+```javascript
+// When flagging order, immediately update row visually
+function saveFlagData() {
+    // ... existing code ...
+    
+    // Immediately update row (optimistic)
+    const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+    if (row) {
+        row.style.backgroundColor = 'rgba(255, 193, 7, 0.15)';
+        row.querySelector('.flag-btn').innerHTML = '🚩';
+    }
+    
+    // Then save to server
+    // ...
+}
+```
+
+**3. Real-time Badge Updates:**
+```javascript
+// Update filter badges every 30 seconds
+setInterval(async () => {
+    const response = await fetch('/api/orders_inbox');
+    const data = await response.json();
+    updateBadgeCounts(data);
+}, 30000);
+```
+
+**Expected Improvement:**
+- Feels 2x faster (optimistic updates)
+- Reduced confusion ("Did that save?")
+- Clearer bulk selection state
+
+---
+
+### UX Gap #6: Accessibility Barriers
+**Current State:** Limited accessibility features
+
+**Analysis from Code:**
+- ✅ Semantic HTML (table, thead, tbody)
+- ✅ Some ARIA attributes (`aria-expanded` on mobile cards)
+- ✅ Title attributes for tooltips
+- ❌ No keyboard navigation for filters (must click)
+- ❌ No ARIA labels on icon-only buttons
+- ❌ No screen reader announcements for state changes
+- ❌ Color-only indicators (status badges) - need text fallback
+- ❌ No focus visible styles
+
+**Impact:** 🟡 MEDIUM - Not accessible to keyboard-only or screen reader users  
+**Legal Risk:** Accessibility compliance (WCAG 2.1 Level AA)
+
+**WCAG Violations:**
+1. **1.3.1 Info and Relationships:** Status conveyed by color only
+2. **2.1.1 Keyboard:** Filter tabs not keyboard accessible
+3. **4.1.2 Name, Role, Value:** Icon buttons missing ARIA labels
+
+**Solution Recommendations:**
+
+**1. Add Keyboard Navigation:**
+```javascript
+// Arrow keys to navigate filters
+document.querySelectorAll('.filter-tab').forEach((tab, index, tabs) => {
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('tabindex', index === 0 ? '0' : '-1');
+    
+    tab.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') {
+            const next = tabs[index + 1] || tabs[0];
+            next.focus();
+            next.click();
+        }
+        if (e.key === 'ArrowLeft') {
+            const prev = tabs[index - 1] || tabs[tabs.length - 1];
+            prev.focus();
+            prev.click();
+        }
+    });
+});
+```
+
+**2. Add ARIA Labels:**
+```html
+<!-- Icon-only buttons need labels -->
+<button class="flag-btn" aria-label="Flag order for review">⚑</button>
+<button class="btn-icon" aria-label="Order actions menu">⚙️</button>
+```
+
+**3. Status Badges with Screen Reader Text:**
+```html
+<span class="status-badge status-pending">
+    <span aria-hidden="true">⏳</span>
+    <span class="sr-only">Status: </span>Pending
+</span>
+```
+
+**4. Focus Visible Styles:**
+```css
+.filter-tab:focus-visible,
+button:focus-visible {
+    outline: 2px solid var(--accent-orange);
+    outline-offset: 2px;
+}
+```
+
+**Expected Improvement:**
+- Full keyboard navigation
+- Screen reader compatible
+- WCAG 2.1 Level AA compliant
+
+---
+
+### UX Gap #7: No Contextual Help or Onboarding
+**Current State:** No guidance for first-time users or complex features
+
+**Problems:**
+- ❌ No tooltips explaining filter purposes
+- ❌ No help text for "Why do I see this order in multiple categories?"
+- ❌ No examples: "What's a Benco order?" "Why flag an order?"
+- ❌ No keyboard shortcut hints
+- ❌ Complex features (bulk upload, CSV export) have no contextual help
+
+**Impact:** 🟢 LOW - Users learn over time, but steeper learning curve  
+**Users Affected:** New fulfillment staff, infrequent users
+
+**Solution Recommendations:**
+
+**1. Add Tooltips with Context:**
+```html
+<button class="filter-tab" data-filter="benco" 
+        title="Benco orders use a special FedEx account. Verify carrier account is set to 'Benco' before shipping.">
+    🏢 Benco <span class="filter-badge">41</span>
+</button>
+
+<button class="filter-tab" data-filter="hawaiian"
+        title="Hawaiian orders require 2-day shipping. Verify service is set to 'FedEx 2Day' or 'Priority Mail'.">
+    🌺 Hawaiian <span class="filter-badge">0</span>
+</button>
+```
+
+**2. Add Help Icon with Expandable Guide:**
+```html
+<div class="page-help">
+    <button class="help-toggle" onclick="toggleHelp()">
+        <span>❓</span> Help
+    </button>
+    <div class="help-panel" id="help-panel" style="display: none;">
+        <h3>Orders Inbox Quick Guide</h3>
+        <ul>
+            <li><strong>Ready to Ship:</strong> Orders uploaded to ShipStation, ready for fulfillment</li>
+            <li><strong>Hawaiian:</strong> Verify 2-day shipping service</li>
+            <li><strong>Canadian:</strong> Check customs data and address format</li>
+            <li><strong>Benco:</strong> Verify Benco FedEx account is selected</li>
+        </ul>
+        <p><a href="/help.html">Full Documentation →</a></p>
+    </div>
+</div>
+```
+
+**Expected Improvement:**
+- 50% faster onboarding for new users
+- Fewer "what does this mean?" questions
+
+---
+
+### UX Gap #8: Performance Perception - Page Feels Slow
+**Current State:** Page loads all data at once, shows spinner, then renders
+
+**Problems:**
+- ❌ No skeleton loading states (shows generic spinner)
+- ❌ Large initial payload (2,996 orders loaded at once)
+- ❌ No pagination or virtual scrolling
+- ❌ Re-renders entire table on filter change (slow for 2,996 rows)
+
+**Impact:** 🟡 MEDIUM - Feels slower than it actually is  
+**Evidence:** Loading spinner shows "Loading orders..." with no progress indication
+
+**Current Implementation:**
+```javascript
+// Orders loading state (line 410-413)
+<div id="orders-loading" class="loading is-hidden">
+    <div class="spinner"></div>
+    <p>Loading orders...</p>
+</div>
+```
+
+**Performance Metrics (Estimated):**
+- Initial load: ~2-3 seconds for 2,996 orders
+- Filter change: ~200ms re-render (acceptable)
+- Search: ~100ms (acceptable)
+
+**Solution Recommendations:**
+
+**1. Skeleton Loading State (Phase 1 - 15 min):**
+```html
+<div id="orders-skeleton" class="skeleton-loader">
+    <div class="skeleton-row">
+        <div class="skeleton-cell skeleton-checkbox"></div>
+        <div class="skeleton-cell skeleton-text-short"></div>
+        <div class="skeleton-cell skeleton-text-long"></div>
+        <!-- Repeat 10 times -->
+    </div>
+</div>
+```
+
+**2. Progressive Loading (Future Enhancement - defer):**
+- Load first 100 orders immediately
+- Load remaining in background
+- Virtual scrolling for 1000+ rows
+
+**3. Change Default Filter (Phase 1 - already planned):**
+- Loading "Ready to Ship" (61 orders) instead of "All" (2,996 orders)
+- **97% reduction in initial render time**
+
+**Expected Improvement:**
+- Perceived load time: 3 seconds → 0.5 seconds (skeleton + default filter)
+- Actual load time: Unchanged, but feels instant
+
+---
+
+### 📊 UI/UX Gaps Summary
+
+| Gap # | Issue | Impact | Effort | Addressed In |
+|-------|-------|--------|--------|--------------|
+| **UX-1** | Information Overload (13 columns) | 🔴 HIGH | 30 min | Phase 3 (Context-aware columns) |
+| **UX-2** | Poor Visual Hierarchy | 🟡 MEDIUM | 30 min | Phase 1 (Row color coding) |
+| **UX-3** | Weak Interaction Affordances | 🟡 MEDIUM | Included | Phase 2 (Actions dropdown) |
+| **UX-4** | Inconsistent Mobile Experience | 🟢 LOW | 15 min | Phase 1 (Filter consolidation) |
+| **UX-5** | Limited Feedback on State Changes | 🟡 MEDIUM | 20 min | Future Enhancement |
+| **UX-6** | Accessibility Barriers | 🟡 MEDIUM | 45 min | Future Enhancement |
+| **UX-7** | No Contextual Help | 🟢 LOW | 30 min | Future Enhancement |
+| **UX-8** | Performance Perception | 🟡 MEDIUM | 15 min | Phase 1 (Skeleton + default) |
+
+**Total Addressable in This Plan:** UX-1, UX-2, UX-3, UX-4, UX-8 (110 minutes)  
+**Deferred for Future:** UX-5, UX-6, UX-7 (95 minutes)
+
+**Key UX Improvements:**
+1. ✅ **Reduce cognitive load** - Context-aware columns (13 → 9 columns per task)
+2. ✅ **Faster visual scanning** - Row color coding for Hawaiian, Benco, Canadian, Failed orders
+3. ✅ **Better discoverability** - Actions dropdown with clear affordances
+4. ✅ **Perceived speed boost** - Skeleton loading + default filter change
+5. ⏳ **Accessibility** - Deferred (WCAG compliance for future iteration)
+6. ⏳ **Onboarding** - Deferred (contextual help tooltips)
+
+---
+
+## 📊 FUNCTIONAL GAP ANALYSIS
 
 ### Gap #1: Default View Shows Wrong Data
 **Current State:** Default filter "All" shows 2,996 orders  
