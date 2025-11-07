@@ -377,9 +377,13 @@ def extract_carrier_service_info(order: Dict[Any, Any]) -> Dict[str, Any]:
     }
 
 
-def check_order_conflict_in_shipstation(order_number: str, current_order_id: str, api_key: str, api_secret: str) -> Tuple[bool, Any]:
+def check_order_conflict_in_shipstation(order_number: str, current_order: Dict[Any, Any], api_key: str, api_secret: str) -> Tuple[bool, Any]:
     """
-    Query ShipStation to check if this order number already exists with a different ShipStation ID.
+    Query ShipStation to check if this order number already exists with a different ShipStation ID
+    AND contains the same SKUs (indicating a true duplicate).
+    
+    Multi-SKU orders with the same order number but different SKUs are NOT conflicts
+    (this is by design - one ShipStation order per SKU).
     
     Returns:
         Tuple of (has_conflict, original_order_data)
@@ -388,6 +392,15 @@ def check_order_conflict_in_shipstation(order_number: str, current_order_id: str
         from src.services.shipstation.api_client import get_shipstation_headers
         
         headers = get_shipstation_headers(api_key, api_secret)
+        current_order_id = str(current_order.get('orderId', ''))
+        
+        # Extract base SKUs from current order (normalize to handle "SKU - LOT" format)
+        current_skus = set()
+        for item in current_order.get('items', []):
+            sku_raw = item.get('sku', '').strip()
+            if sku_raw:
+                base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                current_skus.add(base_sku)
         
         # Query ShipStation for orders with this order number
         response = make_api_request(
@@ -405,15 +418,30 @@ def check_order_conflict_in_shipstation(order_number: str, current_order_id: str
         data = response.json()
         orders = data.get('orders', [])
         
-        # Check if there are other orders with the same order number but different ShipStation ID
+        # Check if there are other orders with the same order number AND overlapping SKUs
         for existing_order in orders:
             existing_id = str(existing_order.get('orderId', ''))
             existing_status = existing_order.get('orderStatus', '').lower()
             
-            # Found a different order with same number (includes cancelled orders)
-            if existing_id != str(current_order_id):
-                logger.warning(f"⚠️ CONFLICT: Order {order_number} already exists in ShipStation (ID: {existing_id}, status: {existing_status})")
+            # Skip if it's the same order
+            if existing_id == current_order_id:
+                continue
+            
+            # Extract base SKUs from existing order
+            existing_skus = set()
+            for item in existing_order.get('items', []):
+                sku_raw = item.get('sku', '').strip()
+                if sku_raw:
+                    base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                    existing_skus.add(base_sku)
+            
+            # Check for SKU overlap (true conflict)
+            overlapping_skus = current_skus & existing_skus
+            if overlapping_skus:
+                logger.warning(f"⚠️ CONFLICT: Order {order_number} already exists in ShipStation (ID: {existing_id}, status: {existing_status}) with overlapping SKUs: {overlapping_skus}")
                 return True, existing_order
+            else:
+                logger.info(f"✓ Order {order_number} has different SKUs - no conflict (current: {current_skus}, existing: {existing_skus})")
         
         return False, None
         
@@ -450,7 +478,8 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             return False
         
         # CONFLICT DETECTION: Query ShipStation to check if this order number already exists
-        has_conflict, original_order = check_order_conflict_in_shipstation(order_number, order_id, api_key, api_secret)
+        # with overlapping SKUs (multi-SKU orders with different SKUs are allowed)
+        has_conflict, original_order = check_order_conflict_in_shipstation(order_number, order, api_key, api_secret)
         
         if has_conflict and original_order:
             # Order number already exists in ShipStation (shipped) - create conflict alert
