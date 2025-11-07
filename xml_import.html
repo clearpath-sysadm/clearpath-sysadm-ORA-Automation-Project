@@ -182,6 +182,52 @@
     </div>
 </div>
 
+<!-- Lot Correction Modal -->
+<div class="modal-overlay" id="lot-edit-modal" style="display: none;" onclick="if(event.target === this) closeLotEditModal()">
+    <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2 style="margin: 0; font-size: 20px; color: var(--text-primary);">
+                ✏️ Edit Lot Number
+            </h2>
+            <button class="btn-close-modal" onclick="closeLotEditModal()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--text-secondary); padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">×</button>
+        </div>
+        <div class="modal-body" style="padding: 24px;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Order Number:</label>
+                <div id="lot-edit-order-number" style="font-size: 16px; color: var(--text-secondary); padding: 8px; background: var(--bg-secondary); border-radius: 4px;"></div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">SKU:</label>
+                <div id="lot-edit-sku" style="font-size: 16px; color: var(--text-secondary); padding: 8px; background: var(--bg-secondary); border-radius: 4px; font-family: monospace;"></div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Current Lot:</label>
+                <div id="lot-edit-current-lot" style="font-size: 16px; color: var(--text-tertiary); padding: 8px; background: var(--bg-secondary); border-radius: 4px; font-family: monospace;"></div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label for="lot-edit-new-lot" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">New Lot Number:</label>
+                <select id="lot-edit-new-lot" class="form-control" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; font-family: monospace;">
+                    <option value="">Loading lots...</option>
+                </select>
+            </div>
+            
+            <div style="padding: 12px; background: var(--bg-tertiary); border-left: 4px solid var(--accent-orange); border-radius: 6px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+                    ⚠️ This will update the lot number in ShipStation. The change syncs immediately.
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="closeLotEditModal()" class="btn" style="background: var(--bg-secondary); color: var(--text-primary);">Cancel</button>
+                <button id="btn-save-lot" onclick="saveLotEdit()" class="btn" style="background: var(--primary-blue); color: white; font-weight: 600;">Save & Sync</button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <!-- Mobile Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
@@ -369,32 +415,20 @@
                     
                     <!-- Filter Tabs -->
                     <div class="filter-tabs-container">
-                        <button class="filter-tab active" data-filter="all">
-                            All <span class="filter-badge" id="badge-all">0</span>
+                        <button class="filter-tab" data-filter="needs-verification" title="Canadian, Hawaiian, Flagged, or On Hold orders requiring special attention">
+                            ⚠️ Needs Verification <span class="filter-badge badge-warning" id="badge-needs-verification">0</span>
                         </button>
-                        <button class="filter-tab" data-filter="pending">
-                            Pending <span class="filter-badge" id="badge-pending">0</span>
+                        <button class="filter-tab active" data-filter="ready-to-ship" title="Pending orders ready for batch processing in ShipStation">
+                            ✅ Ready to Ship <span class="filter-badge" id="badge-ready-to-ship">0</span>
                         </button>
-                        <button class="filter-tab" data-filter="failed">
-                            Failed <span class="filter-badge badge-warning" id="badge-failed">0</span>
+                        <button class="filter-tab" data-filter="shipped" title="Orders successfully shipped with tracking">
+                            📦 Shipped <span class="filter-badge badge-info" id="badge-shipped">0</span>
                         </button>
-                        <button class="filter-tab" data-filter="flagged">
-                            🚩 Flagged <span class="filter-badge badge-warning" id="badge-flagged">0</span>
+                        <button class="filter-tab" data-filter="failed" title="Orders that failed to upload or process">
+                            ❌ Failed <span class="filter-badge badge-warning" id="badge-failed">0</span>
                         </button>
-                        <button class="filter-tab" data-filter="hold">
-                            On Hold <span class="filter-badge" id="badge-hold">0</span>
-                        </button>
-                        <button class="filter-tab" data-filter="benco">
-                            Benco <span class="filter-badge badge-info" id="badge-benco">0</span>
-                        </button>
-                        <button class="filter-tab" data-filter="hawaiian">
-                            Hawaiian <span class="filter-badge badge-info" id="badge-hawaiian">0</span>
-                        </button>
-                        <button class="filter-tab" data-filter="canadian">
-                            🍁 Canadian <span class="filter-badge badge-info" id="badge-canadian">0</span>
-                        </button>
-                        <button class="filter-tab" data-filter="international">
-                            🌐 International <span class="filter-badge badge-info" id="badge-international">0</span>
+                        <button class="filter-tab" data-filter="all" title="Show all orders regardless of status">
+                            📋 All Orders <span class="filter-badge" id="badge-all">0</span>
                         </button>
                     </div>
 
@@ -546,8 +580,8 @@
         // Orders Inbox Functionality
         const alertContainer = document.getElementById('alert-container');
         
-        // Filter state - controlled by filter tabs
-        let activeFilters = new Set(); // Set of active filter names (toggle mode)
+        // Filter state - controlled by filter tabs (single-select mode)
+        let activeFilter = 'ready-to-ship'; // Default to Ready to Ship filter
         let searchTerm = '';
         
         // Track current order for flagging
@@ -645,38 +679,36 @@
 
         function updateStats(orders) {
             // Calculate UNIT COUNTS (not order/row counts) - units are the driving factor for fulfillment
-            const pendingUnits = orders.filter(o => o.status === 'pending').reduce((sum, o) => sum + (o.quantity || 0), 0);
             const failedUnits = orders.filter(o => o.status === 'failed').reduce((sum, o) => sum + (o.quantity || 0), 0);
+            const shippedUnits = orders.filter(o => o.status === 'shipped').reduce((sum, o) => sum + (o.quantity || 0), 0);
             
-            // Calculate units from LOCAL DATABASE (all non-shipped, non-cancelled orders)
-            const awaitingShipmentUnits = orders
-                .filter(o => o.status !== 'shipped' && o.status !== 'cancelled')
-                .reduce((sum, o) => sum + (o.quantity || 0), 0);
+            // Needs Verification: Canadian OR Hawaiian OR Flagged OR On Hold
+            const needsVerificationUnits = orders.filter(o => {
+                const isCanadian = o.is_canadian;
+                const isHawaiian = o.state && o.state.toUpperCase() === 'HI';
+                const isFlagged = o.is_flagged;
+                const isOnHold = o.status === 'on_hold';
+                return isCanadian || isHawaiian || isFlagged || isOnHold;
+            }).reduce((sum, o) => sum + (o.quantity || 0), 0);
+            
+            // Ready to Ship: Pending orders that are NOT in needs-verification category
+            const readyToShipUnits = orders.filter(o => {
+                if (o.status !== 'pending') return false;
+                const isCanadian = o.is_canadian;
+                const isHawaiian = o.state && o.state.toUpperCase() === 'HI';
+                const isFlagged = o.is_flagged;
+                const isOnHold = o.status === 'on_hold';
+                const needsVerification = isCanadian || isHawaiian || isFlagged || isOnHold;
+                return !needsVerification;
+            }).reduce((sum, o) => sum + (o.quantity || 0), 0);
 
             // Update filter badge counts - ALL SHOWING UNIT COUNTS
             const allUnits = orders.reduce((sum, o) => sum + (o.quantity || 0), 0);
             document.getElementById('badge-all').textContent = allUnits;
-            document.getElementById('badge-pending').textContent = pendingUnits;
+            document.getElementById('badge-needs-verification').textContent = needsVerificationUnits;
+            document.getElementById('badge-ready-to-ship').textContent = readyToShipUnits;
+            document.getElementById('badge-shipped').textContent = shippedUnits;
             document.getElementById('badge-failed').textContent = failedUnits;
-            
-            // Count UNITS for flagged, hold, benco, hawaiian, canadian, international
-            const flaggedUnits = orders.filter(o => o.is_flagged).reduce((sum, o) => sum + (o.quantity || 0), 0);
-            const holdUnits = orders.filter(o => o.status === 'on_hold').reduce((sum, o) => sum + (o.quantity || 0), 0);
-            const bencoUnits = orders.filter(o => 
-                o.company_name && o.company_name.toLowerCase().includes('benco')
-            ).reduce((sum, o) => sum + (o.quantity || 0), 0);
-            const hawaiianUnits = orders.filter(o => 
-                o.state && o.state.toUpperCase() === 'HI'
-            ).reduce((sum, o) => sum + (o.quantity || 0), 0);
-            const canadianUnits = orders.filter(o => o.is_canadian).reduce((sum, o) => sum + (o.quantity || 0), 0);
-            const internationalUnits = orders.filter(o => o.is_international).reduce((sum, o) => sum + (o.quantity || 0), 0);
-            
-            document.getElementById('badge-flagged').textContent = flaggedUnits;
-            document.getElementById('badge-hold').textContent = holdUnits;
-            document.getElementById('badge-benco').textContent = bencoUnits;
-            document.getElementById('badge-hawaiian').textContent = hawaiianUnits;
-            document.getElementById('badge-canadian').textContent = canadianUnits;
-            document.getElementById('badge-international').textContent = internationalUnits;
             
             // Show retry button if there are failed UNITS
             const retryBtn = document.getElementById('btn-retry-failed');
@@ -738,13 +770,53 @@
 
         // Helper: Get order type icons HTML
         function getOrderTypeIcons(order) {
-            let icons = '';
-            if (order.is_hawaiian) icons += '<span class="order-icon icon-hawaiian" title="Hawaiian Order">HI</span>';
-            if (order.is_canadian) icons += '<span class="order-icon icon-canadian" title="Canadian Order">CA</span>';
-            if (order.is_benco) icons += '<span class="order-icon icon-benco" title="Benco Order">B</span>';
-            if (order.is_international) icons += '<span class="order-icon icon-international" title="International Order">🌐</span>';
-            if (order.is_manual) icons += '<span class="order-icon icon-manual" title="Manual ShipStation Order">M</span>';
-            return icons ? `<span class="order-type-icons">${icons}</span>` : '';
+            let badges = '';
+            
+            // Hawaiian - Blue badge with flower emoji
+            if (order.is_hawaiian || (order.state && order.state.toUpperCase() === 'HI')) {
+                badges += `<span class="badge badge-pending" style="margin-left: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    🌺 Hawaiian
+                </span>`;
+            }
+            
+            // Canadian - Red badge with FLAG IMAGE
+            if (order.is_canadian) {
+                badges += `<span class="badge badge-critical" style="margin-left: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    <img src="https://flagcdn.com/16x12/ca.png" 
+                         srcset="https://flagcdn.com/32x24/ca.png 2x, https://flagcdn.com/48x36/ca.png 3x"
+                         alt="Canada" 
+                         style="width: 16px; height: 12px; object-fit: contain;"
+                         onerror="this.outerHTML='🇨🇦'">
+                    Canadian
+                </span>`;
+            }
+            
+            // Benco - Gold badge with BENCO LOGO
+            if (order.is_benco || (order.company_name && order.company_name.toLowerCase().includes('benco'))) {
+                badges += `<span class="badge badge-warning" style="margin-left: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    <img src="https://www.benco.com/favicon.ico" 
+                         alt="Benco" 
+                         style="width: 14px; height: 14px; object-fit: contain;"
+                         onerror="this.outerHTML='🏢'">
+                    Benco
+                </span>`;
+            }
+            
+            // International - Green badge with globe emoji
+            if (order.is_international && !order.is_canadian) {
+                badges += `<span class="badge badge-success" style="margin-left: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    🌎 International
+                </span>`;
+            }
+            
+            // Manual orders - Gray badge
+            if (order.is_manual) {
+                badges += `<span class="badge" style="margin-left: 8px; font-size: 11px; font-weight: 600; background: var(--text-tertiary); color: white;">
+                    Manual
+                </span>`;
+            }
+            
+            return badges;
         }
 
         // Helper: Get carrier account badge (Benco or Oracare)
@@ -808,26 +880,38 @@
             // Store all orders for sorting
             currentOrders = orders;
 
-            // Filter based on active filter tabs (toggle mode - show orders matching ANY active filter)
+            // Filter based on active filter (single-select mode)
             let filteredOrders = orders;
-            if (activeFilters.size > 0) {
+            
+            if (activeFilter !== 'all') {
                 filteredOrders = orders.filter(order => {
-                    // Check if order matches ANY of the active filters
-                    for (const filter of activeFilters) {
-                        if (filter === 'pending' && order.status === 'pending') return true;
-                        if (filter === 'awaiting_shipment' && (order.status === 'uploaded' || order.status === 'awaiting_shipment')) return true;
-                        if (filter === 'failed' && order.status === 'failed') return true;
-                        if (filter === 'flagged' && order.is_flagged) return true;
-                        if (filter === 'hold' && order.status === 'on_hold') return true;
-                        if (filter === 'benco' && order.company_name && order.company_name.toLowerCase().includes('benco')) return true;
-                        if (filter === 'hawaiian' && order.state && order.state.toUpperCase() === 'HI') return true;
-                        if (filter === 'canadian' && order.is_canadian) return true;
-                        if (filter === 'international' && order.is_international) return true;
+                    if (activeFilter === 'needs-verification') {
+                        // Canadian OR Hawaiian OR Flagged OR On Hold
+                        const isCanadian = order.is_canadian;
+                        const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
+                        const isFlagged = order.is_flagged;
+                        const isOnHold = order.status === 'on_hold';
+                        return isCanadian || isHawaiian || isFlagged || isOnHold;
                     }
-                    return false; // Order doesn't match any active filter
+                    
+                    if (activeFilter === 'ready-to-ship') {
+                        // Pending orders that are NOT in needs-verification
+                        if (order.status !== 'pending') return false;
+                        const isCanadian = order.is_canadian;
+                        const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
+                        const isFlagged = order.is_flagged;
+                        const isOnHold = order.status === 'on_hold';
+                        const needsVerification = isCanadian || isHawaiian || isFlagged || isOnHold;
+                        return !needsVerification;
+                    }
+                    
+                    if (activeFilter === 'shipped') return order.status === 'shipped';
+                    if (activeFilter === 'failed') return order.status === 'failed';
+                    
+                    return false;
                 });
             }
-            // No active filters = show all orders
+            // activeFilter === 'all' shows all orders (no filtering)
             
             // Apply search filter if search term exists
             if (searchTerm.trim()) {
@@ -844,7 +928,7 @@
                 // Enhanced empty state with helpful context
                 let emptyStateHTML = '';
                 
-                if (activeFilters.size === 0 && orders.length === 0) {
+                if (activeFilter === 'all' && orders.length === 0) {
                     // True empty inbox - show helpful message with Dashboard link
                     emptyStateHTML = `
                         <div style="text-align: center; padding: 60px 20px; background: var(--bg-secondary); border-radius: 12px; margin: 20px;">
@@ -950,6 +1034,18 @@
                     ? `<button onclick="openFlagModal('${order.order_number}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;" title="${flagTooltip}">🚩</button>`
                     : `<button onclick="openFlagModal('${order.order_number}')" style="background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; opacity: 0.3;" title="${flagTooltip}">⚑</button>`;
                 
+                // Parse SKU and Lot from sku_lot_display (format: "SKU - LOT")
+                const skuLotParts = order.sku_lot_display ? order.sku_lot_display.split(' - ') : ['', ''];
+                const sku = skuLotParts[0] || '';
+                const lot = skuLotParts[1] || '';
+                
+                // Add Edit Lot button if order has ShipStation ID (can only edit synced orders)
+                const editLotButton = order.shipstation_order_id ? 
+                    `<button onclick="openLotEditModal('${order.order_number}', '${sku}', '${lot}', '${order.shipstation_order_id}')" 
+                             style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; opacity: 0.6; color: var(--primary-blue);" 
+                             title="Edit lot number">✏️</button>` 
+                    : '';
+                
                 return `
                 <tr data-order-id="${order.id}" class="order-row" style="${flaggedStyle}">
                     <td>
@@ -959,7 +1055,10 @@
                     <td><strong>${order.order_number}</strong>${iconHtml}</td>
                     <td>${order.order_date}</td>
                     <td>${order.company_name || '-'}</td>
-                    <td><strong>${order.sku_lot_display}</strong></td>
+                    <td style="display: flex; align-items: center; gap: 6px;">
+                        <strong>${order.sku_lot_display}</strong>
+                        ${editLotButton}
+                    </td>
                     <td>${order.quantity}</td>
                     <td>${statusBadge}</td>
                     <td>${serviceBadge}</td>
@@ -990,6 +1089,18 @@
                     ? (order.company_name || 'Unknown Customer').substring(0, 40) + '...' 
                     : (order.company_name || 'Unknown Customer');
                 
+                // Parse SKU and Lot for mobile view
+                const skuLotParts = order.sku_lot_display ? order.sku_lot_display.split(' - ') : ['', ''];
+                const sku = skuLotParts[0] || '';
+                const lot = skuLotParts[1] || '';
+                
+                // Add Edit Lot button if order has ShipStation ID
+                const editLotButton = order.shipstation_order_id ? 
+                    `<button onclick="openLotEditModal('${order.order_number}', '${sku}', '${lot}', '${order.shipstation_order_id}')" 
+                             style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 6px; color: var(--primary-blue);" 
+                             title="Edit lot number">✏️</button>` 
+                    : '';
+                
                 return `
                 <div class="order-card" data-order-id="${order.id}">
                     ${order.status === 'pending' ? `
@@ -1010,7 +1121,10 @@
                     <div class="order-card-details" id="details-${order.id}">
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">SKU-LOT:</span>
-                            <span class="order-card-detail-value"><strong>${order.sku_lot_display}</strong></span>
+                            <span class="order-card-detail-value" style="display: flex; align-items: center; gap: 6px;">
+                                <strong>${order.sku_lot_display}</strong>
+                                ${editLotButton}
+                            </span>
                         </div>
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Quantity:</span>
@@ -1427,19 +1541,27 @@
             let ordersToExport = currentOrders;
             
             // Apply same filtering logic as renderOrdersTable
-            if (activeFilters.size > 0) {
+            if (activeFilter !== 'all') {
                 ordersToExport = currentOrders.filter(order => {
-                    for (const filter of activeFilters) {
-                        if (filter === 'pending' && order.status === 'pending') return true;
-                        if (filter === 'awaiting_shipment' && (order.status === 'uploaded' || order.status === 'awaiting_shipment')) return true;
-                        if (filter === 'failed' && order.status === 'failed') return true;
-                        if (filter === 'flagged' && order.is_flagged) return true;
-                        if (filter === 'hold' && order.status === 'on_hold') return true;
-                        if (filter === 'benco' && order.company_name && order.company_name.toLowerCase().includes('benco')) return true;
-                        if (filter === 'hawaiian' && order.state && order.state.toUpperCase() === 'HI') return true;
-                        if (filter === 'canadian' && order.is_canadian) return true;
-                        if (filter === 'international' && order.is_international) return true;
+                    if (activeFilter === 'needs-verification') {
+                        const isCanadian = order.is_canadian;
+                        const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
+                        const isFlagged = order.is_flagged;
+                        const isOnHold = order.status === 'on_hold';
+                        return isCanadian || isHawaiian || isFlagged || isOnHold;
                     }
+                    if (activeFilter === 'ready-to-ship') {
+                        if (order.status !== 'pending') return false;
+                        const isCanadian = order.is_canadian;
+                        const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
+                        const isFlagged = order.is_flagged;
+                        const isOnHold = order.status === 'on_hold';
+                        const needsVerification = isCanadian || isHawaiian || isFlagged || isOnHold;
+                        return !needsVerification;
+                    }
+                    if (activeFilter === 'shipped') return order.status === 'shipped';
+                    if (activeFilter === 'failed') return order.status === 'failed';
+                    
                     return false;
                 });
             }
@@ -1484,8 +1606,8 @@
             const link = document.createElement('a');
             link.href = url;
             
-            // Build filter text from active filters
-            const filterText = activeFilters.size === 0 ? '_all' : `_${Array.from(activeFilters).join('_')}`;
+            // Build filter text from active filter
+            const filterText = activeFilter === 'all' ? '_all' : `_${activeFilter}`;
             const timestamp = new Date().toISOString().split('T')[0];
             link.download = `orders_inbox${filterText}_${timestamp}.csv`;
             
@@ -1500,36 +1622,19 @@
         // CSV Export button handler
         document.getElementById('btn-export-csv').addEventListener('click', exportToCSV);
 
-        // Filter tab click handlers (toggle mode)
+        // Filter tab click handlers (single-select mode for workflow-focused filters)
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const filter = this.getAttribute('data-filter');
                 
-                if (filter === 'all') {
-                    // "All" button clears all filters and deactivates all tabs
-                    activeFilters.clear();
-                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                } else {
-                    // Remove "All" tab active state when selecting any other filter
-                    document.querySelector('.filter-tab[data-filter="all"]').classList.remove('active');
-                    
-                    // Toggle this filter on/off
-                    if (activeFilters.has(filter)) {
-                        activeFilters.delete(filter);
-                        this.classList.remove('active');
-                    } else {
-                        activeFilters.add(filter);
-                        this.classList.add('active');
-                    }
-                    
-                    // If no filters active, activate "All" button
-                    if (activeFilters.size === 0) {
-                        document.querySelector('.filter-tab[data-filter="all"]').classList.add('active');
-                    }
-                }
+                // Single-select mode: set the active filter
+                activeFilter = filter;
                 
-                // Re-render table with new filters
+                // Update tab active states
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Re-render table with new filter
                 if (currentOrders.length > 0) {
                     renderOrdersTable(currentOrders);
                 }
@@ -1688,6 +1793,99 @@
             modal.style.display = 'none';
         }
         
+        // Lot Edit Modal Functions
+        let currentLotEditData = null;
+        
+        async function openLotEditModal(orderNumber, sku, currentLot, shipstationOrderId) {
+            currentLotEditData = { orderNumber, sku, currentLot, shipstationOrderId };
+            
+            // Set order info
+            document.getElementById('lot-edit-order-number').textContent = orderNumber;
+            document.getElementById('lot-edit-sku').textContent = sku;
+            document.getElementById('lot-edit-current-lot').textContent = currentLot || '(none)';
+            
+            // Load available lots for this SKU
+            const lotSelect = document.getElementById('lot-edit-new-lot');
+            lotSelect.innerHTML = '<option value="">Loading lots...</option>';
+            lotSelect.disabled = true;
+            
+            // Show modal
+            document.getElementById('lot-edit-modal').style.display = 'flex';
+            
+            try {
+                const response = await fetch(`/api/sku_lot?sku=${encodeURIComponent(sku)}&active_only=true`);
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    lotSelect.innerHTML = '<option value="">Select a lot number...</option>';
+                    result.data.forEach(lot => {
+                        const option = document.createElement('option');
+                        option.value = lot.lot_number;
+                        option.textContent = lot.lot_number;
+                        if (lot.lot_number === currentLot) {
+                            option.disabled = true;
+                            option.textContent += ' (current)';
+                        }
+                        lotSelect.appendChild(option);
+                    });
+                    lotSelect.disabled = false;
+                } else {
+                    lotSelect.innerHTML = '<option value="">No active lots available</option>';
+                    showAlert(`⚠️ No active lots found for SKU ${sku}`, 'warning');
+                }
+            } catch (error) {
+                lotSelect.innerHTML = '<option value="">Error loading lots</option>';
+                showAlert(`❌ Error loading lots: ${error.message}`, 'error');
+            }
+        }
+        
+        function closeLotEditModal() {
+            document.getElementById('lot-edit-modal').style.display = 'none';
+            currentLotEditData = null;
+        }
+        
+        async function saveLotEdit() {
+            if (!currentLotEditData) return;
+            
+            const newLot = document.getElementById('lot-edit-new-lot').value;
+            if (!newLot) {
+                showAlert('⚠️ Please select a new lot number', 'warning');
+                return;
+            }
+            
+            const saveBtn = document.getElementById('btn-save-lot');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            
+            try {
+                const response = await fetch('/api/update_lot_in_shipstation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        shipstation_order_id: currentLotEditData.shipstationOrderId,
+                        sku: currentLotEditData.sku,
+                        new_lot: newLot
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✅ Lot updated successfully to ${newLot}`, 'success');
+                    closeLotEditModal();
+                    // Reload orders to show updated lot
+                    loadOrdersInbox();
+                } else {
+                    showAlert(`❌ Failed to update lot: ${result.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`❌ Error updating lot: ${error.message}`, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save & Sync';
+            }
+        }
+        
         // Helper functions for formatting
         function formatCarrierName(carrier) {
             if (!carrier) return null;
@@ -1708,8 +1906,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         const preselectedFilter = urlParams.get('filter');
         if (preselectedFilter) {
-            // Add the filter to activeFilters
-            activeFilters.add(preselectedFilter);
+            // Set the active filter
+            activeFilter = preselectedFilter;
             
             // Visually activate the filter tab after page loads
             setTimeout(() => {

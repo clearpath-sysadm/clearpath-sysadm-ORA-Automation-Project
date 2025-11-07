@@ -45,7 +45,7 @@ A single centralized `global-styles.css` defines the premium corporate design sy
     - **Orders Cleanup Service:** Daily deletion of `orders_inbox` entries older than 60 days.
     - **Duplicate Order Monitoring System:** Scans ShipStation every 15 minutes for duplicate order numbers with intelligent auto-resolution and a "Permanently Exclude" feature. Tracks all ShipStation order deletions in `deleted_shipstation_orders`.
 - **Frontend:** `index.html` serves as the main dashboard (DEFAULT VIEW), offering a complete enterprise layout with two-tier navigation, card-based components, responsive design, auto-refresh, skeleton loaders, and error handling.
-- **Orders Inbox (xml_import.html):** Secondary interface for monitoring, troubleshooting, and manual interventions related to order status, inventory, and flagged orders.
+- **Orders Inbox (xml_import.html):** Secondary interface for monitoring, troubleshooting, and manual interventions related to order status, inventory, and flagged orders. Redesigned with workflow-focused filters (Needs Verification, Ready to Ship, Shipped, Failed, All Orders) in single-select mode with "Ready to Ship" as default. Features inline lot number editing with ShipStation sync, visual order type badges (Canadian flag image, Benco logo, Hawaiian flower, International globe), and premium UI polish. Includes ✏️ edit button next to SKU-LOT displays for quick lot corrections via database-driven dropdown.
 - **Bundle SKU System:** Database-driven management with CRUD capabilities for bundle SKUs and automatic expansion.
 - **SKU Lot Management:** Database-driven tracking for SKU-Lot combinations with CRUD support and unique constraints.
 - **Lot Inventory Management:** Auto-calculated FIFO inventory tracking per lot.
