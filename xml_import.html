@@ -691,9 +691,9 @@
                 return isCanadian || isHawaiian || isFlagged || isOnHold;
             }).reduce((sum, o) => sum + (o.quantity || 0), 0);
             
-            // Ready to Ship: Pending orders that are NOT in needs-verification category
+            // Ready to Ship: Awaiting shipment orders that are NOT in needs-verification category
             const readyToShipUnits = orders.filter(o => {
-                if (o.status !== 'pending') return false;
+                if (o.status !== 'awaiting_shipment') return false;
                 const isCanadian = o.is_canadian;
                 const isHawaiian = o.state && o.state.toUpperCase() === 'HI';
                 const isFlagged = o.is_flagged;
@@ -895,8 +895,8 @@
                     }
                     
                     if (activeFilter === 'ready-to-ship') {
-                        // Pending orders that are NOT in needs-verification
-                        if (order.status !== 'pending') return false;
+                        // Awaiting shipment orders that are NOT in needs-verification
+                        if (order.status !== 'awaiting_shipment') return false;
                         const isCanadian = order.is_canadian;
                         const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
                         const isFlagged = order.is_flagged;
@@ -1551,7 +1551,7 @@
                         return isCanadian || isHawaiian || isFlagged || isOnHold;
                     }
                     if (activeFilter === 'ready-to-ship') {
-                        if (order.status !== 'pending') return false;
+                        if (order.status !== 'awaiting_shipment') return false;
                         const isCanadian = order.is_canadian;
                         const isHawaiian = order.state && order.state.toUpperCase() === 'HI';
                         const isFlagged = order.is_flagged;
