@@ -1034,6 +1034,11 @@
                     ? `<button onclick="openFlagModal('${order.order_number}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;" title="${flagTooltip}">🚩</button>`
                     : `<button onclick="openFlagModal('${order.order_number}')" style="background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; opacity: 0.3;" title="${flagTooltip}">⚑</button>`;
                 
+                // Add resolve button if order is flagged but not resolved
+                const resolveButton = (order.is_flagged && !order.flag_resolved) 
+                    ? `<button onclick="resolveFlag('${order.order_number}')" style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; color: var(--success-green); opacity: 0.8;" title="Mark as resolved">✓</button>`
+                    : '';
+                
                 // Parse SKU and Lot from sku_lot_display (format: "SKU - LOT")
                 const skuLotParts = order.sku_lot_display ? order.sku_lot_display.split(' - ') : ['', ''];
                 const sku = skuLotParts[0] || '';
@@ -1051,7 +1056,7 @@
                     <td>
                         ${order.status === 'pending' ? `<input type="checkbox" class="order-checkbox" data-order-id="${order.id}">` : ''}
                     </td>
-                    <td>${flagButton}</td>
+                    <td style="white-space: nowrap;">${flagButton}${resolveButton}</td>
                     <td><strong>${order.order_number}</strong>${iconHtml}</td>
                     <td>${order.order_date}</td>
                     <td>${order.company_name || '-'}</td>
@@ -1723,6 +1728,25 @@
             
             try {
                 const response = await fetch(`/api/orders_inbox/unflag/${orderNumber}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✅ ${result.message}`, 'success');
+                    loadOrdersInbox();
+                } else {
+                    showAlert(`❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function resolveFlag(orderNumber) {
+            try {
+                const response = await fetch(`/api/orders_inbox/resolve_flag/${orderNumber}`, {
                     method: 'POST'
                 });
                 

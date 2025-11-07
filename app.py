@@ -2524,11 +2524,14 @@ def api_orders_inbox():
                 o.flagged_at,
                 o.tracking_status,
                 o.tracking_status_description,
-                o.exception_description
+                o.exception_description,
+                o.flag_resolved,
+                o.flag_resolved_at,
+                o.ship_postal_code
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.tracking_number, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at, o.tracking_status, o.tracking_status_description, o.exception_description
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.tracking_number, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at, o.tracking_status, o.tracking_status_description, o.exception_description, o.flag_resolved, o.flag_resolved_at, o.ship_postal_code
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
@@ -2568,6 +2571,9 @@ def api_orders_inbox():
                 'created_at': row[10],
                 'failure_reason': row[11] or '',
                 'company_name': company_name,
+                'ship_state': ship_state,
+                'ship_country': ship_country,
+                'ship_postal_code': row[27] or '',
                 'is_hawaiian': is_hawaiian,
                 'is_canadian': is_canadian,
                 'is_benco': is_benco,
@@ -2581,7 +2587,9 @@ def api_orders_inbox():
                 'flagged_at': row[21],
                 'tracking_status': row[22] or None,
                 'tracking_status_description': row[23] or None,
-                'exception_description': row[24] or None
+                'exception_description': row[24] or None,
+                'flag_resolved': row[25] or False,
+                'flag_resolved_at': row[26]
             })
         
         return jsonify({
