@@ -60,3 +60,11 @@ A single centralized `global-styles.css` defines the premium corporate design sy
 - **Google Drive:** Integrated for XML file imports.
 - **SendGrid:** (Optional) For email notifications.
 - **Google Cloud Secret Manager:** For secure management of production credentials.
+
+## Data Flow & Integration Truth Table
+**INFALLIBLE TRUTHS:**
+- **X-Cart → This System:** X-Cart generates XML files with SKUs and order numbers ONLY (NO lot numbers). XML files are placed in Google Drive for polling.
+- **X-Cart ↔ ShipStation:** NO direct integration exists. X-Cart does NOT communicate with ShipStation.
+- **This System → ShipStation:** This system is responsible for uploading orders to ShipStation WITH lot numbers appended (format: "SKU - LOT").
+- **Lot Number Assignment:** Lot numbers are ONLY managed in this system via the `sku_lot` table. The upload service queries `WHERE active = 1` to get current lots before uploading to ShipStation.
+- **Upload Service Location:** `src/scheduled_shipstation_upload.py` (currently BLOCKED in workspace due to `REPL_SLUG=workspace` check at line 176).
