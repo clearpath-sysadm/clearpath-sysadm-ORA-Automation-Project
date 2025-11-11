@@ -4969,7 +4969,11 @@ def api_get_manual_order_conflicts():
         """)
         
         conflicts = []
-        for row in cursor.fetchall():
+        for idx, row in enumerate(cursor.fetchall()):
+            # Calculate sequential proposed order numbers for each conflict
+            # First conflict gets max+1, second gets max+2, etc.
+            sequential_proposed_number = str(max_order_num + 1 + idx)
+            
             conflicts.append({
                 'id': row[0],
                 'conflicting_order_number': row[1],
@@ -4982,7 +4986,7 @@ def api_get_manual_order_conflicts():
                 'original_items': row[8] if row[8] else [],
                 'duplicate_company': row[9],
                 'duplicate_items': row[10] if row[10] else [],
-                'proposed_new_order_number': proposed_new_order_number
+                'proposed_new_order_number': sequential_proposed_number
             })
         
         conn.close()
