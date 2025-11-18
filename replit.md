@@ -42,12 +42,14 @@ A single centralized `global-styles.css` defines the premium corporate design sy
 - **Database Layer:** PostgreSQL is the core data store. Key tables include `workflows`, `inventory_current`, `shipped_orders`, `orders_inbox`, `system_kpis`, `bundle_skus`, `bundle_components`, and `sku_lot`. The `configuration_params` table stores critical settings. The `InitialInventory` baseline date is **September 19, 2025**. All order updates are blocked until `shipstation_order_id` is synced. Manual orders (10xxxx) are created in ShipStation and tracked locally for inventory.
 - **Replit Auth:** Implemented with role-based access control (Admin/Viewer roles) using Flask-Dance OAuth, supporting multiple login methods, a dual database architecture, and centralized API authentication middleware.
 - **Backend Automation (Python scripts):**
-    - **Unified ShipStation Sync:** Production workflow combining status sync and manual order import, running every 5 minutes.
+    - **Business Hours Optimization:** All automation workflows operate only during business hours (Monday-Friday 6 AM - 6 PM CST) for 64% database compute time reduction with zero business impact.
+    - **Unified ShipStation Sync:** Production workflow combining status sync and manual order import, running every 5 minutes during business hours.
     - **Physical Inventory Controls:** User-driven buttons for End-of-Day (EOD), End-of-Week (EOW), and End-of-Month (EOM) operations.
-    - **XML Polling Service:** Continuously monitors Google Drive for new order XML files and expands bundle SKUs.
-    - **ShipStation Upload Service:** Automatically uploads pending orders from `orders_inbox` to ShipStation every 5 minutes, handling SKU-Lot mappings and product name mappings.
-    - **Orders Cleanup Service:** Daily deletion of `orders_inbox` entries older than 60 days.
-    - **Duplicate Order Monitoring System:** Scans ShipStation every 15 minutes for duplicate order numbers with intelligent auto-resolution and a "Permanently Exclude" feature. Tracks all ShipStation order deletions in `deleted_shipstation_orders`.
+    - **XML Polling Service:** Monitors Google Drive for new order XML files and expands bundle SKUs during business hours.
+    - **ShipStation Upload Service:** Automatically uploads pending orders from `orders_inbox` to ShipStation every 5 minutes during business hours, handling SKU-Lot mappings and product name mappings.
+    - **Orders Cleanup Service:** Daily deletion of `orders_inbox` entries older than 60 days, running during business hours.
+    - **Duplicate Order Monitoring System:** Scans ShipStation every 15 minutes for duplicate order numbers with intelligent auto-resolution and a "Permanently Exclude" feature during business hours. Tracks all ShipStation order deletions in `deleted_shipstation_orders`.
+    - **Lot Mismatch Scanner:** Detects lot number discrepancies between ShipStation and local database, running every 15 minutes during business hours.
 - **Frontend:** `index.html` serves as the main dashboard (DEFAULT VIEW), offering a complete enterprise layout with two-tier navigation, card-based components, responsive design, auto-refresh, skeleton loaders, and error handling.
 - **Orders Inbox (xml_import.html):** Secondary interface for monitoring, troubleshooting, and manual interventions related to order status, inventory, and flagged orders. Redesigned with workflow-focused filters (Needs Verification, Ready to Ship, Shipped, Failed, All Orders) in single-select mode with "Ready to Ship" as default. Features inline lot number editing with ShipStation sync, visual order type badges (Canadian flag image, Benco logo, Hawaiian flower, International globe), and premium UI polish. Includes ✏️ edit button next to SKU-LOT displays for quick lot corrections via database-driven dropdown.
 - **Bundle SKU System:** Database-driven management with CRUD capabilities for bundle SKUs and automatic expansion.
