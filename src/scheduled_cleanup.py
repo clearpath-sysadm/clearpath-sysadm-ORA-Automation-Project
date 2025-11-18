@@ -18,6 +18,7 @@ if project_root not in sys.path:
 from src.cleanup_old_orders import cleanup_old_orders
 from src.services.database.pg_utils import is_workflow_enabled, update_workflow_last_run
 from utils.logging_config import setup_logging
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 
 log_dir = os.path.join(project_root, 'logs')
 os.makedirs(log_dir, exist_ok=True)
@@ -29,11 +30,22 @@ CLEANUP_INTERVAL = 86400
 
 
 def main():
-    """Run cleanup on a daily schedule"""
+    """Run cleanup on a daily schedule during business hours (Mon-Fri 6 AM - 6 PM CST)"""
     logger.info("Starting scheduled cleanup service (runs daily)")
+    logger.info("⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
     
     while True:
         try:
+            # PRIORITY 1: Check business hours BEFORE any database queries
+            if not is_business_hours():
+                status = format_business_hours_status()
+                logger.info(f"{status}")
+                sleep_duration = get_sleep_until_business_hours()
+                logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
+                time.sleep(sleep_duration)
+                continue
+            
+            # PRIORITY 2: Check if workflow enabled
             if not is_workflow_enabled('orders-cleanup'):
                 logger.info("Workflow 'orders-cleanup' is DISABLED - sleeping 60s")
                 time.sleep(60)

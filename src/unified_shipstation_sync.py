@@ -28,6 +28,7 @@ if project_root not in sys.path:
 
 from config.settings import SHIPSTATION_ORDERS_ENDPOINT
 from utils.logging_config import setup_logging
+from utils.business_hours import is_business_hours as check_business_hours, get_sleep_until_business_hours, format_business_hours_status
 from src.services.database import execute_query, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from src.services.shipstation.tracking_service import (
@@ -1354,11 +1355,28 @@ def run_unified_sync():
 
 
 def main():
-    """Main loop - runs every 5 minutes"""
+    """Main loop - runs every 5 minutes during business hours (Mon-Fri 6 AM - 6 PM CST)"""
     logger.info(f"🚀 Starting Unified ShipStation Sync (every {SYNC_INTERVAL_SECONDS}s)")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
     
     while True:
         try:
+            # PRIORITY 1: Check business hours BEFORE any database queries
+            if not check_business_hours():
+                status = format_business_hours_status()
+                logger.info(f"{status}")
+                sleep_duration = get_sleep_until_business_hours()
+                logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
+                time.sleep(sleep_duration)
+                continue
+            
+            # PRIORITY 2: Check if workflow enabled
+            if not is_workflow_enabled(WORKFLOW_NAME):
+                logger.info(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED - sleeping 60s")
+                time.sleep(60)
+                continue
+            
+            # Run sync during business hours
             run_unified_sync()
             logger.info(f"😴 Next sync in {SYNC_INTERVAL_SECONDS} seconds")
             time.sleep(SYNC_INTERVAL_SECONDS)

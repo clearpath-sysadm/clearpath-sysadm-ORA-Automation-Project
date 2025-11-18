@@ -16,6 +16,7 @@ sys.path.insert(0, str(project_root))
 
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
 from src.services.database import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 import defusedxml.ElementTree as ET
 
 logging.basicConfig(
@@ -396,13 +397,23 @@ def run_scheduled_import():
     
     logger.info(f"🚀 XML import workflow started (fast_polling={fast_polling_enabled}, interval={interval}s)")
     logger.info(f"📁 Data retention: {DATA_RETENTION_DAYS} days")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
     
     error_count = 0
     max_errors = 5
     
     while True:
         try:
-            # Check if workflow is enabled
+            # PRIORITY 1: Check business hours BEFORE any database queries
+            if not is_business_hours():
+                status = format_business_hours_status()
+                logger.info(f"{status}")
+                sleep_duration = get_sleep_until_business_hours()
+                logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
+                time.sleep(sleep_duration)
+                continue
+            
+            # PRIORITY 2: Check if workflow is enabled
             if not is_workflow_enabled('xml-import'):
                 logger.info("⏸️ Workflow 'xml-import' is DISABLED - sleeping 60s")
                 time.sleep(60)

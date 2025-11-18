@@ -21,6 +21,7 @@ from src.services.shipstation.api_client import (
     fetch_shipstation_orders_by_order_numbers
 )
 from config.settings import settings
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 
 logging.basicConfig(
     level=logging.INFO,
@@ -719,13 +720,23 @@ def run_scheduled_upload():
     interval = int(get_feature_flag('fast_polling_interval', '300'))
     
     logger.info(f"🚀 Upload workflow started in PRODUCTION (fast_polling={enabled}, interval={interval}s)")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
     
     last_count = 0
     error_count = 0
     
     while True:
         try:
-            # Check workflow control
+            # PRIORITY 1: Check business hours BEFORE any database queries
+            if not is_business_hours():
+                status = format_business_hours_status()
+                logger.info(f"{status}")
+                sleep_duration = get_sleep_until_business_hours()
+                logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
+                time.sleep(sleep_duration)
+                continue
+            
+            # PRIORITY 2: Check workflow control
             if not is_workflow_enabled('shipstation-upload'):
                 logger.debug("Workflow disabled - sleeping 60s")
                 time.sleep(60)

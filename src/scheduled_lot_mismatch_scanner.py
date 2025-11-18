@@ -23,6 +23,7 @@ sys.path.insert(0, str(project_root))
 from src.services.database.pg_utils import transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from utils.api_utils import make_api_request
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 
 SHIPSTATION_ORDERS_ENDPOINT = 'https://ssapi.shipstation.com/orders'
 
@@ -236,8 +237,9 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
 
 
 def main():
-    """Main loop for lot mismatch scanner."""
+    """Main loop for lot mismatch scanner - runs during business hours (Mon-Fri 6 AM - 6 PM CST)"""
     logger.info(f"🚀 Starting Lot Mismatch Scanner (every 900s)")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
     
     # Get ShipStation credentials
     api_key, api_secret = get_shipstation_credentials()
@@ -247,6 +249,16 @@ def main():
     
     while True:
         try:
+            # PRIORITY 1: Check business hours BEFORE any database queries
+            if not is_business_hours():
+                status = format_business_hours_status()
+                logger.info(f"{status}")
+                sleep_duration = get_sleep_until_business_hours()
+                logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
+                time.sleep(sleep_duration)
+                continue
+            
+            # PRIORITY 2: Check workflow enabled
             if not is_workflow_enabled(WORKFLOW_NAME):
                 logger.info(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED - skipping execution")
             else:

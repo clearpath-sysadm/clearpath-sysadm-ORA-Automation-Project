@@ -20,6 +20,7 @@ from src.services.database.pg_utils import get_connection, is_workflow_enabled, 
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from config.settings import settings
 from utils.api_utils import make_api_request
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 
 logging.basicConfig(
     level=logging.INFO,
@@ -498,12 +499,22 @@ def scan_for_duplicates():
         return False
 
 def run_scheduled_scanner():
-    """Main loop - runs every 15 minutes"""
+    """Main loop - runs every 15 minutes during business hours (Mon-Fri 6 AM - 6 PM CST)"""
     logger.info(f"🚀 Duplicate Scanner started (scanning every {SCAN_INTERVAL_SECONDS // 60} minutes)")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
     
     while True:
         try:
-            # Check workflow control
+            # PRIORITY 1: Check business hours BEFORE any database queries
+            if not is_business_hours():
+                status = format_business_hours_status()
+                logger.info(f"{status}")
+                sleep_duration = get_sleep_until_business_hours()
+                logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
+                time.sleep(sleep_duration)
+                continue
+            
+            # PRIORITY 2: Check workflow control
             if not is_workflow_enabled('duplicate-scanner'):
                 logger.debug("Workflow disabled - sleeping 60s")
                 time.sleep(60)
