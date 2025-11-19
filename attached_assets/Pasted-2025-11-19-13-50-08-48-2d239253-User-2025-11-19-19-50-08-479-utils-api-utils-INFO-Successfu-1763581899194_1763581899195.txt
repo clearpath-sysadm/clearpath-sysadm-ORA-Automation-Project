@@ -1,0 +1,156 @@
+2025-11-19 13:50:08.48
+2d239253
+User
+2025-11-19 19:50:08,479 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-11-19 13:50:08.52
+2d239253
+User
+2025-11-19 19:50:08,520 - shipstation_tracking - WARNING - ⚠️ Skipped tracking update for order 692705 - ShipStation ID not synced yet (NULL)
+2025-11-19 13:50:08.54
+2d239253
+User
+2025-11-19 19:50:08,541 - shipstation_tracking - DEBUG - Updated tracking status for order 692705
+2025-11-19 13:50:08.54
+2d239253
+User
+2025-11-19 19:50:08,541 - shipstation_tracking - DEBUG - Fetching tracking status for 394686792059 from ShipStation
+2025-11-19 13:50:08.54
+2d239253
+User
+2025-11-19 19:50:08,541 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:50:08.74
+2d239253
+User
+2025-11-19 19:50:08,748 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-11-19 13:50:08.74
+2d239253
+User
+2025-11-19 19:50:08,748 - shipstation_tracking - INFO - ✅ Tracking 394686792059: UN (Unknown) [ShipStation: ]
+2025-11-19 13:50:08.78
+2d239253
+User
+2025-11-19 19:50:08,789 - shipstation_tracking - WARNING - ⚠️ Skipped tracking update for order 692825 - ShipStation ID not synced yet (NULL)
+2025-11-19 13:50:08.80
+2d239253
+User
+2025-11-19 19:50:08,809 - shipstation_tracking - DEBUG - Fetching tracking status for 394686794360 from ShipStation
+2025-11-19 13:50:08.80
+2d239253
+User
+2025-11-19 19:50:08,809 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:50:08.80
+2d239253
+User
+2025-11-19 19:50:08,809 - shipstation_tracking - DEBUG - Updated tracking status for order 692825
+2025-11-19 13:50:09.00
+2d239253
+User
+2025-11-19 19:50:09,002 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-11-19 13:50:09.00
+2d239253
+User
+2025-11-19 19:50:09,003 - shipstation_tracking - INFO - ✅ Tracking 394686794360: UN (Unknown) [ShipStation: ]
+2025-11-19 13:50:09.04
+2d239253
+User
+2025-11-19 19:50:09,045 - shipstation_tracking - WARNING - ⚠️ Skipped tracking update for order 692795 - ShipStation ID not synced yet (NULL)
+2025-11-19 13:50:09.12
+2d239253
+User
+2025-11-19 19:50:09,120 - shipstation_tracking - DEBUG - Updated tracking status for order 692795
+2025-11-19 13:50:09.12
+2d239253
+User
+2025-11-19 19:50:09,120 - shipstation_tracking - DEBUG - Fetching tracking status for 394686798930 from ShipStation
+2025-11-19 13:50:09.12
+2d239253
+User
+2025-11-19 19:50:09,121 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:50:09.31
+2d239253
+User
+2025-11-19 19:50:09,309 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-11-19 13:50:09.31
+2d239253
+User
+2025-11-19 19:50:09,310 - shipstation_tracking - INFO - ✅ Tracking 394686798930: UN (Unknown) [ShipStation: ]
+2025-11-19 13:50:09.35
+2d239253
+User
+2025-11-19 19:50:09,351 - shipstation_tracking - WARNING - ⚠️ Skipped tracking update for order 692815 - ShipStation ID not synced yet (NULL)
+2025-11-19 13:50:09.37
+2d239253
+User
+2025-11-19 19:50:09,371 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:50:09.37
+2d239253
+User
+2025-11-19 19:50:09,371 - shipstation_tracking - DEBUG - Updated tracking status for order 692815
+2025-11-19 13:50:09.37
+2d239253
+User
+2025-11-19 19:50:09,371 - shipstation_tracking - DEBUG - Fetching tracking status for 394686792048 from ShipStation
+2025-11-19 13:50:09.59
+2d239253
+User
+2025-11-19 19:50:09,590 - shipstation_tracking - INFO - ✅ Tracking 394686792048: UN (Unknown) [ShipStation: ]
+2025-11-19 13:50:09.63
+2d239253
+User
+2025-11-19 19:50:09,630 - shipstation_tracking - WARNING - ⚠️ Skipped tracking update for order 692785 - ShipStation ID not synced yet (NULL)
+2025-11-19 13:50:09.65
+2d239253
+User
+2025-11-19 19:50:09,653 - shipstation_tracking - DEBUG - Updated tracking status for order 692785
+2025-11-19 13:50:09.65
+2d239253
+User
+2025-11-19 19:50:09,653 - shipstation_tracking - DEBUG - Fetching tracking status for 394686802167 from ShipStation
+2025-11-19 13:50:09.65
+2d239253
+User
+2025-11-19 19:50:09,653 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:50:09.86
+2d239253
+User
+2025-11-19 19:50:09,865 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-11-19 13:50:09.92
+2d239253
+User
+2025-11-19 19:50:09,927 - shipstation_tracking - DEBUG - Fetching tracking status for 394686796000 from ShipStation
+2025-11-19 13:50:10.21
+2d239253
+User
+2025-11-19 19:50:10,210 - shipstation_tracking - DEBUG - Updated tracking status for order 692805
+2025-11-19 13:50:10.21
+2d239253
+User
+2025-11-19 19:50:10,210 - shipstation_tracking - DEBUG - Fetching tracking status for 394686802866 from ShipStation
+2025-11-19 13:50:10.21
+2d239253
+User
+2025-11-19 19:50:10,210 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:50:14.21
+2d239253
+User
+35.191.74.32 - - [19/Nov/2025 19:50:14] "GET /api/shipstation/units_to_ship HTTP/1.1" 200 -
+2025-11-19 13:50:14.21
+2d239253
+User
+2025-11-19 19:50:14,213 - werkzeug - INFO - 35.191.74.32 - - [19/Nov/2025 19:50:14] "GET /api/shipstation/units_to_ship HTTP/1.1" 200 -
+2025-11-19 13:50:22.26
+2d239253
+User
+2025-11-19 19:50:22,263 - utils.api_utils - ERROR - Request failed for https://ssapi.shipstation.com/shipments due to network/request issue: HTTPSConnectionPool(host='ssapi.shipstation.com', port=443): Read timed out. (read timeout=10)
+2025-11-19 13:50:26.26
+2d239253
+User
+2025-11-19 19:50:26,264 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:50:31.62
+2d239253
+User
+2025-11-19 19:50:31,622 - shipstation_api_client - INFO - Using ShipStation credentials from Replit environment variables
+2025-11-19 13:50:31.62
+2d239253
+User
+2025-11-19 19:50:31,625 - urllib3.connectionpool -
