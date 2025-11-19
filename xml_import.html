@@ -376,7 +376,7 @@
                             </div>
                             
                             <!-- Dynamic Action Buttons (shown conditionally) -->
-                            <button class="btn is-hidden" id="btn-upload-selected" style="background: var(--success-teal); color: white; font-weight: 600;">
+                            <button class="btn is-hidden" id="btn-upload-selected" style="background: var(--success-teal); color: white; font-weight: 600; opacity: 0.5; cursor: not-allowed;" disabled title="Upload Selected is disabled - orders upload automatically">
                                 🚀 Upload Selected
                             </button>
                             <button class="btn is-hidden" id="btn-retry-failed" style="background: var(--warning-yellow); color: var(--text-primary); font-weight: 600;">
@@ -391,7 +391,7 @@
                                 <span id="dropdown-arrow">▼</span>
                             </button>
                             <div class="dropdown-menu" id="actions-dropdown-menu">
-                                <button id="mobile-btn-upload-selected" class="is-hidden" onclick="document.getElementById('btn-upload-selected').click(); toggleActionsDropdown();">
+                                <button id="mobile-btn-upload-selected" class="is-hidden" style="opacity: 0.5; cursor: not-allowed;" disabled title="Upload Selected is disabled - orders upload automatically">
                                     🚀 Upload Selected
                                 </button>
                                 <button id="mobile-btn-retry-failed" class="is-hidden" onclick="document.getElementById('btn-retry-failed').click(); toggleActionsDropdown();">
