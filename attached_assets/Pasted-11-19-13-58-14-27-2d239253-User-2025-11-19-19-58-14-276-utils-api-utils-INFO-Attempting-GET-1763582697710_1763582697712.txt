@@ -1,0 +1,85 @@
+11-19 13:58:14.27
+2d239253
+User
+2025-11-19 19:58:14,276 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:58:14.47
+2d239253
+User
+2025-11-19 19:58:14,477 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-11-19 13:58:14.47
+2d239253
+User
+2025-11-19 19:58:14,477 - shipstation_tracking - INFO - ✅ Tracking 394614829750: UN (Unknown) [ShipStation: ]
+2025-11-19 13:58:14.52
+2d239253
+User
+2025-11-19 19:58:14,520 - shipstation_tracking - WARNING - ⚠️ Skipped tracking update for order 692325 - ShipStation ID not synced yet (NULL)
+2025-11-19 13:58:14.54
+2d239253
+User
+2025-11-19 19:58:14,541 - shipstation_tracking - DEBUG - Updated tracking status for order 692325
+2025-11-19 13:58:14.54
+2d239253
+User
+2025-11-19 19:58:14,541 - shipstation_tracking - DEBUG - Fetching tracking status for 394614812570 from ShipStation
+2025-11-19 13:58:14.54
+2d239253
+User
+2025-11-19 19:58:14,542 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
+2025-11-19 13:58:14.73
+2d239253
+User
+2025-11-19 19:58:14,738 - shipstation_tracking - INFO - ✅ Tracking 394614812570: UN (Unknown) [ShipStation: ]
+2025-11-19 13:58:14.73
+2d239253
+User
+2025-11-19 19:58:14,738 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-11-19 13:58:14.78
+2d239253
+User
+2025-11-19 19:58:14,784 - shipstation_tracking - WARNING - ⚠️ Skipped tracking update for order 692285 - ShipStation ID not synced yet (NULL)
+
+2025-11-19 13:58:14.80
+2d239253
+User
+2025-11-19 19:58:14,805 - shipstation_tracking - DEBUG - Fetching tracking status for 394614806830 from ShipStation
+2025-11-19 13:58:14.80
+2d239253
+User
+2025-11-19 19:58:14,804 - shipstation_tracking - DEBUG - Updated tracking status for order 692285
+2025-11-19 13:58:15.00
+2d239253
+User
+2025-11-19 19:58:15,005 - utils.api_utils - INFO - Successfully received response from https://ssapi.shipstation.com/shipments with status code: 200
+2025-11-19 13:58:17.62
+2d239253
+User
+2025-11-19 19:58:17,629 - werkzeug - INFO - 35.191.113.136 - - [19/Nov/2025 19:58:17] "GET /api/orders_inbox HTTP/1.1" 200 -
+2025-11-19 13:58:17.62
+2d239253
+User
+35.191.113.136 - - [19/Nov/2025 19:58:17] "GET /api/orders_inbox HTTP/1.1" 200 -
+2025-11-19 13:58:23.27
+2d239253
+User
+2025-11-19 19:58:23,274 - src.services.google_drive.api_client - INFO - Successfully retrieved Google Drive access token from Replit connector
+2025-11-19 13:58:23.27
+2d239253
+User
+2025-11-19 19:58:23,279 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-11-19 13:58:23.47
+2d239253
+User
+2025-11-19 19:58:23,475 - src.services.google_drive.api_client - INFO - Found 5 XML files in Google Drive folder 1rNudeesa_c6q--KIKUAOLwXta_gyRqAE
+2025-11-19 13:58:23.47
+2d239253
+User
+2025-11-19 19:58:23,476 - __main__ - INFO - METRICS: workflow=xml-import files=5 duration_ms=329 action=skip
+2025-11-19 13:58:26.84
+2d239253
+User
+2025-11-19 19:58:26,843 - utils.api_utils - ERROR - Request failed for https://ssapi.shipstation.com/shipments due to network/request issue: HTTPSConnectionPool(host='ssapi.shipstation.com', port=443): Read timed out. (read timeout=10)
+2025-11-19 13:58:30.84
+2d239253
+User
+2025-11-19 19:58:30,844 - utils.api_utils - INFO - Attempting GET request to: https://ssapi.shipstation.com/shipments
