@@ -3822,13 +3822,14 @@ def api_create_bundle():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Insert bundle
+        # Insert bundle and get the ID (PostgreSQL requires RETURNING clause)
         cursor.execute("""
             INSERT INTO bundle_skus (bundle_sku, description, active)
             VALUES (%s, %s, %s)
+            RETURNING id
         """, (bundle_sku, description, active))
         
-        bundle_id = cursor.lastrowid
+        bundle_id = cursor.fetchone()[0]
         
         # Insert components
         for comp in components:
