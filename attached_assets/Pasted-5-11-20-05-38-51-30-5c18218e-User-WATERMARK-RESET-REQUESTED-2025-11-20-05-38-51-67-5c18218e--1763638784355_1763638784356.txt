@@ -1,0 +1,109 @@
+5-11-20 05:38:51.30
+5c18218e
+User
+🔄 WATERMARK RESET REQUESTED
+2025-11-20 05:38:51.67
+5c18218e
+User
+📊 Old watermark: 2025-11-19T14:00:00.6270000
+2025-11-20 05:38:51.67
+5c18218e
+User
+✅ Watermark reset successful
+2025-11-20 05:38:51.67
+5c18218e
+User
+================================================================================
+2025-11-20 05:38:51.71
+5c18218e
+User
+35.191.120.28 - - [20/Nov/2025 11:38:51] "POST /api/workflow_controls/unified-shipstation-sync/reset-watermark HTTP/1.1" 200 -
+2025-11-20 05:38:51.90
+5c18218e
+User
+35.191.120.30 - - [20/Nov/2025 11:38:51] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:38:56.76
+5c18218e
+User
+'updated_at': result[1].isoformat() if result[1] else None
+2025-11-20 05:38:56.76
+5c18218e
+User
+Traceback (most recent call last):
+2025-11-20 05:38:56.76
+5c18218e
+User
+File "/home/runner/workspace/app.py", line 6231, in get_shipstation_watermark
+2025-11-20 05:38:56.76
+5c18218e
+User
+^^^^^^^^^^^^^^^^^^^
+2025-11-20 05:38:56.76
+5c18218e
+User
+AttributeError: 'str' object has no attribute 'isoformat'. Did you mean: 'format'?
+2025-11-20 05:38:56.76
+5c18218e
+User
+❌ Error fetching watermark: 'str' object has no attribute 'isoformat'
+2025-11-20 05:38:56.80
+5c18218e
+User
+35.191.120.30 - - [20/Nov/2025 11:38:56] "GET /api/workflow_controls/unified-shipstation-sync/watermark HTTP/1.1" 500 -
+2025-11-20 05:38:56.84
+5c18218e
+User
+35.191.120.29 - - [20/Nov/2025 11:38:56] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:38:57.39
+5c18218e
+User
+35.191.120.29 - - [20/Nov/2025 11:38:57] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:39:01.91
+5c18218e
+User
+35.191.120.30 - - [20/Nov/2025 11:39:01] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:39:06.91
+5c18218e
+User
+35.191.120.29 - - [20/Nov/2025 11:39:06] "GET /api/workflow_controls HTTP/1.1" 200 -
+
+2025-11-20 05:39:06.91
+5c18218e
+User
+35.191.120.29 - - [20/Nov/2025 11:39:06] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:39:12.58
+5c18218e
+User
+AttributeError: 'str' object has no attribute 'isoformat'. Did you mean: 'format'?
+2025-11-20 05:39:12.58
+5c18218e
+User
+File "/home/runner/workspace/app.py", line 6231, in get_shipstation_watermark
+2025-11-20 05:39:12.58
+5c18218e
+User
+^^^^^^^^^^^^^^^^^^^
+2025-11-20 05:39:12.58
+5c18218e
+User
+❌ Error fetching watermark: 'str' object has no attribute 'isoformat'
+2025-11-20 05:39:12.58
+5c18218e
+User
+'updated_at': result[1].isoformat() if result[1] else None
+2025-11-20 05:39:12.58
+5c18218e
+User
+Traceback (most recent call last):
+2025-11-20 05:39:12.61
+5c18218e
+User
+35.191.120.28 - - [20/Nov/2025 11:39:12] "GET /api/workflow_controls/unified-shipstation-sync/watermark HTTP/1.1" 500 -
+2025-11-20 05:39:12.62
+5c18218e
+User
+35.191.120.30 - - [20/Nov/2025 11:39:12] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:39:17.61
+5c18218e
+User
+35.191.120.29 - - [20/Nov/2025 11:39:17] "GET /api/workflow_controls HTTP/1.1" 200 -
