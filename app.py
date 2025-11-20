@@ -6153,11 +6153,14 @@ def get_workflow_controls():
         return jsonify([{
             'name': w[0],
             'enabled': bool(w[1]),
-            'last_updated': w[2],
+            'last_updated': w[2].isoformat() if w[2] else None,
             'updated_by': w[3],
-            'last_run_at': w[4]
+            'last_run_at': w[4].isoformat() if w[4] else None
         } for w in workflows])
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"❌ /api/workflow_controls error: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/workflow_controls/<workflow_name>', methods=['PUT'])

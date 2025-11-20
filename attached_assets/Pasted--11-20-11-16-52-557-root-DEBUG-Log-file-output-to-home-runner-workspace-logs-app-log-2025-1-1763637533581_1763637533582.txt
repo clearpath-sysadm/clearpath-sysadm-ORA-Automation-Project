@@ -1,0 +1,169 @@
+-11-20 11:16:52,557 - root - DEBUG - Log file output to: /home/runner/workspace/logs/app.log
+2025-11-20 05:16:52.56
+c8d62839
+User
+2025-11-20 11:16:52,555 - root - DEBUG - Logging system initialized with level: DEBUG
+2025-11-20 05:16:52.56
+c8d62839
+User
+2025-11-20 11:16:52,557 - root - INFO - Logging environment: CLOUD
+2025-11-20 05:16:52.79
+c8d62839
+User
+2025-11-20 11:16:52,793 - shipstation_api_client - INFO - ShipStation API Client started. Environment: CLOUD
+2025-11-20 05:16:52.79
+c8d62839
+User
+2025-11-20 11:16:52,793 - shipstation_api_client - INFO - ShipStation API Client started. Environment: CLOUD
+2025-11-20 05:16:52.79
+c8d62839
+User
+2025-11-20 11:16:52,799 - shipstation_api_client - INFO - ShipStation API Client started. Environment: CLOUD
+2025-11-20 05:16:52.80
+c8d62839
+User
+2025-11-20 11:16:52,799 - shipstation_api_client - INFO - ShipStation API Client started. Environment: CLOUD
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,811 - __main__ - WARNING - ================================================================================
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,813 - __main__ - WARNING - 🛑 UPLOAD SERVICE DISABLED IN DEVELOPMENT ENVIRONMENT
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,814 - __main__ - WARNING - ================================================================================
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,814 - __main__ - WARNING - Reason: Prevents creating duplicate orders in production ShipStation
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,815 - __main__ - WARNING -
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,815 - __main__ - WARNING - This environment shares ShipStation credentials with production,
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,816 - __main__ - WARNING - but has a separate database. Uploading would create duplicates.
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,817 - __main__ - INFO - 💤 Upload service sleeping indefinitely (sync service still active)
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,817 - __main__ - WARNING - To enable uploads (NOT recommended):
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,817 - __main__ - INFO - 🚀 Starting Lot Mismatch Scanner (every 900s)
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,817 - __main__ - WARNING - - Or deploy this code to production where uploads are safe
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,817 - __main__ - WARNING -
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,817 - __main__ - WARNING - - Set ENVIRONMENT=production in Replit Secrets
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,817 - __main__ - WARNING - ================================================================================
+2025-11-20 05:16:52.81
+c8d62839
+User
+2025-11-20 11:16:52,819 - shipstation_api_client - INFO - Using ShipStation credentials from Replit environment variables
+2025-11-20 05:16:52.82
+c8d62839
+User
+2025-11-20 11:16:52,820 - __main__ - INFO - 🚀 Duplicate Scanner started (scanning every 15 minutes)
+2025-11-20 05:16:52.84
+c8d62839
+User
+2025-11-20 11:16:52,839 - root - INFO - Logging environment: CLOUD
+2025-11-20 05:16:52.84
+c8d62839
+User
+2025-11-20 11:16:52,841 - root - INFO - Logging environment: CLOUD
+2025-11-20 05:16:52.84
+c8d62839
+User
+2025-11-20 11:16:52,842 - __main__ - INFO - 🚀 Starting Unified ShipStation Sync (every 300s)
+2025-11-20 05:16:52.84
+c8d62839
+User
+2025-11-20 11:16:52,843 - __main__ - INFO - ⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF
+2025-11-20 05:16:53.18
+c8d62839
+User
+2025-11-20 11:16:53,179 - __main__ - INFO - ⏰ BEFORE HOURS | Thursday 05:16 AM CST | Sleeping (starts 6 AM)
+2025-11-20 05:16:53.18
+c8d62839
+User
+2025-11-20 11:16:53,181 - __main__ - INFO - 💤 Database sleeping for 2586s to reduce compute time
+2025-11-20 05:16:53.18
+c8d62839
+User
+2025-11-20 11:16:53,187 - __main__ - INFO - 💤 Database sleeping for 2586s to reduce compute time
+2025-11-20 05:16:53.18
+c8d62839
+User
+2025-11-20 11:16:53,187 - __main__ - INFO - ⏰ BEFORE HOURS | Thursday 05:16 AM CST | Sleeping (starts 6 AM)
+2025-11-20 05:16:56.34
+c8d62839
+User
+* Debug mode: off
+2025-11-20 05:16:56.34
+c8d62839
+User
+* Serving Flask app 'app'
+2025-11-20 05:16:56.41
+c8d62839
+User
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+2025-11-20 05:16:56.41
+c8d62839
+User
+* Running on http://10.0.23.178:5000
+2025-11-20 05:16:56.41
+c8d62839
+User
+Press CTRL+C to quit
+2025-11-20 05:16:56.41
+c8d62839
+User
+* Running on http://127.0.0.1:5000
+2025-11-20 05:16:56.41
+c8d62839
+User
+* Running on all addresses (0.0.0.0)
+2025-11-20 05:16:58.19
+c8d62839
+User
+2025-11-20 11:16:58,198 - __main__ - INFO - ⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF
+2025-11-20 05:16:58.19
+c8d62839
+User
+2025-11-20 11:16:58,197 - __main__ - INFO - 🚀 XML import workflow started (fast_polling=True, interval=15s)
+2025-11-20 05:16:58.19
+c8d62839
+User
+2025-11-20 11:16:58,198 - __main__ - INFO - 📁 Data retention: 60 days
+2025-11-20 05:16:58.34
+c8d62839
+User
+2025-11-20 11:16:58,344 - __main__ - INFO - ⏰ BEFORE HOURS | Thursday 05:16 AM CST | Sleeping (starts 6 AM)
+2025-11-20 05:16:58.34
+c8d62839
+User
+2025-11-20 11:16:58,344 - __main__ - INFO - 💤 Database sleeping for 2581s to reduce compute time
