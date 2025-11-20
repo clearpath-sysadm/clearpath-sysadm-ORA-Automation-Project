@@ -6225,10 +6225,19 @@ def get_shipstation_watermark():
             else:
                 watermark_str = str(watermark_value) if watermark_value else None
             
+            # Handle updated_at similarly
+            updated_at_value = result[1]
+            if isinstance(updated_at_value, str):
+                updated_at_str = updated_at_value
+            elif hasattr(updated_at_value, 'isoformat'):
+                updated_at_str = updated_at_value.isoformat()
+            else:
+                updated_at_str = str(updated_at_value) if updated_at_value else None
+            
             return jsonify({
                 'success': True,
                 'watermark': watermark_str,
-                'updated_at': result[1].isoformat() if result[1] else None
+                'updated_at': updated_at_str
             })
         else:
             return jsonify({
