@@ -1,0 +1,132 @@
+2025-11-20 05:32:58.77
+b07180fe
+User
+================================================================================
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,456 - __main__ - INFO - ⏭️ Skipped (not manual): 1
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,455 - __main__ - INFO - ✅ New manual orders imported: 5
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,456 - __main__ - INFO - ⏭️ Skipped (no key SKUs): 0
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,456 - __main__ - INFO - ❌ Errors: 0
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,742 - __main__ - INFO - ✅ One-time unified sync complete
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,358 - shipstation_tracking - DEBUG - Outside business hours: Pacific=3:00, Eastern=6:00
+2025-11-20 05:32:58.77
+b07180fe
+User
+🔢 Exit Code: 0
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,455 - __main__ - INFO - ================================================================================
+2025-11-20 05:32:58.77
+b07180fe
+User
+⏱️ Duration: 24.28 seconds
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,455 - __main__ - INFO - 📊 SYNC SUMMARY:
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:54,761 - __main__ - INFO - ✅ Retrieved 108 total shipments
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,456 - __main__ - INFO - ⏱️ Duration: 22.9s
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,456 - __main__ - INFO - ⏳ Ghost orders (WIP): 0
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,455 - __main__ - INFO - 📍 Tracking numbers updated: 64
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,390 - src.services.ghost_order_backfill - INFO - 👻 No ghost orders found - all orders have items
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,222 - __main__ - INFO - ✅ Updated 64 orders with tracking numbers
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,423 - __main__ - INFO - ✅ Watermark advanced (no errors)
+2025-11-20 05:32:58.77
+b07180fe
+User
+📛 STDERR (60181 chars):
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,456 - __main__ - INFO - ⏭️ Skipped (local origin): 0
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,456 - __main__ - INFO - ================================================================================
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,358 - __main__ - INFO - ⏰ Outside business hours - skipping tracking status updates
+2025-11-20 05:32:58.77
+b07180fe
+User
+/ssapi.shipstation.com/shipments with status code: 200
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,455 - __main__ - INFO - 🔄 Existing orders updated: 66
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,422 - __main__ - INFO - ✅ Updated watermark to: 2025-11-19T14:00:00.6270000
+2025-11-20 05:32:58.77
+b07180fe
+User
+2025-11-20 11:32:58,358 - __main__ - INFO - 👻 Checking for ghost orders (0 items)...
+2025-11-20 05:32:59.10
+b07180fe
+User
+35.191.120.29 - - [20/Nov/2025 11:32:59] "POST /api/workflow_controls/unified-shipstation-sync/run HTTP/1.1" 200 -
+2025-11-20 05:33:01.60
+b07180fe
+User
+35.191.120.28 - - [20/Nov/2025 11:33:01] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:33:03.60
+b07180fe
+User
+35.191.120.29 - - [20/Nov/2025 11:33:03] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:33:08.62
+b07180fe
+User
+35.191.120.30 - - [20/Nov/2025 11:33:08] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:33:13.59
+b07180fe
+User
+35.191.120.28 - - [20/Nov/2025 11:33:13] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:33:18.57
+b07180fe
+User
+35.191.120.28 - - [20/Nov/2025 11:33:18] "GET /api/workflow_controls HTTP/1.1" 200 -
+2025-11-20 05:33:23.59
+b07180fe
+User
+35.191.120.30 - - [20/Nov/2025 11:33:23] "GET /api/workflow_controls/unified-shi

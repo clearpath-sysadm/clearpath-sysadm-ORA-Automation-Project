@@ -6216,9 +6216,18 @@ def get_shipstation_watermark():
         conn.close()
         
         if result:
+            # Convert datetime objects to ISO strings for JSON serialization
+            watermark_value = result[0]
+            if isinstance(watermark_value, str):
+                watermark_str = watermark_value
+            elif hasattr(watermark_value, 'isoformat'):
+                watermark_str = watermark_value.isoformat()
+            else:
+                watermark_str = str(watermark_value) if watermark_value else None
+            
             return jsonify({
                 'success': True,
-                'watermark': result[0],
+                'watermark': watermark_str,
                 'updated_at': result[1].isoformat() if result[1] else None
             })
         else:
@@ -6229,6 +6238,9 @@ def get_shipstation_watermark():
             })
             
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"❌ Error fetching watermark: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
             'error': str(e)
