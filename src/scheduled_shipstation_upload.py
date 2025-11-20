@@ -691,10 +691,11 @@ def run_scheduled_upload():
     # ============================================
     repl_slug = os.getenv('REPL_SLUG', '').lower()
     environment = os.getenv('ENVIRONMENT', '').lower()
+    allow_dev_upload = os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
     
     # Detect development environment
     # CRITICAL FIX: REPL_SLUG takes priority - if it contains "workspace", block uploads
-    # This prevents accidental uploads even if ENVIRONMENT=production is incorrectly set in dev
+    # OVERRIDE: Set ALLOW_DEV_UPLOAD=true in Secrets to enable dev uploads (use with caution!)
     if 'workspace' in repl_slug:
         is_dev = True  # Always block workspace environments
     elif environment == 'production':
@@ -702,7 +703,7 @@ def run_scheduled_upload():
     else:
         is_dev = True  # Default to blocking (safe default)
     
-    if is_dev:
+    if is_dev and not allow_dev_upload:
         logger.warning("=" * 80)
         logger.warning("🛑 UPLOAD SERVICE DISABLED IN DEVELOPMENT ENVIRONMENT")
         logger.warning("=" * 80)
@@ -711,8 +712,8 @@ def run_scheduled_upload():
         logger.warning("This environment shares ShipStation credentials with production,")
         logger.warning("but has a separate database. Uploading would create duplicates.")
         logger.warning("")
-        logger.warning("To enable uploads (NOT recommended):")
-        logger.warning("  - Set ENVIRONMENT=production in Replit Secrets")
+        logger.warning("To enable uploads (use with caution!):")
+        logger.warning("  - Set ALLOW_DEV_UPLOAD=true in Replit Secrets")
         logger.warning("  - Or deploy this code to production where uploads are safe")
         logger.warning("=" * 80)
         logger.info("💤 Upload service sleeping indefinitely (sync service still active)")
@@ -720,6 +721,12 @@ def run_scheduled_upload():
         # Sleep forever - don't upload anything
         while True:
             time.sleep(3600)
+    
+    if allow_dev_upload:
+        logger.warning("=" * 80)
+        logger.warning("⚠️ DEV UPLOAD OVERRIDE ENABLED - Upload service active in workspace")
+        logger.warning("⚠️ This can create duplicate orders if not used carefully!")
+        logger.warning("=" * 80)
     
     # Get config
     enabled = get_feature_flag('fast_polling_enabled', 'true') == 'true'
