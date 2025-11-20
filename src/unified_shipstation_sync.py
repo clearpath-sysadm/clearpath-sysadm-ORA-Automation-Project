@@ -1390,5 +1390,30 @@ def main():
             time.sleep(SYNC_INTERVAL_SECONDS)
 
 
+def run_once():
+    """Run a single sync cycle and exit (for manual triggers)"""
+    logger.info(f"🎯 Running one-time unified sync (manual trigger mode)")
+    logger.info("⏩ Skipping business hours check (manual trigger)")
+    
+    try:
+        # Skip business hours check for manual triggers
+        # Check if workflow is enabled
+        if not is_workflow_enabled(WORKFLOW_NAME):
+            logger.warning(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED")
+            return
+        
+        # Run sync once
+        run_unified_sync()
+        logger.info(f"✅ One-time unified sync complete")
+        
+    except Exception as e:
+        logger.error(f"❌ Error in one-time sync: {e}", exc_info=True)
+        raise
+
 if __name__ == '__main__':
-    main()
+    # Check if running in one-shot mode (for manual triggers)
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == '--once':
+        run_once()
+    else:
+        main()
