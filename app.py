@@ -6203,6 +6203,7 @@ def run_workflow_manually(workflow_name):
     """Manually trigger a workflow to run immediately (bypasses business hours)"""
     import subprocess
     import logging
+    from datetime import datetime
     logger = logging.getLogger(__name__)
     
     WORKFLOW_SCRIPTS = {
@@ -6216,6 +6217,7 @@ def run_workflow_manually(workflow_name):
     
     try:
         if workflow_name not in WORKFLOW_SCRIPTS:
+            logger.warning(f"❌ Manual run rejected: Unknown workflow '{workflow_name}'")
             return jsonify({
                 'success': False,
                 'error': f'Unknown workflow: {workflow_name}'
@@ -6224,10 +6226,21 @@ def run_workflow_manually(workflow_name):
         script_args = WORKFLOW_SCRIPTS[workflow_name]
         script_path = script_args[0] if isinstance(script_args, list) else script_args
         
-        logger.info(f"🚀 Manual trigger: Running {workflow_name} from {script_path}")
-        
         # Build command with args
         cmd = ['python'] + (script_args if isinstance(script_args, list) else [script_args])
+        
+        # Enhanced logging - START
+        logger.warning("=" * 80)
+        logger.warning(f"🚀 MANUAL WORKFLOW TRIGGER: {workflow_name}")
+        logger.warning(f"📅 Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        logger.warning(f"📝 Script: {script_path}")
+        logger.warning(f"🔧 Command: {' '.join(cmd)}")
+        logger.warning(f"⏱️  Timeout: 300 seconds")
+        logger.warning("=" * 80)
+        
+        # Run the workflow
+        logger.info(f"▶️  Executing workflow subprocess...")
+        start_time = datetime.now()
         
         result = subprocess.run(
             cmd,
@@ -6236,10 +6249,28 @@ def run_workflow_manually(workflow_name):
             timeout=300
         )
         
+        end_time = datetime.now()
+        duration = (end_time - start_time).total_seconds()
+        
         success = result.returncode == 0
         
+        # Enhanced logging - RESULT
+        logger.warning("-" * 80)
+        logger.warning(f"{'✅ SUCCESS' if success else '❌ FAILED'}: {workflow_name}")
+        logger.warning(f"⏱️  Duration: {duration:.2f} seconds")
+        logger.warning(f"🔢 Exit Code: {result.returncode}")
+        
+        if result.stdout:
+            logger.warning(f"📤 STDOUT ({len(result.stdout)} chars):")
+            logger.warning(result.stdout[-2000:])  # Last 2000 chars
+        
+        if result.stderr:
+            logger.warning(f"📛 STDERR ({len(result.stderr)} chars):")
+            logger.warning(result.stderr[-2000:])  # Last 2000 chars
+        
+        logger.warning("=" * 80)
+        
         if success:
-            logger.info(f"✅ Manual workflow {workflow_name} completed successfully")
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute("""
@@ -6249,26 +6280,30 @@ def run_workflow_manually(workflow_name):
             """, (workflow_name,))
             conn.commit()
             conn.close()
-        else:
-            logger.error(f"❌ Manual workflow {workflow_name} failed with code {result.returncode}")
         
         return jsonify({
             'success': success,
             'workflow': workflow_name,
             'returncode': result.returncode,
+            'duration_seconds': duration,
             'stdout': result.stdout[-1000:] if result.stdout else '',
             'stderr': result.stderr[-1000:] if result.stderr else ''
         })
         
     except subprocess.TimeoutExpired:
-        logger.error(f"⏱️ Manual workflow {workflow_name} timed out after 300 seconds")
+        logger.error("=" * 80)
+        logger.error(f"⏱️ TIMEOUT: Manual workflow {workflow_name} exceeded 300 seconds")
+        logger.error("=" * 80)
         return jsonify({
             'success': False,
             'error': 'Workflow execution timed out (300s limit)',
             'workflow': workflow_name
         }), 408
     except Exception as e:
-        logger.error(f"💥 Manual workflow {workflow_name} error: {str(e)}")
+        logger.error("=" * 80)
+        logger.error(f"💥 EXCEPTION: Manual workflow {workflow_name}")
+        logger.error(f"Error: {str(e)}", exc_info=True)
+        logger.error("=" * 80)
         return jsonify({
             'success': False,
             'error': str(e),
