@@ -6200,6 +6200,40 @@ def update_workflow_control(workflow_name):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/workflow_controls/unified-shipstation-sync/watermark', methods=['GET'])
+def get_shipstation_watermark():
+    """Get the current ShipStation sync watermark"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT last_sync_timestamp, updated_at
+            FROM sync_watermark
+            WHERE workflow_name = 'unified-shipstation-sync'
+        """)
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'watermark': result[0],
+                'updated_at': result[1].isoformat() if result[1] else None
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'watermark': None,
+                'updated_at': None
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/workflow_controls/unified-shipstation-sync/reset-watermark', methods=['POST'])
 @admin_required
 def reset_shipstation_watermark():

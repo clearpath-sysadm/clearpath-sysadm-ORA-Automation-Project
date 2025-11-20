@@ -233,9 +233,14 @@
             
             // Add reset watermark button for unified-shipstation-sync
             const extraButton = workflow.name === 'unified-shipstation-sync' 
-                ? `<button class="btn btn-secondary btn-sm" onclick="resetWatermark()" id="reset-watermark-btn" style="margin-left: 5px;">
-                       🔄 Reset Watermark
-                   </button>`
+                ? `<div style="margin-top: 8px;">
+                       <span id="watermark-display" style="font-size: 0.85em; color: var(--text-secondary); display: block; margin-bottom: 4px;">
+                           Loading watermark...
+                       </span>
+                       <button class="btn btn-secondary btn-sm" onclick="resetWatermark()" id="reset-watermark-btn">
+                           🔄 Reset Watermark
+                       </button>
+                   </div>`
                 : '';
             
             tr.innerHTML = `
@@ -361,6 +366,32 @@
             }
         }
 
+        async function loadWatermark() {
+            try {
+                const response = await fetch('/api/workflow_controls/unified-shipstation-sync/watermark');
+                const result = await response.json();
+                
+                const displayElement = document.getElementById('watermark-display');
+                if (!displayElement) return;
+                
+                if (result.success && result.watermark) {
+                    const watermarkDate = new Date(result.watermark);
+                    const now = new Date();
+                    const daysAgo = Math.floor((now - watermarkDate) / (1000 * 60 * 60 * 24));
+                    
+                    displayElement.innerHTML = `📅 Current watermark: <strong>${watermarkDate.toLocaleDateString()} ${watermarkDate.toLocaleTimeString()}</strong> (${daysAgo} days ago)`;
+                } else {
+                    displayElement.textContent = '📅 No watermark set';
+                }
+            } catch (error) {
+                console.error('Error loading watermark:', error);
+                const displayElement = document.getElementById('watermark-display');
+                if (displayElement) {
+                    displayElement.textContent = '⚠️ Error loading watermark';
+                }
+            }
+        }
+
         async function resetWatermark() {
             const button = document.getElementById('reset-watermark-btn');
             if (!button) return;
@@ -406,6 +437,7 @@
                         button.disabled = false;
                         button.style.opacity = '1';
                         loadWorkflows();
+                        loadWatermark();
                     }, 2000);
                 } else {
                     button.textContent = '❌ Failed';
@@ -473,7 +505,9 @@
         }
 
         loadWorkflows();
+        loadWatermark();
         setInterval(loadWorkflows, 5000);
+        setInterval(loadWatermark, 30000);
     </script>
     <!-- Interactive Training Tours -->
     <script src="/static/tour.js"></script>
