@@ -6200,6 +6200,77 @@ def update_workflow_control(workflow_name):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/workflow_controls/unified-shipstation-sync/reset-watermark', methods=['POST'])
+@admin_required
+def reset_shipstation_watermark():
+    """Reset the ShipStation sync watermark to 7 days ago"""
+    import logging
+    from datetime import datetime, timedelta
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from flask import request
+        data = request.get_json() or {}
+        days = data.get('days', 7)  # Default to 7-day lookback
+        
+        if not isinstance(days, int) or days < 1 or days > 30:
+            return jsonify({
+                'success': False,
+                'error': 'Days must be between 1 and 30'
+            }), 400
+        
+        new_watermark = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%dT00:00:00Z')
+        
+        logger.warning("=" * 80)
+        logger.warning(f"🔄 WATERMARK RESET REQUESTED")
+        logger.warning(f"📅 New watermark: {new_watermark} ({days}-day lookback)")
+        logger.warning(f"👤 Requested by: admin")
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get old watermark for logging
+        cursor.execute("""
+            SELECT last_sync_timestamp
+            FROM sync_watermark
+            WHERE workflow_name = 'unified-shipstation-sync'
+        """)
+        old_watermark = cursor.fetchone()
+        old_value = old_watermark[0] if old_watermark else 'None'
+        
+        # Reset watermark
+        cursor.execute("""
+            INSERT INTO sync_watermark (workflow_name, last_sync_timestamp)
+            VALUES ('unified-shipstation-sync', %s)
+            ON CONFLICT(workflow_name) DO UPDATE SET
+                last_sync_timestamp = excluded.last_sync_timestamp,
+                updated_at = CURRENT_TIMESTAMP
+        """, (new_watermark,))
+        
+        conn.commit()
+        conn.close()
+        
+        logger.warning(f"📊 Old watermark: {old_value}")
+        logger.warning(f"✅ Watermark reset successful")
+        logger.warning("=" * 80)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Watermark reset to {days}-day lookback',
+            'old_watermark': str(old_value),
+            'new_watermark': new_watermark,
+            'days': days
+        })
+        
+    except Exception as e:
+        logger.error("=" * 80)
+        logger.error(f"💥 WATERMARK RESET FAILED: {str(e)}", exc_info=True)
+        logger.error("=" * 80)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/workflow_controls/<workflow_name>/run', methods=['POST'])
 @admin_required
 def run_workflow_manually(workflow_name):

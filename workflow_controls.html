@@ -231,6 +231,13 @@
             const statusClass = workflow.enabled ? 'enabled' : 'disabled';
             const statusText = workflow.enabled ? 'Enabled' : 'Disabled';
             
+            // Add reset watermark button for unified-shipstation-sync
+            const extraButton = workflow.name === 'unified-shipstation-sync' 
+                ? `<button class="btn btn-secondary btn-sm" onclick="resetWatermark()" id="reset-watermark-btn" style="margin-left: 5px;">
+                       🔄 Reset Watermark
+                   </button>`
+                : '';
+            
             tr.innerHTML = `
                 <td><strong>${info.name}</strong></td>
                 <td>${info.description}</td>
@@ -250,6 +257,7 @@
                     <button class="btn btn-primary btn-sm" onclick="runWorkflowNow('${workflow.name}')" id="run-btn-${workflow.name}">
                         ▶️ Run Now
                     </button>
+                    ${extraButton}
                 </td>
             `;
             
@@ -343,6 +351,79 @@
                 button.style.backgroundColor = 'var(--danger)';
                 console.error('Error running workflow:', error);
                 alert(`Error running ${name}: ${error.message}`);
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '';
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                }, 3000);
+            }
+        }
+
+        async function resetWatermark() {
+            const button = document.getElementById('reset-watermark-btn');
+            if (!button) return;
+            
+            // Confirm action
+            const days = prompt('Reset watermark to how many days ago? (1-30)', '7');
+            if (!days) return; // User cancelled
+            
+            const daysNum = parseInt(days);
+            if (isNaN(daysNum) || daysNum < 1 || daysNum > 30) {
+                alert('Please enter a number between 1 and 30');
+                return;
+            }
+            
+            const originalText = button.textContent;
+            
+            try {
+                button.disabled = true;
+                button.textContent = '⏳ Resetting...';
+                button.style.opacity = '0.6';
+                
+                const response = await fetch('/api/workflow_controls/unified-shipstation-sync/reset-watermark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ days: daysNum })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    button.textContent = '✅ Reset';
+                    button.style.backgroundColor = 'var(--success)';
+                    alert(`✅ Watermark reset successful!\n\n` +
+                          `Old: ${result.old_watermark}\n` +
+                          `New: ${result.new_watermark}\n\n` +
+                          `ShipStation sync will now pull orders from the last ${result.days} days.`);
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                        loadWorkflows();
+                    }, 2000);
+                } else {
+                    button.textContent = '❌ Failed';
+                    button.style.backgroundColor = 'var(--danger)';
+                    alert(`Failed to reset watermark:\n${result.error}`);
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                    }, 3000);
+                }
+            } catch (error) {
+                button.textContent = '❌ Error';
+                button.style.backgroundColor = 'var(--danger)';
+                console.error('Error resetting watermark:', error);
+                alert(`Error resetting watermark: ${error.message}`);
                 
                 setTimeout(() => {
                     button.textContent = originalText;
