@@ -138,21 +138,40 @@ python app.py
 
 ---
 
-## Step 8: Data Migration (Optional)
+## Step 8: Data Migration (Recommended)
 
-If you need to migrate production data from the original instance:
+Migrate your production data from the original instance using the automated migration script:
 
-### Option A: Export/Import via pg_dump
+### Step 1: Export Data (in ORIGINAL Repl)
 ```bash
-# In ORIGINAL instance:
-pg_dump > production_backup.sql
-
-# Copy file to NEW instance, then:
-psql < production_backup.sql
+python migrate_data.py export
 ```
 
-### Option B: Selective Data Copy
-Use the database tools to export specific tables (like `shipped_orders`, `inventory_current`) and import them into the new instance.
+This creates `data_migration.sql` containing:
+- ✅ Configuration settings (Key Products, workflow controls)
+- ✅ Bundle SKU definitions and components
+- ✅ SKU lot assignments (current active lots)
+- ✅ Historical shipped orders and items
+- ✅ Inventory records and transactions
+- ✅ Incidents, alerts, and monitoring data
+- ⏭️ Skips active orders_inbox (will be imported fresh from XML)
+
+### Step 2: Transfer File
+Download `data_migration.sql` from original Repl and upload to new Repl.
+
+### Step 3: Import Data (in NEW Repl)
+```bash
+python migrate_data.py import
+```
+
+The script will:
+- Show what will be imported
+- Ask for confirmation
+- Import all data in correct order (respecting foreign keys)
+- Verify the import
+- Ask for final commit confirmation
+
+**Migration Time:** ~2-5 minutes depending on data volume
 
 ---
 
