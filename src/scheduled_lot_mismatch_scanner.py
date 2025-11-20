@@ -276,5 +276,35 @@ def main():
             time.sleep(60)
 
 
+def run_once():
+    """Run a single scan cycle and exit (for manual triggers)"""
+    logger.info(f"🎯 Running one-time lot mismatch scan (manual trigger mode)")
+    logger.info("⏩ Skipping business hours check (manual trigger)")
+    
+    try:
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            logger.critical("❌ Failed to get ShipStation credentials")
+            return
+        
+        # Check if workflow is enabled
+        if not is_workflow_enabled(WORKFLOW_NAME):
+            logger.warning(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED")
+            return
+        
+        # Run scan once
+        scan_for_lot_mismatches(api_key, api_secret)
+        logger.info(f"✅ One-time lot mismatch scan complete")
+        
+    except Exception as e:
+        logger.error(f"❌ Error in one-time scan: {e}", exc_info=True)
+        raise
+
 if __name__ == "__main__":
-    main()
+    # Check if running in one-shot mode (for manual triggers)
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == '--once':
+        run_once()
+    else:
+        main()

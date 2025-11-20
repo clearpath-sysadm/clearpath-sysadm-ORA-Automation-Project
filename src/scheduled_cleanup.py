@@ -69,5 +69,35 @@ def main():
             time.sleep(3600)
 
 
+def run_once():
+    """Run a single cleanup cycle and exit (for manual triggers)"""
+    logger.info(f"🎯 Running one-time cleanup (manual trigger mode)")
+    logger.info("⏩ Skipping business hours check (manual trigger)")
+    
+    try:
+        # Check if workflow is enabled
+        if not is_workflow_enabled('orders-cleanup'):
+            logger.warning("⏸️ Workflow 'orders-cleanup' is DISABLED")
+            return
+        
+        # Run cleanup once
+        update_workflow_last_run('orders-cleanup')
+        logger.info("Running scheduled cleanup...")
+        result = cleanup_old_orders(days=60)
+        
+        if 'error' in result:
+            logger.error(f"Cleanup failed: {result['error']}")
+        else:
+            logger.info(f"✅ Cleanup complete: {result['deleted']} orders deleted")
+        
+    except Exception as e:
+        logger.error(f"❌ Error in one-time cleanup: {e}", exc_info=True)
+        raise
+
 if __name__ == '__main__':
-    main()
+    # Check if running in one-shot mode (for manual triggers)
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == '--once':
+        run_once()
+    else:
+        main()

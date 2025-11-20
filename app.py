@@ -6207,11 +6207,11 @@ def run_workflow_manually(workflow_name):
     
     WORKFLOW_SCRIPTS = {
         'xml-import': ['src/scheduled_xml_import.py', '--once'],
-        'shipstation-upload': ['src/scheduled_shipstation_upload.py'],
+        'shipstation-upload': ['src/scheduled_shipstation_upload.py', '--once'],
         'unified-shipstation-sync': ['src/unified_shipstation_sync.py', '--once'],
-        'duplicate-scanner': ['src/scheduled_duplicate_scanner.py'],
-        'lot-mismatch-scanner': ['src/scheduled_lot_mismatch_scanner.py'],
-        'orders-cleanup': ['src/scheduled_cleanup.py']
+        'duplicate-scanner': ['src/scheduled_duplicate_scanner.py', '--once'],
+        'lot-mismatch-scanner': ['src/scheduled_lot_mismatch_scanner.py', '--once'],
+        'orders-cleanup': ['src/scheduled_cleanup.py', '--once']
     }
     
     try:

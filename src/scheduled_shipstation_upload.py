@@ -785,5 +785,50 @@ def run_scheduled_upload():
             logger.info(f"Backing off {backoff}s after error #{error_count}")
             time.sleep(backoff)
 
+def run_once():
+    """Run a single upload cycle and exit (for manual triggers)"""
+    logger.info(f"🎯 Running one-time shipstation upload (manual trigger mode)")
+    logger.info("⏩ Skipping business hours check (manual trigger)")
+    
+    # SAFETY: Check environment
+    repl_slug = os.getenv('REPL_SLUG', '').lower()
+    environment = os.getenv('ENVIRONMENT', '').lower()
+    
+    if 'workspace' in repl_slug:
+        is_dev = True
+    elif environment == 'production':
+        is_dev = False
+    else:
+        is_dev = True
+    
+    if is_dev:
+        logger.error("=" * 80)
+        logger.error("🛑 UPLOAD BLOCKED: Running in development/workspace environment")
+        logger.error("=" * 80)
+        logger.error("Manual upload trigger is blocked in workspace to prevent duplicates.")
+        logger.error("This workflow can only be manually triggered in production.")
+        logger.error("=" * 80)
+        return
+    
+    try:
+        # Check if workflow is enabled
+        if not is_workflow_enabled('shipstation-upload'):
+            logger.warning("⏸️ Workflow 'shipstation-upload' is DISABLED")
+            return
+        
+        # Run upload once
+        uploaded_count = upload_pending_orders()
+        update_workflow_last_run('shipstation-upload')
+        logger.info(f"✅ One-time upload complete: {uploaded_count} orders uploaded")
+        
+    except Exception as e:
+        logger.error(f"❌ Error in one-time upload: {e}", exc_info=True)
+        raise
+
 if __name__ == '__main__':
-    run_scheduled_upload()
+    # Check if running in one-shot mode (for manual triggers)
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == '--once':
+        run_once()
+    else:
+        run_scheduled_upload()

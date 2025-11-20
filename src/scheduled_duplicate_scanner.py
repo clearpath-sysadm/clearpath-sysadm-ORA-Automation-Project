@@ -541,5 +541,34 @@ def run_scheduled_scanner():
             logger.error(f"❌ Scanner error: {e}", exc_info=True)
             time.sleep(60)
 
+def run_once():
+    """Run a single scan cycle and exit (for manual triggers)"""
+    logger.info(f"🎯 Running one-time duplicate scan (manual trigger mode)")
+    logger.info("⏩ Skipping business hours check (manual trigger)")
+    
+    try:
+        # Check if workflow is enabled
+        if not is_workflow_enabled('duplicate-scanner'):
+            logger.warning("⏸️ Workflow 'duplicate-scanner' is DISABLED")
+            return
+        
+        # Run scan once
+        scan_succeeded = scan_for_duplicates()
+        
+        if scan_succeeded:
+            update_workflow_last_run('duplicate-scanner')
+            logger.info(f"✅ One-time duplicate scan complete")
+        else:
+            logger.error("❌ Scan failed")
+        
+    except Exception as e:
+        logger.error(f"❌ Error in one-time scan: {e}", exc_info=True)
+        raise
+
 if __name__ == '__main__':
-    run_scheduled_scanner()
+    # Check if running in one-shot mode (for manual triggers)
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == '--once':
+        run_once()
+    else:
+        run_scheduled_scanner()
