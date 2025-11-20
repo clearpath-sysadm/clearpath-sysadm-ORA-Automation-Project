@@ -171,14 +171,20 @@ def upload_pending_orders():
     # This prevents accidental uploads even if workflow-level checks fail
     repl_slug = os.getenv('REPL_SLUG', '').lower()
     environment = os.getenv('ENVIRONMENT', '').lower()
+    allow_dev_upload = os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
     
     # Block workspace environments - REPL_SLUG takes priority over ENVIRONMENT
-    # This prevents accidental uploads even if ENVIRONMENT=production is set in dev
-    if 'workspace' in repl_slug:
+    # OVERRIDE: Set ALLOW_DEV_UPLOAD=true in Secrets to enable dev uploads (use with caution!)
+    if 'workspace' in repl_slug and not allow_dev_upload:
         logger.warning(f"🛑 UPLOAD BLOCKED: Workspace environment detected (REPL_SLUG={repl_slug})")
         logger.warning("   Uploads are only allowed in production deployments, not workspaces")
         logger.warning("   Deploy this code to enable uploads safely")
+        logger.warning("   To override: Set ALLOW_DEV_UPLOAD=true in Secrets (⚠️ WARNING: Can create duplicates!)")
         return 0
+    
+    if allow_dev_upload:
+        logger.warning("⚠️ DEV UPLOAD OVERRIDE ENABLED - Proceeding with upload in workspace environment")
+        logger.warning("⚠️ This can create duplicate orders if not used carefully!")
     
     # Generate unique run identifier for this upload batch (outside try block for exception handler)
     run_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
@@ -793,6 +799,7 @@ def run_once():
     # SAFETY: Check environment
     repl_slug = os.getenv('REPL_SLUG', '').lower()
     environment = os.getenv('ENVIRONMENT', '').lower()
+    allow_dev_upload = os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
     
     if 'workspace' in repl_slug:
         is_dev = True
@@ -801,14 +808,19 @@ def run_once():
     else:
         is_dev = True
     
-    if is_dev:
+    if is_dev and not allow_dev_upload:
         logger.error("=" * 80)
         logger.error("🛑 UPLOAD BLOCKED: Running in development/workspace environment")
         logger.error("=" * 80)
         logger.error("Manual upload trigger is blocked in workspace to prevent duplicates.")
         logger.error("This workflow can only be manually triggered in production.")
+        logger.error("To override: Set ALLOW_DEV_UPLOAD=true in Secrets (⚠️ WARNING: Can create duplicates!)")
         logger.error("=" * 80)
         return
+    
+    if allow_dev_upload:
+        logger.warning("⚠️ DEV UPLOAD OVERRIDE ENABLED - Proceeding with manual upload in workspace")
+        logger.warning("⚠️ This can create duplicate orders if not used carefully!")
     
     try:
         # Check if workflow is enabled
