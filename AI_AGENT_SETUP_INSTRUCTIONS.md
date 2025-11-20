@@ -116,6 +116,15 @@ python migrate_data.py import
 - "✅ DATA IMPORT COMPLETE!"
 - Shows row counts for Configuration, Bundle SKUs, Shipped Orders, etc.
 
+**IMPORTANT - Tables Intentionally Skipped:**
+The migration intentionally skips these tables (they will regenerate from workflows):
+- `orders_inbox` / `order_items_inbox` - Active orders (imported fresh from XML)
+- `shipstation_order_line_items` - References active orders (regenerates from ShipStation sync)
+- `shipping_violations` - References active orders (regenerates when violations detected)
+- `manual_order_conflicts` - References active orders (regenerates when conflicts occur)
+
+These tables will populate automatically once the XML import and ShipStation sync workflows run.
+
 **If errors occur:**
 - Check that `data_migration.sql` file exists and has content
 - Check database connection

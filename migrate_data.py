@@ -70,19 +70,19 @@ def export_data(output_file='data_migration.sql'):
         ('inventory_transactions', True),
         
         # Orders and shipping
-        ('orders_inbox', False),  # Skip active orders - will be imported fresh
-        ('order_items_inbox', False),
+        ('orders_inbox', False),  # Skip active orders - will be imported fresh from XML
+        ('order_items_inbox', False),  # Child of orders_inbox - skip
         ('shipped_orders', True),  # Keep historical shipments
         ('shipped_items', True),
-        ('shipstation_order_line_items', True),
+        ('shipstation_order_line_items', False),  # References orders_inbox - skip (will regenerate)
         
         # Monitoring and alerts
         ('duplicate_order_alerts', True),
         ('excluded_duplicate_orders', True),
         ('deleted_shipstation_orders', True),
         ('lot_mismatch_alerts', True),
-        ('shipping_violations', True),
-        ('manual_order_conflicts', True),
+        ('shipping_violations', False),  # References orders_inbox - skip (will regenerate)
+        ('manual_order_conflicts', False),  # References orders_inbox - skip (will regenerate)
         
         # System metrics and reporting
         ('system_kpis', True),
