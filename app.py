@@ -6206,12 +6206,12 @@ def run_workflow_manually(workflow_name):
     logger = logging.getLogger(__name__)
     
     WORKFLOW_SCRIPTS = {
-        'xml-import': 'src/scheduled_xml_import.py',
-        'shipstation-upload': 'src/scheduled_shipstation_upload.py',
-        'unified-shipstation-sync': 'src/unified_shipstation_sync.py',
-        'duplicate-scanner': 'src/scheduled_duplicate_scanner.py',
-        'lot-mismatch-scanner': 'src/scheduled_lot_mismatch_scanner.py',
-        'orders-cleanup': 'src/scheduled_cleanup.py'
+        'xml-import': ['src/scheduled_xml_import.py', '--once'],
+        'shipstation-upload': ['src/scheduled_shipstation_upload.py'],
+        'unified-shipstation-sync': ['src/unified_shipstation_sync.py'],
+        'duplicate-scanner': ['src/scheduled_duplicate_scanner.py'],
+        'lot-mismatch-scanner': ['src/scheduled_lot_mismatch_scanner.py'],
+        'orders-cleanup': ['src/scheduled_cleanup.py']
     }
     
     try:
@@ -6221,12 +6221,16 @@ def run_workflow_manually(workflow_name):
                 'error': f'Unknown workflow: {workflow_name}'
             }), 404
         
-        script_path = WORKFLOW_SCRIPTS[workflow_name]
+        script_args = WORKFLOW_SCRIPTS[workflow_name]
+        script_path = script_args[0] if isinstance(script_args, list) else script_args
         
         logger.info(f"🚀 Manual trigger: Running {workflow_name} from {script_path}")
         
+        # Build command with args
+        cmd = ['python'] + (script_args if isinstance(script_args, list) else [script_args])
+        
         result = subprocess.run(
-            ['python', script_path],
+            cmd,
             capture_output=True,
             text=True,
             timeout=300

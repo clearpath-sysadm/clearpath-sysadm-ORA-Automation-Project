@@ -468,5 +468,59 @@ def run_scheduled_import():
             else:
                 time.sleep(interval)
 
+def run_once():
+    """Run a single import cycle and exit (for manual triggers)"""
+    logger.info(f"🎯 Running one-time XML import (manual trigger mode)")
+    logger.info(f"📁 Data retention: {DATA_RETENTION_DAYS} days")
+    
+    try:
+        # Skip business hours check for manual triggers
+        logger.info("⏩ Skipping business hours check (manual trigger)")
+        
+        # Check if workflow is enabled
+        if not is_workflow_enabled('xml-import'):
+            logger.warning("⏸️ Workflow 'xml-import' is DISABLED")
+            return 0
+        
+        # Check for new files
+        has_changes, file_signature, check_duration = has_new_xml_files()
+        
+        if not has_changes:
+            logger.info("ℹ️ No new XML files detected - nothing to import")
+            return 0
+        
+        # Process files
+        logger.info(f"📥 Processing XML files from Drive (signature changed)")
+        
+        imported = import_orders_from_drive()
+        
+        if imported > 0:
+            logger.info(f"✅ Import complete: {imported} orders imported")
+            update_workflow_last_run('xml-import')
+        else:
+            logger.info(f"ℹ️ Import complete: No new orders")
+        
+        # Update polling state
+        update_xml_polling_state(file_signature)
+        
+        # Cleanup old orders
+        deleted = cleanup_old_orders()
+        if deleted > 0:
+            logger.info(f"🗑️ Cleanup complete: {deleted} old orders deleted")
+        
+        logger.info(f"✅ One-time import complete: {imported} orders imported")
+        return imported
+        
+    except Exception as e:
+        logger.error(f"❌ Error in one-time import: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return 0
+
 if __name__ == '__main__':
-    run_scheduled_import()
+    # Check if running in one-shot mode (for manual triggers)
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == '--once':
+        run_once()
+    else:
+        run_scheduled_import()
