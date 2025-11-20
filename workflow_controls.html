@@ -120,10 +120,10 @@
 
             <div class="content-area">
                 <div class="warning-banner">
-                    <div class="warning-icon">⚠️</div>
+                    <div class="warning-icon">⚙️</div>
                     <div class="warning-content">
-                        <div class="warning-title">Important</div>
-                        <div class="warning-text">Disabling workflows will pause automation. Use this to prevent dev/prod conflicts or during maintenance. Changes take effect within 60 seconds.</div>
+                        <div class="warning-title">Workflow Controls</div>
+                        <div class="warning-text">Toggle workflows on/off to pause automation during maintenance. Use "Run Now" to manually trigger workflows outside business hours. Changes take effect within 60 seconds.</div>
                     </div>
                 </div>
 
@@ -136,11 +136,12 @@
                                 <th>Status</th>
                                 <th>Last Sync</th>
                                 <th style="width: 100px;">Toggle</th>
+                                <th style="width: 120px;">Manual Run</th>
                             </tr>
                         </thead>
                         <tbody id="workflows-table">
                             <tr>
-                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-tertiary);">
+                                <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-tertiary);">
                                     Loading workflows...
                                 </td>
                             </tr>
@@ -245,11 +246,16 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </td>
+                <td onclick="event.stopPropagation()">
+                    <button class="btn btn-primary btn-sm" onclick="runWorkflowNow('${workflow.name}')" id="run-btn-${workflow.name}">
+                        ▶️ Run Now
+                    </button>
+                </td>
             `;
             
-            // Make row clickable (except the toggle column)
+            // Make row clickable (except the toggle and run button columns)
             tr.addEventListener('click', function(e) {
-                if (e.target.closest('td:last-child')) return; // Don't trigger on toggle column
+                if (e.target.closest('td:nth-last-child(-n+2)')) return; // Don't trigger on last 2 columns
                 const checkbox = this.querySelector('input[type="checkbox"]');
                 checkbox.checked = !checkbox.checked;
                 toggleWorkflow(workflow.name, checkbox.checked);
@@ -282,6 +288,68 @@
                 console.error('Error toggling workflow:', error);
                 alert('Error toggling workflow');
                 await loadWorkflows();
+            }
+        }
+
+        async function runWorkflowNow(name) {
+            const button = document.getElementById(`run-btn-${name}`);
+            const originalText = button.textContent;
+            
+            try {
+                button.disabled = true;
+                button.textContent = '⏳ Running...';
+                button.style.opacity = '0.6';
+                
+                const response = await fetch(`/api/workflow_controls/${name}/run`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    button.textContent = '✅ Done';
+                    button.style.backgroundColor = 'var(--success)';
+                    console.log(`Workflow ${name} executed successfully`);
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                        loadWorkflows();
+                    }, 2000);
+                } else {
+                    button.textContent = '❌ Failed';
+                    button.style.backgroundColor = 'var(--danger)';
+                    console.error('Workflow execution failed:', result.error);
+                    alert(`Failed to run ${name}:\n${result.error}\n\nCheck console for details.`);
+                    
+                    if (result.stderr) {
+                        console.error('Workflow stderr:', result.stderr);
+                    }
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                    }, 3000);
+                }
+            } catch (error) {
+                button.textContent = '❌ Error';
+                button.style.backgroundColor = 'var(--danger)';
+                console.error('Error running workflow:', error);
+                alert(`Error running ${name}: ${error.message}`);
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '';
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                }, 3000);
             }
         }
 

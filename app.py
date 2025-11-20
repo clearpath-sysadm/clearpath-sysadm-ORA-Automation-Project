@@ -6197,6 +6197,79 @@ def update_workflow_control(workflow_name):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/workflow_controls/<workflow_name>/run', methods=['POST'])
+def run_workflow_manually(workflow_name):
+    """Manually trigger a workflow to run immediately (bypasses business hours)"""
+    import subprocess
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    WORKFLOW_SCRIPTS = {
+        'xml-import': 'src/scheduled_xml_import.py',
+        'shipstation-upload': 'src/scheduled_shipstation_upload.py',
+        'unified-shipstation-sync': 'src/unified_shipstation_sync.py',
+        'duplicate-scanner': 'src/scheduled_duplicate_scanner.py',
+        'lot-mismatch-scanner': 'src/scheduled_lot_mismatch_scanner.py',
+        'orders-cleanup': 'src/scheduled_cleanup.py'
+    }
+    
+    try:
+        if workflow_name not in WORKFLOW_SCRIPTS:
+            return jsonify({
+                'success': False,
+                'error': f'Unknown workflow: {workflow_name}'
+            }), 404
+        
+        script_path = WORKFLOW_SCRIPTS[workflow_name]
+        
+        logger.info(f"🚀 Manual trigger: Running {workflow_name} from {script_path}")
+        
+        result = subprocess.run(
+            ['python', script_path],
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+        
+        success = result.returncode == 0
+        
+        if success:
+            logger.info(f"✅ Manual workflow {workflow_name} completed successfully")
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE workflow_controls
+                SET last_run_at = CURRENT_TIMESTAMP
+                WHERE workflow_name = %s
+            """, (workflow_name,))
+            conn.commit()
+            conn.close()
+        else:
+            logger.error(f"❌ Manual workflow {workflow_name} failed with code {result.returncode}")
+        
+        return jsonify({
+            'success': success,
+            'workflow': workflow_name,
+            'returncode': result.returncode,
+            'stdout': result.stdout[-1000:] if result.stdout else '',
+            'stderr': result.stderr[-1000:] if result.stderr else ''
+        })
+        
+    except subprocess.TimeoutExpired:
+        logger.error(f"⏱️ Manual workflow {workflow_name} timed out after 300 seconds")
+        return jsonify({
+            'success': False,
+            'error': 'Workflow execution timed out (300s limit)',
+            'workflow': workflow_name
+        }), 408
+    except Exception as e:
+        logger.error(f"💥 Manual workflow {workflow_name} error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'workflow': workflow_name
+        }), 500
+
 @app.route('/api/incidents', methods=['GET'])
 def get_incidents():
     """Get all production incidents with optional filtering"""
