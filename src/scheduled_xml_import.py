@@ -237,6 +237,15 @@ def import_orders_from_drive():
         key_products = {row[0] for row in cursor.fetchall()}
         logger.info(f"Loaded {len(key_products)} Key Products for filtering")
         
+        # Load active lot numbers for automatic assignment
+        cursor.execute("""
+            SELECT sku, lot 
+            FROM sku_lot 
+            WHERE active = 1
+        """)
+        active_lots = {row[0]: row[1] for row in cursor.fetchall()}
+        logger.info(f"Loaded {len(active_lots)} active lot numbers for SKU-Lot assignment")
+        
         # Helper function to safely extract text
         def get_text(elem, tag, default=''):
             child = elem.find(tag)
@@ -363,11 +372,28 @@ def import_orders_from_drive():
                     orders_imported += 1
                 
                 # Insert consolidated line items (duplicates merged, only Key Products)
+                # AUTO-ASSIGN lot numbers from active_lots map
                 for item in consolidated_items:
-                    cursor.execute("""
-                        INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                        VALUES (%s, %s, %s)
-                    """, (order_inbox_id, item['sku'], item['quantity']))
+                    sku = item['sku']
+                    quantity = item['quantity']
+                    
+                    # Look up active lot for this SKU
+                    lot = active_lots.get(sku)
+                    
+                    if lot:
+                        # Format as "SKU - LOT" for sku_lot field
+                        sku_lot = f"{sku} - {lot}"
+                        cursor.execute("""
+                            INSERT INTO order_items_inbox (order_inbox_id, sku, sku_lot, quantity)
+                            VALUES (%s, %s, %s, %s)
+                        """, (order_inbox_id, sku, sku_lot, quantity))
+                    else:
+                        # No active lot found - insert without lot (will need manual assignment)
+                        logger.warning(f"No active lot found for SKU {sku} in order {order_number}")
+                        cursor.execute("""
+                            INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
+                            VALUES (%s, %s, %s)
+                        """, (order_inbox_id, sku, quantity))
         
         conn.commit()
         conn.close()
