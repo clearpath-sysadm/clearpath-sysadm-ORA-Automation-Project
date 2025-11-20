@@ -6198,6 +6198,7 @@ def update_workflow_control(workflow_name):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/workflow_controls/<workflow_name>/run', methods=['POST'])
+@admin_required
 def run_workflow_manually(workflow_name):
     """Manually trigger a workflow to run immediately (bypasses business hours)"""
     import subprocess
