@@ -204,7 +204,7 @@
                         <span class="nav-item-icon">🏭</span>
                         Lot Inventory
                     </a>
-                    <a href="/charge_report.html" class="nav-item">
+                    <a href="/charge_report.html" class="nav-item" id="charge-report-link">
                         <span class="nav-item-icon">💰</span>
                         Charge Report
                     </a>
@@ -2671,6 +2671,15 @@
                 
                 // Show widget
                 widget.style.display = 'flex';
+                
+                // Hide charge report and EOM for operations users
+                if (user.role === 'operations') {
+                    const chargeReportLink = document.getElementById('charge-report-link');
+                    const eomButton = document.getElementById('btn-eom');
+                    
+                    if (chargeReportLink) chargeReportLink.style.display = 'none';
+                    if (eomButton) eomButton.style.display = 'none';
+                }
                 
                 // Set user name
                 const userName = user.first_name && user.last_name 

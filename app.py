@@ -95,20 +95,32 @@ def enforce_api_auth():
     ADMIN_ONLY_ROUTES = {
         '/api/sync_shipstation',
         '/api/fedex_pickup/mark_completed',
-        '/api/reports/eod',
-        '/api/reports/eow',
-        '/api/reports/eom',
+        '/api/reports/eom',  # EOM (charge report) is admin-only
     }
     
-    # Viewer-allowed write operations (POST allowed for authenticated users)
+    # Operations-allowed routes (operations role can POST to these, along with admin)
+    OPERATIONS_ALLOWED_ROUTES = {
+        '/api/reports/eod',  # Operations can run EOD
+        '/api/reports/eow',  # Operations can run EOW
+        '/api/inventory_transactions',  # Operations can add inventory transactions (POST)
+        '/api/sku_lots',  # Operations can add lot numbers (POST)
+    }
+    
+    # Operations-allowed write routes with dynamic paths (POST/PUT/PATCH only - DELETE still requires admin)
+    OPERATIONS_ALLOWED_PATTERNS = [
+        '/api/inventory_transactions/',  # Operations can edit inventory transactions (PUT)
+        '/api/sku_lots/',  # Operations can edit/activate/deactivate lot numbers (PUT)
+    ]
+    
+    # Viewer-allowed write operations (POST allowed for all authenticated users)
     VIEWER_ALLOWED_WRITE_ROUTES = {
-        '/api/incidents',  # Viewers can report bugs (POST)
-        '/api/physical_count_adjustment',  # Viewers can adjust inventory up to ±4 units (admin threshold enforced in handler)
+        '/api/incidents',  # All users can report bugs (POST)
+        '/api/physical_count_adjustment',  # All users can adjust inventory up to ±4 units (admin threshold enforced in handler)
     }
     
     # Viewer-allowed write routes with dynamic paths (POST only - PUT/PATCH/DELETE still require admin)
     VIEWER_ALLOWED_WRITE_PATTERNS = [
-        '/api/incidents/',  # Viewers can add notes/screenshots to incidents
+        '/api/incidents/',  # All users can add notes/screenshots to incidents
     ]
     
     # Check if route is public
@@ -119,6 +131,14 @@ def enforce_api_auth():
     safe_methods = {'GET', 'HEAD', 'OPTIONS'}
     modifying_methods = {'POST', 'PUT', 'PATCH', 'DELETE'}
     
+    # Check if this is an operations-allowed write operation
+    # POST/PUT/PATCH allowed for operations (DELETE still requires admin)
+    is_operations_allowed_write = (
+        request.method in {'POST', 'PUT', 'PATCH'} and 
+        (request.path in OPERATIONS_ALLOWED_ROUTES or
+         any(request.path.startswith(pattern) for pattern in OPERATIONS_ALLOWED_PATTERNS))
+    )
+    
     # Check if this is a viewer-allowed write operation
     # Only POST is allowed for patterns (PUT/PATCH/DELETE still require admin)
     is_viewer_allowed_write = (
@@ -127,8 +147,8 @@ def enforce_api_auth():
          any(request.path.startswith(pattern) for pattern in VIEWER_ALLOWED_WRITE_PATTERNS))
     )
     
-    if request.path in ADMIN_ONLY_ROUTES or (request.method in modifying_methods and not is_viewer_allowed_write):
-        # Require admin role
+    # Admin-only routes
+    if request.path in ADMIN_ONLY_ROUTES:
         if not current_user.is_authenticated:
             return jsonify({
                 'error': 'Authentication required',
@@ -142,8 +162,38 @@ def enforce_api_auth():
                 'role': current_user.role
             }), 403
     
+    # Operations-allowed routes (admin OR operations can modify, but operations cannot DELETE)
+    elif is_operations_allowed_write:
+        if not current_user.is_authenticated:
+            return jsonify({
+                'error': 'Authentication required',
+                'authenticated': False
+            }), 401
+        
+        if current_user.role not in ('admin', 'operations'):
+            return jsonify({
+                'error': 'Operations or Admin access required',
+                'authenticated': True,
+                'role': current_user.role
+            }), 403
+    
+    # All other modifying operations require admin (unless viewer-allowed)
+    elif request.method in modifying_methods and not is_viewer_allowed_write:
+        if not current_user.is_authenticated:
+            return jsonify({
+                'error': 'Authentication required',
+                'authenticated': False
+            }), 401
+        
+        if current_user.role != 'admin':
+            return jsonify({
+                'error': 'Admin access required',
+                'authenticated': True,
+                'role': current_user.role
+            }), 403
+    
+    # Safe methods (GET) - any authenticated user
     elif request.method in safe_methods:
-        # Require any authenticated user (viewer or admin)
         if not current_user.is_authenticated:
             return jsonify({
                 'error': 'Authentication required',

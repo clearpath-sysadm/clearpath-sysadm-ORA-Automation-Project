@@ -45,7 +45,10 @@ A single centralized `global-styles.css` defines the premium corporate design sy
 
 **Technical Implementations & Feature Specifications:**
 - **Database Layer:** PostgreSQL is the core data store. Key tables include `workflows`, `inventory_current`, `shipped_orders`, `orders_inbox`, `system_kpis`, `bundle_skus`, `bundle_components`, and `sku_lot`. The `configuration_params` table stores critical settings. The `InitialInventory` baseline date is **September 19, 2025**. All order updates are blocked until `shipstation_order_id` is synced. Manual orders (10xxxx) are created in ShipStation and tracked locally for inventory.
-- **Replit Auth:** Implemented with role-based access control (Admin/Viewer roles) using Flask-Dance OAuth, supporting multiple login methods, a dual database architecture, and centralized API authentication middleware.
+- **Replit Auth:** Implemented with role-based access control (Admin/Operations/Viewer roles) using Flask-Dance OAuth, supporting multiple login methods, a dual database architecture, and centralized API authentication middleware.
+    - **Admin Role:** Full system access including all CRUD operations, workflow controls, EOD/EOW/EOM reports, and charge reports.
+    - **Operations Role:** Read-only access EXCEPT can run EOD/EOW (not EOM), add/edit inventory transactions, and add/edit/activate/deactivate lot numbers. Cannot delete any records. Charge report page is hidden from Operations users.
+    - **Viewer Role:** Read-only access with limited write permissions (incident reporting, minor inventory adjustments ±4 units).
 - **Backend Automation (Python scripts):**
     - **Business Hours Optimization:** All automation workflows operate only during business hours (Monday-Friday 6 AM - 6 PM CST) for 64% database compute time reduction with zero business impact.
     - **Unified ShipStation Sync:** Production workflow combining status sync and manual order import, running every 5 minutes during business hours.
