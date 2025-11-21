@@ -798,14 +798,20 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showToast(`Order ${orderNumber} deleted successfully`, 'success');
+                    showToast(`Order ${orderNumber} deleted successfully - Refreshing duplicate alerts...`, 'success');
                     closeConfirmation();
                     
-                    // Refresh the search
+                    // Refresh both the search AND the duplicates list
                     setTimeout(() => {
-                        document.getElementById('order-number-input').value = orderNumber;
-                        lookupOrder({ preventDefault: () => {} });
-                    }, 1000);
+                        // Refresh search results if there's an active search
+                        const orderInput = document.getElementById('order-number-input');
+                        if (orderInput.value) {
+                            lookupOrder({ preventDefault: () => {} });
+                        }
+                        
+                        // Reload duplicates list to reflect the deletion
+                        loadDuplicates();
+                    }, 500);
                 } else {
                     showToast(data.error || 'Failed to delete order', 'error');
                 }

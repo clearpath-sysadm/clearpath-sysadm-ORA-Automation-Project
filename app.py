@@ -7161,6 +7161,104 @@ def api_sync_order_items(order_inbox_id):
         logger.error(f'Error syncing items for order {order_inbox_id}: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+def rescan_duplicates_for_order(order_number):
+    """
+    Re-scan ShipStation for duplicates of a specific order number and update alerts
+    Called after deleting an order to refresh duplicate detection
+    """
+    try:
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        from utils.api_utils import make_api_request
+        from collections import defaultdict
+        
+        # Fetch all orders with this order number from ShipStation
+        api_key, api_secret = get_shipstation_credentials()
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        params = {'orderNumber': order_number}
+        response = make_api_request(
+            url=settings.SHIPSTATION_ORDERS_ENDPOINT,
+            method='GET',
+            headers=headers,
+            params=params,
+            timeout=10
+        )
+        
+        if not response or response.status_code != 200:
+            logger.warning(f"Could not fetch order {order_number} from ShipStation for duplicate re-scan")
+            return
+        
+        orders = response.json().get('orders', [])
+        
+        # Helper function to extract base SKU
+        def normalize_sku(sku):
+            if not sku or ' - ' not in sku:
+                return sku
+            return sku.split(' - ')[0].strip()
+        
+        # Identify duplicates for this order number
+        order_sku_map = defaultdict(list)
+        for order in orders:
+            for item in order.get('items', []):
+                sku = item.get('sku', '')
+                base_sku = normalize_sku(sku)
+                if base_sku:
+                    order_sku_map[(order_number, base_sku)].append({
+                        'shipstation_id': str(order.get('orderId')),
+                        'order_status': order.get('orderStatus')
+                    })
+        
+        # Update duplicate alerts
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Get all alerts for this order number
+            cursor.execute("""
+                SELECT id, order_number, base_sku, status
+                FROM duplicate_order_alerts
+                WHERE order_number = %s AND status != 'resolved'
+            """, (order_number,))
+            
+            existing_alerts = cursor.fetchall()
+            
+            for alert_id, alert_order_num, base_sku, status in existing_alerts:
+                alert_key = (alert_order_num, base_sku)
+                
+                # Check if this combination still exists as a duplicate
+                if alert_key in order_sku_map and len(order_sku_map[alert_key]) > 1:
+                    # Still a duplicate - update the ShipStation IDs list
+                    shipstation_ids = [d['shipstation_id'] for d in order_sku_map[alert_key]]
+                    cursor.execute("""
+                        UPDATE duplicate_order_alerts
+                        SET shipstation_ids = %s,
+                            duplicate_count = %s,
+                            last_seen = CURRENT_TIMESTAMP
+                        WHERE id = %s
+                    """, ('{' + ','.join(shipstation_ids) + '}', len(shipstation_ids), alert_id))
+                    logger.info(f"✅ Updated duplicate alert for Order #{alert_order_num} + SKU {base_sku} (now {len(shipstation_ids)} version(s))")
+                else:
+                    # No longer a duplicate - auto-resolve
+                    cursor.execute("""
+                        UPDATE duplicate_order_alerts
+                        SET status = 'resolved',
+                            resolved_at = CURRENT_TIMESTAMP,
+                            resolution_notes = 'Auto-resolved: No longer a duplicate after deletion'
+                        WHERE id = %s
+                    """, (alert_id,))
+                    logger.info(f"✅ Auto-resolved duplicate alert for Order #{alert_order_num} + SKU {base_sku} (no longer a duplicate)")
+            
+            conn.commit()
+            
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"Error updating duplicate alerts for order {order_number}: {e}")
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        logger.error(f"Error in rescan_duplicates_for_order: {e}", exc_info=True)
+
 @app.route('/api/admin/delete_order', methods=['POST'])
 @login_required
 @admin_required
@@ -7201,11 +7299,17 @@ def api_admin_delete_order():
                 # Log warning but don't fail the whole operation since ShipStation deletion succeeded
                 logger.warning(f"⚠️  Failed to track deletion in database: {track_result.get('error')}")
             
+            # Re-scan for duplicates if we have the order number
+            if order_number:
+                logger.info(f"🔄 Re-scanning duplicates for Order #{order_number}")
+                rescan_duplicates_for_order(order_number)
+            
             return jsonify({
                 'success': True,
                 'message': f'Order {shipstation_order_id} successfully deleted from ShipStation',
                 'shipstation_order_id': shipstation_order_id,
-                'order_number': order_number
+                'order_number': order_number,
+                'duplicates_rescanned': bool(order_number)
             })
         else:
             error_msg = result.get('error', 'Failed to delete order')
