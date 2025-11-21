@@ -448,7 +448,7 @@
                                 Current duplicate orders detected in ShipStation. Review and delete the unwanted versions below.
                             </p>
                         </div>
-                        <button class="btn-secondary" onclick="loadDuplicates()" id="refresh-duplicates-btn">
+                        <button class="btn-secondary" onclick="refreshDuplicates()" id="refresh-duplicates-btn">
                             🔄 Refresh
                         </button>
                     </div>
@@ -913,6 +913,54 @@
         }
 
         // Load duplicate orders
+        // Refresh duplicates - runs the duplicate scanner workflow then reloads
+        async function refreshDuplicates() {
+            const duplicatesContainer = document.getElementById('duplicates-container');
+            const refreshBtn = document.getElementById('refresh-duplicates-btn');
+            
+            // Loading state - scanning
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;">🔍 Scanning ShipStation...</span>';
+            duplicatesContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Scanning ShipStation for duplicate orders...</p></div>';
+            
+            try {
+                // Step 1: Run the duplicate scanner workflow
+                console.log('Triggering duplicate scanner workflow...');
+                const scanResponse = await fetch('/api/admin/run_workflow/duplicate-scanner', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const scanData = await scanResponse.json();
+                console.log('Scan workflow response:', scanData);
+                
+                if (!scanData.success) {
+                    throw new Error(scanData.error || 'Failed to run duplicate scanner');
+                }
+                
+                // Step 2: Wait a moment for results to be written to database
+                refreshBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;">⏳ Loading results...</span>';
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Step 3: Load the fresh duplicate data
+                await loadDuplicates();
+                
+            } catch (error) {
+                console.error('Error refreshing duplicates:', error);
+                duplicatesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Failed to scan for duplicates. Please try again.</p>
+                        <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: calc(var(--spacing-unit) * 1);">
+                            Error: ${error.message}
+                        </p>
+                    </div>
+                `;
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = '🔄 Refresh';
+            }
+        }
+        
         async function loadDuplicates() {
             const duplicatesContainer = document.getElementById('duplicates-container');
             const refreshBtn = document.getElementById('refresh-duplicates-btn');
