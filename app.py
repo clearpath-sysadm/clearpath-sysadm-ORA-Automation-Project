@@ -1883,10 +1883,22 @@ def api_weekly_inventory_report():
                 'units_per_pallet': units_per_pallet
             })
         
+        # Get the "As Of" date from configuration_params
+        as_of_date_query = """
+            SELECT value
+            FROM configuration_params
+            WHERE category = 'System' 
+                AND parameter_name = 'inventory_as_of_date'
+                AND sku = ''
+        """
+        as_of_date_result = execute_query(as_of_date_query)
+        as_of_date = as_of_date_result[0][0] if as_of_date_result and as_of_date_result[0][0] else None
+        
         return jsonify({
             'success': True,
             'data': report,
-            'count': len(report)
+            'count': len(report),
+            'as_of_date': as_of_date
         })
     except Exception as e:
         return jsonify({

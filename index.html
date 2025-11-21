@@ -501,8 +501,13 @@
                     
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">
-                                <span>📊</span> Weekly Inventory Report
+                            <div>
+                                <div class="card-title">
+                                    <span>📊</span> Weekly Inventory Report
+                                </div>
+                                <div id="inventoryAsOfDate" style="font-size: 0.85em; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">
+                                    <!-- As Of date will be injected here -->
+                                </div>
                             </div>
                             <div style="display: flex; gap: 8px;">
                                 <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
@@ -764,6 +769,16 @@
                         </tr>
                     `;
                 }).join('');
+                
+                // Display "As Of" date
+                const asOfDateDiv = document.getElementById('inventoryAsOfDate');
+                if (result.as_of_date) {
+                    const date = new Date(result.as_of_date);
+                    const formattedDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    asOfDateDiv.innerHTML = `📅 As of: ${formattedDate}`;
+                } else {
+                    asOfDateDiv.innerHTML = '📅 As of: Not available';
+                }
                 
                 loadingDiv.style.display = 'none';
                 tableDiv.style.display = 'block';

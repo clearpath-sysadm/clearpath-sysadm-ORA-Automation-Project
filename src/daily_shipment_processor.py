@@ -458,28 +458,42 @@ def run_daily_shipment_pull(request=None):
             logger.critical("Failed to get ShipStation credentials.")
             return "Failed to get credentials", 500
 
-        # --- 2. Determine Date Range (Since Last EOD Run) ---
+        # --- 2. Determine Date Range (Using "As Of" Date) ---
         today = datetime.date.today()
         end_date_str = today.strftime('%Y-%m-%d')
         
-        # Query last successful EOD run to minimize data fetching
-        last_eod_rows = execute_query("""
-            SELECT last_run_at
-            FROM workflows
-            WHERE name = 'daily_shipment_processor'
-                AND status = 'completed'
-            ORDER BY last_run_at DESC
-            LIMIT 1
+        # Query the "as_of_date" from configuration_params (most recent shipment date processed)
+        as_of_date_rows = execute_query("""
+            SELECT value
+            FROM configuration_params
+            WHERE category = 'System' 
+                AND parameter_name = 'inventory_as_of_date'
+                AND sku = ''
         """)
         
-        if last_eod_rows and last_eod_rows[0][0]:
-            # Fetch since last EOD run (with 12-hour overlap for late shipments)
-            last_run_timestamp = last_eod_rows[0][0]
-            overlap_start = last_run_timestamp - datetime.timedelta(hours=12)
-            start_date_str = overlap_start.strftime('%Y-%m-%d')
-            logger.info(f"Incremental fetch since {overlap_start.strftime('%Y-%m-%d %H:%M')} (12h overlap): {start_date_str} to {end_date_str}")
+        if as_of_date_rows and as_of_date_rows[0][0]:
+            try:
+                # Fetch since the "as_of_date" with 1-day overlap for safety
+                # Handle both 'YYYY-MM-DD' and 'YYYY-MM-DD HH:MM:SS' formats
+                date_value = as_of_date_rows[0][0]
+                if ' ' in date_value:
+                    # Has timestamp component, parse datetime and extract date
+                    as_of_date = datetime.datetime.strptime(date_value, '%Y-%m-%d %H:%M:%S').date()
+                else:
+                    # Pure date string
+                    as_of_date = datetime.datetime.strptime(date_value, '%Y-%m-%d').date()
+                
+                start_date = as_of_date - datetime.timedelta(days=1)
+                start_date_str = start_date.strftime('%Y-%m-%d')
+                logger.info(f"Incremental fetch from As Of date {as_of_date} (with 1-day overlap): {start_date_str} to {end_date_str}")
+            except (ValueError, TypeError) as e:
+                # Corrupted or invalid date value - fall back to 40-day fetch
+                logger.warning(f"Invalid as_of_date value '{as_of_date_rows[0][0]}', falling back to 40-day fetch: {e}")
+                start_date = today - datetime.timedelta(days=40)
+                start_date_str = start_date.strftime('%Y-%m-%d')
+                logger.info(f"Fallback fetch (40 days): {start_date_str} to {end_date_str}")
         else:
-            # First run or no previous successful EOD - fetch 40 days
+            # First run or no previous "as_of_date" - fetch 40 days
             start_date = today - datetime.timedelta(days=40)
             start_date_str = start_date.strftime('%Y-%m-%d')
             logger.info(f"Initial/full fetch (40 days): {start_date_str} to {end_date_str}")
@@ -639,6 +653,27 @@ def run_daily_shipment_pull(request=None):
                 inventory_saved += 1
         
         logger.info(f"Updated inventory_current table with {inventory_saved} SKUs")
+        
+        # --- 7b. Save "As Of" Date for Inventory Report ---
+        # Get the most recent ship date from the fetched shipments
+        if items_df is not None and not items_df.empty:
+            most_recent_ship_date = items_df['Ship Date'].max()
+            # Convert to pure date string (YYYY-MM-DD format) to avoid timestamp parsing issues
+            if hasattr(most_recent_ship_date, 'date'):
+                date_str = most_recent_ship_date.date().isoformat()
+            else:
+                date_str = str(most_recent_ship_date)[:10]  # Take first 10 chars (YYYY-MM-DD)
+            
+            with transaction() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO configuration_params (category, parameter_name, sku, value, notes, last_updated)
+                    VALUES ('System', 'inventory_as_of_date', '', %s, 'Most recent shipment date processed by EOD', CURRENT_TIMESTAMP)
+                    ON CONFLICT (category, parameter_name, sku) DO UPDATE SET
+                        value = EXCLUDED.value,
+                        last_updated = CURRENT_TIMESTAMP
+                """, (date_str,))
+            logger.info(f"Updated inventory 'As Of' date to: {date_str}")
         
         # --- 8. Update Workflow Status ---
         total_records = items_saved + orders_saved + history_saved + inventory_saved
