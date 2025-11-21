@@ -7566,6 +7566,153 @@ def api_admin_lookup_order():
         logger.error(f'Error looking up order {order_number}: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/admin/get_duplicate_orders', methods=['GET'])
+@login_required
+@admin_required
+def api_admin_get_duplicate_orders():
+    """Get all unresolved duplicate orders with ShipStation details"""
+    try:
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        from utils.api_utils import make_api_request
+        from config.settings import settings
+        from src.services.database.pg_utils import get_connection
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get all unresolved duplicate alerts
+        cursor.execute("""
+            SELECT 
+                id,
+                order_number,
+                base_sku,
+                duplicate_count,
+                shipstation_ids,
+                first_detected,
+                last_seen,
+                notes
+            FROM duplicate_order_alerts
+            WHERE status != 'resolved'
+            ORDER BY order_number, base_sku
+        """)
+        
+        duplicates = cursor.fetchall()
+        
+        if not duplicates:
+            conn.close()
+            return jsonify({
+                'success': True,
+                'duplicate_count': 0,
+                'duplicates': []
+            })
+        
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        result_duplicates = []
+        
+        for alert_id, order_number, base_sku, dup_count, ss_ids_text, first_detected, last_seen, notes in duplicates:
+            # Parse ShipStation IDs from the database field
+            ss_ids = []
+            if ss_ids_text:
+                # Handle both comma-separated and array-like formats
+                ids_text = ss_ids_text.strip('{}').strip()
+                ss_ids = [id.strip() for id in ids_text.split(',') if id.strip() and id.strip().isdigit()]
+            
+            # Fetch details for each ShipStation order
+            shipstation_versions = []
+            for ss_order_id in ss_ids:
+                try:
+                    url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}/{ss_order_id}"
+                    response = make_api_request(
+                        url=url,
+                        method='GET',
+                        headers=headers,
+                        timeout=30
+                    )
+                    
+                    if response and response.status_code == 200:
+                        order_data = response.json()
+                        ship_to = order_data.get('shipTo', {})
+                        items = order_data.get('items', [])
+                        
+                        # Filter to only matching items for this SKU
+                        matching_items = [item for item in items if item.get('sku', '').startswith(base_sku)]
+                        
+                        shipstation_versions.append({
+                            'shipstation_order_id': ss_order_id,
+                            'order_key': order_data.get('orderKey'),
+                            'order_status': order_data.get('orderStatus'),
+                            'customer_name': ship_to.get('name'),
+                            'company': ship_to.get('company'),
+                            'ship_country': ship_to.get('country'),
+                            'create_date': order_data.get('createDate'),
+                            'items': [{
+                                'sku': item.get('sku'),
+                                'name': item.get('name'),
+                                'quantity': item.get('quantity')
+                            } for item in matching_items]
+                        })
+                except Exception as ss_error:
+                    logger.warning(f"Failed to fetch ShipStation order {ss_order_id}: {ss_error}")
+                    shipstation_versions.append({
+                        'shipstation_order_id': ss_order_id,
+                        'order_status': 'error',
+                        'error': 'Failed to fetch from ShipStation'
+                    })
+            
+            # Get local database records
+            cursor.execute("""
+                SELECT 
+                    oi.id,
+                    oi.status,
+                    oi.shipstation_order_id,
+                    oi.created_at,
+                    STRING_AGG(oii.sku || ' (Qty: ' || oii.quantity || ')', ', ') as items
+                FROM orders_inbox oi
+                LEFT JOIN order_items_inbox oii ON oi.id = oii.order_inbox_id
+                WHERE oi.order_number = %s
+                  AND oii.sku LIKE %s
+                GROUP BY oi.id, oi.status, oi.shipstation_order_id, oi.created_at
+                ORDER BY oi.created_at DESC
+            """, (order_number, f"{base_sku}%"))
+            
+            local_records = []
+            for row in cursor.fetchall():
+                local_id, status, ss_id, created, items = row
+                local_records.append({
+                    'id': local_id,
+                    'status': status,
+                    'shipstation_order_id': ss_id,
+                    'created_at': created.isoformat() if created else None,
+                    'items': items
+                })
+            
+            result_duplicates.append({
+                'alert_id': alert_id,
+                'order_number': order_number,
+                'base_sku': base_sku,
+                'duplicate_count': dup_count,
+                'first_detected': first_detected.isoformat() if first_detected else None,
+                'last_seen': last_seen.isoformat() if last_seen else None,
+                'notes': notes,
+                'shipstation_versions': shipstation_versions,
+                'local_records': local_records
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'duplicate_count': len(result_duplicates),
+            'duplicates': result_duplicates
+        })
+            
+    except Exception as e:
+        logger.error(f'Error getting duplicate orders: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/order-management.html')
 @login_required
 @admin_required
