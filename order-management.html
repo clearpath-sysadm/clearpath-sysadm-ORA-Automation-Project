@@ -785,6 +785,16 @@
             
             const { shipstationOrderId, orderNumber } = pendingDeletion;
             
+            // Get modal buttons
+            const deleteBtn = document.querySelector('.confirmation-modal .btn-danger');
+            const cancelBtn = document.querySelector('.confirmation-modal .btn-secondary');
+            const originalDeleteText = deleteBtn.textContent;
+            
+            // Show loading state
+            deleteBtn.disabled = true;
+            cancelBtn.disabled = true;
+            deleteBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;">⏳ Deleting...</span>';
+            
             try {
                 const response = await fetch('/api/admin/delete_order', {
                     method: 'POST',
@@ -798,12 +808,21 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showToast(`Order ${orderNumber} deleted successfully - Refreshing duplicate alerts...`, 'success');
-                    closeConfirmation();
+                    // Show success in button
+                    deleteBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;">✅ Deleted!</span>';
                     
-                    // Refresh both the search AND the duplicates list
+                    showToast(`Order ${orderNumber} deleted successfully - Refreshing duplicate alerts...`, 'success');
+                    
+                    // Close modal after brief delay
                     setTimeout(() => {
-                        // Refresh search results if there's an active search
+                        closeConfirmation();
+                        
+                        // Reset button state
+                        deleteBtn.disabled = false;
+                        cancelBtn.disabled = false;
+                        deleteBtn.textContent = originalDeleteText;
+                        
+                        // Refresh both the search AND the duplicates list
                         const orderInput = document.getElementById('order-number-input');
                         if (orderInput.value) {
                             lookupOrder({ preventDefault: () => {} });
@@ -811,12 +830,23 @@
                         
                         // Reload duplicates list to reflect the deletion
                         loadDuplicates();
-                    }, 500);
+                    }, 800);
                 } else {
+                    // Reset button state on error
+                    deleteBtn.disabled = false;
+                    cancelBtn.disabled = false;
+                    deleteBtn.textContent = originalDeleteText;
+                    
                     showToast(data.error || 'Failed to delete order', 'error');
                 }
             } catch (error) {
                 console.error('Delete error:', error);
+                
+                // Reset button state on error
+                deleteBtn.disabled = false;
+                cancelBtn.disabled = false;
+                deleteBtn.textContent = originalDeleteText;
+                
                 showToast('Failed to delete order', 'error');
             }
         }
