@@ -887,16 +887,25 @@
             duplicatesContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Loading duplicate orders...</p></div>';
             
             try {
+                console.log('Fetching duplicate orders from API...');
                 const response = await fetch('/api/admin/get_duplicate_orders');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('API Response:', data);
                 
                 if (data.success) {
+                    console.log(`Found ${data.duplicate_count} duplicates`);
                     displayDuplicates(data.duplicates);
                 } else {
+                    console.error('API returned error:', data.error);
                     duplicatesContainer.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-state-icon">❌</div>
-                            <p>Failed to load duplicates: ${data.error}</p>
+                            <p>Failed to load duplicates: ${data.error || 'Unknown error'}</p>
                         </div>
                     `;
                 }
@@ -906,6 +915,9 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">❌</div>
                         <p>Failed to load duplicate orders. Please try again.</p>
+                        <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: calc(var(--spacing-unit) * 1);">
+                            Error: ${error.message}
+                        </p>
                     </div>
                 `;
             } finally {
@@ -918,7 +930,10 @@
         function displayDuplicates(duplicates) {
             const duplicatesContainer = document.getElementById('duplicates-container');
             
-            if (!duplicates || duplicates.length === 0) {
+            console.log('displayDuplicates called with:', duplicates);
+            
+            // Defensive check for undefined or non-array
+            if (!duplicates || !Array.isArray(duplicates) || duplicates.length === 0) {
                 duplicatesContainer.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">✅</div>
@@ -933,6 +948,12 @@
             
             // Build HTML for each duplicate group
             const duplicateGroupsHtml = duplicates.map((dup, index) => {
+                // Defensive check for shipstation_versions
+                if (!dup.shipstation_versions || !Array.isArray(dup.shipstation_versions)) {
+                    console.warn('Missing or invalid shipstation_versions for duplicate:', dup);
+                    return '';
+                }
+                
                 const shipstationVersionsHtml = dup.shipstation_versions.map((version, versionIndex) => {
                     const statusClass = version.order_status ? `status-${version.order_status.replace(' ', '_')}` : 'status-error';
                     const itemsHtml = version.items ? version.items.map(item => 
