@@ -248,9 +248,27 @@ def upload_pending_orders():
         """)
         sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
         
-        # DEFENSIVE CHECK: Warn if no active lots found
+        # CRITICAL BUSINESS RULE: Orders without valid SKU-Lot mappings CANNOT be uploaded
         if not sku_lot_map:
-            logger.warning('⚠️ No active lot numbers found in sku_lot table! Orders will upload without lot numbers.')
+            logger.error('🛑 UPLOAD BLOCKED: No active lot numbers found in sku_lot table!')
+            logger.error('   BUSINESS RULE: ShipStation should NEVER have orders without valid SKU-Lot mappings')
+            logger.error('   Please ensure sku_lot table has active lot numbers before uploading')
+            
+            # Revert claimed orders back to 'pending' for retry after lots are configured
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET status = 'pending',
+                    failure_reason = 'No active SKU-Lot mappings available - cannot upload',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE failure_reason = %s
+            """, (run_id,))
+            
+            reverted = cursor.rowcount
+            conn.commit()
+            conn.close()
+            
+            logger.info(f'Reverted {reverted} orders back to pending - upload aborted due to missing SKU-Lot mappings')
+            return 0
         else:
             logger.info('=' * 60)
             logger.info(f'🗂️  ACTIVE LOT MAPPINGS LOADED: {len(sku_lot_map)} SKUs')
@@ -316,14 +334,20 @@ def upload_pending_orders():
                 logger.info(f"   2️⃣ After normalize: '{normalized_sku}'")
                 logger.info(f"   3️⃣ Extracted base SKU: '{base_sku}'")
                 
-                # Replace with active lot if available (handles both new orders and manual orders with stale lots)
+                # CRITICAL BUSINESS RULE: SKU MUST have a valid lot number
                 if base_sku in sku_lot_map:
                     active_lot = sku_lot_map[base_sku]
                     normalized_sku = f"{base_sku} - {active_lot}"
                     logger.info(f"   4️⃣ Found in sku_lot_map → Active lot = {active_lot}")
                     logger.info(f"   ✅ FINAL SKU: '{normalized_sku}'")
                 else:
-                    logger.warning(f"   ❌ SKU '{base_sku}' NOT in sku_lot_map - no lot will be appended!")
+                    # BUSINESS RULE VIOLATION: Orders without valid SKU-Lot cannot be uploaded
+                    logger.error(f"   🛑 CRITICAL: SKU '{base_sku}' NOT in sku_lot_map!")
+                    logger.error(f"   🛑 BUSINESS RULE: ShipStation should NEVER have orders without valid SKU-Lot mappings")
+                    logger.error(f"   🛑 This item will be SKIPPED from the order")
+                    # Skip this item by not adding it to consolidated_items
+                    logger.info('─' * 60)
+                    continue
                 logger.info('─' * 60)
                 
                 # Accumulate quantities for same FULL SKU (base + lot)
@@ -334,6 +358,22 @@ def upload_pending_orders():
                 # Keep original SKU for tracking
                 if not consolidated_items[normalized_sku]['original_sku']:
                     consolidated_items[normalized_sku]['original_sku'] = sku
+            
+            # CRITICAL BUSINESS RULE: Orders must have at least one valid SKU-Lot item
+            if not consolidated_items:
+                logger.error(f"🛑 Order #{order_number} has NO VALID SKU-Lot items - marking as FAILED")
+                logger.error(f"   BUSINESS RULE: ShipStation should NEVER have orders without valid SKU-Lot mappings")
+                
+                # Mark order as failed
+                cursor.execute("""
+                    UPDATE orders_inbox
+                    SET status = 'failed',
+                        failure_reason = 'No valid SKU-Lot mappings for any items in this order',
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (order_id,))
+                
+                continue  # Skip this order entirely
             
             # FIX: Create ONE ShipStation order with ALL SKUs as line items
             if consolidated_items:
@@ -484,16 +524,20 @@ def upload_pending_orders():
                     base_sku = item_sku[:5]  # First 5 digits only
                     base_skus.add(base_sku)
             
-            # Verification logging: Warn if no items in response
+            # CRITICAL FIX: If order exists but has no items, treat it as a duplicate
+            # This prevents uploading the same order again when ShipStation API returns incomplete data
             if len(items) == 0:
-                logger.warning(f"Order {order_num} has no items in ShipStation API response - potential API issue")
+                logger.warning(f"⚠️  Order {order_num} exists in ShipStation but has NO ITEMS - treating as duplicate")
+                logger.warning(f"   This prevents re-uploading orders when ShipStation API returns incomplete data")
+                # Use a special marker to indicate this order should be skipped entirely
+                base_skus.add('__EXISTING_ORDER_NO_ITEMS__')
             else:
                 logger.debug(f"Order {order_num}: {len(items)} items, base SKUs: {base_skus}")
             
             existing_order_map[order_num] = {
                 'orderId': order_id,
                 'orderKey': order_key,
-                'base_skus': base_skus  # NEW: Set of 5-digit base SKUs
+                'base_skus': base_skus  # Set of 5-digit base SKUs (or special marker)
             }
         
         # Filter out duplicates based on (order_number + base_sku) combination
@@ -518,8 +562,35 @@ def upload_pending_orders():
                 existing = existing_order_map[order_num_upper]
                 existing_base_skus = existing.get('base_skus', set())
                 
+                # CRITICAL FIX: If order exists but had no items, always treat as duplicate
+                if '__EXISTING_ORDER_NO_ITEMS__' in existing_base_skus:
+                    skipped_count += 1
+                    shipstation_id = existing['orderId'] or existing['orderKey']
+                    
+                    logger.warning(f"🛑 Skipped duplicate: Order {order_num_upper} already exists in ShipStation (no items returned by API)")
+                    logger.warning(f"   This prevents re-uploading orders when ShipStation API returns incomplete data")
+                    
+                    # Track all SKUs for this order
+                    all_skus = order_sku_info['sku'].split('|')
+                    for sku in all_skus:
+                        cursor.execute("""
+                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (order_inbox_id, sku) DO NOTHING
+                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
+                    
+                    # Update from 'processing' to 'awaiting_shipment' (clear run_id)
+                    cursor.execute("""
+                        UPDATE orders_inbox
+                        SET status = 'awaiting_shipment',
+                            shipstation_order_id = %s,
+                            failure_reason = NULL,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = %s
+                    """, (shipstation_id, order_sku_info['order_inbox_id']))
+                
                 # Check if ANY base SKU overlaps (order + SKU combination exists)
-                if new_order_base_skus.intersection(existing_base_skus):
+                elif new_order_base_skus.intersection(existing_base_skus):
                     # DUPLICATE: Same order number + same base SKU exists
                     skipped_count += 1
                     shipstation_id = existing['orderId'] or existing['orderKey']
