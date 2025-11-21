@@ -417,11 +417,11 @@
                 console.log(`Composing email to ${contacts.length} contacts`);
                 
                 // Encode the email list and body for URL
-                const encodedBccList = encodeURIComponent(emailList);
+                const encodedToList = encodeURIComponent(emailList);
                 const encodedBody = encodeURIComponent(clipboardText);
                 
-                // Create mailto link with all emails in BCC and clipboard in body
-                const mailtoLink = `mailto:?bcc=${encodedBccList}&body=${encodedBody}`;
+                // Create mailto link with all emails in TO and clipboard in body
+                const mailtoLink = `mailto:${encodedToList}?body=${encodedBody}`;
                 
                 console.log('Opening mailto link...');
                 
@@ -435,7 +435,7 @@
                 
                 // Show success message
                 setTimeout(() => {
-                    alert(`✅ Email client should open with ${contacts.length} contacts in BCC`);
+                    alert(`✅ Email client should open with ${contacts.length} contacts in TO`);
                 }, 500);
                 
             } catch (error) {
