@@ -410,33 +410,8 @@
 
             <!-- Content -->
             <div class="content-area">
-                <!-- Duplicate Orders Section -->
-                <div class="order-lookup-card" style="border: 2px solid var(--danger-primary);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: calc(var(--spacing-unit) * 2);">
-                        <div>
-                            <h2 style="margin: 0 0 calc(var(--spacing-unit) * 1) 0; font-size: 1.5rem; font-weight: 600; color: var(--danger-primary);">
-                                🚨 Duplicate Orders
-                            </h2>
-                            <p style="margin: 0; color: var(--text-secondary);">
-                                Current duplicate orders detected in ShipStation. Review and delete the unwanted versions below.
-                            </p>
-                        </div>
-                        <button class="btn-secondary" onclick="loadDuplicates()" id="refresh-duplicates-btn">
-                            🔄 Refresh
-                        </button>
-                    </div>
-                    
-                    <!-- Duplicates Container -->
-                    <div id="duplicates-container">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">🔍</div>
-                            <p>Loading duplicate orders...</p>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Order Lookup Card -->
-                <div class="order-lookup-card" style="margin-top: calc(var(--spacing-unit) * 4);">
+                <div class="order-lookup-card">
                     <h2 style="margin: 0 0 calc(var(--spacing-unit) * 2) 0; font-size: 1.25rem; font-weight: 600;">Lookup Order</h2>
                     <p style="margin: 0 0 calc(var(--spacing-unit) * 3) 0; color: var(--text-secondary);">
                         Search for orders by order number to view details and manage duplicate orders in ShipStation.
@@ -461,6 +436,31 @@
 
                 <!-- Results Container -->
                 <div id="results-container"></div>
+
+                <!-- Duplicate Orders Section -->
+                <div class="order-lookup-card" style="margin-top: calc(var(--spacing-unit) * 4); border: 2px solid var(--danger-primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: calc(var(--spacing-unit) * 2);">
+                        <div>
+                            <h2 style="margin: 0 0 calc(var(--spacing-unit) * 1) 0; font-size: 1.5rem; font-weight: 600; color: var(--danger-primary);">
+                                🚨 Duplicate Orders
+                            </h2>
+                            <p style="margin: 0; color: var(--text-secondary);">
+                                Current duplicate orders detected in ShipStation. Review and delete the unwanted versions below.
+                            </p>
+                        </div>
+                        <button class="btn-secondary" onclick="loadDuplicates()" id="refresh-duplicates-btn">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    
+                    <!-- Duplicates Container -->
+                    <div id="duplicates-container">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <p>Loading duplicate orders...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
