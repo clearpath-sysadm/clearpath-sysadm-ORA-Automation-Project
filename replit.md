@@ -17,6 +17,11 @@ The Oracare Fulfillment System replaces Google Sheets with a PostgreSQL database
     - **Database Note:** The Replit "Development Database" IS the production database (only one database exists)
 - **Business Rules:**
     - **Unit-based metrics:** Display only unit counts (not order counts) throughout the system. Units are the driving factor for all fulfillment, shipping, and inventory workflows. Order counts are only relevant for charge reports.
+    - **SKU-Lot Validation (CRITICAL):** ShipStation should NEVER have orders without valid SKU-Lot mappings. The upload service enforces three strict validations:
+        1. **Global Check:** If `sku_lot` table has no active mappings, ABORT entire upload and revert orders to pending
+        2. **Item-Level Check:** Individual items without lot numbers are SKIPPED with error logging
+        3. **Order-Level Check:** Orders with NO valid items after filtering are marked as 'failed' and never uploaded
+    - **Duplicate Prevention:** Upload service queries ShipStation before uploading to prevent duplicates. If an order exists in ShipStation but returns no items (API issue), it's treated as a duplicate and skipped to prevent re-upload collisions.
 - **Fulfillment Workflow Context:**
     - **12 noon CST cutoff:** Orders accumulate until 12:00 PM Central Standard Time
     - **Work happens in ShipStation:** Fulfillment person processes orders, prints labels, affixes to products, and notes inventory entirely within ShipStation platform (NOT in this system)
