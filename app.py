@@ -7649,32 +7649,25 @@ def api_admin_get_duplicate_orders():
                                 'quantity': item.get('quantity')
                             } for item in items if item.get('sku', '').startswith(base_sku)]
                         })
-                    elif response and response.status_code == 404:
-                        # Order was deleted from ShipStation - this is expected
-                        logger.info(f"ShipStation order {ss_order_id} no longer exists (404)")
                     else:
-                        logger.warning(f"Failed to fetch ShipStation order {ss_order_id}: HTTP {response.status_code if response else 'No response'}")
+                        shipstation_orders.append({
+                            'shipstation_order_id': ss_order_id,
+                            'order_status': 'error',
+                            'error': f'HTTP {response.status_code if response else "No response"}'
+                        })
                 except Exception as ss_error:
                     logger.warning(f"Failed to fetch ShipStation order {ss_order_id}: {ss_error}")
+                    shipstation_orders.append({
+                        'shipstation_order_id': ss_order_id,
+                        'order_status': 'error',
+                        'error': str(ss_error)
+                    })
             
-            # Auto-resolve if no longer a duplicate (0 or 1 orders found)
-            if len(shipstation_orders) <= 1:
-                cursor.execute("""
-                    UPDATE duplicate_order_alerts
-                    SET status = 'resolved',
-                        notes = COALESCE(notes || E'\n', '') || 'Auto-resolved: No longer duplicate in ShipStation'
-                    WHERE id = %s
-                """, (alert_id,))
-                conn.commit()
-                logger.info(f"Auto-resolved duplicate alert {alert_id} (Order {order_number} + SKU {base_sku}) - only {len(shipstation_orders)} version(s) found")
-                continue  # Skip adding to results
-            
-            # Only include duplicates that still have 2+ versions
             result_duplicates.append({
                 'alert_id': alert_id,
                 'order_number': order_number,
                 'base_sku': base_sku,
-                'duplicate_count': len(shipstation_orders),  # Use actual count
+                'duplicate_count': dup_count,
                 'first_detected': first_detected.isoformat() if first_detected else None,
                 'last_seen': last_seen.isoformat() if last_seen else None,
                 'notes': notes,
