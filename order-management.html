@@ -948,6 +948,11 @@
             
             // Build HTML for each duplicate group
             const duplicateGroupsHtml = duplicates.map((dup, index) => {
+                console.log(`Processing duplicate #${index}:`, dup);
+                console.log(`  - Order: ${dup.order_number}, SKU: ${dup.base_sku}`);
+                console.log(`  - shipstation_orders:`, dup.shipstation_orders);
+                console.log(`  - shipstation_orders length:`, dup.shipstation_orders ? dup.shipstation_orders.length : 'undefined');
+                
                 // Build table rows for each ShipStation order
                 const ordersTableHtml = dup.shipstation_orders && dup.shipstation_orders.length > 0
                     ? dup.shipstation_orders.map((order, idx) => {
