@@ -948,24 +948,49 @@
             
             // Build HTML for each duplicate group
             const duplicateGroupsHtml = duplicates.map((dup, index) => {
-                // Display ShipStation IDs as clickable links to investigate
-                const ssIdsHtml = dup.shipstation_ids && dup.shipstation_ids.length > 0 
-                    ? dup.shipstation_ids.map((ssId, idx) => `
-                        <div style="margin-bottom: calc(var(--spacing-unit) * 1); padding: calc(var(--spacing-unit) * 2); background: var(--bg-secondary); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <strong style="color: var(--text-primary);">Version ${idx + 1}:</strong>
-                                <span style="font-family: monospace; color: var(--text-secondary); margin-left: calc(var(--spacing-unit) * 1);">ShipStation ID: ${ssId}</span>
-                            </div>
-                            <button 
-                                class="btn-secondary" 
-                                onclick="lookupOrderNumber('${dup.order_number}')"
-                                style="padding: 6px 12px; font-size: 0.875rem; white-space: nowrap;"
-                            >
-                                🔍 View Details
-                            </button>
-                        </div>
-                    `).join('')
-                    : '<p style="color: var(--text-tertiary); font-style: italic;">No ShipStation IDs found</p>';
+                // Build table rows for each ShipStation order
+                const ordersTableHtml = dup.shipstation_orders && dup.shipstation_orders.length > 0
+                    ? dup.shipstation_orders.map((order, idx) => {
+                        const isShipped = order.order_status === 'shipped';
+                        const isError = order.order_status === 'error';
+                        const recommendDelete = !isShipped && !isError && dup.duplicate_count > 1;
+                        const statusClass = order.order_status ? `status-${order.order_status.replace(/[_ ]/g, '-')}` : 'status-error';
+                        
+                        const itemsHtml = order.items && order.items.length > 0
+                            ? order.items.map(item => `${item.sku} (${item.quantity})`).join(', ')
+                            : 'No items';
+                        
+                        return `
+                            <tr style="${recommendDelete ? 'background: #fee2e2;' : ''}">
+                                <td style="font-weight: 600;">${dup.order_number}</td>
+                                <td style="font-family: monospace;">${order.shipstation_order_id}</td>
+                                <td>
+                                    <span class="status-badge-small ${statusClass}">${order.order_status || 'error'}</span>
+                                    ${isShipped ? '<br><small style="color: #059669; font-weight: 600;">✓ KEEP</small>' : ''}
+                                    ${recommendDelete ? '<br><small style="color: #dc2626; font-weight: 600;">⚠️ SUGGEST DELETE</small>' : ''}
+                                </td>
+                                <td>${order.customer_name || 'N/A'}</td>
+                                <td>${order.company || 'N/A'}</td>
+                                <td>${order.ship_country || 'N/A'}</td>
+                                <td style="font-size: 0.75rem;">${itemsHtml}</td>
+                                <td style="font-size: 0.75rem;">
+                                    ${order.create_date ? new Date(order.create_date).toLocaleString() : 'N/A'}
+                                </td>
+                                <td>
+                                    ${!isError ? `
+                                        <button 
+                                            class="btn-danger" 
+                                            onclick="initiateDelete(${order.shipstation_order_id}, '${dup.order_number}', '${(order.customer_name || '').replace(/'/g, "\\'")}')"
+                                            style="padding: 4px 12px; font-size: 0.75rem;"
+                                        >
+                                            Delete
+                                        </button>
+                                    ` : `<span style="color: var(--text-tertiary); font-size: 0.75rem;">Error</span>`}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')
+                    : '<tr><td colspan="9" style="text-align: center; color: var(--text-tertiary); padding: calc(var(--spacing-unit) * 3);">No ShipStation orders found</td></tr>';
                 
                 return `
                     <div style="margin-bottom: calc(var(--spacing-unit) * 4); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: calc(var(--spacing-unit) * 3); background: var(--card-bg);">
@@ -979,17 +1004,25 @@
                             </p>
                         </div>
                         
-                        <div>
-                            <p style="font-size: 0.875rem; font-weight: 600; color: var(--text-tertiary); margin-bottom: calc(var(--spacing-unit) * 2);">
-                                ShipStation Versions (${dup.duplicate_count}):
-                            </p>
-                            ${ssIdsHtml}
-                        </div>
-                        
-                        <div style="margin-top: calc(var(--spacing-unit) * 3); padding: calc(var(--spacing-unit) * 2); background: #eff6ff; border-radius: var(--radius-md); border: 1px solid #bfdbfe;">
-                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
-                                💡 <strong>Tip:</strong> Click "View Details" above or use the "Order Lookup" search box below to see full order information including status, customer, and items before deleting.
-                            </p>
+                        <div class="local-db-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Order #</th>
+                                        <th>ShipStation ID</th>
+                                        <th>Status</th>
+                                        <th>Customer</th>
+                                        <th>Company</th>
+                                        <th>Ship To</th>
+                                        <th>Items</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${ordersTableHtml}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 `;
@@ -1006,19 +1039,6 @@
                 </div>
                 ${duplicateGroupsHtml}
             `;
-        }
-
-        // Helper function to trigger order lookup from duplicate list
-        function lookupOrderNumber(orderNumber) {
-            // Scroll to order lookup section
-            const orderInput = document.getElementById('order-number-input');
-            orderInput.value = orderNumber;
-            orderInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Auto-trigger search after scroll
-            setTimeout(() => {
-                lookupOrder({ preventDefault: () => {} });
-            }, 300);
         }
 
         // Auto-load duplicates when page loads

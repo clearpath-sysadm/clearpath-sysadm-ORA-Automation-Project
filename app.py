@@ -7570,8 +7570,11 @@ def api_admin_lookup_order():
 @login_required
 @admin_required
 def api_admin_get_duplicate_orders():
-    """Get all unresolved duplicate orders from database"""
+    """Get all unresolved duplicate orders with full ShipStation details"""
     try:
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        from utils.api_utils import make_api_request
+        from config.settings import settings
         from src.services.database.pg_utils import get_connection
         
         conn = get_connection()
@@ -7603,26 +7606,72 @@ def api_admin_get_duplicate_orders():
                 'duplicates': []
             })
         
+        # Get ShipStation credentials
+        api_key, api_secret = get_shipstation_credentials()
+        headers = get_shipstation_headers(api_key, api_secret)
+        
         result_duplicates = []
         
         for alert_id, order_number, base_sku, dup_count, ss_ids_text, first_detected, last_seen, notes in duplicates:
             # Parse ShipStation IDs from the database field
             ss_ids = []
             if ss_ids_text:
-                # Handle both comma-separated and array-like formats
                 ids_text = ss_ids_text.strip('{}').strip()
                 ss_ids = [id.strip() for id in ids_text.split(',') if id.strip() and id.strip().isdigit()]
             
-            # Return basic info - user can use Order Lookup below for detailed investigation
+            # Fetch full details for each ShipStation order
+            shipstation_orders = []
+            for ss_order_id in ss_ids:
+                try:
+                    url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}/{ss_order_id}"
+                    response = make_api_request(
+                        url=url,
+                        method='GET',
+                        headers=headers,
+                        timeout=10
+                    )
+                    
+                    if response and response.status_code == 200:
+                        order_data = response.json()
+                        ship_to = order_data.get('shipTo', {})
+                        items = order_data.get('items', [])
+                        
+                        shipstation_orders.append({
+                            'shipstation_order_id': ss_order_id,
+                            'order_status': order_data.get('orderStatus'),
+                            'customer_name': ship_to.get('name'),
+                            'company': ship_to.get('company'),
+                            'ship_country': ship_to.get('country'),
+                            'create_date': order_data.get('createDate'),
+                            'items': [{
+                                'sku': item.get('sku'),
+                                'name': item.get('name'),
+                                'quantity': item.get('quantity')
+                            } for item in items if item.get('sku', '').startswith(base_sku)]
+                        })
+                    else:
+                        shipstation_orders.append({
+                            'shipstation_order_id': ss_order_id,
+                            'order_status': 'error',
+                            'error': f'HTTP {response.status_code if response else "No response"}'
+                        })
+                except Exception as ss_error:
+                    logger.warning(f"Failed to fetch ShipStation order {ss_order_id}: {ss_error}")
+                    shipstation_orders.append({
+                        'shipstation_order_id': ss_order_id,
+                        'order_status': 'error',
+                        'error': str(ss_error)
+                    })
+            
             result_duplicates.append({
                 'alert_id': alert_id,
                 'order_number': order_number,
                 'base_sku': base_sku,
                 'duplicate_count': dup_count,
-                'shipstation_ids': ss_ids,
                 'first_detected': first_detected.isoformat() if first_detected else None,
                 'last_seen': last_seen.isoformat() if last_seen else None,
-                'notes': notes
+                'notes': notes,
+                'shipstation_orders': shipstation_orders
             })
         
         conn.close()
