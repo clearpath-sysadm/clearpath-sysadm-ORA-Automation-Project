@@ -948,49 +948,24 @@
             
             // Build HTML for each duplicate group
             const duplicateGroupsHtml = duplicates.map((dup, index) => {
-                // Defensive check for shipstation_versions
-                if (!dup.shipstation_versions || !Array.isArray(dup.shipstation_versions)) {
-                    console.warn('Missing or invalid shipstation_versions for duplicate:', dup);
-                    return '';
-                }
-                
-                const shipstationVersionsHtml = dup.shipstation_versions.map((version, versionIndex) => {
-                    const statusClass = version.order_status ? `status-${version.order_status.replace(' ', '_')}` : 'status-error';
-                    const itemsHtml = version.items ? version.items.map(item => 
-                        `${item.sku} (${item.quantity})`
-                    ).join(', ') : 'No items';
-                    
-                    const isShipped = version.order_status === 'shipped';
-                    const recommendDelete = !isShipped && dup.duplicate_count > 1;
-                    
-                    return `
-                        <tr style="${recommendDelete ? 'background: #fee2e2;' : ''}">
-                            <td style="font-weight: 600; ${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">${dup.order_number}</td>
-                            <td style="font-family: monospace; ${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">${version.shipstation_order_id}</td>
-                            <td style="${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">
-                                <span class="status-badge-small ${statusClass}">${version.order_status || 'error'}</span>
-                                ${isShipped ? '<br><small style="color: #059669; font-weight: 600;">✓ KEEP</small>' : ''}
-                                ${recommendDelete ? '<br><small style="color: #dc2626; font-weight: 600;">⚠️ SUGGEST DELETE</small>' : ''}
-                            </td>
-                            <td style="${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">${version.customer_name || 'N/A'}</td>
-                            <td style="${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">${version.company || 'N/A'}</td>
-                            <td style="${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">${version.ship_country || 'N/A'}</td>
-                            <td style="font-size: 0.75rem; ${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">${itemsHtml}</td>
-                            <td style="font-size: 0.75rem; ${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">
-                                ${version.create_date ? new Date(version.create_date).toLocaleString() : 'N/A'}
-                            </td>
-                            <td style="${recommendDelete ? 'background: #fee2e2;' : 'background: #eff6ff;'}">
-                                <button 
-                                    class="btn-danger" 
-                                    onclick="initiateDelete(${version.shipstation_order_id}, '${dup.order_number}', '${version.customer_name || ''}')"
-                                    style="padding: 4px 12px; font-size: 0.75rem;"
-                                >
-                                    Delete
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
+                // Display ShipStation IDs as clickable links to investigate
+                const ssIdsHtml = dup.shipstation_ids && dup.shipstation_ids.length > 0 
+                    ? dup.shipstation_ids.map((ssId, idx) => `
+                        <div style="margin-bottom: calc(var(--spacing-unit) * 1); padding: calc(var(--spacing-unit) * 2); background: var(--bg-secondary); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: var(--text-primary);">Version ${idx + 1}:</strong>
+                                <span style="font-family: monospace; color: var(--text-secondary); margin-left: calc(var(--spacing-unit) * 1);">ShipStation ID: ${ssId}</span>
+                            </div>
+                            <button 
+                                class="btn-secondary" 
+                                onclick="lookupOrderNumber('${dup.order_number}')"
+                                style="padding: 6px 12px; font-size: 0.875rem; white-space: nowrap;"
+                            >
+                                🔍 View Details
+                            </button>
+                        </div>
+                    `).join('')
+                    : '<p style="color: var(--text-tertiary); font-style: italic;">No ShipStation IDs found</p>';
                 
                 return `
                     <div style="margin-bottom: calc(var(--spacing-unit) * 4); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: calc(var(--spacing-unit) * 3); background: var(--card-bg);">
@@ -1004,39 +979,18 @@
                             </p>
                         </div>
                         
-                        <div class="local-db-table">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Order #</th>
-                                        <th>ShipStation ID</th>
-                                        <th>Status</th>
-                                        <th>Customer</th>
-                                        <th>Company</th>
-                                        <th>Ship To</th>
-                                        <th>Items</th>
-                                        <th>Created</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${shipstationVersionsHtml}
-                                </tbody>
-                            </table>
+                        <div>
+                            <p style="font-size: 0.875rem; font-weight: 600; color: var(--text-tertiary); margin-bottom: calc(var(--spacing-unit) * 2);">
+                                ShipStation Versions (${dup.duplicate_count}):
+                            </p>
+                            ${ssIdsHtml}
                         </div>
                         
-                        ${dup.local_records && dup.local_records.length > 0 ? `
-                            <div style="margin-top: calc(var(--spacing-unit) * 2); padding-top: calc(var(--spacing-unit) * 2); border-top: 1px solid var(--border-color);">
-                                <p style="font-size: 0.875rem; font-weight: 600; color: var(--text-tertiary); margin-bottom: calc(var(--spacing-unit) * 1);">
-                                    Local Database Records (${dup.local_records.length}):
-                                </p>
-                                ${dup.local_records.map(rec => `
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary); padding: calc(var(--spacing-unit) * 1); background: var(--bg-secondary); border-radius: var(--radius-sm); margin-bottom: calc(var(--spacing-unit) * 1);">
-                                        Local ID: ${rec.id} | SS ID: ${rec.shipstation_order_id || 'NULL'} | Status: ${rec.status} | Items: ${rec.items || 'none'}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
+                        <div style="margin-top: calc(var(--spacing-unit) * 3); padding: calc(var(--spacing-unit) * 2); background: #eff6ff; border-radius: var(--radius-md); border: 1px solid #bfdbfe;">
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
+                                💡 <strong>Tip:</strong> Click "View Details" above or use the "Order Lookup" search box below to see full order information including status, customer, and items before deleting.
+                            </p>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1052,6 +1006,19 @@
                 </div>
                 ${duplicateGroupsHtml}
             `;
+        }
+
+        // Helper function to trigger order lookup from duplicate list
+        function lookupOrderNumber(orderNumber) {
+            // Scroll to order lookup section
+            const orderInput = document.getElementById('order-number-input');
+            orderInput.value = orderNumber;
+            orderInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Auto-trigger search after scroll
+            setTimeout(() => {
+                lookupOrder({ preventDefault: () => {} });
+            }, 300);
         }
 
         // Auto-load duplicates when page loads
