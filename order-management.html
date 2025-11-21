@@ -811,7 +811,12 @@
                     // Show success in button
                     deleteBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;">✅ Deleted!</span>';
                     
-                    showToast(`Order ${orderNumber} deleted successfully - Refreshing duplicate alerts...`, 'success');
+                    // Show appropriate message based on whether it was already deleted
+                    const message = data.already_deleted 
+                        ? `Order ${orderNumber} was already deleted - Updating duplicate alerts...`
+                        : `Order ${orderNumber} deleted successfully - Refreshing duplicate alerts...`;
+                    
+                    showToast(message, 'success');
                     
                     // Close modal after brief delay
                     setTimeout(() => {

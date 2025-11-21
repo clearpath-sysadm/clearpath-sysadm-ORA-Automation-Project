@@ -7290,8 +7290,17 @@ def api_admin_delete_order():
         logger.info(f"Admin order deletion requested: ShipStation ID {shipstation_order_id}, Order Number: {order_number or 'Not provided'}")
         result = delete_order_from_shipstation(shipstation_order_id)
         
-        if result['success']:
-            logger.info(f"✅ Successfully deleted order {shipstation_order_id} from ShipStation")
+        # Check if order was already deleted (404 Not Found)
+        already_deleted = False
+        if not result['success']:
+            error_msg = result.get('error', '')
+            if '404' in error_msg or 'not found' in error_msg.lower():
+                logger.info(f"ℹ️  Order {shipstation_order_id} already deleted from ShipStation")
+                already_deleted = True
+        
+        if result['success'] or already_deleted:
+            if result['success']:
+                logger.info(f"✅ Successfully deleted order {shipstation_order_id} from ShipStation")
             
             # Record deletion for duplicate alert auto-resolution
             track_result = record_shipstation_order_deletion(shipstation_order_id, order_number)
@@ -7306,9 +7315,10 @@ def api_admin_delete_order():
             
             return jsonify({
                 'success': True,
-                'message': f'Order {shipstation_order_id} successfully deleted from ShipStation',
+                'message': f'Order {shipstation_order_id} {"already deleted" if already_deleted else "successfully deleted from ShipStation"}',
                 'shipstation_order_id': shipstation_order_id,
                 'order_number': order_number,
+                'already_deleted': already_deleted,
                 'duplicates_rescanned': bool(order_number)
             })
         else:
