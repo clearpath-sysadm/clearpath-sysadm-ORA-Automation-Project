@@ -45,6 +45,7 @@ A single centralized `global-styles.css` defines the premium corporate design sy
     - **Business Hours Optimization:** All automation workflows operate only during business hours (Monday-Friday 6 AM - 6 PM CST) for 64% database compute time reduction with zero business impact.
     - **Unified ShipStation Sync:** Production workflow combining status sync and manual order import, running every 5 minutes during business hours.
     - **Physical Inventory Controls:** User-driven buttons for End-of-Day (EOD), End-of-Week (EOW), and End-of-Month (EOM) operations.
+        - **EOD Performance Optimization (Nov 2025):** Incremental fetch since last successful EOD run instead of fixed 40-day window, reducing processing time from 120s+ (timeout) to ~66s. Includes 180s timeout buffer for edge cases and auto-recovery from failed runs.
     - **XML Polling Service:** Monitors Google Drive for new order XML files and expands bundle SKUs during business hours.
     - **ShipStation Upload Service:** Automatically uploads pending orders from `orders_inbox` to ShipStation every 5 minutes during business hours, handling SKU-Lot mappings and product name mappings.
     - **Orders Cleanup Service:** Daily deletion of `orders_inbox` entries older than 60 days, running during business hours.

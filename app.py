@@ -1919,7 +1919,7 @@ def api_run_eod():
             cwd=project_root,
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=180
         )
         
         if result.returncode == 0:
@@ -1975,10 +1975,10 @@ def api_run_eod():
             }), 500
             
     except subprocess.TimeoutExpired:
-        log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>120s)')
+        log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>180s)')
         return jsonify({
             'success': False,
-            'error': 'EOD timed out (>120s)'
+            'error': 'EOD timed out (>180s)'
         }), 500
     except Exception as e:
         log_report_run('EOD', datetime.date.today(), 'failed', str(e))

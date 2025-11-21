@@ -458,12 +458,31 @@ def run_daily_shipment_pull(request=None):
             logger.critical("Failed to get ShipStation credentials.")
             return "Failed to get credentials", 500
 
-        # --- 2. Determine the 32-Day Rolling Date Range ---
+        # --- 2. Determine Date Range (Since Last EOD Run) ---
         today = datetime.date.today()
-        start_date = today - datetime.timedelta(days=40)
         end_date_str = today.strftime('%Y-%m-%d')
-        start_date_str = start_date.strftime('%Y-%m-%d')
-        logger.info(f"Using rolling 32-day date range: {start_date_str} to {end_date_str}")
+        
+        # Query last successful EOD run to minimize data fetching
+        last_eod_rows = execute_query("""
+            SELECT last_run_at
+            FROM workflows
+            WHERE name = 'daily_shipment_processor'
+                AND status = 'completed'
+            ORDER BY last_run_at DESC
+            LIMIT 1
+        """)
+        
+        if last_eod_rows and last_eod_rows[0][0]:
+            # Fetch since last EOD run (with 12-hour overlap for late shipments)
+            last_run_timestamp = last_eod_rows[0][0]
+            overlap_start = last_run_timestamp - datetime.timedelta(hours=12)
+            start_date_str = overlap_start.strftime('%Y-%m-%d')
+            logger.info(f"Incremental fetch since {overlap_start.strftime('%Y-%m-%d %H:%M')} (12h overlap): {start_date_str} to {end_date_str}")
+        else:
+            # First run or no previous successful EOD - fetch 40 days
+            start_date = today - datetime.timedelta(days=40)
+            start_date_str = start_date.strftime('%Y-%m-%d')
+            logger.info(f"Initial/full fetch (40 days): {start_date_str} to {end_date_str}")
         logger.info(f"Environment: {'CLOUD' if IS_CLOUD_ENV else 'LOCAL' if IS_LOCAL_ENV else 'UNKNOWN'}")
         logger.info(f"Service Account Key Path: {SERVICE_ACCOUNT_KEY_PATH}")
 
