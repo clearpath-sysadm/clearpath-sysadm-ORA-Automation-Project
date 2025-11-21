@@ -905,9 +905,9 @@
                         
                         btn.textContent = '📧 Ready!';
                         
-                        // Open email client with BCC recipients (no body due to size limits)
+                        // Open email client with TO recipients (no body due to size limits)
                         const subject = 'Weekly Inventory Report - Oracare';
-                        const mailtoLink = `mailto:?bcc=${encodeURIComponent(emailList)}&subject=${encodeURIComponent(subject)}`;
+                        const mailtoLink = `mailto:${encodeURIComponent(emailList)}?subject=${encodeURIComponent(subject)}`;
                         
                         // Open email client FIRST (while user interaction is fresh)
                         const link = document.createElement('a');
@@ -919,7 +919,7 @@
                         
                         // Show instructions AFTER opening email (prevents popup blocker)
                         setTimeout(() => {
-                            alert(`✅ Email client opened!\n\nThe report has been copied to your clipboard.\n\nNow:\n1. Your email client should have opened with ${contactsData.data.length} BCC recipients\n2. Paste the report into the email body (Ctrl+V or Cmd+V)\n3. Send!`);
+                            alert(`✅ Email client opened!\n\nThe report has been copied to your clipboard.\n\nNow:\n1. Your email client should have opened with ${contactsData.data.length} TO recipients\n2. Paste the report into the email body (Ctrl+V or Cmd+V)\n3. Send!`);
                         }, 500);
                         
                         // Reset button
@@ -970,7 +970,7 @@
                 // Create a simple test mailto link
                 const subject = 'Test Email - Weekly Inventory Report';
                 const body = 'This is a test email from the Oracare Fulfillment System.';
-                const mailtoLink = `mailto:?bcc=${encodeURIComponent(emailList)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                const mailtoLink = `mailto:${encodeURIComponent(emailList)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                 
                 console.log('Opening mailto link:', mailtoLink);
                 
@@ -984,7 +984,7 @@
                 
                 // Show success message
                 setTimeout(() => {
-                    alert(`✅ Email client test initiated!\n\nIf your email client opened with ${data.data.length} contacts in BCC, the feature works!\n\nIf nothing happened, your browser may be blocking mailto: links or you don't have a default email client configured.`);
+                    alert(`✅ Email client test initiated!\n\nIf your email client opened with ${data.data.length} contacts in TO, the feature works!\n\nIf nothing happened, your browser may be blocking mailto: links or you don't have a default email client configured.`);
                 }, 500);
                 
             } catch (error) {
