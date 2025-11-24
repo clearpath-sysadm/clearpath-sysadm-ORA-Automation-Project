@@ -207,10 +207,13 @@ def upload_pending_orders():
         # This ensures only one process can claim each pending order
         
         # Fetch pending order IDs that need upload (with row-level locking)
+        # CRITICAL FIX: Only claim orders that haven't been uploaded yet
+        # This prevents re-uploading orders that sync updated to 'awaiting_shipment'
         cursor.execute("""
             SELECT id
             FROM orders_inbox
-            WHERE status IN ('pending', 'awaiting_shipment')
+            WHERE status = 'pending'
+              AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
               AND order_number NOT IN (SELECT order_number FROM shipped_orders)
             FOR UPDATE SKIP LOCKED
         """)
