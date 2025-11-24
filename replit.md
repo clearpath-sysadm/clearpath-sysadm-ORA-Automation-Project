@@ -21,7 +21,12 @@ The Oracare Fulfillment System replaces Google Sheets with a PostgreSQL database
         1. **Global Check:** If `sku_lot` table has no active mappings, ABORT entire upload and revert orders to pending
         2. **Item-Level Check:** Individual items without lot numbers are SKIPPED with error logging
         3. **Order-Level Check:** Orders with NO valid items after filtering are marked as 'failed' and never uploaded
-    - **Duplicate Prevention:** Upload service queries ShipStation before uploading to prevent duplicates. If an order exists in ShipStation but returns no items (API issue), it's treated as a duplicate and skipped to prevent re-upload collisions.
+    - **Duplicate Prevention (Nov 2025 - Race Condition Fixes):** Multi-layered protection against duplicate order uploads:
+        1. **Upload Service Guard:** Only claims orders with `status='pending'` AND `shipstation_order_id IS NULL`, preventing re-upload of already-processed orders
+        2. **Sync Status Preservation:** Unified sync preserves 'uploaded' and 'failed' statuses, preventing status downgrades that could trigger re-uploads
+        3. **XML Import Protection:** Re-imported orders that already have a `shipstation_order_id` are skipped to prevent clearing upload tracking
+        4. **ShipStation API Check:** Queries ShipStation before uploading; orders with existing entries are skipped (handles API edge cases where items return empty)
+        5. **Atomic Claiming:** `FOR UPDATE SKIP LOCKED` ensures only one upload process claims each order, preventing concurrent duplicate uploads
 - **Fulfillment Workflow Context:**
     - **12 noon CST cutoff:** Orders accumulate until 12:00 PM Central Standard Time
     - **Work happens in ShipStation:** Fulfillment person processes orders, prints labels, affixes to products, and notes inventory entirely within ShipStation platform (NOT in this system)

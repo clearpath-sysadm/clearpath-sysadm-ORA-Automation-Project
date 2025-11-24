@@ -326,17 +326,26 @@ def import_orders_from_drive():
                 total_quantity = sum(item['quantity'] for item in consolidated_items)
                 
                 # IDEMPOTENT UPSERT: Check if order exists
-                cursor.execute("SELECT id FROM orders_inbox WHERE order_number = %s", (order_number,))
+                cursor.execute("SELECT id, shipstation_order_id, status FROM orders_inbox WHERE order_number = %s", (order_number,))
                 existing = cursor.fetchone()
                 
                 if existing:
-                    # Order exists - DELETE old items and UPDATE order (idempotent reprocessing)
                     order_inbox_id = existing[0]
+                    existing_ss_id = existing[1]
+                    existing_status = existing[2]
                     
+                    # CRITICAL FIX: Skip re-importing orders that have already been uploaded
+                    # This prevents clearing shipstation_order_id and re-triggering upload
+                    if existing_ss_id and existing_ss_id.strip():
+                        logger.info(f"SKIPPED Order {order_number}: Already uploaded to ShipStation (ID: {existing_ss_id})")
+                        orders_skipped += 1
+                        continue
+                    
+                    # Order exists but not uploaded yet - DELETE old items and UPDATE order (idempotent reprocessing)
                     # Delete old items
                     cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = %s", (order_inbox_id,))
                     
-                    # Update order metadata
+                    # Update order metadata (preserve status if already set)
                     cursor.execute("""
                         UPDATE orders_inbox
                         SET order_date = %s, customer_email = %s, total_items = %s,

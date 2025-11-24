@@ -732,10 +732,27 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         items = order.get('items', [])
         total_items = sum(item.get('quantity', 0) for item in items)
         
+        # CRITICAL FIX: Check if order was already uploaded by our system
+        # Prevent STATUS DOWNGRADES that would re-queue orders for upload
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT status, shipstation_order_id FROM orders_inbox WHERE id = %s
+        """, (local_order_id,))
+        current_record = cursor.fetchone()
+        current_status = current_record[0] if current_record else None
+        current_ss_id = current_record[1] if current_record else None
+        
+        # Prevent downgrades to 'pending'/'awaiting_shipment' for already-uploaded orders
+        # BUT allow legitimate terminal statuses like 'shipped', 'cancelled', 'on_hold'
+        if current_status in ('uploaded', 'failed') and db_status in ('pending', 'awaiting_shipment'):
+            logger.warning(f"🔒 BLOCKED status downgrade: Order {order_number} status '{current_status}' cannot change to '{db_status}' (would trigger re-upload)")
+            db_status = current_status
+        elif current_status in ('uploaded', 'failed') and db_status in ('shipped', 'cancelled', 'on_hold'):
+            logger.info(f"✅ Allowing status upgrade: Order {order_number} '{current_status}' → '{db_status}' (legitimate terminal status)")
+        
         logger.info(f"🔄 Updating EXISTING order: {order_number} → status: {db_status}, items: {total_items}, carrier: {carrier_info['carrier_code']}, service: {carrier_info['service_code']}")
         
         # Update order in orders_inbox
-        cursor = conn.cursor()
         cursor.execute("""
             UPDATE orders_inbox
             SET status = %s,
