@@ -1372,7 +1372,7 @@
                         else if (order.local_status === 'pending') statusLabel = 'Awaiting Upload';
                         else if (order.local_status === 'awaiting_shipment') statusLabel = 'In Queue';
                         
-                        html += `<details style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
+                        html += `<details id="discrepancy-order-${order.order_number}" style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
                         html += `<summary style="cursor: pointer; font-weight: 600;">Order #${order.order_number} - ${order.customer} <span style="color: #f59e0b;">(SS: ${order.ss_units} | Local: ${order.local_units} | Diff: ${order.difference > 0 ? '+' : ''}${order.difference})</span></summary>`;
                         html += `<div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">`;
                         
@@ -1380,7 +1380,7 @@
                         html += `<div style="background: var(--bg-secondary); padding: 10px; border-radius: 6px;">`;
                         html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
                         html += `<strong style="color: var(--primary-blue); font-size: 12px;">ShipStation Items (${order.ss_units}):</strong>`;
-                        html += `<button onclick="syncDiscrepancy('${order.order_number}', 'ss_to_local', ${order.ss_units}, ${order.local_units})" style="padding: 4px 8px; font-size: 10px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Use ShipStation quantity for Local DB">→ Sync to Local</button>`;
+                        html += `<button id="sync-btn-ss-${order.order_number}" onclick="syncDiscrepancy('${order.order_number}', 'ss_to_local', ${order.ss_units}, ${order.local_units}, this)" style="padding: 4px 8px; font-size: 10px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Use ShipStation quantity for Local DB">→ Sync to Local</button>`;
                         html += `</div>`;
                         if (order.ss_items && order.ss_items.length > 0) {
                             order.ss_items.forEach(item => {
@@ -1395,7 +1395,7 @@
                         html += `<div style="background: var(--bg-secondary); padding: 10px; border-radius: 6px;">`;
                         html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
                         html += `<strong style="color: var(--accent-green); font-size: 12px;">Local DB (${statusLabel}):</strong>`;
-                        html += `<button onclick="syncDiscrepancy('${order.order_number}', 'local_to_ss', ${order.ss_units}, ${order.local_units})" style="padding: 4px 8px; font-size: 10px; background: var(--accent-green); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Use Local DB quantity for ShipStation">→ Sync to SS</button>`;
+                        html += `<button id="sync-btn-local-${order.order_number}" onclick="syncDiscrepancy('${order.order_number}', 'local_to_ss', ${order.ss_units}, ${order.local_units}, this)" style="padding: 4px 8px; font-size: 10px; background: var(--accent-green); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Use Local DB quantity for ShipStation">→ Sync to SS</button>`;
                         html += `</div>`;
                         if (order.local_items && order.local_items.length > 0) {
                             order.local_items.forEach(item => {
@@ -1430,7 +1430,7 @@
         }
 
         // Sync discrepancy between ShipStation and Local DB
-        async function syncDiscrepancy(orderNumber, direction, ssUnits, localUnits) {
+        async function syncDiscrepancy(orderNumber, direction, ssUnits, localUnits, buttonEl) {
             const directionLabel = direction === 'ss_to_local' ? 'ShipStation → Local DB' : 'Local DB → ShipStation';
             const reason = prompt(`Sync Order #${orderNumber} (${directionLabel})\n\nPlease provide a reason for this sync:`);
             
@@ -1440,6 +1440,13 @@
             
             if (!confirm(`Are you sure you want to sync Order #${orderNumber}?\n\nDirection: ${directionLabel}\nReason: ${reason}`)) {
                 return;
+            }
+            
+            // Disable button and show loading state
+            if (buttonEl) {
+                buttonEl.disabled = true;
+                buttonEl.textContent = 'Syncing...';
+                buttonEl.style.opacity = '0.6';
             }
             
             try {
@@ -1458,16 +1465,51 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`Sync logged successfully!\n\n${data.message}`);
-                    // Async refresh the discrepancy analysis without closing modal
-                    setTimeout(async () => {
-                        await showDiscrepancyDetails();
-                    }, 500);
+                    // Mark the order row as synced visually
+                    const orderRow = document.getElementById(`discrepancy-order-${orderNumber}`);
+                    if (orderRow) {
+                        orderRow.style.background = 'rgba(34, 197, 94, 0.15)';
+                        orderRow.style.borderLeft = '4px solid #22c55e';
+                        orderRow.style.borderRadius = '6px';
+                        orderRow.style.padding = '8px 12px';
+                        
+                        // Update summary to show synced status
+                        const summary = orderRow.querySelector('summary');
+                        if (summary) {
+                            summary.innerHTML = `✅ Order #${orderNumber} - <span style="color: #22c55e;">SYNC LOGGED</span> (${directionLabel})`;
+                        }
+                    }
+                    
+                    // Update button to show completed
+                    if (buttonEl) {
+                        buttonEl.textContent = '✓ Logged';
+                        buttonEl.style.background = '#22c55e';
+                        buttonEl.style.opacity = '1';
+                    }
+                    
+                    // Show brief success notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #22c55e; color: white; padding: 12px 20px; border-radius: 8px; z-index: 10001; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+                    notification.textContent = `Order #${orderNumber} sync logged!`;
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
                 } else {
                     alert(`Sync failed: ${data.error}`);
+                    // Reset button on error
+                    if (buttonEl) {
+                        buttonEl.disabled = false;
+                        buttonEl.textContent = direction === 'ss_to_local' ? '→ Sync to Local' : '→ Sync to SS';
+                        buttonEl.style.opacity = '1';
+                    }
                 }
             } catch (error) {
                 alert(`Error syncing: ${error.message}`);
+                // Reset button on error
+                if (buttonEl) {
+                    buttonEl.disabled = false;
+                    buttonEl.textContent = direction === 'ss_to_local' ? '→ Sync to Local' : '→ Sync to SS';
+                    buttonEl.style.opacity = '1';
+                }
             }
         }
 
