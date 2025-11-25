@@ -137,7 +137,10 @@ def make_replit_blueprint(app, db_instance, user_model, oauth_model):
         return merged_user
 
     ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', '').split(',')
-    ADMIN_EMAILS = [email.strip() for email in ADMIN_EMAILS if email.strip()]
+    ADMIN_EMAILS = [email.strip().lower() for email in ADMIN_EMAILS if email.strip()]
+    
+    OPERATIONS_EMAILS = os.getenv('OPERATIONS_EMAILS', '').split(',')
+    OPERATIONS_EMAILS = [email.strip().lower() for email in OPERATIONS_EMAILS if email.strip()]
 
     @oauth_authorized.connect_via(replit_bp)
     def logged_in(blueprint, token):
@@ -145,10 +148,18 @@ def make_replit_blueprint(app, db_instance, user_model, oauth_model):
         user_claims = jwt.decode(token['id_token'], options={"verify_signature": False})
         user = save_user(user_claims)
         
-        if ADMIN_EMAILS and user.email in ADMIN_EMAILS and user.role != 'admin':
+        user_email_lower = (user.email or '').lower()
+        
+        # Check admin first (highest priority)
+        if ADMIN_EMAILS and user_email_lower in ADMIN_EMAILS and user.role != 'admin':
             user.role = 'admin'
             db.session.commit()
             print(f"✅ Auto-promoted {user.email} to admin")
+        # Check operations (second priority)
+        elif OPERATIONS_EMAILS and user_email_lower in OPERATIONS_EMAILS and user.role != 'operations':
+            user.role = 'operations'
+            db.session.commit()
+            print(f"✅ Auto-promoted {user.email} to operations")
         
         login_user(user)
         blueprint.token = token
