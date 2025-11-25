@@ -4488,17 +4488,26 @@ def api_get_units_discrepancy():
         ss_orders = response.json().get('orders', [])
         
         # Build ShipStation order dict: order_number -> {units, items}
+        # IMPORTANT: Aggregate items from multiple ShipStation entries with same order number
         ss_order_dict = {}
         for order in ss_orders:
             order_num = order.get('orderNumber', '')
             items = order.get('items', [])
-            total_units = sum(item.get('quantity', 0) for item in items)
-            ss_order_dict[order_num] = {
-                'units': total_units,
-                'items': [{'sku': item.get('sku', ''), 'qty': item.get('quantity', 0)} for item in items],
-                'customer': order.get('shipTo', {}).get('name', 'Unknown'),
-                'shipstation_id': order.get('orderId')
-            }
+            order_items = [{'sku': item.get('sku', ''), 'qty': item.get('quantity', 0)} for item in items]
+            order_units = sum(item.get('quantity', 0) for item in items)
+            
+            if order_num in ss_order_dict:
+                # Aggregate items from multiple ShipStation entries for same order
+                ss_order_dict[order_num]['units'] += order_units
+                ss_order_dict[order_num]['items'].extend(order_items)
+                ss_order_dict[order_num]['shipstation_ids'].append(order.get('orderId'))
+            else:
+                ss_order_dict[order_num] = {
+                    'units': order_units,
+                    'items': order_items,
+                    'customer': order.get('shipTo', {}).get('name', 'Unknown'),
+                    'shipstation_ids': [order.get('orderId')]
+                }
         
         # Get Local DB orders (not shipped, cancelled, on_hold)
         cursor.execute("""
@@ -4545,7 +4554,8 @@ def api_get_units_discrepancy():
                     'order_number': order_num,
                     'units': ss_data['units'],
                     'customer': ss_data['customer'],
-                    'items': ss_data['items']
+                    'items': ss_data['items'],
+                    'shipstation_ids': ss_data['shipstation_ids']
                 })
             elif ss_data['units'] != local_order_dict[order_num]['units']:
                 unit_mismatches.append({
