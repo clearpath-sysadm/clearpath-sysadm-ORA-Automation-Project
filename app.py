@@ -4620,9 +4620,67 @@ def api_sync_discrepancy():
         cursor = conn.cursor()
         
         if direction == 'ss_to_local':
-            # Update local DB items to match ShipStation
-            # This would require fetching SS items and updating local items
-            # For now, we log the action and provide guidance
+            # Actually update local DB items to match ShipStation
+            
+            # First, get the local order ID
+            cursor.execute("""
+                SELECT id FROM orders_inbox WHERE order_number = %s
+            """, (order_number,))
+            order_row = cursor.fetchone()
+            
+            if not order_row:
+                conn.close()
+                return jsonify({'success': False, 'error': f'Order {order_number} not found in local database'}), 404
+            
+            local_order_id = order_row[0]
+            
+            # Fetch ShipStation items for this order
+            from src.shipstation_api_client import ShipStationAPIClient
+            ss_client = ShipStationAPIClient()
+            
+            # Get all awaiting_shipment orders from ShipStation and find this one
+            ss_orders = ss_client.get_orders(order_status='awaiting_shipment', page_size=500)
+            ss_items_to_sync = []
+            
+            for ss_order in ss_orders:
+                if ss_order.get('orderNumber') == order_number:
+                    items = ss_order.get('items', [])
+                    for item in items:
+                        sku_with_lot = item.get('sku', '')
+                        qty = item.get('quantity', 1)
+                        unit_price = int(float(item.get('unitPrice', 0)) * 100)  # Convert to cents
+                        
+                        # Parse SKU and LOT from "SKU - LOT" format
+                        if ' - ' in sku_with_lot:
+                            parts = sku_with_lot.split(' - ', 1)
+                            sku = parts[0].strip()
+                            lot = parts[1].strip() if len(parts) > 1 else None
+                        else:
+                            sku = sku_with_lot
+                            lot = None
+                        
+                        ss_items_to_sync.append({
+                            'sku': sku,
+                            'sku_lot': lot,
+                            'quantity': qty,
+                            'unit_price_cents': unit_price
+                        })
+            
+            if not ss_items_to_sync:
+                conn.close()
+                return jsonify({'success': False, 'error': f'No items found in ShipStation for order {order_number}'}), 404
+            
+            # Delete existing items for this order
+            cursor.execute("""
+                DELETE FROM order_items_inbox WHERE order_inbox_id = %s
+            """, (local_order_id,))
+            
+            # Insert ShipStation items
+            for item in ss_items_to_sync:
+                cursor.execute("""
+                    INSERT INTO order_items_inbox (order_inbox_id, sku, sku_lot, quantity, unit_price_cents)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (local_order_id, item['sku'], item['sku_lot'], item['quantity'], item['unit_price_cents']))
             
             # Log the sync action
             cursor.execute("""
@@ -4636,16 +4694,17 @@ def api_sync_discrepancy():
             
             return jsonify({
                 'success': True,
-                'message': f'Sync logged: ShipStation ({ss_units} units) → Local DB.\n\nNote: To complete this sync, you should update the order items in the Orders Inbox to match ShipStation.',
+                'message': f'Local DB updated to match ShipStation!\n\nSynced {len(ss_items_to_sync)} item(s) totaling {ss_units} units.',
                 'direction': direction,
-                'target_units': ss_units
+                'target_units': ss_units,
+                'items_synced': len(ss_items_to_sync)
             })
             
         elif direction == 'local_to_ss':
-            # This would update ShipStation - currently we just log
-            # Full ShipStation update would require API calls to modify orders
+            # Syncing to ShipStation requires manual update in ShipStation UI
+            # ShipStation API doesn't support easy order item modification
             
-            # Log the sync action
+            # Log the sync action for audit trail
             cursor.execute("""
                 INSERT INTO discrepancy_sync_log 
                 (order_number, sync_direction, original_ss_units, original_local_units, synced_units, reason, synced_by)
@@ -4657,9 +4716,10 @@ def api_sync_discrepancy():
             
             return jsonify({
                 'success': True,
-                'message': f'Sync logged: Local DB ({local_units} units) → ShipStation.\n\nNote: To complete this sync, you should update the order in ShipStation directly to match the local database items.',
+                'message': f'Sync request logged.\n\nLocal DB has {local_units} units but ShipStation has {ss_units} units.\n\nAction Required: Please manually update the order in ShipStation to add/remove items to match {local_units} units.',
                 'direction': direction,
-                'target_units': local_units
+                'target_units': local_units,
+                'requires_manual_action': True
             })
         else:
             return jsonify({'success': False, 'error': 'Invalid sync direction'}), 400
