@@ -1442,7 +1442,22 @@
                 return;
             }
             
-            // Disable button and show loading state
+            // Show loading overlay on the modal
+            const modalContent = document.getElementById('discrepancy-content');
+            const originalContent = modalContent.innerHTML;
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'sync-loading-overlay';
+            loadingOverlay.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; border-radius: 8px;';
+            loadingOverlay.innerHTML = `
+                <div style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #2B7DE9; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+                <p style="color: white; margin-top: 16px; font-weight: 600;">Syncing Order #${orderNumber}...</p>
+                <p style="color: rgba(255,255,255,0.7); font-size: 12px;">Fetching data from ShipStation</p>
+            `;
+            modalContent.style.position = 'relative';
+            modalContent.appendChild(loadingOverlay);
+            
+            // Disable button
             if (buttonEl) {
                 buttonEl.disabled = true;
                 buttonEl.textContent = 'Syncing...';
@@ -1464,35 +1479,20 @@
                 
                 const data = await response.json();
                 
+                // Remove loading overlay
+                const overlay = document.getElementById('sync-loading-overlay');
+                if (overlay) overlay.remove();
+                
                 if (data.success) {
-                    // Mark the order row as synced visually
-                    const orderRow = document.getElementById(`discrepancy-order-${orderNumber}`);
-                    if (orderRow) {
-                        orderRow.style.background = 'rgba(34, 197, 94, 0.15)';
-                        orderRow.style.borderLeft = '4px solid #22c55e';
-                        orderRow.style.borderRadius = '6px';
-                        orderRow.style.padding = '8px 12px';
-                        
-                        // Update summary to show synced status
-                        const summary = orderRow.querySelector('summary');
-                        if (summary) {
-                            summary.innerHTML = `✅ Order #${orderNumber} - <span style="color: #22c55e;">SYNC LOGGED</span> (${directionLabel})`;
-                        }
-                    }
-                    
-                    // Update button to show completed
-                    if (buttonEl) {
-                        buttonEl.textContent = '✓ Logged';
-                        buttonEl.style.background = '#22c55e';
-                        buttonEl.style.opacity = '1';
-                    }
-                    
                     // Show brief success notification
                     const notification = document.createElement('div');
                     notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #22c55e; color: white; padding: 12px 20px; border-radius: 8px; z-index: 10001; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
-                    notification.textContent = `Order #${orderNumber} sync logged!`;
+                    notification.innerHTML = `<strong>Sync Complete!</strong><br>${data.message.split('\n')[0]}`;
                     document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 3000);
+                    setTimeout(() => notification.remove(), 4000);
+                    
+                    // Refresh the entire discrepancy analysis to show updated data
+                    await showDiscrepancyDetails();
                 } else {
                     alert(`Sync failed: ${data.error}`);
                     // Reset button on error
@@ -1503,6 +1503,10 @@
                     }
                 }
             } catch (error) {
+                // Remove loading overlay on error
+                const overlay = document.getElementById('sync-loading-overlay');
+                if (overlay) overlay.remove();
+                
                 alert(`Error syncing: ${error.message}`);
                 // Reset button on error
                 if (buttonEl) {
