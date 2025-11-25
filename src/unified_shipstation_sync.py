@@ -775,96 +775,19 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
             local_order_id
         ))
         
-        # QUANTITY SYNC: Always sync item quantities from ShipStation for orders in ShipStation
-        # Only sync for orders that have shipstation_order_id (already in ShipStation) 
-        # and are NOT in terminal statuses (shipped, cancelled) - those are finalized
-        # Covers: awaiting_shipment, uploaded, pending, on_hold
-        should_sync_quantities = (
-            items and 
-            current_ss_id and 
-            db_status not in ('shipped', 'cancelled')
-        )
-        if should_sync_quantities:
-            # Get current local items for comparison
-            cursor.execute("""
-                SELECT sku, quantity, sku_lot FROM order_items_inbox WHERE order_inbox_id = %s
-            """, (local_order_id,))
-            local_items_rows = cursor.fetchall()
-            local_items_dict = {row[0]: {'quantity': row[1], 'sku_lot': row[2]} for row in local_items_rows}
-            
-            items_changed = False
-            new_total_units = 0
-            
-            # Process each ShipStation item
-            for item in items:
-                sku_raw = str(item.get('sku', '')).strip()
-                ss_quantity = item.get('quantity', 0)
-                unit_price = item.get('unitPrice', 0)
-                unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
-                
-                if sku_raw and ss_quantity > 0:
-                    new_total_units += ss_quantity
-                    
-                    # Parse SKU - LOT format (e.g., "17612 - 250237")
-                    if ' - ' in sku_raw:
-                        sku_parts = sku_raw.split(' - ')
-                        base_sku = sku_parts[0].strip()
-                        sku_lot = sku_raw
-                    else:
-                        base_sku = sku_raw
-                        sku_lot = None
-                    
-                    # Check if this item exists locally and if quantity differs
-                    if base_sku in local_items_dict:
-                        local_qty = local_items_dict[base_sku]['quantity']
-                        if local_qty != ss_quantity:
-                            logger.info(f"📊 QUANTITY CHANGE: Order {order_number} SKU {base_sku}: {local_qty} → {ss_quantity}")
-                            items_changed = True
-                        # Remove from dict so we can track items only in local DB
-                        del local_items_dict[base_sku]
-                    else:
-                        logger.info(f"➕ NEW ITEM from ShipStation: Order {order_number} SKU {base_sku} x{ss_quantity}")
-                        items_changed = True
-                    
-                    # Upsert the item (insert or update)
-                    cursor.execute("""
-                        INSERT INTO order_items_inbox (
-                            order_inbox_id, sku, sku_lot, quantity, unit_price_cents
-                        )
-                        VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (order_inbox_id, sku) DO UPDATE
-                        SET quantity = EXCLUDED.quantity,
-                            sku_lot = EXCLUDED.sku_lot,
-                            unit_price_cents = EXCLUDED.unit_price_cents
-                    """, (local_order_id, base_sku, sku_lot, ss_quantity, unit_price_cents))
-            
-            # Log items that exist locally but not in ShipStation (customer may have removed them)
-            if local_items_dict:
-                for orphan_sku, orphan_data in local_items_dict.items():
-                    logger.warning(f"⚠️ ITEM REMOVED from ShipStation: Order {order_number} SKU {orphan_sku} x{orphan_data['quantity']} (still in local DB)")
-                    # Note: We don't delete local items - just log the discrepancy
-                    # This prevents data loss if there's a sync issue
-                    items_changed = True
-            
-            # Recalculate total_items if anything changed
-            if items_changed:
-                cursor.execute("""
-                    UPDATE orders_inbox 
-                    SET total_items = %s, updated_at = CURRENT_TIMESTAMP 
-                    WHERE id = %s
-                """, (new_total_units, local_order_id))
-                logger.info(f"📦 Recalculated total_items for order {order_number}: {new_total_units} units")
-        
-        elif items and not current_ss_id:
-            # Order not yet in ShipStation - add items if missing (original behavior)
+        # EDGE CASE FIX: Update/add order items if they exist in ShipStation
+        # This handles the case where orders are created before items are added
+        if items:
+            # Check if order already has items
             cursor.execute("""
                 SELECT COUNT(*) FROM order_items_inbox WHERE order_inbox_id = %s
             """, (local_order_id,))
             existing_items_count = cursor.fetchone()[0]
             
             if existing_items_count == 0:
-                logger.info(f"📦 Adding {len(items)} items to order {order_number} (was empty, pre-upload)")
+                logger.info(f"📦 Adding {len(items)} items to order {order_number} (was empty)")
                 
+                # Insert items into order_items_inbox
                 for item in items:
                     sku_raw = str(item.get('sku', '')).strip()
                     quantity = item.get('quantity', 0)
@@ -872,10 +795,11 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                     unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
                     
                     if sku_raw and quantity > 0:
+                        # Parse SKU - LOT format (e.g., "17612 - 250237")
                         if ' - ' in sku_raw:
                             sku_parts = sku_raw.split(' - ')
                             base_sku = sku_parts[0].strip()
-                            sku_lot = sku_raw
+                            sku_lot = sku_raw  # Store full "17612 - 250237" format
                         else:
                             base_sku = sku_raw
                             sku_lot = None
