@@ -4634,14 +4634,21 @@ def api_sync_discrepancy():
             
             local_order_id = order_row[0]
             
-            # Fetch ShipStation items for this order
-            from src.shipstation_api_client import ShipStationAPIClient
-            ss_client = ShipStationAPIClient()
+            # Fetch ShipStation items for this order using proper API functions
+            from src.services.shipstation.api_client import get_shipstation_credentials, fetch_shipstation_orders_by_order_numbers
+            from config.settings import SHIPSTATION_ORDERS_ENDPOINT
             
-            # Get all awaiting_shipment orders from ShipStation and find this one
-            ss_orders = ss_client.get_orders(order_status='awaiting_shipment', page_size=500)
+            api_key, api_secret = get_shipstation_credentials()
+            if not api_key or not api_secret:
+                conn.close()
+                return jsonify({'success': False, 'error': 'ShipStation credentials not configured'}), 500
+            
+            # Fetch this specific order from ShipStation
+            ss_orders = fetch_shipstation_orders_by_order_numbers(
+                api_key, api_secret, SHIPSTATION_ORDERS_ENDPOINT, [order_number]
+            )
+            
             ss_items_to_sync = []
-            
             for ss_order in ss_orders:
                 if ss_order.get('orderNumber') == order_number:
                     items = ss_order.get('items', [])
@@ -4692,11 +4699,12 @@ def api_sync_discrepancy():
             conn.commit()
             conn.close()
             
+            total_synced_units = sum(item['quantity'] for item in ss_items_to_sync)
             return jsonify({
                 'success': True,
-                'message': f'Local DB updated to match ShipStation!\n\nSynced {len(ss_items_to_sync)} item(s) totaling {ss_units} units.',
+                'message': f'Local DB updated to match ShipStation!\n\nSynced {len(ss_items_to_sync)} item(s) totaling {total_synced_units} units.',
                 'direction': direction,
-                'target_units': ss_units,
+                'target_units': total_synced_units,
                 'items_synced': len(ss_items_to_sync)
             })
             
