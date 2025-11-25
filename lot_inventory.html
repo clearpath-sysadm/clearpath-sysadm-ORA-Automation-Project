@@ -11,6 +11,161 @@
     <!-- Global Premium Design System -->
     <link rel="stylesheet" href="/static/css/global-styles.css">
     
+    <!-- Mobile Responsive Styles -->
+    <style>
+        /* Mobile card view for lot inventory */
+        .lot-card {
+            display: none;
+        }
+        
+        @media (max-width: 900px) {
+            /* Hide table on mobile */
+            .table-container table {
+                display: none;
+            }
+            
+            /* Show card view */
+            .lot-cards-container {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .lot-card {
+                display: block;
+                background: var(--bg-secondary);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 16px;
+            }
+            
+            .lot-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 12px;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            
+            .lot-card-sku {
+                font-size: 18px;
+                font-weight: 700;
+                color: var(--primary-blue);
+            }
+            
+            .lot-card-lot {
+                font-size: 14px;
+                color: var(--text-secondary);
+                margin-top: 2px;
+            }
+            
+            .lot-card-qty {
+                font-size: 24px;
+                font-weight: 700;
+                color: var(--text-primary);
+                text-align: right;
+            }
+            
+            .lot-card-qty-label {
+                font-size: 11px;
+                color: var(--text-tertiary);
+                text-transform: uppercase;
+            }
+            
+            .lot-card-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            
+            .lot-card-item {
+                padding: 8px;
+                background: var(--bg-primary);
+                border-radius: 6px;
+            }
+            
+            .lot-card-item-label {
+                font-size: 10px;
+                color: var(--text-tertiary);
+                text-transform: uppercase;
+                margin-bottom: 2px;
+            }
+            
+            .lot-card-item-value {
+                font-size: 14px;
+                font-weight: 600;
+            }
+            
+            .lot-card-footer {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            
+            .lot-card-footer .btn {
+                flex: 1;
+                min-width: 80px;
+                text-align: center;
+                padding: 10px 12px;
+            }
+            
+            /* Priority badge mobile */
+            .priority-badge {
+                display: inline-block;
+                padding: 2px 8px;
+                background: var(--bg-tertiary);
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+            
+            .priority-badge.priority-1 {
+                background: var(--primary-blue);
+                color: white;
+            }
+            
+            /* Info banner mobile */
+            .info-banner {
+                padding: 12px;
+            }
+            
+            .info-banner-text {
+                font-size: 12px;
+                line-height: 1.5;
+            }
+            
+            /* Modal mobile */
+            .modal {
+                width: 95%;
+                max-width: 95%;
+                max-height: 90vh;
+            }
+            
+            .modal-body {
+                padding: 16px;
+            }
+            
+            .form-group {
+                margin-bottom: 12px;
+            }
+            
+            .form-input, .form-select, .form-textarea {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .lot-card-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .lot-card-footer .btn {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="shipping-violations-alert"></div>
@@ -308,6 +463,7 @@
                 lotsBySKU[lot.sku].push(lot);
             });
 
+            // Desktop Table View
             let html = '<div class="table-container"><table><thead><tr>';
             html += '<th>SKU</th>';
             html += '<th>Lot Number</th>';
@@ -348,6 +504,61 @@
             });
 
             html += '</tbody></table></div>';
+            
+            // Mobile Card View
+            html += '<div class="lot-cards-container">';
+            Object.keys(lotsBySKU).sort().forEach(sku => {
+                const skuLots = lotsBySKU[sku];
+                skuLots.forEach((lot, index) => {
+                    const priority = index + 1;
+                    const adjColor = lot.manual_adjustment >= 0 ? 'var(--success-green)' : 'var(--error-red)';
+                    const adjSign = lot.manual_adjustment >= 0 ? '+' : '';
+                    
+                    html += `<div class="lot-card">`;
+                    html += `<div class="lot-card-header">`;
+                    html += `<div>`;
+                    html += `<div class="lot-card-sku">${lot.sku}</div>`;
+                    html += `<div class="lot-card-lot">Lot: ${lot.lot}</div>`;
+                    html += `</div>`;
+                    html += `<div>`;
+                    html += `<div class="lot-card-qty">${lot.current_qty.toLocaleString()}</div>`;
+                    html += `<div class="lot-card-qty-label">Current Qty</div>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                    
+                    html += `<div class="lot-card-grid">`;
+                    html += `<div class="lot-card-item">`;
+                    html += `<div class="lot-card-item-label">Initial</div>`;
+                    html += `<div class="lot-card-item-value">${lot.initial_qty.toLocaleString()}</div>`;
+                    html += `</div>`;
+                    html += `<div class="lot-card-item">`;
+                    html += `<div class="lot-card-item-label">Shipped</div>`;
+                    html += `<div class="lot-card-item-value" style="color: var(--error-red);">-${lot.total_shipped.toLocaleString()}</div>`;
+                    html += `</div>`;
+                    html += `<div class="lot-card-item">`;
+                    html += `<div class="lot-card-item-label">Adjustment</div>`;
+                    html += `<div class="lot-card-item-value" style="color: ${adjColor};">${adjSign}${lot.manual_adjustment.toLocaleString()}</div>`;
+                    html += `</div>`;
+                    html += `<div class="lot-card-item">`;
+                    html += `<div class="lot-card-item-label">Received</div>`;
+                    html += `<div class="lot-card-item-value">${formatDate(lot.received_date)}</div>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                    
+                    html += `<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">`;
+                    html += `<span class="priority-badge ${priority === 1 ? 'priority-1' : ''}">FIFO #${priority}</span>`;
+                    html += getStatusBadge(lot.status, lot.current_qty);
+                    html += `</div>`;
+                    
+                    html += `<div class="lot-card-footer">`;
+                    html += `<button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>`;
+                    html += `<button class="btn btn-sm" onclick="deleteLot(${lot.id})">Delete</button>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+            });
+            html += '</div>';
+            
             container.innerHTML = html;
         }
 
