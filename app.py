@@ -4612,8 +4612,9 @@ def api_sync_discrepancy():
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
         # Get user info for logging
-        user_info = get_user_info()
-        synced_by = user_info.get('name', 'Unknown') if user_info else 'Unknown'
+        synced_by = f"{current_user.first_name} {current_user.last_name}".strip() if current_user.is_authenticated else 'Unknown'
+        if not synced_by or synced_by == ' ':
+            synced_by = current_user.email if current_user.is_authenticated else 'Unknown'
         
         conn = get_connection()
         cursor = conn.cursor()

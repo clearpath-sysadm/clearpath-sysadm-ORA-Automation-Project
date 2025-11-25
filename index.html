@@ -1458,9 +1458,11 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`Sync completed successfully!\n\n${data.message}`);
-                    // Refresh the discrepancy analysis
-                    showDiscrepancyDetails();
+                    alert(`Sync logged successfully!\n\n${data.message}`);
+                    // Async refresh the discrepancy analysis without closing modal
+                    setTimeout(async () => {
+                        await showDiscrepancyDetails();
+                    }, 500);
                 } else {
                     alert(`Sync failed: ${data.error}`);
                 }
