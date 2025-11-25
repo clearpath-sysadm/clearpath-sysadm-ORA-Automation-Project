@@ -4504,7 +4504,7 @@ def api_get_units_discrepancy():
         cursor.execute("""
             SELECT 
                 o.order_number,
-                o.customer_name,
+                o.ship_name,
                 o.status,
                 o.shipstation_order_id,
                 COALESCE(SUM(oi.quantity), 0) as total_units,
@@ -4512,7 +4512,7 @@ def api_get_units_discrepancy():
             FROM orders_inbox o
             LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             WHERE o.status NOT IN ('shipped', 'cancelled', 'on_hold')
-            GROUP BY o.id, o.order_number, o.customer_name, o.status, o.shipstation_order_id
+            GROUP BY o.id, o.order_number, o.ship_name, o.status, o.shipstation_order_id
         """)
         
         local_orders = cursor.fetchall()
