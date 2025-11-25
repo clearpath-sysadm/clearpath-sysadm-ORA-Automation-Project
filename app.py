@@ -4553,7 +4553,10 @@ def api_get_units_discrepancy():
                     'ss_units': ss_data['units'],
                     'local_units': local_order_dict[order_num]['units'],
                     'difference': ss_data['units'] - local_order_dict[order_num]['units'],
-                    'customer': ss_data['customer']
+                    'customer': ss_data['customer'],
+                    'ss_items': ss_data['items'],
+                    'local_items': local_order_dict[order_num]['items'],
+                    'local_status': local_order_dict[order_num]['status']
                 })
         
         for order_num, local_data in local_order_dict.items():
