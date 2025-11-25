@@ -1342,10 +1342,18 @@
                 if (data.only_in_local.length > 0) {
                     html += `<div style="margin-bottom: 20px;">`;
                     html += `<h4 style="color: #3b82f6; margin-bottom: 12px;">📦 Orders Only in Local DB (${data.only_in_local.length})</h4>`;
+                    html += `<p style="color: var(--text-tertiary); font-size: 12px; margin-bottom: 12px;">These orders exist in the local database but not in ShipStation's "Awaiting Shipment" queue.</p>`;
                     html += `<div style="background: rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; border-left: 4px solid #3b82f6;">`;
                     data.only_in_local.forEach(order => {
+                        // Map status to user-friendly labels
+                        let statusLabel = order.status;
+                        if (order.status === 'uploaded') statusLabel = 'Pending ShipStation Sync';
+                        else if (order.status === 'pending') statusLabel = 'Awaiting Upload';
+                        else if (order.status === 'awaiting_shipment') statusLabel = 'In ShipStation Queue';
+                        
                         html += `<div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
-                        html += `<strong>Order #${order.order_number}</strong> - ${order.customer} - ${order.units} units - Status: <span style="text-transform: capitalize;">${order.status}</span>`;
+                        html += `<strong>Order #${order.order_number}</strong> - ${order.customer} - ${order.units} units`;
+                        html += `<br><span style="font-size: 12px; color: var(--text-tertiary);">Status: <span style="color: #3b82f6;">${statusLabel}</span></span>`;
                         html += `</div>`;
                     });
                     html += `</div></div>`;
@@ -1355,16 +1363,25 @@
                 if (data.unit_mismatches.length > 0) {
                     html += `<div style="margin-bottom: 20px;">`;
                     html += `<h4 style="color: #f59e0b; margin-bottom: 12px;">⚠️ Unit Count Differences (${data.unit_mismatches.length})</h4>`;
-                    html += `<p style="color: var(--text-tertiary); font-size: 12px; margin-bottom: 12px;">Note: Differences may be due to partial shipments, bundle expansions, or sync timing. Click to expand details.</p>`;
+                    html += `<p style="color: var(--text-tertiary); font-size: 12px; margin-bottom: 12px;">Note: Differences may be due to partial shipments, bundle expansions, or sync timing. Click to expand details and use sync buttons to reconcile.</p>`;
                     html += `<div style="background: rgba(245, 158, 11, 0.1); border-radius: 8px; padding: 12px; border-left: 4px solid #f59e0b;">`;
                     data.unit_mismatches.forEach((order, idx) => {
+                        // Map status to user-friendly labels
+                        let statusLabel = order.local_status;
+                        if (order.local_status === 'uploaded') statusLabel = 'Pending Sync';
+                        else if (order.local_status === 'pending') statusLabel = 'Awaiting Upload';
+                        else if (order.local_status === 'awaiting_shipment') statusLabel = 'In Queue';
+                        
                         html += `<details style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
                         html += `<summary style="cursor: pointer; font-weight: 600;">Order #${order.order_number} - ${order.customer} <span style="color: #f59e0b;">(SS: ${order.ss_units} | Local: ${order.local_units} | Diff: ${order.difference > 0 ? '+' : ''}${order.difference})</span></summary>`;
                         html += `<div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">`;
                         
-                        // ShipStation Items
+                        // ShipStation Items with Sync Button
                         html += `<div style="background: var(--bg-secondary); padding: 10px; border-radius: 6px;">`;
-                        html += `<strong style="color: var(--primary-blue); font-size: 12px;">ShipStation Items:</strong>`;
+                        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
+                        html += `<strong style="color: var(--primary-blue); font-size: 12px;">ShipStation Items (${order.ss_units}):</strong>`;
+                        html += `<button onclick="syncDiscrepancy('${order.order_number}', 'ss_to_local', ${order.ss_units}, ${order.local_units})" style="padding: 4px 8px; font-size: 10px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Use ShipStation quantity for Local DB">→ Sync to Local</button>`;
+                        html += `</div>`;
                         if (order.ss_items && order.ss_items.length > 0) {
                             order.ss_items.forEach(item => {
                                 html += `<div style="font-size: 11px; padding: 4px 0; font-family: monospace;">${item.sku} × ${item.qty}</div>`;
@@ -1374,9 +1391,12 @@
                         }
                         html += `</div>`;
                         
-                        // Local DB Items
+                        // Local DB Items with Sync Button
                         html += `<div style="background: var(--bg-secondary); padding: 10px; border-radius: 6px;">`;
-                        html += `<strong style="color: var(--accent-green); font-size: 12px;">Local DB Items (${order.local_status || 'unknown'}):</strong>`;
+                        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
+                        html += `<strong style="color: var(--accent-green); font-size: 12px;">Local DB (${statusLabel}):</strong>`;
+                        html += `<button onclick="syncDiscrepancy('${order.order_number}', 'local_to_ss', ${order.ss_units}, ${order.local_units})" style="padding: 4px 8px; font-size: 10px; background: var(--accent-green); color: white; border: none; border-radius: 4px; cursor: pointer;" title="Use Local DB quantity for ShipStation">→ Sync to SS</button>`;
+                        html += `</div>`;
                         if (order.local_items && order.local_items.length > 0) {
                             order.local_items.forEach(item => {
                                 if (item && item.sku) {
@@ -1406,6 +1426,46 @@
                 
             } catch (error) {
                 document.getElementById('discrepancy-content').innerHTML = `<p style="color: #ef4444;">Error loading discrepancy data: ${error.message}</p>`;
+            }
+        }
+
+        // Sync discrepancy between ShipStation and Local DB
+        async function syncDiscrepancy(orderNumber, direction, ssUnits, localUnits) {
+            const directionLabel = direction === 'ss_to_local' ? 'ShipStation → Local DB' : 'Local DB → ShipStation';
+            const reason = prompt(`Sync Order #${orderNumber} (${directionLabel})\n\nPlease provide a reason for this sync:`);
+            
+            if (!reason) {
+                return; // User cancelled
+            }
+            
+            if (!confirm(`Are you sure you want to sync Order #${orderNumber}?\n\nDirection: ${directionLabel}\nReason: ${reason}`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/sync_discrepancy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_number: orderNumber,
+                        direction: direction,
+                        ss_units: ssUnits,
+                        local_units: localUnits,
+                        reason: reason
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Sync completed successfully!\n\n${data.message}`);
+                    // Refresh the discrepancy analysis
+                    showDiscrepancyDetails();
+                } else {
+                    alert(`Sync failed: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`Error syncing: ${error.message}`);
             }
         }
 

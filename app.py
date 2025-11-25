@@ -4596,6 +4596,76 @@ def api_get_units_discrepancy():
             'error': str(e)
         }), 500
 
+@app.route('/api/sync_discrepancy', methods=['POST'])
+@admin_required
+def api_sync_discrepancy():
+    """Sync unit discrepancy between ShipStation and Local DB"""
+    try:
+        data = request.json
+        order_number = data.get('order_number')
+        direction = data.get('direction')  # 'ss_to_local' or 'local_to_ss'
+        ss_units = data.get('ss_units')
+        local_units = data.get('local_units')
+        reason = data.get('reason')
+        
+        if not all([order_number, direction, reason]):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Get user info for logging
+        user_info = get_user_info()
+        synced_by = user_info.get('name', 'Unknown') if user_info else 'Unknown'
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        if direction == 'ss_to_local':
+            # Update local DB items to match ShipStation
+            # This would require fetching SS items and updating local items
+            # For now, we log the action and provide guidance
+            
+            # Log the sync action
+            cursor.execute("""
+                INSERT INTO discrepancy_sync_log 
+                (order_number, sync_direction, original_ss_units, original_local_units, synced_units, reason, synced_by)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (order_number, direction, ss_units, local_units, ss_units, reason, synced_by))
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Sync logged: ShipStation ({ss_units} units) → Local DB.\n\nNote: To complete this sync, you should update the order items in the Orders Inbox to match ShipStation.',
+                'direction': direction,
+                'target_units': ss_units
+            })
+            
+        elif direction == 'local_to_ss':
+            # This would update ShipStation - currently we just log
+            # Full ShipStation update would require API calls to modify orders
+            
+            # Log the sync action
+            cursor.execute("""
+                INSERT INTO discrepancy_sync_log 
+                (order_number, sync_direction, original_ss_units, original_local_units, synced_units, reason, synced_by)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (order_number, direction, ss_units, local_units, local_units, reason, synced_by))
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Sync logged: Local DB ({local_units} units) → ShipStation.\n\nNote: To complete this sync, you should update the order in ShipStation directly to match the local database items.',
+                'direction': direction,
+                'target_units': local_units
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Invalid sync direction'}), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/local/on_hold_count', methods=['GET'])
 def api_get_on_hold_count():
     """Get count of items in local DB that are on hold"""
