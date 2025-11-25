@@ -404,7 +404,7 @@
                         <!-- ShipStation Count -->
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card id="shipstation-card" style="cursor: pointer; position: relative;">
-                                <span id="shipstation-badge" class="mismatch-badge" style="display: none;">Mismatch</span>
+                                <span id="shipstation-badge" class="mismatch-badge" style="display: none; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); showDiscrepancyDetails();">Mismatch</span>
                                 <div class="stat-value" id="shipstation-units">0</div>
                                 <div class="stat-label">
                                     ShipStation Units
@@ -418,7 +418,7 @@
                         <!-- Local DB Count -->
                         <a href="/xml_import.html?filter=pending" style="text-decoration: none; color: inherit;" title="Click to view pending orders in Orders Inbox">
                             <div class="stat-card hidden" data-stat-card id="local-db-card" style="cursor: pointer; position: relative;">
-                                <span id="local-db-badge" class="mismatch-badge" style="display: none;">Mismatch</span>
+                                <span id="local-db-badge" class="mismatch-badge" style="display: none; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); showDiscrepancyDetails();">Mismatch</span>
                                 <div class="stat-value" id="local-db-units">0</div>
                                 <div class="stat-label">
                                     Local DB Units
@@ -1282,6 +1282,102 @@
             } finally {
                 isRefreshing = false;
                 btn.disabled = false;
+            }
+        }
+
+        // Show Discrepancy Details Modal
+        async function showDiscrepancyDetails() {
+            const modal = document.createElement('div');
+            modal.id = 'discrepancy-modal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
+            modal.innerHTML = `
+                <div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 800px; width: 100%; max-height: 80vh; overflow-y: auto;">
+                    <h3 style="margin-top: 0;">🔍 Unit Count Discrepancy Analysis</h3>
+                    <p style="color: var(--text-secondary);">Loading comparison data from ShipStation and Local DB...</p>
+                    <div id="discrepancy-content" style="text-align: center; padding: 40px;">
+                        <div class="skeleton" style="width: 100%; height: 200px;"></div>
+                    </div>
+                    <button onclick="document.getElementById('discrepancy-modal').remove()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary-navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+            
+            try {
+                const response = await fetch('/api/units_discrepancy');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    document.getElementById('discrepancy-content').innerHTML = `<p style="color: #ef4444;">Error: ${data.error}</p>`;
+                    return;
+                }
+                
+                let html = '';
+                
+                // Summary
+                html += `<div style="background: var(--bg-secondary); border-radius: 8px; padding: 16px; margin-bottom: 20px;">`;
+                html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">`;
+                html += `<div><div style="font-size: 28px; font-weight: bold; color: var(--primary-blue);">${data.summary.shipstation_total}</div><div style="font-size: 12px; color: var(--text-tertiary);">ShipStation Units</div></div>`;
+                html += `<div><div style="font-size: 28px; font-weight: bold; color: var(--accent-green);">${data.summary.local_total}</div><div style="font-size: 12px; color: var(--text-tertiary);">Local DB Units</div></div>`;
+                html += `<div><div style="font-size: 28px; font-weight: bold; color: ${data.summary.difference !== 0 ? '#f59e0b' : 'var(--text-primary)'};">${data.summary.difference > 0 ? '+' : ''}${data.summary.difference}</div><div style="font-size: 12px; color: var(--text-tertiary);">Difference</div></div>`;
+                html += `</div></div>`;
+                
+                // Only in ShipStation
+                if (data.only_in_shipstation.length > 0) {
+                    html += `<div style="margin-bottom: 20px;">`;
+                    html += `<h4 style="color: #f59e0b; margin-bottom: 12px;">⚠️ Orders Only in ShipStation (${data.only_in_shipstation.length})</h4>`;
+                    html += `<div style="background: rgba(245, 158, 11, 0.1); border-radius: 8px; padding: 12px; border-left: 4px solid #f59e0b;">`;
+                    data.only_in_shipstation.forEach(order => {
+                        html += `<div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
+                        html += `<strong>Order #${order.order_number}</strong> - ${order.customer} - <span style="color: #f59e0b;">${order.units} units</span>`;
+                        html += `</div>`;
+                    });
+                    html += `</div></div>`;
+                }
+                
+                // Only in Local DB
+                if (data.only_in_local.length > 0) {
+                    html += `<div style="margin-bottom: 20px;">`;
+                    html += `<h4 style="color: #3b82f6; margin-bottom: 12px;">📦 Orders Only in Local DB (${data.only_in_local.length})</h4>`;
+                    html += `<div style="background: rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; border-left: 4px solid #3b82f6;">`;
+                    data.only_in_local.forEach(order => {
+                        html += `<div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
+                        html += `<strong>Order #${order.order_number}</strong> - ${order.customer} - ${order.units} units - Status: <span style="text-transform: capitalize;">${order.status}</span>`;
+                        html += `</div>`;
+                    });
+                    html += `</div></div>`;
+                }
+                
+                // Unit Mismatches
+                if (data.unit_mismatches.length > 0) {
+                    html += `<div style="margin-bottom: 20px;">`;
+                    html += `<h4 style="color: #ef4444; margin-bottom: 12px;">❌ Unit Count Mismatches (${data.unit_mismatches.length})</h4>`;
+                    html += `<div style="background: rgba(239, 68, 68, 0.1); border-radius: 8px; padding: 12px; border-left: 4px solid #ef4444;">`;
+                    data.unit_mismatches.forEach(order => {
+                        html += `<div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
+                        html += `<strong>Order #${order.order_number}</strong> - ${order.customer}<br>`;
+                        html += `<span style="font-size: 13px;">ShipStation: ${order.ss_units} units | Local: ${order.local_units} units | Diff: <span style="color: #ef4444;">${order.difference > 0 ? '+' : ''}${order.difference}</span></span>`;
+                        html += `</div>`;
+                    });
+                    html += `</div></div>`;
+                }
+                
+                // All matched
+                if (data.only_in_shipstation.length === 0 && data.only_in_local.length === 0 && data.unit_mismatches.length === 0) {
+                    html += `<div style="text-align: center; padding: 40px; color: var(--accent-green);">`;
+                    html += `<div style="font-size: 48px; margin-bottom: 16px;">✅</div>`;
+                    html += `<h4>All Orders Match!</h4>`;
+                    html += `<p style="color: var(--text-secondary);">ShipStation and Local DB are perfectly synchronized.</p>`;
+                    html += `</div>`;
+                }
+                
+                document.getElementById('discrepancy-content').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('discrepancy-content').innerHTML = `<p style="color: #ef4444;">Error loading discrepancy data: ${error.message}</p>`;
             }
         }
 

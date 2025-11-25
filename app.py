@@ -4453,6 +4453,136 @@ def api_get_local_awaiting_shipment_count():
             'error': str(e)
         }), 500
 
+@app.route('/api/units_discrepancy', methods=['GET'])
+def api_get_units_discrepancy():
+    """Compare ShipStation orders vs Local DB to identify discrepancies"""
+    try:
+        import requests
+        from requests.auth import HTTPBasicAuth
+        from src.services.shipstation.api_client import get_shipstation_credentials
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get ShipStation orders with awaiting_shipment status
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation API credentials not found'
+            }), 500
+        
+        response = requests.get(
+            'https://ssapi.shipstation.com/orders',
+            params={'orderStatus': 'awaiting_shipment', 'pageSize': 500},
+            auth=HTTPBasicAuth(api_key, api_secret),
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'error': f'ShipStation API error: {response.status_code}'
+            }), 500
+        
+        ss_orders = response.json().get('orders', [])
+        
+        # Build ShipStation order dict: order_number -> {units, items}
+        ss_order_dict = {}
+        for order in ss_orders:
+            order_num = order.get('orderNumber', '')
+            items = order.get('items', [])
+            total_units = sum(item.get('quantity', 0) for item in items)
+            ss_order_dict[order_num] = {
+                'units': total_units,
+                'items': [{'sku': item.get('sku', ''), 'qty': item.get('quantity', 0)} for item in items],
+                'customer': order.get('shipTo', {}).get('name', 'Unknown'),
+                'shipstation_id': order.get('orderId')
+            }
+        
+        # Get Local DB orders (not shipped, cancelled, on_hold)
+        cursor.execute("""
+            SELECT 
+                o.order_number,
+                o.customer_name,
+                o.status,
+                o.shipstation_order_id,
+                COALESCE(SUM(oi.quantity), 0) as total_units,
+                json_agg(json_build_object('sku', oi.sku, 'qty', oi.quantity)) as items
+            FROM orders_inbox o
+            LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
+            WHERE o.status NOT IN ('shipped', 'cancelled', 'on_hold')
+            GROUP BY o.id, o.order_number, o.customer_name, o.status, o.shipstation_order_id
+        """)
+        
+        local_orders = cursor.fetchall()
+        conn.close()
+        
+        # Build Local order dict
+        local_order_dict = {}
+        for row in local_orders:
+            order_num = row[0]
+            local_order_dict[order_num] = {
+                'units': row[4] or 0,
+                'items': row[5] if row[5] else [],
+                'customer': row[1] or 'Unknown',
+                'status': row[2],
+                'shipstation_id': row[3]
+            }
+        
+        # Find discrepancies
+        only_in_shipstation = []
+        only_in_local = []
+        unit_mismatches = []
+        
+        ss_total = 0
+        local_total = 0
+        
+        for order_num, ss_data in ss_order_dict.items():
+            ss_total += ss_data['units']
+            if order_num not in local_order_dict:
+                only_in_shipstation.append({
+                    'order_number': order_num,
+                    'units': ss_data['units'],
+                    'customer': ss_data['customer'],
+                    'items': ss_data['items']
+                })
+            elif ss_data['units'] != local_order_dict[order_num]['units']:
+                unit_mismatches.append({
+                    'order_number': order_num,
+                    'ss_units': ss_data['units'],
+                    'local_units': local_order_dict[order_num]['units'],
+                    'difference': ss_data['units'] - local_order_dict[order_num]['units'],
+                    'customer': ss_data['customer']
+                })
+        
+        for order_num, local_data in local_order_dict.items():
+            local_total += local_data['units']
+            if order_num not in ss_order_dict:
+                only_in_local.append({
+                    'order_number': order_num,
+                    'units': local_data['units'],
+                    'customer': local_data['customer'],
+                    'status': local_data['status']
+                })
+        
+        return jsonify({
+            'success': True,
+            'summary': {
+                'shipstation_total': ss_total,
+                'local_total': local_total,
+                'difference': ss_total - local_total
+            },
+            'only_in_shipstation': only_in_shipstation,
+            'only_in_local': only_in_local,
+            'unit_mismatches': unit_mismatches
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/local/on_hold_count', methods=['GET'])
 def api_get_on_hold_count():
     """Get count of items in local DB that are on hold"""
