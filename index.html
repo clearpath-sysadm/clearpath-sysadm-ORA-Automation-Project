@@ -2273,7 +2273,10 @@
             }
             
             let html = '<div style="max-width: 800px; max-height: 70vh; overflow-y: auto;">';
-            html += '<h3 style="margin-top: 0;">Manual Order Conflicts</h3>';
+            html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
+            html += '<h3 style="margin-top: 0; margin-bottom: 0;">Manual Order Conflicts</h3>';
+            html += '<button onclick="recalculateManualOrderNumbers()" style="padding: 8px 16px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Recalculate Order Numbers</button>';
+            html += '</div>';
             html += '<p style="color: var(--text-secondary); margin-bottom: 20px;">These manual orders use order numbers that were previously shipped. Recreate them with new order numbers.</p>';
             
             manualOrderConflictsData.forEach((conflict, index) => {
@@ -2357,6 +2360,33 @@
             });
         }
         
+        async function recalculateManualOrderNumbers() {
+            // Close existing modal
+            const existingModal = document.getElementById('manual-conflict-modal');
+            if (existingModal) existingModal.remove();
+            
+            // Refresh data from server (will recalculate proposed order numbers)
+            await checkManualOrderConflicts();
+            
+            // Reopen the modal with updated data
+            if (manualOrderConflictsData.length > 0) {
+                showManualOrderConflictDetails();
+            } else {
+                alert('All conflicts have been resolved!');
+            }
+        }
+        
+        async function closeConfirmationAndShowUpdatedConflicts() {
+            // Close confirmation modal
+            const confirmModal = document.getElementById('confirmation-modal');
+            if (confirmModal) confirmModal.remove();
+            
+            // Reopen conflicts list with updated proposed order numbers
+            if (manualOrderConflictsData.length > 0) {
+                showManualOrderConflictDetails();
+            }
+        }
+        
         async function recreateManualOrder(conflictId, oldOrderNumber) {
             const btn = event.target;
             btn.disabled = true;
@@ -2374,6 +2404,9 @@
                     // Close the details modal
                     const modal = document.getElementById('manual-conflict-modal');
                     if (modal) modal.remove();
+                    
+                    // Refresh conflicts data to recalculate remaining order numbers
+                    await checkManualOrderConflicts();
                     
                     // Show confirmation dialog
                     showConfirmationDialog(conflictId, oldOrderNumber, result.new_order_number);
@@ -2398,7 +2431,7 @@
             html += '<p style="color: var(--text-secondary); margin: 20px 0;">Please verify the new order was created properly in ShipStation before proceeding.</p>';
             html += '<div style="display: flex; gap: 12px; margin-top: 24px;">';
             html += `<button onclick="confirmDeleteOldOrder(${conflictId}, '${oldOrderNumber}', '${newOrderNumber}')" style="flex: 1; padding: 12px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Confirm & Delete Old Order</button>`;
-            html += `<button onclick="this.closest('[id=confirmation-modal]').remove(); checkManualOrderConflicts();" style="flex: 1; padding: 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>`;
+            html += `<button onclick="closeConfirmationAndShowUpdatedConflicts()" style="flex: 1; padding: 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>`;
             html += '</div>';
             html += '</div>';
             
