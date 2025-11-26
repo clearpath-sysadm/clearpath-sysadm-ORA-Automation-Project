@@ -513,9 +513,6 @@
                                 <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
                                     📧 Compose Email
                                 </button>
-                                <button class="btn" onclick="testEmailClient()" style="background: var(--bg-tertiary); color: var(--text-secondary);">
-                                    🧪 Test Email Client
-                                </button>
                                 <button class="btn" onclick="runEOD()" id="btn-eod">
                                     📦 EOD
                                     <div class="btn-status" id="eod-status"></div>
@@ -817,6 +814,53 @@
             
             try {
                 btn.disabled = true;
+                btn.textContent = '⏳ Checking...';
+                
+                // Check if EOD and EOW have been run today
+                const statusResponse = await fetch('/api/reports/status');
+                const statusResult = await statusResponse.json();
+                
+                if (statusResult.success && statusResult.data) {
+                    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+                    const missingReports = [];
+                    
+                    // Check EOD
+                    if (statusResult.data.EOD && statusResult.data.EOD.run_date) {
+                        const eodDate = statusResult.data.EOD.run_date.split('T')[0];
+                        if (eodDate !== today) {
+                            missingReports.push('EOD (End of Day)');
+                        }
+                    } else {
+                        missingReports.push('EOD (End of Day)');
+                    }
+                    
+                    // Check EOW
+                    if (statusResult.data.EOW && statusResult.data.EOW.run_date) {
+                        const eowDate = statusResult.data.EOW.run_date.split('T')[0];
+                        if (eowDate !== today) {
+                            missingReports.push('EOW (End of Week)');
+                        }
+                    } else {
+                        missingReports.push('EOW (End of Week)');
+                    }
+                    
+                    // Alert user if reports are not run today
+                    if (missingReports.length > 0) {
+                        const reportList = missingReports.join('\n• ');
+                        const proceed = confirm(
+                            `⚠️ The following report(s) have NOT been run today:\n\n• ${reportList}\n\n` +
+                            `The weekly inventory data may be outdated.\n\n` +
+                            `Do you want to proceed anyway?`
+                        );
+                        
+                        if (!proceed) {
+                            btn.textContent = originalText;
+                            btn.disabled = false;
+                            return;
+                        }
+                    }
+                }
+                
                 btn.textContent = '⏳ Copying...';
                 
                 const response = await fetch('/api/weekly_inventory_report');
@@ -949,48 +993,6 @@
                     btn.textContent = originalText;
                     btn.disabled = false;
                 }, 2000);
-            }
-        }
-
-        // Test email client functionality
-        async function testEmailClient() {
-            try {
-                // Fetch email contacts
-                const response = await fetch('/api/email_contacts');
-                const data = await response.json();
-                
-                if (!data.success || !data.data || data.data.length === 0) {
-                    alert('⚠️ No email contacts found. Please add contacts in the Email Contacts page first.');
-                    return;
-                }
-                
-                // Get all email addresses
-                const emailList = data.data.map(c => c.email).join(',');
-                
-                // Create a simple test mailto link
-                const subject = 'Test Email - Weekly Inventory Report';
-                const body = 'This is a test email from the Oracare Fulfillment System.';
-                const mailtoLink = `mailto:${encodeURIComponent(emailList)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                
-                console.log('Opening mailto link:', mailtoLink);
-                
-                // Try to open email client
-                const link = document.createElement('a');
-                link.href = mailtoLink;
-                link.target = '_blank';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                // Show success message
-                setTimeout(() => {
-                    alert(`✅ Email client test initiated!\n\nIf your email client opened with ${data.data.length} contacts in TO, the feature works!\n\nIf nothing happened, your browser may be blocking mailto: links or you don't have a default email client configured.`);
-                }, 500);
-                
-            } catch (error) {
-                console.error('Error testing email client:', error);
-                const errorMsg = error?.message || error?.toString() || 'Unknown error';
-                alert('❌ Failed to test email client: ' + errorMsg);
             }
         }
 
