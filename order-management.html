@@ -287,6 +287,173 @@
             background: #dbeafe;
             color: #1e40af;
         }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .order-lookup-card {
+                padding: 16px;
+            }
+            
+            .order-lookup-card h2 {
+                font-size: 1.25rem;
+            }
+            
+            .order-lookup-card .form-group {
+                flex-direction: column;
+            }
+            
+            .order-lookup-card input[type="text"] {
+                font-size: 16px; /* Prevents iOS zoom */
+                width: 100%;
+            }
+            
+            .order-lookup-card .btn {
+                width: 100%;
+                padding: 12px;
+            }
+            
+            .order-card {
+                padding: 16px;
+            }
+            
+            .order-card-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .order-card-title {
+                font-size: 1.1rem;
+            }
+            
+            .order-details-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+            
+            .order-detail-label {
+                font-size: 0.7rem;
+            }
+            
+            .order-detail-value {
+                font-size: 0.85rem;
+            }
+            
+            .order-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 12px;
+            }
+            
+            .order-item > div:last-child {
+                text-align: left;
+            }
+            
+            .order-items-list {
+                padding: 12px;
+            }
+            
+            .btn-danger {
+                width: 100%;
+                padding: 14px 20px;
+            }
+            
+            /* Local DB Table - Card View on Mobile */
+            .local-db-table {
+                border: none;
+                background: transparent;
+            }
+            
+            .local-db-table table,
+            .local-db-table thead,
+            .local-db-table tbody,
+            .local-db-table th,
+            .local-db-table td,
+            .local-db-table tr {
+                display: block;
+            }
+            
+            .local-db-table thead {
+                display: none;
+            }
+            
+            .local-db-table tr {
+                background: var(--card-bg);
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-md);
+                margin-bottom: 12px;
+                padding: 12px;
+            }
+            
+            .local-db-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+                font-size: 0.85rem;
+            }
+            
+            .local-db-table td:last-child {
+                border-bottom: none;
+            }
+            
+            .local-db-table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                color: var(--text-tertiary);
+                flex-shrink: 0;
+                margin-right: 12px;
+            }
+            
+            .local-db-section h3 {
+                font-size: 1.1rem;
+            }
+            
+            /* Confirmation Modal Mobile */
+            .confirmation-content {
+                padding: 20px;
+                margin: 16px;
+            }
+            
+            .confirmation-title {
+                font-size: 1.25rem;
+            }
+            
+            .confirmation-actions {
+                flex-direction: column;
+            }
+            
+            .confirmation-actions .btn {
+                width: 100%;
+                padding: 14px;
+            }
+            
+            /* Page title */
+            .page-title {
+                font-size: 1.25rem;
+            }
+            
+            /* Info banner */
+            .info-banner {
+                padding: 12px;
+            }
+            
+            .info-banner-text {
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .order-details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .order-card-subtitle {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -615,20 +782,20 @@
                 }).join(', ');
                 
                 return `
-                    <tr>
-                        <td style="background: #eff6ff;"><strong>ShipStation</strong></td>
-                        <td style="font-weight: 600; background: #eff6ff;">${order.order_number}</td>
-                        <td style="font-family: monospace; background: #eff6ff;">${order.shipstation_order_id}</td>
-                        <td style="background: #eff6ff;">${order.customer_name || 'N/A'}</td>
-                        <td style="background: #eff6ff;">${order.company || 'N/A'}</td>
-                        <td style="background: #eff6ff;"><span class="status-badge-small status-${order.order_status.replace(' ', '_')}">${order.order_status}</span></td>
-                        <td style="font-size: 0.75rem; background: #eff6ff;">${items || 'No items'}</td>
-                        <td style="font-size: 0.75rem; color: var(--text-tertiary); background: #eff6ff;">${order.create_date ? new Date(order.create_date).toLocaleDateString() : 'N/A'}</td>
-                        <td style="background: #eff6ff;">
+                    <tr style="background: #eff6ff;">
+                        <td data-label="Source"><strong>ShipStation</strong></td>
+                        <td data-label="Order #" style="font-weight: 600;">${order.order_number}</td>
+                        <td data-label="SS ID" style="font-family: monospace;">${order.shipstation_order_id}</td>
+                        <td data-label="Customer">${order.customer_name || 'N/A'}</td>
+                        <td data-label="Company">${order.company || 'N/A'}</td>
+                        <td data-label="Status"><span class="status-badge-small status-${order.order_status.replace(' ', '_')}">${order.order_status}</span></td>
+                        <td data-label="Items" style="font-size: 0.75rem;">${items || 'No items'}</td>
+                        <td data-label="Created" style="font-size: 0.75rem; color: var(--text-tertiary);">${order.create_date ? new Date(order.create_date).toLocaleDateString() : 'N/A'}</td>
+                        <td data-label="Actions">
                             <button 
                                 class="btn-danger" 
                                 onclick="initiateDelete(${order.shipstation_order_id}, '${order.order_number}', '${order.customer_name}')"
-                                style="padding: 4px 12px; font-size: 0.75rem;"
+                                style="padding: 8px 16px; font-size: 0.85rem; width: 100%;"
                             >
                                 Delete
                             </button>
@@ -649,20 +816,20 @@
                 const ssIdDisplay = match.shipstation_order_id || '<span style="color: var(--text-tertiary); font-style: italic;">Not Linked</span>';
                 
                 return `
-                    <tr>
-                        <td style="background: #f0fdf4;"><strong>Local DB</strong></td>
-                        <td style="font-weight: 600; background: #f0fdf4;">${match.order_number || 'N/A'}</td>
-                        <td style="font-family: monospace; background: #f0fdf4;">${ssIdDisplay}</td>
-                        <td style="background: #f0fdf4;">${match.ship_name || 'N/A'}</td>
-                        <td style="background: #f0fdf4;">${match.ship_company || 'N/A'}</td>
-                        <td style="background: #f0fdf4;"><span class="status-badge-small status-${match.status}">${match.status}</span></td>
-                        <td style="font-size: 0.75rem; background: #f0fdf4;">${items || 'No items'}</td>
-                        <td style="font-size: 0.75rem; color: var(--text-tertiary); background: #f0fdf4;">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>
-                        <td style="background: #f0fdf4;">
+                    <tr style="background: #f0fdf4;">
+                        <td data-label="Source"><strong>Local DB</strong></td>
+                        <td data-label="Order #" style="font-weight: 600;">${match.order_number || 'N/A'}</td>
+                        <td data-label="SS ID" style="font-family: monospace;">${ssIdDisplay}</td>
+                        <td data-label="Customer">${match.ship_name || 'N/A'}</td>
+                        <td data-label="Company">${match.ship_company || 'N/A'}</td>
+                        <td data-label="Status"><span class="status-badge-small status-${match.status}">${match.status}</span></td>
+                        <td data-label="Items" style="font-size: 0.75rem;">${items || 'No items'}</td>
+                        <td data-label="Created" style="font-size: 0.75rem; color: var(--text-tertiary);">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>
+                        <td data-label="Actions">
                             <button 
                                 class="btn-secondary" 
                                 onclick="syncLocalOrderFromShipStation('${match.order_number}', ${match.shipstation_order_id || 'null'})"
-                                style="padding: 4px 12px; font-size: 0.75rem; white-space: nowrap;"
+                                style="padding: 8px 16px; font-size: 0.85rem; width: 100%;"
                                 title="Update local database with ShipStation data"
                             >
                                 🔄 Sync from SS
