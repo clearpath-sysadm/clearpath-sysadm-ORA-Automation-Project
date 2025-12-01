@@ -14,7 +14,7 @@ The Oracare Fulfillment System replaces Google Sheets with a PostgreSQL database
 - **Operational Context:**
     - **Environment:** When troubleshooting, issues are typically occurring in PRODUCTION, not development workspace
     - **Production Logs:** Production logs are NOT visible in the development workspace. User must manually share production log file contents when troubleshooting production issues
-    - **Database Note:** The Replit "Development Database" IS the production database (only one database exists)
+    - **Database Note:** Development and Production have SEPARATE databases. Changes made in the dev workspace database do NOT affect production data. Schema changes and migrations must be applied to both environments.
 - **Business Rules:**
     - **Unit-based metrics:** Display only unit counts (not order counts) throughout the system. Units are the driving factor for all fulfillment, shipping, and inventory workflows. Order counts are only relevant for charge reports.
     - **SKU-Lot Validation (CRITICAL):** ShipStation should NEVER have orders without valid SKU-Lot mappings. The upload service enforces three strict validations:
