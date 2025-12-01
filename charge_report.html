@@ -693,6 +693,38 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Monthly Receipts Section -->
+                <div class="receipts-section" style="margin-top: 32px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">
+                            <span style="margin-right: 8px;">📦</span>Monthly Receipts
+                        </h2>
+                        <button class="btn copy-receipts-btn" id="copyReceiptsBtn" onclick="copyReceiptsToClipboard()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                            📋 Copy Table to Clipboard
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <div id="receiptsLoading" class="loading">Loading receipts...</div>
+                        <div id="receiptsEmpty" style="display: none; text-align: center; padding: 24px; color: var(--text-tertiary);">
+                            No receipts recorded for this month
+                        </div>
+                        <table id="receiptsTable" class="hidden">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>SKU</th>
+                                    <th>Quantity</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="receiptsBody">
+                            </tbody>
+                            <tfoot id="receiptsTotals">
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- Orders Detail Modal -->
@@ -1362,6 +1394,178 @@
             document.getElementById('reportTable').classList.add('hidden');
             document.getElementById('errorMessage').innerHTML = '';
             fetchReport();
+            fetchReceipts();
+        }
+
+        // Monthly Receipts functionality
+        let receiptsData = [];
+        let receiptsTotals = {};
+
+        async function fetchReceipts() {
+            const month = document.getElementById('monthSelect').value;
+            const year = document.getElementById('yearSelect').value;
+            
+            const loading = document.getElementById('receiptsLoading');
+            const empty = document.getElementById('receiptsEmpty');
+            const table = document.getElementById('receiptsTable');
+            
+            loading.style.display = 'block';
+            empty.style.display = 'none';
+            table.classList.add('hidden');
+            
+            try {
+                const response = await fetch(`/api/charge_report/receipts?month=${month}&year=${year}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    receiptsData = result.data;
+                    receiptsTotals = result.totals_by_sku;
+                    renderReceipts();
+                } else {
+                    console.error('Failed to load receipts:', result.error);
+                    loading.textContent = 'Error loading receipts';
+                }
+            } catch (error) {
+                console.error('Error fetching receipts:', error);
+                loading.textContent = 'Error loading receipts';
+            }
+        }
+
+        function renderReceipts() {
+            const loading = document.getElementById('receiptsLoading');
+            const empty = document.getElementById('receiptsEmpty');
+            const table = document.getElementById('receiptsTable');
+            const tbody = document.getElementById('receiptsBody');
+            const tfoot = document.getElementById('receiptsTotals');
+            
+            loading.style.display = 'none';
+            
+            if (receiptsData.length === 0) {
+                empty.style.display = 'block';
+                table.classList.add('hidden');
+                return;
+            }
+            
+            // Render rows
+            let html = receiptsData.map(row => `
+                <tr>
+                    <td data-label="Date">${formatChargeReportDate(row.date)}</td>
+                    <td data-label="SKU">${row.sku}</td>
+                    <td data-label="Quantity" class="stat-highlight">${row.quantity.toLocaleString()}</td>
+                    <td data-label="Notes">${row.notes || '-'}</td>
+                </tr>
+            `).join('');
+            tbody.innerHTML = html;
+            
+            // Render totals row
+            const grandTotal = Object.values(receiptsTotals).reduce((sum, qty) => sum + qty, 0);
+            const skuBreakdown = Object.entries(receiptsTotals)
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([sku, qty]) => `${sku}: ${qty.toLocaleString()}`)
+                .join(' | ');
+            
+            tfoot.innerHTML = `
+                <tr class="total-row">
+                    <td colspan="2" style="text-align: right; font-weight: 600;">TOTAL</td>
+                    <td class="stat-highlight" style="font-weight: 700;">${grandTotal.toLocaleString()}</td>
+                    <td style="font-size: 0.85rem; color: var(--text-secondary);">${skuBreakdown}</td>
+                </tr>
+            `;
+            
+            empty.style.display = 'none';
+            table.classList.remove('hidden');
+        }
+
+        async function copyReceiptsToClipboard() {
+            const btn = document.getElementById('copyReceiptsBtn');
+            const originalText = btn.innerHTML;
+            
+            if (receiptsData.length === 0) {
+                btn.innerHTML = '❌ No data to copy';
+                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                return;
+            }
+            
+            // Get month/year for title
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+            const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+            const year = yearSelect.value;
+            
+            // Build HTML table for clipboard
+            let htmlTable = `
+<table style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">
+    <thead>
+        <tr style="background-color: #2B7DE9; color: white;">
+            <th style="border: 1px solid #ddd; padding: 8px 12px; text-align: left;">Date</th>
+            <th style="border: 1px solid #ddd; padding: 8px 12px; text-align: left;">SKU</th>
+            <th style="border: 1px solid #ddd; padding: 8px 12px; text-align: right;">Quantity</th>
+            <th style="border: 1px solid #ddd; padding: 8px 12px; text-align: left;">Notes</th>
+        </tr>
+    </thead>
+    <tbody>`;
+            
+            receiptsData.forEach((row, index) => {
+                const bgColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
+                htmlTable += `
+        <tr style="background-color: ${bgColor};">
+            <td style="border: 1px solid #ddd; padding: 6px 12px;">${formatChargeReportDate(row.date)}</td>
+            <td style="border: 1px solid #ddd; padding: 6px 12px;">${row.sku}</td>
+            <td style="border: 1px solid #ddd; padding: 6px 12px; text-align: right; font-weight: bold;">${row.quantity.toLocaleString()}</td>
+            <td style="border: 1px solid #ddd; padding: 6px 12px;">${row.notes || '-'}</td>
+        </tr>`;
+            });
+            
+            // Add totals row
+            const grandTotal = Object.values(receiptsTotals).reduce((sum, qty) => sum + qty, 0);
+            const skuBreakdown = Object.entries(receiptsTotals)
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([sku, qty]) => `${sku}: ${qty.toLocaleString()}`)
+                .join(' | ');
+            
+            htmlTable += `
+        <tr style="background-color: #e5e7eb; font-weight: bold;">
+            <td colspan="2" style="border: 1px solid #ddd; padding: 8px 12px; text-align: right;">TOTAL</td>
+            <td style="border: 1px solid #ddd; padding: 8px 12px; text-align: right; color: #2B7DE9;">${grandTotal.toLocaleString()}</td>
+            <td style="border: 1px solid #ddd; padding: 8px 12px; font-size: 11px; color: #666;">${skuBreakdown}</td>
+        </tr>
+    </tbody>
+</table>`;
+            
+            // Plain text fallback
+            let plainText = `${monthName} ${year} Receipts\n\n`;
+            plainText += 'Date\tSKU\tQuantity\tNotes\n';
+            plainText += receiptsData.map(row => 
+                `${formatChargeReportDate(row.date)}\t${row.sku}\t${row.quantity}\t${row.notes || '-'}`
+            ).join('\n');
+            plainText += `\n\nTOTAL:\t\t${grandTotal}\t${skuBreakdown}`;
+            
+            try {
+                // Try to copy as HTML (works in modern browsers)
+                const clipboardItem = new ClipboardItem({
+                    'text/html': new Blob([htmlTable], { type: 'text/html' }),
+                    'text/plain': new Blob([plainText], { type: 'text/plain' })
+                });
+                await navigator.clipboard.write([clipboardItem]);
+                
+                btn.innerHTML = '✅ Copied!';
+                btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+            } catch (err) {
+                // Fallback to plain text
+                try {
+                    await navigator.clipboard.writeText(plainText);
+                    btn.innerHTML = '✅ Copied (text)';
+                    btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                } catch (err2) {
+                    btn.innerHTML = '❌ Copy failed';
+                    console.error('Clipboard error:', err2);
+                }
+            }
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            }, 2000);
         }
 
         // Modal functionality

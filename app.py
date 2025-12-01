@@ -1189,6 +1189,78 @@ def api_charge_report():
             'error': str(e)
         }), 500
 
+@app.route('/api/charge_report/receipts')
+def api_charge_report_receipts():
+    """
+    Get inventory receipts (receives) for a given month.
+    Used by Monthly Receipts Report on Charge Report page.
+    
+    Query Parameters:
+    - month: Month number (1-12), defaults to current month
+    - year: Year (e.g., 2025), defaults to current year
+    """
+    try:
+        from flask import request
+        import calendar
+        
+        today = datetime.now().date()
+        month = int(request.args.get('month', today.month))
+        year = int(request.args.get('year', today.year))
+        
+        # Get first and last day of the month
+        first_day = f"{year}-{month:02d}-01"
+        last_day_num = calendar.monthrange(year, month)[1]
+        last_day = f"{year}-{month:02d}-{last_day_num:02d}"
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get all receive transactions for the month
+        cursor.execute("""
+            SELECT date, sku, quantity, notes, created_at
+            FROM inventory_transactions
+            WHERE transaction_type = 'Receive'
+              AND date >= %s AND date <= %s
+            ORDER BY date ASC, created_at ASC
+        """, (first_day, last_day))
+        
+        results = cursor.fetchall()
+        conn.close()
+        
+        receipts = []
+        totals_by_sku = {}
+        
+        for row in results:
+            date_val, sku, quantity, notes, created_at = row
+            receipts.append({
+                'date': str(date_val) if date_val else None,
+                'sku': sku,
+                'quantity': quantity,
+                'notes': notes or ''
+            })
+            # Accumulate totals by SKU
+            if sku not in totals_by_sku:
+                totals_by_sku[sku] = 0
+            totals_by_sku[sku] += quantity
+        
+        # Calculate grand total
+        grand_total = sum(totals_by_sku.values())
+        
+        return jsonify({
+            'success': True,
+            'data': receipts,
+            'totals_by_sku': totals_by_sku,
+            'grand_total': grand_total,
+            'count': len(receipts),
+            'month': month,
+            'year': year
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/charge_report/self_check')
 def api_charge_report_self_check():
     """
