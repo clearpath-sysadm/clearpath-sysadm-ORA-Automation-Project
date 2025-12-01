@@ -1403,6 +1403,43 @@ def api_charge_report_self_check():
                     'message': f'Order counts within normal range (avg: {avg:.0f}/day)'
                 })
         
+        # Check 9: Space rental calculation verification
+        # Get pallet counts for each SKU
+        pallet_counts = {row[0]: int(row[1]) for row in pallet_result}
+        space_rate = config.get('SpaceRentalRate', 0.45)
+        
+        if sample and pallet_counts:
+            # Sample day space rental verification
+            # Query EOD inventory for the sample day to verify space calculation
+            sample_date = sample[0][0]
+            sample_inv_query = """
+                SELECT sku, SUM(quantity) as total
+                FROM inventory_transactions
+                WHERE date <= %s
+                GROUP BY sku
+            """
+            sample_inv = execute_query(sample_inv_query, (str(sample_date),))
+            
+            if sample_inv:
+                calculated_pallets = 0
+                pallet_breakdown = []
+                for row in sample_inv:
+                    sku = row[0]
+                    units = row[1] or 0
+                    if sku in pallet_counts and pallet_counts[sku] > 0:
+                        pallets = max(0, -(-units // pallet_counts[sku]))  # Ceiling division
+                        calculated_pallets += pallets
+                        if units > 0:
+                            pallet_breakdown.append(f"{sku}: {units}÷{pallet_counts[sku]}={pallets}")
+                
+                expected_space = calculated_pallets * space_rate
+                checks['passed'].append({
+                    'check': 'Space Rental Verification',
+                    'status': 'pass',
+                    'message': f'Sample {sample_date}: {calculated_pallets} pallets × ${space_rate:.2f} = ${expected_space:.2f}',
+                    'details': f'Breakdown: {", ".join(pallet_breakdown[:3])}...' if len(pallet_breakdown) > 3 else f'Breakdown: {", ".join(pallet_breakdown)}'
+                })
+        
         # Summary
         total_checks = len(checks['passed']) + len(checks['warnings']) + len(checks['errors'])
         

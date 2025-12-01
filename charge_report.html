@@ -323,6 +323,88 @@
         .dark-mode .summary-badge.errors {
             background: rgba(239, 68, 68, 0.15);
         }
+        
+        /* Enhanced Tooltips for calculation cells */
+        .has-tooltip {
+            cursor: help;
+            position: relative;
+        }
+        
+        .has-tooltip::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--tooltip-background, #1a1a2e);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .has-tooltip:hover::after {
+            opacity: 1;
+        }
+        
+        /* Status indicator badge on self-check button */
+        .self-check-btn {
+            position: relative;
+        }
+        
+        .validation-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .validation-badge.pass {
+            background: #16a34a;
+            color: white;
+        }
+        
+        .validation-badge.warning {
+            background: #ca8a04;
+            color: white;
+        }
+        
+        .validation-badge.error {
+            background: #dc2626;
+            color: white;
+        }
+        
+        @media (max-width: 600px) {
+            .has-tooltip::after {
+                left: 0;
+                transform: none;
+                max-width: 200px;
+                white-space: normal;
+            }
+            
+            .validation-badge {
+                top: -4px;
+                right: -4px;
+                min-width: 18px;
+                height: 18px;
+                font-size: 0.65rem;
+            }
+        }
     </style>
     
     <!-- jsPDF for PDF Export -->
@@ -656,11 +738,8 @@
             const panel = document.getElementById('selfCheckPanel');
             const resultsContainer = document.getElementById('selfCheckResults');
             
-            // Show panel and set loading state
+            // Show panel
             panel.style.display = 'block';
-            btn.classList.add('running');
-            btn.textContent = '⏳ Running...';
-            resultsContainer.innerHTML = '<div class="loading-checks">Running validation checks...</div>';
             
             // Get selected month and year
             const month = document.getElementById('monthSelect').value;
@@ -671,11 +750,25 @@
                                'July', 'August', 'September', 'October', 'November', 'December'];
             document.getElementById('selfCheckPeriod').textContent = `${monthNames[parseInt(month) - 1]} ${year}`;
             
+            // Use cached data if available (from quick check)
+            if (window.lastSelfCheckData && 
+                window.lastSelfCheckData.summary.month === monthNames[parseInt(month) - 1] &&
+                window.lastSelfCheckData.summary.year === parseInt(year)) {
+                renderSelfCheckResults(window.lastSelfCheckData);
+                return;
+            }
+            
+            // Otherwise fetch fresh data
+            btn.classList.add('running');
+            btn.textContent = '⏳ Running...';
+            resultsContainer.innerHTML = '<div class="loading-checks">Running validation checks...</div>';
+            
             try {
                 const response = await fetch(`/api/charge_report/self_check?month=${month}&year=${year}`);
                 const data = await response.json();
                 
                 if (data.success) {
+                    window.lastSelfCheckData = data;
                     renderSelfCheckResults(data);
                 } else {
                     resultsContainer.innerHTML = `
@@ -791,6 +884,51 @@
             const panel = document.getElementById('selfCheckPanel');
             panel.style.display = 'none';
         }
+        
+        // Quick validation check that runs in background on report load
+        async function runQuickCheck() {
+            const month = document.getElementById('monthSelect').value;
+            const year = document.getElementById('yearSelect').value;
+            const btn = document.getElementById('selfCheckBtn');
+            
+            // Remove any existing badge
+            const existingBadge = btn.querySelector('.validation-badge');
+            if (existingBadge) existingBadge.remove();
+            
+            try {
+                const response = await fetch(`/api/charge_report/self_check?month=${month}&year=${year}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const summary = data.summary;
+                    
+                    // Create badge element
+                    const badge = document.createElement('span');
+                    badge.className = 'validation-badge';
+                    
+                    if (summary.errors > 0) {
+                        badge.className += ' error';
+                        badge.textContent = summary.errors;
+                        badge.title = `${summary.errors} error(s) found - click to view`;
+                    } else if (summary.warnings > 0) {
+                        badge.className += ' warning';
+                        badge.textContent = summary.warnings;
+                        badge.title = `${summary.warnings} warning(s) found - click to view`;
+                    } else {
+                        badge.className += ' pass';
+                        badge.textContent = '✓';
+                        badge.title = 'All checks passed';
+                    }
+                    
+                    btn.appendChild(badge);
+                    
+                    // Store results for when user clicks self-check
+                    window.lastSelfCheckData = data;
+                }
+            } catch (error) {
+                console.log('Quick check failed:', error);
+            }
+        }
 
         // Close mobile menu when clicking nav items
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -865,6 +1003,29 @@
             });
         }
 
+        // Rate constants for tooltips
+        const RATES = {
+            order: 4.25,
+            package: 0.75,
+            spacePerPallet: 0.45
+        };
+
+        function buildTooltip(type, row) {
+            switch(type) {
+                case 'orders':
+                    return `${row.order_count} orders × $${RATES.order.toFixed(2)} = $${row.orders_charge.toFixed(2)}`;
+                case 'packages':
+                    const totalUnits = (row.sku_17612 || 0) + (row.sku_17904 || 0) + (row.sku_17914 || 0) + (row.sku_18675 || 0) + (row.sku_18795 || 0);
+                    return `${totalUnits} units × $${RATES.package.toFixed(2)} = $${row.packages_charge.toFixed(2)}`;
+                case 'space':
+                    return `Space rental based on EOD inventory pallets × $${RATES.spacePerPallet.toFixed(2)}/pallet`;
+                case 'total':
+                    return `$${row.orders_charge.toFixed(2)} + $${row.packages_charge.toFixed(2)} + $${row.space_rental.toFixed(2)} = $${row.total.toFixed(2)}`;
+                default:
+                    return '';
+            }
+        }
+
         function renderReport() {
             const tbody = document.getElementById('reportBody');
             const table = document.getElementById('reportTable');
@@ -886,14 +1047,15 @@
                     <td class="clickable-cell" data-label="17914" onclick="openOrdersModal('${row.date}', '17914')" title="Click to view orders">${row.sku_17914 || '-'}</td>
                     <td class="clickable-cell" data-label="18675" onclick="openOrdersModal('${row.date}', '18675')" title="Click to view orders">${row.sku_18675 || '-'}</td>
                     <td class="clickable-cell" data-label="18795" onclick="openOrdersModal('${row.date}', '18795')" title="Click to view orders">${row.sku_18795 || '-'}</td>
-                    <td class="currency clickable-cell" data-label="Orders" onclick="openOrdersModal('${row.date}')" title="Click to view all orders">${formatCurrency(row.orders_charge)}</td>
-                    <td class="currency" data-label="Packages">${formatCurrency(row.packages_charge)}</td>
-                    <td class="currency" data-label="Space Rental">${formatCurrency(row.space_rental)}</td>
-                    <td class="currency stat-highlight" data-label="Total">${formatCurrency(row.total)}</td>
+                    <td class="currency clickable-cell has-tooltip" data-label="Orders" onclick="openOrdersModal('${row.date}')" title="${buildTooltip('orders', row)}">${formatCurrency(row.orders_charge)}</td>
+                    <td class="currency has-tooltip" data-label="Packages" title="${buildTooltip('packages', row)}">${formatCurrency(row.packages_charge)}</td>
+                    <td class="currency has-tooltip" data-label="Space Rental" title="${buildTooltip('space', row)}">${formatCurrency(row.space_rental)}</td>
+                    <td class="currency stat-highlight has-tooltip" data-label="Total" title="${buildTooltip('total', row)}">${formatCurrency(row.total)}</td>
                 </tr>
             `).join('');
             
             if (totalsRow) {
+                const totalUnits = (totalsRow.sku_17612 || 0) + (totalsRow.sku_17904 || 0) + (totalsRow.sku_17914 || 0) + (totalsRow.sku_18675 || 0) + (totalsRow.sku_18795 || 0);
                 html += `
                     <tr class="total-row">
                         <td class="date-cell" data-label="Date">TOTAL</td>
@@ -903,10 +1065,10 @@
                         <td data-label="17914">${totalsRow.sku_17914}</td>
                         <td data-label="18675">${totalsRow.sku_18675}</td>
                         <td data-label="18795">${totalsRow.sku_18795}</td>
-                        <td class="currency" data-label="Orders">${formatCurrency(totalsRow.orders_charge)}</td>
-                        <td class="currency" data-label="Packages">${formatCurrency(totalsRow.packages_charge)}</td>
-                        <td class="currency" data-label="Space Rental">${formatCurrency(totalsRow.space_rental)}</td>
-                        <td class="currency stat-highlight" data-label="Total">${formatCurrency(totalsRow.total)}</td>
+                        <td class="currency has-tooltip" data-label="Orders" title="${totalsRow.order_count} orders × $${RATES.order.toFixed(2)} = $${totalsRow.orders_charge.toFixed(2)}">${formatCurrency(totalsRow.orders_charge)}</td>
+                        <td class="currency has-tooltip" data-label="Packages" title="${totalUnits} units × $${RATES.package.toFixed(2)} = $${totalsRow.packages_charge.toFixed(2)}">${formatCurrency(totalsRow.packages_charge)}</td>
+                        <td class="currency has-tooltip" data-label="Space Rental" title="Sum of daily space rental charges">${formatCurrency(totalsRow.space_rental)}</td>
+                        <td class="currency stat-highlight has-tooltip" data-label="Total" title="$${totalsRow.orders_charge.toFixed(2)} + $${totalsRow.packages_charge.toFixed(2)} + $${totalsRow.space_rental.toFixed(2)} = $${totalsRow.total.toFixed(2)}">${formatCurrency(totalsRow.total)}</td>
                     </tr>
                 `;
             }
@@ -914,6 +1076,9 @@
             tbody.innerHTML = html;
             loading.style.display = 'none';
             table.classList.remove('hidden');
+            
+            // Auto-run quick validation check
+            runQuickCheck();
         }
 
         function exportToPDF() {
