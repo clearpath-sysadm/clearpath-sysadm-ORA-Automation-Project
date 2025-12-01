@@ -8693,7 +8693,7 @@ def backfill_inventory_snapshots():
     from datetime import timedelta
     
     try:
-        conn = get_db_connection()
+        conn = get_connection()
         cursor = conn.cursor()
         
         # Configuration
