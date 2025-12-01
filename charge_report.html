@@ -238,6 +238,44 @@
             font-style: italic;
         }
         
+        /* Troubleshooting expandable section */
+        .check-troubleshooting {
+            margin-top: 8px;
+        }
+        
+        .troubleshooting-toggle {
+            font-size: 0.8rem;
+            color: var(--primary-color, #2B7DE9);
+            cursor: pointer;
+            padding: 4px 8px;
+            background: rgba(43, 125, 233, 0.08);
+            border-radius: 4px;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+        
+        .troubleshooting-toggle:hover {
+            background: rgba(43, 125, 233, 0.15);
+        }
+        
+        .troubleshooting-content {
+            margin-top: 8px;
+            padding: 12px;
+            background: var(--surface-secondary, #f5f7fa);
+            border-radius: 6px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            border-left: 3px solid var(--primary-color, #2B7DE9);
+        }
+        
+        .dark-mode .troubleshooting-content {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
         .check-item.passed .check-status-icon { color: #16a34a; }
         .check-item.warning .check-status-icon { color: #ca8a04; }
         .check-item.error .check-status-icon { color: #dc2626; }
@@ -861,16 +899,32 @@
                 'error': '✗'
             };
             
-            const itemsHtml = items.map(item => `
-                <div class="check-item ${type}">
-                    <span class="check-status-icon">${icons[type]}</span>
-                    <div class="check-content">
-                        <div class="check-name">${item.check}</div>
-                        <div class="check-message">${item.message}</div>
-                        ${item.details ? `<div class="check-details">${item.details}</div>` : ''}
+            const itemsHtml = items.map(item => {
+                // Build troubleshooting block if available
+                let troubleshootingHtml = '';
+                if (item.troubleshooting && Array.isArray(item.troubleshooting)) {
+                    troubleshootingHtml = `
+                        <div class="check-troubleshooting">
+                            <div class="troubleshooting-toggle" onclick="toggleTroubleshooting(this)">
+                                📋 View Calculation Details ▼
+                            </div>
+                            <pre class="troubleshooting-content" style="display: none;">${item.troubleshooting.join('\n')}</pre>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="check-item ${type}">
+                        <span class="check-status-icon">${icons[type]}</span>
+                        <div class="check-content">
+                            <div class="check-name">${item.check}</div>
+                            <div class="check-message">${item.message}</div>
+                            ${item.details ? `<div class="check-details">${item.details}</div>` : ''}
+                            ${troubleshootingHtml}
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
             
             return `
                 <div class="check-section">
@@ -878,6 +932,17 @@
                     ${itemsHtml}
                 </div>
             `;
+        }
+        
+        function toggleTroubleshooting(element) {
+            const content = element.nextElementSibling;
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                element.textContent = '📋 Hide Calculation Details ▲';
+            } else {
+                content.style.display = 'none';
+                element.textContent = '📋 View Calculation Details ▼';
+            }
         }
         
         function closeSelfCheck() {

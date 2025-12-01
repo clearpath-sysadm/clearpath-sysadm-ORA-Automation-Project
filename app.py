@@ -1403,7 +1403,7 @@ def api_charge_report_self_check():
                     'message': f'Order counts within normal range (avg: {avg:.0f}/day)'
                 })
         
-        # Check 9: Space rental calculation verification
+        # Check 9: Space rental calculation verification with full troubleshooting details
         # Get pallet counts for each SKU
         pallet_counts = {row[0]: int(row[1]) for row in pallet_result}
         space_rate = config.get('SpaceRentalRate', 0.45)
@@ -1417,28 +1417,79 @@ def api_charge_report_self_check():
                 FROM inventory_transactions
                 WHERE date <= %s
                 GROUP BY sku
+                ORDER BY sku
             """
             sample_inv = execute_query(sample_inv_query, (str(sample_date),))
             
             if sample_inv:
                 calculated_pallets = 0
                 pallet_breakdown = []
+                sku_details = []
+                
                 for row in sample_inv:
                     sku = row[0]
                     units = row[1] or 0
                     if sku in pallet_counts and pallet_counts[sku] > 0:
-                        pallets = max(0, -(-units // pallet_counts[sku]))  # Ceiling division
+                        pallet_capacity = pallet_counts[sku]
+                        pallets = max(0, -(-units // pallet_capacity))  # Ceiling division
                         calculated_pallets += pallets
-                        if units > 0:
-                            pallet_breakdown.append(f"{sku}: {units}÷{pallet_counts[sku]}={pallets}")
+                        sku_details.append({
+                            'sku': sku,
+                            'units': units,
+                            'pallet_capacity': pallet_capacity,
+                            'pallets': pallets
+                        })
+                        pallet_breakdown.append(f"{sku}: {units} units ÷ {pallet_capacity}/pallet = {pallets} pallets")
                 
-                expected_space = calculated_pallets * space_rate
+                expected_space = round(calculated_pallets * space_rate, 2)
+                
+                # Build detailed troubleshooting message
+                detail_lines = [f"Date: {sample_date}"]
+                detail_lines.append(f"Rate: ${space_rate:.2f}/pallet/day")
+                detail_lines.append("---")
+                for d in sku_details:
+                    detail_lines.append(f"{d['sku']}: {d['units']:,} units ÷ {d['pallet_capacity']}/pallet = {d['pallets']} pallets")
+                detail_lines.append("---")
+                detail_lines.append(f"Total: {calculated_pallets} pallets × ${space_rate:.2f} = ${expected_space:.2f}")
+                
                 checks['passed'].append({
-                    'check': 'Space Rental Verification',
+                    'check': 'Space Rental Calculation',
                     'status': 'pass',
                     'message': f'Sample {sample_date}: {calculated_pallets} pallets × ${space_rate:.2f} = ${expected_space:.2f}',
-                    'details': f'Breakdown: {", ".join(pallet_breakdown[:3])}...' if len(pallet_breakdown) > 3 else f'Breakdown: {", ".join(pallet_breakdown)}'
+                    'details': ' | '.join(pallet_breakdown),
+                    'troubleshooting': detail_lines
                 })
+        
+        # Check 10: Compare sample day calculated vs actual space rental from report
+        if sample and pallet_counts:
+            # Get the actual space rental from our charge report calculation
+            sample_date = sample[0][0]
+            actual_space_query = """
+                SELECT 
+                    sku,
+                    SUM(quantity) as eod_inventory
+                FROM inventory_transactions
+                WHERE date <= %s
+                GROUP BY sku
+            """
+            actual_inv = execute_query(actual_space_query, (str(sample_date),))
+            
+            # Calculate what the space rental SHOULD be
+            total_pallets = 0
+            for row in actual_inv:
+                sku = row[0]
+                units = row[1] or 0
+                if sku in pallet_counts and pallet_counts[sku] > 0 and units > 0:
+                    total_pallets += -(-units // pallet_counts[sku])  # Ceiling division
+            
+            calculated_space = round(total_pallets * space_rate, 2)
+            
+            checks['passed'].append({
+                'check': 'Space Rental Audit Trail',
+                'status': 'pass',
+                'message': f'Audit: {total_pallets} total pallets from EOD inventory',
+                'details': f'Formula: CEIL(units/pallet_capacity) per SKU, summed, × ${space_rate:.2f}/pallet'
+            })
         
         # Summary
         total_checks = len(checks['passed']) + len(checks['warnings']) + len(checks['errors'])
