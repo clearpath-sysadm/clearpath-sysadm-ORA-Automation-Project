@@ -1213,31 +1213,32 @@ def api_charge_report_self_check():
                 'message': 'All 5 SKUs have pallet counts configured'
             })
         
-        # Check 3: EOM Previous Month inventory
-        prev_month = month - 1 if month > 1 else 12
-        prev_year = year if month > 1 else year - 1
-        
-        # Query: sku (0), closing_inventory (1)
+        # Check 3: EOM Previous Month inventory baseline
+        # EOM inventory is stored in configuration_params with parameter_name = 'EomPreviousMonth'
+        # Query: sku (0), value (1)
         eom_query = """
-            SELECT sku, closing_inventory FROM eom_inventory 
-            WHERE month = %s AND year = %s
+            SELECT sku, value FROM configuration_params 
+            WHERE parameter_name = 'EomPreviousMonth' AND sku IS NOT NULL
         """
-        eom_result = execute_query(eom_query, (prev_month, prev_year))
+        eom_result = execute_query(eom_query)
         eom_skus = {row[0] for row in eom_result}
         missing_eom_skus = required_skus - eom_skus
         
-        if missing_eom_skus and month != 9:  # September 2025 is baseline
+        if missing_eom_skus:
             checks['warnings'].append({
-                'check': 'Previous Month Inventory',
+                'check': 'Previous Month Inventory Baseline',
                 'status': 'warning',
-                'message': f'Missing EOM inventory for SKUs: {", ".join(missing_eom_skus)}',
-                'details': f'EOM inventory for {calendar.month_name[prev_month]} {prev_year} needed for accurate space calculation'
+                'message': f'Missing EOM baseline for SKUs: {", ".join(missing_eom_skus)}',
+                'details': 'EomPreviousMonth config needed for accurate space calculation'
             })
         else:
+            # Show the baseline values
+            eom_values = {row[0]: int(row[1]) for row in eom_result}
+            total_units = sum(eom_values.values())
             checks['passed'].append({
-                'check': 'Previous Month Inventory',
+                'check': 'Previous Month Inventory Baseline',
                 'status': 'pass',
-                'message': f'EOM inventory set for {calendar.month_name[prev_month]} {prev_year}'
+                'message': f'EOM baseline set for all 5 SKUs (total: {total_units:,} units)'
             })
         
         # Check 4: Shipped data completeness
