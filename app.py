@@ -1041,29 +1041,31 @@ def api_charge_report():
         
         # Apply receives/adjustments
         for trans_date, sku, trans_type, qty in transactions:
-            if trans_date in daily_inventory and str(sku) in daily_inventory[trans_date]:
+            trans_date_str = str(trans_date)  # Convert date object to string for dict lookup
+            if trans_date_str in daily_inventory and str(sku) in daily_inventory[trans_date_str]:
                 if trans_type == 'Receive':
                     for date_str in daily_inventory:
-                        if date_str >= trans_date:
+                        if date_str >= trans_date_str:
                             daily_inventory[date_str][str(sku)] += qty
                 elif trans_type == 'Repack':
                     for date_str in daily_inventory:
-                        if date_str >= trans_date:
+                        if date_str >= trans_date_str:
                             daily_inventory[date_str][str(sku)] += qty
                 elif trans_type == 'Adjust Up':
                     for date_str in daily_inventory:
-                        if date_str >= trans_date:
+                        if date_str >= trans_date_str:
                             daily_inventory[date_str][str(sku)] += qty
                 elif trans_type == 'Adjust Down':
                     for date_str in daily_inventory:
-                        if date_str >= trans_date:
+                        if date_str >= trans_date_str:
                             daily_inventory[date_str][str(sku)] -= qty
         
         # Apply shipments (at EOD)
         for ship_date, sku, qty in shipments:
-            if ship_date in daily_inventory and str(sku) in daily_inventory[ship_date]:
+            ship_date_str = str(ship_date)  # Convert date object to string for dict lookup
+            if ship_date_str in daily_inventory and str(sku) in daily_inventory[ship_date_str]:
                 for date_str in daily_inventory:
-                    if date_str >= ship_date:
+                    if date_str >= ship_date_str:
                         daily_inventory[date_str][str(sku)] -= qty
         
         # Calculate space rental charges
@@ -2630,29 +2632,31 @@ def api_run_eom():
         
         # Apply receives/adjustments
         for trans_date, sku, trans_type, qty in transactions:
-            if trans_date in daily_inventory and str(sku) in daily_inventory[trans_date]:
+            trans_date_str = str(trans_date)  # Convert date object to string for dict lookup
+            if trans_date_str in daily_inventory and str(sku) in daily_inventory[trans_date_str]:
                 if trans_type == 'Receive':
                     for date_str in daily_inventory:
-                        if date_str >= trans_date:
+                        if date_str >= trans_date_str:
                             daily_inventory[date_str][str(sku)] += qty
                 elif trans_type == 'Repack':
                     for date_str in daily_inventory:
-                        if date_str >= trans_date:
+                        if date_str >= trans_date_str:
                             daily_inventory[date_str][str(sku)] += qty
                 elif trans_type == 'Adjust Up':
                     for date_str in daily_inventory:
-                        if date_str >= trans_date:
+                        if date_str >= trans_date_str:
                             daily_inventory[date_str][str(sku)] += qty
                 elif trans_type == 'Adjust Down':
                     for date_str in daily_inventory:
-                        if date_str >= trans_date:
+                        if date_str >= trans_date_str:
                             daily_inventory[date_str][str(sku)] -= qty
         
         # Apply shipments
         for ship_date, sku, qty in shipments:
-            if ship_date in daily_inventory and str(sku) in daily_inventory[ship_date]:
+            ship_date_str = str(ship_date)  # Convert date object to string for dict lookup
+            if ship_date_str in daily_inventory and str(sku) in daily_inventory[ship_date_str]:
                 for date_str in daily_inventory:
-                    if date_str >= ship_date:
+                    if date_str >= ship_date_str:
                         daily_inventory[date_str][str(sku)] -= qty
         
         # Calculate total space rental across all days
