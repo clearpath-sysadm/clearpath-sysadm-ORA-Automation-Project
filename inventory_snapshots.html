@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Snapshots - Oracare Fulfillment</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/global-styles.css">
+    
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><img src="/static/images/oracare-logo.png" alt="Oracare" style="width: 100%; height: 100%; object-fit: contain;"></div>
+                <div class="sidebar-title">Oracare Fulfillment</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
+                    </a>
+                </div>
+
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin & Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/order-management.html" class="nav-item">
+                            <span class="nav-item-icon">🗑️</span>
+                            Order Management
+                        </a>
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                        <a href="/inventory_snapshots.html" class="nav-item active">
+                            <span class="nav-item-icon">📸</span>
+                            Inventory Snapshots
+                        </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/help.html" class="nav-item">
+                        <span class="nav-item-icon">📚</span>
+                        Help & Training
+                    </a>
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">Inventory Snapshots</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="btn" onclick="loadSnapshots()">
+                        <span>🔄</span>
+                        <span>Refresh</span>
+                    </button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">Summary</div>
+                    </div>
+                    <div style="padding: 16px; display: flex; gap: 24px; flex-wrap: wrap;">
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">Total Snapshots</div>
+                            <div style="font-size: 24px; font-weight: 600;" id="totalSnapshots">-</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">Days Covered</div>
+                            <div style="font-size: 24px; font-weight: 600;" id="daysCovered">-</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">Date Range</div>
+                            <div style="font-size: 16px; font-weight: 500;" id="dateRange">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">Filters</div>
+                    </div>
+                    <div style="padding: 16px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label class="form-label" for="startDate">Start Date</label>
+                            <input type="date" id="startDate" class="form-input" style="width: auto;">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label class="form-label" for="endDate">End Date</label>
+                            <input type="date" id="endDate" class="form-input" style="width: auto;">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label class="form-label" for="skuFilter">SKU</label>
+                            <select id="skuFilter" class="form-input" style="width: auto;">
+                                <option value="">All SKUs</option>
+                                <option value="17612">17612 - Oracare 16oz</option>
+                                <option value="17904">17904 - Travel Kit</option>
+                                <option value="17914">17914 - Oracare 32oz</option>
+                                <option value="18675">18675 - Ortho Protect</option>
+                                <option value="18795">18795 - OraPro Paste</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="loadSnapshots()">
+                            <span>🔍</span>
+                            <span>Apply Filters</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            Daily EOD Inventory Snapshots (<span id="recordCount">0</span>)
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            Used for Charge Report BOM calculations
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="snapshotsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>SKU</th>
+                                    <th style="text-align: right;">EOD Quantity</th>
+                                    <th>Source</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="snapshotsTableBody">
+                                <tr>
+                                    <td colspan="5" class="empty-state">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/dark-mode.js"></script>
+    <script>
+        function toggleAdmin() {
+            const items = document.getElementById('admin-items');
+            const toggle = document.querySelector('.admin-toggle-icon');
+            items.classList.toggle('expanded');
+            toggle.textContent = items.classList.contains('expanded') ? '▼' : '▶';
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-active');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('admin-items').classList.add('expanded');
+            document.querySelector('.admin-toggle-icon').textContent = '▼';
+            
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            
+            loadSnapshots();
+        });
+
+        async function loadSnapshots() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const sku = document.getElementById('skuFilter').value;
+            
+            let url = `/api/inventory_snapshots?start_date=${startDate}&end_date=${endDate}`;
+            if (sku) url += `&sku=${sku}`;
+            
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('totalSnapshots').textContent = result.summary.total_snapshots.toLocaleString();
+                    document.getElementById('daysCovered').textContent = result.summary.days_covered.toLocaleString();
+                    document.getElementById('dateRange').textContent = 
+                        `${result.summary.first_date || 'N/A'} to ${result.summary.last_date || 'N/A'}`;
+                    
+                    document.getElementById('recordCount').textContent = result.count;
+                    
+                    const tbody = document.getElementById('snapshotsTableBody');
+                    
+                    if (result.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No snapshots found for selected filters</td></tr>';
+                        return;
+                    }
+                    
+                    const skuNames = {
+                        '17612': 'Oracare 16oz',
+                        '17904': 'Travel Kit',
+                        '17914': 'Oracare 32oz',
+                        '18675': 'Ortho Protect',
+                        '18795': 'OraPro Paste'
+                    };
+                    
+                    tbody.innerHTML = result.data.map(snapshot => `
+                        <tr>
+                            <td>${snapshot.date}</td>
+                            <td>
+                                <strong>${snapshot.sku}</strong>
+                                <span style="color: var(--text-secondary); font-size: 12px; margin-left: 8px;">
+                                    ${skuNames[snapshot.sku] || ''}
+                                </span>
+                            </td>
+                            <td style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">
+                                ${snapshot.eod_quantity.toLocaleString()}
+                            </td>
+                            <td>
+                                <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
+                                    background: ${snapshot.source === 'eod_report' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
+                                    color: ${snapshot.source === 'eod_report' ? 'rgb(22, 163, 74)' : 'rgb(37, 99, 235)'};">
+                                    ${snapshot.source === 'eod_report' ? 'EOD Report' : 'Backfill'}
+                                </span>
+                            </td>
+                            <td style="color: var(--text-secondary); font-size: 12px;">
+                                ${snapshot.created_at ? new Date(snapshot.created_at).toLocaleString() : '-'}
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    document.getElementById('snapshotsTableBody').innerHTML = 
+                        `<tr><td colspan="5" class="empty-state">Error: ${result.error}</td></tr>`;
+                }
+            } catch (error) {
+                document.getElementById('snapshotsTableBody').innerHTML = 
+                    `<tr><td colspan="5" class="empty-state">Error loading snapshots: ${error.message}</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>

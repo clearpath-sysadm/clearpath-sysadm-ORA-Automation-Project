@@ -287,7 +287,7 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
         }
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html', 'order-management.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html', 'order-management.html', 'inventory_snapshots.html']
 
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
@@ -2184,6 +2184,78 @@ def api_get_skus():
         results = execute_query(query)
         skus = [row[0] for row in results]
         return jsonify(skus)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/inventory_snapshots', methods=['GET'])
+def api_inventory_snapshots():
+    """
+    Get daily inventory snapshots for viewing/auditing.
+    Query params:
+    - start_date: Start date (YYYY-MM-DD), defaults to 30 days ago
+    - end_date: End date (YYYY-MM-DD), defaults to today
+    - sku: Filter by specific SKU (optional)
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        today = datetime.now().date()
+        start_date = request.args.get('start_date', (today - timedelta(days=30)).isoformat())
+        end_date = request.args.get('end_date', today.isoformat())
+        sku_filter = request.args.get('sku', None)
+        
+        if sku_filter:
+            query = """
+                SELECT snapshot_date, sku, eod_quantity, source, created_at
+                FROM inventory_daily_snapshots
+                WHERE snapshot_date >= %s AND snapshot_date <= %s AND sku = %s
+                ORDER BY snapshot_date DESC, sku
+            """
+            results = execute_query(query, (start_date, end_date, sku_filter))
+        else:
+            query = """
+                SELECT snapshot_date, sku, eod_quantity, source, created_at
+                FROM inventory_daily_snapshots
+                WHERE snapshot_date >= %s AND snapshot_date <= %s
+                ORDER BY snapshot_date DESC, sku
+            """
+            results = execute_query(query, (start_date, end_date))
+        
+        snapshots = []
+        for row in results:
+            snapshots.append({
+                'date': str(row[0]),
+                'sku': row[1],
+                'eod_quantity': row[2],
+                'source': row[3] or 'unknown',
+                'created_at': str(row[4]) if row[4] else None
+            })
+        
+        # Also get summary statistics
+        summary_query = """
+            SELECT 
+                MIN(snapshot_date) as first_date,
+                MAX(snapshot_date) as last_date,
+                COUNT(*) as total_snapshots,
+                COUNT(DISTINCT snapshot_date) as days_covered
+            FROM inventory_daily_snapshots
+        """
+        summary = execute_query(summary_query)
+        
+        return jsonify({
+            'success': True,
+            'data': snapshots,
+            'count': len(snapshots),
+            'summary': {
+                'first_date': str(summary[0][0]) if summary[0][0] else None,
+                'last_date': str(summary[0][1]) if summary[0][1] else None,
+                'total_snapshots': summary[0][2],
+                'days_covered': summary[0][3]
+            }
+        })
     except Exception as e:
         return jsonify({
             'success': False,
