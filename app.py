@@ -8680,6 +8680,146 @@ def order_management_page():
     """Serve the order management admin page"""
     return send_from_directory('.', 'order-management.html')
 
+@app.route('/api/admin/backfill-snapshots', methods=['POST'])
+@login_required
+@admin_required
+def backfill_inventory_snapshots():
+    """
+    TEMPORARY ADMIN ENDPOINT: Backfill inventory_daily_snapshots table.
+    This endpoint runs the backfill logic to populate historical EOD inventory.
+    Safe to run multiple times (uses upsert pattern).
+    REMOVE THIS ENDPOINT AFTER USE.
+    """
+    from datetime import timedelta
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Configuration
+        BASELINE_DATE = '2025-09-19'
+        SKUS = ['17612', '17904', '17914', '18675', '18795']
+        
+        results = {
+            'initial_inventory': {},
+            'transactions_days': 0,
+            'shipments_days': 0,
+            'days_processed': 0,
+            'final_eod': {},
+            'comparison': [],
+            'success': True
+        }
+        
+        # Get initial inventory
+        cursor.execute("""
+            SELECT sku, value::integer 
+            FROM configuration_params 
+            WHERE category = 'InitialInventory' AND parameter_name = 'EOD_Prior_Week'
+        """)
+        initial_inventory = {row[0]: row[1] for row in cursor.fetchall()}
+        results['initial_inventory'] = initial_inventory
+        
+        # Get transactions by date
+        cursor.execute("""
+            SELECT date, sku, transaction_type, SUM(quantity) as total_qty
+            FROM inventory_transactions
+            GROUP BY date, sku, transaction_type
+            ORDER BY date, sku
+        """)
+        transactions = {}
+        for row in cursor.fetchall():
+            date_str, sku, txn_type, qty = row
+            if date_str not in transactions:
+                transactions[date_str] = {}
+            if sku not in transactions[date_str]:
+                transactions[date_str][sku] = {'receive': 0, 'adjustment': 0}
+            if txn_type.lower() in ['receive', 'received']:
+                transactions[date_str][sku]['receive'] += qty
+            else:
+                transactions[date_str][sku]['adjustment'] += qty
+        results['transactions_days'] = len(transactions)
+        
+        # Get shipments by date
+        cursor.execute("""
+            SELECT ship_date, base_sku, SUM(quantity_shipped) as total_shipped
+            FROM shipped_items
+            WHERE base_sku IS NOT NULL AND base_sku != ''
+            GROUP BY ship_date, base_sku
+            ORDER BY ship_date, base_sku
+        """)
+        shipments = {}
+        for row in cursor.fetchall():
+            date_str, sku, qty = row
+            if date_str not in shipments:
+                shipments[date_str] = {}
+            shipments[date_str][sku] = qty
+        results['shipments_days'] = len(shipments)
+        
+        # Start with baseline inventory
+        current_inventory = {sku: initial_inventory.get(sku, 0) for sku in SKUS}
+        
+        # Parse dates
+        start_date = datetime.strptime(BASELINE_DATE, '%Y-%m-%d').date()
+        end_date = datetime.now().date()
+        
+        # Process each day
+        current_date = start_date
+        days_processed = 0
+        
+        while current_date <= end_date:
+            date_str = current_date.strftime('%Y-%m-%d')
+            
+            for sku in SKUS:
+                day_txns = transactions.get(date_str, {}).get(sku, {'receive': 0, 'adjustment': 0})
+                receives = day_txns['receive']
+                adjustments = day_txns['adjustment']
+                shipped = shipments.get(date_str, {}).get(sku, 0)
+                
+                eod = current_inventory[sku] + receives + adjustments - shipped
+                
+                # Insert/update snapshot
+                cursor.execute("""
+                    INSERT INTO inventory_daily_snapshots (snapshot_date, sku, eod_quantity, source, created_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON CONFLICT (snapshot_date, sku) 
+                    DO UPDATE SET eod_quantity = EXCLUDED.eod_quantity, source = EXCLUDED.source
+                """, (current_date, sku, eod, 'backfill'))
+                
+                current_inventory[sku] = eod
+            
+            days_processed += 1
+            current_date += timedelta(days=1)
+        
+        conn.commit()
+        results['days_processed'] = days_processed
+        results['final_eod'] = current_inventory
+        
+        # Compare to inventory_current
+        cursor.execute("SELECT sku, current_quantity FROM inventory_current ORDER BY sku")
+        current_db = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        for sku in SKUS:
+            calc = current_inventory[sku]
+            actual = current_db.get(sku, 0)
+            diff = calc - actual
+            results['comparison'].append({
+                'sku': sku,
+                'calculated': calc,
+                'inventory_current': actual,
+                'diff': diff,
+                'match': diff == 0
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Backfill completed: {days_processed} days processed")
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.error(f'Error in backfill: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
