@@ -329,8 +329,17 @@ def get_last_report_runs():
         
         report_status = {}
         for row in results:
+            created_at = row[5]
+            run_date = row[1]
+            if created_at:
+                run_date_str = created_at.isoformat() + 'Z'
+            elif run_date:
+                run_date_str = run_date.isoformat()
+            else:
+                run_date_str = None
+            
             report_status[row[0]] = {
-                'run_date': row[5].isoformat() if row[5] else (row[1].isoformat() if row[1] else None),
+                'run_date': run_date_str,
                 'run_for_date': row[2].isoformat() if row[2] else None,
                 'status': row[3],
                 'message': row[4]

@@ -2829,25 +2829,14 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    const formatTime = (dateStr) => {
-                        if (!dateStr) return '';
-                        const date = new Date(dateStr);
-                        return date.toLocaleString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    };
-                    
                     if (result.data.EOD) {
-                        document.getElementById('eod-status').textContent = formatTime(result.data.EOD.run_date);
+                        document.getElementById('eod-status').textContent = formatWorkflowTimestamp(result.data.EOD.run_date);
                     }
                     if (result.data.EOW) {
-                        document.getElementById('eow-status').textContent = formatTime(result.data.EOW.run_date);
+                        document.getElementById('eow-status').textContent = formatWorkflowTimestamp(result.data.EOW.run_date);
                     }
                     if (result.data.EOM) {
-                        document.getElementById('eom-status').textContent = formatTime(result.data.EOM.run_date);
+                        document.getElementById('eom-status').textContent = formatWorkflowTimestamp(result.data.EOM.run_date);
                     }
                 }
             } catch (error) {
