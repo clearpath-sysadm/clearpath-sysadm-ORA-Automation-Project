@@ -1083,13 +1083,35 @@
                     const totalUnits = (row.sku_17612 || 0) + (row.sku_17904 || 0) + (row.sku_17914 || 0) + (row.sku_18675 || 0) + (row.sku_18795 || 0);
                     return `${totalUnits} units × $${RATES.package.toFixed(2)} = $${row.packages_charge.toFixed(2)}`;
                 case 'space':
-                    const pallets = row.total_pallets || 0;
-                    return `${pallets} pallets × $${RATES.spacePerPallet.toFixed(2)} = $${row.space_rental.toFixed(2)}`;
+                    return buildSpaceTooltip(row);
                 case 'total':
                     return `$${row.orders_charge.toFixed(2)} + $${row.packages_charge.toFixed(2)} + $${row.space_rental.toFixed(2)} = $${row.total.toFixed(2)}`;
                 default:
                     return '';
             }
+        }
+        
+        function buildSpaceTooltip(row) {
+            const pallets = row.total_pallets || 0;
+            const details = row.pallet_details || [];
+            
+            if (details.length === 0) {
+                return `${pallets} pallets × $${RATES.spacePerPallet.toFixed(2)} = $${row.space_rental.toFixed(2)}`;
+            }
+            
+            // Build per-SKU breakdown
+            let lines = details.map(d => {
+                if (d.pallets > 0) {
+                    return `${d.sku}: ${d.units.toLocaleString()} ÷ ${d.units_per_pallet} = ${d.pallets} pallets`;
+                } else {
+                    return `${d.sku}: ${d.units.toLocaleString()} units (0 pallets)`;
+                }
+            });
+            
+            lines.push(`─────────────`);
+            lines.push(`Total: ${pallets} pallets × $${RATES.spacePerPallet.toFixed(2)} = $${row.space_rental.toFixed(2)}`);
+            
+            return lines.join('\n');
         }
 
         function renderReport() {

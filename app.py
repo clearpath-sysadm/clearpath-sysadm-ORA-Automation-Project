@@ -1084,11 +1084,28 @@ def api_charge_report():
             
             # Calculate space rental based on EOD inventory pallets
             total_pallets = 0
+            pallet_details = []  # Per-SKU breakdown for tooltip
             if date in daily_inventory:
-                for sku, inventory_qty in daily_inventory[date].items():
-                    if sku in pallet_config and inventory_qty > 0:
-                        pallets = math.ceil(inventory_qty / pallet_config[sku])
+                for sku in ['17612', '17904', '17914', '18675', '18795']:  # Fixed order for consistency
+                    inventory_qty = daily_inventory[date].get(sku, 0)
+                    units_per_pallet = pallet_config.get(sku, 0)
+                    if units_per_pallet > 0 and inventory_qty > 0:
+                        pallets = math.ceil(inventory_qty / units_per_pallet)
                         total_pallets += pallets
+                        pallet_details.append({
+                            'sku': sku,
+                            'units': inventory_qty,
+                            'units_per_pallet': units_per_pallet,
+                            'pallets': pallets
+                        })
+                    elif units_per_pallet > 0:
+                        # SKU has config but 0 units - still show for transparency
+                        pallet_details.append({
+                            'sku': sku,
+                            'units': inventory_qty,
+                            'units_per_pallet': units_per_pallet,
+                            'pallets': 0
+                        })
             
             space_rental = total_pallets * space_rental_rate
             
@@ -1106,7 +1123,8 @@ def api_charge_report():
                 'packages_charge': round(packages_charge, 2),
                 'space_rental': round(space_rental, 2),
                 'total': round(total_charge, 2),
-                'total_pallets': total_pallets  # EOD pallet count for tooltip
+                'total_pallets': total_pallets,
+                'pallet_details': pallet_details  # Per-SKU breakdown for tooltip
             })
         
         # Calculate totals
