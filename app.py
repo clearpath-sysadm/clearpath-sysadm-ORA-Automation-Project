@@ -902,8 +902,8 @@ def api_charge_report():
     - # of Orders
     - Quantity by SKU (17612, 17904, 17914, 18675, 18795)
     - Orders charge ($4.25 per order)
-    - Packages charge ($3.40 per package)
-    - Space Rental ($18-$23.40 daily)
+    - Packages charge ($0.75 per unit shipped)
+    - Space Rental ($0.45 per pallet per day, based on EOD inventory)
     - Total
     
     Query Parameters:
