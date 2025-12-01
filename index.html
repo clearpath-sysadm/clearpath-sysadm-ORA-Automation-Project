@@ -550,40 +550,6 @@
                         </div>
                     </div>
                 </section>
-
-                <!-- Orders Pipeline Section -->
-                <section>
-                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Orders Pipeline</h2>
-                    
-                    <div class="card" onclick="window.location.href='/xml_import.html'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <span>📥</span> Orders Inbox Status
-                            </div>
-                            <a href="/xml_import.html" class="btn" onclick="event.stopPropagation()">View All Orders →</a>
-                        </div>
-                        <div style="color: var(--text-secondary); font-size: 14px;">
-                            <p>Orders are automatically imported from Google Drive every 5 minutes.</p>
-                            <p style="margin-top: 8px;">Pending orders are ready for upload to ShipStation.</p>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <span>⚙️</span> Automation Status
-                            </div>
-                        </div>
-                        <div id="automation-section">
-                            <!-- Skeleton Loaders -->
-                            <div class="skeleton" style="height: 60px; border-radius: 8px; margin-bottom: 16px;" id="auto-skeleton-1"></div>
-                            <div class="skeleton" style="height: 60px; border-radius: 8px;" id="auto-skeleton-2"></div>
-                            
-                            <!-- Actual Automation Status -->
-                            <div id="automation-list"></div>
-                        </div>
-                    </div>
-                </section>
             </div>
         </main>
     </div>
@@ -687,10 +653,6 @@
                 document.getElementById(`stat-skeleton-${i}`).classList.remove('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.add('hidden'));
-            
-            for (let i = 1; i <= 2; i++) {
-                document.getElementById(`auto-skeleton-${i}`).classList.remove('hidden');
-            }
         }
 
         function hideSkeletons() {
@@ -698,10 +660,6 @@
                 document.getElementById(`stat-skeleton-${i}`).classList.add('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.remove('hidden'));
-            
-            for (let i = 1; i <= 2; i++) {
-                document.getElementById(`auto-skeleton-${i}`).classList.add('hidden');
-            }
         }
 
         // HTML escape helper
@@ -1207,53 +1165,6 @@
                 
                 // Check for manual order conflicts
                 await checkManualOrderConflicts();
-                
-                // Update automation status
-                if (automation.success && automation.data.length > 0) {
-                    const autoList = document.getElementById('automation-list');
-                    autoList.innerHTML = automation.data.map(item => {
-                        const statusClass = item.status === 'success' ? 'success' : item.status === 'running' ? 'warning' : 'critical';
-                        const icon = item.status === 'success' ? '✅' : item.status === 'running' ? '⏳' : '❌';
-                        
-                        // Format timestamp in user's local timezone
-                        let lastRunDisplay = 'Never';
-                        if (item.last_run) {
-                            const lastRunDate = new Date(item.last_run);
-                            const now = new Date();
-                            const diffMs = now - lastRunDate;
-                            const diffMins = Math.floor(diffMs / 60000);
-                            
-                            if (diffMins < 1) {
-                                lastRunDisplay = 'Just now';
-                            } else if (diffMins < 60) {
-                                lastRunDisplay = `${diffMins}m ago`;
-                            } else if (diffMins < 1440) { // Less than 24 hours
-                                const diffHours = Math.floor(diffMins / 60);
-                                lastRunDisplay = `${diffHours}h ago`;
-                            } else {
-                                // Show local date and time for older runs
-                                lastRunDisplay = lastRunDate.toLocaleString();
-                            }
-                        }
-                        
-                        return `
-                            <div style="padding: 16px; border-radius: 8px; background: var(--bg-tertiary); margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <div>
-                                        <strong>${item.name}</strong><br>
-                                        <span style="font-size: 13px; color: var(--text-secondary);">Last run: ${lastRunDisplay}</span>
-                                    </div>
-                                    <span class="badge badge-${statusClass}">
-                                        <span>${icon}</span>
-                                        ${item.status}
-                                    </span>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                } else {
-                    document.getElementById('automation-list').innerHTML = '<p style="color: var(--text-tertiary); text-align: center; padding: 20px;">No automation data</p>';
-                }
                 
                 // Re-check auto-ship day status (updates in real-time)
                 checkAutoShipDay();
