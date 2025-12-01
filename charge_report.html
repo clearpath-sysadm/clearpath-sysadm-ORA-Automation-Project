@@ -1083,7 +1083,8 @@
                     const totalUnits = (row.sku_17612 || 0) + (row.sku_17904 || 0) + (row.sku_17914 || 0) + (row.sku_18675 || 0) + (row.sku_18795 || 0);
                     return `${totalUnits} units × $${RATES.package.toFixed(2)} = $${row.packages_charge.toFixed(2)}`;
                 case 'space':
-                    return `Space rental based on EOD inventory pallets × $${RATES.spacePerPallet.toFixed(2)}/pallet`;
+                    const pallets = row.total_pallets || 0;
+                    return `${pallets} pallets × $${RATES.spacePerPallet.toFixed(2)} = $${row.space_rental.toFixed(2)}`;
                 case 'total':
                     return `$${row.orders_charge.toFixed(2)} + $${row.packages_charge.toFixed(2)} + $${row.space_rental.toFixed(2)} = $${row.total.toFixed(2)}`;
                 default:
@@ -1132,7 +1133,7 @@
                         <td data-label="18795">${totalsRow.sku_18795}</td>
                         <td class="currency has-tooltip" data-label="Orders" title="${totalsRow.order_count} orders × $${RATES.order.toFixed(2)} = $${totalsRow.orders_charge.toFixed(2)}">${formatCurrency(totalsRow.orders_charge)}</td>
                         <td class="currency has-tooltip" data-label="Packages" title="${totalUnits} units × $${RATES.package.toFixed(2)} = $${totalsRow.packages_charge.toFixed(2)}">${formatCurrency(totalsRow.packages_charge)}</td>
-                        <td class="currency has-tooltip" data-label="Space Rental" title="Sum of daily space rental charges">${formatCurrency(totalsRow.space_rental)}</td>
+                        <td class="currency has-tooltip" data-label="Space Rental" title="${totalsRow.total_pallets} pallet-days × $${RATES.spacePerPallet.toFixed(2)} = $${totalsRow.space_rental.toFixed(2)}">${formatCurrency(totalsRow.space_rental)}</td>
                         <td class="currency stat-highlight has-tooltip" data-label="Total" title="$${totalsRow.orders_charge.toFixed(2)} + $${totalsRow.packages_charge.toFixed(2)} + $${totalsRow.space_rental.toFixed(2)} = $${totalsRow.total.toFixed(2)}">${formatCurrency(totalsRow.total)}</td>
                     </tr>
                 `;

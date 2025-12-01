@@ -1103,7 +1103,8 @@ def api_charge_report():
                 'orders_charge': round(orders_charge, 2),
                 'packages_charge': round(packages_charge, 2),
                 'space_rental': round(space_rental, 2),
-                'total': round(total_charge, 2)
+                'total': round(total_charge, 2),
+                'total_pallets': total_pallets  # EOD pallet count for tooltip
             })
         
         # Calculate totals
@@ -1119,7 +1120,8 @@ def api_charge_report():
                 'orders_charge': round(sum(r['orders_charge'] for r in report_data), 2),
                 'packages_charge': round(sum(r['packages_charge'] for r in report_data), 2),
                 'space_rental': round(sum(r['space_rental'] for r in report_data), 2),
-                'total': round(sum(r['total'] for r in report_data), 2)
+                'total': round(sum(r['total'] for r in report_data), 2),
+                'total_pallets': sum(r['total_pallets'] for r in report_data)  # Sum of pallet-days
             }
         else:
             totals = None
