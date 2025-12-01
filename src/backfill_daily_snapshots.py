@@ -166,7 +166,7 @@ def backfill_snapshots():
     
     # Compare to inventory_current
     cursor = conn.cursor()
-    cursor.execute("SELECT sku, quantity FROM inventory_current ORDER BY sku")
+    cursor.execute("SELECT sku, current_quantity FROM inventory_current ORDER BY sku")
     current_db = {row[0]: row[1] for row in cursor.fetchall()}
     cursor.close()
     
