@@ -1163,11 +1163,11 @@ def api_charge_report_self_check():
         
         # Get configuration values
         config_query = """
-            SELECT param_name, param_value FROM configuration_params 
-            WHERE param_name IN ('OrderCharge', 'PackageCharge', 'SpaceRentalRate')
+            SELECT parameter_name, value FROM configuration_params 
+            WHERE parameter_name IN ('OrderCharge', 'PackageCharge', 'SpaceRentalRate')
         """
         config_result = execute_query(config_query)
-        config = {row['param_name']: float(row['param_value']) for row in config_result}
+        config = {row['parameter_name']: float(row['value']) for row in config_result}
         
         # Check 1: Configuration validation
         required_configs = ['OrderCharge', 'PackageCharge', 'SpaceRentalRate']
@@ -1188,8 +1188,8 @@ def api_charge_report_self_check():
         
         # Check 2: Pallet configuration for all SKUs
         pallet_query = """
-            SELECT sku, pallet_count FROM configuration_params 
-            WHERE param_name = 'PalletCount' AND sku IS NOT NULL
+            SELECT sku, value FROM configuration_params 
+            WHERE parameter_name = 'PalletCount' AND sku IS NOT NULL
         """
         pallet_result = execute_query(pallet_query)
         configured_skus = {row['sku'] for row in pallet_result}
