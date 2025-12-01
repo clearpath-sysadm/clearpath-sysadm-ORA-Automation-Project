@@ -1099,16 +1099,29 @@
                 return `${pallets} pallets × $${RATES.spacePerPallet.toFixed(2)} = $${row.space_rental.toFixed(2)}`;
             }
             
-            // Build per-SKU breakdown
+            // Build per-SKU breakdown with full calculation
             let lines = details.map(d => {
+                const bom = d.bom || 0;
+                const receives = d.receives || 0;
+                const adjustments = d.adjustments || 0;
+                const shipped = d.shipped || 0;
+                const adjStr = adjustments >= 0 ? `+${adjustments}` : `${adjustments}`;
+                
+                // Build the formula: BOM + Receives + Adj - Shipped = EOD
+                let formula = `${bom}`;
+                if (receives > 0) formula += ` +${receives}`;
+                if (adjustments !== 0) formula += ` ${adjStr}`;
+                if (shipped > 0) formula += ` -${shipped}`;
+                formula += ` = ${d.units.toLocaleString()}`;
+                
                 if (d.pallets > 0) {
-                    return `${d.sku}: ${d.units.toLocaleString()} ÷ ${d.units_per_pallet} = ${d.pallets} pallets`;
+                    return `${d.sku}: ${formula} ÷ ${d.units_per_pallet} = ${d.pallets}p`;
                 } else {
-                    return `${d.sku}: ${d.units.toLocaleString()} units (0 pallets)`;
+                    return `${d.sku}: ${formula} (0p)`;
                 }
             });
             
-            lines.push(`─────────────`);
+            lines.push(`─────────────────────`);
             lines.push(`Total: ${pallets} pallets × $${RATES.spacePerPallet.toFixed(2)} = $${row.space_rental.toFixed(2)}`);
             
             return lines.join('\n');

@@ -1029,44 +1029,62 @@ def api_charge_report():
         shipments = execute_query(shipments_query, (str(start_date), str(end_date)))
         
         # Calculate daily inventory (EOD) for space rental calculation
+        # Track both ending inventory AND the components (BOM, receives, adjustments, shipped)
         daily_inventory = {}
+        daily_sku_breakdown = {}  # Track per-SKU transaction breakdown per day
         current_inv = bom_inventory.copy()
         
-        # Initialize all dates with BOM inventory
+        # Initialize tracking structures for all dates
         current_date = start_date
         while current_date <= end_date:
             date_str = str(current_date)
             daily_inventory[date_str] = current_inv.copy()
+            # Initialize per-SKU breakdown tracking
+            daily_sku_breakdown[date_str] = {}
+            for sku in ['17612', '17904', '17914', '18675', '18795']:
+                daily_sku_breakdown[date_str][sku] = {
+                    'bom': bom_inventory.get(sku, 0),
+                    'receives': 0,
+                    'adjustments': 0,  # net adjustments (up - down)
+                    'shipped': 0
+                }
             current_date += timedelta(days=1)
         
-        # Apply receives/adjustments
+        # Apply receives/adjustments and track breakdown
         for trans_date, sku, trans_type, qty in transactions:
             trans_date_str = str(trans_date)  # Convert date object to string for dict lookup
-            if trans_date_str in daily_inventory and str(sku) in daily_inventory[trans_date_str]:
+            sku_str = str(sku)
+            if trans_date_str in daily_inventory and sku_str in daily_inventory[trans_date_str]:
                 if trans_type == 'Receive':
                     for date_str in daily_inventory:
                         if date_str >= trans_date_str:
-                            daily_inventory[date_str][str(sku)] += qty
+                            daily_inventory[date_str][sku_str] += qty
+                            daily_sku_breakdown[date_str][sku_str]['receives'] += qty
                 elif trans_type == 'Repack':
                     for date_str in daily_inventory:
                         if date_str >= trans_date_str:
-                            daily_inventory[date_str][str(sku)] += qty
+                            daily_inventory[date_str][sku_str] += qty
+                            daily_sku_breakdown[date_str][sku_str]['receives'] += qty
                 elif trans_type == 'Adjust Up':
                     for date_str in daily_inventory:
                         if date_str >= trans_date_str:
-                            daily_inventory[date_str][str(sku)] += qty
+                            daily_inventory[date_str][sku_str] += qty
+                            daily_sku_breakdown[date_str][sku_str]['adjustments'] += qty
                 elif trans_type == 'Adjust Down':
                     for date_str in daily_inventory:
                         if date_str >= trans_date_str:
-                            daily_inventory[date_str][str(sku)] -= qty
+                            daily_inventory[date_str][sku_str] -= qty
+                            daily_sku_breakdown[date_str][sku_str]['adjustments'] -= qty
         
-        # Apply shipments (at EOD)
+        # Apply shipments (at EOD) and track breakdown
         for ship_date, sku, qty in shipments:
             ship_date_str = str(ship_date)  # Convert date object to string for dict lookup
-            if ship_date_str in daily_inventory and str(sku) in daily_inventory[ship_date_str]:
+            sku_str = str(sku)
+            if ship_date_str in daily_inventory and sku_str in daily_inventory[ship_date_str]:
                 for date_str in daily_inventory:
                     if date_str >= ship_date_str:
-                        daily_inventory[date_str][str(sku)] -= qty
+                        daily_inventory[date_str][sku_str] -= qty
+                        daily_sku_breakdown[date_str][sku_str]['shipped'] += qty
         
         # Calculate space rental charges
         import math
@@ -1089,22 +1107,20 @@ def api_charge_report():
                 for sku in ['17612', '17904', '17914', '18675', '18795']:  # Fixed order for consistency
                     inventory_qty = daily_inventory[date].get(sku, 0)
                     units_per_pallet = pallet_config.get(sku, 0)
-                    if units_per_pallet > 0 and inventory_qty > 0:
-                        pallets = math.ceil(inventory_qty / units_per_pallet)
+                    breakdown = daily_sku_breakdown[date].get(sku, {})
+                    
+                    if units_per_pallet > 0:
+                        pallets = math.ceil(inventory_qty / units_per_pallet) if inventory_qty > 0 else 0
                         total_pallets += pallets
                         pallet_details.append({
                             'sku': sku,
                             'units': inventory_qty,
                             'units_per_pallet': units_per_pallet,
-                            'pallets': pallets
-                        })
-                    elif units_per_pallet > 0:
-                        # SKU has config but 0 units - still show for transparency
-                        pallet_details.append({
-                            'sku': sku,
-                            'units': inventory_qty,
-                            'units_per_pallet': units_per_pallet,
-                            'pallets': 0
+                            'pallets': pallets,
+                            'bom': breakdown.get('bom', 0),
+                            'receives': breakdown.get('receives', 0),
+                            'adjustments': breakdown.get('adjustments', 0),
+                            'shipped': breakdown.get('shipped', 0)
                         })
             
             space_rental = total_pallets * space_rental_rate
