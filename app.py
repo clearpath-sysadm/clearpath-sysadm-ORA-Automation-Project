@@ -996,7 +996,6 @@ def api_charge_report():
         package_charge = 0.75
         space_rental_rate = 0.45
         pallet_config = {}
-        bom_inventory = {}
         
         for row in config_results:
             category, param, sku, value = row
@@ -1009,8 +1008,24 @@ def api_charge_report():
                     space_rental_rate = float(value)
             elif category == 'PalletConfig' and param == 'PalletCount' and sku:
                 pallet_config[str(sku)] = int(value)
-            elif category == 'Inventory' and param == 'EomPreviousMonth' and sku:
-                bom_inventory[str(sku)] = int(value)
+        
+        # Get BOM (Beginning of Month) inventory from daily snapshots
+        # BOM for this month = EOD of last day of previous month
+        bom_date = (start_date - timedelta(days=1))  # Day before first day of report month
+        bom_query = """
+            SELECT sku, eod_quantity 
+            FROM inventory_daily_snapshots 
+            WHERE snapshot_date = %s
+        """
+        bom_results = execute_query(bom_query, (str(bom_date),))
+        bom_inventory = {str(row[0]): row[1] for row in bom_results}
+        
+        # Fallback to EomPreviousMonth if no snapshot exists (legacy support)
+        if not bom_inventory:
+            for row in config_results:
+                category, param, sku, value = row
+                if category == 'Inventory' and param == 'EomPreviousMonth' and sku:
+                    bom_inventory[str(sku)] = int(value)
         
         # Get all inventory transactions and shipments for the month
         transactions_query = """
@@ -2438,6 +2453,38 @@ def api_run_eod():
             success_message = '✅ Daily inventory updated - Shipped items synced from ShipStation'
             if reconciliation_summary and (reconciliation_summary['updated_to_shipped'] > 0 or reconciliation_summary['updated_to_cancelled'] > 0):
                 success_message += f"\n🔄 Reconciled {reconciliation_summary['updated_to_shipped']} shipped + {reconciliation_summary['updated_to_cancelled']} cancelled orders"
+            
+            # Save daily inventory snapshot for charge report BOM calculations
+            try:
+                from src.services.database import get_connection
+                snapshot_conn = get_connection()
+                cursor = snapshot_conn.cursor()
+                
+                # Get current EOD inventory from inventory_current
+                cursor.execute("""
+                    SELECT sku, current_quantity FROM inventory_current 
+                    WHERE sku IN ('17612', '17904', '17914', '18675', '18795')
+                """)
+                current_inventory = cursor.fetchall()
+                
+                # Upsert today's snapshot
+                today = datetime.date.today()
+                for sku, qty in current_inventory:
+                    cursor.execute("""
+                        INSERT INTO inventory_daily_snapshots (snapshot_date, sku, eod_quantity, source, created_at)
+                        VALUES (%s, %s, %s, 'eod_report', NOW())
+                        ON CONFLICT (snapshot_date, sku) 
+                        DO UPDATE SET eod_quantity = EXCLUDED.eod_quantity, source = 'eod_report'
+                    """, (today, sku, qty))
+                
+                snapshot_conn.commit()
+                cursor.close()
+                snapshot_conn.close()
+                logger.info(f"📸 Saved daily inventory snapshot for {today}")
+                success_message += f"\n📸 Snapshot saved for charge report"
+            except Exception as snap_error:
+                logger.warning(f"Failed to save daily snapshot: {snap_error}")
+                # Don't fail EOD if snapshot fails
             
             # Log success
             log_report_run('EOD', datetime.date.today(), 'success', 'Daily inventory updated successfully')
