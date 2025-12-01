@@ -14,6 +14,317 @@
     <!-- Global Premium Design System -->
     <link rel="stylesheet" href="/static/css/global-styles.css">
     
+    <!-- Self-Check Panel Styles -->
+    <style>
+        /* Controls buttons responsive */
+        .controls-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 600px) {
+            .controls-buttons {
+                width: 100%;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .controls-buttons .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        /* Self-Check Button */
+        .self-check-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .self-check-btn:hover {
+            background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+            transform: translateY(-1px);
+        }
+        .self-check-btn.running {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        /* Self-Check Panel */
+        .self-check-panel {
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            animation: slideDown 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .self-check-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .self-check-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .self-check-title h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .self-check-icon {
+            font-size: 1.3rem;
+        }
+        
+        .self-check-period {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background: var(--surface-secondary);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        
+        .btn-close-panel {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: 4px 8px;
+            line-height: 1;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .btn-close-panel:hover {
+            background: var(--surface-secondary);
+            color: var(--text-primary);
+        }
+        
+        /* Summary Bar */
+        .self-check-summary {
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+        
+        .summary-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            flex: 1;
+            min-width: 100px;
+            justify-content: center;
+        }
+        
+        .summary-badge.passed {
+            background: rgba(34, 197, 94, 0.12);
+            color: #16a34a;
+        }
+        
+        .summary-badge.warnings {
+            background: rgba(234, 179, 8, 0.12);
+            color: #ca8a04;
+        }
+        
+        .summary-badge.errors {
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+        }
+        
+        .badge-count {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        
+        .badge-label {
+            font-size: 0.85rem;
+        }
+        
+        /* Check Results */
+        .self-check-results {
+            padding: 16px 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .loading-checks {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+        }
+        
+        .check-section {
+            margin-bottom: 16px;
+        }
+        
+        .check-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .check-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--surface-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .check-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .check-status-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .check-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .check-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            font-size: 0.9rem;
+        }
+        
+        .check-message {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            word-break: break-word;
+        }
+        
+        .check-details {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            font-style: italic;
+        }
+        
+        .check-item.passed .check-status-icon { color: #16a34a; }
+        .check-item.warning .check-status-icon { color: #ca8a04; }
+        .check-item.error .check-status-icon { color: #dc2626; }
+        
+        /* All Passed State */
+        .all-passed-message {
+            text-align: center;
+            padding: 24px;
+        }
+        
+        .all-passed-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+        
+        .all-passed-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #16a34a;
+            margin-bottom: 4px;
+        }
+        
+        .all-passed-subtext {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .self-check-header {
+                padding: 12px 16px;
+            }
+            
+            .self-check-title h3 {
+                font-size: 1rem;
+            }
+            
+            .self-check-period {
+                width: 100%;
+                text-align: center;
+                margin-top: 8px;
+            }
+            
+            .self-check-summary {
+                padding: 12px 16px;
+            }
+            
+            .summary-badge {
+                flex-direction: column;
+                gap: 4px;
+                padding: 10px 12px;
+            }
+            
+            .self-check-results {
+                padding: 12px 16px;
+                max-height: 300px;
+            }
+            
+            .check-item {
+                padding: 10px;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .check-status-icon {
+                margin-top: 0;
+            }
+        }
+        
+        /* Dark Mode */
+        .dark-mode .self-check-panel {
+            background: var(--card-background);
+        }
+        
+        .dark-mode .summary-badge.passed {
+            background: rgba(34, 197, 94, 0.15);
+        }
+        
+        .dark-mode .summary-badge.warnings {
+            background: rgba(234, 179, 8, 0.15);
+        }
+        
+        .dark-mode .summary-badge.errors {
+            background: rgba(239, 68, 68, 0.15);
+        }
+    </style>
+    
     <!-- jsPDF for PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -185,10 +496,44 @@
                         </div>
                         <div class="info-text">Orders: $4.25/order | Packages: $0.75/unit | Space: $0.45/pallet/day</div>
                     </div>
-                    <div style="display: flex; gap: 12px;">
+                    <div class="controls-buttons">
+                        <button class="btn self-check-btn" onclick="runSelfCheck()" id="selfCheckBtn">🔍 Self-Check</button>
                         <button class="btn export-btn" onclick="exportToPDF()">📄 Export PDF</button>
                         <button class="btn export-btn" onclick="exportToCSV()">📥 Export CSV</button>
                         <button class="btn" onclick="refreshData()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Self-Check Panel -->
+                <div id="selfCheckPanel" class="self-check-panel" style="display: none;">
+                    <div class="self-check-header">
+                        <div class="self-check-title">
+                            <span class="self-check-icon" id="selfCheckIcon">🔍</span>
+                            <h3>Data Validation Report</h3>
+                            <span class="self-check-period" id="selfCheckPeriod"></span>
+                        </div>
+                        <button class="btn-close-panel" onclick="closeSelfCheck()">×</button>
+                    </div>
+                    
+                    <!-- Summary Bar -->
+                    <div class="self-check-summary" id="selfCheckSummary">
+                        <div class="summary-badge passed" id="summaryPassed">
+                            <span class="badge-count">0</span>
+                            <span class="badge-label">Passed</span>
+                        </div>
+                        <div class="summary-badge warnings" id="summaryWarnings">
+                            <span class="badge-count">0</span>
+                            <span class="badge-label">Warnings</span>
+                        </div>
+                        <div class="summary-badge errors" id="summaryErrors">
+                            <span class="badge-count">0</span>
+                            <span class="badge-label">Errors</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Check Results -->
+                    <div class="self-check-results" id="selfCheckResults">
+                        <div class="loading-checks">Running validation checks...</div>
                     </div>
                 </div>
 
@@ -301,8 +646,151 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeMobileMenu();
+                closeSelfCheck();
             }
         });
+
+        // Self-Check Functions
+        async function runSelfCheck() {
+            const btn = document.getElementById('selfCheckBtn');
+            const panel = document.getElementById('selfCheckPanel');
+            const resultsContainer = document.getElementById('selfCheckResults');
+            
+            // Show panel and set loading state
+            panel.style.display = 'block';
+            btn.classList.add('running');
+            btn.textContent = '⏳ Running...';
+            resultsContainer.innerHTML = '<div class="loading-checks">Running validation checks...</div>';
+            
+            // Get selected month and year
+            const month = document.getElementById('monthSelect').value;
+            const year = document.getElementById('yearSelect').value;
+            
+            // Update period display
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('selfCheckPeriod').textContent = `${monthNames[parseInt(month) - 1]} ${year}`;
+            
+            try {
+                const response = await fetch(`/api/charge_report/self_check?month=${month}&year=${year}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderSelfCheckResults(data);
+                } else {
+                    resultsContainer.innerHTML = `
+                        <div class="check-item error">
+                            <span class="check-status-icon">❌</span>
+                            <div class="check-content">
+                                <div class="check-name">Self-Check Failed</div>
+                                <div class="check-message">${data.error || 'Unknown error occurred'}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsContainer.innerHTML = `
+                    <div class="check-item error">
+                        <span class="check-status-icon">❌</span>
+                        <div class="check-content">
+                            <div class="check-name">Connection Error</div>
+                            <div class="check-message">${error.message}</div>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                btn.classList.remove('running');
+                btn.textContent = '🔍 Self-Check';
+            }
+        }
+        
+        function renderSelfCheckResults(data) {
+            const summary = data.summary;
+            const checks = data.checks;
+            
+            // Update summary badges
+            document.querySelector('#summaryPassed .badge-count').textContent = summary.passed;
+            document.querySelector('#summaryWarnings .badge-count').textContent = summary.warnings;
+            document.querySelector('#summaryErrors .badge-count').textContent = summary.errors;
+            
+            // Update header icon based on status
+            const icon = document.getElementById('selfCheckIcon');
+            if (summary.status === 'pass') {
+                icon.textContent = '✅';
+            } else if (summary.status === 'warning') {
+                icon.textContent = '⚠️';
+            } else {
+                icon.textContent = '❌';
+            }
+            
+            const resultsContainer = document.getElementById('selfCheckResults');
+            
+            // If all passed, show success message
+            if (summary.errors === 0 && summary.warnings === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="all-passed-message">
+                        <div class="all-passed-icon">✅</div>
+                        <div class="all-passed-text">All Validation Checks Passed!</div>
+                        <div class="all-passed-subtext">Your charge report data for ${summary.month} ${summary.year} is complete and accurate.</div>
+                    </div>
+                    ${renderCheckSection('Verified', checks.passed, 'pass')}
+                `;
+                return;
+            }
+            
+            // Build results HTML
+            let html = '';
+            
+            // Errors first
+            if (checks.errors && checks.errors.length > 0) {
+                html += renderCheckSection('Issues Found', checks.errors, 'error');
+            }
+            
+            // Warnings
+            if (checks.warnings && checks.warnings.length > 0) {
+                html += renderCheckSection('Warnings', checks.warnings, 'warning');
+            }
+            
+            // Passed checks (collapsible)
+            if (checks.passed && checks.passed.length > 0) {
+                html += renderCheckSection('Passed', checks.passed, 'pass');
+            }
+            
+            resultsContainer.innerHTML = html;
+        }
+        
+        function renderCheckSection(title, items, type) {
+            if (!items || items.length === 0) return '';
+            
+            const icons = {
+                'pass': '✓',
+                'warning': '⚠',
+                'error': '✗'
+            };
+            
+            const itemsHtml = items.map(item => `
+                <div class="check-item ${type}">
+                    <span class="check-status-icon">${icons[type]}</span>
+                    <div class="check-content">
+                        <div class="check-name">${item.check}</div>
+                        <div class="check-message">${item.message}</div>
+                        ${item.details ? `<div class="check-details">${item.details}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            return `
+                <div class="check-section">
+                    <div class="check-section-title">${title} (${items.length})</div>
+                    ${itemsHtml}
+                </div>
+            `;
+        }
+        
+        function closeSelfCheck() {
+            const panel = document.getElementById('selfCheckPanel');
+            panel.style.display = 'none';
+        }
 
         // Close mobile menu when clicking nav items
         document.querySelectorAll('.nav-item').forEach(item => {

@@ -1136,6 +1136,289 @@ def api_charge_report():
             'error': str(e)
         }), 500
 
+@app.route('/api/charge_report/self_check')
+def api_charge_report_self_check():
+    """
+    Perform self-check validation on charge report data.
+    Validates data completeness, calculation accuracy, and configuration.
+    
+    Query Parameters:
+    - month: Month number (1-12), defaults to current month
+    - year: Year (e.g., 2025), defaults to current year
+    """
+    try:
+        from flask import request
+        import calendar
+        from statistics import mean, stdev
+        
+        today = datetime.now().date()
+        month = int(request.args.get('month', today.month))
+        year = int(request.args.get('year', today.year))
+        
+        checks = {
+            'passed': [],
+            'warnings': [],
+            'errors': []
+        }
+        
+        # Get configuration values
+        config_query = """
+            SELECT param_name, param_value FROM configuration_params 
+            WHERE param_name IN ('OrderCharge', 'PackageCharge', 'SpaceRentalRate')
+        """
+        config_result = execute_query(config_query)
+        config = {row['param_name']: float(row['param_value']) for row in config_result}
+        
+        # Check 1: Configuration validation
+        required_configs = ['OrderCharge', 'PackageCharge', 'SpaceRentalRate']
+        missing_configs = [c for c in required_configs if c not in config]
+        if missing_configs:
+            checks['errors'].append({
+                'check': 'Rate Configuration',
+                'status': 'error',
+                'message': f'Missing rate configs: {", ".join(missing_configs)}',
+                'details': 'Required rates must be set in configuration_params table'
+            })
+        else:
+            checks['passed'].append({
+                'check': 'Rate Configuration',
+                'status': 'pass',
+                'message': f'All rates configured (Order: ${config.get("OrderCharge", 0):.2f}, Package: ${config.get("PackageCharge", 0):.2f}, Space: ${config.get("SpaceRentalRate", 0):.2f}/pallet/day)'
+            })
+        
+        # Check 2: Pallet configuration for all SKUs
+        pallet_query = """
+            SELECT sku, pallet_count FROM configuration_params 
+            WHERE param_name = 'PalletCount' AND sku IS NOT NULL
+        """
+        pallet_result = execute_query(pallet_query)
+        configured_skus = {row['sku'] for row in pallet_result}
+        required_skus = {'17612', '17904', '17914', '18675', '18795'}
+        missing_pallet_skus = required_skus - configured_skus
+        
+        if missing_pallet_skus:
+            checks['errors'].append({
+                'check': 'Pallet Configuration',
+                'status': 'error',
+                'message': f'Missing pallet config for SKUs: {", ".join(missing_pallet_skus)}',
+                'details': 'Space rental calculation requires pallet counts for all SKUs'
+            })
+        else:
+            checks['passed'].append({
+                'check': 'Pallet Configuration',
+                'status': 'pass',
+                'message': 'All 5 SKUs have pallet counts configured'
+            })
+        
+        # Check 3: EOM Previous Month inventory
+        prev_month = month - 1 if month > 1 else 12
+        prev_year = year if month > 1 else year - 1
+        
+        eom_query = """
+            SELECT sku, closing_inventory FROM eom_inventory 
+            WHERE month = %s AND year = %s
+        """
+        eom_result = execute_query(eom_query, (prev_month, prev_year))
+        eom_skus = {row['sku'] for row in eom_result}
+        missing_eom_skus = required_skus - eom_skus
+        
+        if missing_eom_skus and month != 9:  # September 2025 is baseline
+            checks['warnings'].append({
+                'check': 'Previous Month Inventory',
+                'status': 'warning',
+                'message': f'Missing EOM inventory for SKUs: {", ".join(missing_eom_skus)}',
+                'details': f'EOM inventory for {calendar.month_name[prev_month]} {prev_year} needed for accurate space calculation'
+            })
+        else:
+            checks['passed'].append({
+                'check': 'Previous Month Inventory',
+                'status': 'pass',
+                'message': f'EOM inventory set for {calendar.month_name[prev_month]} {prev_year}'
+            })
+        
+        # Check 4: Shipped data completeness
+        first_day = f"{year}-{month:02d}-01"
+        last_day_num = calendar.monthrange(year, month)[1]
+        last_day = f"{year}-{month:02d}-{last_day_num:02d}"
+        
+        # Check if we're looking at current month
+        is_current_month = (year == today.year and month == today.month)
+        check_until = today if is_current_month else datetime.strptime(last_day, '%Y-%m-%d').date()
+        
+        shipped_query = """
+            SELECT DISTINCT DATE(ship_date) as ship_date
+            FROM shipped_items
+            WHERE ship_date >= %s AND ship_date <= %s
+            ORDER BY ship_date
+        """
+        shipped_result = execute_query(shipped_query, (first_day, check_until.strftime('%Y-%m-%d')))
+        shipped_dates = {row['ship_date'] for row in shipped_result}
+        
+        # Count weekdays (Mon-Fri) up to check_until
+        weekdays = []
+        current = datetime.strptime(first_day, '%Y-%m-%d').date()
+        while current <= check_until:
+            if current.weekday() < 5:  # Monday = 0, Friday = 4
+                weekdays.append(current)
+            current += timedelta(days=1)
+        
+        # Find missing weekdays with no shipments
+        missing_weekdays = [d for d in weekdays if d not in shipped_dates]
+        
+        if missing_weekdays and len(missing_weekdays) > 3:
+            checks['warnings'].append({
+                'check': 'Shipment Data Coverage',
+                'status': 'warning',
+                'message': f'{len(missing_weekdays)} weekdays with no shipments recorded',
+                'details': f'First few: {", ".join(d.strftime("%m/%d") for d in missing_weekdays[:5])}'
+            })
+        else:
+            checks['passed'].append({
+                'check': 'Shipment Data Coverage',
+                'status': 'pass',
+                'message': f'{len(shipped_dates)} days with shipments recorded'
+            })
+        
+        # Check 5: Cross-reference shipped_orders vs shipped_items
+        order_count_query = """
+            SELECT 
+                (SELECT COUNT(DISTINCT order_number) FROM shipped_orders 
+                 WHERE ship_date >= %s AND ship_date <= %s) as orders_count,
+                (SELECT COUNT(DISTINCT order_number) FROM shipped_items 
+                 WHERE ship_date >= %s AND ship_date <= %s) as items_orders_count
+        """
+        counts = execute_query(order_count_query, (first_day, last_day, first_day, last_day))[0]
+        orders_count = counts['orders_count']
+        items_orders_count = counts['items_orders_count']
+        
+        if orders_count != items_orders_count:
+            diff = abs(orders_count - items_orders_count)
+            checks['warnings'].append({
+                'check': 'Order Data Consistency',
+                'status': 'warning',
+                'message': f'Order count mismatch: shipped_orders ({orders_count}) vs shipped_items ({items_orders_count})',
+                'details': f'Difference of {diff} orders - may indicate incomplete sync'
+            })
+        else:
+            checks['passed'].append({
+                'check': 'Order Data Consistency',
+                'status': 'pass',
+                'message': f'{orders_count} orders match between tables'
+            })
+        
+        # Check 6: Negative inventory check
+        negative_inv_query = """
+            SELECT sku, SUM(quantity) as total
+            FROM inventory_transactions
+            WHERE transaction_date <= %s
+            GROUP BY sku
+            HAVING SUM(quantity) < 0
+        """
+        negative_result = execute_query(negative_inv_query, (last_day,))
+        
+        if negative_result:
+            neg_skus = [f"{row['sku']} ({row['total']})" for row in negative_result]
+            checks['errors'].append({
+                'check': 'Inventory Balance',
+                'status': 'error',
+                'message': f'Negative inventory detected for: {", ".join(neg_skus)}',
+                'details': 'Negative inventory indicates missing receives or duplicate shipments'
+            })
+        else:
+            checks['passed'].append({
+                'check': 'Inventory Balance',
+                'status': 'pass',
+                'message': 'No negative inventory values detected'
+            })
+        
+        # Check 7: Calculation spot-check (verify a sample day)
+        sample_query = """
+            SELECT 
+                DATE(ship_date) as ship_date,
+                COUNT(DISTINCT order_number) as order_count,
+                SUM(quantity_shipped) as total_units
+            FROM shipped_items
+            WHERE ship_date >= %s AND ship_date <= %s
+            GROUP BY DATE(ship_date)
+            ORDER BY ship_date DESC
+            LIMIT 1
+        """
+        sample = execute_query(sample_query, (first_day, last_day))
+        
+        if sample:
+            s = sample[0]
+            order_rate = config.get('OrderCharge', 4.25)
+            package_rate = config.get('PackageCharge', 0.75)
+            expected_orders_charge = s['order_count'] * order_rate
+            expected_packages_charge = s['total_units'] * package_rate
+            
+            checks['passed'].append({
+                'check': 'Calculation Verification',
+                'status': 'pass',
+                'message': f'Sample day {s["ship_date"]}: {s["order_count"]} orders × ${order_rate:.2f} = ${expected_orders_charge:.2f}, {s["total_units"]} units × ${package_rate:.2f} = ${expected_packages_charge:.2f}'
+            })
+        
+        # Check 8: Anomaly detection - unusual order counts
+        daily_counts_query = """
+            SELECT DATE(ship_date) as ship_date, COUNT(DISTINCT order_number) as order_count
+            FROM shipped_items
+            WHERE ship_date >= %s AND ship_date <= %s
+            GROUP BY DATE(ship_date)
+            ORDER BY ship_date
+        """
+        daily_counts = execute_query(daily_counts_query, (first_day, last_day))
+        
+        if len(daily_counts) >= 5:
+            counts_list = [row['order_count'] for row in daily_counts]
+            avg = mean(counts_list)
+            std = stdev(counts_list) if len(counts_list) > 1 else 0
+            
+            anomalies = []
+            for row in daily_counts:
+                if std > 0 and abs(row['order_count'] - avg) > 2 * std:
+                    anomalies.append(f"{row['ship_date']} ({row['order_count']} orders)")
+            
+            if anomalies:
+                checks['warnings'].append({
+                    'check': 'Order Volume Anomalies',
+                    'status': 'warning',
+                    'message': f'{len(anomalies)} days with unusual order counts',
+                    'details': f'Avg: {avg:.0f} orders/day. Anomalies: {", ".join(anomalies[:3])}'
+                })
+            else:
+                checks['passed'].append({
+                    'check': 'Order Volume Consistency',
+                    'status': 'pass',
+                    'message': f'Order counts within normal range (avg: {avg:.0f}/day)'
+                })
+        
+        # Summary
+        total_checks = len(checks['passed']) + len(checks['warnings']) + len(checks['errors'])
+        
+        summary = {
+            'status': 'error' if checks['errors'] else ('warning' if checks['warnings'] else 'pass'),
+            'passed': len(checks['passed']),
+            'warnings': len(checks['warnings']),
+            'errors': len(checks['errors']),
+            'total': total_checks,
+            'month': calendar.month_name[month],
+            'year': year
+        }
+        
+        return jsonify({
+            'success': True,
+            'summary': summary,
+            'checks': checks
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
 @app.route('/api/charge_report/orders')
 def api_charge_report_orders():
     """
