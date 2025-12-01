@@ -1162,12 +1162,14 @@ def api_charge_report_self_check():
         }
         
         # Get configuration values
+        # Note: execute_query returns tuples, so use index-based access
+        # Query: parameter_name (0), value (1)
         config_query = """
             SELECT parameter_name, value FROM configuration_params 
             WHERE parameter_name IN ('OrderCharge', 'PackageCharge', 'SpaceRentalRate')
         """
         config_result = execute_query(config_query)
-        config = {row['parameter_name']: float(row['value']) for row in config_result}
+        config = {row[0]: float(row[1]) for row in config_result}
         
         # Check 1: Configuration validation
         required_configs = ['OrderCharge', 'PackageCharge', 'SpaceRentalRate']
@@ -1187,12 +1189,13 @@ def api_charge_report_self_check():
             })
         
         # Check 2: Pallet configuration for all SKUs
+        # Query: sku (0), value (1)
         pallet_query = """
             SELECT sku, value FROM configuration_params 
             WHERE parameter_name = 'PalletCount' AND sku IS NOT NULL
         """
         pallet_result = execute_query(pallet_query)
-        configured_skus = {row['sku'] for row in pallet_result}
+        configured_skus = {row[0] for row in pallet_result}
         required_skus = {'17612', '17904', '17914', '18675', '18795'}
         missing_pallet_skus = required_skus - configured_skus
         
@@ -1214,12 +1217,13 @@ def api_charge_report_self_check():
         prev_month = month - 1 if month > 1 else 12
         prev_year = year if month > 1 else year - 1
         
+        # Query: sku (0), closing_inventory (1)
         eom_query = """
             SELECT sku, closing_inventory FROM eom_inventory 
             WHERE month = %s AND year = %s
         """
         eom_result = execute_query(eom_query, (prev_month, prev_year))
-        eom_skus = {row['sku'] for row in eom_result}
+        eom_skus = {row[0] for row in eom_result}
         missing_eom_skus = required_skus - eom_skus
         
         if missing_eom_skus and month != 9:  # September 2025 is baseline
@@ -1245,6 +1249,7 @@ def api_charge_report_self_check():
         is_current_month = (year == today.year and month == today.month)
         check_until = today if is_current_month else datetime.strptime(last_day, '%Y-%m-%d').date()
         
+        # Query: ship_date (0)
         shipped_query = """
             SELECT DISTINCT DATE(ship_date) as ship_date
             FROM shipped_items
@@ -1252,7 +1257,7 @@ def api_charge_report_self_check():
             ORDER BY ship_date
         """
         shipped_result = execute_query(shipped_query, (first_day, check_until.strftime('%Y-%m-%d')))
-        shipped_dates = {row['ship_date'] for row in shipped_result}
+        shipped_dates = {row[0] for row in shipped_result}
         
         # Count weekdays (Mon-Fri) up to check_until
         weekdays = []
@@ -1280,6 +1285,7 @@ def api_charge_report_self_check():
             })
         
         # Check 5: Cross-reference shipped_orders vs shipped_items
+        # Query: orders_count (0), items_orders_count (1)
         order_count_query = """
             SELECT 
                 (SELECT COUNT(DISTINCT order_number) FROM shipped_orders 
@@ -1288,8 +1294,8 @@ def api_charge_report_self_check():
                  WHERE ship_date >= %s AND ship_date <= %s) as items_orders_count
         """
         counts = execute_query(order_count_query, (first_day, last_day, first_day, last_day))[0]
-        orders_count = counts['orders_count']
-        items_orders_count = counts['items_orders_count']
+        orders_count = counts[0]
+        items_orders_count = counts[1]
         
         if orders_count != items_orders_count:
             diff = abs(orders_count - items_orders_count)
@@ -1307,6 +1313,7 @@ def api_charge_report_self_check():
             })
         
         # Check 6: Negative inventory check
+        # Query: sku (0), total (1)
         negative_inv_query = """
             SELECT sku, SUM(quantity) as total
             FROM inventory_transactions
@@ -1317,7 +1324,7 @@ def api_charge_report_self_check():
         negative_result = execute_query(negative_inv_query, (last_day,))
         
         if negative_result:
-            neg_skus = [f"{row['sku']} ({row['total']})" for row in negative_result]
+            neg_skus = [f"{row[0]} ({row[1]})" for row in negative_result]
             checks['errors'].append({
                 'check': 'Inventory Balance',
                 'status': 'error',
@@ -1332,6 +1339,7 @@ def api_charge_report_self_check():
             })
         
         # Check 7: Calculation spot-check (verify a sample day)
+        # Query: ship_date (0), order_count (1), total_units (2)
         sample_query = """
             SELECT 
                 DATE(ship_date) as ship_date,
@@ -1349,16 +1357,17 @@ def api_charge_report_self_check():
             s = sample[0]
             order_rate = config.get('OrderCharge', 4.25)
             package_rate = config.get('PackageCharge', 0.75)
-            expected_orders_charge = s['order_count'] * order_rate
-            expected_packages_charge = s['total_units'] * package_rate
+            expected_orders_charge = s[1] * order_rate
+            expected_packages_charge = s[2] * package_rate
             
             checks['passed'].append({
                 'check': 'Calculation Verification',
                 'status': 'pass',
-                'message': f'Sample day {s["ship_date"]}: {s["order_count"]} orders × ${order_rate:.2f} = ${expected_orders_charge:.2f}, {s["total_units"]} units × ${package_rate:.2f} = ${expected_packages_charge:.2f}'
+                'message': f'Sample day {s[0]}: {s[1]} orders × ${order_rate:.2f} = ${expected_orders_charge:.2f}, {s[2]} units × ${package_rate:.2f} = ${expected_packages_charge:.2f}'
             })
         
         # Check 8: Anomaly detection - unusual order counts
+        # Query: ship_date (0), order_count (1)
         daily_counts_query = """
             SELECT DATE(ship_date) as ship_date, COUNT(DISTINCT order_number) as order_count
             FROM shipped_items
@@ -1369,14 +1378,14 @@ def api_charge_report_self_check():
         daily_counts = execute_query(daily_counts_query, (first_day, last_day))
         
         if len(daily_counts) >= 5:
-            counts_list = [row['order_count'] for row in daily_counts]
+            counts_list = [row[1] for row in daily_counts]
             avg = mean(counts_list)
             std = stdev(counts_list) if len(counts_list) > 1 else 0
             
             anomalies = []
             for row in daily_counts:
-                if std > 0 and abs(row['order_count'] - avg) > 2 * std:
-                    anomalies.append(f"{row['ship_date']} ({row['order_count']} orders)")
+                if std > 0 and abs(row[1] - avg) > 2 * std:
+                    anomalies.append(f"{row[0]} ({row[1]} orders)")
             
             if anomalies:
                 checks['warnings'].append({
