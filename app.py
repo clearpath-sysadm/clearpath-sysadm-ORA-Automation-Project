@@ -1315,10 +1315,11 @@ def api_charge_report_self_check():
         
         # Check 6: Negative inventory check
         # Query: sku (0), total (1)
+        # Note: inventory_transactions uses 'date' column, not 'transaction_date'
         negative_inv_query = """
             SELECT sku, SUM(quantity) as total
             FROM inventory_transactions
-            WHERE transaction_date <= %s
+            WHERE date <= %s
             GROUP BY sku
             HAVING SUM(quantity) < 0
         """
