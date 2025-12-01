@@ -316,10 +316,10 @@ def get_last_report_runs():
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT report_type, run_date, run_for_date, status, message
+            SELECT report_type, run_date, run_for_date, status, message, created_at
             FROM report_runs
-            WHERE (report_type, run_date) IN (
-                SELECT report_type, MAX(run_date)
+            WHERE (report_type, created_at) IN (
+                SELECT report_type, MAX(created_at)
                 FROM report_runs
                 GROUP BY report_type
             )
@@ -330,7 +330,7 @@ def get_last_report_runs():
         report_status = {}
         for row in results:
             report_status[row[0]] = {
-                'run_date': row[1].isoformat() if row[1] else None,
+                'run_date': row[5].isoformat() if row[5] else (row[1].isoformat() if row[1] else None),
                 'run_for_date': row[2].isoformat() if row[2] else None,
                 'status': row[3],
                 'message': row[4]
