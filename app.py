@@ -8778,6 +8778,82 @@ def api_admin_force_upload_to_shipstation():
         logger.error(f'Error in force upload to ShipStation: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/admin/reset_order_to_pending', methods=['POST'])
+@login_required
+@admin_required
+def api_admin_reset_order_to_pending():
+    """Reset an order's status to pending and clear ShipStation ID"""
+    try:
+        data = request.get_json()
+        order_number = data.get('order_number')
+        
+        if not order_number:
+            return jsonify({
+                'success': False,
+                'error': 'Order number is required'
+            }), 400
+        
+        from src.services.database.pg_utils import get_connection
+        
+        logger.info(f"🔄 Reset to pending requested for Order #{order_number}")
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Check if order exists
+            cursor.execute("""
+                SELECT id, status, shipstation_order_id
+                FROM orders_inbox
+                WHERE order_number = %s
+            """, (order_number,))
+            
+            order_row = cursor.fetchone()
+            
+            if not order_row:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': f'Order #{order_number} not found in local database'
+                }), 404
+            
+            order_id, old_status, old_ss_id = order_row
+            
+            # Reset the order
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET status = 'pending',
+                    shipstation_order_id = NULL,
+                    failure_reason = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_number = %s
+            """, (order_number,))
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"✅ Reset Order #{order_number} to pending (was: {old_status}, SS ID: {old_ss_id})")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Order #{order_number} reset to pending',
+                'previous_status': old_status,
+                'previous_shipstation_id': old_ss_id
+            })
+            
+        except Exception as db_error:
+            conn.rollback()
+            conn.close()
+            logger.error(f"❌ Error resetting order: {db_error}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Database error: {str(db_error)}'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f'Error resetting order to pending: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/admin/lookup_order', methods=['GET'])
 @login_required
 @admin_required

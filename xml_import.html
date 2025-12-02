@@ -1088,14 +1088,22 @@
                     <td>${serviceBadge}</td>
                     <td>${trackingCell}</td>
                     <td>${carrierAcctBadge}</td>
-                    <td>${order.shipstation_order_id ? order.shipstation_order_id : 
+                    <td style="white-space: nowrap;">
+                        ${order.shipstation_order_id ? order.shipstation_order_id : 
                             `<button onclick="forceUploadToShipStation('${order.order_number}')" 
-                                     class="btn-upload-ss" 
-                                     style="padding: 4px 8px; font-size: 11px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
+                                     style="padding: 4px 8px; font-size: 11px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;"
                                      title="Upload this order to ShipStation with current lot numbers">
                                 📤 Upload
                             </button>`
-                    }</td>
+                        }
+                        ${order.status !== 'pending' ? 
+                            `<button onclick="resetOrderToPending('${order.order_number}')" 
+                                     style="padding: 4px 6px; font-size: 11px; background: var(--warning-amber); color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 4px;"
+                                     title="Reset status to pending and clear ShipStation ID">
+                                🔄
+                            </button>` : ''
+                        }
+                    </td>
                     <td>${formatRelativeDate(order.created_at)}</td>
                 </tr>
                 `;
@@ -1190,13 +1198,22 @@
                         ` : ''}
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">ShipStation ID:</span>
-                            <span class="order-card-detail-value">${order.shipstation_order_id ? order.shipstation_order_id : 
+                            <span class="order-card-detail-value" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${order.shipstation_order_id ? order.shipstation_order_id : 
                                     `<button onclick="forceUploadToShipStation('${order.order_number}')" 
                                              style="padding: 6px 12px; font-size: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;"
                                              title="Upload this order to ShipStation with current lot numbers">
-                                        📤 Upload to ShipStation
+                                        📤 Upload
                                     </button>`
-                            }</span>
+                                }
+                                ${order.status !== 'pending' ? 
+                                    `<button onclick="resetOrderToPending('${order.order_number}')" 
+                                             style="padding: 6px 12px; font-size: 12px; background: var(--warning-amber); color: white; border: none; border-radius: 4px; cursor: pointer;"
+                                             title="Reset status to pending">
+                                        🔄 Reset
+                                    </button>` : ''
+                                }
+                            </span>
                         </div>
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Created:</span>
@@ -1844,6 +1861,57 @@
                 buttons.forEach((btn, i) => {
                     btn.disabled = false;
                     btn.innerHTML = originalTexts[i];
+                });
+            }
+        }
+
+        // Reset order status to pending
+        async function resetOrderToPending(orderNumber) {
+            if (!confirm(`Reset Order #${orderNumber} to Pending?\n\nThis will:\n• Clear the ShipStation ID\n• Set status back to 'pending'\n• Clear any failure reason\n\nThe order will be ready for upload again.`)) {
+                return;
+            }
+            
+            // Find the button and show loading state
+            const buttons = document.querySelectorAll(`button[onclick="resetOrderToPending('${orderNumber}')"]`);
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.innerHTML = '⏳';
+            });
+            
+            try {
+                const response = await fetch('/api/admin/reset_order_to_pending', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_number: orderNumber
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(`✅ Order #${orderNumber} reset to pending`, 'success');
+                    
+                    // Refresh the orders list
+                    setTimeout(() => {
+                        loadOrdersInbox();
+                    }, 800);
+                } else {
+                    showAlert(`❌ ${data.error || 'Failed to reset order'}`, 'error');
+                    
+                    // Reset button state
+                    buttons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.innerHTML = '🔄';
+                    });
+                }
+            } catch (error) {
+                console.error('Reset error:', error);
+                showAlert('❌ Failed to reset order', 'error');
+                
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.innerHTML = '🔄';
                 });
             }
         }
