@@ -1089,13 +1089,12 @@
                     <td>${trackingCell}</td>
                     <td>${carrierAcctBadge}</td>
                     <td>${order.shipstation_order_id ? order.shipstation_order_id : 
-                        ((['pending', 'failed'].includes(order.status)) ? 
                             `<button onclick="forceUploadToShipStation('${order.order_number}')" 
                                      class="btn-upload-ss" 
                                      style="padding: 4px 8px; font-size: 11px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
                                      title="Upload this order to ShipStation with current lot numbers">
                                 📤 Upload
-                            </button>` : '-')
+                            </button>`
                     }</td>
                     <td>${formatRelativeDate(order.created_at)}</td>
                 </tr>
@@ -1192,12 +1191,11 @@
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">ShipStation ID:</span>
                             <span class="order-card-detail-value">${order.shipstation_order_id ? order.shipstation_order_id : 
-                                ((['pending', 'failed'].includes(order.status)) ? 
                                     `<button onclick="forceUploadToShipStation('${order.order_number}')" 
                                              style="padding: 6px 12px; font-size: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;"
                                              title="Upload this order to ShipStation with current lot numbers">
                                         📤 Upload to ShipStation
-                                    </button>` : '-')
+                                    </button>`
                             }</span>
                         </div>
                         <div class="order-card-detail-row">

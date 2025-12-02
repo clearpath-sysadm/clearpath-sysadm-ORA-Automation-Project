@@ -830,9 +830,8 @@
                 // Determine which action buttons to show
                 let actionButtons = '';
                 const hasShipStationId = match.shipstation_order_id && match.shipstation_order_id !== 'null';
-                const canUpload = !hasShipStationId && ['pending', 'failed'].includes(match.status);
                 
-                if (canUpload) {
+                if (!hasShipStationId) {
                     // Show Force Upload button for orders not in ShipStation
                     actionButtons = `
                         <button 
