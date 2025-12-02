@@ -1088,7 +1088,15 @@
                     <td>${serviceBadge}</td>
                     <td>${trackingCell}</td>
                     <td>${carrierAcctBadge}</td>
-                    <td>${order.shipstation_order_id || '-'}</td>
+                    <td>${order.shipstation_order_id ? order.shipstation_order_id : 
+                        ((['pending', 'failed'].includes(order.status)) ? 
+                            `<button onclick="forceUploadToShipStation('${order.order_number}')" 
+                                     class="btn-upload-ss" 
+                                     style="padding: 4px 8px; font-size: 11px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
+                                     title="Upload this order to ShipStation with current lot numbers">
+                                📤 Upload
+                            </button>` : '-')
+                    }</td>
                     <td>${formatRelativeDate(order.created_at)}</td>
                 </tr>
                 `;
@@ -1181,12 +1189,17 @@
                             <span class="order-card-detail-value">${getCarrierAccountBadge(order)}</span>
                         </div>
                         ` : ''}
-                        ${order.shipstation_order_id ? `
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">ShipStation ID:</span>
-                            <span class="order-card-detail-value">${order.shipstation_order_id}</span>
+                            <span class="order-card-detail-value">${order.shipstation_order_id ? order.shipstation_order_id : 
+                                ((['pending', 'failed'].includes(order.status)) ? 
+                                    `<button onclick="forceUploadToShipStation('${order.order_number}')" 
+                                             style="padding: 6px 12px; font-size: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;"
+                                             title="Upload this order to ShipStation with current lot numbers">
+                                        📤 Upload to ShipStation
+                                    </button>` : '-')
+                            }</span>
                         </div>
-                        ` : ''}
                         <div class="order-card-detail-row">
                             <span class="order-card-detail-label">Created:</span>
                             <span class="order-card-detail-value">${formatRelativeDate(order.created_at)}</span>
@@ -1771,6 +1784,69 @@
                 }
             } catch (error) {
                 showAlert(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Force upload order to ShipStation
+        async function forceUploadToShipStation(orderNumber) {
+            if (!confirm(`Upload Order #${orderNumber} to ShipStation?\n\nThis will:\n• Apply the current active lot numbers to all items\n• Create the order in ShipStation\n• Update the local database status to 'uploaded'\n\nMake sure lot numbers are correct before uploading.`)) {
+                return;
+            }
+            
+            // Find the button that was clicked and show loading state
+            const buttons = document.querySelectorAll(`button[onclick="forceUploadToShipStation('${orderNumber}')"]`);
+            const originalTexts = [];
+            buttons.forEach(btn => {
+                originalTexts.push(btn.innerHTML);
+                btn.disabled = true;
+                btn.innerHTML = '⏳...';
+            });
+            
+            try {
+                const response = await fetch('/api/admin/force_upload_to_shipstation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_number: orderNumber
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Build success message
+                    let message = `Order #${orderNumber} uploaded to ShipStation`;
+                    if (data.shipstation_order_id) {
+                        message += ` (ID: ${data.shipstation_order_id})`;
+                    }
+                    if (data.items_uploaded) {
+                        message += ` - ${data.items_uploaded} item(s), ${data.total_units} unit(s)`;
+                    }
+                    
+                    showAlert(`✅ ${message}`, 'success');
+                    
+                    // Refresh the orders list to show updated status
+                    setTimeout(() => {
+                        loadOrdersInbox();
+                    }, 1000);
+                } else {
+                    showAlert(`❌ ${data.error || 'Failed to upload order to ShipStation'}`, 'error');
+                    
+                    // Reset button state
+                    buttons.forEach((btn, i) => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalTexts[i];
+                    });
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showAlert('❌ Failed to upload order to ShipStation', 'error');
+                
+                // Reset button state
+                buttons.forEach((btn, i) => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalTexts[i];
+                });
             }
         }
 
