@@ -1802,8 +1802,8 @@
             }
         }
 
-        // Force upload order to ShipStation
-        async function forceUploadToShipStation(orderNumber) {
+        // Force upload order to ShipStation (explicitly global for onclick handlers)
+        window.forceUploadToShipStation = async function(orderNumber) {
             if (!confirm(`Upload Order #${orderNumber} to ShipStation?\n\nThis will:\n• Apply the current active lot numbers to all items\n• Create the order in ShipStation\n• Update the local database status to 'uploaded'\n\nMake sure lot numbers are correct before uploading.`)) {
                 return;
             }
@@ -1865,8 +1865,8 @@
             }
         }
 
-        // Reset order status to pending
-        async function resetOrderToPending(orderNumber) {
+        // Reset order status to pending (explicitly global for onclick handlers)
+        window.resetOrderToPending = async function(orderNumber) {
             if (!confirm(`Reset Order #${orderNumber} to Pending?\n\nThis will:\n• Clear the ShipStation ID\n• Set status back to 'pending'\n• Clear any failure reason\n\nThe order will be ready for upload again.`)) {
                 return;
             }
