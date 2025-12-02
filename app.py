@@ -8480,6 +8480,304 @@ def api_admin_sync_order_from_shipstation():
         logger.error(f'Error syncing order from ShipStation: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/admin/force_upload_to_shipstation', methods=['POST'])
+@login_required
+@admin_required
+def api_admin_force_upload_to_shipstation():
+    """Force upload a single order from local database to ShipStation"""
+    try:
+        data = request.get_json()
+        order_number = data.get('order_number')
+        
+        if not order_number:
+            return jsonify({
+                'success': False,
+                'error': 'Order number is required'
+            }), 400
+        
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        from utils.api_utils import make_api_request
+        from config.settings import settings
+        from src.services.database.pg_utils import get_connection
+        
+        logger.info(f"📤 Force upload requested for Order #{order_number}")
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Step 1: Get order from orders_inbox
+            cursor.execute("""
+                SELECT id, order_number, order_date, status, shipstation_order_id,
+                       ship_name, ship_company, ship_street1, ship_city, ship_state, 
+                       ship_postal_code, ship_country, ship_phone,
+                       bill_name, bill_company, bill_street1, bill_city, bill_state,
+                       bill_postal_code, bill_country, bill_phone,
+                       customer_email
+                FROM orders_inbox
+                WHERE order_number = %s
+            """, (order_number,))
+            
+            order_row = cursor.fetchone()
+            
+            if not order_row:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': f'Order #{order_number} not found in local database'
+                }), 404
+            
+            (order_id, order_number, order_date, status, existing_ss_id,
+             ship_name, ship_company, ship_street1, ship_city, ship_state,
+             ship_postal_code, ship_country, ship_phone,
+             bill_name, bill_company, bill_street1, bill_city, bill_state,
+             bill_postal_code, bill_country, bill_phone,
+             customer_email) = order_row
+            
+            # Check if order already exists in ShipStation
+            if existing_ss_id:
+                # Verify it still exists in ShipStation
+                api_key, api_secret = get_shipstation_credentials()
+                headers = get_shipstation_headers(api_key, api_secret)
+                
+                check_params = {'orderNumber': order_number}
+                check_response = make_api_request(
+                    url=settings.SHIPSTATION_ORDERS_ENDPOINT,
+                    method='GET',
+                    headers=headers,
+                    params=check_params,
+                    timeout=30
+                )
+                
+                if check_response and check_response.status_code == 200:
+                    ss_orders = check_response.json().get('orders', [])
+                    if ss_orders:
+                        conn.close()
+                        return jsonify({
+                            'success': False,
+                            'error': f'Order #{order_number} already exists in ShipStation (ID: {existing_ss_id}). Delete it first if you want to re-upload.'
+                        }), 400
+            
+            # Step 2: Get order items
+            cursor.execute("""
+                SELECT sku, sku_lot, quantity, unit_price_cents
+                FROM order_items
+                WHERE order_inbox_id = %s
+            """, (order_id,))
+            
+            items = cursor.fetchall()
+            
+            if not items:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': f'Order #{order_number} has no items in local database'
+                }), 400
+            
+            # Step 3: Get active SKU-lot mappings
+            cursor.execute("""
+                SELECT sku, lot
+                FROM sku_lot 
+                WHERE active = 1
+            """)
+            sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
+            
+            if not sku_lot_map:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': 'No active SKU-Lot mappings found. Cannot upload without valid lot numbers.'
+                }), 400
+            
+            # Step 4: Get product name mappings
+            cursor.execute("""
+                SELECT sku, product_name
+                FROM product_name_map
+            """)
+            product_name_map = {row[0]: row[1] for row in cursor.fetchall()}
+            
+            # Step 5: Build line items with lot numbers
+            line_items = []
+            skipped_items = []
+            
+            for sku, sku_lot, quantity, unit_price_cents in items:
+                # Normalize SKU - extract base SKU
+                raw_sku = sku or ''
+                if ' - ' in raw_sku:
+                    base_sku = raw_sku.split(' - ')[0].strip()
+                elif '-' in raw_sku:
+                    parts = raw_sku.split('-')
+                    base_sku = parts[0].strip()
+                else:
+                    base_sku = raw_sku.strip()
+                
+                # Check for active lot
+                if base_sku not in sku_lot_map:
+                    skipped_items.append(base_sku)
+                    logger.warning(f"   ⚠️ Skipping SKU {base_sku} - no active lot mapping")
+                    continue
+                
+                active_lot = sku_lot_map[base_sku]
+                full_sku = f"{base_sku} - {active_lot}"
+                product_name = product_name_map.get(base_sku, f'Product {base_sku}')
+                
+                line_items.append({
+                    'sku': full_sku,
+                    'name': product_name,
+                    'quantity': quantity,
+                    'unitPrice': (unit_price_cents / 100) if unit_price_cents else 0
+                })
+                
+                logger.info(f"   📦 Adding item: {full_sku} x {quantity}")
+            
+            if not line_items:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': f'Order #{order_number} has no items with valid SKU-Lot mappings. Skipped SKUs: {", ".join(skipped_items)}'
+                }), 400
+            
+            # Step 6: Build ShipStation payload
+            shipstation_order = {
+                'orderNumber': order_number,
+                'orderDate': order_date.isoformat() if order_date else None,
+                'orderStatus': 'awaiting_shipment',
+                'customerEmail': customer_email or '',
+                'billTo': {
+                    'name': bill_name or ship_name or '',
+                    'company': bill_company or ship_company or '',
+                    'street1': bill_street1 or ship_street1 or '',
+                    'city': bill_city or ship_city or '',
+                    'state': bill_state or ship_state or '',
+                    'postalCode': bill_postal_code or ship_postal_code or '',
+                    'country': bill_country or ship_country or 'US',
+                    'phone': bill_phone or ship_phone or ''
+                },
+                'shipTo': {
+                    'name': ship_name or '',
+                    'company': ship_company or '',
+                    'street1': ship_street1 or '',
+                    'city': ship_city or '',
+                    'state': ship_state or '',
+                    'postalCode': ship_postal_code or '',
+                    'country': ship_country or 'US',
+                    'phone': ship_phone or ''
+                },
+                'items': line_items,
+                'amountPaid': sum(item['unitPrice'] * item['quantity'] for item in line_items),
+                'orderTotal': sum(item['unitPrice'] * item['quantity'] for item in line_items)
+            }
+            
+            # Step 7: Upload to ShipStation
+            api_key, api_secret = get_shipstation_credentials()
+            if not api_key or not api_secret:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': 'ShipStation API credentials not configured'
+                }), 500
+            
+            headers = get_shipstation_headers(api_key, api_secret)
+            
+            logger.info(f"📤 Sending Order #{order_number} to ShipStation...")
+            
+            response = make_api_request(
+                url=settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT,
+                method='POST',
+                headers=headers,
+                json_data=[shipstation_order],
+                timeout=60
+            )
+            
+            if not response:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': 'No response from ShipStation API'
+                }), 500
+            
+            if response.status_code not in [200, 201]:
+                error_text = response.text[:500] if response.text else 'Unknown error'
+                conn.close()
+                logger.error(f"❌ ShipStation API error: {response.status_code} - {error_text}")
+                return jsonify({
+                    'success': False,
+                    'error': f'ShipStation API error: {response.status_code} - {error_text}'
+                }), 500
+            
+            # Parse response to get ShipStation order ID
+            ss_response = response.json()
+            
+            # ShipStation returns results array
+            if isinstance(ss_response, dict) and 'results' in ss_response:
+                results = ss_response.get('results', [])
+                if results:
+                    new_ss_id = results[0].get('orderId')
+                else:
+                    new_ss_id = None
+            elif isinstance(ss_response, list) and ss_response:
+                new_ss_id = ss_response[0].get('orderId')
+            else:
+                new_ss_id = ss_response.get('orderId')
+            
+            # Step 8: Update local database
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET status = 'uploaded',
+                    shipstation_order_id = %s,
+                    failure_reason = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_number = %s
+            """, (new_ss_id, order_number))
+            
+            # Also update order_items with current lot numbers
+            for sku, sku_lot, quantity, unit_price_cents in items:
+                raw_sku = sku or ''
+                if ' - ' in raw_sku:
+                    base_sku = raw_sku.split(' - ')[0].strip()
+                elif '-' in raw_sku:
+                    parts = raw_sku.split('-')
+                    base_sku = parts[0].strip()
+                else:
+                    base_sku = raw_sku.strip()
+                
+                if base_sku in sku_lot_map:
+                    active_lot = sku_lot_map[base_sku]
+                    new_sku_lot = f"{base_sku} - {active_lot}"
+                    cursor.execute("""
+                        UPDATE order_items
+                        SET sku_lot = %s
+                        WHERE order_inbox_id = %s AND sku = %s
+                    """, (new_sku_lot, order_id, sku))
+            
+            conn.commit()
+            conn.close()
+            
+            total_units = sum(item['quantity'] for item in line_items)
+            logger.info(f"✅ Successfully uploaded Order #{order_number} to ShipStation (ID: {new_ss_id})")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Order #{order_number} uploaded to ShipStation successfully',
+                'shipstation_order_id': new_ss_id,
+                'items_uploaded': len(line_items),
+                'total_units': total_units,
+                'skipped_items': skipped_items if skipped_items else None
+            })
+            
+        except Exception as db_error:
+            conn.rollback()
+            conn.close()
+            logger.error(f"❌ Error during force upload: {db_error}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Upload error: {str(db_error)}'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f'Error in force upload to ShipStation: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/admin/lookup_order', methods=['GET'])
 @login_required
 @admin_required

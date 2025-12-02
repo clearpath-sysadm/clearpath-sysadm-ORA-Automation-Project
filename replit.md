@@ -73,7 +73,7 @@ A single centralized `global-styles.css` defines the premium corporate design sy
 - **Workflow Controls System:** Programmatic system for toggling automation workflows via a database table and UI. Includes manual "Run Now" buttons that bypass business hours restrictions and allow admins to trigger workflows on-demand with real-time execution feedback.
 - **Shipping Validation System:** Alert-only system comparing actual carrier/service from ShipStation against expected rules.
 - **Production Incident Tracker:** Bug tracking system (`incidents.html`) with severity levels, status management, and enforced resolution documentation.
-- **Order Management Admin Tool:** Comprehensive admin interface (`order-management.html`) for managing ShipStation orders, including lookup, details, and safe deletion of problematic orders.
+- **Order Management Admin Tool:** Comprehensive admin interface (`order-management.html`) for managing ShipStation orders, including lookup, details, safe deletion of problematic orders, and **Force Upload to ShipStation** for manually pushing individual orders with current lot numbers. The force upload feature is available for local database orders with 'pending' or 'failed' status that aren't already in ShipStation.
 - **Deployment:** The system is deployed as a continuous VM in Replit, using `start_all.sh` to launch the dashboard server and all background automation workflows.
 
 ## External Dependencies
