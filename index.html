@@ -2463,9 +2463,12 @@
                 // Side-by-side comparison of orders
                 html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
                 
-                // Original (Shipped) Order
-                html += '<div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border-left: 3px solid #22c55e;">';
-                html += '<strong style="color: #22c55e;">✅ Original (Shipped)</strong>';
+                // Original Order - show actual status from ShipStation
+                const originalStatus = conflict.original_order_status || 'Shipped';
+                const statusColor = originalStatus.toLowerCase() === 'shipped' ? '#22c55e' : '#f97316';
+                const statusIcon = originalStatus.toLowerCase() === 'shipped' ? '✅' : '⏳';
+                html += '<div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border-left: 3px solid ' + statusColor + ';">';
+                html += '<strong style="color: ' + statusColor + ';">' + statusIcon + ' Original (' + originalStatus + ')</strong>';
                 html += `<div style="margin-top: 8px; font-size: 12px;"><strong>Company:</strong> ${conflict.original_company || 'None'}</div>`;
                 html += '<div style="margin-top: 8px;"><strong>Items:</strong></div>';
                 if (conflict.original_items && conflict.original_items.length > 0) {

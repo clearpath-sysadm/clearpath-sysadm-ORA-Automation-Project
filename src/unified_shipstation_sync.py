@@ -518,7 +518,10 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
                 qty = item.get('quantity', 0)
                 duplicate_items.append({'sku': sku, 'quantity': qty})
             
-            logger.warning(f"⚠️ CONFLICT DETECTED: Order {order_number} already exists in ShipStation as shipped")
+            # Get original order's actual status for accurate display
+            original_order_status = original_order.get('orderStatus', 'unknown')
+            
+            logger.warning(f"⚠️ CONFLICT DETECTED: Order {order_number} already exists in ShipStation (status: {original_order_status})")
             
             # Check if conflict already exists to avoid duplicates
             cursor = conn.cursor()
@@ -528,15 +531,15 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             """, (str(order_id),))
             
             if not cursor.fetchone():
-                # Create new conflict alert with detailed information
+                # Create new conflict alert with detailed information including actual status
                 cursor.execute("""
                     INSERT INTO manual_order_conflicts (
                         conflicting_order_number, shipstation_order_id, customer_name, original_ship_date,
-                        original_company, original_items, duplicate_company, duplicate_items
+                        original_company, original_items, duplicate_company, duplicate_items, original_order_status
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (order_number, str(order_id), customer_name, original_ship_date,
-                      original_company, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items)))
+                      original_company, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items), original_order_status))
                 logger.info(f"🚨 Created conflict alert for order {order_number}")
             else:
                 logger.debug(f"  Conflict alert already exists for order {order_number}")
