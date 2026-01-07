@@ -2027,6 +2027,21 @@ def api_get_inventory_transactions():
 @app.route('/api/inventory_transactions', methods=['POST'])
 def api_create_inventory_transaction():
     """Create new inventory transaction"""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except:
+        pass
+    
     try:
         from flask import request
         
@@ -2103,6 +2118,8 @@ def api_create_inventory_transaction():
         conn.commit()
         conn.close()
         
+        server_logger.info(f"Inventory transaction created: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
+        
         return jsonify({
             'success': True,
             'id': transaction_id,
@@ -2117,6 +2134,21 @@ def api_create_inventory_transaction():
 @app.route('/api/inventory_transactions/<int:transaction_id>', methods=['PUT'])
 def api_update_inventory_transaction(transaction_id):
     """Update existing inventory transaction"""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except:
+        pass
+    
     try:
         from flask import request
         
@@ -2203,6 +2235,8 @@ def api_update_inventory_transaction(transaction_id):
         conn.commit()
         conn.close()
         
+        server_logger.info(f"Inventory transaction #{transaction_id} updated: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
+        
         return jsonify({
             'success': True,
             'message': 'Transaction updated successfully'
@@ -2216,6 +2250,21 @@ def api_update_inventory_transaction(transaction_id):
 @app.route('/api/inventory_transactions/<int:transaction_id>', methods=['DELETE'])
 def api_delete_inventory_transaction(transaction_id):
     """Delete inventory transaction"""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except:
+        pass
+    
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -2254,6 +2303,8 @@ def api_delete_inventory_transaction(transaction_id):
         cursor.execute("DELETE FROM inventory_transactions WHERE id = %s", (transaction_id,))
         conn.commit()
         conn.close()
+        
+        server_logger.info(f"Inventory transaction #{transaction_id} deleted: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
         
         return jsonify({
             'success': True,
@@ -4721,6 +4772,21 @@ def api_get_sku_lots():
 @app.route('/api/sku_lots', methods=['POST'])
 def api_create_sku_lot():
     """Create a new SKU-Lot combination"""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except:
+        pass
+    
     try:
         data = request.json
         
@@ -4744,6 +4810,9 @@ def api_create_sku_lot():
         conn.commit()
         conn.close()
         
+        active_status = "active" if data.get('active', 1) else "inactive"
+        server_logger.info(f"SKU-Lot created: SKU {data['sku']} → Lot {data['lot']} ({active_status})", source="SKU-Lot", user=user_name, role=user_role)
+        
         return jsonify({
             'success': True,
             'sku_lot_id': sku_lot_id,
@@ -4763,6 +4832,21 @@ def api_create_sku_lot():
 @app.route('/api/sku_lots/<int:sku_lot_id>', methods=['PUT'])
 def api_update_sku_lot(sku_lot_id):
     """Update a SKU-Lot combination"""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except:
+        pass
+    
     try:
         data = request.json
         
@@ -4786,6 +4870,9 @@ def api_update_sku_lot(sku_lot_id):
         conn.commit()
         conn.close()
         
+        active_status = "active" if data.get('active', 1) else "inactive"
+        server_logger.info(f"SKU-Lot #{sku_lot_id} updated: SKU {data['sku']} → Lot {data['lot']} ({active_status})", source="SKU-Lot", user=user_name, role=user_role)
+        
         return jsonify({
             'success': True,
             'message': 'SKU-Lot updated successfully'
@@ -4804,14 +4891,36 @@ def api_update_sku_lot(sku_lot_id):
 @app.route('/api/sku_lots/<int:sku_lot_id>', methods=['DELETE'])
 def api_delete_sku_lot(sku_lot_id):
     """Delete a SKU-Lot combination"""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except:
+        pass
+    
     try:
         conn = get_connection()
         cursor = conn.cursor()
+        
+        # Get SKU-Lot info before deleting for logging
+        cursor.execute("SELECT sku, lot FROM sku_lot WHERE id = %s", (sku_lot_id,))
+        row = cursor.fetchone()
+        sku_info = f"SKU {row[0]} → Lot {row[1]}" if row else f"ID {sku_lot_id}"
         
         cursor.execute("DELETE FROM sku_lot WHERE id = %s", (sku_lot_id,))
         
         conn.commit()
         conn.close()
+        
+        server_logger.info(f"SKU-Lot deleted: {sku_info}", source="SKU-Lot", user=user_name, role=user_role)
         
         return jsonify({
             'success': True,

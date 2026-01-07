@@ -189,10 +189,12 @@ def read_logs(
         'Database': r'\[database\]|\[db\]|postgres|sql|query|insert|update|delete',
         'ShipStation': r'\[shipstation\]|shipstation|order.*upload|sync',
         'Auth': r'\[auth\]|login|logout|session|token|permission',
-        'Inventory': r'\[inventory\]|inventory|stock|lot|sku',
+        'Inventory': r'\[inventory\]|inventory|stock|transaction',
+        'SKU-Lot': r'\[sku-lot\]|sku.*lot|lot.*sku',
         'Scheduler': r'\[scheduler\]|\[cron\]|scheduled|polling|workflow',
         'Email': r'\[email\]|sendgrid|mail|notification',
-        'Import': r'\[import\]|xml|google.*drive|import'
+        'Import': r'\[import\]|xml|google.*drive|import',
+        'Reports': r'\[reports\]|eod|eow|eom|report'
     }
     
     for line in all_lines:

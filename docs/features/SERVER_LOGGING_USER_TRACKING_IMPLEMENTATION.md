@@ -201,10 +201,12 @@ category_patterns = {
     'Database': r'\[database\]|\[db\]|postgres|sql|query|insert|update|delete',
     'ShipStation': r'\[shipstation\]|shipstation|order.*upload|sync',
     'Auth': r'\[auth\]|login|logout|session|token|permission',
-    'Inventory': r'\[inventory\]|inventory|stock|lot|sku',
+    'Inventory': r'\[inventory\]|inventory|stock|transaction',
+    'SKU-Lot': r'\[sku-lot\]|sku.*lot|lot.*sku',
     'Scheduler': r'\[scheduler\]|\[cron\]|scheduled|polling|workflow',
     'Email': r'\[email\]|sendgrid|mail|notification',
-    'Import': r'\[import\]|xml|google.*drive|import'
+    'Import': r'\[import\]|xml|google.*drive|import',
+    'Reports': r'\[reports\]|eod|eow|eom|report'
 }
 ```
 
@@ -395,6 +397,12 @@ def api_some_action():
 | `/api/reports/eod` | Reports | End of Day report generation |
 | `/api/reports/eow` | Reports | End of Week report generation |
 | `/api/reports/eom` | Reports | End of Month report generation |
+| `/api/inventory_transactions` (POST) | Inventory | Create inventory transaction |
+| `/api/inventory_transactions/<id>` (PUT) | Inventory | Update inventory transaction |
+| `/api/inventory_transactions/<id>` (DELETE) | Inventory | Delete inventory transaction |
+| `/api/sku_lots` (POST) | SKU-Lot | Create SKU-Lot mapping |
+| `/api/sku_lots/<id>` (PUT) | SKU-Lot | Update SKU-Lot mapping |
+| `/api/sku_lots/<id>` (DELETE) | SKU-Lot | Delete SKU-Lot mapping |
 
 ### 4.4 System vs User Activity
 
@@ -408,6 +416,8 @@ def api_some_action():
 - Report generation (EOD/EOW/EOM)
 - Conflict resolution actions
 - Email composition
+- Inventory transactions (create, update, delete)
+- SKU-Lot management (create, update, delete)
 
 ---
 
