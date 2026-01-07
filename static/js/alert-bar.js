@@ -43,6 +43,18 @@ class AdminAlertBar {
             return;
         }
         
+        if (!document.getElementById('admin-alert-pulse-style')) {
+            const style = document.createElement('style');
+            style.id = 'admin-alert-pulse-style';
+            style.textContent = `
+                @keyframes alertPulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.85; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
         const bar = document.createElement('div');
         bar.id = 'admin-alert-bar';
         bar.style.cssText = `
@@ -60,6 +72,7 @@ class AdminAlertBar {
             justify-content: center;
             gap: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            animation: alertPulse 2s ease-in-out infinite;
             ${isActive ? 
                 'background: linear-gradient(135deg, #dc3545, #c82333); color: white;' : 
                 'background: linear-gradient(135deg, #28a745, #218838); color: white;'}
