@@ -70,20 +70,25 @@ class ServerLogger:
         
         ServerLogger._initialized = True
     
-    def debug(self, message: str, source: str = 'app'):
-        self.logger.debug(f'[{source}] {message}')
+    def debug(self, message: str, source: str = 'app', user: str = None):
+        actor = f'<{user}>' if user else '<system>'
+        self.logger.debug(f'[{source}] {actor} {message}')
     
-    def info(self, message: str, source: str = 'app'):
-        self.logger.info(f'[{source}] {message}')
+    def info(self, message: str, source: str = 'app', user: str = None):
+        actor = f'<{user}>' if user else '<system>'
+        self.logger.info(f'[{source}] {actor} {message}')
     
-    def warning(self, message: str, source: str = 'app'):
-        self.logger.warning(f'[{source}] {message}')
+    def warning(self, message: str, source: str = 'app', user: str = None):
+        actor = f'<{user}>' if user else '<system>'
+        self.logger.warning(f'[{source}] {actor} {message}')
     
-    def error(self, message: str, source: str = 'app', exc_info: bool = False):
-        self.logger.error(f'[{source}] {message}', exc_info=exc_info)
+    def error(self, message: str, source: str = 'app', user: str = None, exc_info: bool = False):
+        actor = f'<{user}>' if user else '<system>'
+        self.logger.error(f'[{source}] {actor} {message}', exc_info=exc_info)
     
-    def critical(self, message: str, source: str = 'app', exc_info: bool = False):
-        self.logger.critical(f'[{source}] {message}', exc_info=exc_info)
+    def critical(self, message: str, source: str = 'app', user: str = None, exc_info: bool = False):
+        actor = f'<{user}>' if user else '<system>'
+        self.logger.critical(f'[{source}] {actor} {message}', exc_info=exc_info)
 
 
 def get_logger() -> ServerLogger:
@@ -232,11 +237,21 @@ def read_logs(
             except ValueError:
                 pass  # Keep line if timestamp parsing fails
             
+            # Extract actor from message if present: [source] <actor> message
+            actor = 'system'
+            actor_match = re.match(r'^\[([^\]]+)\]\s*<([^>]+)>\s*(.*)$', message)
+            if actor_match:
+                msg_source, actor, clean_message = actor_match.groups()
+            else:
+                # Legacy format without actor
+                clean_message = message
+            
             filtered_logs.append({
                 'timestamp': timestamp_str,
                 'level': log_level,
                 'source': log_source,
-                'message': message,
+                'actor': actor,
+                'message': clean_message,
                 'raw': line
             })
         else:

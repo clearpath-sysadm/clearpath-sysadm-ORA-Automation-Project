@@ -152,6 +152,11 @@
             color: #a78bfa;
         }
         
+        .log-actor {
+            color: #22d3ee;
+            font-weight: 500;
+        }
+        
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -569,10 +574,11 @@
                 const icon = levelIcons[level] || '⚪';
                 const timestamp = formatTimestamp(log.timestamp);
                 const source = log.source || 'app';
+                const actor = log.actor || 'system';
                 const category = log.category ? `[${log.category}]` : '';
                 const message = escapeHtml(log.message || '');
                 
-                return `<div class="log-line ${level}">${icon} <span class="log-timestamp">[${timestamp}]</span> <span class="log-level">[LOG]</span> <span class="log-source">[${source}]</span> ${category} ${message}</div>`;
+                return `<div class="log-line ${level}">${icon} <span class="log-timestamp">[${timestamp}]</span> <span class="log-level">[LOG]</span> <span class="log-source">[${source}]</span> <span class="log-actor">&lt;${actor}&gt;</span> ${category} ${message}</div>`;
             }).join('\n');
             
             container.innerHTML = html;
