@@ -1858,6 +1858,21 @@ def api_workflows_status():
 @app.route('/api/sync_shipstation', methods=['POST'])
 def api_sync_shipstation():
     """Trigger ShipStation sync manually"""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    try:
+        from src.services.auth import get_current_user
+        user = get_current_user()
+        if user:
+            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+    except:
+        pass
+    
+    server_logger.info("Manual ShipStation sync triggered", source="ShipStation", user=user_name)
+    
     try:
         import subprocess
         import threading
@@ -6212,6 +6227,19 @@ def api_confirm_delete_conflicting_order(conflict_id):
     try:
         from src.services.shipstation.api_client import get_shipstation_credentials
         from utils.api_utils import make_api_request
+        from src.utils.server_logger import get_logger
+        
+        server_logger = get_logger()
+        
+        # Get current user for logging
+        user_name = "unknown"
+        try:
+            from src.services.auth import get_current_user
+            user = get_current_user()
+            if user:
+                user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+        except:
+            pass
         
         # Get conflict details
         conn = get_connection()
@@ -6274,6 +6302,8 @@ def api_confirm_delete_conflicting_order(conflict_id):
         conn.commit()
         conn.close()
         
+        server_logger.info(f"ShipStation order deleted: conflict #{conflict_id}, old order ID {old_shipstation_order_id}", source="ShipStation", user=user_name)
+        
         return jsonify({
             'success': True,
             'message': f'Old order deleted and conflict resolved. New order: {new_order_number}'
@@ -6288,6 +6318,19 @@ def api_confirm_delete_conflicting_order(conflict_id):
 @app.route('/api/manual_order_conflicts/<int:conflict_id>/dismiss', methods=['POST'])
 def api_dismiss_manual_order_conflict(conflict_id):
     """Dismiss a manual order conflict without taking action"""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    try:
+        from src.services.auth import get_current_user
+        user = get_current_user()
+        if user:
+            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+    except:
+        pass
+    
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -6308,6 +6351,8 @@ def api_dismiss_manual_order_conflict(conflict_id):
         
         conn.commit()
         conn.close()
+        
+        server_logger.info(f"Manual order conflict #{conflict_id} dismissed", source="ShipStation", user=user_name)
         
         return jsonify({
             'success': True,

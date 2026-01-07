@@ -16,8 +16,11 @@ sys.path.insert(0, str(project_root))
 
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
 from src.services.database import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
+from src.utils.server_logger import get_logger
 from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 import defusedxml.ElementTree as ET
+
+server_logger = get_logger()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -464,15 +467,18 @@ def run_scheduled_import():
             
             # Changes detected - process files
             logger.info(f"📥 Processing XML files from Drive (signature changed)")
+            server_logger.info("XML import workflow started", source="Scheduler")
             
             imported = import_orders_from_drive()
             
             if imported > 0:
                 logger.info(f"✅ Import complete: {imported} orders imported")
+                server_logger.info(f"XML import: {imported} orders imported", source="Scheduler")
                 # ONLY update timestamp when we actually imported something
                 update_workflow_last_run('xml-import')
             else:
                 logger.info(f"ℹ️ Import complete: No new orders")
+                server_logger.info("XML import workflow completed (no new orders)", source="Scheduler")
             
             # Update polling state on success with file signature (for change detection)
             update_xml_polling_state(file_signature)

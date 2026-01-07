@@ -22,9 +22,11 @@ sys.path.insert(0, str(project_root))
 
 from src.services.database.pg_utils import transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+from src.utils.server_logger import get_logger
 from utils.api_utils import make_api_request
 from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 
+server_logger = get_logger()
 SHIPSTATION_ORDERS_ENDPOINT = 'https://ssapi.shipstation.com/orders'
 
 # Configure logging
@@ -262,7 +264,9 @@ def main():
             if not is_workflow_enabled(WORKFLOW_NAME):
                 logger.info(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED - skipping execution")
             else:
+                server_logger.info("Lot mismatch scanner workflow started", source="Scheduler")
                 scan_for_lot_mismatches(api_key, api_secret)
+                server_logger.info("Lot mismatch scanner workflow completed", source="Scheduler")
             
             logger.info("😴 Next scan in 900 seconds (15 minutes)")
             time.sleep(900)

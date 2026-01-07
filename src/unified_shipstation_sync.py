@@ -39,7 +39,10 @@ from src.services.shipstation.tracking_service import (
     map_carrier_to_code
 )
 from src.services.ghost_order_backfill import backfill_ghost_orders
+from src.utils.server_logger import get_logger
 from utils.api_utils import make_api_request
+
+server_logger = get_logger()
 
 # Logging setup with comprehensive output
 log_dir = os.path.join(project_root, 'logs')
@@ -1040,6 +1043,7 @@ def run_unified_sync():
         return
     
     update_workflow_last_run(WORKFLOW_NAME)
+    server_logger.info("Unified ShipStation sync workflow started", source="Scheduler")
     logger.info("=" * 80)
     logger.info("🚀 UNIFIED SHIPSTATION SYNC STARTED")
     logger.info("=" * 80)
@@ -1369,8 +1373,11 @@ def run_unified_sync():
         except Exception as e:
             logger.warning(f"⚠️ Failed to auto-resolve conflicts (non-fatal): {e}")
         
+        server_logger.info("Unified ShipStation sync workflow completed", source="Scheduler")
+        
     except Exception as e:
         logger.error(f"❌ FATAL ERROR in unified sync: {e}", exc_info=True)
+        server_logger.error(f"Unified ShipStation sync failed: {str(e)[:100]}", source="Scheduler")
         raise
 
 

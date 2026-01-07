@@ -18,9 +18,12 @@ sys.path.insert(0, str(project_root))
 
 from src.services.database.pg_utils import get_connection, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+from src.utils.server_logger import get_logger
 from config.settings import settings
 from utils.api_utils import make_api_request
 from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
+
+server_logger = get_logger()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -467,12 +470,14 @@ def scan_for_duplicates():
         
         if duplicates:
             logger.warning(f"⚠️  Found {len(duplicates)} duplicate order+SKU combinations in ShipStation!")
+            server_logger.warning(f"Duplicate scan: Found {len(duplicates)} duplicate order+SKU combinations", source="Scheduler")
             for (order_num, base_sku), dup_list in list(duplicates.items())[:10]:  # Log first 10
                 logger.warning(f"  Order #{order_num} + SKU {base_sku}: {len(dup_list)} records")
             if len(duplicates) > 10:
                 logger.warning(f"  ... and {len(duplicates) - 10} more duplicates")
         else:
             logger.info("✅ No duplicate orders found in ShipStation")
+            server_logger.info("Duplicate scan: No duplicates found", source="Scheduler")
         
         # Identify order number collisions (same order number with different ShipStation IDs)
         collisions = identify_order_number_collisions(orders)
@@ -521,14 +526,17 @@ def run_scheduled_scanner():
                 continue
             
             # Run scan
+            server_logger.info("Duplicate scanner workflow started", source="Scheduler")
             scan_succeeded = scan_for_duplicates()
             
             # SAFETY: Only update workflow timestamp on successful scans
             # This allows monitoring systems to detect scan failures
             if scan_succeeded:
                 update_workflow_last_run('duplicate-scanner')
+                server_logger.info("Duplicate scanner workflow completed", source="Scheduler")
             else:
                 logger.error("❌ Scan failed - workflow timestamp NOT updated (monitoring will detect failure)")
+                server_logger.error("Duplicate scanner workflow failed", source="Scheduler")
             
             # Sleep until next scan
             logger.info(f"😴 Next scan in {SCAN_INTERVAL_SECONDS // 60} minutes")
