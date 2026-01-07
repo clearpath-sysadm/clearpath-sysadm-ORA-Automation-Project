@@ -459,7 +459,7 @@
                     return;
                 }
                 
-                if (data.role !== 'admin') {
+                if (data.user.role !== 'admin') {
                     document.querySelector('.content-area').innerHTML = `
                         <div class="empty-state">
                             <div class="icon">🔒</div>
@@ -471,8 +471,8 @@
                 }
                 
                 document.getElementById('user-info').innerHTML = `
-                    <span style="color: var(--text-muted);">${data.user.name || data.user.username}</span>
-                    <span class="role-badge role-${data.role}">${data.role}</span>
+                    <span style="color: var(--text-muted);">${data.user.first_name || data.user.email}</span>
+                    <span class="role-badge role-${data.user.role}">${data.user.role.toUpperCase()}</span>
                 `;
                 
                 loadLogs();
