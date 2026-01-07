@@ -615,10 +615,15 @@ def update_admin_alert():
         
         conn = get_connection()
         cursor = conn.cursor()
+        # Use UPSERT to ensure row exists (production may not have initial row)
         cursor.execute("""
-            UPDATE admin_alerts
-            SET message = %s, is_active = %s, updated_at = CURRENT_TIMESTAMP, updated_by = %s
-            WHERE id = 1
+            INSERT INTO admin_alerts (id, message, is_active, updated_at, updated_by)
+            VALUES (1, %s, %s, CURRENT_TIMESTAMP, %s)
+            ON CONFLICT (id) DO UPDATE SET
+                message = EXCLUDED.message,
+                is_active = EXCLUDED.is_active,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_by = EXCLUDED.updated_by
         """, (message, is_active, current_user.email))
         conn.commit()
         conn.close()
