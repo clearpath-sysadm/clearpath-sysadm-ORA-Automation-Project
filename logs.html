@@ -582,7 +582,12 @@
         function formatTimestamp(isoString) {
             if (!isoString) return '';
             try {
-                const date = new Date(isoString);
+                // Server logs in UTC - add 'Z' if not present to parse as UTC
+                let utcString = isoString;
+                if (!isoString.endsWith('Z') && !isoString.includes('+') && !isoString.includes('-', 10)) {
+                    utcString = isoString + 'Z';
+                }
+                const date = new Date(utcString);
                 return date.toLocaleString(undefined, {
                     year: 'numeric',
                     month: 'short',
