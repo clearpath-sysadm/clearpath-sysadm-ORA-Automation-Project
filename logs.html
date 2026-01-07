@@ -397,7 +397,31 @@
                             <option value="Inventory">Inventory</option>
                             <option value="Scheduler">Scheduler</option>
                             <option value="Email">Email</option>
-                            <option value="Import">Import</option>
+                            <option value="Reports">Reports</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Process</label>
+                        <select id="filter-process" onchange="applyProcessFilter()">
+                            <option value="ALL">All Processes</option>
+                            <optgroup label="Reports">
+                                <option value="EOD">EOD Report</option>
+                                <option value="EOW">EOW Report</option>
+                                <option value="EOM">EOM Report</option>
+                            </optgroup>
+                            <optgroup label="Workflows">
+                                <option value="XML import">XML Import</option>
+                                <option value="ShipStation upload">ShipStation Upload</option>
+                                <option value="ShipStation sync">ShipStation Sync</option>
+                                <option value="Duplicate">Duplicate Scanner</option>
+                                <option value="Lot mismatch">Lot Mismatch Scanner</option>
+                            </optgroup>
+                            <optgroup label="Operations">
+                                <option value="Manual order">Manual Orders</option>
+                                <option value="Compose email">Email Compose</option>
+                                <option value="deleted from ShipStation">ShipStation Deletes</option>
+                            </optgroup>
                         </select>
                     </div>
                     
@@ -521,6 +545,16 @@
         function debounceSearch() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(loadLogs, 300);
+        }
+        
+        function applyProcessFilter() {
+            const process = document.getElementById('filter-process').value;
+            if (process !== 'ALL') {
+                document.getElementById('filter-search').value = process;
+            } else {
+                document.getElementById('filter-search').value = '';
+            }
+            loadLogs();
         }
         
         async function loadLogs() {
