@@ -426,6 +426,14 @@
                     </div>
                     
                     <div class="control-group">
+                        <label>User</label>
+                        <select id="filter-user" onchange="applyUserFilter()">
+                            <option value="ALL">All Users</option>
+                            <option value="system">System Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
                         <label>Lines</label>
                         <select id="filter-lines" onchange="loadLogs()">
                             <option value="100">100</option>
@@ -551,10 +559,55 @@
             const process = document.getElementById('filter-process').value;
             if (process !== 'ALL') {
                 document.getElementById('filter-search').value = process;
+                document.getElementById('filter-user').value = 'ALL';
             } else {
                 document.getElementById('filter-search').value = '';
             }
             loadLogs();
+        }
+        
+        function applyUserFilter() {
+            const user = document.getElementById('filter-user').value;
+            if (user !== 'ALL') {
+                document.getElementById('filter-search').value = `<${user}`;
+                document.getElementById('filter-process').value = 'ALL';
+            } else {
+                document.getElementById('filter-search').value = '';
+            }
+            loadLogs();
+        }
+        
+        function updateUserDropdown(logs) {
+            const userSelect = document.getElementById('filter-user');
+            const currentValue = userSelect.value;
+            
+            // Collect unique users from logs
+            const users = new Set();
+            logs.forEach(log => {
+                if (log.actor && log.actor !== 'system') {
+                    users.add(log.actor);
+                }
+            });
+            
+            // Rebuild options
+            userSelect.innerHTML = '<option value="ALL">All Users</option><option value="system">System Only</option>';
+            
+            if (users.size > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Users';
+                Array.from(users).sort().forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user;
+                    option.textContent = user;
+                    optgroup.appendChild(option);
+                });
+                userSelect.appendChild(optgroup);
+            }
+            
+            // Restore selection if still valid
+            if (currentValue) {
+                userSelect.value = currentValue;
+            }
         }
         
         async function loadLogs() {
@@ -584,6 +637,7 @@
                 }
                 
                 updateStats(data.stats);
+                updateUserDropdown(data.logs);
                 renderLogs(data.logs);
                 
             } catch (error) {
