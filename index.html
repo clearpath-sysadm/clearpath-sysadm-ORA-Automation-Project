@@ -913,6 +913,16 @@
                         
                         btn.textContent = '📧 Ready!';
                         
+                        // Log compose email action to server
+                        fetch('/api/tracking/compose_email', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                recipient_count: contactsData.data.length,
+                                report_type: 'Weekly Inventory Report'
+                            })
+                        }).catch(err => console.warn('Failed to log compose email:', err));
+                        
                         // Open email client with TO recipients (no body due to size limits)
                         const subject = 'Weekly Inventory Report - Oracare';
                         const mailtoLink = `mailto:${encodeURIComponent(emailList)}?subject=${encodeURIComponent(subject)}`;

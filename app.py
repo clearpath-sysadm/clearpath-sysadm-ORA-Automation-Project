@@ -2542,8 +2542,22 @@ def api_run_eod():
     import subprocess
     import logging
     from src.services.database.pg_utils import log_report_run
+    from src.utils.server_logger import get_logger
     
     logger = logging.getLogger(__name__)
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    try:
+        from src.services.auth import get_current_user
+        user = get_current_user()
+        if user:
+            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+    except:
+        pass
+    
+    server_logger.info(f"EOD report triggered", source="Reports", user=user_name)
     
     # Concurrency guard: prevent duplicate EOD runs
     if _report_locks['EOD']:
@@ -2632,6 +2646,7 @@ def api_run_eod():
             
             # Log success
             log_report_run('EOD', datetime.date.today(), 'success', 'Daily inventory updated successfully')
+            server_logger.info(f"EOD report completed successfully", source="Reports", user=user_name)
             
             return jsonify({
                 'success': True,
@@ -2641,6 +2656,7 @@ def api_run_eod():
         else:
             # Log failure
             log_report_run('EOD', datetime.date.today(), 'failed', f'Error: {result.stderr[:200]}')
+            server_logger.error(f"EOD report failed: {result.stderr[:200]}", source="Reports", user=user_name)
             
             return jsonify({
                 'success': False,
@@ -2669,6 +2685,21 @@ def api_run_eow():
     import datetime
     import subprocess
     from src.services.database.pg_utils import eod_done_today, log_report_run
+    from src.utils.server_logger import get_logger
+    
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    try:
+        from src.services.auth import get_current_user
+        user = get_current_user()
+        if user:
+            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+    except:
+        pass
+    
+    server_logger.info(f"EOW report triggered", source="Reports", user=user_name)
     
     # Concurrency guard: prevent duplicate EOW runs
     if _report_locks['EOW']:
@@ -2713,6 +2744,7 @@ def api_run_eow():
         
         if result.returncode == 0:
             log_report_run('EOW', week_start, 'success', 'Weekly report generated successfully')
+            server_logger.info(f"EOW report completed successfully", source="Reports", user=user_name)
             
             return jsonify({
                 'success': True,
@@ -2720,6 +2752,7 @@ def api_run_eow():
             })
         else:
             log_report_run('EOW', week_start, 'failed', f'Error: {result.stderr[:200]}')
+            server_logger.error(f"EOW report failed: {result.stderr[:200]}", source="Reports", user=user_name)
             
             return jsonify({
                 'success': False,
@@ -4907,6 +4940,31 @@ def api_delete_email_contact(contact_id):
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/tracking/compose_email', methods=['POST'])
+def api_track_compose_email():
+    """Track when a user composes an email (for server logs)"""
+    from src.utils.server_logger import get_logger
+    
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    try:
+        from src.services.auth import get_current_user
+        user = get_current_user()
+        if user:
+            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+    except:
+        pass
+    
+    data = request.json or {}
+    recipient_count = data.get('recipient_count', 0)
+    report_type = data.get('report_type', 'Weekly Inventory Report')
+    
+    server_logger.info(f"Compose email: {report_type} to {recipient_count} recipient(s)", source="Email", user=user_name)
+    
+    return jsonify({'success': True})
 
 @app.route('/api/shipstation/units_to_ship', methods=['GET'])
 def api_get_units_to_ship():
