@@ -1,0 +1,37 @@
+### Create server log
+
+Task Overview Set up server-side logging for the application. Key Goals Implement logging framework : Integrate a robust logging library (e.g., Winston, Log4j). Configure log levels : Support debug, info, warn, error levels. Define log output : Write logs to a file, potentially with rotation. Why This Matters Improved Debugging : Quickly identify and resolve application issues. Operational Visibility : Monitor application health and performance. Auditing : Track key events for security and compliance. Definition of Done Server-side logs are successfully written to a designated file. Logs include timestamps, log levels, and relevant message content. Log rotation is configured to prevent excessive disk usage. Documentation for accessing and interpreting logs is created.
+
+### Definition of Done
+
+```html
+
+### Acceptance Criteria
+
+• [ ] **Logs are written to a designated file:** Verify that log files are created in the configured directory (e.g., `/var/log/oracare/fulfillment.log`) upon server startup and that log entries are appended to the file.
+
+• [ ] **Log entries include required information:** Confirm that each log entry contains a timestamp (ISO 8601 format), log level (DEBUG, INFO, WARN, ERROR), and the relevant message content. Example: `2024-10-27T10:00:00.000Z - INFO - Order placed: Order ID 12345`.
+
+• [ ] **Log levels are configurable:** The application's log level can be adjusted via environment variable (e.g., `LOG_LEVEL=debug`) or a configuration file.  Changes to the log level are reflected in the logs without requiring a server restart.
+
+• [ ] **Log rotation is implemented:** Log files are rotated based on either size (e.g., 10MB) or time (e.g., daily).  A maximum of 7 rotated log files are retained (e.g., `fulfillment.log.1` to `fulfillment.log.7`). Older files are automatically deleted.
+
+• [ ] **Error handling is logged:** When exceptions or errors occur within the application, appropriate error messages, including stack traces (where applicable and permitted by security policy), are logged at the ERROR level.  The logged error messages are helpful in diagnosing the root cause of the issue.
+
+• [ ] **Key events are logged at appropriate levels:** Verify that key events such as order creation (INFO), order fulfillment (INFO), payment processing (INFO), and critical failures (ERROR) are logged at the appropriate levels.
+
+• [ ] **Log access is controlled:** The log files have appropriate file permissions (e.g., 640) to restrict access to authorized users (e.g., the `oracare` user and the `adm` group).
+
+### Testing Requirements
+
+• [ ] **Log Level Testing:** Verify that changing the `LOG_LEVEL` environment variable to DEBUG, INFO, WARN, and ERROR results in the correct log messages being written to the log file (i.e., only messages at or above the specified level are logged).
+
+• [ ] **Error Logging Test:** Introduce an error scenario (e.g., attempt to process a payment with invalid credentials) and verify that an ERROR-level log message is generated, including a relevant error message.
+
+• [ ] **Log Rotation Test:** Generate a large volume of log data to trigger log rotation (either by exceeding the file size limit or by waiting for the daily rotation). Verify that the log file is rotated and a new log file is created. Confirm that the older log files are being deleted after the specified maximum number of files is reached.
+
+• [ ] **Simulated High Load Test:** Simulate a high load scenario (e.g., multiple concurrent requests) and verify that the logging mechanism does not introduce significant performance overhead. Monitor server resource usage (CPU, memory, disk I/O) during the test.
+
+• [ ] **Access Control Test:** Verify that a user without the correct permissions (e.g., a standard user without group membership) cannot read the log files.
+
+```

@@ -1,0 +1,72 @@
+Prompt for Replit Agent
+**Create a Server Logs admin page with the following components:**
+1. Create server/logger.ts - The logging utility module:
+import fs from 'fs';import path from 'path';const LOG_DIR = '/tmp/app-logs';const MAX_LOG_AGE_HOURS = 24;let loggingEnabled = true;try {  if (!fs.existsSync(LOG_DIR)) {    fs.mkdirSync(LOG_DIR, { recursive: true });  }} catch (err) {  loggingEnabled = false;}function getLogFilePath(): string {  const date = new Date().toISOString().split('T')[0];  return path.join(LOG_DIR, `app-${date}.log`);}function formatUtcTimestamp(date: Date = new Date()): string {  return date.toISOString();}function formatLogEntry(level: string, args: any[]): string {  const timestamp = formatUtcTimestamp();  const message = args.map(arg =&gt; {    if (typeof arg === 'object') {      try {        return JSON.stringify(arg, null, 2);      } catch {        return String(arg);      }    }    return String(arg);  }).join(' ');    return `[${timestamp}] [${level}] ${message}\n`;}function writeToLogFile(entry: string): void {  if (!loggingEnabled) return;  try {    fs.appendFileSync(getLogFilePath(), entry);  } catch (err) {}}function cleanupOldLogs(): void {  try {    const files = fs.readdirSync(LOG_DIR);    const cutoffTime = Date.now() - (MAX_LOG_AGE_HOURS * 60 * 60 * 1000);        for (const file of files) {      if (file.startsWith('app-') && file.endsWith('.log')) {        const filePath = path.join(LOG_DIR, file);        const stats = fs.statSync(filePath);        if (stats.mtimeMs &lt; cutoffTime) {          fs.unlinkSync(filePath);        }      }    }  } catch {}}const originalConsoleLog = console.log.bind(console);const originalConsoleError = console.error.bind(console);const originalConsoleWarn = console.warn.bind(console);const originalConsoleInfo = console.info.bind(console);export function initializeFileLogging(): void {  cleanupOldLogs();    console.log = (...args: any[]) =&gt; {    originalConsoleLog(...args);    writeToLogFile(formatLogEntry('LOG', args));  };    console.error = (...args: any[]) =&gt; {    originalConsoleError(...args);    writeToLogFile(formatLogEntry('ERROR', args));  };    console.warn = (...args: any[]) =&gt; {    originalConsoleWarn(...args);    writeToLogFile(formatLogEntry('WARN', args));  };    console.info = (...args: any[]) =&gt; {    originalConsoleInfo(...args);    writeToLogFile(formatLogEntry('INFO', args));  };    setInterval(cleanupOldLogs, 60 * 60 * 1000);  console.log('[Logger] File logging initialized');}function extractSource(line: string): string | null {  const match = line.match(/\[(LOG|ERROR|WARN|INFO)\]\s*\[([^\]]+)\]/);  return match ? match[2] : null;}export function readLogs(options: {  level?: 'LOG' | 'ERROR' | 'WARN' | 'INFO' | 'ALL';  lastNLines?: number;  searchPattern?: string;  hoursBack?: number;  source?: string;} = {}): { logs: string; lineCount: number; filePath: string } {  const { level = 'ALL', lastNLines = 200, searchPattern, hoursBack = 24, source } = options;    try {    const logPath = getLogFilePath();        if (!fs.existsSync(logPath)) {      return { logs: 'No logs available for today.', lineCount: 0, filePath: logPath };    }        let content = fs.readFileSync(logPath, 'utf-8');    let lines = content.split('\n').filter(line =&gt; line.trim());        if (level !== 'ALL') {      lines = lines.filter(line =&gt; line.includes(`[${level}]`));    }        if (source && source !== 'ALL') {      lines = lines.filter(line =&gt; line.includes(`[${source}]`));    }        if (searchPattern) {      const pattern = new RegExp(searchPattern, 'i');      lines = lines.filter(line =&gt; pattern.test(line));    }        if (hoursBack &lt; 24) {      const cutoffTime = new Date(Date.now() - hoursBack * 60 * 60 * 1000);      lines = lines.filter(line =&gt; {        const isoMatch = line.match(/\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z?)\]/);        if (isoMatch) {          const logTime = new Date(isoMatch[1]);          return logTime &gt;= cutoffTime;        }        return true;      });    }        const totalLines = lines.length;    lines = lines.slice(-lastNLines);        return {      logs: lines.join('\n') || 'No matching logs found.',      lineCount: totalLines,      filePath: logPath    };  } catch (err) {    return { logs: `Error reading logs: ${err}`, lineCount: 0, filePath: getLogFilePath() };  }}export function getLogStats(): {  totalLines: number;  errorCount: number;  warnCount: number;  infoCount: number;  logCount: number;  logPath: string;  fileSizeKB: number;  sources: string[];} {  try {    const logPath = getLogFilePath();        if (!fs.existsSync(logPath)) {      return { totalLines: 0, errorCount: 0, warnCount: 0, infoCount: 0, logCount: 0, logPath, fileSizeKB: 0, sources: [] };    }        const content = fs.readFileSync(logPath, 'utf-8');    const lines = content.split('\n');    const stats = fs.statSync(logPath);        const sourcesSet = new Set&lt;string&gt;();    for (const line of lines) {      const source = extractSource(line);      if (source) sourcesSet.add(source);    }        return {      totalLines: lines.length,      errorCount: lines.filter(l =&gt; l.includes('[ERROR]')).length,      warnCount: lines.filter(l =&gt; l.includes('[WARN]')).length,      infoCount: lines.filter(l =&gt; l.includes('[INFO]')).length,      logCount: lines.filter(l =&gt; l.includes('[LOG]')).length,      logPath,      fileSizeKB: Math.round(stats.size / 1024),      sources: Array.from(sourcesSet).sort()    };  } catch {    return { totalLines: 0, errorCount: 0, warnCount: 0, infoCount: 0, logCount: 0, logPath: getLogFilePath(), fileSizeKB: 0, sources: [] };  }}2. Add these API routes to your Express routes file:
+// GET /api/admin/logs - Read server logs with filtersapp.get('/api/admin/logs', isAuthenticated, isAdmin, async (req: any, res) =&gt; {  try {    const { readLogs } = await import('./logger');        const level = (req.query.level as string) || 'ALL';    const source = (req.query.source as string) || 'ALL';    const searchPattern = req.query.searchPattern as string | undefined;    const lastNLines = Math.min(parseInt(req.query.lastNLines as string) || 500, 5000);    const hoursBack = Math.min(parseInt(req.query.hoursBack as string) || 24, 24);        const result = readLogs({      level: level as 'LOG' | 'ERROR' | 'WARN' | 'INFO' | 'ALL',      source,      searchPattern,      lastNLines,      hoursBack    });        res.json(result);  } catch (error) {    console.error('Error reading logs:', error);    res.status(500).json({ error: 'Failed to read logs' });  }});// GET /api/admin/logs/stats - Get log statisticsapp.get('/api/admin/logs/stats', isAuthenticated, isAdmin, async (req: any, res) =&gt; {  try {    const { getLogStats } = await import('./logger');    const stats = getLogStats();    res.json(stats);  } catch (error) {    console.error('Error getting log stats:', error);    res.status(500).json({ error: 'Failed to get log stats' });  }});3. Initialize logger in server startup (server/index.ts):
+Add this near the top of your server startup:
+import { initializeFileLogging } from './logger';initializeFileLogging();4. Create frontend page client/src/pages/admin/ServerLogs.tsx:
+Create a Server Logs admin page with these features:
+
+• Use TanStack Query to fetch from /api/admin/logs and /api/admin/logs/stats
+
+• Display stats cards showing: Total Lines, Errors (red), Warnings (yellow), File Size, Displayed count
+
+• Clicking stats cards filters by that log level
+
+• Filter controls: Log Level dropdown, Category dropdown, Source dropdown, Search pattern input, Lines to show, Hours back
+
+• Auto-refresh toggle button (5 second interval when enabled)
+
+• Download button to export logs as .txt file
+
+• Refresh button to manually reload
+
+• Display logs in a ScrollArea with monospace font
+
+• Color-code log lines: red background for errors, yellow for warnings, blue for info
+
+• Add icons next to each log line based on content (use lucide-react icons):
+
+• AlertCircle (red) for errors
+
+• AlertTriangle (yellow) for warnings
+
+• Info (blue) for info
+
+• Bot (violet) for AI/Gemini logs
+
+• Lock (amber) for auth logs
+
+• Database (cyan) for database logs
+
+• Mail (pink) for email logs
+
+• MessageSquare (teal) for chat/websocket logs
+
+• Clock (orange) for scheduler/cron logs
+
+• Globe (sky) for API requests
+
+• Terminal (muted) for general logs
+
+• Convert UTC timestamps to browser local timezone for display
+
+• Detect JSON in log lines and make them expandable/collapsible with pretty-printing
+
+• Category filters that match patterns in log content (AI, Auth, Database, Email, Chat, Scheduler, Storage)
+
+Use shadcn components: Card, Button, Badge, Input, Select, ScrollArea, Collapsible. Use React Hook Form is not needed - just useState for filters.
+5. Add route to your app router:
+&lt;Route path="/admin/logs" component={ServerLogs} /&gt;6. Add navigation link to your admin sidebar/menu:
+Add a "Server Logs" link pointing to /admin/logs with a Terminal or FileText icon.
+**Key Implementation Notes:**
+
+• The logger overrides console.log/error/warn/info to write to files in /tmp/app-logs/
+
+• Logs are stored with UTC timestamps and converted to local time on the frontend
+
+• Old logs (&gt;24 hours) are automatically cleaned up
+
+• The admin routes should be protected with your authentication middleware
+
+• Adjust isAuthenticated and isAdmin middleware to match your app's auth system

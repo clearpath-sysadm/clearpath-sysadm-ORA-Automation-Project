@@ -1,0 +1,520 @@
+```html
+
+### EXECUTIVE SUMMARY
+
+This task involves setting up server-side logging for the Oracare Fulfillment App MVP. The goal is to integrate a logging framework, configure log levels, and define log output to a file with rotation for improved debugging, operational visibility, and auditing.
+
+• Implement a logging framework (e.g., Winston).
+
+• Configure debug, info, warn, and error log levels.
+
+• Write logs to a file with rotation.
+
+Estimated complexity: Medium
+
+Primary files affected:
+
+• src/config/logger.ts (or similar)
+
+• src/app.ts (or similar - main application entry point)
+
+• config/default.json (or similar - configuration file)
+
+### PHASE 1: CODEBASE ASSESSMENT
+
+### 1. Existing Patterns & Conventions
+
+The application's existing patterns and conventions will be analyzed to determine the best way to integrate the logging framework. This includes examining how configuration is handled, how errors are managed, and how external libraries are used.
+
+### 2. Reusable Components
+
+We will look for reusable components, such as existing configuration loading mechanisms, error handling utilities, and file system access functions, that can be leveraged for the logging implementation.
+
+### 3. Integration Points
+
+The main integration points will be in the application's entry point (e.g., src/app.ts) and in modules where significant events occur (e.g., order processing, payment handling). We need to ensure that the logging is integrated seamlessly into these areas.
+
+### 4. Current Limitations
+
+The current limitations might include a lack of structured logging, insufficient error reporting, or limited visibility into application behavior. These limitations will be addressed by the logging implementation.
+
+### PHASE 2: IMPLEMENTATION PLAN
+
+### 1. Architecture Overview
+
+The architecture will involve integrating a logging library like Winston. The logger will be configured with different log levels (debug, info, warn, error). Log messages will be written to a file, and log rotation will be implemented to prevent excessive disk usage. The application will use a configuration file or environment variables to set the log level.
+
+Simplified Flow:
+
+• Application code calls a logging function (e.g., logger.info('Order created')).
+
+• The logging function checks the configured log level.
+
+• If the message's log level is at or above the configured level, the message is formatted and written to the log file.
+
+• Log rotation is handled automatically based on size or time.
+
+### 2. File Changes Table
+
+  
+    
+      Action
+      File Path
+      Purpose
+    
+  
+  
+    
+      CREATE
+      src/config/logger.ts
+      Creates a module to initialize and configure the Winston logger.
+    
+    
+      MODIFY
+      src/app.ts
+      Integrates the logger into the main application entry point and adds logging for application startup.
+    
+    
+      MODIFY
+      config/default.json
+      Adds configuration settings for the log level and log file path.
+    
+    
+      MODIFY
+      src/services/orderService.ts (example)
+      Adds logging for key events in the order service (e.g., order creation, fulfillment).
+    
+  
+
+### 3. Key Code Examples
+
+**Logger Configuration (src/config/logger.ts):**
+
+import winston from 'winston';
+import config from 'config';
+
+const logLevels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  verbose: 4,
+  debug: 5,
+  silly: 6
+};
+
+const level = () =&gt; {
+  const env = process.env.NODE_ENV || 'development'
+  const isDevelopment = env === 'development'
+  return isDevelopment ? 'debug' : 'warn'
+}
+
+const colors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  verbose: 'cyan',
+  debug: 'white',
+  silly: 'gray'
+}
+
+winston.addColors(colors)
+
+const format = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+  winston.format.colorize({ all: true }),
+  winston.format.printf(
+    (info) =&gt; `${info.timestamp} ${info.level}: ${info.message}`,
+  ),
+)
+
+const transports = [
+  new winston.transports.Console(),
+  new winston.transports.File({
+    filename: 'logs/error.log',
+    level: 'error',
+  }),
+  new winston.transports.File({ filename: 'logs/all.log' }),
+]
+
+const logger = winston.createLogger({
+  level: level(),
+  levels: logLevels,
+  format,
+  transports,
+})
+
+export default logger;
+
+**Application Integration (src/app.ts):**
+
+import express from 'express';
+import logger from './config/logger';
+
+const app = express();
+const port = 3000;
+
+app.get('/', (req, res) =&gt; {
+  logger.info('Received a request to the root endpoint.');
+  res.send('Hello World!');
+});
+
+app.listen(port, () =&gt; {
+  logger.info(`Server listening on port ${port}`);
+});
+
+**Service Logging (src/services/orderService.ts):**
+
+import logger from '../config/logger';
+
+export const createOrder = (orderData: any) =&gt; {
+  logger.info(`Creating order: ${JSON.stringify(orderData)}`);
+  // ... order creation logic ...
+  logger.info(`Order created successfully: ${orderId}`);
+  return orderId;
+};
+
+export const fulfillOrder = (orderId: string) =&gt; {
+  logger.info(`Fulfilling order: ${orderId}`);
+  // ... order fulfillment logic ...
+  logger.info(`Order fulfilled successfully: ${orderId}`);
+};
+
+### 4. Execution Steps
+
+• Create the src/config/logger.ts file with the Winston logger configuration.
+
+• Install Winston and any necessary dependencies: npm install winston config
+
+• Modify src/app.ts to import and use the logger for application startup and request handling.
+
+• Modify config/default.json to include logger configuration settings (log level, file path).
+
+• Modify relevant service files (e.g., src/services/orderService.ts) to add logging for key events.
+
+• Test the logging implementation by running the application and generating different types of log messages.
+
+• Configure log rotation using Winston's built-in mechanisms or a separate log rotation utility.
+
+• Set appropriate file permissions for the log files to restrict access.
+
+### PHASE 3: GAP ANALYSIS
+
+  
+    
+      Category
+      Question
+      Gap Found
+      Resolution
+    
+  
+  
+    
+      Code Reuse
+      Duplicating functionality?
+      No
+      N/A - Using Winston library.
+    
+    
+      Edge Cases
+      What could break?
+      Yes
+      Handle file system errors (e.g., disk full, permission denied) when writing logs.
+    
+    
+      Error Handling
+      All failures covered?
+      Yes
+      Ensure that all unhandled exceptions are caught and logged at the ERROR level.
+    
+    
+      Security
+      Any vulnerabilities?
+      No
+      Ensure that sensitive information (e.g., passwords, API keys) is not logged.
+    
+  
+
+### PHASE 4: FINAL PLAN
+
+The final plan addresses the gaps identified in the gap analysis. File system error handling and unhandled exception logging will be implemented.
+
+### 1. Updated file changes (if any)
+
+No changes to the file table.
+
+### 2. Quality requirements applied
+
+• Code should be well-documented and easy to understand.
+
+• Logging should be consistent and informative.
+
+• Error messages should be clear and actionable.
+
+### 3. Final execution order
+
+• Create the src/config/logger.ts file with the Winston logger configuration, including file system error handling.
+
+• Install Winston and any necessary dependencies: npm install winston config
+
+• Modify src/app.ts to import and use the logger for application startup and request handling, including unhandled exception logging.
+
+• Modify config/default.json to include logger configuration settings (log level, file path).
+
+• Modify relevant service files (e.g., src/services/orderService.ts) to add logging for key events.
+
+• Test the logging implementation by running the application and generating different types of log messages.
+
+• Configure log rotation using Winston's built-in mechanisms or a separate log rotation utility.
+
+• Set appropriate file permissions for the log files to restrict access.
+
+### DELIVERABLES CHECKLIST
+
+  
+    
+      #
+      Deliverable
+      Status
+    
+  
+  
+    
+      1
+      Files created/modified
+      Pending
+    
+    
+      2
+      Tests passing
+      Pending
+    
+    
+      3
+      DoD criteria met
+      Pending
+    
+  
+
+### TEST CASES
+
+• Test case 1 - Verify that log messages are written to the log file with the correct timestamp, log level, and message content. Expected outcome: Log messages are written to the file in the expected format.
+
+• Test case 2 - Verify that changing the LOG_LEVEL environment variable results in the correct log messages being written to the log file. Expected outcome: Only messages at or above the specified log level are logged.
+
+• Test case 3 - Verify that log rotation is implemented and that old log files are deleted after the specified maximum number of files is reached. Expected outcome: Log files are rotated based on size or time, and older files are deleted.
+
+• Test case 4 - Verify that error messages, including stack traces (where applicable), are logged at the ERROR level when exceptions or errors occur. Expected outcome: Error messages with stack traces are logged when errors occur.
+
+• Test case 5 - Verify that key events such as order creation, order fulfillment, and payment processing are logged at the appropriate levels. Expected outcome: Key events are logged at the correct log levels.
+
+• Test case 6 - Verify that a user without the correct permissions cannot read the log files. Expected outcome: Unauthorized users cannot access the log files.
+
+### EXECUTION INSTRUCTIONS
+
+**IMPORTANT: This section must be included in the output.**
+
+After this implementation plan is complete, the AI agent executing this plan MUST follow these steps in order:
+
+### Step 1: Execute the Plan
+
+• Follow the Execution Steps in sequence
+
+• Create/modify files as specified in the File Changes Table
+
+• Implement each component following the code examples provided
+
+• Address any issues immediately before proceeding
+
+• Run the application to verify basic functionality after each major change
+
+### Step 2: Run QA Tests
+
+After execution is complete, run comprehensive QA tests:
+
+• Execute all test cases listed in the TEST CASES section above
+
+• Run unit tests if applicable (e.g., npx tsx for TypeScript validation)
+
+• Perform end-to-end testing using the run_test tool where applicable
+
+• Document all test results (passed/failed with details)
+
+• Save QA report to: docs/qa-reports/TASK-644-QA-report.md
+
+### Step 3: Final Gap Analysis
+
+Before generating the implementation report, perform a final gap analysis:
+
+• **Requirements Verification**: Review the original DoD checklist and verify EACH acceptance criterion is met
+
+• **Code Quality Check**: 
+   
+
+   • Run LSP diagnostics on all changed files
+
+   • Verify no TypeScript/compilation errors
+
+   • Check for any console errors in browser/server logs
+
+   
+
+• **Integration Verification**: 
+   
+
+   • Confirm new code integrates correctly with existing systems
+
+   • Verify no regressions in related functionality
+
+   
+
+• **Edge Cases Review**: 
+   
+
+   • Re-examine edge cases from Phase 3 Gap Analysis
+
+   • Confirm all identified gaps have been resolved
+
+   
+
+• **Documentation Check**:
+   
+
+   • Verify code comments are present where needed
+
+   • Confirm any new APIs/functions have proper JSDoc annotations
+
+   
+
+Document any gaps found and address them before proceeding to the implementation report.
+
+### Step 4: Generate Implementation Report
+
+After completing Steps 1-3, create a comprehensive markdown implementation report and save it to:
+
+docs/implementation-reports/TASK-644-impl-report.md
+
+The report MUST include ALL of these sections:
+
+### 1. Task Summary
+
+• **Task ID**: TASK-644
+
+• **Task Title**: Create server log
+
+• **Implementation Date**: Date work was completed
+
+• **Estimated vs Actual Effort**: Compare if estimated hours were provided
+
+### 2. Executive Summary
+
+• Brief overview of what was built (2-3 sentences)
+
+• Key outcomes achieved
+
+• Overall complexity assessment (Low/Medium/High)
+
+### 3. Files Changed
+
+Complete table of all files created or modified:
+
+  
+    
+      Action
+      File Path
+      Change Summary
+    
+  
+  
+    
+      CREATE/MODIFY/DELETE
+      path/to/file
+      What changed and why
+    
+  
+
+### 4. Architecture & Design Decisions
+
+• Key technical decisions made during implementation
+
+• Rationale for each decision
+
+• Alternatives considered and why they were rejected
+
+• Any patterns or conventions followed
+
+### 5. Implementation Details
+
+• Step-by-step summary of what was built
+
+• Key code snippets for complex logic (if helpful)
+
+• Integration points with existing systems
+
+• Configuration changes made
+
+### 6. Testing Results
+
+Comprehensive testing summary:
+
+• **Unit Tests**: Number run, passed, failed
+
+• **Integration Tests**: What was tested, results
+
+• **Manual Testing**: Scenarios tested, outcomes
+
+• **Edge Cases**: How they were handled
+
+• Link to QA report: docs/qa-reports/TASK-644-QA-report.md
+
+### 7. Gap Analysis Results
+
+Summary of the final gap analysis (Step 3):
+
+• Requirements verification status (all DoD items checked)
+
+• Code quality issues found and resolved
+
+• Integration issues encountered and fixed
+
+• Any remaining technical debt
+
+### 8. Deviations from Plan
+
+• Any changes from the original implementation plan
+
+• Reasons for each deviation
+
+• Impact on the final solution
+
+### 9. Known Limitations
+
+• Current constraints or limitations
+
+• Recommended future improvements
+
+• Technical debt introduced (if any)
+
+### 10. Definition of Done Checklist
+
+Final verification against all DoD acceptance criteria:
+
+  
+    
+      #
+      Criterion
+      Status
+      Notes
+    
+  
+  
+    
+      1
+      [Criterion from DoD]
+      PASS/FAIL
+      Details
+    
+  
+
+```
