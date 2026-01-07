@@ -110,54 +110,46 @@
         
         .log-line {
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.6;
-            padding: 4px 8px;
-            margin: 2px 0;
+            font-size: 13px;
+            line-height: 1.8;
+            padding: 6px 12px;
+            margin: 1px 0;
             border-radius: 4px;
-            white-space: pre-wrap;
-            word-break: break-all;
+            white-space: nowrap;
+            overflow-x: auto;
+            color: #e2e8f0;
         }
         
         .log-line.ERROR {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border-left: 3px solid #ef4444;
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 4px solid #ef4444;
         }
         
         .log-line.WARNING {
             background: rgba(245, 158, 11, 0.15);
-            color: #fcd34d;
-            border-left: 3px solid #f59e0b;
+            border-left: 4px solid #f59e0b;
         }
         
         .log-line.INFO {
             background: rgba(59, 130, 246, 0.1);
-            color: #93c5fd;
-            border-left: 3px solid #3b82f6;
+            border-left: 4px solid #3b82f6;
         }
         
         .log-line.DEBUG {
             background: rgba(139, 92, 246, 0.1);
-            color: #c4b5fd;
-            border-left: 3px solid #8b5cf6;
+            border-left: 4px solid #8b5cf6;
         }
         
         .log-timestamp {
-            color: #6b7280;
-            margin-right: 8px;
+            color: #94a3b8;
         }
         
         .log-level {
-            font-weight: 700;
-            margin-right: 8px;
-            min-width: 60px;
-            display: inline-block;
+            color: #64748b;
         }
         
         .log-source {
-            color: #10b981;
-            margin-right: 8px;
+            color: #a78bfa;
         }
         
         .empty-state {
@@ -565,35 +557,23 @@
                 return;
             }
             
+            const levelIcons = {
+                'ERROR': '🔴',
+                'WARNING': '🟡',
+                'INFO': '🔵',
+                'DEBUG': '🟣'
+            };
+            
             const html = logs.map((log, index) => {
                 const level = log.level || 'INFO';
+                const icon = levelIcons[level] || '⚪';
                 const timestamp = formatTimestamp(log.timestamp);
+                const source = log.source || 'app';
+                const category = log.category ? `[${log.category}]` : '';
                 const message = escapeHtml(log.message || '');
                 
-                let jsonHtml = '';
-                const jsonMatch = message.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    try {
-                        const jsonObj = JSON.parse(jsonMatch[0]);
-                        const prettyJson = JSON.stringify(jsonObj, null, 2);
-                        jsonHtml = `
-                            <div class="json-expandable" onclick="toggleJson(${index})">📋 Click to expand JSON</div>
-                            <div class="json-content" id="json-${index}">${escapeHtml(prettyJson)}</div>
-                        `;
-                    } catch (e) {
-                    }
-                }
-                
-                return `
-                    <div class="log-line ${level}">
-                        <span class="log-timestamp">${timestamp}</span>
-                        <span class="log-level">${level}</span>
-                        <span class="log-source">${escapeHtml(log.source || 'app')}</span>
-                        ${message.replace(jsonMatch?.[0] || '', '')}
-                        ${jsonHtml}
-                    </div>
-                `;
-            }).join('');
+                return `<div class="log-line ${level}">${icon} <span class="log-timestamp">[${timestamp}]</span> <span class="log-level">[LOG]</span> <span class="log-source">[${source}]</span> ${category} ${message}</div>`;
+            }).join('\n');
             
             container.innerHTML = html;
             container.scrollTop = container.scrollHeight;
