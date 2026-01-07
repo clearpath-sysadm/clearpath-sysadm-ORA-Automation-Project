@@ -1087,6 +1087,9 @@ def run_unified_sync():
             'errors': 0
         }
         
+        # Collect detailed error information
+        error_details = []
+        
         max_modify_date = None
         
         # Process all orders in a single transaction (per architect)
@@ -1131,6 +1134,7 @@ def run_unified_sync():
                                 stats['existing_updated'] += 1
                             else:
                                 stats['errors'] += 1
+                                error_details.append(f"Order {order_number}: Failed to update existing order status")
                         else:
                             # COLLISION DETECTED! Same order number but different/missing ShipStation ID
                             logger.warning(f"⚠️ ORDER COLLISION DETECTED: Order {order_number} exists with different ShipStation ID")
@@ -1158,6 +1162,7 @@ def run_unified_sync():
                                     stats['existing_updated'] += 1
                                 else:
                                     stats['errors'] += 1
+                                    error_details.append(f"Order {order_number}: Failed to update linked order status")
                             
                             # CASE 2: Local order has DIFFERENT non-NULL shipstation_order_id → TRUE CONFLICT
                             else:
@@ -1257,6 +1262,7 @@ def run_unified_sync():
                             stats['new_manual_imported'] += 1
                         else:
                             stats['errors'] += 1
+                            error_details.append(f"Order {order_number}: Failed to import new manual order")
                     
                     # Success - release the savepoint
                     cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
@@ -1269,6 +1275,9 @@ def run_unified_sync():
                     except:
                         pass  # If rollback fails, transaction will abort anyway
                     
+                    import traceback
+                    error_msg = f"Order {order.get('orderNumber', 'UNKNOWN')}: {str(e)}"
+                    error_details.append(f"{error_msg}\n{traceback.format_exc()}")
                     logger.error(f"❌ Error processing order {order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
                     stats['errors'] += 1
             
@@ -1345,8 +1354,12 @@ def run_unified_sync():
                     logger.info(f"✅ Watermark advanced to current time (no errors)")
             else:
                 logger.warning(f"⚠️ Watermark NOT advanced due to {stats['errors']} errors - will retry on next run")
+                # Log detailed errors for debugging
+                for detail in error_details:
+                    logger.error(f"   ERROR DETAIL: {detail}")
                 # Rollback transaction to avoid partial commits
-                raise Exception(f"Processing failed with {stats['errors']} errors - aborting transaction")
+                error_summary = "; ".join([d.split('\n')[0] for d in error_details[:5]])  # First line of first 5 errors
+                raise Exception(f"Processing failed with {stats['errors']} errors: {error_summary}")
         
         # Comprehensive summary logging
         elapsed = (datetime.datetime.now() - sync_start).total_seconds()
@@ -1376,8 +1389,10 @@ def run_unified_sync():
         server_logger.info("Unified ShipStation sync workflow completed", source="Scheduler")
         
     except Exception as e:
+        import traceback
+        full_error = f"Unified ShipStation sync failed: {str(e)}\n\nFull traceback:\n{traceback.format_exc()}"
         logger.error(f"❌ FATAL ERROR in unified sync: {e}", exc_info=True)
-        server_logger.error(f"Unified ShipStation sync failed: {str(e)[:100]}", source="Scheduler")
+        server_logger.error(full_error, source="Scheduler")
         raise
 
 
