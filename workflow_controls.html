@@ -160,6 +160,52 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <span>📢</span> Admin Alert Bar
+                        </h3>
+                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                            Display important messages to all users at the top of every page. Active alerts (red) cannot be dismissed. Cleared alerts (green) can be dismissed by users.
+                        </p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div>
+                                <label style="display: block; font-weight: 500; margin-bottom: 8px;">Alert Message</label>
+                                <textarea id="alert-message" 
+                                    placeholder="Enter alert message (max 255 characters)" 
+                                    maxlength="255" 
+                                    style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px; background: var(--bg-primary); color: var(--text-primary);"></textarea>
+                                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                    <span id="char-count" style="font-size: 12px; color: var(--text-tertiary);">0 / 255 characters</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <label style="font-weight: 500;">Alert Status:</label>
+                                    <div id="alert-status-indicator" style="display: flex; align-items: center; gap: 8px;">
+                                        <span id="status-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #6c757d;"></span>
+                                        <span id="status-text" style="font-size: 14px;">No Alert</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                    <button id="btn-activate" onclick="updateAlert(true)" class="btn btn-danger" style="display: flex; align-items: center; gap: 6px;">
+                                        <span>🔴</span> Activate Alert
+                                    </button>
+                                    <button id="btn-clear" onclick="updateAlert(false)" class="btn btn-success" style="display: flex; align-items: center; gap: 6px;">
+                                        <span>🟢</span> Clear Alert
+                                    </button>
+                                    <button id="btn-remove" onclick="removeAlert()" class="btn btn-secondary" style="display: flex; align-items: center; gap: 6px;">
+                                        <span>🗑️</span> Remove Alert
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="alert-feedback" style="display: none; padding: 12px; border-radius: 6px; font-size: 14px;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -517,8 +563,136 @@
             adminToggle.classList.add('open');
         }
 
+        // Admin Alert Management
+        async function loadAdminAlert() {
+            try {
+                const response = await fetch('/api/admin/alert');
+                const data = await response.json();
+                
+                const messageInput = document.getElementById('alert-message');
+                const charCount = document.getElementById('char-count');
+                const statusDot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+                
+                messageInput.value = data.message || '';
+                charCount.textContent = `${(data.message || '').length} / 255 characters`;
+                
+                if (!data.message || data.message.trim() === '') {
+                    statusDot.style.background = '#6c757d';
+                    statusText.textContent = 'No Alert';
+                } else if (data.is_active) {
+                    statusDot.style.background = '#dc3545';
+                    statusText.textContent = 'Active (Red Bar)';
+                } else {
+                    statusDot.style.background = '#28a745';
+                    statusText.textContent = 'Cleared (Green Bar)';
+                }
+            } catch (error) {
+                console.error('Error loading admin alert:', error);
+                showAlertFeedback('Error loading alert', 'error');
+            }
+        }
+        
+        async function updateAlert(isActive) {
+            const message = document.getElementById('alert-message').value.trim();
+            
+            if (!message) {
+                showAlertFeedback('Please enter a message before activating or clearing the alert.', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/alert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, is_active: isActive })
+                });
+                
+                if (response.status === 403) {
+                    showAlertFeedback('Admin access required to update alerts.', 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const status = isActive ? 'activated' : 'cleared';
+                    showAlertFeedback(`Alert ${status} successfully. The alert bar will update on all pages.`, 'success');
+                    loadAdminAlert();
+                    localStorage.removeItem('alertDismissed');
+                    if (window.adminAlertBar) {
+                        window.adminAlertBar.init();
+                    }
+                } else {
+                    showAlertFeedback(data.error || 'Failed to update alert', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating alert:', error);
+                showAlertFeedback('Error updating alert. Please try again.', 'error');
+            }
+        }
+        
+        async function removeAlert() {
+            try {
+                const response = await fetch('/api/admin/alert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: '', is_active: false })
+                });
+                
+                if (response.status === 403) {
+                    showAlertFeedback('Admin access required to remove alerts.', 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlertFeedback('Alert removed. The alert bar will be hidden on all pages.', 'success');
+                    loadAdminAlert();
+                    localStorage.removeItem('alertDismissed');
+                    const alertBar = document.getElementById('admin-alert-bar');
+                    if (alertBar) alertBar.remove();
+                    document.body.style.paddingTop = '0';
+                } else {
+                    showAlertFeedback(data.error || 'Failed to remove alert', 'error');
+                }
+            } catch (error) {
+                console.error('Error removing alert:', error);
+                showAlertFeedback('Error removing alert. Please try again.', 'error');
+            }
+        }
+        
+        function showAlertFeedback(message, type) {
+            const feedback = document.getElementById('alert-feedback');
+            feedback.textContent = message;
+            feedback.style.display = 'block';
+            
+            if (type === 'success') {
+                feedback.style.background = 'rgba(40, 167, 69, 0.1)';
+                feedback.style.color = '#28a745';
+                feedback.style.border = '1px solid rgba(40, 167, 69, 0.3)';
+            } else if (type === 'error') {
+                feedback.style.background = 'rgba(220, 53, 69, 0.1)';
+                feedback.style.color = '#dc3545';
+                feedback.style.border = '1px solid rgba(220, 53, 69, 0.3)';
+            } else {
+                feedback.style.background = 'rgba(255, 193, 7, 0.1)';
+                feedback.style.color = '#856404';
+                feedback.style.border = '1px solid rgba(255, 193, 7, 0.3)';
+            }
+            
+            setTimeout(() => { feedback.style.display = 'none'; }, 5000);
+        }
+        
+        // Update character count as user types
+        document.getElementById('alert-message').addEventListener('input', function() {
+            document.getElementById('char-count').textContent = `${this.value.length} / 255 characters`;
+        });
+
         loadWorkflows();
         loadWatermark();
+        loadAdminAlert();
         setInterval(loadWorkflows, 5000);
         setInterval(loadWatermark, 30000);
     </script>
