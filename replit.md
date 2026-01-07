@@ -50,7 +50,7 @@ The Oracare Fulfillment System is a production-ready order management platform t
 - Alerts: `duplicate_order_alerts`, `lot_mismatch_alerts`, `manual_order_conflicts`, `shipping_violations`
 - System: `workflows`, `workflow_controls`, `configuration_params`, `users`
 
-**Frontend Pages (19):**
+**Frontend Pages (20):**
 - `index.html` - Main dashboard (DEFAULT VIEW)
 - `xml_import.html` - Orders Inbox for troubleshooting
 - `shipped_orders.html`, `shipped_items.html` - Historical data
@@ -59,6 +59,7 @@ The Oracare Fulfillment System is a production-ready order management platform t
 - `charge_report.html`, `weekly_shipped_history.html` - Reports
 - `order-management.html`, `order_audit.html` - Admin tools
 - `workflow_controls.html`, `incidents.html` - System management
+- `logs.html` - Server Logs viewer (Admin only)
 - `email_contacts.html`, `settings.html`, `help.html`, `landing.html` - Utility pages
 
 **Automation Workflows (7):**
@@ -108,11 +109,12 @@ X-Cart → XML → Google Drive → xml-import → orders_inbox
 - `static/global-styles.css` - Design system
 - `TECHNICAL_DOCUMENTATION.md` - Full technical reference
 
-## Recent Changes (Dec 2025)
+## Recent Changes (Dec 2025 - Jan 2026)
 - Added `manual_order_conflicts` table and UI for conflict tracking
 - Added `original_order_status` column for accurate conflict status display
 - Daily inventory snapshots for charge report BOM calculations
 - Multi-methodology diagnostic tooling for production issues
+- **Server Logging System (Jan 2026):** File-based logging with rotation (10MB, 7 backups), configurable via LOG_LEVEL env var, Server Logs admin page (logs.html) with filtering/search/download
 
 ## Important Notes
 - InitialInventory baseline: September 19, 2025
