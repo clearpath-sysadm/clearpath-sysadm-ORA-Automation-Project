@@ -149,9 +149,26 @@ class AuthManager {
     isViewer() {
         return this.isAuthenticated && this.user && this.user.role === 'viewer';
     }
+    
+    async getAuthStatus() {
+        if (this.user !== null) {
+            return { authenticated: this.isAuthenticated, user: this.user };
+        }
+        try {
+            const response = await fetch('/api/auth/status');
+            const data = await response.json();
+            this.isAuthenticated = data.authenticated;
+            this.user = data.user;
+            return data;
+        } catch (err) {
+            console.error('Auth status check failed:', err);
+            return { authenticated: false, user: null };
+        }
+    }
 }
 
 const authManager = new AuthManager();
 document.addEventListener('DOMContentLoaded', () => authManager.init());
 
 window.authManager = authManager;
+window.auth = authManager;
