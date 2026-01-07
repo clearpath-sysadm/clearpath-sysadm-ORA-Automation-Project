@@ -2565,14 +2565,14 @@ def api_run_eod():
     # Get current user for logging
     user_name = "unknown"
     try:
-        from src.services.auth import get_current_user
+        from src.auth.middleware import get_current_user
         user = get_current_user()
-        if user:
-            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
     except:
         pass
     
-    server_logger.info(f"EOD report triggered", source="Reports", user=user_name)
+    server_logger.info(f"EOD report started", source="Reports", user=user_name)
     
     # Concurrency guard: prevent duplicate EOD runs
     if _report_locks['EOD']:
@@ -2707,14 +2707,14 @@ def api_run_eow():
     # Get current user for logging
     user_name = "unknown"
     try:
-        from src.services.auth import get_current_user
+        from src.auth.middleware import get_current_user
         user = get_current_user()
-        if user:
-            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
     except:
         pass
     
-    server_logger.info(f"EOW report triggered", source="Reports", user=user_name)
+    server_logger.info(f"EOW report started", source="Reports", user=user_name)
     
     # Concurrency guard: prevent duplicate EOW runs
     if _report_locks['EOW']:
@@ -2803,6 +2803,21 @@ def api_run_eom():
     """
     import datetime
     from src.services.database.pg_utils import log_report_run, execute_query
+    from src.utils.server_logger import get_logger
+    
+    server_logger = get_logger()
+    
+    # Get current user for logging
+    user_name = "unknown"
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+    except:
+        pass
+    
+    server_logger.info(f"EOM report started", source="Reports", user=user_name)
     
     # Concurrency guard: prevent duplicate EOM runs
     if _report_locks['EOM']:
@@ -2946,6 +2961,7 @@ def api_run_eom():
         
         # Log success
         log_report_run('EOM', month_start, 'success', f'Monthly charges: ${grand_total:,.2f}')
+        server_logger.info(f"EOM report completed successfully (${grand_total:,.2f})", source="Reports", user=user_name)
         
         return jsonify({
             'success': True,
@@ -2964,6 +2980,7 @@ def api_run_eom():
     except Exception as e:
         month_start = datetime.date.today().replace(day=1)
         log_report_run('EOM', month_start, 'failed', str(e))
+        server_logger.error(f"EOM report failed: {str(e)[:200]}", source="Reports", user=user_name)
         return jsonify({
             'success': False,
             'error': str(e)
