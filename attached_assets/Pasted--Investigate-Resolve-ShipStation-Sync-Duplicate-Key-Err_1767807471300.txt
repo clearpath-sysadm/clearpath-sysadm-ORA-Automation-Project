@@ -1,0 +1,35 @@
+### Investigate & Resolve ShipStation Sync Duplicate Key Error
+
+Task Overview Unified ShipStation sync failed on Jan 7, 2026, 11:14:23 AM CST. Processing failed with 2 errors: Order 100859 and Order 100594. Error: duplicate key value violates unique constraint "manual_order_conflicts_shipstation_order_id_key". Key Goals Identify root cause of duplicate key violation during ShipStation sync. Implement fix to prevent future sync failures for duplicate orders. Process affected orders (100859, 100594) manually or via re-sync. Why This Matters Ensures accurate and timely order fulfillment. Prevents data inconsistencies between systems. Maintains operational efficiency.
+
+### Definition of Done
+
+```html
+
+### Acceptance Criteria
+
+    • [ ] **Root Cause Identified:** The root cause of the duplicate key violation for ShipStation order IDs in the `manual_order_conflicts` table has been identified and documented in the task notes. This documentation should include the specific scenario leading to the duplicate keys.
+
+    • [ ] **Fix Implemented:** A code change has been implemented to prevent future duplicate key violations for ShipStation order IDs in the `manual_order_conflicts` table. This could involve checking for existing entries before insertion, updating existing entries instead of inserting duplicates, or other appropriate solutions.
+
+    • [ ] **Affected Orders Processed:** Orders 100859 and 100594 have been successfully processed in the system. This can be verified by confirming that they have been either manually adjusted or successfully re-synced with ShipStation, and their status is accurate in the Oracare Fulfillment App.
+
+    • [ ] **Idempotency:** The fix should be idempotent. Meaning that running the sync process multiple times with the same data should not result in duplicate key errors or data corruption.
+
+    • [ ] **Monitoring/Logging Implemented:** Appropriate logging has been added to monitor the ShipStation sync process and quickly identify similar duplicate key violations in the future. Logs should include relevant information like order IDs, timestamps, and error messages.
+
+    • [ ] **Code Review Approved:** The code changes have been reviewed and approved by at least one other senior engineer, ensuring code quality and adherence to best practices.
+
+    • [ ] **Deployment Successful:** The code changes have been successfully deployed to the staging environment without introducing any new errors or regressions.
+
+### Testing Requirements
+
+    • [ ] **Unit Test for Duplicate Prevention:** A unit test has been created to specifically verify that the fix prevents duplicate key violations when attempting to insert a ShipStation order ID that already exists in the `manual_order_conflicts` table.
+
+    • [ ] **Integration Test with ShipStation Mock:** An integration test has been created that simulates a ShipStation sync with scenarios that previously caused duplicate key errors, ensuring that the fix correctly handles these scenarios. A mock ShipStation API should be used to avoid impacting live data.
+
+    • [ ] **Regression Testing:** Regression testing has been performed to ensure that the fix does not introduce any new issues or negatively impact existing functionality of the Oracare Fulfillment App.
+
+    • [ ] **Manual Testing of Affected Orders:** Manually verify the status and data integrity of orders 100859 and 100594 after the fix and re-sync/manual processing.
+
+```

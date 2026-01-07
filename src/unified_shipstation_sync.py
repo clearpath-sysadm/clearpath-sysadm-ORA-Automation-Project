@@ -526,26 +526,23 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             
             logger.warning(f"⚠️ CONFLICT DETECTED: Order {order_number} already exists in ShipStation (status: {original_order_status})")
             
-            # Check if conflict already exists to avoid duplicates
+            # Use UPSERT to handle conflicts idempotently (ON CONFLICT DO NOTHING)
+            # This prevents duplicate key errors when the same order is seen multiple times
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id FROM manual_order_conflicts 
-                WHERE shipstation_order_id = %s AND resolution_status = 'pending'
-            """, (str(order_id),))
+                INSERT INTO manual_order_conflicts (
+                    conflicting_order_number, shipstation_order_id, customer_name, original_ship_date,
+                    original_company, original_items, duplicate_company, duplicate_items, original_order_status
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (shipstation_order_id) DO NOTHING
+            """, (order_number, str(order_id), customer_name, original_ship_date,
+                  original_company, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items), original_order_status))
             
-            if not cursor.fetchone():
-                # Create new conflict alert with detailed information including actual status
-                cursor.execute("""
-                    INSERT INTO manual_order_conflicts (
-                        conflicting_order_number, shipstation_order_id, customer_name, original_ship_date,
-                        original_company, original_items, duplicate_company, duplicate_items, original_order_status
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (order_number, str(order_id), customer_name, original_ship_date,
-                      original_company, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items), original_order_status))
+            if cursor.rowcount > 0:
                 logger.info(f"🚨 Created conflict alert for order {order_number}")
             else:
-                logger.debug(f"  Conflict alert already exists for order {order_number}")
+                logger.debug(f"  Conflict alert already exists for order {order_number} (shipstation_order_id: {order_id})")
             
             return False  # Do not import the order
         
@@ -1205,25 +1202,22 @@ def run_unified_sync():
                                         qty = item.get('quantity', 0)
                                         duplicate_items.append({'sku': sku, 'quantity': qty})
                                     
-                                    # Check if conflict already exists
+                                    # Use UPSERT to handle conflicts idempotently (ON CONFLICT DO NOTHING)
+                                    # This prevents duplicate key errors when the same order is seen multiple times
                                     cursor.execute("""
-                                        SELECT id FROM manual_order_conflicts 
-                                        WHERE shipstation_order_id = %s AND resolution_status = 'pending'
-                                    """, (current_shipstation_id,))
+                                        INSERT INTO manual_order_conflicts (
+                                            conflicting_order_number, shipstation_order_id, customer_name, original_ship_date,
+                                            original_company, original_items, duplicate_company, duplicate_items
+                                        )
+                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                                        ON CONFLICT (shipstation_order_id) DO NOTHING
+                                    """, (order_number, current_shipstation_id, duplicate_ship_name, original_created_at,
+                                          None, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items)))
                                     
-                                    if not cursor.fetchone():
-                                        # Create new conflict alert
-                                        cursor.execute("""
-                                            INSERT INTO manual_order_conflicts (
-                                                conflicting_order_number, shipstation_order_id, customer_name, original_ship_date,
-                                                original_company, original_items, duplicate_company, duplicate_items
-                                            )
-                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                                        """, (order_number, current_shipstation_id, duplicate_ship_name, original_created_at,
-                                              None, json.dumps(original_items), duplicate_company, json.dumps(duplicate_items)))
+                                    if cursor.rowcount > 0:
                                         logger.info(f"🚨 Created manual order conflict alert for order {order_number}")
                                     else:
-                                        logger.debug(f"  Conflict alert already exists for order {order_number}")
+                                        logger.debug(f"  Conflict alert already exists for order {order_number} (shipstation_id: {current_shipstation_id})")
                                 else:
                                     # Non-manual order collision - log but don't create manual_order_conflicts alert
                                     logger.warning(f"⚠️ NON-MANUAL order collision detected for {order_number}")
