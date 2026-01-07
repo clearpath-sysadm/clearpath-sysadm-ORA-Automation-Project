@@ -100,7 +100,7 @@
         .stat-card.debug .stat-value { color: #8b5cf6; }
         
         .log-container {
-            background: #0d1117;
+            background: var(--card-bg);
             border-radius: var(--radius-md);
             border: 1px solid var(--border-color);
             max-height: 600px;
@@ -117,7 +117,7 @@
             border-radius: 4px;
             white-space: nowrap;
             overflow-x: auto;
-            color: #e2e8f0;
+            color: var(--text-primary);
         }
         
         .log-line.ERROR {
@@ -141,15 +141,15 @@
         }
         
         .log-timestamp {
-            color: #94a3b8;
+            color: var(--text-muted);
         }
         
         .log-level {
-            color: #64748b;
+            color: var(--text-tertiary);
         }
         
         .log-source {
-            color: #a78bfa;
+            color: var(--accent-color);
         }
         
         .log-actor {
@@ -179,7 +179,7 @@
         
         .json-expandable {
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--bg-tertiary);
             padding: 4px 8px;
             border-radius: 4px;
             display: inline-block;
