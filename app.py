@@ -91,6 +91,11 @@ def enforce_api_auth():
         '/api/auth/status',  # Required for login flow - landing page checks auth state
     }
     
+    # Routes that are public for GET but require admin for write operations
+    PUBLIC_GET_ADMIN_WRITE_ROUTES = {
+        '/api/admin/alert',  # Alert bar displays for all users (GET), but write requires admin
+    }
+    
     # Admin-only routes regardless of method
     ADMIN_ONLY_ROUTES = {
         '/api/sync_shipstation',
@@ -125,6 +130,24 @@ def enforce_api_auth():
     
     # Check if route is public
     if request.path in PUBLIC_ROUTES:
+        return None
+    
+    # Check if route is public for GET but requires admin for write operations
+    if request.path in PUBLIC_GET_ADMIN_WRITE_ROUTES:
+        if request.method in {'GET', 'HEAD', 'OPTIONS'}:
+            return None
+        # For write operations, require admin
+        if not current_user.is_authenticated:
+            return jsonify({
+                'error': 'Authentication required',
+                'authenticated': False
+            }), 401
+        if current_user.role != 'admin':
+            return jsonify({
+                'error': 'Admin access required',
+                'authenticated': True,
+                'role': current_user.role
+            }), 403
         return None
     
     # Determine required role based on method and overrides

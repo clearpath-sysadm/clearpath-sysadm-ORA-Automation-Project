@@ -118,6 +118,7 @@ X-Cart → XML → Google Drive → xml-import → orders_inbox
 - **User Activity Tracking (Jan 2026):** 16 endpoints tracked with user/role attribution for Inventory, SKU-Lot, Reports, ShipStation, and Email operations
 - **ShipStation Sync Fix (Jan 7, 2026):** Fixed duplicate key constraint violations in `manual_order_conflicts` table using UPSERT pattern (`ON CONFLICT DO NOTHING`). See `docs/implementation-reports/SHIPSTATION_SYNC_DUPLICATE_KEY_FIX.md`
 - **ShipStation Deletion Audit Trail (Jan 7, 2026):** Enhanced `deleted_shipstation_orders` table to capture full customer data before deletion: customer_name, customer_email, customer_company, ship_to_name/city/state, order_total_cents, order_date, items_json. Server logging added for deletion events.
+- **Admin Alert Bar System (Jan 7, 2026):** Admin-controlled messaging system for displaying important alerts to all users. Active alerts (red bar) cannot be dismissed; cleared alerts (green bar) can be dismissed by users. Managed via Workflow Controls page (Admin only). Database table: `admin_alerts`. API: `/api/admin/alert`.
 
 ## Important Notes
 - InitialInventory baseline: September 19, 2025
