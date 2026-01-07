@@ -9278,6 +9278,91 @@ def backfill_inventory_snapshots():
         logger.error(f'Error in backfill: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ========================================
+# SERVER LOGS API (Admin Only)
+# ========================================
+
+@app.route('/api/admin/logs', methods=['GET'])
+@admin_required
+def api_get_server_logs():
+    """Get server logs with filtering options (Admin only)"""
+    try:
+        from src.utils.server_logger import read_logs
+        
+        level = request.args.get('level', 'ALL')
+        source = request.args.get('source', 'ALL')
+        category = request.args.get('category', 'ALL')
+        search_pattern = request.args.get('searchPattern', None)
+        last_n_lines = min(int(request.args.get('lastNLines', 500)), 5000)
+        hours_back = min(int(request.args.get('hoursBack', 24)), 168)  # Max 7 days
+        
+        result = read_logs(
+            level=level,
+            source=source,
+            category=category,
+            search_pattern=search_pattern,
+            last_n_lines=last_n_lines,
+            hours_back=hours_back
+        )
+        
+        return jsonify({
+            'success': True,
+            **result
+        })
+        
+    except Exception as e:
+        logger.error(f'Error reading server logs: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/logs/stats', methods=['GET'])
+@admin_required
+def api_get_log_stats():
+    """Get log file statistics (Admin only)"""
+    try:
+        from src.utils.server_logger import get_log_stats
+        
+        stats = get_log_stats()
+        return jsonify({
+            'success': True,
+            **stats
+        })
+        
+    except Exception as e:
+        logger.error(f'Error getting log stats: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/logs/download', methods=['GET'])
+@admin_required  
+def api_download_logs():
+    """Download log file as text (Admin only)"""
+    try:
+        log_path = 'logs/app.log'
+        
+        if not os.path.exists(log_path):
+            return jsonify({'success': False, 'error': 'Log file not found'}), 404
+        
+        with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
+            content = f.read()
+        
+        from flask import Response
+        return Response(
+            content,
+            mimetype='text/plain',
+            headers={'Content-Disposition': 'attachment; filename=server-logs.txt'}
+        )
+        
+    except Exception as e:
+        logger.error(f'Error downloading logs: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
+    # Initialize file logging
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+    server_logger.info('Dashboard server starting...', source='app')
+    
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
