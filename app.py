@@ -1863,15 +1863,17 @@ def api_sync_shipstation():
     
     # Get current user for logging
     user_name = "unknown"
+    user_role = None
     try:
-        from src.services.auth import get_current_user
+        from src.auth.middleware import get_current_user
         user = get_current_user()
-        if user:
-            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
     except:
         pass
     
-    server_logger.info("Manual ShipStation sync triggered", source="ShipStation", user=user_name)
+    server_logger.info("Manual ShipStation sync triggered", source="ShipStation", user=user_name, role=user_role)
     
     try:
         import subprocess
@@ -4988,11 +4990,13 @@ def api_track_compose_email():
     
     # Get current user for logging
     user_name = "unknown"
+    user_role = None
     try:
-        from src.services.auth import get_current_user
+        from src.auth.middleware import get_current_user
         user = get_current_user()
-        if user:
-            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
     except:
         pass
     
@@ -5000,7 +5004,7 @@ def api_track_compose_email():
     recipient_count = data.get('recipient_count', 0)
     report_type = data.get('report_type', 'Weekly Inventory Report')
     
-    server_logger.info(f"Compose email: {report_type} to {recipient_count} recipient(s)", source="Email", user=user_name)
+    server_logger.info(f"Compose email: {report_type} to {recipient_count} recipient(s)", source="Email", user=user_name, role=user_role)
     
     return jsonify({'success': True})
 
@@ -6256,11 +6260,13 @@ def api_confirm_delete_conflicting_order(conflict_id):
         
         # Get current user for logging
         user_name = "unknown"
+        user_role = None
         try:
-            from src.services.auth import get_current_user
+            from src.auth.middleware import get_current_user
             user = get_current_user()
-            if user:
-                user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+            if user and user.is_authenticated:
+                user_name = user.first_name or user.email or "unknown"
+                user_role = user.role
         except:
             pass
         
@@ -6325,7 +6331,7 @@ def api_confirm_delete_conflicting_order(conflict_id):
         conn.commit()
         conn.close()
         
-        server_logger.info(f"ShipStation order deleted: conflict #{conflict_id}, old order ID {old_shipstation_order_id}", source="ShipStation", user=user_name)
+        server_logger.info(f"ShipStation order deleted: conflict #{conflict_id}, old order ID {old_shipstation_order_id}", source="ShipStation", user=user_name, role=user_role)
         
         return jsonify({
             'success': True,
@@ -6346,11 +6352,13 @@ def api_dismiss_manual_order_conflict(conflict_id):
     
     # Get current user for logging
     user_name = "unknown"
+    user_role = None
     try:
-        from src.services.auth import get_current_user
+        from src.auth.middleware import get_current_user
         user = get_current_user()
-        if user:
-            user_name = user.get('first_name') or user.get('email') or user.get('username', 'unknown')
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
     except:
         pass
     
@@ -6375,7 +6383,7 @@ def api_dismiss_manual_order_conflict(conflict_id):
         conn.commit()
         conn.close()
         
-        server_logger.info(f"Manual order conflict #{conflict_id} dismissed", source="ShipStation", user=user_name)
+        server_logger.info(f"Manual order conflict #{conflict_id} dismissed", source="ShipStation", user=user_name, role=user_role)
         
         return jsonify({
             'success': True,
