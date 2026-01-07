@@ -551,6 +551,63 @@ def auth_status():
             'user': None
         })
 
+# Admin Alert API Endpoints
+@app.route('/api/admin/alert')
+def get_admin_alert():
+    """Get current admin alert for all users"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, message, is_active, updated_at, updated_by
+            FROM admin_alerts
+            WHERE id = 1
+        """)
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return jsonify({
+                'id': row[0],
+                'message': row[1] or '',
+                'is_active': row[2],
+                'updated_at': row[3].isoformat() if row[3] else None,
+                'updated_by': row[4]
+            })
+        return jsonify({'message': '', 'is_active': False})
+    except Exception as e:
+        server_logger.error(f"Error fetching admin alert: {str(e)}", source="Admin Alert")
+        return jsonify({'message': '', 'is_active': False})
+
+@app.route('/api/admin/alert', methods=['POST'])
+def update_admin_alert():
+    """Update admin alert (Admin only)"""
+    if not current_user.is_authenticated or current_user.role != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        data = request.json
+        message = (data.get('message') or '')[:255]
+        is_active = data.get('is_active', False)
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE admin_alerts
+            SET message = %s, is_active = %s, updated_at = CURRENT_TIMESTAMP, updated_by = %s
+            WHERE id = 1
+        """, (message, is_active, current_user.email))
+        conn.commit()
+        conn.close()
+        
+        status = "activated" if is_active else "cleared"
+        server_logger.info(f"Admin alert {status} by {current_user.email}: {message[:50]}{'...' if len(message) > 50 else ''}", source="Admin Alert")
+        
+        return jsonify({'success': True, 'message': message, 'is_active': is_active})
+    except Exception as e:
+        server_logger.error(f"Error updating admin alert: {str(e)}", source="Admin Alert")
+        return jsonify({'error': 'Error updating alert'}), 500
+
 # API Endpoints
 
 @app.route('/api/dashboard_stats')
