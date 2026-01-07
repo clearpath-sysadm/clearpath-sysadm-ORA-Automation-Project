@@ -541,6 +541,7 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             
             if cursor.rowcount > 0:
                 logger.info(f"🚨 Created conflict alert for order {order_number}")
+                server_logger.warning(f"Conflict detected: Order {order_number} already exists in ShipStation (status: {original_order_status})", source="ShipStation Sync")
             else:
                 logger.debug(f"  Conflict alert already exists for order {order_number} (shipstation_order_id: {order_id})")
             
@@ -688,8 +689,10 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
                     """, (ship_date, sku_lot, base_sku, quantity, order_number))
             
             logger.info(f"✅ Imported SHIPPED manual order: {order_number} (ship_date: {ship_date})")
+            server_logger.info(f"Imported shipped manual order: {order_number} (ship_date: {ship_date})", source="ShipStation Sync")
         else:
             logger.info(f"✅ Imported AWAITING manual order: {order_number}")
+            server_logger.info(f"Imported awaiting manual order: {order_number}", source="ShipStation Sync")
         
         return True
         
@@ -1216,6 +1219,7 @@ def run_unified_sync():
                                     
                                     if cursor.rowcount > 0:
                                         logger.info(f"🚨 Created manual order conflict alert for order {order_number}")
+                                        server_logger.warning(f"Manual order conflict detected: {order_number} (ShipStation ID collision)", source="ShipStation Sync")
                                     else:
                                         logger.debug(f"  Conflict alert already exists for order {order_number} (shipstation_id: {current_shipstation_id})")
                                 else:
@@ -1371,6 +1375,22 @@ def run_unified_sync():
         logger.info(f"   ❌ Errors: {stats['errors']}")
         logger.info(f"   ⏱️ Duration: {elapsed:.1f}s")
         logger.info("=" * 80)
+        
+        # Server logger summary for admin visibility
+        summary_parts = []
+        if stats['new_manual_imported'] > 0:
+            summary_parts.append(f"{stats['new_manual_imported']} imported")
+        if stats['existing_updated'] > 0:
+            summary_parts.append(f"{stats['existing_updated']} updated")
+        if stats.get('tracking_updates', 0) > 0:
+            summary_parts.append(f"{stats['tracking_updates']} tracking")
+        if stats['errors'] > 0:
+            summary_parts.append(f"{stats['errors']} errors")
+        
+        if summary_parts:
+            server_logger.info(f"Sync complete: {', '.join(summary_parts)} ({elapsed:.1f}s)", source="ShipStation Sync")
+        else:
+            server_logger.info(f"Sync complete: No changes ({elapsed:.1f}s)", source="ShipStation Sync")
         
         # Auto-resolve manual order conflicts (independent operation after main sync)
         try:

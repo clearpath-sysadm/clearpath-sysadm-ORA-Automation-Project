@@ -454,6 +454,41 @@ This fix is code-only:
 
 ---
 
-**Document Version:** 1.0  
+---
+
+## Addendum: Server Logging Enhancement (Jan 7, 2026)
+
+Following the duplicate key fix, server logging was added to provide visibility on the Server Logs admin page (logs.html).
+
+### New Server Logger Events
+
+| Event | Level | Source | When Logged |
+|-------|-------|--------|-------------|
+| Conflict detected | WARNING | ShipStation Sync | When a conflict alert is created (order exists in ShipStation) |
+| Manual order conflict | WARNING | ShipStation Sync | When a ShipStation ID collision is detected |
+| Imported shipped order | INFO | ShipStation Sync | When a shipped manual order is successfully imported |
+| Imported awaiting order | INFO | ShipStation Sync | When an awaiting manual order is successfully imported |
+| Sync complete summary | INFO | ShipStation Sync | After each sync with stats (imported, updated, tracking, errors) |
+
+### Example Log Messages
+
+```
+[WARNING] [ShipStation Sync] Conflict detected: Order 100859 already exists in ShipStation (status: shipped)
+[INFO] [ShipStation Sync] Imported shipped manual order: 100934 (ship_date: 2026-01-07)
+[INFO] [ShipStation Sync] Sync complete: 3 imported, 12 updated, 5 tracking (45.2s)
+```
+
+### Benefits
+
+1. **Admin Visibility:** All key sync operations now appear on the Server Logs page
+2. **Conflict Tracking:** Warnings for conflicts provide immediate visibility without console access
+3. **Import Confirmation:** Each successful import is logged with order number and type
+4. **Summary Statistics:** Concise sync summaries show activity at a glance
+
+---
+
+**Document Version:** 1.1  
 **Author:** Oracare Development Team  
-**Commit:** `e5018d7` - Fix ShipStation sync to prevent duplicate order conflicts
+**Commits:** 
+- `e5018d7` - Fix ShipStation sync to prevent duplicate order conflicts
+- `[pending]` - Add server logging for ShipStation sync operations
