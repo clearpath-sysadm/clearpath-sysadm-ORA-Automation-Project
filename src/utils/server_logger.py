@@ -57,9 +57,9 @@ class ServerLogger:
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(log_level)
             
-            # Format: ISO timestamp - LEVEL - source - message
+            # Format: ISO timestamp - LEVEL - message (removed redundant logger name)
             formatter = logging.Formatter(
-                '%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+                '%(asctime)s - %(levelname)s - %(message)s',
                 datefmt='%Y-%m-%dT%H:%M:%S'
             )
             file_handler.setFormatter(formatter)
@@ -70,25 +70,33 @@ class ServerLogger:
         
         ServerLogger._initialized = True
     
-    def debug(self, message: str, source: str = 'app', user: str = None):
-        actor = f'<{user}>' if user else '<system>'
+    def debug(self, message: str, source: str = 'app', user: str = None, role: str = None):
+        actor = self._format_actor(user, role)
         self.logger.debug(f'[{source}] {actor} {message}')
     
-    def info(self, message: str, source: str = 'app', user: str = None):
-        actor = f'<{user}>' if user else '<system>'
+    def info(self, message: str, source: str = 'app', user: str = None, role: str = None):
+        actor = self._format_actor(user, role)
         self.logger.info(f'[{source}] {actor} {message}')
     
-    def warning(self, message: str, source: str = 'app', user: str = None):
-        actor = f'<{user}>' if user else '<system>'
+    def warning(self, message: str, source: str = 'app', user: str = None, role: str = None):
+        actor = self._format_actor(user, role)
         self.logger.warning(f'[{source}] {actor} {message}')
     
-    def error(self, message: str, source: str = 'app', user: str = None, exc_info: bool = False):
-        actor = f'<{user}>' if user else '<system>'
+    def error(self, message: str, source: str = 'app', user: str = None, role: str = None, exc_info: bool = False):
+        actor = self._format_actor(user, role)
         self.logger.error(f'[{source}] {actor} {message}', exc_info=exc_info)
     
-    def critical(self, message: str, source: str = 'app', user: str = None, exc_info: bool = False):
-        actor = f'<{user}>' if user else '<system>'
+    def critical(self, message: str, source: str = 'app', user: str = None, role: str = None, exc_info: bool = False):
+        actor = self._format_actor(user, role)
         self.logger.critical(f'[{source}] {actor} {message}', exc_info=exc_info)
+    
+    def _format_actor(self, user: str = None, role: str = None) -> str:
+        """Format actor string with optional role"""
+        if user:
+            if role:
+                return f'<{user}|{role}>'
+            return f'<{user}>'
+        return '<system>'
 
 
 def get_logger() -> ServerLogger:
@@ -170,8 +178,10 @@ def read_logs(
         'displayed_count': 0
     }
     
-    # Log line pattern: 2024-01-01T12:00:00 - LEVEL - source - message
-    log_pattern = re.compile(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\s*-\s*(\w+)\s*-\s*(\S+)\s*-\s*(.*)$')
+    # Log line pattern: 2024-01-01T12:00:00 - LEVEL - message (new format without logger name)
+    # Also support old format with logger name for backwards compatibility
+    log_pattern_new = re.compile(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\s*-\s*(\w+)\s*-\s*(.*)$')
+    log_pattern_old = re.compile(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\s*-\s*(\w+)\s*-\s*\S+\s*-\s*(.*)$')
     
     # Category patterns
     category_patterns = {
@@ -189,76 +199,85 @@ def read_logs(
         line = line.strip()
         if not line:
             continue
-            
-        match = log_pattern.match(line)
+        
+        # Try new format first, then old format for backwards compatibility
+        match = log_pattern_new.match(line)
         if match:
-            timestamp_str, log_level, log_source, message = match.groups()
-            
-            # Count by level
-            if log_level == 'ERROR':
-                stats['error_count'] += 1
-            elif log_level == 'WARNING':
-                stats['warning_count'] += 1
-            elif log_level == 'INFO':
-                stats['info_count'] += 1
-            elif log_level == 'DEBUG':
-                stats['debug_count'] += 1
-            
-            # Filter by level
-            if level != 'ALL' and log_level != level.upper():
-                continue
-            
-            # Filter by source
-            if source != 'ALL' and source.lower() not in log_source.lower():
-                continue
-            
-            # Filter by category
-            if category != 'ALL':
-                category_pattern = category_patterns.get(category)
-                if category_pattern and not re.search(category_pattern, line, re.IGNORECASE):
-                    continue
-            
-            # Filter by search pattern
-            if search_pattern:
-                try:
-                    if not re.search(search_pattern, line, re.IGNORECASE):
-                        continue
-                except re.error:
-                    # Invalid regex, fall back to simple string search
-                    if search_pattern.lower() not in line.lower():
-                        continue
-            
-            # Filter by time
-            try:
-                log_time = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S')
-                log_time = cst.localize(log_time)
-                if log_time < cutoff_time:
-                    continue
-            except ValueError:
-                pass  # Keep line if timestamp parsing fails
-            
-            # Extract actor from message if present: [source] <actor> message
-            actor = 'system'
-            actor_match = re.match(r'^\[([^\]]+)\]\s*<([^>]+)>\s*(.*)$', message)
-            if actor_match:
-                msg_source, actor, clean_message = actor_match.groups()
-            else:
-                # Legacy format without actor
-                clean_message = message
-            
-            filtered_logs.append({
-                'timestamp': timestamp_str,
-                'level': log_level,
-                'source': log_source,
-                'actor': actor,
-                'message': clean_message,
-                'raw': line
-            })
+            timestamp_str, log_level, message = match.groups()
         else:
-            # Non-matching lines (stack traces, etc.) - append to previous log if exists
-            if filtered_logs and line:
-                filtered_logs[-1]['message'] += '\n' + line
-                filtered_logs[-1]['raw'] += '\n' + line
+            match = log_pattern_old.match(line)
+            if match:
+                timestamp_str, log_level, message = match.groups()
+            else:
+                # Non-matching line
+                if filtered_logs and line:
+                    filtered_logs[-1]['message'] += '\n' + line
+                    filtered_logs[-1]['raw'] += '\n' + line
+                continue
+        
+        # Count by level
+        if log_level == 'ERROR':
+            stats['error_count'] += 1
+        elif log_level == 'WARNING':
+            stats['warning_count'] += 1
+        elif log_level == 'INFO':
+            stats['info_count'] += 1
+        elif log_level == 'DEBUG':
+            stats['debug_count'] += 1
+        
+        # Filter by level
+        if level != 'ALL' and log_level != level.upper():
+            continue
+        
+        # Filter by category
+        if category != 'ALL':
+            category_pattern = category_patterns.get(category)
+            if category_pattern and not re.search(category_pattern, line, re.IGNORECASE):
+                continue
+        
+        # Filter by search pattern
+        if search_pattern:
+            try:
+                if not re.search(search_pattern, line, re.IGNORECASE):
+                    continue
+            except re.error:
+                # Invalid regex, fall back to simple string search
+                if search_pattern.lower() not in line.lower():
+                    continue
+        
+        # Filter by time
+        try:
+            log_time = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S')
+            log_time = cst.localize(log_time)
+            if log_time < cutoff_time:
+                continue
+        except ValueError:
+            pass  # Keep line if timestamp parsing fails
+        
+        # Extract source, actor, and role from message: [source] <actor|role> message
+        msg_source = 'app'
+        actor = 'system'
+        role = None
+        clean_message = message
+        
+        actor_match = re.match(r'^\[([^\]]+)\]\s*<([^>]+)>\s*(.*)$', message)
+        if actor_match:
+            msg_source, actor_part, clean_message = actor_match.groups()
+            # Parse actor and role if present: <user|role>
+            if '|' in actor_part:
+                actor, role = actor_part.split('|', 1)
+            else:
+                actor = actor_part
+        
+        filtered_logs.append({
+            'timestamp': timestamp_str,
+            'level': log_level,
+            'source': msg_source,
+            'actor': actor,
+            'role': role,
+            'message': clean_message,
+            'raw': line
+        })
     
     # Get last N lines
     filtered_logs = filtered_logs[-last_n_lines:]

@@ -2564,15 +2564,17 @@ def api_run_eod():
     
     # Get current user for logging
     user_name = "unknown"
+    user_role = None
     try:
         from src.auth.middleware import get_current_user
         user = get_current_user()
         if user and user.is_authenticated:
             user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
     except:
         pass
     
-    server_logger.info(f"EOD report started", source="Reports", user=user_name)
+    server_logger.info(f"EOD report started", source="Reports", user=user_name, role=user_role)
     
     # Concurrency guard: prevent duplicate EOD runs
     if _report_locks['EOD']:
@@ -2661,7 +2663,7 @@ def api_run_eod():
             
             # Log success
             log_report_run('EOD', datetime.date.today(), 'success', 'Daily inventory updated successfully')
-            server_logger.info(f"EOD report completed successfully", source="Reports", user=user_name)
+            server_logger.info(f"EOD report completed successfully", source="Reports", user=user_name, role=user_role)
             
             return jsonify({
                 'success': True,
@@ -2671,7 +2673,7 @@ def api_run_eod():
         else:
             # Log failure
             log_report_run('EOD', datetime.date.today(), 'failed', f'Error: {result.stderr[:200]}')
-            server_logger.error(f"EOD report failed: {result.stderr[:200]}", source="Reports", user=user_name)
+            server_logger.error(f"EOD report failed: {result.stderr[:200]}", source="Reports", user=user_name, role=user_role)
             
             return jsonify({
                 'success': False,
@@ -2706,15 +2708,17 @@ def api_run_eow():
     
     # Get current user for logging
     user_name = "unknown"
+    user_role = None
     try:
         from src.auth.middleware import get_current_user
         user = get_current_user()
         if user and user.is_authenticated:
             user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
     except:
         pass
     
-    server_logger.info(f"EOW report started", source="Reports", user=user_name)
+    server_logger.info(f"EOW report started", source="Reports", user=user_name, role=user_role)
     
     # Concurrency guard: prevent duplicate EOW runs
     if _report_locks['EOW']:
@@ -2759,7 +2763,7 @@ def api_run_eow():
         
         if result.returncode == 0:
             log_report_run('EOW', week_start, 'success', 'Weekly report generated successfully')
-            server_logger.info(f"EOW report completed successfully", source="Reports", user=user_name)
+            server_logger.info(f"EOW report completed successfully", source="Reports", user=user_name, role=user_role)
             
             return jsonify({
                 'success': True,
@@ -2767,7 +2771,7 @@ def api_run_eow():
             })
         else:
             log_report_run('EOW', week_start, 'failed', f'Error: {result.stderr[:200]}')
-            server_logger.error(f"EOW report failed: {result.stderr[:200]}", source="Reports", user=user_name)
+            server_logger.error(f"EOW report failed: {result.stderr[:200]}", source="Reports", user=user_name, role=user_role)
             
             return jsonify({
                 'success': False,
@@ -2809,15 +2813,17 @@ def api_run_eom():
     
     # Get current user for logging
     user_name = "unknown"
+    user_role = None
     try:
         from src.auth.middleware import get_current_user
         user = get_current_user()
         if user and user.is_authenticated:
             user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
     except:
         pass
     
-    server_logger.info(f"EOM report started", source="Reports", user=user_name)
+    server_logger.info(f"EOM report started", source="Reports", user=user_name, role=user_role)
     
     # Concurrency guard: prevent duplicate EOM runs
     if _report_locks['EOM']:
@@ -2961,7 +2967,7 @@ def api_run_eom():
         
         # Log success
         log_report_run('EOM', month_start, 'success', f'Monthly charges: ${grand_total:,.2f}')
-        server_logger.info(f"EOM report completed successfully (${grand_total:,.2f})", source="Reports", user=user_name)
+        server_logger.info(f"EOM report completed successfully (${grand_total:,.2f})", source="Reports", user=user_name, role=user_role)
         
         return jsonify({
             'success': True,
@@ -2980,7 +2986,7 @@ def api_run_eom():
     except Exception as e:
         month_start = datetime.date.today().replace(day=1)
         log_report_run('EOM', month_start, 'failed', str(e))
-        server_logger.error(f"EOM report failed: {str(e)[:200]}", source="Reports", user=user_name)
+        server_logger.error(f"EOM report failed: {str(e)[:200]}", source="Reports", user=user_name, role=user_role)
         return jsonify({
             'success': False,
             'error': str(e)

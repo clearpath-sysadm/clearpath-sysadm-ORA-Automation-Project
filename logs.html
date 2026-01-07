@@ -640,10 +640,11 @@
                 const timestamp = formatTimestamp(log.timestamp);
                 const source = log.source || 'app';
                 const actor = log.actor || 'system';
-                const category = log.category ? `[${log.category}]` : '';
+                const role = log.role;
+                const actorDisplay = role ? `${actor}|${role}` : actor;
                 const message = escapeHtml(log.message || '');
                 
-                return `<div class="log-line ${level}">${icon} <span class="log-timestamp">[${timestamp}]</span> <span class="log-level">[LOG]</span> <span class="log-source">[${source}]</span> <span class="log-actor">&lt;${actor}&gt;</span> ${category} ${message}</div>`;
+                return `<div class="log-line ${level}">${icon} <span class="log-timestamp">[${timestamp}]</span> <span class="log-level">[${level}]</span> <span class="log-source">[${source}]</span> <span class="log-actor">&lt;${actorDisplay}&gt;</span> ${message}</div>`;
             }).join('\n');
             
             container.innerHTML = html;
