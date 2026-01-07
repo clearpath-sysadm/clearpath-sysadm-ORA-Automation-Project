@@ -293,29 +293,61 @@
                 </div>
 
                 <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/help.html" class="nav-item">
+                        <span class="nav-item-icon">📚</span>
+                        Help & Training
+                    </a>
                     <a href="/settings.html" class="nav-item">
                         <span class="nav-item-icon">⚙️</span>
                         Settings
                     </a>
-                    <a href="/help.html" class="nav-item">
-                        <span class="nav-item-icon">❓</span>
-                        Help
-                    </a>
+                </div>
+
+                <div class="user-widget" id="user-widget" style="display: none;">
+                    <div class="user-avatar" id="user-avatar">
+                        <img id="user-avatar-img" src="" alt="User" style="display: none;">
+                        <div id="user-avatar-initials" class="user-avatar-initials"></div>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name" id="user-name">Loading...</div>
+                        <div class="user-role-badge" id="user-role-badge">
+                            <span id="user-role-text">Viewer</span>
+                        </div>
+                    </div>
+                    <button class="user-logout-btn" onclick="logout()" title="Logout">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M11 11L14 8M14 8L11 5M14 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
             </nav>
         </aside>
 
         <main class="main-content">
-            <header class="content-header">
-                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
-                <div class="page-title">
-                    <h1>📜 Server Logs</h1>
-                    <p class="page-subtitle">View and search application logs</p>
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">Server Logs</h1>
                 </div>
-                <div class="header-actions">
-                    <div class="user-info" id="user-info"></div>
+                <div class="top-bar-actions">
+                    <span id="auto-refresh-status" style="color: var(--text-muted); font-size: 13px;">Auto-refresh OFF</span>
+                    <button class="btn" id="auto-refresh-btn" onclick="toggleAutoRefresh()">
+                        🔄 Auto
+                    </button>
+                    <button class="btn" onclick="downloadLogs()">
+                        📥 Download
+                    </button>
+                    <button class="btn btn-primary" onclick="loadLogs()">
+                        🔄 Refresh
+                    </button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
                 </div>
-            </header>
+            </div>
 
             <div class="content-area">
                 <div class="stats-grid" id="stats-grid">
@@ -399,17 +431,6 @@
                         <input type="text" id="filter-search" class="search-input" placeholder="Search logs..." onkeyup="debounceSearch()">
                     </div>
                     
-                    <div class="control-buttons">
-                        <button class="btn btn-secondary" id="auto-refresh-btn" onclick="toggleAutoRefresh()">
-                            🔄 Auto-Refresh: OFF
-                        </button>
-                        <button class="btn btn-secondary" onclick="downloadLogs()">
-                            📥 Download
-                        </button>
-                        <button class="btn btn-primary" onclick="loadLogs()">
-                            🔄 Refresh
-                        </button>
-                    </div>
                 </div>
 
                 <div class="log-container" id="log-container">
@@ -622,16 +643,19 @@
         
         function toggleAutoRefresh() {
             const btn = document.getElementById('auto-refresh-btn');
+            const status = document.getElementById('auto-refresh-status');
             
             if (autoRefreshInterval) {
                 clearInterval(autoRefreshInterval);
                 autoRefreshInterval = null;
-                btn.textContent = '🔄 Auto-Refresh: OFF';
+                btn.textContent = '🔄 Auto';
                 btn.classList.remove('auto-refresh-active');
+                if (status) status.textContent = 'Auto-refresh OFF';
             } else {
                 autoRefreshInterval = setInterval(loadLogs, 5000);
-                btn.textContent = '🔄 Auto-Refresh: ON';
+                btn.textContent = '⏸️ Stop';
                 btn.classList.add('auto-refresh-active');
+                if (status) status.textContent = 'Auto-refresh ON (5s)';
             }
         }
         
@@ -653,6 +677,46 @@
         }
         
         checkAuth();
+    </script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/dark-mode.js"></script>
+    <script>
+        function logout() {
+            window.location.href = '/__repl_auth/logout';
+        }
+        
+        function populateUserWidget(data) {
+            const widget = document.getElementById('user-widget');
+            if (!widget || !data || !data.user) return;
+            
+            widget.style.display = 'flex';
+            
+            const user = data.user;
+            const name = user.first_name || user.email || 'User';
+            const role = user.role || 'viewer';
+            
+            document.getElementById('user-name').textContent = name;
+            document.getElementById('user-role-text').textContent = role.toUpperCase();
+            
+            const badge = document.getElementById('user-role-badge');
+            badge.className = 'user-role-badge role-' + role;
+            
+            const initials = document.getElementById('user-avatar-initials');
+            initials.textContent = name.charAt(0).toUpperCase();
+            
+            if (user.profile_image_url) {
+                const img = document.getElementById('user-avatar-img');
+                img.src = user.profile_image_url;
+                img.style.display = 'block';
+                initials.style.display = 'none';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.AuthHelpers) {
+                window.AuthHelpers.getAuthStatus().then(populateUserWidget);
+            }
+        });
     </script>
 </body>
 </html>
