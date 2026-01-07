@@ -384,20 +384,58 @@ def fetch_order_by_id(order_id: int, api_key: str = None, api_secret: str = None
         logger.error(f"Error fetching order {order_id} from ShipStation: {e}", exc_info=True)
         return {'success': False, 'error': str(e)}
 
-def delete_order_from_shipstation(order_id: int) -> dict:
+def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = True) -> dict:
     """
     Delete an order from ShipStation by order ID.
+    Optionally fetches order details before deletion for audit/tracking purposes.
     
     Args:
         order_id: The ShipStation order ID to delete
+        fetch_details_first: If True, fetch order details before deleting for audit trail
         
     Returns:
-        dict: {'success': bool, 'message': str, 'error': str (optional)}
+        dict: {
+            'success': bool, 
+            'message': str, 
+            'order_number': str (if fetched),
+            'customer_data': dict (if fetched) - includes customer_name, customer_email, etc.
+            'error': str (optional)
+        }
     """
     try:
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
             return {'success': False, 'error': 'ShipStation credentials not found'}
+        
+        # Fetch order details before deletion for audit trail
+        order_details = None
+        customer_data = {}
+        order_number = None
+        
+        if fetch_details_first:
+            fetch_result = fetch_order_by_id(order_id, api_key, api_secret)
+            if fetch_result.get('success') and fetch_result.get('order'):
+                order_details = fetch_result['order']
+                order_number = order_details.get('orderNumber')
+                
+                # Extract customer data for audit
+                bill_to = order_details.get('billTo') or {}
+                ship_to = order_details.get('shipTo') or {}
+                items = order_details.get('items', [])
+                
+                customer_data = {
+                    'customer_name': bill_to.get('name') or ship_to.get('name'),
+                    'customer_email': order_details.get('customerEmail'),
+                    'customer_company': bill_to.get('company') or ship_to.get('company'),
+                    'ship_to_name': ship_to.get('name'),
+                    'ship_to_city': ship_to.get('city'),
+                    'ship_to_state': ship_to.get('state'),
+                    'order_total_cents': int(float(order_details.get('orderTotal', 0)) * 100) if order_details.get('orderTotal') else None,
+                    'order_date': order_details.get('orderDate', '')[:10] if order_details.get('orderDate') else None,
+                    'items_json': [{'sku': item.get('sku'), 'quantity': item.get('quantity'), 'name': item.get('name')} for item in items]
+                }
+                
+                logger.info(f"📋 Captured order details before deletion: Order #{order_number}, Customer: {customer_data.get('customer_name')}")
         
         headers = get_shipstation_headers(api_key, api_secret)
         url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}/{order_id}"
@@ -413,11 +451,16 @@ def delete_order_from_shipstation(order_id: int) -> dict:
         
         if response and response.status_code == 200:
             logger.info(f"✅ Successfully deleted order {order_id} from ShipStation")
-            return {'success': True, 'message': f'Order {order_id} deleted successfully'}
+            return {
+                'success': True, 
+                'message': f'Order {order_id} deleted successfully',
+                'order_number': order_number,
+                'customer_data': customer_data
+            }
         else:
             error_msg = f"Failed to delete order {order_id}: HTTP {response.status_code if response else 'No response'}"
             logger.error(error_msg)
-            return {'success': False, 'error': error_msg}
+            return {'success': False, 'error': error_msg, 'order_number': order_number, 'customer_data': customer_data}
             
     except Exception as e:
         logger.error(f"Error deleting order {order_id} from ShipStation: {e}", exc_info=True)

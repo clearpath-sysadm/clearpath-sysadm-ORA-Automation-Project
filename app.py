@@ -213,7 +213,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def record_shipstation_order_deletion(shipstation_order_id, order_number=None, deleted_by=None):
+def record_shipstation_order_deletion(shipstation_order_id, order_number=None, deleted_by=None, customer_data=None):
     """
     Record a ShipStation order deletion in the database for duplicate alert auto-resolution.
     
@@ -228,17 +228,21 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
         shipstation_order_id (int): The ShipStation order ID that was deleted
         order_number (str, optional): The order number for logging purposes
         deleted_by (str, optional): Username/email of who deleted the order (defaults to 'system')
+        customer_data (dict, optional): Customer data captured before deletion:
+            - customer_name, customer_email, customer_company
+            - ship_to_name, ship_to_city, ship_to_state
+            - order_total_cents, order_date, items_json
         
     Returns:
         dict: {'success': bool, 'message': str, 'already_deleted': bool, 'error': str (optional)}
     """
+    import json
     try:
         conn = get_connection()
         cursor = conn.cursor()
         
         # Determine who deleted this order
         if deleted_by is None:
-            # Try to get current user email if available
             try:
                 if current_user and current_user.is_authenticated:
                     deleted_by = current_user.email
@@ -247,23 +251,42 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
             except:
                 deleted_by = 'system'
         
-        # Record the deletion (idempotent with ON CONFLICT)
-        # RETURNING clause tells us if a new row was inserted or conflict occurred
+        # Extract customer data if provided
+        customer_data = customer_data or {}
+        customer_name = customer_data.get('customer_name')
+        customer_email = customer_data.get('customer_email')
+        customer_company = customer_data.get('customer_company')
+        ship_to_name = customer_data.get('ship_to_name')
+        ship_to_city = customer_data.get('ship_to_city')
+        ship_to_state = customer_data.get('ship_to_state')
+        order_total_cents = customer_data.get('order_total_cents')
+        order_date = customer_data.get('order_date')
+        items_json = json.dumps(customer_data.get('items_json')) if customer_data.get('items_json') else None
+        
+        # Record the deletion with customer data (idempotent with ON CONFLICT)
         cursor.execute("""
             INSERT INTO deleted_shipstation_orders 
-            (shipstation_order_id, order_number, deleted_at, deleted_by)
-            VALUES (%s, %s, CURRENT_TIMESTAMP, %s)
+            (shipstation_order_id, order_number, deleted_at, deleted_by,
+             customer_name, customer_email, customer_company,
+             ship_to_name, ship_to_city, ship_to_state,
+             order_total_cents, order_date, items_json)
+            VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (shipstation_order_id) DO NOTHING
             RETURNING shipstation_order_id
-        """, (shipstation_order_id, order_number, deleted_by))
+        """, (shipstation_order_id, order_number, deleted_by,
+              customer_name, customer_email, customer_company,
+              ship_to_name, ship_to_city, ship_to_state,
+              order_total_cents, order_date, items_json))
         
         inserted = cursor.fetchone()
         conn.commit()
         conn.close()
         
         if inserted:
-            # New deletion record created
-            logger.info(f"✅ Recorded deletion of order {shipstation_order_id} (Order #{order_number}) by {deleted_by}")
+            # New deletion record created - log to server logger for admin visibility
+            customer_display = customer_name or customer_email or 'Unknown'
+            logger.info(f"✅ Recorded deletion of order {shipstation_order_id} (Order #{order_number}, Customer: {customer_display}) by {deleted_by}")
+            server_logger.info(f"Order deleted: #{order_number} (SS ID: {shipstation_order_id}, Customer: {customer_display}) by {deleted_by}", source="ShipStation")
             return {
                 'success': True,
                 'already_deleted': False,
@@ -8078,28 +8101,30 @@ def serve_screenshot(filename):
 
 @app.route('/api/duplicate_alerts/delete_order/<int:shipstation_order_id>', methods=['DELETE'])
 def api_delete_duplicate_order(shipstation_order_id):
-    """Delete a duplicate order from ShipStation and track it"""
+    """Delete a duplicate order from ShipStation and track it with customer data"""
     try:
         from src.services.shipstation.api_client import delete_order_from_shipstation
         
-        # Delete from ShipStation
+        # Delete from ShipStation (fetches order details first for audit trail)
         result = delete_order_from_shipstation(shipstation_order_id)
         
         if result['success']:
-            # Record deletion for duplicate alert auto-resolution (shared helper)
+            # Record deletion with customer data for duplicate alert auto-resolution
             track_result = record_shipstation_order_deletion(
                 shipstation_order_id, 
                 result.get('order_number'),
-                deleted_by='dashboard'
+                deleted_by='dashboard',
+                customer_data=result.get('customer_data')
             )
             
             if not track_result['success'] and not track_result.get('already_deleted'):
-                # Log warning but don't fail the whole operation since ShipStation deletion succeeded
                 logger.warning(f"⚠️  Failed to track deletion in database: {track_result.get('error')}")
             
             return jsonify({
                 'success': True,
-                'message': f'Order {shipstation_order_id} deleted from ShipStation'
+                'message': f'Order {shipstation_order_id} deleted from ShipStation',
+                'order_number': result.get('order_number'),
+                'customer_name': result.get('customer_data', {}).get('customer_name')
             })
         else:
             return jsonify({
@@ -8463,7 +8488,7 @@ def rescan_duplicates_for_order(order_number):
 @login_required
 @admin_required
 def api_admin_delete_order():
-    """Admin endpoint to delete a single order from ShipStation by ID"""
+    """Admin endpoint to delete a single order from ShipStation by ID with full audit trail"""
     try:
         data = request.get_json()
         shipstation_order_id = data.get('shipstation_order_id')
@@ -8486,9 +8511,13 @@ def api_admin_delete_order():
         
         from src.services.shipstation.api_client import delete_order_from_shipstation
         
-        # Delete from ShipStation
+        # Delete from ShipStation (fetches order details first for audit trail)
         logger.info(f"Admin order deletion requested: ShipStation ID {shipstation_order_id}, Order Number: {order_number or 'Not provided'}")
         result = delete_order_from_shipstation(shipstation_order_id)
+        
+        # Use order number from ShipStation if not provided
+        actual_order_number = result.get('order_number') or order_number
+        customer_data = result.get('customer_data', {})
         
         # Check if order was already deleted (404 Not Found)
         already_deleted = False
@@ -8500,26 +8529,31 @@ def api_admin_delete_order():
         
         if result['success'] or already_deleted:
             if result['success']:
-                logger.info(f"✅ Successfully deleted order {shipstation_order_id} from ShipStation")
+                customer_name = customer_data.get('customer_name', 'Unknown')
+                logger.info(f"✅ Successfully deleted order {shipstation_order_id} (#{actual_order_number}, Customer: {customer_name}) from ShipStation")
             
-            # Record deletion for duplicate alert auto-resolution
-            track_result = record_shipstation_order_deletion(shipstation_order_id, order_number)
+            # Record deletion with customer data for duplicate alert auto-resolution
+            track_result = record_shipstation_order_deletion(
+                shipstation_order_id, 
+                actual_order_number,
+                customer_data=customer_data
+            )
             if not track_result['success'] and not track_result.get('already_deleted'):
-                # Log warning but don't fail the whole operation since ShipStation deletion succeeded
                 logger.warning(f"⚠️  Failed to track deletion in database: {track_result.get('error')}")
             
             # Re-scan for duplicates if we have the order number
-            if order_number:
-                logger.info(f"🔄 Re-scanning duplicates for Order #{order_number}")
-                rescan_duplicates_for_order(order_number)
+            if actual_order_number:
+                logger.info(f"🔄 Re-scanning duplicates for Order #{actual_order_number}")
+                rescan_duplicates_for_order(actual_order_number)
             
             return jsonify({
                 'success': True,
                 'message': f'Order {shipstation_order_id} {"already deleted" if already_deleted else "successfully deleted from ShipStation"}',
                 'shipstation_order_id': shipstation_order_id,
-                'order_number': order_number,
+                'order_number': actual_order_number,
+                'customer_name': customer_data.get('customer_name'),
                 'already_deleted': already_deleted,
-                'duplicates_rescanned': bool(order_number)
+                'duplicates_rescanned': bool(actual_order_number)
             })
         else:
             error_msg = result.get('error', 'Failed to delete order')
