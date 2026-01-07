@@ -115,6 +115,8 @@ X-Cart → XML → Google Drive → xml-import → orders_inbox
 - Daily inventory snapshots for charge report BOM calculations
 - Multi-methodology diagnostic tooling for production issues
 - **Server Logging System (Jan 2026):** File-based logging with rotation (10MB, 7 backups), configurable via LOG_LEVEL env var, Server Logs admin page (logs.html) with filtering/search/download
+- **User Activity Tracking (Jan 2026):** 16 endpoints tracked with user/role attribution for Inventory, SKU-Lot, Reports, ShipStation, and Email operations
+- **ShipStation Sync Fix (Jan 7, 2026):** Fixed duplicate key constraint violations in `manual_order_conflicts` table using UPSERT pattern (`ON CONFLICT DO NOTHING`). See `docs/implementation-reports/SHIPSTATION_SYNC_DUPLICATE_KEY_FIX.md`
 
 ## Important Notes
 - InitialInventory baseline: September 19, 2025
