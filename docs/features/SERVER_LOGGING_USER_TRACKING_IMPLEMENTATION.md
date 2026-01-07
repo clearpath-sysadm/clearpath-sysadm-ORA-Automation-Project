@@ -495,6 +495,10 @@ def api_some_action():
 2025-01-07T14:32:15 - INFO - [ShipStation] <Nathan|admin> Manual ShipStation sync triggered
 2025-01-07T14:30:00 - INFO - [Scheduler] <system> XML import started
 2025-01-07T14:28:45 - ERROR - [Database] <system> Connection timeout after 30s
+2025-01-07T15:10:22 - INFO - [Inventory] <Nathan|admin> Inventory transaction created: Receive 500 units of 17612
+2025-01-07T15:12:45 - INFO - [SKU-Lot] <Nathan|admin> SKU-Lot created: SKU 17612 → Lot 250362 (active)
+2025-01-07T15:15:30 - INFO - [SKU-Lot] <Nathan|admin> SKU-Lot #45 updated: SKU 17614 → Lot 250400 (inactive)
+2025-01-07T15:18:00 - INFO - [Inventory] <Nathan|admin> Inventory transaction #123 deleted: Ship 25 units of 17612
 ```
 
 ### 7.2 Parsed Log Structure
@@ -540,6 +544,7 @@ Dropdown options with pattern matching:
 - ShipStation
 - Auth
 - Inventory
+- SKU-Lot
 - Scheduler
 - Email
 - Reports
@@ -606,11 +611,36 @@ Options: 100, 250, 500 (default), 1000, 2000
 
 | File | Changes |
 |------|---------|
-| `app.py` | Added logging API endpoints, user tracking in 8+ endpoints |
+| `app.py` | Added logging API endpoints, user tracking in 16 endpoints (see Section 4.3) |
 | `src/unified_shipstation_sync.py` | Enhanced error logging with context |
 | `src/scheduled_duplicate_scanner.py` | Added server logging |
 | `src/scheduled_shipstation_upload.py` | Added server logging |
 | `src/scheduled_lot_mismatch_scanner.py` | Added server logging |
+
+### 9.3 Endpoints with User Tracking (Complete List)
+
+**ShipStation Operations:**
+- `POST /api/sync_shipstation` - Manual sync trigger
+- `POST /api/manual_order_conflicts/<id>/confirm_delete` - Conflict resolution
+- `POST /api/manual_order_conflicts/<id>/dismiss` - Conflict dismissal
+
+**Reports:**
+- `POST /api/reports/eod` - End of Day report
+- `POST /api/reports/eow` - End of Week report
+- `POST /api/reports/eom` - End of Month report
+
+**Inventory Monitor:**
+- `POST /api/inventory_transactions` - Create transaction
+- `PUT /api/inventory_transactions/<id>` - Update transaction
+- `DELETE /api/inventory_transactions/<id>` - Delete transaction
+
+**SKU-Lot Management:**
+- `POST /api/sku_lots` - Create SKU-Lot mapping
+- `PUT /api/sku_lots/<id>` - Update SKU-Lot mapping
+- `DELETE /api/sku_lots/<id>` - Delete SKU-Lot mapping
+
+**Email:**
+- `POST /api/tracking/compose_email` - Email composition tracking
 
 ---
 
@@ -742,10 +772,11 @@ Consider integration with:
 
 Manual testing via:
 1. Navigate to Server Logs page (admin only)
-2. Trigger various actions (reports, syncs)
+2. Trigger various actions (reports, syncs, inventory transactions, SKU-lot changes)
 3. Verify user/role appears correctly
-4. Test all filter combinations
+4. Test all filter combinations (including new Inventory and SKU-Lot categories)
 5. Verify auto-refresh functionality
+6. Test User filter with dynamic dropdown population
 
 ---
 
@@ -786,6 +817,54 @@ server_logger.info("Action description", source="ModuleName", user=user_name, ro
 
 ---
 
-**Document Version:** 1.0  
+## Appendix C: Log Message Examples by Source
+
+### Inventory Source Examples
+
+```
+[Inventory] <Nathan|admin> Inventory transaction created: Receive 500 units of 17612
+[Inventory] <Nathan|admin> Inventory transaction #45 updated: Adjust Up 100 units of 17614
+[Inventory] <Nathan|admin> Inventory transaction #45 deleted: Ship 200 units of 17612
+[Inventory] <Nathan|operations> Inventory transaction created: Repack 50 units of 17618
+```
+
+### SKU-Lot Source Examples
+
+```
+[SKU-Lot] <Nathan|admin> SKU-Lot created: SKU 17612 → Lot 250362 (active)
+[SKU-Lot] <Nathan|admin> SKU-Lot #12 updated: SKU 17612 → Lot 250400 (inactive)
+[SKU-Lot] <Nathan|admin> SKU-Lot deleted: SKU 17614 → Lot 250300
+[SKU-Lot] <Nathan|operations> SKU-Lot #8 updated: SKU 17618 → Lot 250450 (active)
+```
+
+### Reports Source Examples
+
+```
+[Reports] <Nathan|admin> EOD report started
+[Reports] <Nathan|admin> EOD report completed successfully
+[Reports] <Nathan|admin> EOW report started
+[Reports] <Nathan|admin> EOM report completed successfully ($125,432.00)
+[Reports] <Nathan|admin> EOM report failed: Database timeout
+```
+
+### ShipStation Source Examples
+
+```
+[ShipStation] <Nathan|admin> Manual ShipStation sync triggered
+[ShipStation] <Nathan|admin> ShipStation order deleted: conflict #5, old order ID 12345678
+[ShipStation] <Nathan|admin> Manual order conflict #5 dismissed
+[ShipStation] <system> Synced 45 shipments from ShipStation
+```
+
+---
+
+**Document Version:** 1.1  
 **Last Updated:** January 7, 2026  
 **Author:** Oracare Development Team
+
+### Revision History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | Jan 7, 2026 | Initial implementation with core logging, reports, and ShipStation tracking |
+| 1.1 | Jan 7, 2026 | Added Inventory Monitor and SKU-Lot Management user tracking |
