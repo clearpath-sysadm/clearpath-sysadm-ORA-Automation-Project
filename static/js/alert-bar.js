@@ -1,25 +1,41 @@
 /**
  * Admin Alert Bar
  * Displays admin-set alert messages at the top of all pages
+ * Polls for updates every 30 seconds
  */
 class AdminAlertBar {
     constructor() {
         this.alertData = null;
         this.dismissedVersion = null;
+        this.pollInterval = null;
     }
     
     async init() {
+        await this.fetchAndRender();
+        this.startPolling();
+    }
+    
+    async fetchAndRender() {
         try {
             const response = await fetch('/api/admin/alert');
             if (!response.ok) return;
             
-            this.alertData = await response.json();
+            const newData = await response.json();
             this.dismissedVersion = localStorage.getItem('alertDismissed');
             
-            this.render();
+            const hasChanged = JSON.stringify(this.alertData) !== JSON.stringify(newData);
+            this.alertData = newData;
+            
+            if (hasChanged) {
+                this.render();
+            }
         } catch (err) {
             console.error('Failed to load admin alert:', err);
         }
+    }
+    
+    startPolling() {
+        this.pollInterval = setInterval(() => this.fetchAndRender(), 30000);
     }
     
     escapeHtml(text) {
@@ -30,7 +46,10 @@ class AdminAlertBar {
     
     render() {
         const existingBar = document.getElementById('admin-alert-bar');
-        if (existingBar) existingBar.remove();
+        if (existingBar) {
+            existingBar.remove();
+            document.body.style.paddingTop = '0';
+        }
         
         if (!this.alertData || !this.alertData.message || this.alertData.message.trim() === '') {
             return;
