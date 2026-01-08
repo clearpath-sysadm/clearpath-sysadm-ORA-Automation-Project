@@ -170,10 +170,9 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                     if shipstation_lot != active_lot:
                         mismatches_found += 1
                         
-                        logger.warning(
-                            f"⚠️ LOT MISMATCH: Order {order_number}, SKU {base_sku} → "
-                            f"ShipStation: {shipstation_lot or 'NONE'}, Active: {active_lot}"
-                        )
+                        mismatch_msg = f"Lot mismatch found: Order {order_number}, SKU {base_sku} - ShipStation has '{shipstation_lot or 'NONE'}' but active lot is '{active_lot}'"
+                        logger.warning(f"⚠️ {mismatch_msg}")
+                        server_logger.warning(mismatch_msg, source="Lot Mismatch")
                         
                         # Create/update alert
                         cursor.execute("""
@@ -233,6 +232,12 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
         logger.info(f"   ✅ Auto-resolved: {auto_resolved}")
         logger.info(f"   ⏱️ Duration: {elapsed:.1f}s")
         logger.info("=" * 80)
+        
+        # Log summary to server logger for visibility in UI
+        if mismatches_found > 0:
+            server_logger.warning(f"Lot mismatch scan complete: {mismatches_found} mismatches found, {mismatches_created} alerts created, {auto_resolved} auto-resolved ({elapsed:.1f}s)", source="Lot Mismatch")
+        else:
+            server_logger.info(f"Lot mismatch scan complete: No mismatches found, {auto_resolved} auto-resolved ({elapsed:.1f}s)", source="Lot Mismatch")
         
     except Exception as e:
         logger.error(f"❌ Error scanning for lot mismatches: {e}", exc_info=True)
