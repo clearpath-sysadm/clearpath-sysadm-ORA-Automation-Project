@@ -382,6 +382,13 @@ def import_orders_from_drive():
                     
                     order_inbox_id = cursor.fetchone()[0]
                     orders_imported += 1
+                    
+                    # Log new order to server logger
+                    item_count = len(consolidated_items)
+                    sku_list = ', '.join([f"{item['sku']} x{item['quantity']}" for item in consolidated_items[:3]])
+                    if len(consolidated_items) > 3:
+                        sku_list += f" (+{len(consolidated_items) - 3} more)"
+                    server_logger.info(f"New order imported: {order_number} - {item_count} items ({sku_list})", source="XML Import")
                 
                 # Insert consolidated line items (duplicates merged, only Key Products)
                 # AUTO-ASSIGN lot numbers from active_lots map

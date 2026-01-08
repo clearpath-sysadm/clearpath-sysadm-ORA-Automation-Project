@@ -679,6 +679,9 @@ def upload_pending_orders():
                     """, (shipstation_id, order_sku_info['order_inbox_id']))
                     
                     uploaded_count += 1
+                    
+                    # Log successful upload to server logger
+                    server_logger.info(f"Order uploaded to ShipStation: {order_sku_info['order_number']} (SS ID: {shipstation_id}, SKUs: {order_sku_info['sku']})", source="ShipStation Upload")
                 else:
                     failed_count += 1
                     error_details = error_msg or result.get('message') or 'Unknown error'
