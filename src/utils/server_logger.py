@@ -110,7 +110,9 @@ def read_logs(
     category: str = 'ALL',
     search_pattern: Optional[str] = None,
     last_n_lines: int = 500,
-    hours_back: int = 24
+    hours_back: int = 24,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Read and filter log entries from the log file.
@@ -121,7 +123,9 @@ def read_logs(
         category: Filter by category (API, Database, ShipStation, etc.)
         search_pattern: Regex pattern to search in log messages
         last_n_lines: Maximum number of lines to return
-        hours_back: Only include logs from the last N hours
+        hours_back: Only include logs from the last N hours (ignored if start_time/end_time provided)
+        start_time: ISO format start datetime (e.g., 2024-01-15T09:00)
+        end_time: ISO format end datetime (e.g., 2024-01-15T17:00)
         
     Returns:
         Dictionary with logs and statistics
@@ -142,9 +146,27 @@ def read_logs(
             }
         }
     
-    # Calculate cutoff time
+    # Calculate cutoff times
     cst = pytz.timezone('America/Chicago')
-    cutoff_time = datetime.now(cst) - timedelta(hours=hours_back)
+    
+    # Use explicit date range if provided, otherwise fall back to hours_back
+    if start_time:
+        try:
+            cutoff_start = datetime.strptime(start_time, '%Y-%m-%dT%H:%M')
+            cutoff_start = cst.localize(cutoff_start)
+        except ValueError:
+            cutoff_start = datetime.now(cst) - timedelta(hours=hours_back)
+    else:
+        cutoff_start = datetime.now(cst) - timedelta(hours=hours_back)
+    
+    if end_time:
+        try:
+            cutoff_end = datetime.strptime(end_time, '%Y-%m-%dT%H:%M')
+            cutoff_end = cst.localize(cutoff_end)
+        except ValueError:
+            cutoff_end = datetime.now(cst)
+    else:
+        cutoff_end = datetime.now(cst)
     
     # Read all lines
     try:
@@ -247,11 +269,11 @@ def read_logs(
                 if search_pattern.lower() not in line.lower():
                     continue
         
-        # Filter by time
+        # Filter by time range
         try:
             log_time = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S')
             log_time = cst.localize(log_time)
-            if log_time < cutoff_time:
+            if log_time < cutoff_start or log_time > cutoff_end:
                 continue
         except ValueError:
             pass  # Keep line if timestamp parsing fails

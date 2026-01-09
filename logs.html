@@ -514,13 +514,23 @@
                     
                     <div class="control-group">
                         <label>Hours Back</label>
-                        <select id="filter-hours" onchange="loadLogs()">
+                        <select id="filter-hours" onchange="clearDateRange(); loadLogs()">
                             <option value="1">1 hour</option>
                             <option value="6">6 hours</option>
                             <option value="24" selected>24 hours</option>
                             <option value="48">48 hours</option>
                             <option value="168">7 days</option>
                         </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Start Date/Time</label>
+                        <input type="datetime-local" id="filter-start" onchange="onDateRangeChange()" style="min-width: 170px;">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>End Date/Time</label>
+                        <input type="datetime-local" id="filter-end" onchange="onDateRangeChange()" style="min-width: 170px;">
                     </div>
                     
                     <div class="control-group">
@@ -634,6 +644,21 @@
             searchTimeout = setTimeout(loadLogs, 300);
         }
         
+        function clearDateRange() {
+            document.getElementById('filter-start').value = '';
+            document.getElementById('filter-end').value = '';
+        }
+        
+        function onDateRangeChange() {
+            const startDate = document.getElementById('filter-start').value;
+            const endDate = document.getElementById('filter-end').value;
+            
+            if (startDate || endDate) {
+                document.getElementById('filter-hours').value = '168';
+            }
+            loadLogs();
+        }
+        
         function applyProcessFilter() {
             const process = document.getElementById('filter-process').value;
             if (process !== 'ALL') {
@@ -695,6 +720,8 @@
             const lines = document.getElementById('filter-lines').value;
             const hours = document.getElementById('filter-hours').value;
             const search = document.getElementById('filter-search').value;
+            const startTime = document.getElementById('filter-start').value;
+            const endTime = document.getElementById('filter-end').value;
             
             const params = new URLSearchParams({
                 level: level,
@@ -705,6 +732,14 @@
             
             if (search) {
                 params.append('searchPattern', search);
+            }
+            
+            if (startTime) {
+                params.append('startTime', startTime);
+            }
+            
+            if (endTime) {
+                params.append('endTime', endTime);
             }
             
             try {
