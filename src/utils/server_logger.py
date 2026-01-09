@@ -281,8 +281,9 @@ def read_logs(
             'raw': line
         })
     
-    # Get last N lines
+    # Get last N lines and reverse for DESC order (newest first)
     filtered_logs = filtered_logs[-last_n_lines:]
+    filtered_logs.reverse()  # DESC: newest first
     stats['displayed_count'] = len(filtered_logs)
     
     return {

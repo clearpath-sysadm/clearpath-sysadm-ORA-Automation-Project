@@ -1,0 +1,37 @@
+### Refactor: Consolidate Removed Line Item Backfill Logic
+
+Task Overview Duplicate logic identified by the architect (see NOTE-1268) in server/scripts/backfill-removed-line-items.ts and new DbStorage methods for removed line item backfill. Key Goals Consolidate implementations into a shared service. Eliminate maintenance drift and ensure consistent logic. Why This Matters Duplicate code increases the risk of inconsistencies in data processing. Impacts the reliability of inventory and demand forecasting by potentially misclassifying items.
+
+### Definition of Done
+
+```html
+
+### Acceptance Criteria
+
+• [ ] **Code Consolidation:** The duplicate logic in `server/scripts/backfill-removed-line-items.ts` and new DbStorage methods is successfully consolidated into a new shared service named `RemovedLineItemBackfillService` within a designated directory (e.g., `server/services`).
+
+• [ ] **Functionality Preservation:** The `RemovedLineItemBackfillService` accurately replicates the functionality of both the original script and DbStorage methods for backfilling removed line items.  Data integrity is maintained.
+
+• [ ] **Configuration:** The `RemovedLineItemBackfillService` is configurable via environment variables or a configuration file to allow control over backfill parameters (e.g., date ranges, batch sizes).
+
+• [ ] **Error Handling:** The `RemovedLineItemBackfillService` includes robust error handling, logging errors appropriately and providing mechanisms for retry or manual intervention in case of failures.  Specific error scenarios like database connection issues and invalid data are handled gracefully.
+
+• [ ] **Integration:**  Both the `server/scripts/backfill-removed-line-items.ts` script and DbStorage methods now call the new `RemovedLineItemBackfillService` to perform the backfill operation. The original code is removed.
+
+• [ ] **Performance:** The refactored code performs at least as well as, or better than, the original code in terms of backfill processing time. Backfill of 10,000 line items should complete within X minutes (where X is to be determined based on current performance).
+
+• [ ] **Monitoring:**  The `RemovedLineItemBackfillService` includes logging and/or metrics to monitor its performance and identify potential issues. This should cover key metrics like processing time, error rates, and number of line items processed.
+
+### Testing Requirements
+
+• [ ] **Unit Tests:** Unit tests cover all public methods and key internal logic of the `RemovedLineItemBackfillService`, including error handling scenarios. A minimum of 80% code coverage is required for the service.
+
+• [ ] **Integration Tests:** Integration tests verify the correct integration of the `RemovedLineItemBackfillService` with the existing `server/scripts/backfill-removed-line-items.ts` script and DbStorage methods.
+
+• [ ] **Regression Tests:** Existing regression tests for inventory and demand forecasting functionality are executed to ensure no negative impact from the refactoring.
+
+• [ ] **Performance Tests:** Performance tests are conducted to ensure the refactored code meets the performance requirements outlined in the Acceptance Criteria. These tests should simulate realistic data volumes.
+
+• [ ] **Error Scenario Tests:** Tests are conducted to simulate various error scenarios (e.g., database connection errors, invalid data) to verify the error handling mechanisms of the `RemovedLineItemBackfillService`.
+
+```
