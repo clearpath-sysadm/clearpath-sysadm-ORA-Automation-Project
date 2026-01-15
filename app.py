@@ -5414,6 +5414,122 @@ def api_get_local_awaiting_shipment_count():
             'error': str(e)
         }), 500
 
+@app.route('/api/admin/db_diagnostics', methods=['GET'])
+@admin_required
+def api_db_diagnostics():
+    """Diagnostic endpoint to check database state and active lots (Admin only)"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        diagnostics = {
+            'success': True,
+            'timestamp': datetime.now().isoformat(),
+            'database': {},
+            'active_lots': [],
+            'orders_inbox': {},
+            'order_items': {}
+        }
+        
+        # Get database connection info
+        cursor.execute("SELECT current_database(), current_user, version()")
+        db_info = cursor.fetchone()
+        diagnostics['database'] = {
+            'name': db_info[0],
+            'user': db_info[1],
+            'version': db_info[2][:50] + '...' if len(db_info[2]) > 50 else db_info[2]
+        }
+        
+        # Get all active lots with their updated_at timestamps
+        cursor.execute("""
+            SELECT sku, lot, active, updated_at 
+            FROM sku_lot 
+            WHERE active = 1
+            ORDER BY sku
+        """)
+        active_lots = cursor.fetchall()
+        diagnostics['active_lots'] = [
+            {
+                'sku': row[0],
+                'lot': row[1],
+                'active': row[2],
+                'updated_at': row[3].isoformat() if row[3] else None
+            }
+            for row in active_lots
+        ]
+        
+        # Get orders_inbox stats
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_orders,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
+                COUNT(CASE WHEN status = 'awaiting_shipment' THEN 1 END) as awaiting_shipment,
+                COUNT(CASE WHEN status = 'shipped' THEN 1 END) as shipped,
+                COUNT(CASE WHEN status = 'on_hold' THEN 1 END) as on_hold,
+                MIN(created_at) as oldest_order,
+                MAX(created_at) as newest_order
+            FROM orders_inbox
+        """)
+        orders_stats = cursor.fetchone()
+        diagnostics['orders_inbox'] = {
+            'total_orders': orders_stats[0],
+            'pending': orders_stats[1],
+            'awaiting_shipment': orders_stats[2],
+            'shipped': orders_stats[3],
+            'on_hold': orders_stats[4],
+            'oldest_order': orders_stats[5].isoformat() if orders_stats[5] else None,
+            'newest_order': orders_stats[6].isoformat() if orders_stats[6] else None
+        }
+        
+        # Get order_items stats including lot distribution
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_items,
+                COUNT(DISTINCT order_inbox_id) as unique_orders,
+                SUM(quantity) as total_units
+            FROM order_items_inbox
+        """)
+        items_stats = cursor.fetchone()
+        diagnostics['order_items'] = {
+            'total_items': items_stats[0],
+            'unique_orders': items_stats[1],
+            'total_units': items_stats[2] or 0
+        }
+        
+        # Get sample of lot assignments in order_items (most recent 10)
+        cursor.execute("""
+            SELECT oi.sku, oi.sku_lot, oi.quantity, o.order_number, o.created_at
+            FROM order_items_inbox oi
+            JOIN orders_inbox o ON oi.order_inbox_id = o.id
+            ORDER BY o.created_at DESC
+            LIMIT 10
+        """)
+        recent_items = cursor.fetchall()
+        diagnostics['recent_order_items'] = [
+            {
+                'sku': row[0],
+                'sku_lot': row[1],
+                'quantity': row[2],
+                'order_number': row[3],
+                'created_at': row[4].isoformat() if row[4] else None
+            }
+            for row in recent_items
+        ]
+        
+        conn.close()
+        
+        server_logger.info(f"DB Diagnostics run: {len(active_lots)} active lots, {orders_stats[0]} orders, {items_stats[2] or 0} units", source="Diagnostics")
+        
+        return jsonify(diagnostics)
+        
+    except Exception as e:
+        server_logger.error(f"DB Diagnostics error: {str(e)}", source="Diagnostics")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/units_discrepancy', methods=['GET'])
 def api_get_units_discrepancy():
     """Compare ShipStation orders vs Local DB to identify discrepancies"""
