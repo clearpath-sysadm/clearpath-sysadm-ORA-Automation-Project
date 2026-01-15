@@ -282,6 +282,12 @@ def upload_pending_orders():
             for sku, lot in sku_lot_map.items():
                 logger.info(f'   📦 SKU {sku} → Active Lot {lot}')
             logger.info('=' * 60)
+            
+            # Log to server logger for production visibility
+            lots_summary = ', '.join([f"{sku}={lot}" for sku, lot in list(sku_lot_map.items())[:5]])
+            if len(sku_lot_map) > 5:
+                lots_summary += f" (+{len(sku_lot_map) - 5} more)"
+            server_logger.info(f"ShipStation upload using active lots: {lots_summary}", source="ShipStation Upload")
         
         # Fetch Product Name mappings
         cursor.execute("""
@@ -343,9 +349,14 @@ def upload_pending_orders():
                 # CRITICAL BUSINESS RULE: SKU MUST have a valid lot number
                 if base_sku in sku_lot_map:
                     active_lot = sku_lot_map[base_sku]
+                    old_lot = normalized_sku.split(' - ')[1].strip() if ' - ' in normalized_sku else None
                     normalized_sku = f"{base_sku} - {active_lot}"
                     logger.info(f"   4️⃣ Found in sku_lot_map → Active lot = {active_lot}")
                     logger.info(f"   ✅ FINAL SKU: '{normalized_sku}'")
+                    
+                    # Log lot replacement if old lot was different
+                    if old_lot and old_lot != active_lot:
+                        server_logger.warning(f"Lot replaced: Order {order_number}, SKU {base_sku}: '{old_lot}' -> '{active_lot}'", source="ShipStation Upload")
                 else:
                     # BUSINESS RULE VIOLATION: Orders without valid SKU-Lot cannot be uploaded
                     logger.error(f"   🛑 CRITICAL: SKU '{base_sku}' NOT in sku_lot_map!")

@@ -249,6 +249,15 @@ def import_orders_from_drive():
         active_lots = {row[0]: row[1] for row in cursor.fetchall()}
         logger.info(f"Loaded {len(active_lots)} active lot numbers for SKU-Lot assignment")
         
+        # Log active lots to server logger for production debugging
+        if active_lots:
+            lots_summary = ', '.join([f"{sku}={lot}" for sku, lot in list(active_lots.items())[:5]])
+            if len(active_lots) > 5:
+                lots_summary += f" (+{len(active_lots) - 5} more)"
+            server_logger.info(f"Active lots loaded: {lots_summary}", source="XML Import")
+        else:
+            server_logger.warning("No active lot numbers found in sku_lot table!", source="XML Import")
+        
         # Helper function to safely extract text
         def get_text(elem, tag, default=''):
             child = elem.find(tag)

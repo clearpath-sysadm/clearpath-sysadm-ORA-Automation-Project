@@ -5368,7 +5368,6 @@ def api_get_local_awaiting_shipment_count():
         """)
         
         result = cursor.fetchone()
-        conn.close()
         
         if result:
             order_count, total_units, last_updated = result
@@ -5379,14 +5378,27 @@ def api_get_local_awaiting_shipment_count():
             elif total_units == 0:
                 server_logger.info(f"Local DB Units: 0 orders, 0 units. Status breakdown: {status_breakdown}", source="Dashboard")
             
+            # Get total order count for debugging "updated never" issue
+            cursor.execute("SELECT COUNT(*) FROM orders_inbox")
+            total_order_count = cursor.fetchone()[0]
+            
+            # Get order_items count for debugging
+            cursor.execute("SELECT COUNT(*) FROM order_items_inbox")
+            total_items_count = cursor.fetchone()[0]
+            
+            conn.close()
+            
             return jsonify({
                 'success': True,
                 'total_units': total_units or 0,
                 'order_count': order_count or 0,
                 'last_updated': last_updated,
-                'debug_status_breakdown': status_breakdown
+                'debug_status_breakdown': status_breakdown,
+                'debug_total_orders': total_order_count,
+                'debug_total_items': total_items_count
             })
         else:
+            conn.close()
             server_logger.warning("Local DB Units: No result from query", source="Dashboard")
             return jsonify({
                 'success': True,
