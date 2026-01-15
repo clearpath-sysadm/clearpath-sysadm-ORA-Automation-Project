@@ -81,6 +81,13 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
             active_lots = get_active_lot_mappings(conn)
             logger.info(f"📋 Active lot mappings: {len(active_lots)} SKUs")
             
+            # Log active lots to server logger for production visibility
+            if active_lots:
+                lots_detail = ', '.join([f"{sku}={lot}" for sku, lot in active_lots.items()])
+                server_logger.info(f"Lot mismatch scanner using active lots: {lots_detail}", source="Lot Mismatch")
+            else:
+                server_logger.warning("Lot mismatch scanner: No active lots found in sku_lot table!", source="Lot Mismatch")
+            
             # Fetch orders from ShipStation (last 30 days, awaiting shipment)
             # We only care about orders that haven't shipped yet
             lookback_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%SZ')

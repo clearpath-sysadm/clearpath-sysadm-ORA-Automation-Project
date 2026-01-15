@@ -6292,10 +6292,13 @@ def api_update_lot_in_shipstation():
         
         # Update the item SKU to include new lot
         new_sku = f"{base_sku} - {new_lot}"
+        old_sku = None
         
         for item in order_data.get('items', []):
             if str(item.get('orderItemId')) == str(item_id):
+                old_sku = item.get('sku')
                 item['sku'] = new_sku
+                server_logger.info(f"Updating ShipStation lot: Order {order_data.get('orderNumber', order_id)}, SKU {base_sku}: '{old_sku}' -> '{new_sku}'", source="Lot Mismatch")
                 break
         
         # Update order in ShipStation
