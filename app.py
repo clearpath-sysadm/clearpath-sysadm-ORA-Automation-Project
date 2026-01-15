@@ -5348,6 +5348,14 @@ def api_get_local_awaiting_shipment_count():
         conn = get_connection()
         cursor = conn.cursor()
         
+        # First, get status breakdown for debugging
+        cursor.execute("""
+            SELECT status, COUNT(*) as count 
+            FROM orders_inbox 
+            GROUP BY status
+        """)
+        status_breakdown = {row[0]: row[1] for row in cursor.fetchall()}
+        
         # Count total units for all orders ready to ship (exclude shipped, cancelled, on_hold)
         cursor.execute("""
             SELECT 
@@ -5364,20 +5372,31 @@ def api_get_local_awaiting_shipment_count():
         
         if result:
             order_count, total_units, last_updated = result
+            
+            # Log if units is zero but there are orders (potential issue)
+            if total_units == 0 and order_count > 0:
+                server_logger.warning(f"Local DB Units: {order_count} orders but 0 units. Status breakdown: {status_breakdown}", source="Dashboard")
+            elif total_units == 0:
+                server_logger.info(f"Local DB Units: 0 orders, 0 units. Status breakdown: {status_breakdown}", source="Dashboard")
+            
             return jsonify({
                 'success': True,
                 'total_units': total_units or 0,
                 'order_count': order_count or 0,
-                'last_updated': last_updated
+                'last_updated': last_updated,
+                'debug_status_breakdown': status_breakdown
             })
         else:
+            server_logger.warning("Local DB Units: No result from query", source="Dashboard")
             return jsonify({
                 'success': True,
                 'total_units': 0,
                 'order_count': 0,
-                'last_updated': None
+                'last_updated': None,
+                'debug_status_breakdown': status_breakdown
             })
     except Exception as e:
+        server_logger.error(f"Local DB Units error: {str(e)}", source="Dashboard")
         return jsonify({
             'success': False,
             'error': str(e)
