@@ -31,70 +31,95 @@ def cleanup_old_orders(days=60):
     """
     Delete orders from orders_inbox older than specified days.
     
+    CRITICAL: Only deletes TERMINAL orders (shipped, cancelled).
+    Non-terminal orders (pending, awaiting_shipment, uploaded, on_hold, failed) 
+    are PRESERVED regardless of age to maintain sync with ShipStation.
+    
     Args:
         days: Number of days to retain orders (default: 60)
     
     Returns:
         Dict with cleanup results
     """
+    # Terminal statuses - safe to delete after retention period
+    TERMINAL_STATUSES = ('shipped', 'cancelled')
+    
     try:
         cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-        logger.info(f"Starting cleanup of orders older than {days} days (before {cutoff_date})")
+        logger.info(f"Starting cleanup of TERMINAL orders older than {days} days (before {cutoff_date})")
+        logger.info(f"Terminal statuses eligible for deletion: {TERMINAL_STATUSES}")
         
         with transaction() as conn:
             cursor = conn.cursor()
 
+            # Count orders eligible for deletion (terminal + old)
             cursor.execute("""
                 SELECT COUNT(*) FROM orders_inbox
                 WHERE DATE(order_date) < %s
-            """, (cutoff_date,))
+                  AND status IN %s
+            """, (cutoff_date, TERMINAL_STATUSES))
             orders_to_delete = cursor.fetchone()[0]
             
+            # Also count preserved non-terminal orders for logging
+            cursor.execute("""
+                SELECT COUNT(*) FROM orders_inbox
+                WHERE DATE(order_date) < %s
+                  AND status NOT IN %s
+            """, (cutoff_date, TERMINAL_STATUSES))
+            orders_preserved = cursor.fetchone()[0]
+            
+            if orders_preserved > 0:
+                logger.info(f"⚠️ PRESERVING {orders_preserved} non-terminal orders (still active in ShipStation)")
+            
             if orders_to_delete == 0:
-                logger.info("No orders to clean up")
+                logger.info("No terminal orders to clean up")
                 return {
                     'deleted': 0,
+                    'preserved': orders_preserved,
                     'cutoff_date': cutoff_date,
-                    'message': 'No orders older than retention period'
+                    'message': 'No terminal orders older than retention period'
                 }
             
-            logger.info(f"Found {orders_to_delete} orders to delete")
+            logger.info(f"Found {orders_to_delete} terminal orders to delete")
             
             cursor = conn.cursor()
 
-            
+            # Delete order items for terminal orders only
             cursor.execute("""
                 DELETE FROM order_items_inbox
                 WHERE order_inbox_id IN (
                     SELECT id FROM orders_inbox
                     WHERE DATE(order_date) < %s
+                      AND status IN %s
                 )
-            """, (cutoff_date,))
+            """, (cutoff_date, TERMINAL_STATUSES))
             items_deleted = cursor.rowcount
             logger.info(f"Deleted {items_deleted} order items")
             
             cursor = conn.cursor()
 
-            
+            # Delete ShipStation line items for terminal orders only
             cursor.execute("""
                 DELETE FROM shipstation_order_line_items
                 WHERE order_inbox_id IN (
                     SELECT id FROM orders_inbox
                     WHERE DATE(order_date) < %s
+                      AND status IN %s
                 )
-            """, (cutoff_date,))
+            """, (cutoff_date, TERMINAL_STATUSES))
             line_items_deleted = cursor.rowcount
             logger.info(f"Deleted {line_items_deleted} ShipStation line items")
             
             cursor = conn.cursor()
 
-            
+            # Delete terminal orders only
             cursor.execute("""
                 DELETE FROM orders_inbox
                 WHERE DATE(order_date) < %s
-            """, (cutoff_date,))
+                  AND status IN %s
+            """, (cutoff_date, TERMINAL_STATUSES))
             orders_deleted = cursor.rowcount
-            logger.info(f"Deleted {orders_deleted} orders from inbox")
+            logger.info(f"Deleted {orders_deleted} terminal orders from inbox")
         
         result = {
             'deleted': orders_deleted,
