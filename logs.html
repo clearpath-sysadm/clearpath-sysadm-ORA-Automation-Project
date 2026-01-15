@@ -524,6 +524,14 @@
                     </div>
                     
                     <div class="control-group">
+                        <label>Log Source</label>
+                        <select id="filter-log-source" onchange="loadLogs()" title="Database logs persist across republishes">
+                            <option value="database" selected>Database (Persistent)</option>
+                            <option value="file">File (Session Only)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
                         <label>Start Date/Time</label>
                         <input type="datetime-local" id="filter-start" onchange="onDateRangeChange()" style="min-width: 170px;">
                     </div>
@@ -722,12 +730,14 @@
             const search = document.getElementById('filter-search').value;
             const startTime = document.getElementById('filter-start').value;
             const endTime = document.getElementById('filter-end').value;
+            const logSource = document.getElementById('filter-log-source').value;
             
             const params = new URLSearchParams({
                 level: level,
                 category: category,
                 lastNLines: lines,
-                hoursBack: hours
+                hoursBack: hours,
+                logSource: logSource
             });
             
             if (search) {

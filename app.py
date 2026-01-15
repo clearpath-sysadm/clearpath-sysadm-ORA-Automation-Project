@@ -9799,7 +9799,7 @@ def backfill_inventory_snapshots():
 def api_get_server_logs():
     """Get server logs with filtering options (Admin only)"""
     try:
-        from src.utils.server_logger import read_logs
+        from src.utils.server_logger import read_logs, read_logs_from_db
         
         level = request.args.get('level', 'ALL')
         source = request.args.get('source', 'ALL')
@@ -9809,17 +9809,29 @@ def api_get_server_logs():
         hours_back = min(int(request.args.get('hoursBack', 24)), 168)  # Max 7 days
         start_time = request.args.get('startTime', None)
         end_time = request.args.get('endTime', None)
+        log_source = request.args.get('logSource', 'database')  # 'database' or 'file'
         
-        result = read_logs(
-            level=level,
-            source=source,
-            category=category,
-            search_pattern=search_pattern,
-            last_n_lines=last_n_lines,
-            hours_back=hours_back,
-            start_time=start_time,
-            end_time=end_time
-        )
+        if log_source == 'database':
+            result = read_logs_from_db(
+                level=level,
+                source=source,
+                search_pattern=search_pattern,
+                last_n_lines=last_n_lines,
+                hours_back=hours_back,
+                start_time=start_time,
+                end_time=end_time
+            )
+        else:
+            result = read_logs(
+                level=level,
+                source=source,
+                category=category,
+                search_pattern=search_pattern,
+                last_n_lines=last_n_lines,
+                hours_back=hours_back,
+                start_time=start_time,
+                end_time=end_time
+            )
         
         return jsonify({
             'success': True,

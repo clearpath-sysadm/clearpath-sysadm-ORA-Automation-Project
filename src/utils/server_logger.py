@@ -1,6 +1,7 @@
 """
 Server Logger Module
-Provides file-based logging with rotation, log level filtering, and log reading utilities.
+Provides file-based logging with rotation, database persistence, log level filtering, and log reading utilities.
+Logs persist in PostgreSQL database across republishes.
 """
 import os
 import sys
@@ -11,6 +12,7 @@ import pytz
 import json
 import re
 from typing import List, Dict, Optional, Any
+import threading
 
 LOG_DIR = 'logs'
 LOG_FILE = 'app.log'
@@ -20,6 +22,22 @@ DEFAULT_LOG_LEVEL = 'INFO'
 
 # Ensure log directory exists
 os.makedirs(LOG_DIR, exist_ok=True)
+
+def _write_log_to_db(level: str, source: str, actor: str, role: Optional[str], message: str):
+    """Write log entry to database in a separate thread to avoid blocking."""
+    try:
+        from src.services.database.pg_utils import get_connection
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO server_logs (level, source, actor, role, message)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (level, source, actor, role, message))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception:
+        pass  # Silent fail - don't break logging if DB fails
 
 class ServerLogger:
     _instance = None
@@ -73,22 +91,27 @@ class ServerLogger:
     def debug(self, message: str, source: str = 'app', user: str = None, role: str = None):
         actor = self._format_actor(user, role)
         self.logger.debug(f'[{source}] {actor} {message}')
+        threading.Thread(target=_write_log_to_db, args=('DEBUG', source, user or 'system', role, message), daemon=True).start()
     
     def info(self, message: str, source: str = 'app', user: str = None, role: str = None):
         actor = self._format_actor(user, role)
         self.logger.info(f'[{source}] {actor} {message}')
+        threading.Thread(target=_write_log_to_db, args=('INFO', source, user or 'system', role, message), daemon=True).start()
     
     def warning(self, message: str, source: str = 'app', user: str = None, role: str = None):
         actor = self._format_actor(user, role)
         self.logger.warning(f'[{source}] {actor} {message}')
+        threading.Thread(target=_write_log_to_db, args=('WARNING', source, user or 'system', role, message), daemon=True).start()
     
     def error(self, message: str, source: str = 'app', user: str = None, role: str = None, exc_info: bool = False):
         actor = self._format_actor(user, role)
         self.logger.error(f'[{source}] {actor} {message}', exc_info=exc_info)
+        threading.Thread(target=_write_log_to_db, args=('ERROR', source, user or 'system', role, message), daemon=True).start()
     
     def critical(self, message: str, source: str = 'app', user: str = None, role: str = None, exc_info: bool = False):
         actor = self._format_actor(user, role)
         self.logger.critical(f'[{source}] {actor} {message}', exc_info=exc_info)
+        threading.Thread(target=_write_log_to_db, args=('CRITICAL', source, user or 'system', role, message), daemon=True).start()
     
     def _format_actor(self, user: str = None, role: str = None) -> str:
         """Format actor string with optional role"""
@@ -312,6 +335,126 @@ def read_logs(
         'logs': filtered_logs,
         'stats': stats
     }
+
+
+def read_logs_from_db(
+    level: str = 'ALL',
+    source: str = 'ALL',
+    search_pattern: Optional[str] = None,
+    last_n_lines: int = 500,
+    hours_back: int = 24,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Read and filter log entries from the PostgreSQL database.
+    These logs persist across republishes.
+    """
+    try:
+        from src.services.database.pg_utils import get_connection
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cst = pytz.timezone('America/Chicago')
+        
+        # Build time filter
+        if start_time:
+            try:
+                cutoff_start = datetime.strptime(start_time, '%Y-%m-%dT%H:%M')
+                cutoff_start = cst.localize(cutoff_start)
+            except ValueError:
+                cutoff_start = datetime.now(cst) - timedelta(hours=hours_back)
+        else:
+            cutoff_start = datetime.now(cst) - timedelta(hours=hours_back)
+        
+        if end_time:
+            try:
+                cutoff_end = datetime.strptime(end_time, '%Y-%m-%dT%H:%M')
+                cutoff_end = cst.localize(cutoff_end)
+            except ValueError:
+                cutoff_end = datetime.now(cst)
+        else:
+            cutoff_end = datetime.now(cst)
+        
+        # Build query with filters
+        conditions = ["timestamp >= %s", "timestamp <= %s"]
+        params = [cutoff_start, cutoff_end]
+        
+        if level != 'ALL':
+            conditions.append("level = %s")
+            params.append(level.upper())
+        
+        if source != 'ALL':
+            conditions.append("source = %s")
+            params.append(source)
+        
+        if search_pattern:
+            conditions.append("message ILIKE %s")
+            params.append(f'%{search_pattern}%')
+        
+        where_clause = " AND ".join(conditions)
+        
+        # Get stats first
+        cursor.execute(f"""
+            SELECT 
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE level = 'ERROR') as errors,
+                COUNT(*) FILTER (WHERE level = 'WARNING') as warnings,
+                COUNT(*) FILTER (WHERE level = 'INFO') as infos,
+                COUNT(*) FILTER (WHERE level = 'DEBUG') as debugs
+            FROM server_logs
+            WHERE {where_clause}
+        """, params)
+        
+        stats_row = cursor.fetchone()
+        stats = {
+            'total_lines': stats_row[0],
+            'error_count': stats_row[1],
+            'warning_count': stats_row[2],
+            'info_count': stats_row[3],
+            'debug_count': stats_row[4],
+            'file_size': 0,
+            'displayed_count': 0,
+            'source': 'database'
+        }
+        
+        # Get logs
+        params.append(last_n_lines)
+        cursor.execute(f"""
+            SELECT timestamp, level, source, actor, role, message
+            FROM server_logs
+            WHERE {where_clause}
+            ORDER BY timestamp DESC
+            LIMIT %s
+        """, params)
+        
+        filtered_logs = []
+        for row in cursor.fetchall():
+            filtered_logs.append({
+                'timestamp': row[0].strftime('%Y-%m-%dT%H:%M:%S') if row[0] else '',
+                'level': row[1],
+                'source': row[2] or 'app',
+                'actor': row[3] or 'system',
+                'role': row[4],
+                'message': row[5],
+                'raw': f"{row[0]} - {row[1]} - [{row[2]}] <{row[3]}> {row[5]}"
+            })
+        
+        stats['displayed_count'] = len(filtered_logs)
+        
+        cursor.close()
+        conn.close()
+        
+        return {
+            'logs': filtered_logs,
+            'stats': stats
+        }
+        
+    except Exception as e:
+        return {
+            'logs': [{'message': f'Error reading logs from database: {str(e)}', 'level': 'ERROR', 'source': 'logger', 'timestamp': '', 'actor': 'system', 'role': None, 'raw': str(e)}],
+            'stats': {'total_lines': 0, 'error_count': 1, 'warning_count': 0, 'info_count': 0, 'debug_count': 0, 'file_size': 0, 'displayed_count': 1, 'source': 'database'}
+        }
 
 
 def get_log_stats() -> Dict[str, Any]:
