@@ -1,0 +1,500 @@
+[Jan 15, 2026, 1:50:36 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:50:36 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:50:27 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 925}
+[Jan 15, 2026, 1:50:25 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 925}
+[Jan 15, 2026, 1:50:20 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:50:20 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:50:03 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:50:03 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:49:47 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:49:47 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:49:31 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:49:30 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:49:14 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:49:14 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:49:14 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 1:48:58 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:48:57 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:48:41 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:48:41 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:48:25 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:48:25 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:48:09 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:48:08 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:47:52 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:47:52 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:47:36 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:47:35 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:47:19 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:47:19 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:47:03 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:47:02 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:46:46 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:46:46 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:46:30 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:46:30 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:46:13 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:46:13 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:45:57 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:45:57 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:45:41 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:45:41 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:45:24 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:45:24 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:45:08 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:45:08 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:44:52 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:44:51 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:44:35 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:44:35 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:44:19 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:44:19 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:44:13 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow completed
+[Jan 15, 2026, 1:44:13 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (118.9s)
+[Jan 15, 2026, 1:44:03 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:44:02 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:43:46 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:43:46 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:43:41 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 925}
+[Jan 15, 2026, 1:43:36 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 925}
+[Jan 15, 2026, 1:43:33 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 925}
+[Jan 15, 2026, 1:43:30 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:43:30 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:43:13 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:43:13 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:42:57 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:42:57 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:42:40 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:42:40 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:42:24 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:42:24 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:42:14 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 1:42:08 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:42:08 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:41:51 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:41:51 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:41:35 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:41:35 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:41:19 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:41:18 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:41:02 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:41:02 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:40:46 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:40:46 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:40:29 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:40:29 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:40:13 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:40:13 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:39:57 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:39:57 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:39:40 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:39:40 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:39:24 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:39:24 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:39:18 PM CST] [INFO] [Scheduler] <system> Duplicate scanner workflow completed
+[Jan 15, 2026, 1:39:17 PM CST] [WARNING] [Scheduler] <system> Duplicate scan: Found 1 duplicate order+SKU combinations
+[Jan 15, 2026, 1:39:15 PM CST] [INFO] [Scheduler] <system> Duplicate scanner workflow started
+[Jan 15, 2026, 1:39:08 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:39:07 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:38:51 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:38:51 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:38:35 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:38:34 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:38:18 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:38:18 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:38:03 PM CST] [INFO] [Scheduler] <system> Lot mismatch scanner workflow completed
+[Jan 15, 2026, 1:38:03 PM CST] [WARNING] [Lot Mismatch] <system> Lot mismatch scan complete: 2 mismatches found, 2 alerts created, 0 auto-resolved (1.0s)
+[Jan 15, 2026, 1:38:03 PM CST] [WARNING] [Lot Mismatch] <system> Lot mismatch found: Order 709955, SKU 17612 - ShipStation has '250237' but active lot is '250372'
+[Jan 15, 2026, 1:38:03 PM CST] [WARNING] [Lot Mismatch] <system> Lot mismatch found: Order 709945, SKU 17612 - ShipStation has '250237' but active lot is '250372'
+[Jan 15, 2026, 1:38:02 PM CST] [INFO] [Lot Mismatch] <system> Lot mismatch scanner using active lots: 18675=240231, 18795=11001, 17914=250297, 17904=250240, 17612=250372
+[Jan 15, 2026, 1:38:02 PM CST] [INFO] [Scheduler] <system> Lot mismatch scanner workflow started
+[Jan 15, 2026, 1:38:02 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:38:02 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:37:45 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:37:45 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:37:29 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:37:29 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:37:13 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow completed
+[Jan 15, 2026, 1:37:13 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (115.1s)
+[Jan 15, 2026, 1:37:13 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:37:12 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:36:56 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:36:55 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:36:39 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:36:39 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:36:23 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:36:23 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:36:07 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:36:07 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:35:50 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:35:50 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:35:34 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:35:33 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:35:18 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 1:35:17 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:35:17 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:35:01 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:35:01 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:34:44 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:34:44 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:34:28 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:34:28 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:34:12 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:34:12 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:33:55 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:33:55 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:33:39 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:33:39 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:33:23 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:33:22 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:33:06 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:33:06 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:32:49 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:32:49 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:32:33 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:32:33 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:32:17 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:32:17 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:32:00 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:32:00 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:31:44 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:31:44 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:31:28 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:31:27 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:31:11 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:31:11 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:30:55 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:30:54 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:30:38 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:30:38 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:30:22 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:30:22 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:30:17 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow completed
+[Jan 15, 2026, 1:30:17 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (119.5s)
+[Jan 15, 2026, 1:30:05 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:30:05 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:29:49 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:29:49 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:29:32 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:29:32 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:29:16 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:29:16 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:29:00 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:28:59 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:28:43 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:28:43 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:28:27 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:28:26 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:28:18 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 1:28:10 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:28:10 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:27:54 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:27:54 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:27:38 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:27:37 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:27:21 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:27:21 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:27:05 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:27:05 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:26:48 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:26:48 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:26:32 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:26:32 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:26:16 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:26:16 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:25:59 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:25:59 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:25:43 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:25:43 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:25:27 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:25:27 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:25:10 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:25:10 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:24:54 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:24:54 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:24:38 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:24:37 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:24:21 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:24:21 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:24:14 PM CST] [INFO] [Scheduler] <system> Duplicate scanner workflow completed
+[Jan 15, 2026, 1:24:14 PM CST] [WARNING] [Scheduler] <system> Duplicate scan: Found 1 duplicate order+SKU combinations
+[Jan 15, 2026, 1:24:11 PM CST] [INFO] [Scheduler] <system> Duplicate scanner workflow started
+[Jan 15, 2026, 1:24:05 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:24:05 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:23:49 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:23:48 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:23:32 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:23:32 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:23:17 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow completed
+[Jan 15, 2026, 1:23:17 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (132.8s)
+[Jan 15, 2026, 1:23:16 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:23:15 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:23:02 PM CST] [WARNING] [Lot Mismatch] <system> Lot mismatch scan complete: 2 mismatches found, 2 alerts created, 0 auto-resolved (1.0s)
+[Jan 15, 2026, 1:23:02 PM CST] [INFO] [Scheduler] <system> Lot mismatch scanner workflow completed
+[Jan 15, 2026, 1:23:02 PM CST] [WARNING] [Lot Mismatch] <system> Lot mismatch found: Order 709955, SKU 17612 - ShipStation has '250237' but active lot is '250372'
+[Jan 15, 2026, 1:23:02 PM CST] [WARNING] [Lot Mismatch] <system> Lot mismatch found: Order 709945, SKU 17612 - ShipStation has '250237' but active lot is '250372'
+[Jan 15, 2026, 1:23:01 PM CST] [INFO] [Lot Mismatch] <system> Lot mismatch scanner using active lots: 18675=240231, 18795=11001, 17914=250297, 17904=250240, 17612=250372
+[Jan 15, 2026, 1:23:01 PM CST] [INFO] [Scheduler] <system> Lot mismatch scanner workflow started
+[Jan 15, 2026, 1:22:59 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:22:59 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:22:43 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:22:43 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:22:27 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:22:27 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:22:10 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:22:10 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:21:54 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:21:54 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:21:38 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:21:37 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:21:21 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:21:21 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:21:05 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:21:04 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:21:04 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 1:20:48 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:20:48 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:20:32 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:20:31 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:20:15 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:20:15 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:19:59 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:19:58 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:19:42 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:19:42 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:19:25 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:19:25 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:19:09 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:19:08 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:18:52 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:18:52 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:18:36 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:18:35 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:18:19 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:18:19 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:18:03 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:18:03 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:17:47 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:17:46 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:17:30 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:17:30 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:17:14 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:17:14 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:16:57 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:16:57 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:16:41 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:16:41 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:16:25 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:16:25 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:16:08 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:16:08 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:16:03 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow completed
+[Jan 15, 2026, 1:16:03 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (118.5s)
+[Jan 15, 2026, 1:15:52 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:15:52 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:15:36 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:15:35 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:15:19 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:15:19 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:15:03 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:15:02 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:14:46 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:14:46 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:14:30 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:14:30 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:14:14 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:14:13 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:14:05 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 1:13:57 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:13:57 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:13:41 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:13:41 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:13:25 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:13:24 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:13:08 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:13:08 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:12:52 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:12:51 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:12:35 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:12:35 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:12:19 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:12:19 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:12:03 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:12:02 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:11:45 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:11:45 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:11:29 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:11:29 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:11:13 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:11:12 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:10:56 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:10:55 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:10:39 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:10:39 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:10:23 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:10:23 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:10:06 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:10:06 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:09:50 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:09:50 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:09:34 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:09:33 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:09:17 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:09:17 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:09:10 PM CST] [INFO] [Scheduler] <system> Duplicate scanner workflow completed
+[Jan 15, 2026, 1:09:10 PM CST] [WARNING] [Scheduler] <system> Duplicate scan: Found 1 duplicate order+SKU combinations
+[Jan 15, 2026, 1:09:07 PM CST] [INFO] [Scheduler] <system> Duplicate scanner workflow started
+[Jan 15, 2026, 1:09:04 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow completed
+[Jan 15, 2026, 1:09:04 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (119.1s)
+[Jan 15, 2026, 1:09:01 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:09:00 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:08:44 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:08:44 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:08:28 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:08:27 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:08:11 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:08:11 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:08:01 PM CST] [INFO] [Scheduler] <system> Lot mismatch scanner workflow completed
+[Jan 15, 2026, 1:08:01 PM CST] [WARNING] [Lot Mismatch] <system> Lot mismatch scan complete: 1 mismatches found, 1 alerts created, 0 auto-resolved (0.9s)
+[Jan 15, 2026, 1:08:00 PM CST] [WARNING] [Lot Mismatch] <system> Lot mismatch found: Order 709945, SKU 17612 - ShipStation has '250237' but active lot is '250372'
+[Jan 15, 2026, 1:08:00 PM CST] [INFO] [Lot Mismatch] <system> Lot mismatch scanner using active lots: 18675=240231, 18795=11001, 17914=250297, 17904=250240, 17612=250372
+[Jan 15, 2026, 1:08:00 PM CST] [INFO] [Scheduler] <system> Lot mismatch scanner workflow started
+[Jan 15, 2026, 1:07:55 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:07:55 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:07:39 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:07:38 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:07:22 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:07:22 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:07:06 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:07:05 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:07:05 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 1:06:49 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:06:49 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:06:33 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:06:32 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:06:16 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:06:16 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:06:00 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:06:00 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:05:43 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:05:43 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:05:27 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:05:27 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:05:11 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:05:10 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:04:54 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:04:54 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:04:38 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:04:37 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:04:21 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:04:21 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:04:05 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:04:04 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:03:48 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:03:48 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:03:32 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:03:32 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:03:15 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:03:15 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:02:59 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:02:59 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:02:43 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:02:43 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:02:27 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:02:26 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:02:10 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:02:10 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:02:04 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow completed
+[Jan 15, 2026, 1:02:04 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (119.6s)
+[Jan 15, 2026, 1:01:54 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:01:54 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:01:37 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:01:37 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:01:21 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:01:21 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:01:04 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:01:04 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:00:48 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:00:48 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:00:32 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:00:32 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:00:15 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 1:00:15 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 1:00:04 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 12:59:59 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:59:58 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:59:42 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:59:42 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:59:26 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:59:26 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:59:10 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:59:09 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:58:53 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:58:53 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:58:37 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:58:37 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:58:20 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:58:20 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:58:04 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:58:04 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:57:48 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:57:48 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:57:31 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:57:31 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:57:15 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:57:15 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:56:59 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:56:59 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:56:42 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:56:42 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:56:26 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:56:26 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:56:09 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:56:09 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:55:53 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:55:53 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:55:37 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:55:36 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:55:20 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:55:20 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:55:04 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:55:04 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow completed
+[Jan 15, 2026, 12:55:03 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:55:03 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (118.5s)
+[Jan 15, 2026, 12:54:47 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:54:47 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:54:31 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:54:31 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:54:15 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:54:14 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:54:07 PM CST] [INFO] [Scheduler] <system> Duplicate scanner workflow completed
+[Jan 15, 2026, 12:54:06 PM CST] [WARNING] [Scheduler] <system> Duplicate scan: Found 1 duplicate order+SKU combinations
+[Jan 15, 2026, 12:53:58 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:53:58 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:53:42 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:53:41 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:53:25 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:53:25 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:53:24 PM CST] [INFO] [Scheduler] <system> Duplicate scanner workflow started
+[Jan 15, 2026, 12:53:09 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:53:09 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:53:05 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 15, 2026, 12:52:59 PM CST] [INFO] [Lot Mismatch] <system> Lot mismatch scan complete: No mismatches found, 0 auto-resolved (1.0s)
+[Jan 15, 2026, 12:52:59 PM CST] [INFO] [Scheduler] <system> Lot mismatch scanner workflow completed
+[Jan 15, 2026, 12:52:59 PM CST] [INFO] [Lot Mismatch] <system> Lot mismatch scanner using active lots: 18675=240231, 18795=11001, 17914=250297, 17904=250240, 17612=250372
+[Jan 15, 2026, 12:52:58 PM CST] [INFO] [Scheduler] <system> Lot mismatch scanner workflow started
+[Jan 15, 2026, 12:52:52 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:52:52 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:52:36 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:52:36 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:52:20 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:52:19 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:52:03 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:52:03 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:51:47 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:51:47 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:51:30 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:51:30 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:51:14 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
+[Jan 15, 2026, 12:51:14 PM CST] [INFO] [Scheduler] <system> XML import workflow started
+[Jan 15, 2026, 12:50:56 PM CST] [INFO] [Scheduler] <system> XML import workflow completed (no new orders)
