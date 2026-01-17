@@ -40,6 +40,7 @@ from src.services.shipstation.tracking_service import (
 )
 from src.services.ghost_order_backfill import backfill_ghost_orders
 from src.utils.server_logger import get_logger
+from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.api_utils import make_api_request
 
 server_logger = get_logger()
@@ -1433,7 +1434,9 @@ def main():
                 continue
             
             # Run sync during business hours
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
             run_unified_sync()
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
             logger.info(f"😴 Next sync in {SYNC_INTERVAL_SECONDS} seconds")
             time.sleep(SYNC_INTERVAL_SECONDS)
             
@@ -1441,6 +1444,7 @@ def main():
             logger.info("⛔ Unified sync stopped by user")
             break
         except Exception as e:
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
             logger.error(f"❌ Error in sync loop: {e}", exc_info=True)
             logger.info(f"🔁 Retrying in {SYNC_INTERVAL_SECONDS} seconds")
             time.sleep(SYNC_INTERVAL_SECONDS)

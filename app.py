@@ -7909,6 +7909,246 @@ def run_workflow_manually(workflow_name):
             'workflow': workflow_name
         }), 500
 
+@app.route('/api/workflow_health', methods=['GET'])
+@login_required
+def get_workflow_health():
+    """Get health status for all workflows including stuck detection"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                w.name,
+                w.display_name,
+                w.status,
+                w.last_run_at,
+                w.expected_interval_seconds,
+                wc.enabled,
+                wc.last_updated as controls_last_updated,
+                (
+                    SELECT heartbeat_at 
+                    FROM workflow_heartbeats 
+                    WHERE workflow_name = w.name 
+                    ORDER BY heartbeat_at DESC 
+                    LIMIT 1
+                ) as last_heartbeat,
+                (
+                    SELECT execution_phase 
+                    FROM workflow_heartbeats 
+                    WHERE workflow_name = w.name 
+                    ORDER BY heartbeat_at DESC 
+                    LIMIT 1
+                ) as last_phase
+            FROM workflows w
+            LEFT JOIN workflow_controls wc ON w.name = wc.workflow_name
+            WHERE w.name != 'dashboard-server'
+            ORDER BY w.name
+        """)
+        
+        rows = cursor.fetchall()
+        
+        threshold_multiplier = 3.0
+        cursor.execute("SELECT value FROM configuration_params WHERE parameter_name = 'stuck_workflow_threshold_multiplier'")
+        thresh_row = cursor.fetchone()
+        if thresh_row:
+            threshold_multiplier = float(thresh_row[0])
+        
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        
+        workflows = []
+        for row in rows:
+            wf = {
+                'name': row[0],
+                'display_name': row[1],
+                'status': row[2],
+                'last_run_at': row[3].isoformat() if row[3] else None,
+                'expected_interval_seconds': row[4],
+                'enabled': bool(row[5]) if row[5] is not None else True,
+                'controls_last_updated': row[6].isoformat() if row[6] else None,
+                'last_heartbeat': row[7].isoformat() if row[7] else None,
+                'last_phase': row[8],
+                'health_status': 'healthy',
+                'stuck_warning': None
+            }
+            
+            if wf['enabled'] and wf['expected_interval_seconds']:
+                last_heartbeat = row[7]
+                last_run = row[3]
+                last_phase = row[8]
+                reference_time = last_heartbeat if last_heartbeat else last_run
+                
+                if reference_time:
+                    if hasattr(reference_time, 'replace') and reference_time.tzinfo is None:
+                        from datetime import timezone as tz
+                        reference_time = reference_time.replace(tzinfo=tz.utc)
+                    
+                    threshold_seconds = wf['expected_interval_seconds'] * threshold_multiplier
+                    actual_gap = (now - reference_time).total_seconds()
+                    time_source = "heartbeat" if last_heartbeat else "last_run"
+                    
+                    if actual_gap > threshold_seconds:
+                        wf['health_status'] = 'stuck'
+                        if last_phase in ('started', 'error'):
+                            wf['stuck_warning'] = f"Last phase '{last_phase}' with no completion for {int(actual_gap)}s (possible crash)"
+                        else:
+                            wf['stuck_warning'] = f"No activity for {int(actual_gap)}s (threshold: {int(threshold_seconds)}s, source: {time_source})"
+                    elif actual_gap > wf['expected_interval_seconds'] * 1.5:
+                        wf['health_status'] = 'warning'
+                        wf['stuck_warning'] = f"Delayed: {int(actual_gap)}s since last activity"
+            
+            workflows.append(wf)
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'workflows': workflows,
+            'threshold_multiplier': threshold_multiplier,
+            'checked_at': now.isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ /api/workflow_health error: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/workflow/<workflow_name>/reset', methods=['POST'])
+@admin_required
+def reset_stuck_workflow(workflow_name):
+    """Manually reset a stuck workflow by setting status to 'completed'"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT status FROM workflows WHERE name = %s", (workflow_name,))
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': f'Workflow {workflow_name} not found'}), 404
+        
+        old_status = row[0]
+        
+        cursor.execute("""
+            UPDATE workflows 
+            SET status = 'completed',
+                last_run_at = NOW(),
+                updated_at = NOW()
+            WHERE name = %s
+        """, (workflow_name,))
+        
+        cursor.execute("""
+            UPDATE stuck_workflow_incidents
+            SET status = 'resolved',
+                resolved_at = NOW(),
+                resolved_by = %s,
+                resolution_method = 'manual_reset'
+            WHERE workflow_name = %s AND status = 'active'
+        """, (g.user.get('username', 'admin'), workflow_name))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        from src.utils.server_logger import get_logger
+        server_logger = get_logger()
+        server_logger.info(f"Workflow reset: {workflow_name} (was {old_status})", source="Admin")
+        
+        return jsonify({
+            'success': True,
+            'workflow': workflow_name,
+            'old_status': old_status,
+            'new_status': 'completed'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ /api/workflow/{workflow_name}/reset error: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stuck_workflow_incidents', methods=['GET'])
+@login_required
+def get_stuck_workflow_incidents():
+    """Get stuck workflow incident history"""
+    try:
+        status_filter = request.args.get('status')
+        limit = request.args.get('limit', 50, type=int)
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT id, workflow_name, detected_at, last_heartbeat, 
+                   expected_interval_seconds, actual_gap_seconds, status,
+                   resolved_at, resolved_by, resolution_method, notes
+            FROM stuck_workflow_incidents
+            WHERE 1=1
+        """
+        params = []
+        
+        if status_filter:
+            query += " AND status = %s"
+            params.append(status_filter)
+        
+        query += " ORDER BY detected_at DESC LIMIT %s"
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        incidents = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        return jsonify([{
+            'id': inc[0],
+            'workflow_name': inc[1],
+            'detected_at': inc[2].isoformat() if inc[2] else None,
+            'last_heartbeat': inc[3].isoformat() if inc[3] else None,
+            'expected_interval_seconds': inc[4],
+            'actual_gap_seconds': inc[5],
+            'status': inc[6],
+            'resolved_at': inc[7].isoformat() if inc[7] else None,
+            'resolved_by': inc[8],
+            'resolution_method': inc[9],
+            'notes': inc[10]
+        } for inc in incidents])
+        
+    except Exception as e:
+        logger.error(f"❌ /api/stuck_workflow_incidents error: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/workflow_heartbeats/<workflow_name>', methods=['GET'])
+@login_required
+def get_workflow_heartbeats(workflow_name):
+    """Get recent heartbeats for a specific workflow"""
+    try:
+        limit = request.args.get('limit', 20, type=int)
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT heartbeat_at, execution_phase, records_processed, details
+            FROM workflow_heartbeats
+            WHERE workflow_name = %s
+            ORDER BY heartbeat_at DESC
+            LIMIT %s
+        """, (workflow_name, limit))
+        
+        heartbeats = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        return jsonify([{
+            'heartbeat_at': hb[0].isoformat() if hb[0] else None,
+            'execution_phase': hb[1],
+            'records_processed': hb[2],
+            'details': hb[3]
+        } for hb in heartbeats])
+        
+    except Exception as e:
+        logger.error(f"❌ /api/workflow_heartbeats/{workflow_name} error: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/incidents', methods=['GET'])
 def get_incidents():
     """Get all production incidents with optional filtering"""

@@ -44,6 +44,10 @@ args = "duplicate-scanner"
 task = "workflow.run"
 args = "lot-mismatch-scanner"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "stuck-workflow-detector"
+
 [[workflows.workflow]]
 name = "dashboard-server"
 author = "agent"
@@ -118,6 +122,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/scheduled_lot_mismatch_scanner.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "stuck-workflow-detector"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python src/scheduled_stuck_workflow_detector.py"
 
 [workflows.workflow.metadata]
 outputType = "console"

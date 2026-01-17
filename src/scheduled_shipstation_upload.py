@@ -21,9 +21,11 @@ from src.services.shipstation.api_client import (
     fetch_shipstation_orders_by_order_numbers
 )
 from src.utils.server_logger import get_logger
+from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from config.settings import settings
 from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 
+WORKFLOW_NAME = 'shipstation-upload'
 server_logger = get_logger()
 
 logging.basicConfig(
@@ -856,6 +858,7 @@ def run_scheduled_upload():
                         logger.info("✅ Upload queue empty")
                         update_polling_state(0)
                     last_count = 0
+                    heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_pending_orders'})
                     time.sleep(interval)
                     continue
                 
@@ -867,6 +870,7 @@ def run_scheduled_upload():
                 last_count = count
             
             # Run existing upload logic (all safeguards preserved)
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
             server_logger.info("ShipStation upload workflow started", source="Scheduler")
             uploaded_count = upload_pending_orders()
             
@@ -880,6 +884,7 @@ def run_scheduled_upload():
                 server_logger.info("ShipStation upload workflow completed (no pending orders)", source="Scheduler")
             
             error_count = 0
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED, records_processed=uploaded_count)
             
             time.sleep(interval if enabled else UPLOAD_INTERVAL_SECONDS)
             
@@ -888,6 +893,7 @@ def run_scheduled_upload():
             break
         except Exception as e:
             error_count += 1
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
             logger.error(f"❌ Upload error: {e}", exc_info=True)
             
             # Exponential backoff with max 5 min

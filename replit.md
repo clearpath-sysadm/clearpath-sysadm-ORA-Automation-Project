@@ -43,12 +43,12 @@ The Oracare Fulfillment System is a production-ready order management platform t
 
 ### Key Components
 
-**Database Tables (35 total):**
+**Database Tables (37 total):**
 - Order Management: `orders_inbox`, `order_items_inbox`, `shipped_orders`, `shipped_items`
 - Inventory: `inventory_current`, `inventory_transactions`, `inventory_daily_snapshots`, `lot_inventory`
 - SKU/Bundles: `sku_lot`, `bundle_skus`, `bundle_components`
 - Alerts: `duplicate_order_alerts`, `lot_mismatch_alerts`, `manual_order_conflicts`, `shipping_violations`
-- System: `workflows`, `workflow_controls`, `configuration_params`, `users`
+- System: `workflows`, `workflow_controls`, `configuration_params`, `users`, `workflow_heartbeats`, `stuck_workflow_incidents`
 
 **Frontend Pages (20):**
 - `index.html` - Main dashboard (DEFAULT VIEW)
@@ -62,7 +62,7 @@ The Oracare Fulfillment System is a production-ready order management platform t
 - `logs.html` - Server Logs viewer (Admin only)
 - `email_contacts.html`, `settings.html`, `help.html`, `landing.html` - Utility pages
 
-**Automation Workflows (7):**
+**Automation Workflows (8):**
 | Workflow | Script | Interval |
 |----------|--------|----------|
 | dashboard-server | `app.py` | Continuous |
@@ -71,7 +71,10 @@ The Oracare Fulfillment System is a production-ready order management platform t
 | unified-shipstation-sync | `unified_shipstation_sync.py` | 5 min |
 | duplicate-scanner | `scheduled_duplicate_scanner.py` | 15 min |
 | lot-mismatch-scanner | `scheduled_lot_mismatch_scanner.py` | 15 min |
+| stuck-workflow-detector | `scheduled_stuck_workflow_detector.py` | 15 min |
 | orders-cleanup | `scheduled_cleanup.py` | Daily |
+
+**Workflow Health Monitoring:** Automatic detection of stuck workflows via heartbeat system. All workflows log heartbeats (started/completed/error phases) to `workflow_heartbeats` table. Detector runs every 15 minutes, creates incidents in `stuck_workflow_incidents`, and can auto-reset stuck workflows.
 
 **Business Hours:** Monday-Friday 6 AM - 6 PM CST (64% compute reduction)
 
@@ -119,6 +122,7 @@ X-Cart → XML → Google Drive → xml-import → orders_inbox
 - **ShipStation Sync Fix (Jan 7, 2026):** Fixed duplicate key constraint violations in `manual_order_conflicts` table using UPSERT pattern (`ON CONFLICT DO NOTHING`). See `docs/implementation-reports/SHIPSTATION_SYNC_DUPLICATE_KEY_FIX.md`
 - **ShipStation Deletion Audit Trail (Jan 7, 2026):** Enhanced `deleted_shipstation_orders` table to capture full customer data before deletion: customer_name, customer_email, customer_company, ship_to_name/city/state, order_total_cents, order_date, items_json. Server logging added for deletion events.
 - **Admin Alert Bar System (Jan 7, 2026):** Admin-controlled messaging system for displaying important alerts to all users. Active alerts (red bar) cannot be dismissed; cleared alerts (green bar) can be dismissed by users. Managed via Workflow Controls page (Admin only). Database table: `admin_alerts`. API: `/api/admin/alert`.
+- **Workflow Health Monitoring (Jan 17, 2026):** Automated detection of stuck workflows to prevent production outages like the Jan 9th XML import incident. Features: heartbeat logging for all workflows (`workflow_heartbeats` table), stuck workflow detector service (runs every 15 mins), incident tracking (`stuck_workflow_incidents`), UI enhancements on Workflow Controls page (health badges, reset buttons, incident history). APIs: `/api/workflow_health`, `/api/workflow/{name}/reset`, `/api/stuck_workflow_incidents`.
 
 ## Important Notes
 - InitialInventory baseline: September 19, 2025

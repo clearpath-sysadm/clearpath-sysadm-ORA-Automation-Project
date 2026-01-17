@@ -17,8 +17,11 @@ sys.path.insert(0, str(project_root))
 from src.services.google_drive.api_client import list_xml_files_from_folder, fetch_xml_from_drive_by_file_id
 from src.services.database import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.utils.server_logger import get_logger
+from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 import defusedxml.ElementTree as ET
+
+WORKFLOW_NAME = 'xml-import'
 
 server_logger = get_logger()
 
@@ -477,11 +480,13 @@ def run_scheduled_import():
             has_changes, file_signature, check_duration = has_new_xml_files()
             
             if not has_changes:
-                # No changes - skip processing
+                # No changes - skip processing, log skipped heartbeat
+                heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_changes'})
                 time.sleep(interval)
                 continue
             
             # Changes detected - process files
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
             logger.info(f"📥 Processing XML files from Drive (signature changed)")
             server_logger.info("XML import workflow started", source="Scheduler")
             
@@ -504,8 +509,9 @@ def run_scheduled_import():
             if deleted > 0:
                 logger.info(f"🗑️ Cleanup complete: {deleted} old orders deleted")
             
-            # Reset error count on success
+            # Reset error count on success and log completion
             error_count = 0
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED, records_processed=imported, details={'deleted': deleted})
             
             logger.info(f"😴 Next import check in {interval} seconds")
             time.sleep(interval)
@@ -515,6 +521,7 @@ def run_scheduled_import():
             break
         except Exception as e:
             error_count += 1
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
             logger.error(f"❌ Error in scheduled import (attempt {error_count}/{max_errors}): {str(e)}")
             
             if error_count >= max_errors:

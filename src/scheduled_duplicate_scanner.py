@@ -19,10 +19,12 @@ sys.path.insert(0, str(project_root))
 from src.services.database.pg_utils import get_connection, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
 from src.utils.server_logger import get_logger
+from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from config.settings import settings
 from utils.api_utils import make_api_request
 from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
 
+WORKFLOW_NAME = 'duplicate-scanner'
 server_logger = get_logger()
 
 logging.basicConfig(
@@ -526,6 +528,7 @@ def run_scheduled_scanner():
                 continue
             
             # Run scan
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
             server_logger.info("Duplicate scanner workflow started", source="Scheduler")
             scan_succeeded = scan_for_duplicates()
             
@@ -533,9 +536,11 @@ def run_scheduled_scanner():
             # This allows monitoring systems to detect scan failures
             if scan_succeeded:
                 update_workflow_last_run('duplicate-scanner')
+                heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
                 server_logger.info("Duplicate scanner workflow completed", source="Scheduler")
             else:
                 logger.error("❌ Scan failed - workflow timestamp NOT updated (monitoring will detect failure)")
+                heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': 'scan_failed'})
                 server_logger.error("Duplicate scanner workflow failed", source="Scheduler")
             
             # Sleep until next scan
@@ -546,6 +551,7 @@ def run_scheduled_scanner():
             logger.info("Duplicate scanner stopped by user")
             break
         except Exception as e:
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
             logger.error(f"❌ Scanner error: {e}", exc_info=True)
             time.sleep(60)
 

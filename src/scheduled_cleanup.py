@@ -17,8 +17,11 @@ if project_root not in sys.path:
 
 from src.cleanup_old_orders import cleanup_old_orders
 from src.services.database.pg_utils import is_workflow_enabled, update_workflow_last_run
+from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.logging_config import setup_logging
 from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
+
+WORKFLOW_NAME = 'orders-cleanup'
 
 log_dir = os.path.join(project_root, 'logs')
 os.makedirs(log_dir, exist_ok=True)
@@ -51,19 +54,23 @@ def main():
                 time.sleep(60)
                 continue
             
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
             update_workflow_last_run('orders-cleanup')
             logger.info("Running scheduled cleanup...")
             result = cleanup_old_orders(days=60)
             
             if 'error' in result:
                 logger.error(f"Cleanup failed: {result['error']}")
+                heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': result['error'][:200]})
             else:
                 logger.info(f"Cleanup complete: {result['deleted']} orders deleted")
+                heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED, records_processed=result.get('deleted', 0))
             
             logger.info(f"Next cleanup in {CLEANUP_INTERVAL} seconds (24 hours)")
             time.sleep(CLEANUP_INTERVAL)
             
         except Exception as e:
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
             logger.error(f"Error in cleanup loop: {e}", exc_info=True)
             logger.info("Retrying in 1 hour...")
             time.sleep(3600)
