@@ -1,0 +1,36 @@
+[Jan 17, 2026, 1:20:24 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:20:18 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:20:06 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 17, 2026, 1:19:45 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:19:39 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:19:35 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:17:15 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (105.0s)
+[Jan 17, 2026, 1:16:28 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:16:06 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:16:00 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:15:40 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:15:34 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:15:30 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 17, 2026, 1:13:15 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:13:10 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:11:17 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:11:00 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:09:52 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 1:05:24 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:05:15 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:04:29 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:04:24 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:04:19 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 1:02:54 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:56:46 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:56:09 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:55:49 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:55:13 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:49:24 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:46:02 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:45:56 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:44:31 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:40:28 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:36:45 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:36:40 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:36:28 PM CST] [INFO] [app] <system> Dashboard server starting...

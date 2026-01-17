@@ -1078,6 +1078,16 @@ def run_unified_sync():
         
         logger.info(f"📦 Processing {len(orders)} orders from ShipStation")
         
+        # Count orders by status for better visibility
+        status_counts = {}
+        for order in orders:
+            status = order.get('orderStatus', 'unknown').lower()
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
+        status_summary = ", ".join([f"{k}: {v}" for k, v in sorted(status_counts.items())])
+        logger.info(f"📊 Orders by status: {status_summary}")
+        server_logger.info(f"Fetched {len(orders)} orders from ShipStation ({status_summary})", source="ShipStation Sync")
+        
         # Counters for comprehensive logging
         stats = {
             'new_manual_imported': 0,
@@ -1085,6 +1095,7 @@ def run_unified_sync():
             'skipped_local_origin': 0,
             'skipped_no_key_skus': 0,
             'skipped_not_manual': 0,
+            'skipped_awaiting_orphans': 0,  # Orders in ShipStation awaiting but not in local DB
             'errors': 0
         }
         
@@ -1236,15 +1247,26 @@ def run_unified_sync():
                         # POTENTIALLY NEW MANUAL ORDER → Apply filters
                         
                         # Filter 1: Must start with "10" (manual orders only)
+                        order_status = order.get('orderStatus', '').lower()
                         if not order_number.startswith('10'):
-                            logger.debug(f"⏭️ Skipping {order_number} - not manual (doesn't start with '10')")
+                            # Track awaiting_shipment orders that exist in ShipStation but not locally
+                            if order_status == 'awaiting_shipment':
+                                stats['skipped_awaiting_orphans'] += 1
+                                logger.warning(f"⚠️ ORPHAN: Order {order_number} is awaiting_shipment in ShipStation but NOT in local DB (not a manual order)")
+                            else:
+                                logger.debug(f"⏭️ Skipping {order_number} - not manual (doesn't start with '10')")
                             stats['skipped_not_manual'] += 1
                             cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                             continue
                         
                         # Filter 2: Must NOT be from local system
                         if is_order_from_local_system(str(order_id)):
-                            logger.debug(f"⏭️ Skipping {order_number} - originated from local system")
+                            # Track awaiting_shipment orders that exist in ShipStation but are orphaned
+                            if order_status == 'awaiting_shipment':
+                                stats['skipped_awaiting_orphans'] += 1
+                                logger.warning(f"⚠️ ORPHAN: Order {order_number} is awaiting_shipment in ShipStation, has line items in DB, but orders_inbox record missing/shipped")
+                            else:
+                                logger.debug(f"⏭️ Skipping {order_number} - originated from local system")
                             stats['skipped_local_origin'] += 1
                             cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                             continue
@@ -1373,11 +1395,12 @@ def run_unified_sync():
         logger.info(f"   ⏭️ Skipped (not manual): {stats['skipped_not_manual']}")
         logger.info(f"   ⏭️ Skipped (local origin): {stats['skipped_local_origin']}")
         logger.info(f"   ⏭️ Skipped (no key SKUs): {stats['skipped_no_key_skus']}")
+        logger.info(f"   ⚠️ Orphan awaiting orders: {stats.get('skipped_awaiting_orphans', 0)}")
         logger.info(f"   ❌ Errors: {stats['errors']}")
         logger.info(f"   ⏱️ Duration: {elapsed:.1f}s")
         logger.info("=" * 80)
         
-        # Server logger summary for admin visibility
+        # Server logger summary for admin visibility - now with detailed breakdown
         summary_parts = []
         if stats['new_manual_imported'] > 0:
             summary_parts.append(f"{stats['new_manual_imported']} imported")
@@ -1388,10 +1411,29 @@ def run_unified_sync():
         if stats['errors'] > 0:
             summary_parts.append(f"{stats['errors']} errors")
         
+        # Add skip reasons to help diagnose issues
+        skip_parts = []
+        if stats['skipped_not_manual'] > 0:
+            skip_parts.append(f"{stats['skipped_not_manual']} not-manual")
+        if stats['skipped_local_origin'] > 0:
+            skip_parts.append(f"{stats['skipped_local_origin']} local-origin")
+        if stats['skipped_no_key_skus'] > 0:
+            skip_parts.append(f"{stats['skipped_no_key_skus']} no-key-SKUs")
+        
         if summary_parts:
             server_logger.info(f"Sync complete: {', '.join(summary_parts)} ({elapsed:.1f}s)", source="ShipStation Sync")
+        elif skip_parts:
+            server_logger.info(f"Sync complete: No changes. Skipped: {', '.join(skip_parts)} ({elapsed:.1f}s)", source="ShipStation Sync")
         else:
             server_logger.info(f"Sync complete: No changes ({elapsed:.1f}s)", source="ShipStation Sync")
+        
+        # CRITICAL: Warn if there are orphan awaiting orders (ShipStation has awaiting but local DB doesn't)
+        if stats.get('skipped_awaiting_orphans', 0) > 0:
+            server_logger.warning(
+                f"MISMATCH: {stats['skipped_awaiting_orphans']} orders are awaiting_shipment in ShipStation but NOT in local DB. "
+                f"Check if XML Import is running or if orders were deleted from orders_inbox.",
+                source="ShipStation Sync"
+            )
         
         # Auto-resolve manual order conflicts (independent operation after main sync)
         try:
