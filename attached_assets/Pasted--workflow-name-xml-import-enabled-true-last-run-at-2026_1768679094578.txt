@@ -1,0 +1,134 @@
+[
+  {
+    "workflow_name": "xml-import",
+    "enabled": true,
+    "last_run_at": "2026-01-17T19:27:32.797Z"
+  }
+]
+{
+  "status": "error",
+  "error": "column \"phase\" does not exist"
+}
+
+[
+  {
+    "id": 26,
+    "category": "Key Products",
+    "parameter_name": "PT Kit",
+    "value": " ",
+    "sku": "17612",
+    "notes": " ",
+    "last_updated": null,
+    "created_at": "2025-10-01 12:22:30"
+  },
+  {
+    "id": 27,
+    "category": "Key Products",
+    "parameter_name": "Travel Kit",
+    "value": " ",
+    "sku": "17904",
+    "notes": " ",
+    "last_updated": null,
+    "created_at": "2025-10-01 12:22:30"
+  },
+  {
+    "id": 28,
+    "category": "Key Products",
+    "parameter_name": "PPR Kit",
+    "value": " ",
+    "sku": "17914",
+    "notes": " ",
+    "last_updated": null,
+    "created_at": "2025-10-01 12:22:30"
+  },
+  {
+    "id": 29,
+    "category": "Key Products",
+    "parameter_name": "Ortho Protect",
+    "value": " ",
+    "sku": "18675",
+    "notes": " ",
+    "last_updated": null,
+    "created_at": "2025-10-01 12:22:30"
+  },
+  {
+    "id": 30,
+    "category": "Key Products",
+    "parameter_name": "OraPro Paste Peppermint",
+    "value": "None",
+    "sku": "18795",
+    "notes": null,
+    "last_updated": null,
+    "created_at": "2025-10-01 12:22:30"
+  }
+]
+
+
+[
+  {
+    "sku": "17612",
+    "lot": "250372",
+    "active": 1,
+    "updated_at": "2026-01-05 16:42:24.522498+00"
+  },
+  {
+    "sku": "17612",
+    "lot": "250362",
+    "active": 0,
+    "updated_at": "2026-01-05 16:41:51.475511+00"
+  },
+  {
+    "sku": "17612",
+    "lot": "250340",
+    "active": 0,
+    "updated_at": "2025-12-03 12:37:26.281271+00"
+  },
+  {
+    "sku": "17612",
+    "lot": "250237",
+    "active": 0,
+    "updated_at": "2025-10-06 17:05:10"
+  },
+  {
+    "sku": "17612",
+    "lot": "250300",
+    "active": 0,
+    "updated_at": "2025-10-06 17:05:04"
+  },
+  {
+    "sku": "17612",
+    "lot": "250101",
+    "active": 0,
+    "updated_at": "2025-10-02 06:58:13"
+  },
+  {
+    "sku": "17612",
+    "lot": "250216",
+    "active": 0,
+    "updated_at": "2025-10-02 06:58:13"
+  },
+  {
+    "sku": "17612",
+    "lot": "250195",
+    "active": 0,
+    "updated_at": "2025-10-02 06:58:13"
+  },
+  {
+    "sku": "17612",
+    "lot": "250172",
+    "active": 0,
+    "updated_at": "2025-10-02 06:58:13"
+  }
+]
+
+SELECT last_xml_count, last_xml_check FROM polling_state WHERE id = 1;
+no results
+
+-- 7. Check server logs for XML Import activity
+SELECT created_at, level, message 
+FROM server_logs 
+WHERE source = 'XML Import' 
+AND created_at > NOW() - INTERVAL '24 hours' 
+ORDER BY created_at DESC 
+LIMIT 20;
+no results
