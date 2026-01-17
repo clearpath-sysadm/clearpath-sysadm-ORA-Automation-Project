@@ -210,19 +210,26 @@ def import_orders_from_drive():
     """Import orders.xml from Google Drive with bundle expansion"""
     conn = None
     try:
+        server_logger.info(f"Connecting to Google Drive folder: {GOOGLE_DRIVE_FOLDER_ID}", source="XML Import")
         files = list_xml_files_from_folder(GOOGLE_DRIVE_FOLDER_ID)
+        server_logger.info(f"Found {len(files)} files in Google Drive folder", source="XML Import")
         
         orders_file = next((f for f in files if f['name'] == 'orders.xml'), None)
         
         if not orders_file:
             logger.warning("orders.xml not found in Google Drive")
+            server_logger.warning("orders.xml NOT FOUND in Google Drive folder!", source="XML Import")
             return 0
         
         logger.info(f"Found orders.xml (ID: {orders_file['id']})")
+        server_logger.info(f"Found orders.xml (ID: {orders_file['id'][:20]}...)", source="XML Import")
         
         xml_content = fetch_xml_from_drive_by_file_id(orders_file['id'])
+        server_logger.info(f"Fetched XML content ({len(xml_content)} bytes)", source="XML Import")
         
         root = ET.fromstring(xml_content)
+        total_orders_in_xml = len(root.findall('order'))
+        server_logger.info(f"Parsed XML: {total_orders_in_xml} orders found in file", source="XML Import")
         
         conn = get_connection()
         
@@ -242,6 +249,7 @@ def import_orders_from_drive():
         """)
         key_products = {row[0] for row in cursor.fetchall()}
         logger.info(f"Loaded {len(key_products)} Key Products for filtering")
+        server_logger.info(f"Key Products loaded: {', '.join(sorted(key_products))}", source="XML Import")
         
         # Load active lot numbers for automatic assignment
         cursor.execute("""
@@ -430,10 +438,12 @@ def import_orders_from_drive():
         conn.close()
         
         logger.info(f"Successfully imported {orders_imported} new orders from Google Drive ({orders_skipped} skipped - no Key Products)")
+        server_logger.info(f"Import summary: {orders_imported} imported, {orders_skipped} skipped (no Key Products), {total_orders_in_xml} total in XML", source="XML Import")
         return orders_imported
         
     except Exception as e:
         logger.error(f"Error importing from Google Drive: {str(e)}")
+        server_logger.error(f"Import FAILED: {str(e)[:200]}", source="XML Import")
         # Rollback transaction on any error
         if conn:
             try:
@@ -465,6 +475,7 @@ def run_scheduled_import():
             if not is_business_hours():
                 status = format_business_hours_status()
                 logger.info(f"{status}")
+                server_logger.info(f"XML Import sleeping: {status}", source="XML Import")
                 sleep_duration = get_sleep_until_business_hours()
                 logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
                 time.sleep(sleep_duration)
@@ -473,6 +484,7 @@ def run_scheduled_import():
             # PRIORITY 2: Check if workflow is enabled
             if not is_workflow_enabled('xml-import'):
                 logger.info("⏸️ Workflow 'xml-import' is DISABLED - sleeping 60s")
+                server_logger.warning("XML Import workflow DISABLED", source="XML Import")
                 time.sleep(60)
                 continue
             
@@ -482,13 +494,14 @@ def run_scheduled_import():
             if not has_changes:
                 # No changes - skip processing, log skipped heartbeat
                 heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_changes'})
+                server_logger.info(f"XML Import: No file changes detected (check took {check_duration}ms)", source="XML Import")
                 time.sleep(interval)
                 continue
             
             # Changes detected - process files
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
             logger.info(f"📥 Processing XML files from Drive (signature changed)")
-            server_logger.info("XML import workflow started", source="Scheduler")
+            server_logger.info(f"XML Import: File changes detected, processing... (sig_len={len(file_signature)})", source="XML Import")
             
             imported = import_orders_from_drive()
             
@@ -518,11 +531,13 @@ def run_scheduled_import():
             
         except KeyboardInterrupt:
             logger.info("⏹️ Scheduled import stopped by user")
+            server_logger.info("XML Import: Stopped by user", source="XML Import")
             break
         except Exception as e:
             error_count += 1
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
             logger.error(f"❌ Error in scheduled import (attempt {error_count}/{max_errors}): {str(e)}")
+            server_logger.error(f"XML Import ERROR: {str(e)[:200]}", source="XML Import")
             
             if error_count >= max_errors:
                 logger.error(f"🚨 Max errors ({max_errors}) reached - using exponential backoff")
@@ -536,6 +551,7 @@ def run_once():
     """Run a single import cycle and exit (for manual triggers)"""
     logger.info(f"🎯 Running one-time XML import (manual trigger mode)")
     logger.info(f"📁 Data retention: {DATA_RETENTION_DAYS} days")
+    server_logger.info("XML Import: Manual trigger started (--once mode)", source="XML Import")
     
     try:
         # Skip business hours check for manual triggers
@@ -544,25 +560,31 @@ def run_once():
         # Check if workflow is enabled
         if not is_workflow_enabled('xml-import'):
             logger.warning("⏸️ Workflow 'xml-import' is DISABLED")
+            server_logger.warning("XML Import: Workflow DISABLED, aborting manual run", source="XML Import")
             return 0
         
         # Check for new files
         has_changes, file_signature, check_duration = has_new_xml_files()
+        server_logger.info(f"XML Import: File check complete - changes={has_changes}, sig_len={len(file_signature)}, duration={check_duration}ms", source="XML Import")
         
         if not has_changes:
             logger.info("ℹ️ No new XML files detected - nothing to import")
+            server_logger.info("XML Import: No file changes detected, nothing to import", source="XML Import")
             return 0
         
         # Process files
         logger.info(f"📥 Processing XML files from Drive (signature changed)")
+        server_logger.info(f"XML Import: Processing files from Google Drive", source="XML Import")
         
         imported = import_orders_from_drive()
         
         if imported > 0:
             logger.info(f"✅ Import complete: {imported} orders imported")
+            server_logger.info(f"XML Import: {imported} orders imported successfully", source="XML Import")
             update_workflow_last_run('xml-import')
         else:
             logger.info(f"ℹ️ Import complete: No new orders")
+            server_logger.info("XML Import: Completed with no new orders", source="XML Import")
         
         # Update polling state
         update_xml_polling_state(file_signature)
@@ -571,12 +593,14 @@ def run_once():
         deleted = cleanup_old_orders()
         if deleted > 0:
             logger.info(f"🗑️ Cleanup complete: {deleted} old orders deleted")
+            server_logger.info(f"XML Import: Cleaned up {deleted} old orders", source="XML Import")
         
         logger.info(f"✅ One-time import complete: {imported} orders imported")
         return imported
         
     except Exception as e:
         logger.error(f"❌ Error in one-time import: {str(e)}")
+        server_logger.error(f"XML Import ERROR (manual): {str(e)[:200]}", source="XML Import")
         import traceback
         traceback.print_exc()
         return 0
