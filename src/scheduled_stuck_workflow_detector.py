@@ -552,5 +552,60 @@ def run_stuck_detector():
             time.sleep(60)
 
 
+def run_once():
+    """Run a single detection scan (for manual triggering via --once flag)."""
+    logger.info(f"")
+    logger.info(f"{'='*60}")
+    logger.info(f"🔍 MANUAL SCAN - Stuck Workflow Detector")
+    logger.info(f"{'='*60}")
+    logger.info(f"")
+    
+    threshold_multiplier = float(get_config_value('stuck_workflow_threshold_multiplier', '3'))
+    auto_reset_enabled = get_config_value('stuck_workflow_auto_reset_enabled', 'false') == 'true'
+    retention_days = int(get_config_value('stuck_workflow_heartbeat_retention_days', '7'))
+    
+    logger.info(f"📋 Configuration:")
+    logger.info(f"   - Threshold Multiplier: {threshold_multiplier}x")
+    logger.info(f"   - Auto-Reset Enabled: {auto_reset_enabled}")
+    logger.info(f"   - Heartbeat Retention: {retention_days} days")
+    logger.info(f"")
+    
+    stuck = detect_stuck_workflows(threshold_multiplier)
+    
+    if stuck:
+        logger.warning(f"")
+        logger.warning(f"🚨 ALERT: Found {len(stuck)} stuck workflow(s)!")
+        logger.warning(f"")
+        
+        for wf in stuck:
+            logger.warning(f"   Processing stuck workflow: {wf['name']}")
+            incident_id = create_incident(wf)
+            
+            if incident_id and auto_reset_enabled:
+                logger.info(f"   Auto-reset is ENABLED - attempting reset...")
+                auto_reset_workflow(wf['name'], incident_id)
+            elif incident_id:
+                logger.info(f"   Auto-reset is DISABLED - incident #{incident_id} created, awaiting manual intervention")
+                server_logger.warning(
+                    f"Manual intervention required: Workflow '{wf['name']}' is stuck (incident #{incident_id})",
+                    source='Stuck Detector'
+                )
+    else:
+        logger.info(f"")
+        logger.info(f"✅ All workflows healthy - no issues detected")
+    
+    logger.info(f"")
+    logger.info(f"🧹 Cleaning up old heartbeat records (retention: {retention_days} days)...")
+    cleanup_old_heartbeats(retention_days)
+    
+    logger.info(f"")
+    logger.info(f"✅ Manual scan complete")
+    logger.info(f"{'='*60}")
+
+
 if __name__ == '__main__':
-    run_stuck_detector()
+    import sys
+    if '--once' in sys.argv:
+        run_once()
+    else:
+        run_stuck_detector()

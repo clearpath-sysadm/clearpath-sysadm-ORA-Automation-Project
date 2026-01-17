@@ -7811,7 +7811,8 @@ def run_workflow_manually(workflow_name):
         'unified-shipstation-sync': ['src/unified_shipstation_sync.py', '--once'],
         'duplicate-scanner': ['src/scheduled_duplicate_scanner.py', '--once'],
         'lot-mismatch-scanner': ['src/scheduled_lot_mismatch_scanner.py', '--once'],
-        'orders-cleanup': ['src/scheduled_cleanup.py', '--once']
+        'orders-cleanup': ['src/scheduled_cleanup.py', '--once'],
+        'stuck-workflow-detector': ['src/scheduled_stuck_workflow_detector.py', '--once']
     }
     
     try:
