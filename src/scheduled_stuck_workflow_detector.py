@@ -123,6 +123,14 @@ def get_workflow_health_data() -> list:
         return []
 
 
+def get_cst_now() -> datetime:
+    """Get current time in CST (Central Standard Time, UTC-6)."""
+    from datetime import timezone
+    utc_now = datetime.now(timezone.utc)
+    cst_offset = timedelta(hours=-6)
+    return utc_now + cst_offset
+
+
 def get_last_business_end_time() -> datetime:
     """
     Get the end time of the most recent business period in UTC.
@@ -133,7 +141,6 @@ def get_last_business_end_time() -> datetime:
     
     Returns UTC datetime of when business hours last ended.
     """
-    from config.settings import get_cst_now
     cst_now = get_cst_now()
     weekday = cst_now.weekday()  # 0=Monday, 6=Sunday
     hour = cst_now.hour
@@ -171,7 +178,6 @@ def get_current_business_start_time() -> datetime:
     Returns UTC datetime of when the current business day started (or when
     the next business period will start if currently outside business hours).
     """
-    from config.settings import get_cst_now
     cst_now = get_cst_now()
     weekday = cst_now.weekday()  # 0=Monday, 6=Sunday
     hour = cst_now.hour
