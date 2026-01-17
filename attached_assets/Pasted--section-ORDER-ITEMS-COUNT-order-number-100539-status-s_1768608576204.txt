@@ -1,0 +1,162 @@
+[
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "100539",
+    "status": "shipped",
+    "created_at": "2026-01-16T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "100377",
+    "status": "shipped",
+    "created_at": "2026-01-16T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "100603",
+    "status": "shipped",
+    "created_at": "2026-01-16T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "3"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "100864",
+    "status": "shipped",
+    "created_at": "2026-01-14T00:00:00.000Z",
+    "item_count": "2",
+    "total_qty": "7"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "100863",
+    "status": "shipped",
+    "created_at": "2026-01-14T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "6"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "100602",
+    "status": "shipped",
+    "created_at": "2026-01-14T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708415",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708405",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "2",
+    "total_qty": "2"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708395",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708385",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "2",
+    "total_qty": "4"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708375",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "3"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708365",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708345",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "2"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708335",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708305",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708325",
+    "status": "shipped",
+    "created_at": "2026-01-09T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "1"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708265",
+    "status": "shipped",
+    "created_at": "2026-01-08T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "6"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708245",
+    "status": "shipped",
+    "created_at": "2026-01-08T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "6"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708255",
+    "status": "shipped",
+    "created_at": "2026-01-08T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "2"
+  },
+  {
+    "section": "ORDER ITEMS COUNT",
+    "order_number": "708235",
+    "status": "shipped",
+    "created_at": "2026-01-08T00:00:00.000Z",
+    "item_count": "1",
+    "total_qty": "2"
+  }
+]
