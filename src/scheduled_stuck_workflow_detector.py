@@ -16,7 +16,7 @@ import os
 import sys
 import time
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -227,10 +227,10 @@ def detect_stuck_workflows(threshold_multiplier: float = 3.0) -> list:
     """
     stuck_workflows = []
     workflows = get_workflow_health_data()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)  # Use naive UTC for consistency
     
-    business_start = get_current_business_start_time()
-    last_business_end = get_last_business_end_time()
+    business_start = get_current_business_start_time().replace(tzinfo=None)
+    last_business_end = get_last_business_end_time().replace(tzinfo=None)
     time_since_business_start = (now - business_start).total_seconds()
     startup_grace_period = int(get_config_value('stuck_workflow_startup_grace_seconds', '900'))
     
