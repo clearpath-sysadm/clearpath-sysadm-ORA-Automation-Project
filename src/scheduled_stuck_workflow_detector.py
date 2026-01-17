@@ -58,6 +58,7 @@ def get_workflow_health_data() -> list:
     
     Returns list of dicts with workflow health info.
     """
+    logger.info("📊 Fetching workflow health data from database...")
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -95,7 +96,7 @@ def get_workflow_health_data() -> list:
         cursor.close()
         conn.close()
         
-        return [{
+        workflows = [{
             'name': row[0],
             'display_name': row[1],
             'status': row[2],
@@ -107,8 +108,18 @@ def get_workflow_health_data() -> list:
             'last_phase': row[8]
         } for row in rows]
         
+        logger.info(f"📊 Found {len(workflows)} workflows to monitor")
+        for wf in workflows:
+            enabled_status = "enabled" if wf.get('enabled', True) else "DISABLED"
+            heartbeat_info = wf['last_heartbeat'].strftime('%H:%M:%S') if wf['last_heartbeat'] else "none"
+            phase_info = wf['last_phase'] or "n/a"
+            logger.info(f"   - {wf['name']}: {enabled_status}, last_heartbeat={heartbeat_info}, phase={phase_info}")
+        
+        return workflows
+        
     except Exception as e:
         logger.error(f"Failed to get workflow health data: {e}")
+        server_logger.error(f"Failed to get workflow health data: {e}", source='Stuck Detector')
         return []
 
 
@@ -217,14 +228,26 @@ def detect_stuck_workflows(threshold_multiplier: float = 3.0) -> list:
     time_since_business_start = (now - business_start).total_seconds()
     startup_grace_period = int(get_config_value('stuck_workflow_startup_grace_seconds', '900'))
     
-    logger.debug(f"Business context: start={business_start.isoformat()}, last_end={last_business_end.isoformat()}, since_start={int(time_since_business_start)}s")
+    logger.info(f"⏱️  Detection Parameters:")
+    logger.info(f"   - Current time (UTC): {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"   - Business start (UTC): {business_start.strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"   - Last business end (UTC): {last_business_end.strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"   - Time since business start: {int(time_since_business_start)}s ({int(time_since_business_start/60)} min)")
+    logger.info(f"   - Threshold multiplier: {threshold_multiplier}x")
+    logger.info(f"   - Startup grace period: {startup_grace_period}s ({int(startup_grace_period/60)} min)")
+    logger.info(f"")
+    logger.info(f"🔬 Evaluating {len(workflows)} workflows...")
     
     for wf in workflows:
+        wf_name = wf['name']
+        
         if not wf.get('enabled', True):
+            logger.info(f"   [{wf_name}] SKIPPED - workflow is disabled")
             continue
             
         expected_interval = wf.get('expected_interval_seconds')
         if not expected_interval:
+            logger.info(f"   [{wf_name}] SKIPPED - no expected interval configured")
             continue
         
         last_heartbeat = wf.get('last_heartbeat')
@@ -233,6 +256,7 @@ def detect_stuck_workflows(threshold_multiplier: float = 3.0) -> list:
         
         reference_time = last_heartbeat if last_heartbeat else last_run
         if not reference_time:
+            logger.info(f"   [{wf_name}] SKIPPED - no heartbeat or last_run timestamp available")
             continue
         
         if hasattr(reference_time, 'replace'):
@@ -242,15 +266,23 @@ def detect_stuck_workflows(threshold_multiplier: float = 3.0) -> list:
             
         threshold_seconds = expected_interval * threshold_multiplier
         actual_gap = (now - reference_naive).total_seconds()
+        time_source = "heartbeat" if last_heartbeat else "last_run_at"
+        
+        logger.info(f"   [{wf_name}] Evaluating:")
+        logger.info(f"      - Expected interval: {expected_interval}s ({int(expected_interval/60)} min)")
+        logger.info(f"      - Stuck threshold: {int(threshold_seconds)}s ({int(threshold_seconds/60)} min)")
+        logger.info(f"      - Last activity ({time_source}): {reference_naive.strftime('%H:%M:%S')}")
+        logger.info(f"      - Last phase: {last_phase or 'n/a'}")
+        logger.info(f"      - Gap since activity: {int(actual_gap)}s ({int(actual_gap/60)} min)")
         
         workflow_grace_period = expected_interval + startup_grace_period
         if time_since_business_start < workflow_grace_period:
             if reference_naive < last_business_end.replace(tzinfo=None):
-                logger.debug(
-                    f"Skipping {wf['name']} during startup grace period - "
-                    f"last activity was before business hours ended "
-                    f"({int(time_since_business_start)}s < {int(workflow_grace_period)}s grace)"
+                logger.info(
+                    f"      - GRACE PERIOD ACTIVE: Last activity was before business ended. "
+                    f"Remaining grace: {int(workflow_grace_period - time_since_business_start)}s"
                 )
+                logger.info(f"      - Result: HEALTHY (grace period)")
                 continue
         
         is_stuck = False
@@ -258,12 +290,16 @@ def detect_stuck_workflows(threshold_multiplier: float = 3.0) -> list:
         
         if actual_gap > threshold_seconds:
             is_stuck = True
-            time_source = "heartbeat" if last_heartbeat else "last_run_at"
             
             if last_phase in ('started', 'error'):
                 stuck_reason = f"last phase was '{last_phase}' but no completion for {int(actual_gap)}s (possible mid-run crash)"
             else:
                 stuck_reason = f"no activity for {int(actual_gap)}s (threshold: {int(threshold_seconds)}s, source: {time_source})"
+            
+            logger.warning(f"      - Result: STUCK - {stuck_reason}")
+        else:
+            remaining = int(threshold_seconds - actual_gap)
+            logger.info(f"      - Result: HEALTHY (gap {int(actual_gap)}s < threshold {int(threshold_seconds)}s, {remaining}s remaining)")
         
         if is_stuck:
             stuck_workflows.append({
@@ -274,15 +310,28 @@ def detect_stuck_workflows(threshold_multiplier: float = 3.0) -> list:
                 'actual_gap_seconds': int(actual_gap),
                 'threshold_seconds': int(threshold_seconds),
                 'last_heartbeat': last_heartbeat,
-                'last_phase': last_phase
+                'last_phase': last_phase,
+                'stuck_reason': stuck_reason
             })
-            logger.warning(f"Stuck workflow detected: {wf['name']} - {stuck_reason}")
+    
+    logger.info(f"")
+    logger.info(f"📋 Detection Summary:")
+    logger.info(f"   - Workflows evaluated: {len(workflows)}")
+    logger.info(f"   - Stuck workflows found: {len(stuck_workflows)}")
+    if stuck_workflows:
+        for sw in stuck_workflows:
+            logger.warning(f"   - ⚠️  {sw['name']}: {sw['stuck_reason']}")
+    else:
+        logger.info(f"   - All workflows are healthy")
     
     return stuck_workflows
 
 
 def create_incident(workflow: dict) -> Optional[int]:
     """Create a stuck workflow incident record."""
+    wf_name = workflow['name']
+    logger.info(f"📝 Creating incident for stuck workflow: {wf_name}")
+    
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -291,22 +340,23 @@ def create_incident(workflow: dict) -> Optional[int]:
             SELECT id FROM stuck_workflow_incidents
             WHERE workflow_name = %s AND status = 'active'
             LIMIT 1
-        """, (workflow['name'],))
+        """, (wf_name,))
         
         existing = cursor.fetchone()
         if existing:
-            logger.debug(f"Active incident already exists for {workflow['name']}")
+            logger.info(f"   Active incident #{existing[0]} already exists for {wf_name} - not creating duplicate")
             cursor.close()
             conn.close()
             return existing[0]
         
+        logger.info(f"   No existing incident - creating new one")
         cursor.execute("""
             INSERT INTO stuck_workflow_incidents
             (workflow_name, last_heartbeat, expected_interval_seconds, actual_gap_seconds, status)
             VALUES (%s, %s, %s, %s, 'active')
             RETURNING id
         """, (
-            workflow['name'],
+            wf_name,
             workflow.get('last_heartbeat'),
             workflow['expected_interval_seconds'],
             workflow['actual_gap_seconds']
@@ -314,7 +364,7 @@ def create_incident(workflow: dict) -> Optional[int]:
         
         result = cursor.fetchone()
         if not result:
-            logger.error(f"Failed to get incident ID for {workflow['name']}")
+            logger.error(f"   Failed to get incident ID for {wf_name}")
             conn.commit()
             cursor.close()
             conn.close()
@@ -325,16 +375,23 @@ def create_incident(workflow: dict) -> Optional[int]:
         cursor.close()
         conn.close()
         
+        logger.info(f"   Created incident #{incident_id}")
+        logger.info(f"   - Workflow: {wf_name}")
+        logger.info(f"   - Gap: {workflow['actual_gap_seconds']}s")
+        logger.info(f"   - Threshold: {workflow['threshold_seconds']}s")
+        logger.info(f"   - Last phase: {workflow.get('last_phase', 'n/a')}")
+        
         server_logger.warning(
-            f"Stuck workflow detected: {workflow['name']} - no activity for {workflow['actual_gap_seconds']}s",
+            f"STUCK WORKFLOW INCIDENT #{incident_id}: {wf_name} - "
+            f"no activity for {workflow['actual_gap_seconds']}s (threshold: {workflow['threshold_seconds']}s)",
             source='Stuck Detector'
         )
         
-        logger.info(f"Created incident #{incident_id} for stuck workflow {workflow['name']}")
         return incident_id
         
     except Exception as e:
-        logger.error(f"Failed to create incident for {workflow['name']}: {e}")
+        logger.error(f"Failed to create incident for {wf_name}: {e}")
+        server_logger.error(f"Failed to create incident for {wf_name}: {e}", source='Stuck Detector')
         return None
 
 
@@ -343,10 +400,14 @@ def auto_reset_workflow(workflow_name: str, incident_id: int) -> bool:
     Auto-reset a stuck workflow by setting its status to 'completed'.
     This allows the scheduler to start a new execution.
     """
+    logger.info(f"🔄 Auto-resetting stuck workflow: {workflow_name}")
+    logger.info(f"   - Incident ID: {incident_id}")
+    
     try:
         conn = get_connection()
         cursor = conn.cursor()
         
+        logger.info(f"   - Setting workflow status to 'completed'...")
         cursor.execute("""
             UPDATE workflows 
             SET status = 'completed',
@@ -355,6 +416,7 @@ def auto_reset_workflow(workflow_name: str, incident_id: int) -> bool:
             WHERE name = %s
         """, (workflow_name,))
         
+        logger.info(f"   - Resolving incident #{incident_id}...")
         cursor.execute("""
             UPDATE stuck_workflow_incidents
             SET status = 'resolved',
@@ -368,24 +430,37 @@ def auto_reset_workflow(workflow_name: str, incident_id: int) -> bool:
         cursor.close()
         conn.close()
         
+        logger.info(f"   - Auto-reset complete for {workflow_name}")
+        
         server_logger.info(
-            f"Auto-reset stuck workflow: {workflow_name}",
+            f"AUTO-RESET: Workflow '{workflow_name}' has been automatically reset (incident #{incident_id})",
             source='Stuck Detector'
         )
         
-        logger.info(f"Auto-reset workflow {workflow_name} (incident #{incident_id})")
         return True
         
     except Exception as e:
         logger.error(f"Failed to auto-reset {workflow_name}: {e}")
+        server_logger.error(f"Failed to auto-reset {workflow_name}: {e}", source='Stuck Detector')
         return False
 
 
 def run_stuck_detector():
     """Main detection loop."""
     
-    logger.info(f"🚀 Starting {WORKFLOW_NAME}")
-    logger.info("⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
+    logger.info(f"")
+    logger.info(f"{'='*60}")
+    logger.info(f"🚀 STUCK WORKFLOW DETECTOR - Starting Up")
+    logger.info(f"{'='*60}")
+    logger.info(f"")
+    logger.info(f"📋 Service Configuration:")
+    logger.info(f"   - Workflow Name: {WORKFLOW_NAME}")
+    logger.info(f"   - Business Hours: Monday-Friday 6 AM - 6 PM CST")
+    logger.info(f"   - Weekend Behavior: Sleep (1 hour intervals)")
+    logger.info(f"   - After Hours Behavior: Sleep (1 hour intervals)")
+    logger.info(f"")
+    
+    scan_count = 0
     
     while True:
         try:
@@ -394,20 +469,21 @@ def run_stuck_detector():
             weekday = now.weekday()
             
             if weekday >= 5:
-                logger.info(f"⏰ WEEKEND | {now.strftime('%A %I:%M %p CST')} | Sleeping")
-                logger.info("💤 Database sleeping for 3600s to reduce compute time")
+                logger.info(f"⏰ WEEKEND | {now.strftime('%A %I:%M %p CST')} | Detection paused")
+                logger.info(f"💤 Sleeping for 3600s to reduce compute costs")
                 time.sleep(3600)
                 continue
             
             cst_hour = (hour - 6) % 24
             if cst_hour < 6 or cst_hour >= 18:
-                logger.info(f"⏰ AFTER HOURS | {now.strftime('%A %I:%M %p CST')} | Sleeping")
-                logger.info("💤 Database sleeping for 3600s to reduce compute time")
+                logger.info(f"⏰ AFTER HOURS | {now.strftime('%A %I:%M %p CST')} | Detection paused")
+                logger.info(f"💤 Sleeping for 3600s to reduce compute costs")
                 time.sleep(3600)
                 continue
             
             if not is_workflow_enabled(WORKFLOW_NAME):
-                logger.info(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED - sleeping 60s")
+                logger.info(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED via workflow_controls")
+                logger.info(f"   Sleeping for 60s and checking again...")
                 time.sleep(60)
                 continue
             
@@ -416,28 +492,57 @@ def run_stuck_detector():
             check_interval = int(get_config_value('stuck_workflow_check_interval_seconds', '900'))
             retention_days = int(get_config_value('stuck_workflow_heartbeat_retention_days', '7'))
             
-            logger.info(f"🔍 Scanning for stuck workflows (threshold: {threshold_multiplier}x)")
+            scan_count += 1
+            logger.info(f"")
+            logger.info(f"{'='*60}")
+            logger.info(f"🔍 SCAN #{scan_count} | {now.strftime('%Y-%m-%d %H:%M:%S CST')}")
+            logger.info(f"{'='*60}")
+            logger.info(f"")
+            logger.info(f"📋 Configuration (loaded from database):")
+            logger.info(f"   - Threshold Multiplier: {threshold_multiplier}x")
+            logger.info(f"   - Auto-Reset Enabled: {auto_reset_enabled}")
+            logger.info(f"   - Check Interval: {check_interval}s ({int(check_interval/60)} min)")
+            logger.info(f"   - Heartbeat Retention: {retention_days} days")
+            logger.info(f"")
             
             stuck = detect_stuck_workflows(threshold_multiplier)
             
             if stuck:
-                logger.warning(f"⚠️ Found {len(stuck)} stuck workflow(s)")
+                logger.warning(f"")
+                logger.warning(f"🚨 ALERT: Found {len(stuck)} stuck workflow(s)!")
+                logger.warning(f"")
                 
                 for wf in stuck:
+                    logger.warning(f"   Processing stuck workflow: {wf['name']}")
                     incident_id = create_incident(wf)
                     
                     if incident_id and auto_reset_enabled:
+                        logger.info(f"   Auto-reset is ENABLED - attempting reset...")
                         auto_reset_workflow(wf['name'], incident_id)
+                    elif incident_id:
+                        logger.info(f"   Auto-reset is DISABLED - incident #{incident_id} created, awaiting manual intervention")
+                        server_logger.warning(
+                            f"Manual intervention required: Workflow '{wf['name']}' is stuck (incident #{incident_id})",
+                            source='Stuck Detector'
+                        )
             else:
-                logger.info("✅ All workflows healthy")
+                logger.info(f"")
+                logger.info(f"✅ All workflows healthy - no issues detected")
             
+            logger.info(f"")
+            logger.info(f"🧹 Cleaning up old heartbeat records (retention: {retention_days} days)...")
             cleanup_old_heartbeats(retention_days)
             
-            logger.info(f"😴 Next scan in {check_interval} seconds")
+            logger.info(f"")
+            logger.info(f"😴 Scan complete. Next scan in {check_interval}s ({int(check_interval/60)} min)")
+            logger.info(f"{'='*60}")
             time.sleep(check_interval)
             
         except Exception as e:
-            logger.error(f"Error in stuck detector: {e}")
+            logger.error(f"")
+            logger.error(f"❌ ERROR in stuck detector: {e}")
+            logger.error(f"   Sleeping 60s before retry...")
+            server_logger.error(f"Stuck detector error: {e}", source='Stuck Detector')
             time.sleep(60)
 
 
