@@ -628,6 +628,33 @@ select {
     cursor: pointer;
 }
 
+/* Prevent browser dark mode plugins from overriding form elements */
+/* Light mode: force light color scheme */
+:root:not([data-theme="dark"]) select,
+:root:not([data-theme="dark"]) select option,
+:root:not([data-theme="dark"]) input[type="text"],
+:root:not([data-theme="dark"]) input[type="email"],
+:root:not([data-theme="dark"]) input[type="password"],
+:root:not([data-theme="dark"]) input[type="number"],
+:root:not([data-theme="dark"]) input[type="date"],
+:root:not([data-theme="dark"]) input[type="search"],
+:root:not([data-theme="dark"]) textarea {
+    color-scheme: light;
+}
+
+/* Dark mode: force dark color scheme */
+[data-theme="dark"] select,
+[data-theme="dark"] select option,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] textarea {
+    color-scheme: dark;
+}
+
 textarea {
     resize: vertical;
     min-height: 80px;
