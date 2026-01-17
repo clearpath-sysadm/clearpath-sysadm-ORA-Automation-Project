@@ -1,0 +1,59 @@
+Replit response:
+
+Great analysis from Serena! Let me assess both hypotheses:
+
+Comparing Theories
+Evidence	My Theory (Disabled)	Serena's Theory (Zombie Process)
+workflows.last_run_at = Jan 9	✅ Fits - not running	✅ Fits - stuck process
+workflow_controls.enabled = true	❌ Conflicts - I said disabled	✅ Fits - enabled but blocked
+workflow_controls.last_run_at = Jan 16	❌ Conflicts	✅ Fits - scheduler attempts
+workflows.status = 'running'	Neutral	✅ Fits - never completed
+Dev logs showed "DISABLED - sleeping"	✅ Dev was disabled	N/A - that was dev, not prod
+Serena is likely correct. The key evidence:
+
+workflow_controls.enabled = true - The workflow IS enabled
+workflow_controls.last_run_at = 2026-01-16 - Scheduler is trying to run it
+workflows.last_run_at = 2026-01-09 - But actual execution hasn't happened since Jan 9
+This pattern suggests the scheduler checks if status='running' and skips to avoid duplicate processes.
+
+How to Verify & Fix
+Run these in PRODUCTION:
+
+-- Check if there's a stuck 'running' status blocking new runs
+SELECT name, status, last_run_at, updated_at
+FROM workflows 
+WHERE name = 'xml-import';
+-- If status = 'running' and last_run_at is old, reset it:
+UPDATE workflows 
+SET status = 'completed', 
+    last_run_at = NOW(),
+    updated_at = NOW()
+WHERE name = 'xml-import' 
+AND status = 'running';
+This should unblock the scheduler and allow new XML imports to start.
+
+However, we should also check if there's actually a running process that needs to be killed, or if this is just a stale database record from a crashed process. Would you like me to search the codebase to understand how the scheduler checks for running status?
+
+query responses:
+
+[
+  {
+    "name": "xml-import",
+    "status": "running",
+    "last_run_at": "2026-01-09T20:37:30.576Z",
+    "updated_at": "2026-01-09T20:37:30.576Z"
+  }
+]
+
+{
+  "status": "success"
+}
+
+[
+  {
+    "name": "xml-import",
+    "status": "completed",
+    "last_run_at": "2026-01-17T17:40:49.133Z",
+    "updated_at": "2026-01-17T17:40:49.133Z"
+  }
+]
