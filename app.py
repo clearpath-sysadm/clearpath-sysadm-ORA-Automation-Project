@@ -10126,11 +10126,43 @@ def api_download_logs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+def ensure_stuck_workflow_detector_exists():
+    """Ensure stuck-workflow-detector is registered in workflows and workflow_controls tables."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT name FROM workflows WHERE name = 'stuck-workflow-detector'")
+        if not cursor.fetchone():
+            cursor.execute("""
+                INSERT INTO workflows (name, display_name, status, expected_interval_seconds, enabled)
+                VALUES ('stuck-workflow-detector', 'Stuck Workflow Detector', 'completed', 900, 1)
+            """)
+            logger.info("Created stuck-workflow-detector entry in workflows table")
+        
+        cursor.execute("SELECT workflow_name FROM workflow_controls WHERE workflow_name = 'stuck-workflow-detector'")
+        if not cursor.fetchone():
+            cursor.execute("""
+                INSERT INTO workflow_controls (workflow_name, enabled)
+                VALUES ('stuck-workflow-detector', true)
+            """)
+            logger.info("Created stuck-workflow-detector entry in workflow_controls table")
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error ensuring stuck-workflow-detector exists: {e}")
+
+
 if __name__ == '__main__':
     # Initialize file logging
     from src.utils.server_logger import get_logger
     server_logger = get_logger()
     server_logger.info('Dashboard server starting...', source='app')
+    
+    # Ensure stuck-workflow-detector is registered
+    ensure_stuck_workflow_detector_exists()
     
     # Bind to 0.0.0.0:5000 for Replit
     app.run(host='0.0.0.0', port=5000, debug=False)
