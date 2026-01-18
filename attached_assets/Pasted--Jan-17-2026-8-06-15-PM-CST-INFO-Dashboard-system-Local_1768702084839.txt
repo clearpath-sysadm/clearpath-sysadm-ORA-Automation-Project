@@ -1,0 +1,99 @@
+[Jan 17, 2026, 8:06:15 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 8:06:07 PM CST] [WARNING] [ShipStation Sync] <system> MISMATCH: 1 orders are awaiting_shipment in ShipStation but NOT in local DB. Check if XML Import is running or if orders were deleted from orders_inbox.
+[Jan 17, 2026, 8:06:07 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes. Skipped: 1 not-manual (1.8s)
+[Jan 17, 2026, 8:06:06 PM CST] [INFO] [ShipStation Sync] <system> Fetched 1 orders from ShipStation (awaiting_shipment: 1)
+[Jan 17, 2026, 8:06:06 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 17, 2026, 8:05:57 PM CST] [ERROR] [XML Import] <system> Import FAILED: The credentials do not contain the necessary fields need to refresh the access token. You must specify refresh_token, token_uri, client_id, and client_secret.
+[Jan 17, 2026, 8:05:57 PM CST] [INFO] [XML Import] <system> XML Import: Completed with no new orders
+[Jan 17, 2026, 8:05:56 PM CST] [INFO] [XML Import] <system> XML Import: Processing files from Google Drive
+[Jan 17, 2026, 8:05:56 PM CST] [INFO] [XML Import] <system> Connecting to Google Drive folder: 1rNudeesa_c6q--KIKUAOLwXta_gyRqAE
+[Jan 17, 2026, 8:05:56 PM CST] [INFO] [XML Import] <system> XML Import: File check complete - changes=True, sig_len=0, duration=270ms
+[Jan 17, 2026, 8:05:56 PM CST] [INFO] [XML Import] <system> XML Import: Manual trigger started (--once mode)
+[Jan 17, 2026, 8:05:50 PM CST] [INFO] [XML Import] <system> XML Import: Completed with no new orders
+[Jan 17, 2026, 8:05:50 PM CST] [ERROR] [XML Import] <system> Import FAILED: The credentials do not contain the necessary fields need to refresh the access token. You must specify refresh_token, token_uri, client_id, and client_secret.
+[Jan 17, 2026, 8:05:49 PM CST] [INFO] [XML Import] <system> Connecting to Google Drive folder: 1rNudeesa_c6q--KIKUAOLwXta_gyRqAE
+[Jan 17, 2026, 8:05:49 PM CST] [INFO] [XML Import] <system> XML Import: Processing files from Google Drive
+[Jan 17, 2026, 8:05:49 PM CST] [INFO] [XML Import] <system> XML Import: File check complete - changes=True, sig_len=0, duration=1014ms
+[Jan 17, 2026, 8:05:48 PM CST] [INFO] [XML Import] <system> XML Import: Manual trigger started (--once mode)
+[Jan 17, 2026, 8:05:23 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 8:05:18 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 8:05:16 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 8:00:48 PM CST] [INFO] [XML Import] <system> XML Import sleeping: ⏰ WEEKEND | Saturday 08:00 PM CST | Sleeping
+[Jan 17, 2026, 7:00:50 PM CST] [INFO] [XML Import] <system> XML Import sleeping: ⏰ WEEKEND | Saturday 07:00 PM CST | Sleeping
+[Jan 17, 2026, 6:00:48 PM CST] [INFO] [XML Import] <system> XML Import sleeping: ⏰ WEEKEND | Saturday 06:00 PM CST | Sleeping
+[Jan 17, 2026, 5:00:47 PM CST] [INFO] [XML Import] <system> XML Import sleeping: ⏰ WEEKEND | Saturday 05:00 PM CST | Sleeping
+[Jan 17, 2026, 4:00:47 PM CST] [INFO] [XML Import] <system> XML Import sleeping: ⏰ WEEKEND | Saturday 04:00 PM CST | Sleeping
+[Jan 17, 2026, 3:34:07 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 3:00:48 PM CST] [INFO] [XML Import] <system> XML Import sleeping: ⏰ WEEKEND | Saturday 03:00 PM CST | Sleeping
+[Jan 17, 2026, 2:00:47 PM CST] [INFO] [XML Import] <system> XML Import sleeping: ⏰ WEEKEND | Saturday 02:00 PM CST | Sleeping
+[Jan 17, 2026, 2:00:43 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 1:56:49 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:34:49 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:34:44 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:33:13 PM CST] [WARNING] [ShipStation Sync] <system> MISMATCH: 1 orders are awaiting_shipment in ShipStation but NOT in local DB. Check if XML Import is running or if orders were deleted from orders_inbox.
+[Jan 17, 2026, 1:33:13 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes. Skipped: 1 not-manual (76.6s)
+[Jan 17, 2026, 1:32:06 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:32:01 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:31:57 PM CST] [INFO] [ShipStation Sync] <system> Fetched 2 orders from ShipStation (awaiting_shipment: 2)
+[Jan 17, 2026, 1:31:56 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 17, 2026, 1:31:45 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:31:40 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:31:34 PM CST] [INFO] [Lot Mismatch] <system> Updating ShipStation lot: Order 710145, SKU 17612: '17612 - 250237' -> '17612 - 250372'
+[Jan 17, 2026, 1:31:14 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:31:05 PM CST] [WARNING] [ShipStation Sync] <system> MISMATCH: 1 orders are awaiting_shipment in ShipStation but NOT in local DB. Check if XML Import is running or if orders were deleted from orders_inbox.
+[Jan 17, 2026, 1:31:05 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: 10 updated, 8 tracking (180.4s)
+[Jan 17, 2026, 1:30:09 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (171.3s)
+[Jan 17, 2026, 1:28:45 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:28:39 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:28:19 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:28:17 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:28:11 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:28:05 PM CST] [INFO] [ShipStation Sync] <system> Fetched 167 orders from ShipStation (awaiting_shipment: 2, cancelled: 3, shipped: 162)
+[Jan 17, 2026, 1:28:04 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 17, 2026, 1:27:40 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:27:35 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:27:18 PM CST] [INFO] [ShipStation Sync] <system> Fetched 1 orders from ShipStation (awaiting_shipment: 1)
+[Jan 17, 2026, 1:27:17 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 17, 2026, 1:26:44 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 1:22:05 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (119.3s)
+[Jan 17, 2026, 1:20:24 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:20:18 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:20:06 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 17, 2026, 1:19:45 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:19:39 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:19:35 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:17:15 PM CST] [INFO] [ShipStation Sync] <system> Sync complete: No changes (105.0s)
+[Jan 17, 2026, 1:16:28 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:16:06 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:16:00 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:15:40 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:15:34 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:15:30 PM CST] [INFO] [Scheduler] <system> Unified ShipStation sync workflow started
+[Jan 17, 2026, 1:13:15 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:13:10 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:11:17 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:11:00 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:09:52 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 1:05:24 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:05:15 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:04:29 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:04:24 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 1:04:19 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 1:02:54 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:56:46 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:56:09 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:55:49 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:55:13 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:49:24 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:46:02 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:45:56 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:44:31 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:40:28 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:36:45 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:36:40 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 12:36:28 PM CST] [INFO] [app] <system> Dashboard server starting...
+[Jan 17, 2026, 12:19:17 PM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 11:38:21 AM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 11:21:24 AM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 11:20:04 AM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
+[Jan 17, 2026, 11:20:02 AM CST] [INFO] [Dashboard] <system> Local DB Units: 0 orders, 0 units. Status breakdown: {'cancelled': 33, 'shipped': 926}
