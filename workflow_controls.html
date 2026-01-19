@@ -445,6 +445,9 @@
                        <button class="btn btn-secondary btn-sm" onclick="resetWatermark()" id="reset-watermark-btn">
                            🔄 Reset Watermark
                        </button>
+                       <button class="btn btn-warning btn-sm" onclick="fixOrderStatusSync()" id="fix-status-btn" style="margin-left: 4px;">
+                           ⚡ Fix Status Sync
+                       </button>
                    </div>`;
             }
             
@@ -708,6 +711,65 @@
                 button.style.backgroundColor = 'var(--danger)';
                 console.error('Error resetting watermark:', error);
                 alert(`Error resetting watermark: ${error.message}`);
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '';
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                }, 3000);
+            }
+        }
+
+        async function fixOrderStatusSync() {
+            const button = document.getElementById('fix-status-btn');
+            if (!button) return;
+            
+            if (!confirm('This will mark orders as shipped in local DB if they are already shipped in ShipStation.\n\nThis fixes the mismatch between Local DB Units and ShipStation Units.\n\nContinue?')) {
+                return;
+            }
+            
+            const originalText = button.textContent;
+            
+            try {
+                button.disabled = true;
+                button.textContent = '⏳ Fixing...';
+                button.style.opacity = '0.6';
+                
+                const response = await fetch('/api/admin/fix-order-status-sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    button.textContent = `✅ Fixed ${result.fixed}`;
+                    button.style.backgroundColor = 'var(--success)';
+                    alert(`Fixed ${result.fixed} orders!\n\nLocal awaiting before: ${result.local_awaiting_before}\nShipStation shipped found: ${result.shipstation_shipped_found}\n\nRefresh the dashboard to see updated counts.`);
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                    }, 3000);
+                } else {
+                    button.textContent = '❌ Failed';
+                    button.style.backgroundColor = 'var(--danger)';
+                    alert(`Failed: ${result.error}`);
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.backgroundColor = '';
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                    }, 3000);
+                }
+            } catch (error) {
+                button.textContent = '❌ Error';
+                button.style.backgroundColor = 'var(--danger)';
+                alert(`Error: ${error.message}`);
                 
                 setTimeout(() => {
                     button.textContent = originalText;

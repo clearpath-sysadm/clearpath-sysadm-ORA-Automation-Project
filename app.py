@@ -7796,6 +7796,94 @@ def reset_shipstation_watermark():
             'error': str(e)
         }), 500
 
+@app.route('/api/admin/fix-order-status-sync', methods=['POST'])
+@admin_required
+def fix_order_status_sync():
+    """
+    One-time fix: Mark orders as shipped in local DB if they're shipped in ShipStation.
+    This fixes the mismatch where local DB shows more 'awaiting_shipment' than ShipStation.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from src.services.shipstation.api_client import get_shipstation_credentials
+        import requests
+        import base64
+        
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key:
+            return jsonify({'success': False, 'error': 'No ShipStation credentials'}), 500
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get all orders in local DB still marked as awaiting_shipment
+        cursor.execute("""
+            SELECT order_number FROM orders_inbox 
+            WHERE status = 'awaiting_shipment'
+        """)
+        local_awaiting = {row[0] for row in cursor.fetchall()}
+        
+        if not local_awaiting:
+            conn.close()
+            return jsonify({'success': True, 'message': 'No orders awaiting shipment', 'fixed': 0})
+        
+        # Fetch shipped orders from ShipStation (last 30 days)
+        from datetime import datetime, timedelta
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        
+        auth_string = base64.b64encode(f"{api_key}:{api_secret}".encode()).decode()
+        headers = {'Authorization': f'Basic {auth_string}'}
+        
+        shipped_orders = set()
+        page = 1
+        while True:
+            url = f"https://ssapi.shipstation.com/orders?orderStatus=shipped&shipDateStart={start_date}&shipDateEnd={end_date}&page={page}&pageSize=500"
+            resp = requests.get(url, headers=headers, timeout=30)
+            if resp.status_code != 200:
+                break
+            data = resp.json()
+            orders = data.get('orders', [])
+            if not orders:
+                break
+            for order in orders:
+                shipped_orders.add(order.get('orderNumber', ''))
+            if page >= data.get('pages', 1):
+                break
+            page += 1
+        
+        # Find orders that are shipped in ShipStation but still awaiting in local DB
+        to_fix = local_awaiting & shipped_orders
+        
+        if to_fix:
+            # Update their status to shipped
+            cursor.execute("""
+                UPDATE orders_inbox 
+                SET status = 'shipped', updated_at = NOW()
+                WHERE order_number = ANY(%s) AND status = 'awaiting_shipment'
+            """, (list(to_fix),))
+            conn.commit()
+            
+            logger.warning(f"Fixed {len(to_fix)} orders: marked as shipped")
+            server_logger.info(f"Order status sync fix: {len(to_fix)} orders marked as shipped", source='admin')
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Fixed {len(to_fix)} orders',
+            'fixed': len(to_fix),
+            'local_awaiting_before': len(local_awaiting),
+            'shipstation_shipped_found': len(shipped_orders)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fixing order status sync: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/workflow_controls/<workflow_name>/run', methods=['POST'])
 @admin_required
 def run_workflow_manually(workflow_name):
