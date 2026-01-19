@@ -10164,7 +10164,7 @@ def shipstation_backfill_dry_run():
         server_logger.info(
             f"ShipStation backfill dry run: {results['missing_from_shipped']} orders need sync",
             source='admin',
-            user=current_user.username if current_user.is_authenticated else 'unknown'
+            user=current_user.email if current_user.is_authenticated else 'unknown'
         )
         
         return jsonify({
@@ -10201,14 +10201,14 @@ def shipstation_backfill_sync():
             server_logger.error(
                 f"ShipStation backfill sync failed: {metrics['error']}",
                 source='admin',
-                user=current_user.username if current_user.is_authenticated else 'unknown'
+                user=current_user.email if current_user.is_authenticated else 'unknown'
             )
             return jsonify({'success': False, 'error': metrics['error']}), 500
         
         server_logger.info(
             f"ShipStation backfill sync complete: created={metrics.get('created_new', 0)}, updated={metrics.get('updated_existing', 0)}, units={metrics.get('total_units_synced', 0)}",
             source='admin',
-            user=current_user.username if current_user.is_authenticated else 'unknown'
+            user=current_user.email if current_user.is_authenticated else 'unknown'
         )
         
         return jsonify({
