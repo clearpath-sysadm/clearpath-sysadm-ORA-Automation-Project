@@ -40,12 +40,16 @@ def get_service_account_credentials():
         raise Exception(f'Invalid JSON in GOOGLE_SERVICE_ACCOUNT_KEY: {str(e)}')
 
 def list_xml_files_from_folder(folder_id: str):
-    """List all XML files from a Google Drive folder using Service Account"""
+    """List all XML files from a Google Drive folder using Service Account.
+    
+    Falls back to searching for 'orders.xml' by name if folder listing returns 0 files
+    (handles case where file is shared directly but folder is not).
+    """
     try:
         credentials = get_service_account_credentials()
         service = build('drive', 'v3', credentials=credentials)
         
-        # Query for XML files in the folder
+        # First try: Query for XML files in the folder
         query = f"'{folder_id}' in parents and (mimeType='text/xml' or mimeType='application/xml' or name contains '.xml') and trashed=false"
         
         results = service.files().list(
@@ -55,7 +59,23 @@ def list_xml_files_from_folder(folder_id: str):
         ).execute()
         
         files = results.get('files', [])
-        logger.info(f"Found {len(files)} XML files in Google Drive folder {folder_id}")
+        
+        if files:
+            logger.info(f"Found {len(files)} XML files in Google Drive folder {folder_id}")
+            return files
+        
+        # Fallback: Search for orders.xml by name (works when file is shared directly)
+        logger.info("No files found in folder listing, trying direct file search for 'orders.xml'...")
+        search_query = "name = 'orders.xml' and trashed = false"
+        
+        search_results = service.files().list(
+            q=search_query,
+            pageSize=10,
+            fields="files(id, name, mimeType, modifiedTime, size)"
+        ).execute()
+        
+        files = search_results.get('files', [])
+        logger.info(f"Direct search found {len(files)} file(s) named 'orders.xml'")
         
         return files
         
