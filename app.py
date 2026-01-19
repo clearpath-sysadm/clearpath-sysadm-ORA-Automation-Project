@@ -10259,5 +10259,6 @@ if __name__ == '__main__':
     # Ensure stuck-workflow-detector is registered
     ensure_stuck_workflow_detector_exists()
     
-    # Bind to 0.0.0.0:5000 for Replit
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    # Bind to 0.0.0.0 on PORT env var (default 5000) for Replit
+    port = int(os.environ.get('PORT', os.environ.get('FLASK_PORT', 5000)))
+    app.run(host='0.0.0.0', port=port, debug=False)
