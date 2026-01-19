@@ -29,11 +29,12 @@ def get_service_account_credentials():
     
     try:
         creds_info = json.loads(service_account_key)
+        client_email = creds_info.get('client_email', 'unknown')
         creds = service_account.Credentials.from_service_account_info(
             creds_info, 
             scopes=['https://www.googleapis.com/auth/drive.readonly']
         )
-        logger.info("Successfully loaded Service Account credentials")
+        logger.info(f"Successfully loaded Service Account credentials for: {client_email}")
         return creds
     except json.JSONDecodeError as e:
         raise Exception(f'Invalid JSON in GOOGLE_SERVICE_ACCOUNT_KEY: {str(e)}')
