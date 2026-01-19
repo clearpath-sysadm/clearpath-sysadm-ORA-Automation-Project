@@ -1,0 +1,32 @@
+Added by: Paige Turner (Senior Google Cloud Architect & Strategist), Geordi La Forge (Software Architecture Lead)
+**Proposed Implementation Plan for Oracare Fulfillment App Update**
+
+• Repurpose existing Google Service Account for the Oracare fulfillment app.
+
+• Migrate the Google Drive integration from the old connector to the repurposed Service Account.
+
+**Key Goals**
+
+• **Leverage existing infrastructure:** Utilize a proven, working service account for Google Drive access.
+
+• **Ensure seamless XML uploads:** Verify orders are uploaded from Google Drive into the fulfillment app database.
+
+• **Transition safely:** Disable the old process only after successful integration and testing.
+
+**Implementation Steps**
+
+• **Identify Existing Service Account:** Locate the Google Service Account currently used by the old process for XML data uploads.
+
+• **Assess and Adjust Permissions:** Verify the existing service account has the necessary, and minimal, permissions for the Oracare Fulfillment App's Google Drive integration. Adjust if needed to adhere to the principle of least privilege.
+
+• **Configure Fulfillment App:** Update the Oracare Fulfillment App to use the identified and verified Google Service Account for Google Drive integration.
+
+• **Develop & Test XML Upload:** Implement and thoroughly test the XML data upload functionality from Google Drive into the fulfillment app's database using the repurposed service account. This includes unit, integration, and performance testing.
+
+• **Monitor & Verify in Staging:** Closely monitor the new integration in a staging environment to ensure stability and correct data flow.
+
+• **Create Rollback Plan:** Document a clear rollback strategy in case unforeseen issues arise during the transition.
+
+• **Safely Disable Old Process:** Once the new integration is fully functional and stable in production, safely disable the old process that was handling XML uploads.
+
+• **Update Documentation:** Revise `NOTE-1662` (tech-doc) to reflect the new implementation strategy and service account usage.
