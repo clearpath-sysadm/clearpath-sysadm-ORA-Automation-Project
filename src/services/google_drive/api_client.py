@@ -20,50 +20,28 @@ from config import settings
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
 
-def get_replit_google_drive_access_token():
-    """Get Google Drive access token from Replit connection"""
-    hostname = os.environ.get('REPLIT_CONNECTORS_HOSTNAME')
-    x_replit_token = os.environ.get('REPL_IDENTITY')
+def get_service_account_credentials():
+    """Get Google Drive credentials from Service Account JSON key"""
+    service_account_key = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY')
     
-    if x_replit_token:
-        x_replit_token = 'repl ' + x_replit_token
-    elif os.environ.get('WEB_REPL_RENEWAL'):
-        x_replit_token = 'depl ' + os.environ.get('WEB_REPL_RENEWAL')
-    else:
-        raise Exception('X_REPLIT_TOKEN not found for repl/depl')
+    if not service_account_key:
+        raise Exception('GOOGLE_SERVICE_ACCOUNT_KEY environment variable not set')
     
-    url = f'https://{hostname}/api/v2/connection?include_secrets=true&connector_names=google-drive'
-    headers = {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': x_replit_token
-    }
-    
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    
-    data = response.json()
-    connection_settings = data.get('items', [{}])[0]
-    
-    # Try multiple paths for access token (connector API can return it in different places)
-    settings = connection_settings.get('settings', {})
-    access_token = settings.get('access_token')
-    
-    if not access_token:
-        # Try OAuth credentials path
-        access_token = settings.get('oauth', {}).get('credentials', {}).get('access_token')
-    
-    if not access_token:
-        raise Exception('Google Drive not connected')
-    
-    logger.info("Successfully retrieved Google Drive access token from Replit connector")
-    return access_token
+    try:
+        creds_info = json.loads(service_account_key)
+        creds = service_account.Credentials.from_service_account_info(
+            creds_info, 
+            scopes=['https://www.googleapis.com/auth/drive.readonly']
+        )
+        logger.info("Successfully loaded Service Account credentials")
+        return creds
+    except json.JSONDecodeError as e:
+        raise Exception(f'Invalid JSON in GOOGLE_SERVICE_ACCOUNT_KEY: {str(e)}')
 
 def list_xml_files_from_folder(folder_id: str):
-    """List all XML files from a Google Drive folder using Replit connection"""
+    """List all XML files from a Google Drive folder using Service Account"""
     try:
-        access_token = get_replit_google_drive_access_token()
-        
-        credentials = Credentials(token=access_token)
+        credentials = get_service_account_credentials()
         service = build('drive', 'v3', credentials=credentials)
         
         # Query for XML files in the folder
@@ -85,11 +63,9 @@ def list_xml_files_from_folder(folder_id: str):
         raise
 
 def fetch_xml_from_drive_by_file_id(file_id: str) -> str:
-    """Fetch XML content from Google Drive using Replit connection"""
+    """Fetch XML content from Google Drive using Service Account"""
     try:
-        access_token = get_replit_google_drive_access_token()
-        
-        credentials = Credentials(token=access_token)
+        credentials = get_service_account_credentials()
         service = build('drive', 'v3', credentials=credentials)
         
         # Get file metadata
