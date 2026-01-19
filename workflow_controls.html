@@ -238,6 +238,42 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <span>🔄</span> ShipStation Backfill
+                        </h3>
+                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                            Sync missing shipped orders from ShipStation to local database. Use this when orders were shipped in ShipStation but not imported locally (e.g., after an import outage).
+                        </p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: end;">
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px;">Start Date</label>
+                                    <input type="date" id="backfill-start-date" 
+                                        style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; background: var(--bg-primary); color: var(--text-primary);">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px;">End Date</label>
+                                    <input type="date" id="backfill-end-date" 
+                                        style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; background: var(--bg-primary); color: var(--text-primary);">
+                                </div>
+                                <div style="display: flex; gap: 12px;">
+                                    <button onclick="runBackfillDryRun()" class="btn btn-secondary" style="display: flex; align-items: center; gap: 6px;">
+                                        <span>🔍</span> Dry Run
+                                    </button>
+                                    <button onclick="runBackfillSync()" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                                        <span>🔄</span> Sync Now
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="backfill-results" style="display: none; padding: 16px; background: var(--bg-secondary); border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap; max-height: 400px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -846,6 +882,155 @@
         document.getElementById('alert-message').addEventListener('input', function() {
             document.getElementById('char-count').textContent = `${this.value.length} / 255 characters`;
         });
+
+        // ShipStation Backfill Functions
+        async function runBackfillDryRun() {
+            const startDate = document.getElementById('backfill-start-date').value;
+            const endDate = document.getElementById('backfill-end-date').value;
+            const resultsDiv = document.getElementById('backfill-results');
+            
+            if (!startDate || !endDate) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.textContent = 'Error: Please select both start and end dates.';
+                resultsDiv.style.color = '#dc3545';
+                return;
+            }
+            
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = 'Running dry run... This may take a moment.';
+            resultsDiv.style.color = 'var(--text-primary)';
+            
+            try {
+                const response = await fetch('/api/admin/shipstation-backfill/dry-run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start_date: startDate, end_date: endDate })
+                });
+                
+                if (response.status === 403) {
+                    resultsDiv.textContent = 'Error: Admin access required.';
+                    resultsDiv.style.color = '#dc3545';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const r = data.results;
+                    let output = `DRY RUN RESULTS (${startDate} to ${endDate})\n`;
+                    output += '═'.repeat(50) + '\n\n';
+                    output += `📦 ShipStation Orders (unique):    ${r.shipstation_total}\n`;
+                    output += `   └─ Without Key Products:        ${r.no_key_products} (skipped)\n`;
+                    output += `   └─ Already Synced:              ${r.already_synced} ✓\n`;
+                    output += `   └─ In Inbox, Not Shipped:       ${r.in_inbox_not_shipped}\n`;
+                    output += `   └─ Missing from Inbox:          ${r.missing_from_inbox}\n\n`;
+                    output += `📊 SYNC NEEDED: ${r.missing_from_shipped} orders\n\n`;
+                    
+                    if (r.details.missing_from_inbox && r.details.missing_from_inbox.length > 0) {
+                        output += '🔴 MISSING ORDERS (need backfill):\n';
+                        r.details.missing_from_inbox.slice(0, 15).forEach(order => {
+                            const items = order.items.slice(0, 3).map(i => `${i.sku}x${i.qty}`).join(', ');
+                            output += `   - ${order.order_number} (shipped ${order.ship_date}) - ${items}\n`;
+                        });
+                        if (r.details.missing_from_inbox.length > 15) {
+                            output += `   ... and ${r.details.missing_from_inbox.length - 15} more\n`;
+                        }
+                    }
+                    
+                    if (r.missing_from_shipped === 0) {
+                        output += '\n✅ LOCAL DATABASE IS IN SYNC WITH SHIPSTATION';
+                    } else {
+                        output += `\n⚠️ Click "Sync Now" to backfill ${r.missing_from_shipped} orders`;
+                    }
+                    
+                    resultsDiv.textContent = output;
+                    resultsDiv.style.color = 'var(--text-primary)';
+                } else {
+                    resultsDiv.textContent = `Error: ${data.error}`;
+                    resultsDiv.style.color = '#dc3545';
+                }
+            } catch (error) {
+                console.error('Backfill dry run error:', error);
+                resultsDiv.textContent = `Error: ${error.message}`;
+                resultsDiv.style.color = '#dc3545';
+            }
+        }
+        
+        async function runBackfillSync() {
+            const startDate = document.getElementById('backfill-start-date').value;
+            const endDate = document.getElementById('backfill-end-date').value;
+            const resultsDiv = document.getElementById('backfill-results');
+            
+            if (!startDate || !endDate) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.textContent = 'Error: Please select both start and end dates.';
+                resultsDiv.style.color = '#dc3545';
+                return;
+            }
+            
+            if (!confirm(`This will sync shipped orders from ShipStation (${startDate} to ${endDate}) to the local database. Continue?`)) {
+                return;
+            }
+            
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = 'Running sync... This may take several minutes for large date ranges.';
+            resultsDiv.style.color = 'var(--text-primary)';
+            
+            try {
+                const response = await fetch('/api/admin/shipstation-backfill/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start_date: startDate, end_date: endDate })
+                });
+                
+                if (response.status === 403) {
+                    resultsDiv.textContent = 'Error: Admin access required.';
+                    resultsDiv.style.color = '#dc3545';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const m = data.metrics;
+                    let output = `SYNC COMPLETE (${startDate} to ${endDate})\n`;
+                    output += '═'.repeat(50) + '\n\n';
+                    output += `📦 Total ShipStation Orders:       ${m.total_shipments}\n`;
+                    output += `   └─ Skipped (no key products):   ${m.skipped_no_key_products}\n`;
+                    output += `   └─ Already Synced:              ${m.already_synced}\n`;
+                    output += `   └─ Created New:                 ${m.created_new}\n`;
+                    output += `   └─ Updated Existing:            ${m.updated_existing}\n`;
+                    output += `   └─ Errors:                      ${m.errors}\n\n`;
+                    output += `📊 Total Units Synced:             ${m.total_units_synced}\n\n`;
+                    
+                    if (m.errors === 0) {
+                        output += '✅ SYNC COMPLETED SUCCESSFULLY';
+                    } else {
+                        output += `⚠️ SYNC COMPLETED WITH ${m.errors} ERRORS - Check server logs`;
+                    }
+                    
+                    resultsDiv.textContent = output;
+                    resultsDiv.style.color = m.errors === 0 ? 'var(--text-primary)' : '#856404';
+                } else {
+                    resultsDiv.textContent = `Error: ${data.error}`;
+                    resultsDiv.style.color = '#dc3545';
+                }
+            } catch (error) {
+                console.error('Backfill sync error:', error);
+                resultsDiv.textContent = `Error: ${error.message}`;
+                resultsDiv.style.color = '#dc3545';
+            }
+        }
+        
+        // Set default date range (last 7 days)
+        (function setDefaultDates() {
+            const today = new Date();
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            
+            document.getElementById('backfill-end-date').value = today.toISOString().split('T')[0];
+            document.getElementById('backfill-start-date').value = sevenDaysAgo.toISOString().split('T')[0];
+        })();
 
         loadWorkflows();
         loadWatermark();

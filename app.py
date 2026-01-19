@@ -10127,6 +10127,100 @@ def api_download_logs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/shipstation-backfill/dry-run', methods=['POST'])
+@login_required
+@admin_required
+def shipstation_backfill_dry_run():
+    """
+    Run dry run to compare ShipStation shipped orders with local database.
+    Returns list of orders that would be synced.
+    """
+    from src.shipstation_backfill_dry_run import (
+        get_local_shipped_orders,
+        get_local_inbox_orders,
+        fetch_all_shipments,
+        analyze_gap
+    )
+    from src.services.shipstation.api_client import get_shipstation_credentials
+    
+    try:
+        data = request.get_json() or {}
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        
+        if not start_date or not end_date:
+            return jsonify({'success': False, 'error': 'start_date and end_date required'}), 400
+        
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
+        
+        local_shipped = get_local_shipped_orders(start_date, end_date)
+        local_inbox = get_local_inbox_orders(start_date, end_date)
+        shipments = fetch_all_shipments(api_key, api_secret, start_date, end_date)
+        
+        results = analyze_gap(shipments, local_shipped, local_inbox)
+        
+        server_logger.info(
+            f"ShipStation backfill dry run: {results['missing_from_shipped']} orders need sync",
+            source='admin',
+            user=get_current_user_info().get('username', 'unknown')
+        )
+        
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f'Error in ShipStation backfill dry run: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/shipstation-backfill/sync', methods=['POST'])
+@login_required
+@admin_required
+def shipstation_backfill_sync():
+    """
+    Sync missing shipped orders from ShipStation to local database.
+    Creates orders in orders_inbox and shipped_orders.
+    """
+    from src.shipstation_backfill_sync import run_sync
+    
+    try:
+        data = request.get_json() or {}
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        
+        if not start_date or not end_date:
+            return jsonify({'success': False, 'error': 'start_date and end_date required'}), 400
+        
+        metrics = run_sync(start_date, end_date)
+        
+        if 'error' in metrics:
+            server_logger.error(
+                f"ShipStation backfill sync failed: {metrics['error']}",
+                source='admin',
+                user=get_current_user_info().get('username', 'unknown')
+            )
+            return jsonify({'success': False, 'error': metrics['error']}), 500
+        
+        server_logger.info(
+            f"ShipStation backfill sync complete: created={metrics.get('created_new', 0)}, updated={metrics.get('updated_existing', 0)}, units={metrics.get('total_units_synced', 0)}",
+            source='admin',
+            user=get_current_user_info().get('username', 'unknown')
+        )
+        
+        return jsonify({
+            'success': True,
+            'metrics': metrics
+        })
+        
+    except Exception as e:
+        logger.error(f'Error in ShipStation backfill sync: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 def ensure_stuck_workflow_detector_exists():
     """Ensure stuck-workflow-detector is registered in workflows and workflow_controls tables."""
     try:
