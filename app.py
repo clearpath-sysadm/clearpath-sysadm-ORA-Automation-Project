@@ -10594,7 +10594,7 @@ def recreate_order():
             new_order.pop('shipDate', None)
             
             # Send to ShipStation
-            create_endpoint = settings.SHIPSTATION_ORDERS_CREATE_ENDPOINT
+            create_endpoint = settings.SHIPSTATION_CREATE_ORDERS_ENDPOINT
             results = send_all_orders_to_shipstation([new_order], api_key, api_secret, create_endpoint)
             
             if results and len(results) > 0:
