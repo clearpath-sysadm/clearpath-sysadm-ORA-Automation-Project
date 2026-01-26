@@ -10309,6 +10309,194 @@ def shipstation_backfill_sync():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/unit-comparison', methods=['GET'])
+@login_required
+@admin_required
+def api_unit_comparison():
+    """
+    Compare awaiting_shipment orders between ShipStation and Local DB.
+    Returns detailed breakdown showing which orders exist in each system.
+    """
+    import requests
+    from requests.auth import HTTPBasicAuth
+    from config.settings import settings
+    from src.services.shipstation.api_client import get_shipstation_credentials
+    
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation API credentials not found'
+            }), 500
+        
+        url = settings.SHIPSTATION_ORDERS_ENDPOINT
+        ss_orders = []
+        page = 1
+        max_pages = 20
+        
+        while page <= max_pages:
+            params = {
+                'orderStatus': 'awaiting_shipment',
+                'pageSize': 500,
+                'page': page
+            }
+            
+            response = requests.get(
+                url,
+                auth=HTTPBasicAuth(api_key, api_secret),
+                params=params,
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                return jsonify({
+                    'success': False,
+                    'error': f'ShipStation API error: {response.status_code}'
+                }), 500
+            
+            data = response.json()
+            orders_page = data.get('orders', [])
+            ss_orders.extend(orders_page)
+            
+            total_pages = data.get('pages', 1)
+            if page >= total_pages:
+                break
+            page += 1
+        
+        truncated = page >= max_pages and total_pages > max_pages
+        
+        ss_order_map = {}
+        skipped_empty = 0
+        for order in ss_orders:
+            order_number = order.get('orderNumber', '').strip()
+            if not order_number:
+                skipped_empty += 1
+                continue
+            items = order.get('items', [])
+            units = sum(item.get('quantity', 0) for item in items)
+            ss_order_map[order_number] = {
+                'order_number': order_number,
+                'shipstation_order_id': order.get('orderId'),
+                'units': units,
+                'items': [{'sku': i.get('sku', ''), 'qty': i.get('quantity', 0)} for i in items],
+                'customer': order.get('shipTo', {}).get('name', 'N/A'),
+                'order_date': order.get('orderDate', '')[:10] if order.get('orderDate') else ''
+            }
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                oi.order_number,
+                oi.shipstation_order_id,
+                COALESCE(SUM(oii.quantity), 0) as units,
+                oi.ship_to_name,
+                oi.order_date::text
+            FROM orders_inbox oi
+            LEFT JOIN order_items_inbox oii ON oi.order_number = oii.order_number
+            WHERE oi.status = 'awaiting_shipment'
+            GROUP BY oi.order_number, oi.shipstation_order_id, oi.ship_to_name, oi.order_date
+        """)
+        
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        local_order_map = {}
+        local_skipped_empty = 0
+        for row in rows:
+            order_number = (row[0] or '').strip()
+            if not order_number:
+                local_skipped_empty += 1
+                continue
+            local_order_map[order_number] = {
+                'order_number': order_number,
+                'shipstation_order_id': row[1],
+                'units': row[2] or 0,
+                'customer': row[3] or 'N/A',
+                'order_date': row[4][:10] if row[4] else ''
+            }
+        
+        ss_only = []
+        local_only = []
+        matched = []
+        unit_mismatches = []
+        
+        all_order_numbers = set(ss_order_map.keys()) | set(local_order_map.keys())
+        
+        for order_number in all_order_numbers:
+            in_ss = order_number in ss_order_map
+            in_local = order_number in local_order_map
+            
+            if in_ss and in_local:
+                ss_data = ss_order_map[order_number]
+                local_data = local_order_map[order_number]
+                matched.append({
+                    'order_number': order_number,
+                    'ss_units': ss_data['units'],
+                    'local_units': local_data['units'],
+                    'customer': ss_data['customer'] or local_data['customer']
+                })
+                if ss_data['units'] != local_data['units']:
+                    unit_mismatches.append({
+                        'order_number': order_number,
+                        'ss_units': ss_data['units'],
+                        'local_units': local_data['units'],
+                        'difference': ss_data['units'] - local_data['units'],
+                        'customer': ss_data['customer']
+                    })
+            elif in_ss:
+                ss_data = ss_order_map[order_number]
+                ss_only.append({
+                    'order_number': order_number,
+                    'units': ss_data['units'],
+                    'customer': ss_data['customer'],
+                    'order_date': ss_data['order_date'],
+                    'items': ss_data['items']
+                })
+            else:
+                local_data = local_order_map[order_number]
+                local_only.append({
+                    'order_number': order_number,
+                    'units': local_data['units'],
+                    'customer': local_data['customer'],
+                    'order_date': local_data['order_date']
+                })
+        
+        ss_total_units = sum(o['units'] for o in ss_order_map.values())
+        local_total_units = sum(o['units'] for o in local_order_map.values())
+        
+        return jsonify({
+            'success': True,
+            'truncated': truncated,
+            'summary': {
+                'shipstation_orders': len(ss_order_map),
+                'shipstation_units': ss_total_units,
+                'local_orders': len(local_order_map),
+                'local_units': local_total_units,
+                'matched_orders': len(matched),
+                'ss_only_orders': len(ss_only),
+                'ss_only_units': sum(o['units'] for o in ss_only),
+                'local_only_orders': len(local_only),
+                'local_only_units': sum(o['units'] for o in local_only),
+                'unit_mismatches': len(unit_mismatches),
+                'ss_skipped_empty': skipped_empty,
+                'local_skipped_empty': local_skipped_empty
+            },
+            'details': {
+                'ss_only': sorted(ss_only, key=lambda x: x['order_number']),
+                'local_only': sorted(local_only, key=lambda x: x['order_number']),
+                'unit_mismatches': sorted(unit_mismatches, key=lambda x: abs(x['difference']), reverse=True)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f'Error in unit comparison: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 def ensure_stuck_workflow_detector_exists():
     """Ensure stuck-workflow-detector is registered in workflows and workflow_controls tables."""
     try:

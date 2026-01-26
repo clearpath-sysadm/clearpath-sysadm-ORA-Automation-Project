@@ -274,6 +274,29 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <span>🔍</span> Unit Comparison Tool
+                        </h3>
+                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                            Compare awaiting_shipment orders between ShipStation and Local DB to identify discrepancies. Shows exactly which orders exist in one system but not the other.
+                        </p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <button onclick="runUnitComparison()" id="compare-btn" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                                    <span>🔍</span> Compare Now
+                                </button>
+                                <span id="compare-status" style="color: var(--text-secondary); font-size: 14px;"></span>
+                            </div>
+                            <div id="comparison-summary" style="display: none;"></div>
+                            <div id="comparison-results" style="display: none; padding: 16px; background: var(--bg-secondary); border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap; max-height: 500px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -944,6 +967,131 @@
         document.getElementById('alert-message').addEventListener('input', function() {
             document.getElementById('char-count').textContent = `${this.value.length} / 255 characters`;
         });
+
+        // Unit Comparison Tool
+        async function runUnitComparison() {
+            const btn = document.getElementById('compare-btn');
+            const statusSpan = document.getElementById('compare-status');
+            const summaryDiv = document.getElementById('comparison-summary');
+            const resultsDiv = document.getElementById('comparison-results');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Comparing...';
+            statusSpan.textContent = 'Fetching data from ShipStation and Local DB...';
+            summaryDiv.style.display = 'none';
+            resultsDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/admin/unit-comparison');
+                
+                if (response.status === 403) {
+                    statusSpan.textContent = 'Error: Admin access required.';
+                    statusSpan.style.color = '#dc3545';
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🔍</span> Compare Now';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const s = data.summary;
+                    const d = data.details;
+                    
+                    // Show truncation warning if applicable
+                    let truncationWarning = '';
+                    if (data.truncated) {
+                        truncationWarning = '<div style="background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3); padding: 12px; border-radius: 6px; margin-bottom: 16px; color: #856404;">⚠️ Results may be incomplete: ShipStation has more than 10,000 orders awaiting shipment. Only the first 10,000 were compared.</div>';
+                    }
+                    
+                    // Build summary cards
+                    let summaryHtml = truncationWarning + `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                            <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 24px; font-weight: 700; color: var(--text-primary);">${s.shipstation_units}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">ShipStation Units</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">${s.shipstation_orders} orders</div>
+                            </div>
+                            <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 24px; font-weight: 700; color: var(--text-primary);">${s.local_units}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">Local DB Units</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">${s.local_orders} orders</div>
+                            </div>
+                            <div style="background: ${s.ss_only_orders > 0 ? 'rgba(220,53,69,0.1)' : 'var(--bg-secondary)'}; padding: 16px; border-radius: 8px; text-align: center; border: ${s.ss_only_orders > 0 ? '1px solid rgba(220,53,69,0.3)' : 'none'};">
+                                <div style="font-size: 24px; font-weight: 700; color: ${s.ss_only_orders > 0 ? '#dc3545' : 'var(--text-primary)'};">${s.ss_only_units}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">Only in ShipStation</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">${s.ss_only_orders} orders</div>
+                            </div>
+                            <div style="background: ${s.local_only_orders > 0 ? 'rgba(255,193,7,0.1)' : 'var(--bg-secondary)'}; padding: 16px; border-radius: 8px; text-align: center; border: ${s.local_only_orders > 0 ? '1px solid rgba(255,193,7,0.3)' : 'none'};">
+                                <div style="font-size: 24px; font-weight: 700; color: ${s.local_only_orders > 0 ? '#856404' : 'var(--text-primary)'};">${s.local_only_units}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">Only in Local DB</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">${s.local_only_orders} orders</div>
+                            </div>
+                        </div>
+                    `;
+                    summaryDiv.innerHTML = summaryHtml;
+                    summaryDiv.style.display = 'block';
+                    
+                    // Build detailed results
+                    let output = '';
+                    
+                    if (s.ss_only_orders === 0 && s.local_only_orders === 0 && s.unit_mismatches === 0) {
+                        output = '✅ PERFECT MATCH! ShipStation and Local DB are in sync.\n';
+                        output += `   Matched Orders: ${s.matched_orders}\n`;
+                        output += `   Total Units: ${s.shipstation_units}`;
+                        statusSpan.textContent = 'Perfect match!';
+                        statusSpan.style.color = '#28a745';
+                    } else {
+                        output = 'DISCREPANCY DETAILS\n';
+                        output += '═'.repeat(50) + '\n\n';
+                        
+                        if (d.ss_only.length > 0) {
+                            output += `🔴 ORDERS ONLY IN SHIPSTATION (${d.ss_only.length} orders, ${s.ss_only_units} units):\n`;
+                            output += '   These orders exist in ShipStation but NOT in local DB\n\n';
+                            d.ss_only.forEach(o => {
+                                const items = o.items ? o.items.slice(0, 3).map(i => `${i.sku}x${i.qty}`).join(', ') : '';
+                                output += `   Order: ${o.order_number}  |  ${o.units} units  |  ${o.customer}\n`;
+                                if (items) output += `          Items: ${items}\n`;
+                            });
+                            output += '\n';
+                        }
+                        
+                        if (d.local_only.length > 0) {
+                            output += `🟡 ORDERS ONLY IN LOCAL DB (${d.local_only.length} orders, ${s.local_only_units} units):\n`;
+                            output += '   These orders exist in local DB but NOT in ShipStation\n\n';
+                            d.local_only.forEach(o => {
+                                output += `   Order: ${o.order_number}  |  ${o.units} units  |  ${o.customer}\n`;
+                            });
+                            output += '\n';
+                        }
+                        
+                        if (d.unit_mismatches.length > 0) {
+                            output += `⚠️ UNIT COUNT MISMATCHES (${d.unit_mismatches.length} orders):\n`;
+                            output += '   Order exists in both but unit counts differ\n\n';
+                            d.unit_mismatches.forEach(o => {
+                                output += `   Order: ${o.order_number}  |  SS: ${o.ss_units} vs Local: ${o.local_units} (diff: ${o.difference > 0 ? '+' : ''}${o.difference})\n`;
+                            });
+                        }
+                        
+                        statusSpan.textContent = `Found ${s.ss_only_orders + s.local_only_orders} mismatched orders`;
+                        statusSpan.style.color = '#dc3545';
+                    }
+                    
+                    resultsDiv.textContent = output;
+                    resultsDiv.style.display = 'block';
+                } else {
+                    statusSpan.textContent = `Error: ${data.error}`;
+                    statusSpan.style.color = '#dc3545';
+                }
+            } catch (error) {
+                console.error('Comparison error:', error);
+                statusSpan.textContent = `Error: ${error.message}`;
+                statusSpan.style.color = '#dc3545';
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<span>🔍</span> Compare Now';
+        }
 
         // ShipStation Backfill Functions
         async function runBackfillDryRun() {
