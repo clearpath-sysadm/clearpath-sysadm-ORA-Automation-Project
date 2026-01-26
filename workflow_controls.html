@@ -297,6 +297,84 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Recreate Order Tool -->
+                <div class="card" style="margin-top: 24px;">
+                    <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <span>🔄</span> Recreate Order Tool
+                        </h3>
+                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                            Fix order number issues by recreating an order in ShipStation with the correct order number. Safe workflow: Create new first, compare, then delete old.
+                        </p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <!-- Step 1: Enter order numbers -->
+                            <div id="recreate-step1">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                    <div>
+                                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">Wrong Order Number</label>
+                                        <input type="text" id="wrong-order-number" placeholder="e.g., 00611" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">Correct Order Number</label>
+                                        <input type="text" id="correct-order-number" placeholder="e.g., 100611" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <button onclick="fetchOldOrder()" id="fetch-order-btn" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                                        <span>🔍</span> Fetch Order
+                                    </button>
+                                    <span id="recreate-status" style="color: var(--text-secondary); font-size: 14px;"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 2: Show old order details -->
+                            <div id="recreate-step2" style="display: none;">
+                                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 12px;">
+                                    <h4 style="margin: 0 0 12px; font-size: 14px; color: var(--text-primary);">📋 Old Order Details</h4>
+                                    <div id="old-order-details" style="font-size: 13px;"></div>
+                                </div>
+                                <button onclick="createNewOrder()" id="create-order-btn" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                                    <span>➕</span> Create New Order with Correct Number
+                                </button>
+                            </div>
+                            
+                            <!-- Step 3: Compare and confirm deletion -->
+                            <div id="recreate-step3" style="display: none;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                    <div style="background: rgba(220,53,69,0.1); padding: 16px; border-radius: 8px; border: 1px solid rgba(220,53,69,0.3);">
+                                        <h4 style="margin: 0 0 8px; font-size: 14px; color: #dc3545;">❌ Old Order (to delete)</h4>
+                                        <div id="old-order-compare" style="font-size: 13px;"></div>
+                                    </div>
+                                    <div style="background: rgba(40,167,69,0.1); padding: 16px; border-radius: 8px; border: 1px solid rgba(40,167,69,0.3);">
+                                        <h4 style="margin: 0 0 8px; font-size: 14px; color: #28a745;">✅ New Order (created)</h4>
+                                        <div id="new-order-compare" style="font-size: 13px;"></div>
+                                    </div>
+                                </div>
+                                <div style="background: rgba(255,193,7,0.1); padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255,193,7,0.3);">
+                                    <span style="color: #856404;">⚠️ Confirm that the new order was created correctly before deleting the old one.</span>
+                                </div>
+                                <div style="display: flex; gap: 12px;">
+                                    <button onclick="deleteOldOrder()" id="delete-order-btn" class="btn" style="background: #dc3545; color: white; display: flex; align-items: center; gap: 6px;">
+                                        <span>🗑️</span> Delete Old Order
+                                    </button>
+                                    <button onclick="resetRecreateFlow()" class="btn btn-secondary">Cancel</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Completion message -->
+                            <div id="recreate-complete" style="display: none;">
+                                <div style="background: rgba(40,167,69,0.1); padding: 16px; border-radius: 8px; border: 1px solid rgba(40,167,69,0.3);">
+                                    <h4 style="margin: 0 0 8px; font-size: 14px; color: #28a745;">✅ Order Recreated Successfully</h4>
+                                    <div id="complete-message" style="font-size: 13px;"></div>
+                                </div>
+                                <button onclick="resetRecreateFlow()" class="btn btn-primary" style="margin-top: 12px;">Start New</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -1091,6 +1169,221 @@
             
             btn.disabled = false;
             btn.innerHTML = '<span>🔍</span> Compare Now';
+        }
+
+        // Recreate Order Tool Functions
+        let recreateOrderData = {
+            wrongOrderNumber: null,
+            correctOrderNumber: null,
+            oldOrder: null,
+            newOrder: null,
+            rawOrder: null
+        };
+
+        function resetRecreateFlow() {
+            document.getElementById('wrong-order-number').value = '';
+            document.getElementById('correct-order-number').value = '';
+            document.getElementById('recreate-status').textContent = '';
+            document.getElementById('recreate-step1').style.display = 'block';
+            document.getElementById('recreate-step2').style.display = 'none';
+            document.getElementById('recreate-step3').style.display = 'none';
+            document.getElementById('recreate-complete').style.display = 'none';
+            recreateOrderData = { wrongOrderNumber: null, correctOrderNumber: null, oldOrder: null, newOrder: null, rawOrder: null };
+        }
+
+        async function fetchOldOrder() {
+            const wrongOrderNumber = document.getElementById('wrong-order-number').value.trim();
+            const correctOrderNumber = document.getElementById('correct-order-number').value.trim();
+            const statusSpan = document.getElementById('recreate-status');
+            const btn = document.getElementById('fetch-order-btn');
+            
+            if (!wrongOrderNumber) {
+                statusSpan.textContent = 'Please enter the wrong order number';
+                statusSpan.style.color = '#dc3545';
+                return;
+            }
+            if (!correctOrderNumber) {
+                statusSpan.textContent = 'Please enter the correct order number';
+                statusSpan.style.color = '#dc3545';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Fetching...';
+            statusSpan.textContent = 'Looking up order in ShipStation...';
+            statusSpan.style.color = 'var(--text-secondary)';
+            
+            try {
+                const response = await fetch('/api/admin/recreate-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'fetch', wrong_order_number: wrongOrderNumber })
+                });
+                
+                if (response.status === 403) {
+                    statusSpan.textContent = 'Admin access required';
+                    statusSpan.style.color = '#dc3545';
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🔍</span> Fetch Order';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    recreateOrderData.wrongOrderNumber = wrongOrderNumber;
+                    recreateOrderData.correctOrderNumber = correctOrderNumber;
+                    recreateOrderData.oldOrder = data.order;
+                    recreateOrderData.rawOrder = data.order.raw_order;
+                    
+                    const o = data.order;
+                    const itemsList = o.items.map(i => `${i.sku} x${i.quantity}`).join(', ');
+                    
+                    document.getElementById('old-order-details').innerHTML = `
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 16px;">
+                            <span style="color: var(--text-secondary);">Order Number:</span><span style="font-weight: 600;">${o.order_number}</span>
+                            <span style="color: var(--text-secondary);">ShipStation ID:</span><span>${o.shipstation_order_id}</span>
+                            <span style="color: var(--text-secondary);">Status:</span><span>${o.order_status}</span>
+                            <span style="color: var(--text-secondary);">Date:</span><span>${o.order_date}</span>
+                            <span style="color: var(--text-secondary);">Customer:</span><span>${o.customer_name}</span>
+                            <span style="color: var(--text-secondary);">Ship To:</span><span>${o.ship_to_name}, ${o.ship_to_city} ${o.ship_to_state}</span>
+                            <span style="color: var(--text-secondary);">Items:</span><span>${itemsList}</span>
+                            <span style="color: var(--text-secondary);">Total Units:</span><span style="font-weight: 600;">${o.total_units}</span>
+                        </div>
+                        <div style="margin-top: 12px; padding: 8px; background: rgba(0,123,255,0.1); border-radius: 4px;">
+                            Will be recreated as: <strong style="color: #007bff;">${correctOrderNumber}</strong>
+                        </div>
+                    `;
+                    
+                    statusSpan.textContent = 'Order found!';
+                    statusSpan.style.color = '#28a745';
+                    
+                    document.getElementById('recreate-step2').style.display = 'block';
+                } else {
+                    statusSpan.textContent = data.error || 'Order not found';
+                    statusSpan.style.color = '#dc3545';
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                statusSpan.textContent = `Error: ${error.message}`;
+                statusSpan.style.color = '#dc3545';
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<span>🔍</span> Fetch Order';
+        }
+
+        async function createNewOrder() {
+            const btn = document.getElementById('create-order-btn');
+            const statusSpan = document.getElementById('recreate-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Creating...';
+            statusSpan.textContent = 'Creating new order in ShipStation...';
+            statusSpan.style.color = 'var(--text-secondary)';
+            
+            try {
+                const response = await fetch('/api/admin/recreate-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'create',
+                        wrong_order_number: recreateOrderData.wrongOrderNumber,
+                        correct_order_number: recreateOrderData.correctOrderNumber,
+                        raw_order: recreateOrderData.rawOrder
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    recreateOrderData.newOrder = data.new_order;
+                    
+                    const old = recreateOrderData.oldOrder;
+                    const newO = data.new_order;
+                    
+                    document.getElementById('old-order-compare').innerHTML = `
+                        <div>Order #: <strong>${old.order_number}</strong></div>
+                        <div>SS ID: ${old.shipstation_order_id}</div>
+                        <div>Units: ${old.total_units}</div>
+                    `;
+                    
+                    document.getElementById('new-order-compare').innerHTML = `
+                        <div>Order #: <strong>${newO.order_number}</strong></div>
+                        <div>SS ID: ${newO.shipstation_order_id}</div>
+                        <div>Units: ${newO.total_units}</div>
+                    `;
+                    
+                    statusSpan.textContent = 'New order created! Verify and confirm deletion of old order.';
+                    statusSpan.style.color = '#28a745';
+                    
+                    document.getElementById('recreate-step2').style.display = 'none';
+                    document.getElementById('recreate-step3').style.display = 'block';
+                } else {
+                    statusSpan.textContent = data.error || 'Failed to create order';
+                    statusSpan.style.color = '#dc3545';
+                }
+            } catch (error) {
+                console.error('Create error:', error);
+                statusSpan.textContent = `Error: ${error.message}`;
+                statusSpan.style.color = '#dc3545';
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<span>➕</span> Create New Order with Correct Number';
+        }
+
+        async function deleteOldOrder() {
+            const btn = document.getElementById('delete-order-btn');
+            const statusSpan = document.getElementById('recreate-status');
+            
+            if (!confirm(`Are you sure you want to delete the old order "${recreateOrderData.wrongOrderNumber}" from ShipStation? This cannot be undone.`)) {
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Deleting...';
+            statusSpan.textContent = 'Deleting old order from ShipStation...';
+            statusSpan.style.color = 'var(--text-secondary)';
+            
+            try {
+                const response = await fetch('/api/admin/recreate-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'delete',
+                        wrong_order_number: recreateOrderData.wrongOrderNumber,
+                        correct_order_number: recreateOrderData.correctOrderNumber,
+                        old_order_id: recreateOrderData.oldOrder.shipstation_order_id,
+                        confirmed: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('complete-message').innerHTML = `
+                        <div>Old order <strong>${recreateOrderData.wrongOrderNumber}</strong> has been deleted.</div>
+                        <div>New order <strong>${recreateOrderData.correctOrderNumber}</strong> is now active in ShipStation.</div>
+                    `;
+                    
+                    statusSpan.textContent = 'Order recreated successfully!';
+                    statusSpan.style.color = '#28a745';
+                    
+                    document.getElementById('recreate-step3').style.display = 'none';
+                    document.getElementById('recreate-complete').style.display = 'block';
+                } else {
+                    statusSpan.textContent = data.error || 'Failed to delete order';
+                    statusSpan.style.color = '#dc3545';
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                statusSpan.textContent = `Error: ${error.message}`;
+                statusSpan.style.color = '#dc3545';
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<span>🗑️</span> Delete Old Order';
         }
 
         // ShipStation Backfill Functions

@@ -10497,6 +10497,171 @@ def api_unit_comparison():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/recreate-order', methods=['POST'])
+@admin_required
+def recreate_order():
+    """
+    Recreate an order in ShipStation with a corrected order number.
+    Three-step workflow:
+    - action=fetch: Fetch order details by wrong order number
+    - action=create: Create new order with correct order number
+    - action=delete: Delete the old order (requires confirmation)
+    """
+    
+    data = request.get_json()
+    action = data.get('action')
+    wrong_order_number = data.get('wrong_order_number', '').strip()
+    correct_order_number = data.get('correct_order_number', '').strip()
+    
+    if not wrong_order_number:
+        return jsonify({'success': False, 'error': 'Wrong order number is required'}), 400
+    
+    try:
+        from src.services.shipstation.api_client import (
+            get_shipstation_credentials, get_shipstation_headers, 
+            send_all_orders_to_shipstation, delete_order_from_shipstation
+        )
+        from utils.api_utils import make_api_request
+        from config import settings
+        
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'ShipStation credentials not found'}), 500
+        
+        headers = get_shipstation_headers(api_key, api_secret)
+        
+        if action == 'fetch':
+            # Step 1: Fetch the order by order number
+            url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}?orderNumber={wrong_order_number}"
+            response = make_api_request(url=url, method='GET', headers=headers, timeout=30)
+            
+            if not response or response.status_code != 200:
+                return jsonify({'success': False, 'error': f'Failed to fetch order: HTTP {response.status_code if response else "No response"}'}), 500
+            
+            data = response.json()
+            orders = data.get('orders', [])
+            
+            if not orders:
+                return jsonify({'success': False, 'error': f'Order "{wrong_order_number}" not found in ShipStation'}), 404
+            
+            order = orders[0]  # Take first match
+            
+            # Extract order details for display and recreation
+            ship_to = order.get('shipTo') or {}
+            bill_to = order.get('billTo') or {}
+            items = order.get('items', [])
+            
+            order_details = {
+                'shipstation_order_id': order.get('orderId'),
+                'order_number': order.get('orderNumber'),
+                'order_status': order.get('orderStatus'),
+                'order_date': order.get('orderDate', '')[:10] if order.get('orderDate') else '',
+                'customer_name': bill_to.get('name') or ship_to.get('name') or 'N/A',
+                'customer_email': order.get('customerEmail') or 'N/A',
+                'ship_to_name': ship_to.get('name') or 'N/A',
+                'ship_to_address': f"{ship_to.get('street1', '')} {ship_to.get('street2', '')}".strip(),
+                'ship_to_city': ship_to.get('city') or '',
+                'ship_to_state': ship_to.get('state') or '',
+                'ship_to_zip': ship_to.get('postalCode') or '',
+                'order_total': order.get('orderTotal'),
+                'items': [{'sku': item.get('sku'), 'name': item.get('name'), 'quantity': item.get('quantity')} for item in items],
+                'total_units': sum(item.get('quantity', 0) for item in items),
+                'raw_order': order  # Store full order for recreation
+            }
+            
+            logger.info(f"Admin fetched order {wrong_order_number} for recreation. SS ID: {order.get('orderId')}")
+            return jsonify({'success': True, 'order': order_details})
+        
+        elif action == 'create':
+            # Step 2: Create new order with correct order number
+            if not correct_order_number:
+                return jsonify({'success': False, 'error': 'Correct order number is required'}), 400
+            
+            raw_order = data.get('raw_order')
+            if not raw_order:
+                return jsonify({'success': False, 'error': 'Raw order data is required (fetch first)'}), 400
+            
+            # Modify the order to use the correct order number
+            new_order = raw_order.copy()
+            new_order['orderNumber'] = correct_order_number
+            new_order['orderKey'] = correct_order_number  # Use order number as key for uniqueness
+            
+            # Remove fields that shouldn't be copied
+            new_order.pop('orderId', None)
+            new_order.pop('orderStatus', None)  # Let ShipStation set status
+            new_order.pop('createDate', None)
+            new_order.pop('modifyDate', None)
+            new_order.pop('shipDate', None)
+            
+            # Send to ShipStation
+            create_endpoint = settings.SHIPSTATION_ORDERS_CREATE_ENDPOINT
+            results = send_all_orders_to_shipstation([new_order], api_key, api_secret, create_endpoint)
+            
+            if results and len(results) > 0:
+                result = results[0]
+                if result.get('success', True):  # ShipStation returns success implicitly
+                    logger.info(f"Admin created new order {correct_order_number} (replacing {wrong_order_number}). New SS ID: {result.get('orderId')}")
+                    
+                    # Fetch the newly created order to confirm
+                    verify_url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}?orderNumber={correct_order_number}"
+                    verify_response = make_api_request(url=verify_url, method='GET', headers=headers, timeout=30)
+                    
+                    new_order_details = None
+                    if verify_response and verify_response.status_code == 200:
+                        verify_data = verify_response.json()
+                        new_orders = verify_data.get('orders', [])
+                        if new_orders:
+                            no = new_orders[0]
+                            ship_to = no.get('shipTo') or {}
+                            items = no.get('items', [])
+                            new_order_details = {
+                                'shipstation_order_id': no.get('orderId'),
+                                'order_number': no.get('orderNumber'),
+                                'order_status': no.get('orderStatus'),
+                                'total_units': sum(item.get('quantity', 0) for item in items)
+                            }
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': f'New order {correct_order_number} created successfully',
+                        'new_order': new_order_details,
+                        'api_result': result
+                    })
+                else:
+                    return jsonify({'success': False, 'error': result.get('errorMessage', 'Unknown error')}), 500
+            else:
+                return jsonify({'success': False, 'error': 'No response from ShipStation create order API'}), 500
+        
+        elif action == 'delete':
+            # Step 3: Delete the old order (with confirmation)
+            old_order_id = data.get('old_order_id')
+            if not old_order_id:
+                return jsonify({'success': False, 'error': 'Old order ID is required'}), 400
+            
+            confirmed = data.get('confirmed', False)
+            if not confirmed:
+                return jsonify({'success': False, 'error': 'Deletion must be confirmed'}), 400
+            
+            result = delete_order_from_shipstation(old_order_id, fetch_details_first=True)
+            
+            if result.get('success'):
+                logger.info(f"Admin deleted old order {wrong_order_number} (SS ID: {old_order_id}) after recreating as {correct_order_number}")
+                return jsonify({
+                    'success': True,
+                    'message': f'Old order {wrong_order_number} deleted successfully',
+                    'customer_data': result.get('customer_data')
+                })
+            else:
+                return jsonify({'success': False, 'error': result.get('error', 'Delete failed')}), 500
+        
+        else:
+            return jsonify({'success': False, 'error': 'Invalid action. Use fetch, create, or delete'}), 400
+    
+    except Exception as e:
+        logger.error(f'Error in recreate order: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 def ensure_stuck_workflow_detector_exists():
     """Ensure stuck-workflow-detector is registered in workflows and workflow_controls tables."""
     try:
