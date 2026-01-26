@@ -10588,7 +10588,9 @@ def recreate_order():
             
             # Remove fields that shouldn't be copied
             new_order.pop('orderId', None)
-            new_order.pop('orderStatus', None)  # Let ShipStation set status
+            # Keep orderStatus - ShipStation requires it. Default to awaiting_shipment if not present
+            if 'orderStatus' not in new_order:
+                new_order['orderStatus'] = 'awaiting_shipment'
             new_order.pop('createDate', None)
             new_order.pop('modifyDate', None)
             new_order.pop('shipDate', None)
