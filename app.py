@@ -10497,6 +10497,38 @@ def api_unit_comparison():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/next-order-number', methods=['GET'])
+@admin_required
+def get_next_order_number():
+    """Get the next available order number (max < 200000 + 1)"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT MAX(order_num) FROM (
+                SELECT CAST(order_number AS INTEGER) as order_num
+                FROM shipped_orders
+                WHERE order_number ~ '^[0-9]+$'
+                AND CAST(order_number AS INTEGER) < 200000
+                UNION ALL
+                SELECT CAST(order_number AS INTEGER) as order_num
+                FROM orders_inbox
+                WHERE order_number ~ '^[0-9]+$'
+                AND CAST(order_number AS INTEGER) < 200000
+            ) combined
+        """)
+        max_row = cursor.fetchone()
+        max_order_num = max_row[0] if max_row and max_row[0] else 100000
+        next_order_number = str(max_order_num + 1)
+        
+        conn.close()
+        return jsonify({'success': True, 'next_order_number': next_order_number, 'max_order_number': max_order_num})
+    except Exception as e:
+        logger.error(f'Error getting next order number: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/admin/recreate-order', methods=['POST'])
 @admin_required
 def recreate_order():

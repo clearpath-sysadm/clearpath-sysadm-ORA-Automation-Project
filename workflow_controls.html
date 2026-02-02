@@ -318,8 +318,8 @@
                                         <input type="text" id="wrong-order-number" placeholder="e.g., 100566 or SS ID 259241090" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
                                     </div>
                                     <div>
-                                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">New Order Number</label>
-                                        <input type="text" id="correct-order-number" placeholder="e.g., 1100566" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+                                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">New Order Number <span id="next-order-hint" style="color: #28a745; font-size: 11px;"></span></label>
+                                        <input type="text" id="correct-order-number" placeholder="Loading next available..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 12px; align-items: center;">
@@ -1192,7 +1192,6 @@
 
         function resetRecreateFlow() {
             document.getElementById('wrong-order-number').value = '';
-            document.getElementById('correct-order-number').value = '';
             document.getElementById('recreate-status').textContent = '';
             document.getElementById('recreate-step1').style.display = 'block';
             document.getElementById('recreate-step1b').style.display = 'none';
@@ -1200,7 +1199,32 @@
             document.getElementById('recreate-step3').style.display = 'none';
             document.getElementById('recreate-complete').style.display = 'none';
             recreateOrderData = { wrongOrderNumber: null, correctOrderNumber: null, oldOrder: null, newOrder: null, rawOrder: null, selectedShipstationId: null };
+            loadNextOrderNumber();
         }
+        
+        async function loadNextOrderNumber() {
+            const input = document.getElementById('correct-order-number');
+            const hint = document.getElementById('next-order-hint');
+            try {
+                const response = await fetch('/api/admin/next-order-number');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        input.value = data.next_order_number;
+                        input.placeholder = 'e.g., ' + data.next_order_number;
+                        hint.textContent = '(auto-filled)';
+                    }
+                }
+            } catch (e) {
+                console.log('Could not load next order number:', e);
+                input.placeholder = 'Enter new order number';
+            }
+        }
+        
+        // Load next order number on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNextOrderNumber();
+        });
 
         async function fetchOldOrder(shipstationId = null) {
             const wrongOrderNumber = document.getElementById('wrong-order-number').value.trim();
