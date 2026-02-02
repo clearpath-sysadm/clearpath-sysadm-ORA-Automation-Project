@@ -2,7 +2,7 @@
 # Oracare Fulfillment - Startup Script
 # Launches all automation workflows and dashboard server
 
-set -e
+# Don't use set -e as background processes may exit/restart independently
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Starting Oracare Fulfillment System..."
 echo "================================================"
