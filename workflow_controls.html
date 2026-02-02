@@ -1202,11 +1202,15 @@
             loadNextOrderNumber();
         }
         
-        async function loadNextOrderNumber() {
+        async function loadNextOrderNumber(excludeNumber = '') {
             const input = document.getElementById('correct-order-number');
             const hint = document.getElementById('next-order-hint');
             try {
-                const response = await fetch('/api/admin/next-order-number');
+                let url = '/api/admin/next-order-number';
+                if (excludeNumber) {
+                    url += '?exclude=' + encodeURIComponent(excludeNumber);
+                }
+                const response = await fetch(url);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -1224,6 +1228,13 @@
         // Load next order number on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadNextOrderNumber();
+            // Also refresh when wrong order number changes
+            document.getElementById('wrong-order-number').addEventListener('blur', function() {
+                const wrongNum = this.value.trim();
+                if (wrongNum && /^\d+$/.test(wrongNum)) {
+                    loadNextOrderNumber(wrongNum);
+                }
+            });
         });
 
         async function fetchOldOrder(shipstationId = null) {

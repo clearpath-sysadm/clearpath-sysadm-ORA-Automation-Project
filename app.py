@@ -10500,11 +10500,19 @@ def api_unit_comparison():
 @app.route('/api/admin/next-order-number', methods=['GET'])
 @admin_required
 def get_next_order_number():
-    """Get the next available order number (max < 200000 + 1)"""
+    """Get the next available order number (max < 200000 + 1)
+    
+    Also considers:
+    - manual_order_conflicts table (pending conflicts)
+    - Optional 'exclude' parameter to ensure we don't suggest the same number being fixed
+    """
     try:
+        exclude_number = request.args.get('exclude', '')
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Get max from shipped_orders, orders_inbox, AND manual_order_conflicts
         cursor.execute("""
             SELECT MAX(order_num) FROM (
                 SELECT CAST(order_number AS INTEGER) as order_num
@@ -10516,10 +10524,22 @@ def get_next_order_number():
                 FROM orders_inbox
                 WHERE order_number ~ '^[0-9]+$'
                 AND CAST(order_number AS INTEGER) < 200000
+                UNION ALL
+                SELECT CAST(conflicting_order_number AS INTEGER) as order_num
+                FROM manual_order_conflicts
+                WHERE conflicting_order_number ~ '^[0-9]+$'
+                AND CAST(conflicting_order_number AS INTEGER) < 200000
             ) combined
         """)
         max_row = cursor.fetchone()
         max_order_num = max_row[0] if max_row and max_row[0] else 100000
+        
+        # If caller provided an exclude number, make sure we're at least one higher
+        if exclude_number and exclude_number.isdigit():
+            exclude_int = int(exclude_number)
+            if exclude_int < 200000 and exclude_int >= max_order_num:
+                max_order_num = exclude_int
+        
         next_order_number = str(max_order_num + 1)
         
         conn.close()
