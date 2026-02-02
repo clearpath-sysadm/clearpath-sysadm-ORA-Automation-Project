@@ -314,12 +314,12 @@
                             <div id="recreate-step1">
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                                     <div>
-                                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">Wrong Order Number</label>
-                                        <input type="text" id="wrong-order-number" placeholder="e.g., 00611" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+                                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">Order Number (or ShipStation ID)</label>
+                                        <input type="text" id="wrong-order-number" placeholder="e.g., 100566 or SS ID 259241090" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
                                     </div>
                                     <div>
-                                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">Correct Order Number</label>
-                                        <input type="text" id="correct-order-number" placeholder="e.g., 100611" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
+                                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">New Order Number</label>
+                                        <input type="text" id="correct-order-number" placeholder="e.g., 1100566" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px;">
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 12px; align-items: center;">
@@ -328,6 +328,15 @@
                                     </button>
                                     <span id="recreate-status" style="color: var(--text-secondary); font-size: 14px;"></span>
                                 </div>
+                            </div>
+                            
+                            <!-- Step 1b: Multiple orders found - select one -->
+                            <div id="recreate-step1b" style="display: none;">
+                                <div style="background: rgba(255,193,7,0.1); padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255,193,7,0.3);">
+                                    <span style="color: #856404;">⚠️ Multiple orders found with this number. Select the one to recreate:</span>
+                                </div>
+                                <div id="multiple-orders-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;"></div>
+                                <button onclick="resetRecreateFlow()" class="btn btn-secondary">Cancel</button>
                             </div>
                             
                             <!-- Step 2: Show old order details -->
@@ -1177,7 +1186,8 @@
             correctOrderNumber: null,
             oldOrder: null,
             newOrder: null,
-            rawOrder: null
+            rawOrder: null,
+            selectedShipstationId: null
         };
 
         function resetRecreateFlow() {
@@ -1185,25 +1195,26 @@
             document.getElementById('correct-order-number').value = '';
             document.getElementById('recreate-status').textContent = '';
             document.getElementById('recreate-step1').style.display = 'block';
+            document.getElementById('recreate-step1b').style.display = 'none';
             document.getElementById('recreate-step2').style.display = 'none';
             document.getElementById('recreate-step3').style.display = 'none';
             document.getElementById('recreate-complete').style.display = 'none';
-            recreateOrderData = { wrongOrderNumber: null, correctOrderNumber: null, oldOrder: null, newOrder: null, rawOrder: null };
+            recreateOrderData = { wrongOrderNumber: null, correctOrderNumber: null, oldOrder: null, newOrder: null, rawOrder: null, selectedShipstationId: null };
         }
 
-        async function fetchOldOrder() {
+        async function fetchOldOrder(shipstationId = null) {
             const wrongOrderNumber = document.getElementById('wrong-order-number').value.trim();
             const correctOrderNumber = document.getElementById('correct-order-number').value.trim();
             const statusSpan = document.getElementById('recreate-status');
             const btn = document.getElementById('fetch-order-btn');
             
             if (!wrongOrderNumber) {
-                statusSpan.textContent = 'Please enter the wrong order number';
+                statusSpan.textContent = 'Please enter the order number or ShipStation ID';
                 statusSpan.style.color = '#dc3545';
                 return;
             }
             if (!correctOrderNumber) {
-                statusSpan.textContent = 'Please enter the correct order number';
+                statusSpan.textContent = 'Please enter the new order number';
                 statusSpan.style.color = '#dc3545';
                 return;
             }
@@ -1213,11 +1224,20 @@
             statusSpan.textContent = 'Looking up order in ShipStation...';
             statusSpan.style.color = 'var(--text-secondary)';
             
+            // Check if input looks like a ShipStation ID (9+ digits)
+            const isShipstationId = shipstationId || (/^\d{9,}$/.test(wrongOrderNumber));
+            const ssIdToUse = shipstationId || (isShipstationId ? wrongOrderNumber : null);
+            
             try {
+                const requestBody = { action: 'fetch', wrong_order_number: wrongOrderNumber };
+                if (ssIdToUse) {
+                    requestBody.shipstation_order_id = ssIdToUse;
+                }
+                
                 const response = await fetch('/api/admin/recreate-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'fetch', wrong_order_number: wrongOrderNumber })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 if (response.status === 403) {
@@ -1231,34 +1251,39 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    recreateOrderData.wrongOrderNumber = wrongOrderNumber;
-                    recreateOrderData.correctOrderNumber = correctOrderNumber;
-                    recreateOrderData.oldOrder = data.order;
-                    recreateOrderData.rawOrder = data.order.raw_order;
-                    
-                    const o = data.order;
-                    const itemsList = o.items.map(i => `${i.sku} x${i.quantity}`).join(', ');
-                    
-                    document.getElementById('old-order-details').innerHTML = `
-                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 16px;">
-                            <span style="color: var(--text-secondary);">Order Number:</span><span style="font-weight: 600;">${o.order_number}</span>
-                            <span style="color: var(--text-secondary);">ShipStation ID:</span><span>${o.shipstation_order_id}</span>
-                            <span style="color: var(--text-secondary);">Status:</span><span>${o.order_status}</span>
-                            <span style="color: var(--text-secondary);">Date:</span><span>${o.order_date}</span>
-                            <span style="color: var(--text-secondary);">Customer:</span><span>${o.customer_name}</span>
-                            <span style="color: var(--text-secondary);">Ship To:</span><span>${o.ship_to_name}, ${o.ship_to_city} ${o.ship_to_state}</span>
-                            <span style="color: var(--text-secondary);">Items:</span><span>${itemsList}</span>
-                            <span style="color: var(--text-secondary);">Total Units:</span><span style="font-weight: 600;">${o.total_units}</span>
-                        </div>
-                        <div style="margin-top: 12px; padding: 8px; background: rgba(0,123,255,0.1); border-radius: 4px;">
-                            Will be recreated as: <strong style="color: #007bff;">${correctOrderNumber}</strong>
-                        </div>
-                    `;
-                    
-                    statusSpan.textContent = 'Order found!';
-                    statusSpan.style.color = '#28a745';
-                    
-                    document.getElementById('recreate-step2').style.display = 'block';
+                    // Check if multiple orders returned
+                    if (data.multiple) {
+                        recreateOrderData.wrongOrderNumber = wrongOrderNumber;
+                        recreateOrderData.correctOrderNumber = correctOrderNumber;
+                        
+                        // Show selection UI
+                        const listDiv = document.getElementById('multiple-orders-list');
+                        listDiv.innerHTML = data.orders.map(o => `
+                            <div onclick="selectOrderForRecreate('${o.shipstation_order_id}')" 
+                                 style="padding: 12px; background: var(--bg-secondary); border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);"
+                                 onmouseover="this.style.borderColor='#007bff'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <strong>${o.order_number}</strong>
+                                    <span style="color: ${o.order_status === 'shipped' ? '#28a745' : '#ffc107'};">${o.order_status}</span>
+                                </div>
+                                <div style="font-size: 13px; color: var(--text-secondary);">
+                                    ${o.customer_name} | ${o.ship_to_city} | ${o.order_date} | SS ID: ${o.shipstation_order_id}
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('recreate-step1').style.display = 'none';
+                        document.getElementById('recreate-step1b').style.display = 'block';
+                        statusSpan.textContent = '';
+                    } else {
+                        recreateOrderData.wrongOrderNumber = wrongOrderNumber;
+                        recreateOrderData.correctOrderNumber = correctOrderNumber;
+                        recreateOrderData.oldOrder = data.order;
+                        recreateOrderData.rawOrder = data.order.raw_order;
+                        recreateOrderData.selectedShipstationId = data.order.shipstation_order_id;
+                        
+                        showOrderDetails(data.order, correctOrderNumber);
+                    }
                 } else {
                     statusSpan.textContent = data.error || 'Order not found';
                     statusSpan.style.color = '#dc3545';
@@ -1271,6 +1296,38 @@
             
             btn.disabled = false;
             btn.innerHTML = '<span>🔍</span> Fetch Order';
+        }
+        
+        async function selectOrderForRecreate(shipstationId) {
+            // Fetch the specific order by ShipStation ID
+            document.getElementById('recreate-step1b').style.display = 'none';
+            document.getElementById('recreate-step1').style.display = 'block';
+            recreateOrderData.selectedShipstationId = shipstationId;
+            await fetchOldOrder(shipstationId);
+        }
+        
+        function showOrderDetails(o, correctOrderNumber) {
+            const itemsList = o.items.map(i => `${i.sku} x${i.quantity}`).join(', ');
+            
+            document.getElementById('old-order-details').innerHTML = `
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 16px;">
+                    <span style="color: var(--text-secondary);">Order Number:</span><span style="font-weight: 600;">${o.order_number}</span>
+                    <span style="color: var(--text-secondary);">ShipStation ID:</span><span>${o.shipstation_order_id}</span>
+                    <span style="color: var(--text-secondary);">Status:</span><span>${o.order_status}</span>
+                    <span style="color: var(--text-secondary);">Date:</span><span>${o.order_date}</span>
+                    <span style="color: var(--text-secondary);">Customer:</span><span>${o.customer_name}</span>
+                    <span style="color: var(--text-secondary);">Ship To:</span><span>${o.ship_to_name}, ${o.ship_to_city} ${o.ship_to_state}</span>
+                    <span style="color: var(--text-secondary);">Items:</span><span>${itemsList}</span>
+                    <span style="color: var(--text-secondary);">Total Units:</span><span style="font-weight: 600;">${o.total_units}</span>
+                </div>
+                <div style="margin-top: 12px; padding: 8px; background: rgba(0,123,255,0.1); border-radius: 4px;">
+                    Will be recreated as: <strong style="color: #007bff;">${correctOrderNumber}</strong>
+                </div>
+            `;
+            
+            document.getElementById('recreate-status').textContent = 'Order found!';
+            document.getElementById('recreate-status').style.color = '#28a745';
+            document.getElementById('recreate-step2').style.display = 'block';
         }
 
         async function createNewOrder() {

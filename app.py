@@ -10512,9 +10512,10 @@ def recreate_order():
     action = data.get('action')
     wrong_order_number = data.get('wrong_order_number', '').strip()
     correct_order_number = data.get('correct_order_number', '').strip()
+    target_shipstation_id = data.get('shipstation_order_id', '').strip()  # Optional: specific SS ID to target
     
-    if not wrong_order_number:
-        return jsonify({'success': False, 'error': 'Wrong order number is required'}), 400
+    if not wrong_order_number and action != 'delete':
+        return jsonify({'success': False, 'error': 'Order number is required'}), 400
     
     try:
         from src.services.shipstation.api_client import (
@@ -10531,20 +10532,53 @@ def recreate_order():
         headers = get_shipstation_headers(api_key, api_secret)
         
         if action == 'fetch':
-            # Step 1: Fetch the order by order number
-            url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}?orderNumber={wrong_order_number}"
-            response = make_api_request(url=url, method='GET', headers=headers, timeout=30)
-            
-            if not response or response.status_code != 200:
-                return jsonify({'success': False, 'error': f'Failed to fetch order: HTTP {response.status_code if response else "No response"}'}), 500
-            
-            data = response.json()
-            orders = data.get('orders', [])
-            
-            if not orders:
-                return jsonify({'success': False, 'error': f'Order "{wrong_order_number}" not found in ShipStation'}), 404
-            
-            order = orders[0]  # Take first match
+            # Step 1: Fetch the order by order number (or by ShipStation ID if provided)
+            if target_shipstation_id:
+                # Fetch specific order by ShipStation ID
+                url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}/{target_shipstation_id}"
+                response = make_api_request(url=url, method='GET', headers=headers, timeout=30)
+                
+                if not response or response.status_code != 200:
+                    return jsonify({'success': False, 'error': f'Failed to fetch order: HTTP {response.status_code if response else "No response"}'}), 500
+                
+                order = response.json()
+            else:
+                # Fetch by order number
+                url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}?orderNumber={wrong_order_number}"
+                response = make_api_request(url=url, method='GET', headers=headers, timeout=30)
+                
+                if not response or response.status_code != 200:
+                    return jsonify({'success': False, 'error': f'Failed to fetch order: HTTP {response.status_code if response else "No response"}'}), 500
+                
+                resp_data = response.json()
+                orders = resp_data.get('orders', [])
+                
+                if not orders:
+                    return jsonify({'success': False, 'error': f'Order "{wrong_order_number}" not found in ShipStation'}), 404
+                
+                # If multiple orders found, return the list for user selection
+                if len(orders) > 1:
+                    order_list = []
+                    for o in orders:
+                        ship_to = o.get('shipTo') or {}
+                        bill_to = o.get('billTo') or {}
+                        order_list.append({
+                            'shipstation_order_id': o.get('orderId'),
+                            'order_number': o.get('orderNumber'),
+                            'order_status': o.get('orderStatus'),
+                            'order_date': o.get('orderDate', '')[:10] if o.get('orderDate') else '',
+                            'customer_name': bill_to.get('name') or ship_to.get('name') or 'N/A',
+                            'ship_to_name': ship_to.get('name') or 'N/A',
+                            'ship_to_city': ship_to.get('city') or 'N/A',
+                        })
+                    return jsonify({
+                        'success': True,
+                        'multiple': True,
+                        'orders': order_list,
+                        'message': f'Found {len(orders)} orders with number "{wrong_order_number}". Please select one by ShipStation ID.'
+                    })
+                
+                order = orders[0]
             
             # Extract order details for display and recreation
             ship_to = order.get('shipTo') or {}
