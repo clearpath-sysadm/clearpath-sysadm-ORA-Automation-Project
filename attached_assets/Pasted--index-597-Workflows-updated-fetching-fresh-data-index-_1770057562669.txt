@@ -1,0 +1,30 @@
+(index):597 📊 Workflows updated - fetching fresh data
+(index):597 📊 Workflows updated - fetching fresh data
+(index):597 📊 Workflows updated - fetching fresh data
+(index):597 📊 Workflows updated - fetching fresh data
+(index):597 📊 Workflows updated - fetching fresh data
+fetch('/api/admin/recreate-order', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    action: 'fetch',
+    wrong_order_number: '100566'
+  })
+}).then(r => r.json()).then(d => { window.fetchedOrder = d; console.log(d); });
+Promise {<pending>}
+VM190:8 {order: {…}, success: true}order: customer_email: "sanantonio6bf@pacden.com"customer_name: "Oscar DeLeon"items: [{…}]order_date: "2025-11-11"order_number: "100566"order_status: "shipped"order_total: 0raw_order: {advancedOptions: {…}, amountPaid: 0, billTo: {…}, carrierCode: 'fedex', confirmation: 'none', …}ship_to_address: "10538 POTRANCO RD STE 206"ship_to_city: "SAN ANTONIO"ship_to_name: "Oscar DeLeon"ship_to_state: "TX"ship_to_zip: "78251-3359"shipstation_order_id: 232997081total_units: 6[[Prototype]]: Objectsuccess: true[[Prototype]]: Object
+(index):597 📊 Workflows updated - fetching fresh data
+(index):597 📊 Workflows updated - fetching fresh data
+// Fetch the correct order by ShipStation ID 259241090 (Matthew Gesell)
+fetch('/api/admin/recreate-order', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    action: 'fetch',
+    wrong_order_number: '100566',
+    shipstation_order_id: '259241090'
+  })
+}).then(r => r.json()).then(d => { window.fetchedOrder = d; console.log(d); });
+Promise {<pending>}
+VM194:10 {order: {…}, success: true}order: customer_email: "sanantonio6bf@pacden.com"customer_name: "Oscar DeLeon"items: [{…}]order_date: "2025-11-11"order_number: "100566"order_status: "shipped"order_total: 0raw_order: {advancedOptions: {…}, amountPaid: 0, billTo: {…}, carrierCode: 'fedex', confirmation: 'none', …}ship_to_address: "10538 POTRANCO RD STE 206"ship_to_city: "SAN ANTONIO"ship_to_name: "Oscar DeLeon"ship_to_state: "TX"ship_to_zip: "78251-3359"shipstation_order_id: 232997081total_units: 6[[Prototype]]: Objectsuccess: true[[Prototype]]: Object
+(index):597 📊 Workflows updated - fetching fresh data
