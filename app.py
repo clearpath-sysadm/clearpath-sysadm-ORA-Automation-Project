@@ -10502,6 +10502,7 @@ def api_unit_comparison():
 def get_next_order_number():
     """Get the next available order number (max < 200000 + 1)
     
+    Uses exact same logic as /api/manual_order_conflicts endpoint.
     Also considers:
     - manual_order_conflicts table (pending conflicts)
     - Optional 'exclude' parameter to ensure we don't suggest the same number being fixed
@@ -10509,7 +10510,7 @@ def get_next_order_number():
     try:
         exclude_number = request.args.get('exclude', '')
         
-        conn = get_db_connection()
+        conn = get_connection()
         cursor = conn.cursor()
         
         # Get max from shipped_orders, orders_inbox, AND manual_order_conflicts
