@@ -1,0 +1,302 @@
+[
+  {
+    "start_date": "2026-01-26",
+    "sku": "17904",
+    "quantity_shipped": 10
+  },
+  {
+    "start_date": "2026-01-19",
+    "sku": "17904",
+    "quantity_shipped": 4
+  },
+  {
+    "start_date": "2026-01-12",
+    "sku": "17904",
+    "quantity_shipped": 9
+  },
+  {
+    "start_date": "2026-01-05",
+    "sku": "17904",
+    "quantity_shipped": 5
+  },
+  {
+    "start_date": "2025-12-29",
+    "sku": "17904",
+    "quantity_shipped": 3
+  },
+  {
+    "start_date": "2025-12-22",
+    "sku": "17904",
+    "quantity_shipped": 4
+  },
+  {
+    "start_date": "2025-12-15",
+    "sku": "17904",
+    "quantity_shipped": 6
+  },
+  {
+    "start_date": "2025-12-08",
+    "sku": "17904",
+    "quantity_shipped": 5
+  },
+  {
+    "start_date": "2025-12-01",
+    "sku": "17904",
+    "quantity_shipped": 2
+  },
+  {
+    "start_date": "2025-11-24",
+    "sku": "17904",
+    "quantity_shipped": 4
+  },
+  {
+    "start_date": "2025-11-17",
+    "sku": "17904",
+    "quantity_shipped": 7
+  },
+  {
+    "start_date": "2025-11-10",
+    "sku": "17904",
+    "quantity_shipped": 11
+  },
+  {
+    "start_date": "2025-11-03",
+    "sku": "17904",
+    "quantity_shipped": 16
+  },
+  {
+    "start_date": "2025-10-27",
+    "sku": "17904",
+    "quantity_shipped": 24
+  },
+  {
+    "start_date": "2025-10-20",
+    "sku": "17904",
+    "quantity_shipped": 6
+  },
+  {
+    "start_date": "2025-10-13",
+    "sku": "17904",
+    "quantity_shipped": 17
+  },
+  {
+    "start_date": "2025-10-06",
+    "sku": "17904",
+    "quantity_shipped": 16
+  },
+  {
+    "start_date": "2025-09-29",
+    "sku": "17904",
+    "quantity_shipped": 3
+  },
+  {
+    "start_date": "2025-09-22",
+    "sku": "17904",
+    "quantity_shipped": 18
+  },
+  {
+    "start_date": "2025-09-15",
+    "sku": "17904",
+    "quantity_shipped": 28
+  },
+  {
+    "start_date": "2025-09-08",
+    "sku": "17904",
+    "quantity_shipped": 1
+  },
+  {
+    "start_date": "2025-09-01",
+    "sku": "17904",
+    "quantity_shipped": 10
+  },
+  {
+    "start_date": "2025-08-25",
+    "sku": "17904",
+    "quantity_shipped": 9
+  },
+  {
+    "start_date": "2025-08-18",
+    "sku": "17904",
+    "quantity_shipped": 14
+  },
+  {
+    "start_date": "2025-08-11",
+    "sku": "17904",
+    "quantity_shipped": 15
+  },
+  {
+    "start_date": "2025-08-04",
+    "sku": "17904",
+    "quantity_shipped": 12
+  },
+  {
+    "start_date": "2025-07-28",
+    "sku": "17904",
+    "quantity_shipped": 1
+  },
+  {
+    "start_date": "2025-07-21",
+    "sku": "17904",
+    "quantity_shipped": 15
+  },
+  {
+    "start_date": "2025-07-14",
+    "sku": "17904",
+    "quantity_shipped": 18
+  },
+  {
+    "start_date": "2025-07-07",
+    "sku": "17904",
+    "quantity_shipped": 17
+  },
+  {
+    "start_date": "2025-06-30",
+    "sku": "17904",
+    "quantity_shipped": 7
+  },
+  {
+    "start_date": "2025-06-23",
+    "sku": "17904",
+    "quantity_shipped": 13
+  },
+  {
+    "start_date": "2025-06-16",
+    "sku": "17904",
+    "quantity_shipped": 7
+  },
+  {
+    "start_date": "2025-06-09",
+    "sku": "17904",
+    "quantity_shipped": 18
+  },
+  {
+    "start_date": "2025-06-02",
+    "sku": "17904",
+    "quantity_shipped": 25
+  },
+  {
+    "start_date": "2025-05-26",
+    "sku": "17904",
+    "quantity_shipped": 4
+  },
+  {
+    "start_date": "2025-05-19",
+    "sku": "17904",
+    "quantity_shipped": 16
+  },
+  {
+    "start_date": "2025-05-12",
+    "sku": "17904",
+    "quantity_shipped": 16
+  },
+  {
+    "start_date": "2025-05-05",
+    "sku": "17904",
+    "quantity_shipped": 25
+  },
+  {
+    "start_date": "2025-04-28",
+    "sku": "17904",
+    "quantity_shipped": 16
+  },
+  {
+    "start_date": "2025-04-21",
+    "sku": "17904",
+    "quantity_shipped": 18
+  },
+  {
+    "start_date": "2025-04-14",
+    "sku": "17904",
+    "quantity_shipped": 8
+  },
+  {
+    "start_date": "2025-04-07",
+    "sku": "17904",
+    "quantity_shipped": 7
+  },
+  {
+    "start_date": "2025-03-31",
+    "sku": "17904",
+    "quantity_shipped": 5
+  },
+  {
+    "start_date": "2025-03-24",
+    "sku": "17904",
+    "quantity_shipped": 18
+  },
+  {
+    "start_date": "2025-03-17",
+    "sku": "17904",
+    "quantity_shipped": 11
+  },
+  {
+    "start_date": "2025-03-10",
+    "sku": "17904",
+    "quantity_shipped": 14
+  },
+  {
+    "start_date": "2025-03-03",
+    "sku": "17904",
+    "quantity_shipped": 17
+  },
+  {
+    "start_date": "2025-02-24",
+    "sku": "17904",
+    "quantity_shipped": 10
+  },
+  {
+    "start_date": "2025-02-17",
+    "sku": "17904",
+    "quantity_shipped": 11
+  },
+  {
+    "start_date": "2025-02-10",
+    "sku": "17904",
+    "quantity_shipped": 7
+  },
+  {
+    "start_date": "2025-02-03",
+    "sku": "17904",
+    "quantity_shipped": 21
+  },
+  {
+    "start_date": "2025-01-27",
+    "sku": "17904",
+    "quantity_shipped": 13
+  },
+  {
+    "start_date": "2025-01-20",
+    "sku": "17904",
+    "quantity_shipped": 13
+  },
+  {
+    "start_date": "2025-01-13",
+    "sku": "17904",
+    "quantity_shipped": 6
+  },
+  {
+    "start_date": "2025-01-06",
+    "sku": "17904",
+    "quantity_shipped": 14
+  },
+  {
+    "start_date": "2024-12-30",
+    "sku": "17904",
+    "quantity_shipped": 2
+  },
+  {
+    "start_date": "2024-12-23",
+    "sku": "17904",
+    "quantity_shipped": 13
+  },
+  {
+    "start_date": "2024-12-16",
+    "sku": "17904",
+    "quantity_shipped": 17
+  },
+  {
+    "start_date": "2024-12-09",
+    "sku": "17904",
+    "quantity_shipped": 9
+  }
+]
