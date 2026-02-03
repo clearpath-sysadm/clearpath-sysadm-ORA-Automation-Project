@@ -10722,7 +10722,7 @@ def recreate_order():
                 return jsonify({'success': False, 'error': 'No response from ShipStation create order API'}), 500
         
         elif action == 'delete':
-            # Step 3: Delete the old order (with confirmation)
+            # Step 3: Delete the old order (with confirmation) and clean up local DB
             old_order_id = data.get('old_order_id')
             if not old_order_id:
                 return jsonify({'success': False, 'error': 'Old order ID is required'}), 400
@@ -10735,10 +10735,48 @@ def recreate_order():
             
             if result.get('success'):
                 logger.info(f"Admin deleted old order {wrong_order_number} (SS ID: {old_order_id}) after recreating as {correct_order_number}")
+                
+                # Also clean up local database records for the old order
+                local_cleanup_message = ""
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    
+                    # Find the orders_inbox record by shipstation_order_id
+                    cursor.execute("""
+                        SELECT id, order_number FROM orders_inbox 
+                        WHERE shipstation_order_id = %s
+                    """, (str(old_order_id),))
+                    inbox_row = cursor.fetchone()
+                    
+                    if inbox_row:
+                        inbox_id = inbox_row[0]
+                        old_order_num = inbox_row[1]
+                        
+                        # Delete order items first (foreign key constraint)
+                        cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = %s", (inbox_id,))
+                        items_deleted = cursor.rowcount
+                        
+                        # Delete the order itself
+                        cursor.execute("DELETE FROM orders_inbox WHERE id = %s", (inbox_id,))
+                        
+                        conn.commit()
+                        local_cleanup_message = f" Local DB cleaned: removed order {old_order_num} and {items_deleted} item(s)."
+                        logger.info(f"Cleaned up local DB: deleted orders_inbox id={inbox_id}, order_number={old_order_num}, items={items_deleted}")
+                    else:
+                        local_cleanup_message = " No local DB record found for this ShipStation ID."
+                    
+                    cursor.close()
+                    conn.close()
+                except Exception as db_err:
+                    logger.error(f"Failed to clean up local DB after ShipStation delete: {db_err}")
+                    local_cleanup_message = f" Warning: Local DB cleanup failed: {str(db_err)}"
+                
                 return jsonify({
                     'success': True,
-                    'message': f'Old order {wrong_order_number} deleted successfully',
-                    'customer_data': result.get('customer_data')
+                    'message': f'Old order {wrong_order_number} deleted successfully.{local_cleanup_message}',
+                    'customer_data': result.get('customer_data'),
+                    'local_cleanup': local_cleanup_message
                 })
             else:
                 return jsonify({'success': False, 'error': result.get('error', 'Delete failed')}), 500
