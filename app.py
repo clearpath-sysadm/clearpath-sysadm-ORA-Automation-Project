@@ -10395,7 +10395,7 @@ def api_unit_comparison():
                 oi.ship_to_name,
                 oi.order_date::text
             FROM orders_inbox oi
-            LEFT JOIN order_items_inbox oii ON oi.order_number = oii.order_number
+            LEFT JOIN order_items_inbox oii ON oi.id = oii.order_inbox_id
             WHERE oi.status = 'awaiting_shipment'
             GROUP BY oi.order_number, oi.shipstation_order_id, oi.ship_to_name, oi.order_date
         """)
