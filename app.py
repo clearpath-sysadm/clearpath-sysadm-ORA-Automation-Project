@@ -10392,12 +10392,12 @@ def api_unit_comparison():
                 oi.order_number,
                 oi.shipstation_order_id,
                 COALESCE(SUM(oii.quantity), 0) as units,
-                oi.ship_to_name,
+                oi.ship_name,
                 oi.order_date::text
             FROM orders_inbox oi
             LEFT JOIN order_items_inbox oii ON oi.id = oii.order_inbox_id
             WHERE oi.status = 'awaiting_shipment'
-            GROUP BY oi.order_number, oi.shipstation_order_id, oi.ship_to_name, oi.order_date
+            GROUP BY oi.order_number, oi.shipstation_order_id, oi.ship_name, oi.order_date
         """)
         
         rows = cursor.fetchall()
