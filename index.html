@@ -387,7 +387,8 @@
                     <strong>🔄 Manual Order Conflicts Detected</strong><br>
                     <span id="manual-order-conflict-count">0</span> manual order(s) use previously shipped order numbers.
                     <a href="#" onclick="showManualOrderConflictDetails(); return false;" style="text-decoration: underline; margin-left: 10px;">View Details</a>
-                    <button onclick="bulkRecreateAllConflicts(this)" style="margin-left: 10px; padding: 6px 14px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;">⚡ Bulk Dedup All</button>
+                    <button onclick="bulkRecreateAllConflicts(this, true)" style="margin-left: 10px; padding: 6px 14px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;">🔍 Dry Run</button>
+                    <button onclick="bulkRecreateAllConflicts(this)" style="margin-left: 4px; padding: 6px 14px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;">⚡ Bulk Dedup All</button>
                 </div>
 
                 <!-- Operational Pulse Section -->
@@ -2452,6 +2453,7 @@
             html += '<h3 style="margin-top: 0; margin-bottom: 0;">Manual Order Conflicts</h3>';
             html += '<div style="display: flex; gap: 8px;">';
             html += '<button onclick="recalculateManualOrderNumbers()" style="padding: 8px 16px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Recalculate Order Numbers</button>';
+            html += '<button onclick="bulkRecreateAllConflicts(this, true)" style="padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔍 Dry Run</button>';
             html += '<button onclick="bulkRecreateAllConflicts(this)" style="padding: 8px 16px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚡ Bulk Dedup All</button>';
             html += '</div>';
             html += '</div>';
