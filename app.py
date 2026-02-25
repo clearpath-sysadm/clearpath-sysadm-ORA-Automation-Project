@@ -6759,6 +6759,33 @@ def api_bulk_recreate_manual_orders():
 
                 new_ss_id = create_resp.json().get('orderId')
 
+                ship_to = order_data.get('shipTo', {})
+                bill_to = order_data.get('billTo', {})
+                order_total_raw = order_data.get('orderTotal', 0)
+                order_total_cents = int(float(order_total_raw) * 100) if order_total_raw else None
+                order_date_raw = order_data.get('orderDate', '')
+                order_date_val = order_date_raw[:10] if order_date_raw and len(order_date_raw) >= 10 else None
+                items_backup = json.dumps(order_data.get('items', []))
+
+                cursor.execute("""
+                    INSERT INTO deleted_shipstation_orders
+                    (shipstation_order_id, order_number, deleted_at, deleted_by,
+                     customer_name, customer_email, customer_company,
+                     ship_to_name, ship_to_city, ship_to_state,
+                     order_total_cents, order_date, items_json)
+                    VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (shipstation_order_id) DO NOTHING
+                """, (
+                    int(ss_order_id), old_order_number, f'bulk_dedup:{user_name}',
+                    ship_to.get('name') or bill_to.get('name'),
+                    bill_to.get('email', ''),
+                    ship_to.get('company') or bill_to.get('company', ''),
+                    ship_to.get('name', ''),
+                    ship_to.get('city', ''),
+                    ship_to.get('state', ''),
+                    order_total_cents, order_date_val, items_backup
+                ))
+
                 make_api_request(
                     url=f'https://ssapi.shipstation.com/orders/{ss_order_id}',
                     method='DELETE',
