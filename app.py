@@ -6655,12 +6655,6 @@ def api_bulk_recreate_manual_orders():
         cursor.execute("ALTER TABLE manual_order_conflicts ADD COLUMN IF NOT EXISTS resolution_notes TEXT")
         conn.commit()
 
-        cursor.execute("SELECT pg_try_advisory_lock(73001)")
-        lock_acquired = cursor.fetchone()[0]
-        if not lock_acquired:
-            conn.close()
-            return jsonify({'success': False, 'error': 'Another bulk dedup operation is already in progress. Please wait and try again.'}), 409
-
         cursor.execute("""
             SELECT id, shipstation_order_id, conflicting_order_number
             FROM manual_order_conflicts
@@ -6670,7 +6664,6 @@ def api_bulk_recreate_manual_orders():
         pending = cursor.fetchall()
 
         if not pending:
-            cursor.execute("SELECT pg_advisory_unlock(73001)")
             conn.close()
             return jsonify({'success': True, 'message': 'No pending conflicts to process', 'recreated': 0, 'auto_resolved': 0})
 
@@ -6695,6 +6688,8 @@ def api_bulk_recreate_manual_orders():
         """)
         active_lots = {row[0]: row[1] for row in cursor.fetchall()}
 
+        conn.close()
+
         recreated = 0
         auto_resolved = 0
         failed = 0
@@ -6711,13 +6706,17 @@ def api_bulk_recreate_manual_orders():
 
                 if not order_resp or order_resp.status_code != 200:
                     if not dry_run:
-                        cursor.execute("""
+                        c2 = get_connection()
+                        cr2 = c2.cursor()
+                        cr2.execute("""
                             UPDATE manual_order_conflicts
                             SET resolution_status = 'resolved',
                                 resolved_at = CURRENT_TIMESTAMP,
                                 resolution_notes = 'Auto-resolved: Order no longer exists in ShipStation'
                             WHERE id = %s
                         """, (conflict_id,))
+                        c2.commit()
+                        c2.close()
                     auto_resolved += 1
                     results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'would_auto_resolve' if dry_run else 'auto_resolved', 'reason': 'Order not found in ShipStation'})
                     continue
@@ -6732,13 +6731,17 @@ def api_bulk_recreate_manual_orders():
 
                 if order_status in ('shipped', 'cancelled'):
                     if not dry_run:
-                        cursor.execute("""
+                        c2 = get_connection()
+                        cr2 = c2.cursor()
+                        cr2.execute("""
                             UPDATE manual_order_conflicts
                             SET resolution_status = 'resolved',
                                 resolved_at = CURRENT_TIMESTAMP,
                                 resolution_notes = %s
                             WHERE id = %s
                         """, (f'Auto-resolved: Order already {order_status} in ShipStation', conflict_id))
+                        c2.commit()
+                        c2.close()
                     auto_resolved += 1
                     results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'would_auto_resolve' if dry_run else 'auto_resolved', 'reason': f'Already {order_status}', 'customer': customer_name, 'company': customer_company, 'status': order_status})
                     continue
@@ -6808,7 +6811,10 @@ def api_bulk_recreate_manual_orders():
                 order_date_val = order_date_raw[:10] if order_date_raw and len(order_date_raw) >= 10 else None
                 items_backup = json.dumps(order_data.get('items', []))
 
-                cursor.execute("""
+                c2 = get_connection()
+                cr2 = c2.cursor()
+
+                cr2.execute("""
                     INSERT INTO deleted_shipstation_orders
                     (shipstation_order_id, order_number, deleted_at, deleted_by,
                      customer_name, customer_email, customer_company,
@@ -6834,7 +6840,7 @@ def api_bulk_recreate_manual_orders():
                     timeout=30
                 )
 
-                cursor.execute("""
+                cr2.execute("""
                     UPDATE manual_order_conflicts
                     SET new_order_number = %s,
                         new_shipstation_order_id = %s,
@@ -6843,6 +6849,9 @@ def api_bulk_recreate_manual_orders():
                         resolution_notes = 'Bulk recreated and old order deleted'
                     WHERE id = %s
                 """, (new_order_number, str(new_ss_id), conflict_id))
+
+                c2.commit()
+                c2.close()
 
                 recreated += 1
                 results.append({
@@ -6864,12 +6873,6 @@ def api_bulk_recreate_manual_orders():
                 results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'failed', 'reason': str(e)})
 
         if not dry_run:
-            conn.commit()
-
-        cursor.execute("SELECT pg_advisory_unlock(73001)")
-        conn.close()
-
-        if not dry_run:
             server_logger.info(
                 f"Bulk dedup complete: {recreated} recreated, {auto_resolved} auto-resolved, {failed} failed (out of {len(pending)} total)",
                 source="Admin", user=user_name
@@ -6888,13 +6891,6 @@ def api_bulk_recreate_manual_orders():
         })
 
     except Exception as e:
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT pg_advisory_unlock(73001)")
-            conn.close()
-        except:
-            pass
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/manual_order_conflicts/<int:conflict_id>/confirm_delete', methods=['POST'])
