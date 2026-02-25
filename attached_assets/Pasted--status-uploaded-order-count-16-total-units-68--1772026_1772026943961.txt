@@ -1,0 +1,163 @@
+[
+  {
+    "status": "uploaded",
+    "order_count": "16",
+    "total_units": "68"
+  },
+  {
+    "status": "pending",
+    "order_count": "2",
+    "total_units": "8"
+  },
+  {
+    "status": "awaiting_shipment",
+    "order_count": "1",
+    "total_units": "1"
+  }
+]
+
+
+[
+  {
+    "metric_name": "units_to_ship",
+    "metric_value": 75,
+    "last_updated": "2026-02-25 13:37:48.739432+00"
+  }
+]
+
+[
+  {
+    "order_number": "718035",
+    "status": "uploaded",
+    "item_rows": "2",
+    "total_units": "7"
+  },
+  {
+    "order_number": "717915",
+    "status": "uploaded",
+    "item_rows": "2",
+    "total_units": "3"
+  },
+  {
+    "order_number": "718005",
+    "status": "uploaded",
+    "item_rows": "2",
+    "total_units": "3"
+  }
+]
+
+[
+  {
+    "order_number": "718045",
+    "status": "uploaded",
+    "shipstation_order_id": "265040181",
+    "created_at": "2026-02-25T12:00:03.772Z",
+    "units": "2"
+  },
+  {
+    "order_number": "718035",
+    "status": "uploaded",
+    "shipstation_order_id": "264948408",
+    "created_at": "2026-02-24T23:38:37.510Z",
+    "units": "7"
+  },
+  {
+    "order_number": "718015",
+    "status": "uploaded",
+    "shipstation_order_id": "264926196",
+    "created_at": "2026-02-24T21:58:27.518Z",
+    "units": "2"
+  },
+  {
+    "order_number": "718005",
+    "status": "uploaded",
+    "shipstation_order_id": "264926195",
+    "created_at": "2026-02-24T21:58:27.518Z",
+    "units": "3"
+  },
+  {
+    "order_number": "717995",
+    "status": "uploaded",
+    "shipstation_order_id": "264923730",
+    "created_at": "2026-02-24T21:48:16.349Z",
+    "units": "6"
+  },
+  {
+    "order_number": "717985",
+    "status": "uploaded",
+    "shipstation_order_id": "264920387",
+    "created_at": "2026-02-24T21:33:21.024Z",
+    "units": "2"
+  },
+  {
+    "order_number": "717975",
+    "status": "uploaded",
+    "shipstation_order_id": "264913446",
+    "created_at": "2026-02-24T21:08:16.371Z",
+    "units": "6"
+  },
+  {
+    "order_number": "717965",
+    "status": "uploaded",
+    "shipstation_order_id": "264911365",
+    "created_at": "2026-02-24T21:03:14.182Z",
+    "units": "4"
+  },
+  {
+    "order_number": "717955",
+    "status": "uploaded",
+    "shipstation_order_id": "264898262",
+    "created_at": "2026-02-24T20:08:07.746Z",
+    "units": "2"
+  },
+  {
+    "order_number": "717935",
+    "status": "uploaded",
+    "shipstation_order_id": "264896847",
+    "created_at": "2026-02-24T20:03:10.156Z",
+    "units": "6"
+  },
+  {
+    "order_number": "717925",
+    "status": "uploaded",
+    "shipstation_order_id": "264894484",
+    "created_at": "2026-02-24T19:58:12.173Z",
+    "units": "6"
+  },
+  {
+    "order_number": "717915",
+    "status": "uploaded",
+    "shipstation_order_id": "264890314",
+    "created_at": "2026-02-24T19:48:13.203Z",
+    "units": "3"
+  },
+  {
+    "order_number": "717905",
+    "status": "uploaded",
+    "shipstation_order_id": "264882402",
+    "created_at": "2026-02-24T19:23:26.067Z",
+    "units": "1"
+  },
+  {
+    "order_number": "717895",
+    "status": "uploaded",
+    "shipstation_order_id": "264880809",
+    "created_at": "2026-02-24T19:18:12.218Z",
+    "units": "6"
+  },
+  {
+    "order_number": "717875",
+    "status": "uploaded",
+    "shipstation_order_id": "264877743",
+    "created_at": "2026-02-24T19:08:15.566Z",
+    "units": "6"
+  },
+  {
+    "order_number": "717855",
+    "status": "uploaded",
+    "shipstation_order_id": "264868765",
+    "created_at": "2026-02-24T18:43:09.478Z",
+    "units": "6"
+  }
+]
+

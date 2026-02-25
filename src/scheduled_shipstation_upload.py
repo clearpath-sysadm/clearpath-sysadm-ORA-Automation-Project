@@ -715,7 +715,7 @@ def upload_pending_orders():
             SET status = 'awaiting_shipment',
                 failure_reason = NULL,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE status = 'processing'
+            WHERE status = 'uploaded'
               AND failure_reason = %s
               AND id IN (
                 SELECT DISTINCT order_inbox_id 
