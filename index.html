@@ -2557,24 +2557,28 @@
             }
         }
         
-        async function bulkRecreateAllConflicts(btn) {
+        async function bulkRecreateAllConflicts(btn, isDryRun = false) {
             const count = manualOrderConflictsData.length;
             if (count === 0) {
                 alert('No pending conflicts to process.');
                 return;
             }
 
-            if (!confirm(`This will process all ${count} pending conflict(s):\n\n- Actionable orders (awaiting_shipment/on_hold) will be recreated with new sequential order numbers and the old orders deleted from ShipStation.\n- Already shipped/cancelled orders will be auto-resolved.\n\nProceed?`)) {
-                return;
+            if (!isDryRun) {
+                if (!confirm(`This will process all ${count} pending conflict(s):\n\n- Actionable orders (awaiting_shipment/on_hold) will be recreated with new sequential order numbers and the old orders deleted from ShipStation.\n- Already shipped/cancelled orders will be auto-resolved.\n\nProceed?`)) {
+                    return;
+                }
             }
 
+            const originalText = btn ? btn.textContent : '';
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = '⏳ Processing...';
+                btn.textContent = isDryRun ? '⏳ Running dry run...' : '⏳ Processing...';
             }
 
             try {
-                const response = await fetch('/api/manual_order_conflicts/bulk_recreate', {
+                const url = isDryRun ? '/api/manual_order_conflicts/bulk_recreate?dry_run=true' : '/api/manual_order_conflicts/bulk_recreate';
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -2582,30 +2586,44 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    let msg = `Bulk Dedup Complete:\n\n`;
-                    msg += `✅ Recreated: ${data.recreated}\n`;
-                    msg += `🔄 Auto-resolved (shipped/cancelled): ${data.auto_resolved}\n`;
+                    let msg = isDryRun ? `DRY RUN PREVIEW (no changes made):\n\n` : `Bulk Dedup Complete:\n\n`;
+                    msg += `${isDryRun ? '📋' : '✅'} ${isDryRun ? 'Would recreate' : 'Recreated'}: ${data.recreated}\n`;
+                    msg += `🔄 ${isDryRun ? 'Would auto-resolve' : 'Auto-resolved'} (shipped/cancelled): ${data.auto_resolved}\n`;
                     if (data.failed > 0) {
                         msg += `❌ Failed: ${data.failed}\n`;
                     }
-                    msg += `\nTotal processed: ${data.total}`;
+                    msg += `\nTotal: ${data.total}`;
 
                     if (data.results && data.results.length > 0) {
-                        const recreated = data.results.filter(r => r.action === 'recreated');
-                        if (recreated.length > 0) {
-                            msg += '\n\nRecreated orders:';
-                            recreated.forEach(r => {
+                        const toRecreate = data.results.filter(r => r.action === 'would_recreate' || r.action === 'recreated');
+                        if (toRecreate.length > 0) {
+                            msg += `\n\n${isDryRun ? 'Orders to recreate' : 'Recreated orders'}:`;
+                            toRecreate.forEach(r => {
                                 msg += `\n  ${r.old_order} → ${r.new_order}`;
+                                if (r.customer) msg += ` (${r.customer}${r.company ? ', ' + r.company : ''})`;
+                                if (r.items) msg += ` [${r.items.map(i => i.sku + ' ×' + i.qty).join(', ')}]`;
+                                if (r.sku_changes && r.sku_changes.length > 0) {
+                                    msg += `\n    Lot updates: ${r.sku_changes.map(c => c.from + ' → ' + c.to).join(', ')}`;
+                                }
+                            });
+                        }
+                        const toResolve = data.results.filter(r => r.action === 'would_auto_resolve' || r.action === 'auto_resolved');
+                        if (toResolve.length > 0) {
+                            msg += `\n\n${isDryRun ? 'Orders to auto-resolve' : 'Auto-resolved'}:`;
+                            toResolve.forEach(r => {
+                                msg += `\n  ${r.old_order} - ${r.reason}`;
+                                if (r.customer) msg += ` (${r.customer})`;
                             });
                         }
                     }
 
                     alert(msg);
 
-                    const existingModal = document.getElementById('manual-conflict-modal');
-                    if (existingModal) existingModal.remove();
-
-                    await checkManualOrderConflicts();
+                    if (!isDryRun) {
+                        const existingModal = document.getElementById('manual-conflict-modal');
+                        if (existingModal) existingModal.remove();
+                        await checkManualOrderConflicts();
+                    }
                 } else {
                     alert('Bulk dedup failed: ' + (data.error || 'Unknown error'));
                 }
@@ -2614,7 +2632,7 @@
             } finally {
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = '⚡ Bulk Dedup All';
+                    btn.textContent = originalText;
                 }
             }
         }

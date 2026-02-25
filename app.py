@@ -6618,6 +6618,7 @@ def api_bulk_recreate_manual_orders():
     """
     Bulk recreate all pending manual order conflicts with new sequential order numbers.
     Orders in shipped/cancelled status are auto-resolved instead of recreated.
+    Pass ?dry_run=true to preview actions without making any changes.
     """
     try:
         import json
@@ -6627,6 +6628,11 @@ def api_bulk_recreate_manual_orders():
         from src.services.data_processing.sku_lot_parser import parse_shipstation_sku
         from src.utils.server_logger import get_logger
         server_logger = get_logger()
+
+        dry_run = request.args.get('dry_run', 'false').lower() == 'true'
+        if not dry_run:
+            body = request.get_json(silent=True) or {}
+            dry_run = body.get('dry_run', False)
 
         user_name = "unknown"
         try:
@@ -6701,34 +6707,67 @@ def api_bulk_recreate_manual_orders():
                 )
 
                 if not order_resp or order_resp.status_code != 200:
-                    cursor.execute("""
-                        UPDATE manual_order_conflicts
-                        SET resolution_status = 'resolved',
-                            resolved_at = CURRENT_TIMESTAMP,
-                            resolution_notes = 'Auto-resolved: Order no longer exists in ShipStation'
-                        WHERE id = %s
-                    """, (conflict_id,))
+                    if not dry_run:
+                        cursor.execute("""
+                            UPDATE manual_order_conflicts
+                            SET resolution_status = 'resolved',
+                                resolved_at = CURRENT_TIMESTAMP,
+                                resolution_notes = 'Auto-resolved: Order no longer exists in ShipStation'
+                            WHERE id = %s
+                        """, (conflict_id,))
                     auto_resolved += 1
-                    results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'auto_resolved', 'reason': 'Order not found in ShipStation'})
+                    results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'would_auto_resolve' if dry_run else 'auto_resolved', 'reason': 'Order not found in ShipStation'})
                     continue
 
                 order_data = order_resp.json()
                 order_status = (order_data.get('orderStatus') or '').lower()
+                ship_to = order_data.get('shipTo', {})
+                customer_name = ship_to.get('name', 'N/A')
+                customer_company = ship_to.get('company', '')
+                items = order_data.get('items', [])
+                item_summary = [{'sku': it.get('sku', ''), 'qty': it.get('quantity', 0)} for it in items]
 
                 if order_status in ('shipped', 'cancelled'):
-                    cursor.execute("""
-                        UPDATE manual_order_conflicts
-                        SET resolution_status = 'resolved',
-                            resolved_at = CURRENT_TIMESTAMP,
-                            resolution_notes = %s
-                        WHERE id = %s
-                    """, (f'Auto-resolved: Order already {order_status} in ShipStation', conflict_id))
+                    if not dry_run:
+                        cursor.execute("""
+                            UPDATE manual_order_conflicts
+                            SET resolution_status = 'resolved',
+                                resolved_at = CURRENT_TIMESTAMP,
+                                resolution_notes = %s
+                            WHERE id = %s
+                        """, (f'Auto-resolved: Order already {order_status} in ShipStation', conflict_id))
                     auto_resolved += 1
-                    results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'auto_resolved', 'reason': f'Already {order_status}'})
+                    results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'would_auto_resolve' if dry_run else 'auto_resolved', 'reason': f'Already {order_status}', 'customer': customer_name, 'company': customer_company, 'status': order_status})
                     continue
 
                 new_order_number = str(next_order_num)
                 next_order_num += 1
+
+                sku_changes = []
+                for item in items:
+                    current_sku = item.get('sku', '')
+                    if current_sku:
+                        parsed = parse_shipstation_sku(current_sku)
+                        base_sku = parsed.base_sku
+                        if base_sku and base_sku in active_lots:
+                            new_sku = f"{base_sku} - {active_lots[base_sku]}"
+                            if new_sku != current_sku:
+                                sku_changes.append({'from': current_sku, 'to': new_sku})
+
+                if dry_run:
+                    recreated += 1
+                    results.append({
+                        'conflict_id': conflict_id,
+                        'old_order': old_order_number,
+                        'new_order': new_order_number,
+                        'action': 'would_recreate',
+                        'status': order_status,
+                        'customer': customer_name,
+                        'company': customer_company,
+                        'items': item_summary,
+                        'sku_changes': sku_changes
+                    })
+                    continue
 
                 new_order = order_data.copy()
                 new_order['orderNumber'] = new_order_number
@@ -6759,7 +6798,6 @@ def api_bulk_recreate_manual_orders():
 
                 new_ss_id = create_resp.json().get('orderId')
 
-                ship_to = order_data.get('shipTo', {})
                 bill_to = order_data.get('billTo', {})
                 order_total_raw = order_data.get('orderTotal', 0)
                 order_total_cents = int(float(order_total_raw) * 100) if order_total_raw else None
@@ -6822,19 +6860,23 @@ def api_bulk_recreate_manual_orders():
                 failed += 1
                 results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'failed', 'reason': str(e)})
 
-        conn.commit()
+        if not dry_run:
+            conn.commit()
 
         cursor.execute("SELECT pg_advisory_unlock(73001)")
         conn.close()
 
-        server_logger.info(
-            f"Bulk dedup complete: {recreated} recreated, {auto_resolved} auto-resolved, {failed} failed (out of {len(pending)} total)",
-            source="Admin", user=user_name
-        )
+        if not dry_run:
+            server_logger.info(
+                f"Bulk dedup complete: {recreated} recreated, {auto_resolved} auto-resolved, {failed} failed (out of {len(pending)} total)",
+                source="Admin", user=user_name
+            )
 
+        mode_label = 'DRY RUN - ' if dry_run else ''
         return jsonify({
             'success': True,
-            'message': f'Processed {len(pending)} conflicts: {recreated} recreated, {auto_resolved} auto-resolved, {failed} failed',
+            'dry_run': dry_run,
+            'message': f'{mode_label}Processed {len(pending)} conflicts: {recreated} {"would be " if dry_run else ""}recreated, {auto_resolved} {"would be " if dry_run else ""}auto-resolved, {failed} failed',
             'recreated': recreated,
             'auto_resolved': auto_resolved,
             'failed': failed,
