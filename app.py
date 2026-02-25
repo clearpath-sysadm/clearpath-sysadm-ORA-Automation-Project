@@ -10849,6 +10849,146 @@ def get_next_order_number():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/cleanup_orphan_orders', methods=['POST'])
+@login_required
+@admin_required
+def cleanup_orphan_orders():
+    import json, time
+    try:
+        data = request.get_json()
+        start_order = int(data.get('start_order', 0))
+        end_order = int(data.get('end_order', 0))
+        dry_run = data.get('dry_run', False)
+
+        if not start_order or not end_order or start_order > end_order:
+            return jsonify({'success': False, 'error': 'Valid start_order and end_order required'}), 400
+
+        if (end_order - start_order + 1) > 50:
+            return jsonify({'success': False, 'error': 'Range too large, max 50 orders at a time'}), 400
+
+        from src.services.shipstation.api_client import (
+            get_shipstation_credentials, get_shipstation_headers,
+            delete_order_from_shipstation
+        )
+        from utils.api_utils import make_api_request
+        from config import settings
+
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'ShipStation credentials not found'}), 500
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        results = []
+
+        for order_num in range(start_order, end_order + 1):
+            order_number_str = str(order_num)
+            result_entry = {'order_number': order_number_str, 'status': 'not_found'}
+
+            try:
+                url = f"{settings.SHIPSTATION_ORDERS_ENDPOINT}?orderNumber={order_number_str}"
+                response = make_api_request(url=url, method='GET', headers=headers, timeout=30)
+
+                if not response or response.status_code != 200:
+                    result_entry['status'] = 'api_error'
+                    result_entry['error'] = f'HTTP {response.status_code if response else "No response"}'
+                    results.append(result_entry)
+                    time.sleep(0.6)
+                    continue
+
+                resp_data = response.json()
+                orders = resp_data.get('orders', [])
+
+                if not orders:
+                    result_entry['status'] = 'not_found'
+                    results.append(result_entry)
+                    time.sleep(0.6)
+                    continue
+
+                for ss_order in orders:
+                    ss_id = ss_order.get('orderId')
+                    ship_to = ss_order.get('shipTo') or {}
+                    bill_to = ss_order.get('billTo') or {}
+                    items = ss_order.get('items', [])
+                    order_status = ss_order.get('orderStatus', 'unknown')
+                    customer_name = bill_to.get('name') or ship_to.get('name') or 'N/A'
+                    company = bill_to.get('company') or ship_to.get('company') or ''
+
+                    entry = {
+                        'order_number': order_number_str,
+                        'shipstation_order_id': ss_id,
+                        'order_status': order_status,
+                        'customer_name': customer_name,
+                        'company': company,
+                        'items': [{'sku': i.get('sku'), 'qty': i.get('quantity')} for i in items],
+                    }
+
+                    if dry_run:
+                        entry['status'] = 'would_delete'
+                        results.append(entry)
+                    else:
+                        customer_data = {
+                            'customer_name': customer_name,
+                            'customer_email': ss_order.get('customerEmail'),
+                            'customer_company': company,
+                            'ship_to_name': ship_to.get('name'),
+                            'ship_to_city': ship_to.get('city'),
+                            'ship_to_state': ship_to.get('state'),
+                            'order_total_cents': int(float(ss_order.get('orderTotal', 0)) * 100) if ss_order.get('orderTotal') else None,
+                            'order_date': ss_order.get('orderDate', '')[:10] if ss_order.get('orderDate') else None,
+                            'items_json': [{'sku': i.get('sku'), 'quantity': i.get('quantity'), 'name': i.get('name')} for i in items]
+                        }
+
+                        record_shipstation_order_deletion(
+                            ss_id, order_number_str,
+                            deleted_by='orphan_cleanup',
+                            customer_data=customer_data
+                        )
+
+                        del_result = delete_order_from_shipstation(ss_id, fetch_details_first=False)
+                        if del_result.get('success'):
+                            entry['status'] = 'deleted'
+                            logger.info(f"Orphan cleanup: deleted order {order_number_str} (SS ID {ss_id}, {customer_name})")
+                        else:
+                            entry['status'] = 'delete_failed'
+                            entry['error'] = del_result.get('error', 'Unknown')
+                            logger.error(f"Orphan cleanup: FAILED to delete {order_number_str} SS ID {ss_id}: {del_result.get('error')}")
+
+                        results.append(entry)
+                        time.sleep(0.6)
+
+            except Exception as e:
+                result_entry['status'] = 'error'
+                result_entry['error'] = str(e)
+                results.append(result_entry)
+                logger.error(f"Orphan cleanup error for order {order_number_str}: {e}")
+
+            time.sleep(0.6)
+
+        found = [r for r in results if r['status'] != 'not_found']
+        deleted = [r for r in results if r['status'] == 'deleted']
+        would_delete = [r for r in results if r['status'] == 'would_delete']
+
+        summary = {
+            'dry_run': dry_run,
+            'range': f"{start_order}-{end_order}",
+            'total_checked': end_order - start_order + 1,
+            'found_in_shipstation': len(found),
+            'not_found': len([r for r in results if r['status'] == 'not_found']),
+        }
+        if dry_run:
+            summary['would_delete'] = len(would_delete)
+        else:
+            summary['deleted'] = len(deleted)
+            summary['failed'] = len([r for r in results if r['status'] == 'delete_failed'])
+
+        logger.info(f"Orphan cleanup complete: {json.dumps(summary)}")
+        return jsonify({'success': True, 'summary': summary, 'results': results})
+
+    except Exception as e:
+        logger.error(f'Orphan cleanup error: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/admin/recreate-order', methods=['POST'])
 @admin_required
 def recreate_order():
