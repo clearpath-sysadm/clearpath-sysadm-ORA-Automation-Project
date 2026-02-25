@@ -115,12 +115,13 @@ def identify_duplicates(orders):
     
     DUPLICATE DEFINITION: Two or more orders with the same order_number AND base_sku
     
-    INCLUDES: All order statuses (including cancelled orders)
+    Only flags actionable duplicates where at least one order is still in
+    awaiting_shipment or on_hold status. Fully shipped/cancelled duplicates
+    are historical and not actionable.
     
     Returns:
         dict: {(order_number, base_sku): [list of order details]}
     """
-    # Group by (order_number, base_sku) - each item in an order creates a separate entry
     order_sku_map = defaultdict(list)
     
     for order in orders:
@@ -128,19 +129,15 @@ def identify_duplicates(orders):
         if not order_number:
             continue
         
-        # Extract all items from the order
         items = order.get('items', [])
         
-        # Process each item separately to detect SKU-level duplicates
         for item in items:
             sku = item.get('sku', '')
             if not sku:
                 continue
             
-            # Extract base SKU (remove lot number suffix like " - 250300")
             base_sku = normalize_sku(sku)
             
-            # Key is (order_number, base_sku) tuple
             key = (order_number, base_sku)
             
             order_sku_map[key].append({
@@ -156,8 +153,16 @@ def identify_duplicates(orders):
                 'order_total': order.get('orderTotal', 0)
             })
     
-    # Filter to only duplicates (count > 1 for same order_number + base_sku)
-    duplicates = {k: v for k, v in order_sku_map.items() if len(v) > 1}
+    TERMINAL_STATUSES = {'shipped', 'cancelled'}
+    
+    duplicates = {}
+    for k, v in order_sku_map.items():
+        if len(v) <= 1:
+            continue
+        statuses = {entry.get('order_status', '').lower() for entry in v}
+        if statuses.issubset(TERMINAL_STATUSES):
+            continue
+        duplicates[k] = v
     
     return duplicates
 

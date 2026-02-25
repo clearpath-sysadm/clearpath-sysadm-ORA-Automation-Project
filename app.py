@@ -6612,6 +6612,219 @@ def api_recreate_manual_order(conflict_id):
             'error': str(e)
         }), 500
 
+@app.route('/api/manual_order_conflicts/bulk_recreate', methods=['POST'])
+@admin_required
+def api_bulk_recreate_manual_orders():
+    """
+    Bulk recreate all pending manual order conflicts with new sequential order numbers.
+    Orders in shipped/cancelled status are auto-resolved instead of recreated.
+    """
+    try:
+        import json
+        import time
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        from utils.api_utils import make_api_request
+        from src.services.data_processing.sku_lot_parser import parse_shipstation_sku
+        from src.utils.server_logger import get_logger
+        server_logger = get_logger()
+
+        user_name = "unknown"
+        try:
+            from src.auth.middleware import get_current_user
+            user = get_current_user()
+            if user and user.is_authenticated:
+                user_name = user.first_name or user.email or "unknown"
+        except:
+            pass
+
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
+
+        headers = get_shipstation_headers(api_key, api_secret)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT pg_try_advisory_lock(73001)")
+        lock_acquired = cursor.fetchone()[0]
+        if not lock_acquired:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Another bulk dedup operation is already in progress. Please wait and try again.'}), 409
+
+        cursor.execute("""
+            SELECT id, shipstation_order_id, conflicting_order_number
+            FROM manual_order_conflicts
+            WHERE resolution_status = 'pending'
+            ORDER BY id
+        """)
+        pending = cursor.fetchall()
+
+        if not pending:
+            cursor.execute("SELECT pg_advisory_unlock(73001)")
+            conn.close()
+            return jsonify({'success': True, 'message': 'No pending conflicts to process', 'recreated': 0, 'auto_resolved': 0})
+
+        cursor.execute("""
+            SELECT MAX(order_num) FROM (
+                SELECT CAST(order_number AS INTEGER) as order_num
+                FROM shipped_orders
+                WHERE order_number ~ '^[0-9]+$'
+                AND CAST(order_number AS INTEGER) < 200000
+                UNION ALL
+                SELECT CAST(order_number AS INTEGER) as order_num
+                FROM orders_inbox
+                WHERE order_number ~ '^[0-9]+$'
+                AND CAST(order_number AS INTEGER) < 200000
+            ) combined
+        """)
+        max_row = cursor.fetchone()
+        next_order_num = (max_row[0] if max_row and max_row[0] else 100000) + 1
+
+        cursor.execute("""
+            SELECT sku, lot FROM sku_lot WHERE active = 1
+        """)
+        active_lots = {row[0]: row[1] for row in cursor.fetchall()}
+
+        recreated = 0
+        auto_resolved = 0
+        failed = 0
+        results = []
+
+        for conflict_id, ss_order_id, old_order_number in pending:
+            try:
+                order_resp = make_api_request(
+                    url=f'https://ssapi.shipstation.com/orders/{ss_order_id}',
+                    method='GET',
+                    headers=headers,
+                    timeout=30
+                )
+
+                if not order_resp or order_resp.status_code != 200:
+                    cursor.execute("""
+                        UPDATE manual_order_conflicts
+                        SET resolution_status = 'resolved',
+                            resolved_at = CURRENT_TIMESTAMP,
+                            resolution_notes = 'Auto-resolved: Order no longer exists in ShipStation'
+                        WHERE id = %s
+                    """, (conflict_id,))
+                    auto_resolved += 1
+                    results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'auto_resolved', 'reason': 'Order not found in ShipStation'})
+                    continue
+
+                order_data = order_resp.json()
+                order_status = (order_data.get('orderStatus') or '').lower()
+
+                if order_status in ('shipped', 'cancelled'):
+                    cursor.execute("""
+                        UPDATE manual_order_conflicts
+                        SET resolution_status = 'resolved',
+                            resolved_at = CURRENT_TIMESTAMP,
+                            resolution_notes = %s
+                        WHERE id = %s
+                    """, (f'Auto-resolved: Order already {order_status} in ShipStation', conflict_id))
+                    auto_resolved += 1
+                    results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'auto_resolved', 'reason': f'Already {order_status}'})
+                    continue
+
+                new_order_number = str(next_order_num)
+                next_order_num += 1
+
+                new_order = order_data.copy()
+                new_order['orderNumber'] = new_order_number
+                new_order.pop('orderId', None)
+                new_order.pop('orderKey', None)
+
+                for item in new_order.get('items', []):
+                    item.pop('orderItemId', None)
+                    current_sku = item.get('sku', '')
+                    if current_sku:
+                        parsed = parse_shipstation_sku(current_sku)
+                        base_sku = parsed.base_sku
+                        if base_sku and base_sku in active_lots:
+                            item['sku'] = f"{base_sku} - {active_lots[base_sku]}"
+
+                create_resp = make_api_request(
+                    url='https://ssapi.shipstation.com/orders/createorder',
+                    method='POST',
+                    headers=headers,
+                    data=new_order,
+                    timeout=30
+                )
+
+                if not create_resp or create_resp.status_code != 200:
+                    failed += 1
+                    results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'failed', 'reason': 'Failed to create new order'})
+                    continue
+
+                new_ss_id = create_resp.json().get('orderId')
+
+                make_api_request(
+                    url=f'https://ssapi.shipstation.com/orders/{ss_order_id}',
+                    method='DELETE',
+                    headers=headers,
+                    timeout=30
+                )
+
+                cursor.execute("""
+                    UPDATE manual_order_conflicts
+                    SET new_order_number = %s,
+                        new_shipstation_order_id = %s,
+                        resolution_status = 'recreated',
+                        resolved_at = CURRENT_TIMESTAMP,
+                        resolution_notes = 'Bulk recreated and old order deleted'
+                    WHERE id = %s
+                """, (new_order_number, str(new_ss_id), conflict_id))
+
+                recreated += 1
+                results.append({
+                    'conflict_id': conflict_id,
+                    'old_order': old_order_number,
+                    'new_order': new_order_number,
+                    'action': 'recreated'
+                })
+
+                server_logger.info(
+                    f"Bulk dedup: Order {old_order_number} recreated as {new_order_number} (old SS:{ss_order_id} deleted, new SS:{new_ss_id})",
+                    source="Admin", user=user_name
+                )
+
+                time.sleep(0.5)
+
+            except Exception as e:
+                failed += 1
+                results.append({'conflict_id': conflict_id, 'old_order': old_order_number, 'action': 'failed', 'reason': str(e)})
+
+        conn.commit()
+
+        cursor.execute("SELECT pg_advisory_unlock(73001)")
+        conn.close()
+
+        server_logger.info(
+            f"Bulk dedup complete: {recreated} recreated, {auto_resolved} auto-resolved, {failed} failed (out of {len(pending)} total)",
+            source="Admin", user=user_name
+        )
+
+        return jsonify({
+            'success': True,
+            'message': f'Processed {len(pending)} conflicts: {recreated} recreated, {auto_resolved} auto-resolved, {failed} failed',
+            'recreated': recreated,
+            'auto_resolved': auto_resolved,
+            'failed': failed,
+            'total': len(pending),
+            'results': results
+        })
+
+    except Exception as e:
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT pg_advisory_unlock(73001)")
+            conn.close()
+        except:
+            pass
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/manual_order_conflicts/<int:conflict_id>/confirm_delete', methods=['POST'])
 def api_confirm_delete_conflicting_order(conflict_id):
     """

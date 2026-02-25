@@ -130,6 +130,9 @@ X-Cart → XML → Google Drive → xml-import → orders_inbox
 - **Unit Comparison Tool (Jan 26, 2026):** Diagnostic tool to compare awaiting_shipment orders between ShipStation and local database. Features: pagination support (up to 10K orders), empty order_number handling, truncation warnings. Identifies orders only in ShipStation, only in local DB, or with unit count mismatches. UI on Workflow Controls page. API: `/api/admin/unit-comparison`.
 - **Recreate Order Tool (Jan 26, 2026):** Admin tool to fix order number issues by recreating orders in ShipStation with corrected numbers. Safe 3-step workflow: (1) Fetch old order details, (2) Create new order with correct number, (3) Compare and confirm deletion of old order. UI on Workflow Controls page. API: `/api/admin/recreate-order`.
 
+- **Bulk Dedup Tool (Feb 2026):** One-click bulk resolution of manual order conflicts. Processes all pending conflicts: recreates actionable orders (awaiting_shipment/on_hold) with sequential new order numbers and deletes old duplicates from ShipStation; auto-resolves shipped/cancelled conflicts. Uses PostgreSQL advisory lock (73001) to prevent concurrent execution. Dashboard button available in alert banner and conflict details modal. API: `POST /api/manual_order_conflicts/bulk_recreate` (admin-only).
+- **Duplicate Scanner Filter (Feb 2026):** `identify_duplicates()` in `scheduled_duplicate_scanner.py` now filters out groups where ALL orders have terminal statuses (shipped/cancelled). Only flags actionable duplicates with at least one awaiting_shipment/on_hold order.
+
 ## Important Notes
 - InitialInventory baseline: September 19, 2025
 - Upload service blocked in workspace via `REPL_SLUG=workspace` check (line 176)

@@ -387,6 +387,7 @@
                     <strong>🔄 Manual Order Conflicts Detected</strong><br>
                     <span id="manual-order-conflict-count">0</span> manual order(s) use previously shipped order numbers.
                     <a href="#" onclick="showManualOrderConflictDetails(); return false;" style="text-decoration: underline; margin-left: 10px;">View Details</a>
+                    <button onclick="bulkRecreateAllConflicts(this)" style="margin-left: 10px; padding: 6px 14px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;">⚡ Bulk Dedup All</button>
                 </div>
 
                 <!-- Operational Pulse Section -->
@@ -2449,7 +2450,10 @@
             let html = '<div style="max-width: 800px; max-height: 70vh; overflow-y: auto;">';
             html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
             html += '<h3 style="margin-top: 0; margin-bottom: 0;">Manual Order Conflicts</h3>';
+            html += '<div style="display: flex; gap: 8px;">';
             html += '<button onclick="recalculateManualOrderNumbers()" style="padding: 8px 16px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Recalculate Order Numbers</button>';
+            html += '<button onclick="bulkRecreateAllConflicts(this)" style="padding: 8px 16px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚡ Bulk Dedup All</button>';
+            html += '</div>';
             html += '</div>';
             html += '<p style="color: var(--text-secondary); margin-bottom: 20px;">These manual orders use order numbers that were previously shipped. Recreate them with new order numbers.</p>';
             
@@ -2553,6 +2557,68 @@
             }
         }
         
+        async function bulkRecreateAllConflicts(btn) {
+            const count = manualOrderConflictsData.length;
+            if (count === 0) {
+                alert('No pending conflicts to process.');
+                return;
+            }
+
+            if (!confirm(`This will process all ${count} pending conflict(s):\n\n- Actionable orders (awaiting_shipment/on_hold) will be recreated with new sequential order numbers and the old orders deleted from ShipStation.\n- Already shipped/cancelled orders will be auto-resolved.\n\nProceed?`)) {
+                return;
+            }
+
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Processing...';
+            }
+
+            try {
+                const response = await fetch('/api/manual_order_conflicts/bulk_recreate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let msg = `Bulk Dedup Complete:\n\n`;
+                    msg += `✅ Recreated: ${data.recreated}\n`;
+                    msg += `🔄 Auto-resolved (shipped/cancelled): ${data.auto_resolved}\n`;
+                    if (data.failed > 0) {
+                        msg += `❌ Failed: ${data.failed}\n`;
+                    }
+                    msg += `\nTotal processed: ${data.total}`;
+
+                    if (data.results && data.results.length > 0) {
+                        const recreated = data.results.filter(r => r.action === 'recreated');
+                        if (recreated.length > 0) {
+                            msg += '\n\nRecreated orders:';
+                            recreated.forEach(r => {
+                                msg += `\n  ${r.old_order} → ${r.new_order}`;
+                            });
+                        }
+                    }
+
+                    alert(msg);
+
+                    const existingModal = document.getElementById('manual-conflict-modal');
+                    if (existingModal) existingModal.remove();
+
+                    await checkManualOrderConflicts();
+                } else {
+                    alert('Bulk dedup failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error during bulk dedup: ' + error.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '⚡ Bulk Dedup All';
+                }
+            }
+        }
+
         async function closeConfirmationAndShowUpdatedConflicts() {
             // Close confirmation modal
             const confirmModal = document.getElementById('confirmation-modal');
