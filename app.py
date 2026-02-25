@@ -6652,6 +6652,9 @@ def api_bulk_recreate_manual_orders():
         conn = get_connection()
         cursor = conn.cursor()
 
+        cursor.execute("ALTER TABLE manual_order_conflicts ADD COLUMN IF NOT EXISTS resolution_notes TEXT")
+        conn.commit()
+
         cursor.execute("SELECT pg_try_advisory_lock(73001)")
         lock_acquired = cursor.fetchone()[0]
         if not lock_acquired:

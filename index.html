@@ -2617,6 +2617,13 @@
                                 if (r.customer) msg += ` (${r.customer})`;
                             });
                         }
+                        const failures = data.results.filter(r => r.action === 'failed');
+                        if (failures.length > 0) {
+                            msg += '\n\nFailed orders:';
+                            failures.forEach(r => {
+                                msg += `\n  ${r.old_order} - ${r.reason || 'Unknown error'}`;
+                            });
+                        }
                     }
 
                     alert(msg);
