@@ -7818,65 +7818,83 @@ def fix_order_status_sync():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Get all orders in local DB still marked as awaiting_shipment
+        uploaded_fixed = 0
+        cursor.execute("""
+            UPDATE orders_inbox
+            SET status = 'awaiting_shipment',
+                failure_reason = NULL,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'uploaded'
+              AND shipstation_order_id IS NOT NULL
+              AND shipstation_order_id != ''
+            RETURNING order_number
+        """)
+        uploaded_fixed = cursor.rowcount
+        if uploaded_fixed > 0:
+            fixed_orders = [row[0] for row in cursor.fetchall()]
+            conn.commit()
+            logger.warning(f"Fixed {uploaded_fixed} stuck 'uploaded' orders -> 'awaiting_shipment': {fixed_orders}")
+            server_logger.info(f"Order status sync fix: {uploaded_fixed} stuck 'uploaded' orders moved to 'awaiting_shipment'", source='admin')
+        
         cursor.execute("""
             SELECT order_number FROM orders_inbox 
             WHERE status = 'awaiting_shipment'
         """)
         local_awaiting = {row[0] for row in cursor.fetchall()}
         
-        if not local_awaiting:
+        if not local_awaiting and uploaded_fixed == 0:
             conn.close()
-            return jsonify({'success': True, 'message': 'No orders awaiting shipment', 'fixed': 0})
+            return jsonify({'success': True, 'message': 'No orders to fix', 'fixed': 0, 'uploaded_fixed': 0})
         
-        # Fetch shipped orders from ShipStation (last 30 days)
-        from datetime import datetime, timedelta
-        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        
-        auth_string = base64.b64encode(f"{api_key}:{api_secret}".encode()).decode()
-        headers = {'Authorization': f'Basic {auth_string}'}
-        
-        shipped_orders = set()
-        page = 1
-        while True:
-            url = f"https://ssapi.shipstation.com/orders?orderStatus=shipped&shipDateStart={start_date}&shipDateEnd={end_date}&page={page}&pageSize=500"
-            resp = requests.get(url, headers=headers, timeout=30)
-            if resp.status_code != 200:
-                break
-            data = resp.json()
-            orders = data.get('orders', [])
-            if not orders:
-                break
-            for order in orders:
-                shipped_orders.add(order.get('orderNumber', ''))
-            if page >= data.get('pages', 1):
-                break
-            page += 1
-        
-        # Find orders that are shipped in ShipStation but still awaiting in local DB
-        to_fix = local_awaiting & shipped_orders
-        
-        if to_fix:
-            # Update their status to shipped
-            cursor.execute("""
-                UPDATE orders_inbox 
-                SET status = 'shipped', updated_at = NOW()
-                WHERE order_number = ANY(%s) AND status = 'awaiting_shipment'
-            """, (list(to_fix),))
-            conn.commit()
+        shipped_fixed = 0
+        if local_awaiting:
+            from datetime import datetime, timedelta
+            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+            end_date = datetime.now().strftime('%Y-%m-%d')
             
-            logger.warning(f"Fixed {len(to_fix)} orders: marked as shipped")
-            server_logger.info(f"Order status sync fix: {len(to_fix)} orders marked as shipped", source='admin')
+            auth_string = base64.b64encode(f"{api_key}:{api_secret}".encode()).decode()
+            headers = {'Authorization': f'Basic {auth_string}'}
+            
+            shipped_orders = set()
+            page = 1
+            while True:
+                url = f"https://ssapi.shipstation.com/orders?orderStatus=shipped&shipDateStart={start_date}&shipDateEnd={end_date}&page={page}&pageSize=500"
+                resp = requests.get(url, headers=headers, timeout=30)
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                orders = data.get('orders', [])
+                if not orders:
+                    break
+                for order in orders:
+                    shipped_orders.add(order.get('orderNumber', ''))
+                if page >= data.get('pages', 1):
+                    break
+                page += 1
+            
+            to_fix = local_awaiting & shipped_orders
+            
+            if to_fix:
+                cursor.execute("""
+                    UPDATE orders_inbox 
+                    SET status = 'shipped', updated_at = NOW()
+                    WHERE order_number = ANY(%s) AND status = 'awaiting_shipment'
+                """, (list(to_fix),))
+                shipped_fixed = cursor.rowcount
+                conn.commit()
+                
+                logger.warning(f"Fixed {shipped_fixed} orders: marked as shipped")
+                server_logger.info(f"Order status sync fix: {shipped_fixed} orders marked as shipped", source='admin')
         
         conn.close()
         
         return jsonify({
             'success': True,
-            'message': f'Fixed {len(to_fix)} orders',
-            'fixed': len(to_fix),
-            'local_awaiting_before': len(local_awaiting),
-            'shipstation_shipped_found': len(shipped_orders)
+            'message': f'Fixed {uploaded_fixed} stuck uploaded orders, {shipped_fixed} shipped orders',
+            'uploaded_fixed': uploaded_fixed,
+            'shipped_fixed': shipped_fixed,
+            'total_fixed': uploaded_fixed + shipped_fixed,
+            'local_awaiting_checked': len(local_awaiting)
         })
         
     except Exception as e:
