@@ -749,13 +749,14 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         current_status = current_record[0] if current_record else None
         current_ss_id = current_record[1] if current_record else None
         
-        # Prevent downgrades to 'pending'/'awaiting_shipment' for already-uploaded orders
-        # BUT allow legitimate terminal statuses like 'shipped', 'cancelled', 'on_hold'
-        if current_status in ('uploaded', 'failed') and db_status in ('pending', 'awaiting_shipment'):
+        # Prevent downgrades to 'pending' for already-uploaded orders
+        # Allow uploaded/failed → awaiting_shipment (valid forward progression from ShipStation confirmation)
+        # Allow uploaded/failed → shipped/cancelled/on_hold (legitimate terminal statuses)
+        if current_status in ('uploaded', 'failed') and db_status == 'pending':
             logger.warning(f"🔒 BLOCKED status downgrade: Order {order_number} status '{current_status}' cannot change to '{db_status}' (would trigger re-upload)")
             db_status = current_status
-        elif current_status in ('uploaded', 'failed') and db_status in ('shipped', 'cancelled', 'on_hold'):
-            logger.info(f"✅ Allowing status upgrade: Order {order_number} '{current_status}' → '{db_status}' (legitimate terminal status)")
+        elif current_status in ('uploaded', 'failed') and db_status in ('awaiting_shipment', 'shipped', 'cancelled', 'on_hold'):
+            logger.info(f"✅ Allowing status upgrade: Order {order_number} '{current_status}' → '{db_status}'")
         
         logger.info(f"🔄 Updating EXISTING order: {order_number} → status: {db_status}, items: {total_items}, carrier: {carrier_info['carrier_code']}, service: {carrier_info['service_code']}")
         
