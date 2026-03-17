@@ -145,5 +145,9 @@ run = ["bash", "start_all.sh"]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 5904
+externalPort = 3000
+
 [env]
 TZ = "America/Chicago"
