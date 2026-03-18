@@ -7,7 +7,7 @@ import sys
 import uuid
 import logging
 from flask import Flask, jsonify, render_template, send_from_directory, request, session, g
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -531,7 +531,7 @@ def health_check():
         return jsonify({
             'environment': 'PRODUCTION' if is_production else 'DEVELOPMENT',
             'repl_slug': repl_slug,
-            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'overall_health': overall_health,
             'sync_health': sync_health,
             'workflows': workflow_status,
@@ -680,7 +680,12 @@ def api_dashboard_stats():
         cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= %s", (week_ago,))
         recent_shipments = cursor.fetchone()[0] or 0
         
-        # Benco orders (orders with "BENCO" in company name) - awaiting shipment only
+        # Benco orders (orders with "BENCO" in company name) - awaiting_shipment only.
+        # NOTE: Intentionally narrower than Hawaiian/Canadian filters below.
+        # Benco is a domestic account managed by the warehouse team; the dashboard
+        # card acts as a "ready to pick" alert, so only confirmed-awaiting orders
+        # are relevant.  'uploaded' orders are excluded because they may still be
+        # in transit through the upload pipeline and should not trigger action yet.
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
             WHERE status = 'awaiting_shipment'
@@ -688,7 +693,10 @@ def api_dashboard_stats():
         """)
         benco_orders = cursor.fetchone()[0] or 0
         
-        # Hawaiian orders (ship to Hawaii) - unshipped from last 5 days (handles weekend backlog)
+        # Hawaiian orders (ship to Hawaii) - unshipped from last 5 days (handles weekend backlog).
+        # NOTE: Includes 'uploaded' status (in addition to 'awaiting_shipment') because
+        # Hawaiian orders require a specific carrier (FedEx 2Day) and the team needs
+        # early visibility while the upload is still processing, to avoid mis-routing.
         five_days_ago = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
@@ -698,7 +706,8 @@ def api_dashboard_stats():
         """, (five_days_ago,))
         hawaiian_orders = cursor.fetchone()[0] or 0
         
-        # Canadian orders (ship to Canada) - unshipped from last 5 days
+        # Canadian orders (ship to Canada) - unshipped from last 5 days.
+        # Includes 'uploaded' for the same early-visibility reason as Hawaiian orders.
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
             WHERE order_date >= %s
@@ -707,7 +716,8 @@ def api_dashboard_stats():
         """, (five_days_ago,))
         canadian_orders = cursor.fetchone()[0] or 0
         
-        # Other international orders (not US or Canada) - unshipped from last 5 days
+        # Other international orders (not US or Canada) - unshipped from last 5 days.
+        # Includes 'uploaded' for the same early-visibility reason as Hawaiian/Canadian.
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
             WHERE order_date >= %s
@@ -11192,16 +11202,21 @@ def recreate_order():
                         inbox_id = inbox_row[0]
                         old_order_num = inbox_row[1]
                         
-                        # Delete order items first (foreign key constraint)
+                        # Delete order items first (has ON DELETE CASCADE, but explicit for clarity)
                         cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = %s", (inbox_id,))
                         items_deleted = cursor.rowcount
+                        
+                        # Delete ShipStation line items — this FK has NO CASCADE so must be
+                        # removed explicitly before orders_inbox can be deleted.
+                        cursor.execute("DELETE FROM shipstation_order_line_items WHERE order_inbox_id = %s", (inbox_id,))
+                        ss_items_deleted = cursor.rowcount
                         
                         # Delete the order itself
                         cursor.execute("DELETE FROM orders_inbox WHERE id = %s", (inbox_id,))
                         
                         conn.commit()
-                        local_cleanup_message = f" Local DB cleaned: removed order {old_order_num} and {items_deleted} item(s)."
-                        logger.info(f"Cleaned up local DB: deleted orders_inbox id={inbox_id}, order_number={old_order_num}, items={items_deleted}")
+                        local_cleanup_message = f" Local DB cleaned: removed order {old_order_num}, {items_deleted} item(s), and {ss_items_deleted} ShipStation line item(s)."
+                        logger.info(f"Cleaned up local DB: deleted orders_inbox id={inbox_id}, order_number={old_order_num}, items={items_deleted}, ss_line_items={ss_items_deleted}")
                     else:
                         local_cleanup_message = " No local DB record found for this ShipStation ID."
                     

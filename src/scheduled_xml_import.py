@@ -132,34 +132,35 @@ def update_xml_polling_state(signature):
         conn.close()
 
 def cleanup_old_orders():
-    """Delete orders older than 2 months from orders_inbox"""
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        
-        cutoff_date = (datetime.now() - timedelta(days=DATA_RETENTION_DAYS)).strftime('%Y-%m-%d')
-        
-        cursor.execute("""
-            DELETE FROM order_items_inbox 
-            WHERE order_inbox_id IN (
-                SELECT id FROM orders_inbox WHERE created_at < %s
-            )
-        """, (cutoff_date,))
-        
-        cursor.execute("DELETE FROM orders_inbox WHERE created_at < %s", (cutoff_date,))
-        
-        deleted_count = cursor.rowcount
-        conn.commit()
-        
-        if deleted_count > 0:
-            logger.info(f"Cleaned up {deleted_count} orders older than {DATA_RETENTION_DAYS} days")
-        
-        return deleted_count
-    except Exception as e:
-        logger.error(f"Error cleaning up old orders: {str(e)}")
+    """
+    Delete terminal orders older than DATA_RETENTION_DAYS from orders_inbox.
+
+    Delegates to src.cleanup_old_orders.cleanup_old_orders() which is the
+    single authoritative implementation.  That function:
+      - Filters on order_date (not created_at), reflecting when the order was
+        placed rather than when it was imported.
+      - Only deletes orders in terminal statuses ('shipped', 'cancelled').
+        Non-terminal orders (pending, awaiting_shipment, uploaded, on_hold,
+        failed) are PRESERVED regardless of age so that ShipStation
+        deduplication references are never lost, preventing duplicate uploads.
+      - Deletes from shipstation_order_line_items before orders_inbox to
+        satisfy the foreign key constraint that has no ON DELETE CASCADE.
+
+    Returns:
+        int: number of orders deleted (0 on error or nothing to delete)
+    """
+    from src.cleanup_old_orders import cleanup_old_orders as _shared_cleanup
+    result = _shared_cleanup(days=DATA_RETENTION_DAYS)
+    if 'error' in result:
+        logger.error(f"Error cleaning up old orders: {result['error']}")
         return 0
-    finally:
-        conn.close()
+    deleted = result.get('deleted', 0)
+    preserved = result.get('preserved', 0)
+    if deleted > 0:
+        logger.info(f"Cleaned up {deleted} terminal orders older than {DATA_RETENTION_DAYS} days")
+    if preserved > 0:
+        logger.info(f"Preserved {preserved} non-terminal orders older than {DATA_RETENTION_DAYS} days (still active)")
+    return deleted
 
 def load_bundle_config(cursor):
     """Load bundle configurations from database"""

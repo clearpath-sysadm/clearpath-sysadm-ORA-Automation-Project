@@ -153,28 +153,49 @@ if __name__ == '__main__':
     if args.dry_run:
         from datetime import datetime, timedelta
         cutoff_date = (datetime.now() - timedelta(days=args.days)).strftime('%Y-%m-%d')
-        
+        TERMINAL_STATUSES = ('shipped', 'cancelled')
+
+        # Sample of orders that WOULD be deleted (terminal + old)
         rows = execute_query("""
             SELECT order_number, order_date, status
             FROM orders_inbox
             WHERE DATE(order_date) < %s
+              AND status IN %s
             ORDER BY order_date
             LIMIT 10
-        """, (cutoff_date,))
-        
-        print(f"\n🔍 DRY RUN - Orders that would be deleted (older than {args.days} days):")
+        """, (cutoff_date, TERMINAL_STATUSES))
+
+        # Count orders that WOULD be preserved (non-terminal + old)
+        preserved_rows = execute_query("""
+            SELECT COUNT(*), status
+            FROM orders_inbox
+            WHERE DATE(order_date) < %s
+              AND status NOT IN %s
+            GROUP BY status
+            ORDER BY status
+        """, (cutoff_date, TERMINAL_STATUSES))
+
+        print(f"\n🔍 DRY RUN - Orders that would be deleted (older than {args.days} days, terminal status only):")
         print(f"Cutoff date: {cutoff_date}")
-        print(f"\nSample orders:")
+        print(f"Eligible statuses: {', '.join(TERMINAL_STATUSES)}")
+        print(f"\nSample orders to DELETE:")
         for order_num, order_date, status in rows:
             print(f"  {order_num}: {order_date} ({status})")
-        
+
         count_rows = execute_query("""
             SELECT COUNT(*) FROM orders_inbox
             WHERE DATE(order_date) < %s
-        """, (cutoff_date,))
-        
+              AND status IN %s
+        """, (cutoff_date, TERMINAL_STATUSES))
+
         total = count_rows[0][0] if count_rows else 0
-        print(f"\nTotal orders to delete: {total}")
+        print(f"\nTotal orders to DELETE: {total}")
+
+        if preserved_rows:
+            print(f"\n⚠️  Orders that would be PRESERVED (non-terminal, regardless of age):")
+            for count, status in preserved_rows:
+                print(f"  {count} order(s) with status '{status}'")
+
         print("\nRun without --dry-run to perform actual deletion")
     else:
         result = cleanup_old_orders(days=args.days)
