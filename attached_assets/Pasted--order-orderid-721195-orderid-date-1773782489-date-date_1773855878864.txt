@@ -1,0 +1,532 @@
+<order>
+<orderid>721195</orderid>
+<date>1773782489</date>
+<date2>2026-03-17 16:21:29</date2>
+<dentistcode>E5197</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Randall A. Ellis DDS</company>
+<email>raellisdds@gmail.com</email>
+<s_firstname>Randall</s_firstname>
+<s_lastname>Ellis</s_lastname>
+<s_company>Randall A. Ellis DDS</s_company>
+<s_address>312 Arkansas Blvd </s_address>
+<s_city>Texarkana</s_city>
+<s_state>AR</s_state>
+<s_zipcode>71854</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(870) 772-1374</s_phone>
+<b_firstname>Randall</b_firstname>
+<b_lastname>Ellis</b_lastname>
+<b_company>Randall A. Ellis DDS</b_company>
+<b_address>312 Arkansas Blvd </b_address>
+<b_city>Texarkana</b_city>
+<b_state>AR</b_state>
+<b_zipcode>71854</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(870) 772-1374</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>27205</customerid>
+<order_detail>
+<orderid>721195</orderid>
+<amount>1</amount>
+<product>Case(s) of OraCare&trade; Oral Health Rinse</product>
+<productid>17612</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721205</orderid>
+<date>1773837721</date>
+<date2>2026-03-18 07:42:01</date2>
+<dentistcode>D4044</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Defuniak Springs Family Dental</company>
+<email>inspirewithdarci@gmail.com</email>
+<s_firstname>Collin</s_firstname>
+<s_lastname>Myrick</s_lastname>
+<s_company>Defuniak Springs Family Denal</s_company>
+<s_address>746 Baldwin Ave, Defuniak Springs, FL 32435 </s_address>
+<s_city>Defuniak Springs</s_city>
+<s_state>FL</s_state>
+<s_zipcode>32435</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(630) 664-0380</s_phone>
+<b_firstname>Collin</b_firstname>
+<b_lastname>Myrick</b_lastname>
+<b_company>Defuniak Springs Family Denal</b_company>
+<b_address>746 Baldwin Ave, Defuniak Springs, FL 32435 </b_address>
+<b_city>Defuniak Springs</b_city>
+<b_state>FL</b_state>
+<b_zipcode>32435</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(630) 664-0380</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>91065</customerid>
+<order_detail>
+<orderid>721205</orderid>
+<amount>1</amount>
+<product>OraCare Buy 5 Cases Get 1</product>
+<productid>18255</productid>
+</order_detail>
+<order_detail>
+<orderid>721205</orderid>
+<amount>1</amount>
+<product>Case(s) of OraCare&trade; Large PPR (Pre-Rinse)</product>
+<productid>17914</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721215</orderid>
+<date>1773838560</date>
+<date2>2026-03-18 07:56:00</date2>
+<dentistcode>M3601</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Panacea Dental</company>
+<email>caseymodel@sbcglobal.net</email>
+<s_firstname>Martha</s_firstname>
+<s_lastname>Model</s_lastname>
+<s_company>Panacea Dental</s_company>
+<s_address>182 Westerfield Place </s_address>
+<s_city>Grayslake</s_city>
+<s_state>IL</s_state>
+<s_zipcode>60030</s_zipcode>
+<s_country>US</s_country>
+<s_phone>2245429358</s_phone>
+<b_firstname>Martha</b_firstname>
+<b_lastname>Model</b_lastname>
+<b_company>Panacea Dental</b_company>
+<b_address>182 Westerfield Place </b_address>
+<b_city>Grayslake</b_city>
+<b_state>IL</b_state>
+<b_zipcode>60030</b_zipcode>
+<b_country>US</b_country>
+<b_phone>2245429358</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>3354</customerid>
+<order_detail>
+<orderid>721215</orderid>
+<amount>1</amount>
+<product>Case(s) of OraCare&trade; Large PPR (Pre-Rinse)</product>
+<productid>17914</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721225</orderid>
+<date>1773838723</date>
+<date2>2026-03-18 07:58:43</date2>
+<dentistcode>B0629</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Buehler Family Dental</company>
+<email>officemanager@buehlerfamilydental.com</email>
+<s_firstname>Christin</s_firstname>
+<s_lastname>Beuhler</s_lastname>
+<s_company>Buehler Family Dental</s_company>
+<s_address>912 West Main Street Ste 404</s_address>
+<s_city>New Holland</s_city>
+<s_state>PA</s_state>
+<s_zipcode>17557</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(717) 656-0005</s_phone>
+<b_firstname>Christin</b_firstname>
+<b_lastname>Beuhler</b_lastname>
+<b_company>Buehler Family Dental</b_company>
+<b_address>912 West Main Street Ste 404</b_address>
+<b_city>New Holland</b_city>
+<b_state>PA</b_state>
+<b_zipcode>17557</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(717) 656-0005</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>45525</customerid>
+<order_detail>
+<orderid>721225</orderid>
+<amount>1</amount>
+<product>Case(s) of OraCare&trade; Oral Health Rinse</product>
+<productid>17612</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721235</orderid>
+<date>1773839176</date>
+<date2>2026-03-18 08:06:16</date2>
+<dentistcode>B4906</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Bonaventure Dental Care</company>
+<email>drjbstaff@gmail.com</email>
+<s_firstname>Alexis</s_firstname>
+<s_lastname>Shelton</s_lastname>
+<s_company>Justin Bonaventure</s_company>
+<s_address>13431 Tiger Bend Road </s_address>
+<s_city>Baton Rouge</s_city>
+<s_state>LA</s_state>
+<s_zipcode>70817</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(225) 753-0123</s_phone>
+<b_firstname>Alexis</b_firstname>
+<b_lastname>Shelton</b_lastname>
+<b_company>Justin Bonaventure</b_company>
+<b_address>13431 Tiger Bend Road </b_address>
+<b_city>Baton Rouge</b_city>
+<b_state>LA</b_state>
+<b_zipcode>70817</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(225) 753-0123</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>56255</customerid>
+<order_detail>
+<orderid>721235</orderid>
+<amount>1</amount>
+<product>OraCare Buy 30 Cases Get 10 Free </product>
+<productid>18225</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721245</orderid>
+<date>1773840694</date>
+<date2>2026-03-18 08:31:34</date2>
+<dentistcode>D9521</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Dorer Dental</company>
+<email>dorerdental@gmail.com</email>
+<s_firstname>M.J. </s_firstname>
+<s_lastname>Dorer</s_lastname>
+<s_company>Dorer Dental</s_company>
+<s_address>419 Spring Ave </s_address>
+<s_city>Ellwood City</s_city>
+<s_state>PA</s_state>
+<s_zipcode>16117</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(724) 378-2423</s_phone>
+<b_firstname>Kurt</b_firstname>
+<b_lastname>Dorer</b_lastname>
+<b_company>Dorer Dental</b_company>
+<b_address>2704 Broad Head Road </b_address>
+<b_city>Aliquippa</b_city>
+<b_state>PA</b_state>
+<b_zipcode>15001</b_zipcode>
+<b_country>US</b_country>
+<b_phone>724-378-2423</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>95075</customerid>
+<order_detail>
+<orderid>721245</orderid>
+<amount>1</amount>
+<product>Case(s) of OraCare&trade; Oral Health Rinse</product>
+<productid>17612</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721255</orderid>
+<date>1773842213</date>
+<date2>2026-03-18 08:56:53</date2>
+<dentistcode> 7009</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Greenhills Dental</company>
+<email>info@fremontgreenhillsdental.com</email>
+<s_firstname>Shirley</s_firstname>
+<s_lastname>Bien</s_lastname>
+<s_company>Shirley H Bien DMD Inc</s_company>
+<s_address>39560 Stevenson Pl Suite 212</s_address>
+<s_city>Fremont</s_city>
+<s_state>CA</s_state>
+<s_zipcode>94539</s_zipcode>
+<s_country>US</s_country>
+<s_phone>510-790-8800</s_phone>
+<b_firstname>Shirley</b_firstname>
+<b_lastname>Bien</b_lastname>
+<b_company>Shirley H Bien DMD Inc</b_company>
+<b_address>39560 Stevenson Pl Suite 212</b_address>
+<b_city>Fremont</b_city>
+<b_state>CA</b_state>
+<b_zipcode>94539</b_zipcode>
+<b_country>US</b_country>
+<b_phone>510-790-8800</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>3042</customerid>
+<order_detail>
+<orderid>721255</orderid>
+<amount>2</amount>
+<product>Case(s) of OraCare&trade; Oral Health Rinse</product>
+<productid>17612</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721265</orderid>
+<date>1773843506</date>
+<date2>2026-03-18 09:18:26</date2>
+<dentistcode>H0002</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Wilson Martino Dental- TRUBLU</company>
+<email>shelby@wilmarmanagement.com</email>
+<s_firstname>Robert</s_firstname>
+<s_lastname>Martino</s_lastname>
+<s_company>Wilmar Management</s_company>
+<s_address>2000 Industrial Road East Suite 200</s_address>
+<s_city>Bridgeport</s_city>
+<s_state>WV</s_state>
+<s_zipcode>26330</s_zipcode>
+<s_country>US</s_country>
+<s_phone>3049335300</s_phone>
+<b_firstname>Robert</b_firstname>
+<b_lastname>Martino</b_lastname>
+<b_company>Wilmar Management</b_company>
+<b_address>2000 Industrial Road East Suite 200</b_address>
+<b_city>Bridgeport</b_city>
+<b_state>WV</b_state>
+<b_zipcode>26330</b_zipcode>
+<b_country>US</b_country>
+<b_phone>3049335300</b_phone>
+<shipping_cost>0.00</shipping_cost>
+<customerid>102</customerid>
+<order_detail>
+<orderid>721265</orderid>
+<amount>10</amount>
+<product>WilMar- OraPro Paste - Peppermint</product>
+<productid>18815</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721275</orderid>
+<date>1773844413</date>
+<date2>2026-03-18 09:33:33</date2>
+<dentistcode>S3412</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Sicklerville Smiles</company>
+<email>admin@sicklervillesmiles.com</email>
+<s_firstname>Sicklerville</s_firstname>
+<s_lastname>Smiles</s_lastname>
+<s_company>Sicklerville Smiles LLC</s_company>
+<s_address>423 SICKLERVILLE RD </s_address>
+<s_city>SICKLERVILLE</s_city>
+<s_state>NJ</s_state>
+<s_zipcode>08081</s_zipcode>
+<s_country>US</s_country>
+<s_phone>8567289200</s_phone>
+<b_firstname>Sicklerville</b_firstname>
+<b_lastname>Smiles</b_lastname>
+<b_company>Sicklerville Smiles LLC</b_company>
+<b_address>423 SICKLERVILLE RD </b_address>
+<b_city>SICKLERVILLE</b_city>
+<b_state>NJ</b_state>
+<b_zipcode>08081</b_zipcode>
+<b_country>US</b_country>
+<b_phone>8567289200</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>80855</customerid>
+<order_detail>
+<orderid>721275</orderid>
+<amount>1</amount>
+<product>OraCare Buy 5 Cases Get 1</product>
+<productid>18255</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721285</orderid>
+<date>1773844530</date>
+<date2>2026-03-18 09:35:30</date2>
+<dentistcode>N6173</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Nooga Dentistry</company>
+<email>jami.markdilldds@gmail.com</email>
+<s_firstname>Jami</s_firstname>
+<s_lastname>Hollingsworth</s_lastname>
+<s_company>Nooga Dentistry</s_company>
+<s_address>6106 Shallowford Road Ste 116</s_address>
+<s_city>Chattanooga</s_city>
+<s_state>TN</s_state>
+<s_zipcode>37421</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(423) 296-1053</s_phone>
+<b_firstname>Mark</b_firstname>
+<b_lastname>Dill</b_lastname>
+<b_company>Nooga Dentistry</b_company>
+<b_address>6550 Standifer Gap road </b_address>
+<b_city>Chattanooga</b_city>
+<b_state>TN</b_state>
+<b_zipcode>37421</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(423)296-1053</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>88535</customerid>
+<order_detail>
+<orderid>721285</orderid>
+<amount>1</amount>
+<product>OraCare Buy 30 Cases Get 10 Free </product>
+<productid>18225</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721295</orderid>
+<date>1773845857</date>
+<date2>2026-03-18 09:57:37</date2>
+<dentistcode>V6802</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Vidal Dental Associates Teaneck, LLC</company>
+<email>vidaldental.teaneck@gmail.com</email>
+<s_firstname>Lillian</s_firstname>
+<s_lastname>Vidal, D.D.S.</s_lastname>
+<s_company>Vidal Dental Associates Teaneck, LLC</s_company>
+<s_address>756 Cedar Ln </s_address>
+<s_city>Teaneck</s_city>
+<s_state>NJ</s_state>
+<s_zipcode>07666</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(201) 692-1919</s_phone>
+<b_firstname>Lillian</b_firstname>
+<b_lastname>Vidal, D.D.S.</b_lastname>
+<b_company>Vidal Dental Associates Teaneck, LLC</b_company>
+<b_address>756 Cedar Ln </b_address>
+<b_city>Teaneck</b_city>
+<b_state>NJ</b_state>
+<b_zipcode>07666</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(201) 692-1919</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>78425</customerid>
+<order_detail>
+<orderid>721295</orderid>
+<amount>1</amount>
+<product>Case(s) of OraCare&trade; Oral Health Rinse</product>
+<productid>17612</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721305</orderid>
+<date>1773846740</date>
+<date2>2026-03-18 10:12:20</date2>
+<dentistcode>T5190</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>The 901 Dentist</company>
+<email>the901dentist@gmail.com</email>
+<s_firstname>Elizabeth</s_firstname>
+<s_lastname>Mitchell</s_lastname>
+<s_company>The 901 Dentist</s_company>
+<s_address>795 Ridge Lake Blvd Suite 106</s_address>
+<s_city>Memphis</s_city>
+<s_state>TN</s_state>
+<s_zipcode>38120</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(901) 756-1151</s_phone>
+<b_firstname>Elizabeth</b_firstname>
+<b_lastname>Mitchell</b_lastname>
+<b_company>The 901 Dentist</b_company>
+<b_address>795 Ridge Lake Blvd Suite 106</b_address>
+<b_city>Memphis</b_city>
+<b_state>TN</b_state>
+<b_zipcode>38120</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(901) 756-1151</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>67205</customerid>
+<order_detail>
+<orderid>721305</orderid>
+<amount>1</amount>
+<product>Case(s) of OraCare&trade; Oral Health Rinse</product>
+<productid>17612</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721315</orderid>
+<date>1773848178</date>
+<date2>2026-03-18 10:36:18</date2>
+<dentistcode>B7918</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>Brumbach Family Dentistry, PLLC</company>
+<email>scheduling@brumbachdentistry.com</email>
+<s_firstname>Zach</s_firstname>
+<s_lastname>Brumbach</s_lastname>
+<s_company>Brumbach Family Dentistry, PLLC</s_company>
+<s_address>609 Calgary Ct. 104</s_address>
+<s_city>Post Falls</s_city>
+<s_state>ID</s_state>
+<s_zipcode>83854</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(208) 777-1222</s_phone>
+<b_firstname>Zach</b_firstname>
+<b_lastname>Brumbach</b_lastname>
+<b_company>Brumbach Family Dentistry, PLLC</b_company>
+<b_address>609 Calgary Ct. 104</b_address>
+<b_city>Post Falls</b_city>
+<b_state>ID</b_state>
+<b_zipcode>83854</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(208) 777-1222</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>25405</customerid>
+<order_detail>
+<orderid>721315</orderid>
+<amount>1</amount>
+<product>Case(s) of OraCare&trade; Oral Health Rinse</product>
+<productid>17612</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721325</orderid>
+<date>1773851801</date>
+<date2>2026-03-18 11:36:41</date2>
+<dentistcode>C0362</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>SkyRidge Dental</company>
+<email>ryan@skyridgedental.com</email>
+<s_firstname>Ryan</s_firstname>
+<s_lastname>Cook</s_lastname>
+<s_company>SkyRidge Dental</s_company>
+<s_address>3315 Ranch Road 620 S. STE 250 </s_address>
+<s_city>Austin</s_city>
+<s_state>TX</s_state>
+<s_zipcode>78738</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(512) 402-9090</s_phone>
+<b_firstname>Ryan</b_firstname>
+<b_lastname>Cook</b_lastname>
+<b_company>SkyRidge Dental</b_company>
+<b_address>3315 Ranch Road 620 S. STE 250 </b_address>
+<b_city>Austin</b_city>
+<b_state>TX</b_state>
+<b_zipcode>78738</b_zipcode>
+<b_country>US</b_country>
+<b_phone>(512) 402-9090</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>52715</customerid>
+<order_detail>
+<orderid>721325</orderid>
+<amount>1</amount>
+<product>OraCare Buy 5 Cases Get 1</product>
+<productid>18255</productid>
+</order_detail>
+</order>
+<order>
+<orderid>721335</orderid>
+<date>1773852719</date>
+<date2>2026-03-18 11:51:59</date2>
+<dentistcode>A1538</dentistcode>
+<shipping>Standard Flat Rate Ground</shipping>
+<company>J Street Dental Group- TRUBLU</company>
+<email>yuriy@jstreetdentalgroup.com</email>
+<s_firstname>Ashkan</s_firstname>
+<s_lastname>Alizadeh</s_lastname>
+<s_company>J Street Dental Group</s_company>
+<s_address>2619 J Street </s_address>
+<s_city>Sacramento</s_city>
+<s_state>CA</s_state>
+<s_zipcode>95816</s_zipcode>
+<s_country>US</s_country>
+<s_phone>(916) 759-0238</s_phone>
+<b_firstname>Ashkan</b_firstname>
+<b_lastname>Alizadeh</b_lastname>
+<b_company>Sacramento River Dental Group</b_company>
+<b_address>905 Secret River Dr. Ste C</b_address>
+<b_city>Sacramento</b_city>
+<b_state>CA</b_state>
+<b_zipcode>95661</b_zipcode>
+<b_country>US</b_country>
+<b_phone>9163914848</b_phone>
+<shipping_cost>24.95</shipping_cost>
+<customerid>55545</customerid>
+<order_detail>
+<orderid>721335</orderid>
+<amount>1</amount>
+<product>OraCare Buy 5 Cases Get 1</product>
+<productid>18255</productid>
+</order_detail>
+</order>
+</DentistSelectOrders>
