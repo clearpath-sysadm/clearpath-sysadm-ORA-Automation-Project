@@ -1053,8 +1053,9 @@
                 if (shipstation.success) {
                     ssUnits = shipstation.units_to_ship || 0;
                     document.getElementById('shipstation-units').textContent = ssUnits;
+                    const ssTimestamp = shipstation.metric_updated_at || shipstation.last_updated;
                     document.getElementById('shipstation-timestamp').textContent = 
-                        'Updated: ' + formatRelativeTime(shipstation.last_updated);
+                        'Updated: ' + formatRelativeTime(ssTimestamp);
                 }
                 
                 // Update Local DB card independently

@@ -659,7 +659,7 @@ def api_dashboard_stats():
         fedex_phone = '651-846-0590'
         
         # Check if today's FedEx pickup has been marked completed
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
         cursor.execute("""
             SELECT completed_at, units_count 
             FROM fedex_pickup_log 
@@ -676,7 +676,7 @@ def api_dashboard_stats():
         pending_uploads = cursor.fetchone()[0] or 0
         
         # Recent shipments (last 7 days)
-        week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%d')
         cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= %s", (week_ago,))
         recent_shipments = cursor.fetchone()[0] or 0
         
@@ -697,7 +697,7 @@ def api_dashboard_stats():
         # NOTE: Includes 'uploaded' status (in addition to 'awaiting_shipment') because
         # Hawaiian orders require a specific carrier (FedEx 2Day) and the team needs
         # early visibility while the upload is still processing, to avoid mis-routing.
-        five_days_ago = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
+        five_days_ago = (datetime.now(timezone.utc) - timedelta(days=5)).strftime('%Y-%m-%d')
         cursor.execute("""
             SELECT COUNT(*) FROM orders_inbox 
             WHERE order_date >= %s
@@ -729,7 +729,7 @@ def api_dashboard_stats():
         
         # System status (check recent workflow health)
         # Check if critical workflows ran recently (within last 2 hours)
-        two_hours_ago = (datetime.now() - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')
+        two_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute("""
             SELECT 
                 COUNT(*) as total,
@@ -5256,12 +5256,14 @@ def api_get_units_to_ship():
             return jsonify({
                 'success': True,
                 'units_to_ship': units,
+                'metric_updated_at': last_updated,
                 'last_updated': last_updated
             })
         else:
             return jsonify({
                 'success': True,
                 'units_to_ship': 0,
+                'metric_updated_at': None,
                 'last_updated': None
             })
     except Exception as e:
