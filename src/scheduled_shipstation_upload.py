@@ -161,6 +161,37 @@ def normalize_sku(sku):
     
     return sku
 
+def reset_orphaned_uploads():
+    """
+    Self-healing: Reset 'uploaded' orders with no shipstation_order_id back to 'pending'.
+    These are orders that got claimed and marked 'uploaded' but whose API call never
+    completed (e.g. SSL drop, process crash). Without this they are permanently stuck.
+    Returns the number of orders reset.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE orders_inbox
+            SET status = 'pending',
+                failure_reason = 'Auto-reset: uploaded with no ShipStation ID (failed upload)',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'uploaded'
+              AND (shipstation_order_id IS NULL OR shipstation_order_id = '')
+        """)
+        reset_count = cursor.rowcount
+        conn.commit()
+        if reset_count > 0:
+            logger.warning(f"⚠️ Self-heal: Reset {reset_count} orphaned 'uploaded' orders back to 'pending' (no ShipStation ID)")
+        return reset_count
+    except Exception as e:
+        logger.error(f"Error resetting orphaned uploads: {e}")
+        conn.rollback()
+        return 0
+    finally:
+        conn.close()
+
+
 def upload_pending_orders():
     """
     Upload pending orders from orders_inbox to ShipStation
@@ -869,6 +900,9 @@ def run_scheduled_upload():
                 update_polling_state(count)
                 last_count = count
             
+            # Self-heal: reset any orders stuck in 'uploaded' with no ShipStation ID
+            reset_orphaned_uploads()
+
             # Run existing upload logic (all safeguards preserved)
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
             server_logger.info("ShipStation upload workflow started", source="Scheduler")
