@@ -546,7 +546,7 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             else:
                 logger.debug(f"  Conflict alert already exists for order {order_number} (shipstation_order_id: {order_id})")
             
-            return False  # Do not import the order
+            return None  # Conflict handled gracefully - not an error, just skip
         
         # Extract carrier/service info
         carrier_info = extract_carrier_service_info(order)
@@ -1280,8 +1280,14 @@ def run_unified_sync():
                             continue
                         
                         # All filters passed → Import as NEW manual order
-                        if import_new_manual_order(order, conn, api_key, api_secret):
+                        # Returns True=success, None=conflict handled (not an error), False=real failure
+                        import_result = import_new_manual_order(order, conn, api_key, api_secret)
+                        if import_result is True:
                             stats['new_manual_imported'] += 1
+                        elif import_result is None:
+                            # Conflict detected and handled gracefully - skip without counting as error
+                            stats['conflicts_handled'] = stats.get('conflicts_handled', 0) + 1
+                            logger.debug(f"  Order {order_number} conflict handled - skipping without error")
                         else:
                             stats['errors'] += 1
                             error_details.append(f"Order {order_number}: Failed to import new manual order")
@@ -1397,6 +1403,7 @@ def run_unified_sync():
         logger.info(f"   ⏭️ Skipped (local origin): {stats['skipped_local_origin']}")
         logger.info(f"   ⏭️ Skipped (no key SKUs): {stats['skipped_no_key_skus']}")
         logger.info(f"   ⚠️ Orphan awaiting orders: {stats.get('skipped_awaiting_orphans', 0)}")
+        logger.info(f"   🔀 Conflicts handled (skipped): {stats.get('conflicts_handled', 0)}")
         logger.info(f"   ❌ Errors: {stats['errors']}")
         logger.info(f"   ⏱️ Duration: {elapsed:.1f}s")
         logger.info("=" * 80)
