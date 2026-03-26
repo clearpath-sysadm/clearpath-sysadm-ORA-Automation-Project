@@ -11014,12 +11014,13 @@ def purge_local_ghost_orders():
         if len(order_numbers) > 100:
             return jsonify({'success': False, 'error': 'Max 100 orders per request'}), 400
 
-        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
-        from utils.api_utils import make_api_request
+        import requests as _requests
+        from requests.auth import HTTPBasicAuth
+        from src.services.shipstation.api_client import get_shipstation_credentials
         from config import settings
 
         api_key, api_secret = get_shipstation_credentials()
-        headers = get_shipstation_headers(api_key, api_secret)
+        ss_auth = HTTPBasicAuth(api_key, api_secret)
 
         conn = get_connection()
         cursor = conn.cursor()
@@ -11046,14 +11047,18 @@ def purge_local_ghost_orders():
                 skipped.append(order_num)
                 continue
 
-            response = make_api_request(
-                url=f"{settings.SHIPSTATION_ORDERS_ENDPOINT}/{ss_id}",
-                method='GET',
-                headers=headers,
-                timeout=15
-            )
+            try:
+                response = _requests.get(
+                    f"{settings.SHIPSTATION_ORDERS_ENDPOINT}/{ss_id}",
+                    auth=ss_auth,
+                    timeout=15
+                )
+            except Exception as req_err:
+                results.append({'order_number': order_num, 'action': 'api_error', 'error': str(req_err)})
+                skipped.append(order_num)
+                continue
 
-            if response and response.status_code == 200:
+            if response.status_code == 200:
                 ss_status = response.json().get('orderStatus', 'unknown')
                 results.append({'order_number': order_num, 'action': 'skipped_exists_in_ss', 'ss_status': ss_status})
                 skipped.append(order_num)
