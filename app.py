@@ -5274,7 +5274,7 @@ def api_get_units_to_ship():
 
 @app.route('/api/shipstation/refresh_units_to_ship', methods=['POST'])
 def api_refresh_units_to_ship():
-    """Fetch real-time units to ship from ShipStation and update cache"""
+    """Fetch real-time units to ship from ShipStation (Oracare store only) and update cache"""
     try:
         import requests
         from requests.auth import HTTPBasicAuth
@@ -5289,32 +5289,44 @@ def api_refresh_units_to_ship():
                 'error': 'ShipStation API credentials not found'
             }), 500
         
-        # Fetch orders with status awaiting_shipment (excluding on_hold and cancelled)
+        # Oracare store ID in ShipStation (excludes BigCommerce V3 store 376779)
+        ORACARE_STORE_ID = 345611
+        
         url = settings.SHIPSTATION_ORDERS_ENDPOINT
-        params = {
-            'orderStatus': 'awaiting_shipment',
-            'pageSize': 500
-        }
+        auth = HTTPBasicAuth(api_key, api_secret)
         
-        response = requests.get(
-            url,
-            auth=HTTPBasicAuth(api_key, api_secret),
-            params=params
-        )
+        all_orders = []
+        page = 1
         
-        if response.status_code != 200:
-            return jsonify({
-                'success': False,
-                'error': f'ShipStation API error: {response.status_code}'
-            }), 500
+        # Paginate through all Oracare awaiting_shipment orders
+        while True:
+            params = {
+                'orderStatus': 'awaiting_shipment',
+                'storeId': ORACARE_STORE_ID,
+                'pageSize': 500,
+                'page': page
+            }
+            response = requests.get(url, auth=auth, params=params, timeout=30)
+            
+            if response.status_code != 200:
+                return jsonify({
+                    'success': False,
+                    'error': f'ShipStation API error: {response.status_code}'
+                }), 500
+            
+            data = response.json()
+            orders = data.get('orders', [])
+            total_pages = data.get('pages', 1)
+            all_orders.extend(orders)
+            
+            if page >= total_pages or len(orders) == 0:
+                break
+            page += 1
         
-        data = response.json()
-        orders = data.get('orders', [])
-        
-        # Count total units across all items in all orders
+        # Count total units across all items in all Oracare orders
         total_units = sum(
             item.get('quantity', 0)
-            for order in orders
+            for order in all_orders
             for item in order.get('items', [])
         )
         
@@ -5323,10 +5335,11 @@ def api_refresh_units_to_ship():
         cursor = conn.cursor()
         
         cursor.execute("""
-            UPDATE shipstation_metrics
-            SET metric_value = %s,
-                last_updated = CURRENT_TIMESTAMP
-            WHERE metric_name = 'units_to_ship'
+            INSERT INTO shipstation_metrics (metric_name, metric_value, last_updated)
+            VALUES ('units_to_ship', %s, CURRENT_TIMESTAMP)
+            ON CONFLICT (metric_name) DO UPDATE
+                SET metric_value = EXCLUDED.metric_value,
+                    last_updated = EXCLUDED.last_updated
         """, (total_units,))
         
         conn.commit()
@@ -5345,7 +5358,7 @@ def api_refresh_units_to_ship():
             'success': True,
             'units_to_ship': total_units,
             'last_updated': last_updated,
-            'orders_count': len(orders)
+            'orders_count': len(all_orders)
         })
     except Exception as e:
         return jsonify({
@@ -5836,7 +5849,7 @@ def api_get_on_hold_count():
             SELECT 
                 COUNT(DISTINCT o.id) as order_count,
                 COALESCE(SUM(oi.quantity), 0) as total_units,
-                MAX(o.created_at) as last_updated
+                CURRENT_TIMESTAMP as last_updated
             FROM orders_inbox o
             LEFT JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
             WHERE o.status = 'on_hold'
