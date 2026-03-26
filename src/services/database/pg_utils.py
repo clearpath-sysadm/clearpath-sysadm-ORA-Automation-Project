@@ -12,6 +12,7 @@ Environment-aware database connection:
 import os
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 import time
 import random
 import logging
@@ -30,14 +31,59 @@ logger = logging.getLogger(__name__)
 _workflow_cache = {}
 _cache_ttl = {}
 
+# Connection pool — created lazily on first use so worker processes that import
+# this module but never need a pool don't pay the connection cost at import time.
+_pool = None
+
+def _get_pool():
+    global _pool
+    if _pool is None:
+        if not DATABASE_URL:
+            raise ValueError("DATABASE_URL environment variable not set")
+        _pool = psycopg2.pool.ThreadedConnectionPool(
+            minconn=2,
+            maxconn=10,
+            dsn=DATABASE_URL,
+        )
+        logger.info("PostgreSQL connection pool initialised (min=2, max=10)")
+    return _pool
+
+
+class _PooledConnection:
+    """Thin wrapper that returns the underlying connection to the pool on close()."""
+
+    def __init__(self, conn, pool):
+        self._conn = conn
+        self._pool = pool
+        self._closed = False
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def close(self):
+        if not self._closed:
+            self._closed = True
+            try:
+                self._pool.putconn(self._conn)
+            except Exception as e:
+                logger.warning(f"Error returning connection to pool: {e}")
+
+    def __del__(self):
+        self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+
+
 def get_connection():
-    """Get PostgreSQL connection"""
-    if not DATABASE_URL:
-        raise ValueError("DATABASE_URL environment variable not set")
-    
-    conn = psycopg2.connect(DATABASE_URL)
-    # PostgreSQL enforces foreign keys by default (unlike SQLite)
-    return conn
+    """Borrow a connection from the pool. Caller must call conn.close() when done."""
+    pool = _get_pool()
+    conn = pool.getconn()
+    return _PooledConnection(conn, pool)
 
 @contextmanager
 def transaction():

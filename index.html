@@ -1037,7 +1037,6 @@
                     fetch('/api/local/awaiting_shipment_count'),
                     fetch('/api/local/on_hold_count'),
                     fetch('/api/lot_mismatch_count'),
-                    updateProductionHealth()  // Add production health check
                 ]);
                 
                 const stats = await statsRes.json();
@@ -1191,6 +1190,7 @@
                 console.error('Failed to load dashboard data:', error);
             } finally {
                 hideSkeletons();
+                updateProductionHealth().catch(e => console.error('Health check failed:', e));
             }
         }
 

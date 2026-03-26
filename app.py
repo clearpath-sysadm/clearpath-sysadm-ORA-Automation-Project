@@ -671,61 +671,41 @@ def api_dashboard_stats():
         fedex_pickup_completed = pickup_log is not None
         fedex_pickup_completed_at = pickup_log[0] if pickup_log else None
         
-        # Pending uploads from orders_inbox
-        cursor.execute("SELECT COUNT(*) FROM orders_inbox WHERE status = 'pending'")
-        pending_uploads = cursor.fetchone()[0] or 0
-        
         # Recent shipments (last 7 days)
         week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%d')
         cursor.execute("SELECT COUNT(*) FROM shipped_orders WHERE ship_date >= %s", (week_ago,))
         recent_shipments = cursor.fetchone()[0] or 0
-        
-        # Benco orders (orders with "BENCO" in company name) - awaiting_shipment only.
-        # NOTE: Intentionally narrower than Hawaiian/Canadian filters below.
-        # Benco is a domestic account managed by the warehouse team; the dashboard
-        # card acts as a "ready to pick" alert, so only confirmed-awaiting orders
-        # are relevant.  'uploaded' orders are excluded because they may still be
-        # in transit through the upload pipeline and should not trigger action yet.
-        cursor.execute("""
-            SELECT COUNT(*) FROM orders_inbox 
-            WHERE status = 'awaiting_shipment'
-            AND (ship_company LIKE '%BENCO%' OR ship_company LIKE '%Benco%')
-        """)
-        benco_orders = cursor.fetchone()[0] or 0
-        
-        # Hawaiian orders (ship to Hawaii) - unshipped from last 5 days (handles weekend backlog).
-        # NOTE: Includes 'uploaded' status (in addition to 'awaiting_shipment') because
-        # Hawaiian orders require a specific carrier (FedEx 2Day) and the team needs
-        # early visibility while the upload is still processing, to avoid mis-routing.
+
+        # All orders_inbox counts in a single pass over the table.
+        # Benco: awaiting_shipment only (ready-to-pick alert, no 'uploaded').
+        # Hawaiian/Canadian/International: last 5 days, includes 'uploaded' for early visibility.
         five_days_ago = (datetime.now(timezone.utc) - timedelta(days=5)).strftime('%Y-%m-%d')
         cursor.execute("""
-            SELECT COUNT(*) FROM orders_inbox 
-            WHERE order_date >= %s
-            AND ship_state = 'HI'
-            AND status IN ('awaiting_shipment', 'uploaded')
-        """, (five_days_ago,))
-        hawaiian_orders = cursor.fetchone()[0] or 0
-        
-        # Canadian orders (ship to Canada) - unshipped from last 5 days.
-        # Includes 'uploaded' for the same early-visibility reason as Hawaiian orders.
-        cursor.execute("""
-            SELECT COUNT(*) FROM orders_inbox 
-            WHERE order_date >= %s
-            AND (ship_country = 'CA' OR ship_country = 'Canada')
-            AND status IN ('awaiting_shipment', 'uploaded')
-        """, (five_days_ago,))
-        canadian_orders = cursor.fetchone()[0] or 0
-        
-        # Other international orders (not US or Canada) - unshipped from last 5 days.
-        # Includes 'uploaded' for the same early-visibility reason as Hawaiian/Canadian.
-        cursor.execute("""
-            SELECT COUNT(*) FROM orders_inbox 
-            WHERE order_date >= %s
-            AND ship_country IS NOT NULL
-            AND ship_country NOT IN ('US', 'USA', 'United States', 'CA', 'Canada')
-            AND status IN ('awaiting_shipment', 'uploaded')
-        """, (five_days_ago,))
-        other_international_orders = cursor.fetchone()[0] or 0
+            SELECT
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END),
+                SUM(CASE WHEN status = 'awaiting_shipment'
+                         AND (ship_company LIKE '%%BENCO%%' OR ship_company LIKE '%%Benco%%')
+                         THEN 1 ELSE 0 END),
+                SUM(CASE WHEN order_date >= %s AND ship_state = 'HI'
+                         AND status IN ('awaiting_shipment', 'uploaded')
+                         THEN 1 ELSE 0 END),
+                SUM(CASE WHEN order_date >= %s
+                         AND (ship_country = 'CA' OR ship_country = 'Canada')
+                         AND status IN ('awaiting_shipment', 'uploaded')
+                         THEN 1 ELSE 0 END),
+                SUM(CASE WHEN order_date >= %s
+                         AND ship_country IS NOT NULL
+                         AND ship_country NOT IN ('US', 'USA', 'United States', 'CA', 'Canada')
+                         AND status IN ('awaiting_shipment', 'uploaded')
+                         THEN 1 ELSE 0 END)
+            FROM orders_inbox
+        """, (five_days_ago, five_days_ago, five_days_ago))
+        inbox_counts = cursor.fetchone()
+        pending_uploads       = inbox_counts[0] or 0
+        benco_orders          = inbox_counts[1] or 0
+        hawaiian_orders       = inbox_counts[2] or 0
+        canadian_orders       = inbox_counts[3] or 0
+        other_international_orders = inbox_counts[4] or 0
         
         # System status (check recent workflow health)
         # Check if critical workflows ran recently (within last 2 hours)
