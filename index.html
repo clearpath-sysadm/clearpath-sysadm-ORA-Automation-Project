@@ -566,6 +566,7 @@
         // Global state
         let lastUpdateTime = Date.now();
         let isRefreshing = false;
+        let isDashboardLoading = false;
         let darkMode = localStorage.getItem('darkMode') === 'true';
         let lastKnownTimestamps = {}; // Track workflow timestamps for smart polling
 
@@ -603,8 +604,6 @@
                 }
             } catch (error) {
                 console.error('Timestamp check failed:', error);
-                // Fallback: load data anyway if check fails
-                await loadDashboardData();
             }
         }
 
@@ -1028,6 +1027,8 @@
 
         // Load dashboard data
         async function loadDashboardData() {
+            if (isDashboardLoading) return;
+            isDashboardLoading = true;
             try {
                 const [statsRes, alertsRes, automationRes, shipstationRes, localDbRes, onHoldRes, lotMismatchRes] = await Promise.all([
                     fetch('/api/dashboard_stats'),
@@ -1189,6 +1190,7 @@
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
             } finally {
+                isDashboardLoading = false;
                 hideSkeletons();
                 updateProductionHealth().catch(e => console.error('Health check failed:', e));
             }
