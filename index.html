@@ -1174,22 +1174,23 @@
                 }
                 
                 // Check for duplicate order alerts
-                await checkDuplicateAlerts();
+                try { await checkDuplicateAlerts(); } catch (e) { console.error('checkDuplicateAlerts failed:', e); }
                 
                 // Check for lot mismatch alerts
-                await checkLotMismatchAlerts();
+                try { await checkLotMismatchAlerts(); } catch (e) { console.error('checkLotMismatchAlerts failed:', e); }
                 
                 // Check for manual order conflicts
-                await checkManualOrderConflicts();
+                try { await checkManualOrderConflicts(); } catch (e) { console.error('checkManualOrderConflicts failed:', e); }
                 
                 // Re-check auto-ship day status (updates in real-time)
-                checkAutoShipDay();
+                try { checkAutoShipDay(); } catch (e) { console.error('checkAutoShipDay failed:', e); }
                 
-                hideSkeletons();
                 lastUpdateTime = Date.now();
                 updateTimestamp();
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
+            } finally {
+                hideSkeletons();
             }
         }
 
