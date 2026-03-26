@@ -10,6 +10,7 @@ Environment-aware database connection:
 """
 
 import os
+import threading
 import psycopg2
 import psycopg2.extras
 import psycopg2.pool
@@ -34,18 +35,21 @@ _cache_ttl = {}
 # Connection pool — created lazily on first use so worker processes that import
 # this module but never need a pool don't pay the connection cost at import time.
 _pool = None
+_pool_lock = threading.Lock()
 
 def _get_pool():
     global _pool
     if _pool is None:
-        if not DATABASE_URL:
-            raise ValueError("DATABASE_URL environment variable not set")
-        _pool = psycopg2.pool.ThreadedConnectionPool(
-            minconn=2,
-            maxconn=10,
-            dsn=DATABASE_URL,
-        )
-        logger.info("PostgreSQL connection pool initialised (min=2, max=10)")
+        with _pool_lock:
+            if _pool is None:  # double-checked — only one thread creates the pool
+                if not DATABASE_URL:
+                    raise ValueError("DATABASE_URL environment variable not set")
+                _pool = psycopg2.pool.ThreadedConnectionPool(
+                    minconn=2,
+                    maxconn=20,
+                    dsn=DATABASE_URL,
+                )
+                logger.info("PostgreSQL connection pool initialised (min=2, max=20)")
     return _pool
 
 
