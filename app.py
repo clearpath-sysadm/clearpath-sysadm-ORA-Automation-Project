@@ -10994,6 +10994,105 @@ def cleanup_orphan_orders():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/purge_local_ghost_orders', methods=['POST'])
+@login_required
+@admin_required
+def purge_local_ghost_orders():
+    """
+    Delete local orders that no longer exist in ShipStation (confirmed 404).
+    Verifies each order's ShipStation ID returns 404 before deleting locally.
+    Accepts: { "order_numbers": ["100893", "100894", ...], "dry_run": true/false }
+    """
+    import time
+    try:
+        data = request.get_json()
+        order_numbers = data.get('order_numbers', [])
+        dry_run = data.get('dry_run', True)
+
+        if not order_numbers:
+            return jsonify({'success': False, 'error': 'order_numbers list required'}), 400
+        if len(order_numbers) > 100:
+            return jsonify({'success': False, 'error': 'Max 100 orders per request'}), 400
+
+        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+        from utils.api_utils import make_api_request
+        from config import settings
+
+        api_key, api_secret = get_shipstation_credentials()
+        headers = get_shipstation_headers(api_key, api_secret)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT order_number, shipstation_order_id, status FROM orders_inbox WHERE order_number = ANY(%s)",
+            (order_numbers,)
+        )
+        local_orders = {row[0]: {'ss_id': row[1], 'status': row[2]} for row in cursor.fetchall()}
+
+        results = []
+        purged = []
+        skipped = []
+
+        for order_num in order_numbers:
+            local = local_orders.get(order_num)
+            if not local:
+                results.append({'order_number': order_num, 'action': 'not_in_local_db'})
+                continue
+
+            ss_id = local['ss_id']
+            if not ss_id:
+                results.append({'order_number': order_num, 'action': 'skipped_no_ss_id', 'local_status': local['status']})
+                skipped.append(order_num)
+                continue
+
+            response = make_api_request(
+                url=f"{settings.SHIPSTATION_ORDERS_ENDPOINT}/{ss_id}",
+                method='GET',
+                headers=headers,
+                timeout=15
+            )
+
+            if response and response.status_code == 200:
+                ss_status = response.json().get('orderStatus', 'unknown')
+                results.append({'order_number': order_num, 'action': 'skipped_exists_in_ss', 'ss_status': ss_status})
+                skipped.append(order_num)
+                logger.warning(f"purge_local_ghost_orders: order {order_num} (SS {ss_id}) still exists in ShipStation as '{ss_status}' - skipping")
+            elif response and response.status_code == 404:
+                if dry_run:
+                    results.append({'order_number': order_num, 'action': 'would_delete', 'local_status': local['status'], 'ss_id': ss_id})
+                else:
+                    cursor.execute("DELETE FROM order_items_inbox WHERE order_inbox_id = (SELECT id FROM orders_inbox WHERE order_number = %s)", (order_num,))
+                    cursor.execute("DELETE FROM orders_inbox WHERE order_number = %s RETURNING id", (order_num,))
+                    deleted_id = cursor.fetchone()
+                    results.append({'order_number': order_num, 'action': 'deleted', 'local_status': local['status'], 'ss_id': ss_id})
+                    purged.append(order_num)
+                    logger.info(f"purge_local_ghost_orders: deleted local order {order_num} (SS ID {ss_id} is 404 in ShipStation)")
+            else:
+                status_code = response.status_code if response else 'no_response'
+                results.append({'order_number': order_num, 'action': 'api_error', 'http_status': status_code})
+                skipped.append(order_num)
+
+            time.sleep(0.3)
+
+        if not dry_run and purged:
+            conn.commit()
+        conn.close()
+
+        summary = {
+            'dry_run': dry_run,
+            'checked': len(order_numbers),
+            'purged' if not dry_run else 'would_purge': len(purged) if not dry_run else len([r for r in results if r['action'] == 'would_delete']),
+            'skipped': len(skipped),
+        }
+        logger.info(f"purge_local_ghost_orders: {summary}")
+        return jsonify({'success': True, 'summary': summary, 'results': results})
+
+    except Exception as e:
+        logger.error(f'purge_local_ghost_orders error: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/admin/recreate-order', methods=['POST'])
 @admin_required
 def recreate_order():
