@@ -1250,8 +1250,15 @@ def run_unified_sync():
                         # Filter 1: Must start with "10" (manual orders only)
                         order_status = order.get('orderStatus', '').lower()
                         if not order_number.startswith('10'):
-                            # Track awaiting_shipment orders that exist in ShipStation but not locally
-                            if order_status == 'awaiting_shipment':
+                            # Suppress orphan warnings for BigCommerce migration orders.
+                            # Those orders (numeric order numbers >= 801000) live in a
+                            # separate ShipStation store and will never be in our local DB.
+                            # Logging a warning for each of the 60 K+ migrated orders
+                            # produces noise and triggers false mismatch alerts.
+                            is_bigcommerce_order = (
+                                order_number.isdigit() and int(order_number) >= 801000
+                            )
+                            if order_status == 'awaiting_shipment' and not is_bigcommerce_order:
                                 stats['skipped_awaiting_orphans'] += 1
                                 logger.warning(f"⚠️ ORPHAN: Order {order_number} is awaiting_shipment in ShipStation but NOT in local DB (not a manual order)")
                             else:

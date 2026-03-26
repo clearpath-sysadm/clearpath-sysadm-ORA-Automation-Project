@@ -268,77 +268,50 @@ def fetch_shipstation_orders_by_order_numbers(
 ) -> list:
     """
     Fetches existing orders from ShipStation by specific order numbers.
-    Uses a single date-range query for efficiency instead of per-order queries.
-    
+    Uses direct per-order lookups (?orderNumber=X) instead of a bulk date-range
+    scan. This is O(n) in the number of orders we care about, not O(total orders
+    in ShipStation), so it stays fast regardless of how many orders ShipStation
+    holds (e.g. after a BigCommerce store migration).
+
     Args:
         api_key: ShipStation API Key
         api_secret: ShipStation API Secret
         orders_endpoint: ShipStation orders API endpoint URL
         order_numbers: List of order numbers to query
-    
+
     Returns:
         list: List of existing orders from ShipStation matching the order numbers
     """
     if not order_numbers:
         return []
-    
+
     headers = get_shipstation_headers(api_key, api_secret)
-    
-    # Use a wide date range to capture all orders (last 6 months)
-    # This is more efficient than querying each order individually
-    from datetime import datetime, timedelta
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=180)
-    
-    params = {
-        'createDateStart': start_date.strftime('%Y-%m-%dT00:00:00Z'),
-        'createDateEnd': end_date.strftime('%Y-%m-%dT23:59:59Z'),
-        'page': 1,
-        'pageSize': 500
-    }
-    
     all_orders = []
-    order_numbers_upper = set(str(num).strip().upper() for num in order_numbers)
-    
-    try:
-        logger.info(f"Fetching orders from ShipStation (date range query for {len(order_numbers)} order numbers)")
-        
-        while True:
+
+    logger.info(f"Fetching orders from ShipStation (per-order lookup for {len(order_numbers)} order numbers)")
+
+    for order_number in order_numbers:
+        try:
             response = make_api_request(
                 url=orders_endpoint,
                 method='GET',
                 headers=headers,
-                params=params,
+                params={'orderNumber': str(order_number), 'pageSize': 500},
                 timeout=30
             )
-            
+
             if response and response.status_code == 200:
                 data = response.json()
                 orders_on_page = data.get('orders', [])
-                
-                # Filter to only orders we care about
-                for order in orders_on_page:
-                    order_num = order.get('orderNumber', '').strip().upper()
-                    if order_num in order_numbers_upper:
-                        all_orders.append(order)
-                
-                total_pages = data.get('pages', 1)
-                current_page = data.get('page', 1)
-                
-                logger.debug(f"Fetched page {current_page}/{total_pages}, found {len([o for o in orders_on_page if o.get('orderNumber', '').strip().upper() in order_numbers_upper])} matching orders")
-                
-                if current_page >= total_pages:
-                    break
-                else:
-                    params['page'] += 1
+                all_orders.extend(orders_on_page)
+                logger.debug(f"Order {order_number}: found {len(orders_on_page)} match(es) in ShipStation")
             else:
-                logger.error(f"Failed to fetch orders. Status: {response.status_code if response else 'N/A'}")
-                break
-                
-    except Exception as e:
-        logger.error(f"Error fetching orders by date range: {e}", exc_info=True)
-    
-    logger.info(f"Retrieved {len(all_orders)} existing orders (filtered from bulk query)")
+                logger.error(f"Failed to fetch order {order_number}. Status: {response.status_code if response else 'N/A'}")
+
+        except Exception as e:
+            logger.error(f"Error fetching order {order_number} from ShipStation: {e}", exc_info=True)
+
+    logger.info(f"Retrieved {len(all_orders)} existing orders (per-order lookup)")
     return all_orders
 
 def fetch_order_by_id(order_id: int, api_key: str = None, api_secret: str = None) -> dict:
