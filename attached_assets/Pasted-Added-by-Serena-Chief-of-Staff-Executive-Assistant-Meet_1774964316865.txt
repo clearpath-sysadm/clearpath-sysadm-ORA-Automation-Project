@@ -1,0 +1,33 @@
+Added by: Serena (Chief of Staff & Executive Assistant)
+
+### Meeting Summary: ShipStation Order Processing Implementation
+
+**Date:** March 31, 2026
+
+**Attendees:** Speaker 1, Oracare - Quinn, Seven of Nine, Geordi La Forge, B'Elanna Torres, Serena
+
+### Key Discussion Points
+
+• **Cutover Strategy:** Discussed a phased approach for transitioning from XML to ShipStation API ingestion. This includes running the new shipstation-import worker in parallel (shadow mode) for validation and maintaining the old XML code for a defined period to allow for rollback if necessary. The "rerouting" involves updating application entry points and worker registrations.
+
+• **ShipStation Data Flow:** The new shipstation-import worker will use the ShipStation API to retrieve order/shipment IDs and SKU data. ShipStation's internal auto-split feature and automation rules will handle initial order processing and routing to correct "Ship From Locations" (Axiom/OraCare).
+
+• **Lot Number Assignment:** The fulfillment app will apply internal logic to assign lot numbers based on SKUs. A critical action item is to confirm whether the ShipStation API supports updating shipment records with these assigned lot numbers. If not, lot numbers will primarily reside in our orders_inbox.
+
+• **Inventory Management:** The team needs to define a clear strategy for inventory synchronization, including identifying the source of truth for inventory levels. Robust, transactional mechanisms for updating inventory, especially considering ShipStation's auto-split feature creating multiple shipments, are essential.
+
+• **Code Changes:** Implementation will involve modifying app.py, init_database.py, the workflows table, and start_all.sh to reference the new shipstation-import worker.
+
+### Consensus & Key Takeaways
+
+• ✅ **Phased Cutover & Rollback:** Proceed with a controlled, phased replacement of the XML ingestion with the new ShipStation worker, ensuring a robust rollback plan is in place.
+
+• 🎯 **ShipStation API Interaction:** The core of the new process relies on direct API interaction with ShipStation for order ingestion and potential updates.
+
+• ⚙️ **Lot Number Logic:** Our fulfillment app will manage lot number assignment; confirmation is needed on ShipStation's capability to store this data via API.
+
+• 📊 **Inventory Management:** A clear, atomic strategy for inventory updates, especially with split shipments, is paramount.
+
+### Proactive Insight
+
+To mitigate risks during the cutover, consider implementing a **data reconciliation module**. This module would periodically compare a sample set of orders processed by the new shipstation-import worker against expected outcomes (e.g., manually verified orders or a small parallel run of the old XML system). This would flag any discrepancies in order details, SKUs, or lot number assignments, providing an early warning system for potential integration issues before they impact a large volume of live orders.
