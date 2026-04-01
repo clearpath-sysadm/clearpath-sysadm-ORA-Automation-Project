@@ -2882,25 +2882,26 @@ def api_run_eow():
     try:
         week_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
         
-        # Check if EOD done today, run it if not
-        if not eod_done_today():
-            # Run EOD first
-            eod_result = subprocess.run(
-                ['python', 'src/daily_shipment_processor.py'],
-                cwd=project_root,
-                capture_output=True,
-                text=True,
-                timeout=120
-            )
-            
-            if eod_result.returncode != 0:
-                log_report_run('EOW', week_start, 'failed', 'EOD prerequisite failed')
-                return jsonify({
-                    'success': False,
-                    'error': f'EOD prerequisite failed: {eod_result.stderr}'
-                }), 500
-            
-            log_report_run('EOD', datetime.date.today(), 'success', 'Auto-run by EOW')
+        # Always run the daily processor before generating the weekly report.
+        # EOW must produce fresh calculations regardless of whether EOD already ran
+        # today — the processor applies the backfill, reloads history, and writes
+        # the correct rolling average to inventory_current.
+        eod_result = subprocess.run(
+            ['python', 'src/daily_shipment_processor.py'],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+        
+        if eod_result.returncode != 0:
+            log_report_run('EOW', week_start, 'failed', 'EOD prerequisite failed')
+            return jsonify({
+                'success': False,
+                'error': f'EOD prerequisite failed: {eod_result.stderr}'
+            }), 500
+        
+        log_report_run('EOD', datetime.date.today(), 'success', 'Auto-run by EOW')
         
         # Run the weekly reporter
         result = subprocess.run(
