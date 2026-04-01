@@ -2079,23 +2079,29 @@ def api_get_inventory_transactions():
         sku = request.args.get('sku')
         transaction_type = request.args.get('transaction_type')
         
-        query = "SELECT id, date, sku, quantity, transaction_type, notes, created_at FROM inventory_transactions WHERE 1=1"
+        query = """
+            SELECT it.id, it.date, it.sku, it.quantity, it.transaction_type,
+                   it.notes, it.created_at, it.lot_id, l.lot_number
+            FROM inventory_transactions it
+            LEFT JOIN lots l ON l.lot_id = it.lot_id
+            WHERE 1=1
+        """
         params = []
         
         if start_date:
-            query += " AND date >= %s"
+            query += " AND it.date >= %s"
             params.append(start_date)
         if end_date:
-            query += " AND date <= %s"
+            query += " AND it.date <= %s"
             params.append(end_date)
         if sku:
-            query += " AND sku = %s"
+            query += " AND it.sku = %s"
             params.append(sku)
         if transaction_type:
-            query += " AND transaction_type = %s"
+            query += " AND it.transaction_type = %s"
             params.append(transaction_type)
         
-        query += " ORDER BY date DESC, created_at DESC"
+        query += " ORDER BY it.date DESC, it.created_at DESC"
         
         conn = get_connection()
         cursor = conn.cursor()
@@ -2112,7 +2118,9 @@ def api_get_inventory_transactions():
                 'quantity': row[3],
                 'transaction_type': row[4],
                 'notes': row[5] or '',
-                'created_at': row[6]
+                'created_at': row[6],
+                'lot_id': row[7],
+                'lot_number': row[8] or ''
             })
         
         return jsonify(transactions)
@@ -2121,6 +2129,29 @@ def api_get_inventory_transactions():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@app.route('/api/lots_by_sku/<sku>', methods=['GET'])
+def api_lots_by_sku(sku):
+    """Return all lots for a given SKU, ordered by received_date for FIFO display."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT l.lot_id, l.lot_number, l.status, l.received_date
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE s.sku_code = %s
+            ORDER BY l.received_date ASC NULLS LAST, l.lot_id ASC
+        """, (sku,))
+        rows = cursor.fetchall()
+        conn.close()
+        return jsonify([
+            {'lot_id': r[0], 'lot_number': r[1], 'status': r[2], 'received_date': str(r[3]) if r[3] else ''}
+            for r in rows
+        ])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/inventory_transactions', methods=['POST'])
 def api_create_inventory_transaction():
@@ -2259,6 +2290,7 @@ def api_update_inventory_transaction(transaction_id):
         quantity = data.get('quantity')
         transaction_type = data.get('transaction_type')
         notes = data.get('notes', '')
+        lot_id = data.get('lot_id') or None
         
         if not all([date, sku, quantity, transaction_type]):
             return jsonify({
@@ -2316,9 +2348,9 @@ def api_update_inventory_transaction(transaction_id):
         # Update the transaction
         cursor.execute("""
             UPDATE inventory_transactions 
-            SET date = %s, sku = %s, quantity = %s, transaction_type = %s, notes = %s
+            SET date = %s, sku = %s, quantity = %s, transaction_type = %s, notes = %s, lot_id = %s
             WHERE id = %s
-        """, (date, sku, quantity, transaction_type, notes, transaction_id))
+        """, (date, sku, quantity, transaction_type, notes, lot_id, transaction_id))
         
         # Apply new transaction effect
         if transaction_type in ['Receive', 'Adjust Up', 'Repack']:

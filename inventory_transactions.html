@@ -70,10 +70,6 @@
                         <span class="nav-item-icon">📦</span>
                         Inventory Monitor
                     </a>
-                    <a href="/lot_inventory.html" class="nav-item">
-                        <span class="nav-item-icon">🏭</span>
-                        Lot Inventory
-                    </a>
                     <a href="/charge_report.html" class="nav-item">
                         <span class="nav-item-icon">💰</span>
                         Charge Report
@@ -168,6 +164,20 @@
             </div>
 
             <div class="content-area">
+
+                <!-- Lot Balances Summary -->
+                <div class="card" style="margin-bottom: 16px;">
+                    <div class="card-header">
+                        <h2 class="card-title">📦 Current Lot Balances</h2>
+                        <button class="btn" onclick="loadLotBalances()" style="font-size:13px;">↻ Refresh</button>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="lot-balances-container">
+                            <div style="padding:16px; color:var(--text-tertiary);">Loading lot balances...</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="controls">
                     <input type="date" id="startDate" placeholder="Start Date">
                     <input type="date" id="endDate" placeholder="End Date">
@@ -203,6 +213,7 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>SKU</th>
+                                    <th>Lot</th>
                                     <th>Quantity</th>
                                     <th>Type</th>
                                     <th>Notes</th>
@@ -233,7 +244,7 @@
                 </div>
                 <div class="form-group">
                     <label for="transactionSku">SKU *</label>
-                    <select id="transactionSku" required>
+                    <select id="transactionSku" required onchange="loadLotsForSku(this.value)">
                         <option value="">Select SKU</option>
                         <option value="17612">17612</option>
                         <option value="17904">17904</option>
@@ -241,6 +252,13 @@
                         <option value="18675">18675</option>
                         <option value="18795">18795</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="transactionLot">Lot Number</label>
+                    <select id="transactionLot">
+                        <option value="">— Select SKU first —</option>
+                    </select>
+                    <small style="color: var(--text-tertiary); font-size: 12px;">Required for Receive and adjustment transactions so the lot balance updates correctly.</small>
                 </div>
                 <div class="form-group">
                     <label for="transactionQuantity">Quantity *</label>
@@ -306,7 +324,75 @@
         });
 
         let allTransactions = [];
-        
+
+        // ── Lot Balances Summary ──────────────────────────────────────
+        async function loadLotBalances() {
+            const container = document.getElementById('lot-balances-container');
+            try {
+                const res = await fetch('/api/lot_inventory');
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+                const lots = data.lots;
+                if (lots.length === 0) {
+                    container.innerHTML = '<div style="padding:16px;color:var(--text-tertiary);">No lots found.</div>';
+                    return;
+                }
+                const statusBadge = (s, balance) => {
+                    if (s === 'active' && balance > 0) return `<span style="background:var(--success-green,#16a34a);color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Active</span>`;
+                    if (s === 'active' && balance === 0) return `<span style="background:#d97706;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Empty</span>`;
+                    if (s === 'depleted') return `<span style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Depleted</span>`;
+                    if (s === 'quarantine') return `<span style="background:#7c3aed;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Quarantine</span>`;
+                    return `<span style="background:var(--border-color);color:var(--text-secondary);padding:2px 8px;border-radius:12px;font-size:11px;">Inactive</span>`;
+                };
+                container.innerHTML = `
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:var(--bg-secondary);">
+                                <th style="padding:10px 16px;text-align:left;font-size:12px;text-transform:uppercase;color:var(--text-tertiary);">SKU</th>
+                                <th style="padding:10px 16px;text-align:left;font-size:12px;text-transform:uppercase;color:var(--text-tertiary);">Lot</th>
+                                <th style="padding:10px 16px;text-align:left;font-size:12px;text-transform:uppercase;color:var(--text-tertiary);">Status</th>
+                                <th style="padding:10px 16px;text-align:right;font-size:12px;text-transform:uppercase;color:var(--text-tertiary);">Balance</th>
+                                <th style="padding:10px 16px;text-align:left;font-size:12px;text-transform:uppercase;color:var(--text-tertiary);">Received</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${lots.map((l, i) => `
+                            <tr style="border-top:1px solid var(--border-color);${i % 2 === 1 ? 'background:var(--bg-secondary);' : ''}">
+                                <td style="padding:10px 16px;font-weight:600;">${l.sku}</td>
+                                <td style="padding:10px 16px;">${l.lot}</td>
+                                <td style="padding:10px 16px;">${statusBadge(l.status, l.balance)}</td>
+                                <td style="padding:10px 16px;text-align:right;font-weight:700;font-size:16px;">${l.balance.toLocaleString()}</td>
+                                <td style="padding:10px 16px;color:var(--text-secondary);font-size:13px;">${l.received_date || '—'}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>`;
+            } catch (err) {
+                container.innerHTML = `<div style="padding:16px;color:#dc2626;">Failed to load lot balances: ${err.message}</div>`;
+            }
+        }
+
+        // ── Lot dropdown for form ─────────────────────────────────────
+        async function loadLotsForSku(sku) {
+            const select = document.getElementById('transactionLot');
+            if (!sku) {
+                select.innerHTML = '<option value="">— Select SKU first —</option>';
+                return;
+            }
+            select.innerHTML = '<option value="">Loading...</option>';
+            try {
+                const res = await fetch(`/api/lots_by_sku/${encodeURIComponent(sku)}`);
+                const lots = await res.json();
+                if (lots.error) throw new Error(lots.error);
+                select.innerHTML = '<option value="">— No lot (untracked) —</option>' +
+                    lots.map(l => {
+                        const label = `${l.lot_number} (${l.status}${l.received_date ? ', rcvd ' + l.received_date : ''})`;
+                        return `<option value="${l.lot_id}">${label}</option>`;
+                    }).join('');
+            } catch (err) {
+                select.innerHTML = '<option value="">Failed to load lots</option>';
+            }
+        }
+
         async function fetchTransactions() {
             try {
                 const startDate = document.getElementById('startDate').value;
@@ -341,7 +427,7 @@
             const table = document.getElementById('transactionsTable');
             
             if (transactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-tertiary);">No transactions found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-tertiary);">No transactions found</td></tr>';
                 cardsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-tertiary);">No transactions found</div>';
                 loading.style.display = 'none';
                 table.style.display = 'table';
@@ -352,10 +438,14 @@
             // Render desktop table view
             tbody.innerHTML = transactions.map(t => {
                 const badgeClass = `badge-${t.transaction_type.toLowerCase().replace(' ', '-')}`;
+                const lotDisplay = t.lot_number
+                    ? `<span style="font-family:monospace;font-size:13px;">${t.lot_number}</span>`
+                    : `<span style="color:var(--text-tertiary);">—</span>`;
                 return `
                     <tr data-transaction-id="${t.id}">
                         <td>${t.date}</td>
                         <td><strong>${t.sku}</strong></td>
+                        <td>${lotDisplay}</td>
                         <td>${t.quantity}</td>
                         <td><span class="badge ${badgeClass}">${t.transaction_type}</span></td>
                         <td>${t.notes || '-'}</td>
@@ -382,6 +472,10 @@
                             <div class="card-row">
                                 <span class="label">Date:</span>
                                 <span>${t.date}</span>
+                            </div>
+                            <div class="card-row">
+                                <span class="label">Lot:</span>
+                                <span style="font-family:monospace;">${t.lot_number || '—'}</span>
                             </div>
                             <div class="card-row">
                                 <span class="label">Quantity:</span>
@@ -532,7 +626,7 @@
             document.getElementById('transactionModal').classList.add('active');
         }
         
-        function editTransaction(id) {
+        async function editTransaction(id) {
             const transaction = allTransactions.find(t => t.id === id);
             if (!transaction) return;
             
@@ -543,11 +637,19 @@
             document.getElementById('transactionQuantity').value = transaction.quantity;
             document.getElementById('transactionType').value = transaction.transaction_type;
             document.getElementById('transactionNotes').value = transaction.notes || '';
+
+            await loadLotsForSku(transaction.sku);
+            if (transaction.lot_id) {
+                document.getElementById('transactionLot').value = transaction.lot_id;
+            }
+
             document.getElementById('transactionModal').classList.add('active');
         }
         
         function closeModal() {
             document.getElementById('transactionModal').classList.remove('active');
+            document.getElementById('transactionForm').reset();
+            document.getElementById('transactionLot').innerHTML = '<option value="">— Select SKU first —</option>';
         }
         
         async function deleteTransaction(id) {
@@ -576,12 +678,14 @@
             e.preventDefault();
             
             const id = document.getElementById('transactionId').value;
+            const selectedLotId = document.getElementById('transactionLot').value;
             const data = {
                 date: document.getElementById('transactionDate').value,
                 sku: document.getElementById('transactionSku').value,
                 quantity: parseInt(document.getElementById('transactionQuantity').value),
                 transaction_type: document.getElementById('transactionType').value,
-                notes: document.getElementById('transactionNotes').value
+                notes: document.getElementById('transactionNotes').value,
+                lot_id: selectedLotId ? parseInt(selectedLotId) : null
             };
             
             try {
@@ -672,6 +776,7 @@
         
         fetchTransactions();
         fetchSkus();
+        loadLotBalances();
     </script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/alert-bar.js"></script>
