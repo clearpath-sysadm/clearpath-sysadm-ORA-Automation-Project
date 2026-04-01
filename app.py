@@ -8082,6 +8082,28 @@ def reset_shipstation_watermark():
             'error': str(e)
         }), 500
 
+@app.route('/api/admin/backfill-weekly-history', methods=['POST'])
+@admin_required
+def admin_backfill_weekly_history():
+    """
+    Corrects weekly_shipped_history from Aug 2025 onwards by recomputing totals
+    directly from shipped_items (the authoritative UPSERT-based source).
+
+    Fixes the undercount bug where incremental EOW runs were overwriting full-week
+    totals with only the most recent API batch data.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        from src.daily_shipment_processor import backfill_weekly_history_from_shipped_items
+        result = backfill_weekly_history_from_shipped_items()
+        logger.info(f"Weekly history backfill complete: {result}")
+        return jsonify({'success': True, **result}), 200
+    except Exception as e:
+        logger.error(f"Weekly history backfill failed: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/admin/fix-order-status-sync', methods=['POST'])
 @admin_required
 def fix_order_status_sync():

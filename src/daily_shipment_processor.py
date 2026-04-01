@@ -136,38 +136,33 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
         existing_history_df = existing_history_df[existing_history_df['Start Date'] < next_monday].reset_index(drop=True)
         return existing_history_df
     
-    # Helper function to filter raw shipment data for a specific week
-    def filter_shipments_for_week(shipment_data, start_date, end_date):
-        filtered = []
-        for s in shipment_data:
-            ship_date_str = s.get('shipDate')
-            if ship_date_str:
-                ship_date = datetime.datetime.strptime(ship_date_str[:10], '%Y-%m-%d').date()
-                if start_date <= ship_date <= end_date:
-                    filtered.append(s)
-        return filtered
-    
-    # Get shipments for the processed week
-    processed_week_shipments = filter_shipments_for_week(
-        shipment_data, processed_week_start, processed_week_end
+    # Query shipped_items directly for accurate week totals.
+    # shipped_items is UPSERT-based and accumulates correctly over time, unlike the raw
+    # ShipStation API batch which only covers the current incremental window and would
+    # overwrite the full week total with a partial day's data on each run.
+    sku_placeholders = ','.join(['%s'] * len(target_skus))
+    week_rows = execute_query(
+        f"SELECT base_sku, SUM(quantity_shipped) AS qty FROM shipped_items "
+        f"WHERE ship_date::date BETWEEN %s AND %s AND base_sku IN ({sku_placeholders}) "
+        f"GROUP BY base_sku",
+        (str(processed_week_start), str(processed_week_end)) + tuple(target_skus)
     )
     
-    # Aggregate the processed week's data
-    processed_week_summary_df = aggregate_weekly_shipped_history(
-        processed_week_shipments,
-        target_skus
-    )
-    
-    if processed_week_summary_df.empty:
-        logger.warning(f"Aggregation of processed week ({processed_week_start} to {processed_week_end}) resulted in empty DataFrame.")
-        # Still purge incomplete weeks before returning
+    if not week_rows:
+        logger.warning(f"No shipped_items data found for processed week ({processed_week_start} to {processed_week_end}). "
+                      "Skipping history update for this week.")
         next_monday = current_monday + datetime.timedelta(days=7)
         existing_history_df['Start Date'] = pd.to_datetime(existing_history_df['Start Date']).dt.date
         existing_history_df = existing_history_df[existing_history_df['Start Date'] < next_monday].reset_index(drop=True)
         return existing_history_df
     
-    # Get the aggregated row
-    new_week_row = processed_week_summary_df.iloc[0]
+    sku_quantities = {str(row[0]): int(row[1]) for row in week_rows}
+    logger.info(f"Week totals from shipped_items for {processed_week_start}: {sku_quantities}")
+    
+    new_week_data = {'Start Date': processed_week_start, 'Stop Date': processed_week_end}
+    for sku in target_skus:
+        new_week_data[sku] = sku_quantities.get(sku, 0)
+    new_week_row = pd.Series(new_week_data)
     
     logger.info(f"Aggregated data for week {processed_week_start} to {processed_week_end}")
     
@@ -421,6 +416,79 @@ def get_weekly_history_from_db(target_skus):
         return pd.DataFrame(columns=expected_columns)
 
 
+def backfill_weekly_history_from_shipped_items(target_skus=None, cutoff_date='2025-08-25'):
+    """
+    Corrects weekly_shipped_history entries for weeks >= cutoff_date by recomputing
+    totals from shipped_items (the authoritative, UPSERT-based source).
+
+    This fixes the historical undercount caused by update_weekly_history_incrementally()
+    overwriting full-week totals with only the most recent incremental API batch.
+
+    Weeks before cutoff_date are left untouched — they were populated by the original
+    ShipStation backfill and are accurate.
+
+    Returns:
+        dict: {'weeks_processed': int, 'records_updated': int}
+    """
+    logger.info(f"Starting weekly history backfill from shipped_items (cutoff: {cutoff_date})...")
+
+    if target_skus is None:
+        target_skus_rows = execute_query("""
+            SELECT sku FROM configuration_params
+            WHERE category = 'Key Products'
+            ORDER BY sku
+        """)
+        target_skus = [str(row[0]) for row in target_skus_rows] if target_skus_rows else ['17612', '17904', '17914', '18675', '18795']
+
+    sku_placeholders = ','.join(['%s'] * len(target_skus))
+
+    distinct_weeks = execute_query(
+        f"""
+        SELECT DISTINCT
+            DATE_TRUNC('week', ship_date::date)::date AS week_start,
+            (DATE_TRUNC('week', ship_date::date) + INTERVAL '6 days')::date AS week_end
+        FROM shipped_items
+        WHERE ship_date::date >= %s
+          AND base_sku IN ({sku_placeholders})
+          AND ship_date::date < DATE_TRUNC('week', CURRENT_DATE)
+        ORDER BY week_start
+        """,
+        (cutoff_date,) + tuple(target_skus)
+    )
+
+    if not distinct_weeks:
+        logger.warning("No weeks found in shipped_items >= cutoff_date. Nothing to backfill.")
+        return {'weeks_processed': 0, 'records_updated': 0}
+
+    records_updated = 0
+    with transaction() as conn:
+        for week_start, week_end in distinct_weeks:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                SELECT base_sku, SUM(quantity_shipped) AS qty
+                FROM shipped_items
+                WHERE ship_date::date BETWEEN %s AND %s
+                  AND base_sku IN ({sku_placeholders})
+                GROUP BY base_sku
+                """,
+                (str(week_start), str(week_end)) + tuple(target_skus)
+            )
+            sku_totals = {str(row[0]): int(row[1]) for row in cursor.fetchall()}
+
+            for sku, qty in sku_totals.items():
+                cursor.execute("""
+                    INSERT INTO weekly_shipped_history (start_date, end_date, sku, quantity_shipped)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (start_date, end_date, sku) DO UPDATE SET
+                        quantity_shipped = excluded.quantity_shipped
+                """, (str(week_start), str(week_end), sku, qty))
+                records_updated += 1
+
+    logger.info(f"Backfill complete: {len(distinct_weeks)} weeks processed, {records_updated} records updated.")
+    return {'weeks_processed': len(distinct_weeks), 'records_updated': records_updated}
+
+
 def run_daily_shipment_pull(request=None):
     """
     Main function for the daily shipment processor.
@@ -548,6 +616,13 @@ def run_daily_shipment_pull(request=None):
         updated_history_df = update_weekly_history_incrementally(items_df.copy(), existing_history_df.copy(), target_skus, shipment_data)
         
         history_saved = save_weekly_history_to_db(updated_history_df)
+
+        # Backfill all weeks from Aug 2025 onwards using shipped_items as the authoritative
+        # source. This self-heals any historical undercount from the prior overwrite bug and
+        # is idempotent — safe to run on every processor invocation.
+        logger.info("Running weekly history backfill from shipped_items to correct any historical undercount...")
+        backfill_result = backfill_weekly_history_from_shipped_items(target_skus=target_skus)
+        logger.info(f"Backfill result: {backfill_result}")
         
         # --- 7. Calculate and Update Current Inventory ---
         logger.info("Calculating current inventory...")
