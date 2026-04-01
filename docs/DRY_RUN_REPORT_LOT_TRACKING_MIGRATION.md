@@ -113,10 +113,10 @@ No `ON CONFLICT` clause and no `except psycopg2.IntegrityError` handler. If the 
 
 ## Priority Fix Order
 
-| Priority | Issue | Action |
-|----------|-------|--------|
-| 1 | Issue 2 — Duplicate active lots (data) | One SQL UPDATE against live DB |
-| 2 | Issue 1 — Delete FK violation (sku_lots page) | One-line code fix in app.py |
-| 3 | Issue 3 — Delete FK violation (lot_inventory page, deferred) | One-line code fix in app.py |
-| 4 | Issue 5 — Correction duplicate error UX | Add except block in app.py |
-| 5 | Issue 4 — Utility scripts | Update before dropping sku_lot table |
+| Priority | Issue | Action | Status |
+|----------|-------|--------|--------|
+| 1 | Issue 2 — Duplicate active lots (data) | Dev DB only — not applicable to production | Deferred |
+| 2 | Issue 1 — Delete FK violation (sku_lots page) | `app.py` `api_delete_sku_lot` — clear `inventory_transactions` + NULL `shipstation_order_line_items.lot_id` first | **Fixed** |
+| 3 | Issue 3 — Delete FK violation (lot_inventory page) | `app.py` `api_delete_lot_inventory` — NULL `shipstation_order_line_items.lot_id` before delete | **Fixed** |
+| 4 | Issue 5 — Correction duplicate error UX | `app.py` `api_correct_lot_inventory` — added `psycopg2.IntegrityError` → HTTP 409 handler | **Fixed** |
+| 5 | Issue 4 — Utility scripts | `utils/cleanup_shipstation_duplicates.py` updated to `lots`/`skus`; two SQLite scripts are obsolete and excluded | **Fixed** |

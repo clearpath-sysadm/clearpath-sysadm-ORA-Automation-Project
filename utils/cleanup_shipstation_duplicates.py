@@ -55,9 +55,10 @@ def get_active_lot_map():
     cursor = conn.cursor()
     
     cursor.execute("""
-        SELECT sku, lot
-        FROM sku_lot
-        WHERE active = 1
+        SELECT s.sku_code, l.lot_number
+        FROM lots l
+        JOIN skus s ON s.sku_id = l.sku_id
+        WHERE l.status = 'active'
     """)
     
     # FIX: Normalize keys to base SKU (first 5 chars) for lookup compatibility

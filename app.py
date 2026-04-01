@@ -5054,6 +5054,14 @@ def api_delete_sku_lot(sku_lot_id):
         row = cursor.fetchone()
         sku_info = f"SKU {row[0]} → Lot {row[1]}" if row else f"ID {sku_lot_id}"
 
+        # Clear FK references before deleting the lot
+        cursor.execute(
+            "DELETE FROM inventory_transactions WHERE lot_id = %s", (sku_lot_id,)
+        )
+        cursor.execute(
+            "UPDATE shipstation_order_line_items SET lot_id = NULL WHERE lot_id = %s",
+            (sku_lot_id,)
+        )
         cursor.execute("DELETE FROM lots WHERE lot_id = %s", (sku_lot_id,))
 
         conn.commit()
@@ -7612,9 +7620,13 @@ def api_delete_lot_inventory(lot_id):
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Remove transactions first (FK constraint)
+        # Clear FK references before deleting the lot
         cursor.execute(
             "DELETE FROM inventory_transactions WHERE lot_id = %s", (lot_id,)
+        )
+        cursor.execute(
+            "UPDATE shipstation_order_line_items SET lot_id = NULL WHERE lot_id = %s",
+            (lot_id,)
         )
         cursor.execute("DELETE FROM lots WHERE lot_id = %s", (lot_id,))
 
@@ -7711,6 +7723,11 @@ def api_correct_lot_inventory(lot_id):
             'message': 'Correction recorded successfully',
             'transaction_id': tx_id
         })
+    except psycopg2.IntegrityError:
+        return jsonify({
+            'success': False,
+            'error': 'An identical correction for this date, type, and amount already exists'
+        }), 409
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
