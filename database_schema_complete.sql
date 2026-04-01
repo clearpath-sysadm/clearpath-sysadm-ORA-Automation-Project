@@ -402,6 +402,7 @@ CREATE TABLE public.inventory_transactions (
     transaction_type text NOT NULL,
     notes text,
     created_at text DEFAULT CURRENT_TIMESTAMP,
+    lot_id integer REFERENCES public.lots(lot_id),
     CONSTRAINT inventory_transactions_quantity_check CHECK ((quantity <> 0)),
     CONSTRAINT inventory_transactions_transaction_type_check CHECK ((transaction_type = ANY (ARRAY['Receive'::text, 'Ship'::text, 'Adjust Up'::text, 'Adjust Down'::text, 'Repack'::text])))
 );
@@ -463,6 +464,89 @@ CREATE SEQUENCE public.lot_inventory_id_seq
 --
 
 ALTER SEQUENCE public.lot_inventory_id_seq OWNED BY public.lot_inventory.id;
+
+
+--
+-- Name: skus; Type: TABLE; Schema: public; Owner: -
+-- (Added by migration 009 — source of truth for SKU codes referenced by lots)
+--
+
+CREATE TABLE public.skus (
+    sku_id integer NOT NULL,
+    sku_code text NOT NULL,
+    CONSTRAINT skus_sku_code_unique UNIQUE (sku_code)
+);
+
+CREATE SEQUENCE public.skus_sku_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.skus_sku_id_seq OWNED BY public.skus.sku_id;
+ALTER TABLE ONLY public.skus ALTER COLUMN sku_id SET DEFAULT nextval('public.skus_sku_id_seq'::regclass);
+
+
+--
+-- Name: lots; Type: TABLE; Schema: public; Owner: -
+-- (Added by migration 009 — consolidates sku_lot + lot_inventory)
+--
+
+CREATE TABLE public.lots (
+    lot_id integer NOT NULL,
+    sku_id integer NOT NULL,
+    lot_number text NOT NULL,
+    status text DEFAULT 'active'::text NOT NULL,
+    received_date text,
+    notes text,
+    created_at text DEFAULT CURRENT_TIMESTAMP,
+    updated_at text DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT lots_sku_id_lot_number_unique UNIQUE (sku_id, lot_number),
+    CONSTRAINT lots_status_check CHECK ((status = ANY (ARRAY['active'::text, 'inactive'::text, 'depleted'::text, 'quarantine'::text]))),
+    CONSTRAINT lots_sku_id_fkey FOREIGN KEY (sku_id) REFERENCES public.skus(sku_id)
+);
+
+CREATE SEQUENCE public.lots_lot_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.lots_lot_id_seq OWNED BY public.lots.lot_id;
+ALTER TABLE ONLY public.lots ALTER COLUMN lot_id SET DEFAULT nextval('public.lots_lot_id_seq'::regclass);
+
+
+--
+-- Name: lot_balances; Type: VIEW; Schema: public; Owner: -
+-- (Added by migration 009 — computed balance per lot from inventory_transactions)
+--
+
+CREATE VIEW public.lot_balances AS
+SELECT
+    l.lot_id,
+    s.sku_code,
+    l.lot_number,
+    l.status,
+    l.received_date,
+    l.notes,
+    l.created_at,
+    l.updated_at,
+    COALESCE(SUM(
+        CASE
+            WHEN it.transaction_type IN ('Receive', 'Adjust Up', 'Repack') THEN  it.quantity
+            WHEN it.transaction_type IN ('Ship', 'Adjust Down')            THEN -it.quantity
+            ELSE 0
+        END
+    ), 0) AS balance
+FROM public.lots l
+JOIN public.skus s ON s.sku_id = l.sku_id
+LEFT JOIN public.inventory_transactions it ON it.lot_id = l.lot_id
+GROUP BY l.lot_id, s.sku_code, l.lot_number, l.status,
+         l.received_date, l.notes, l.created_at, l.updated_at;
 
 
 --
@@ -971,7 +1055,8 @@ CREATE TABLE public.shipstation_order_line_items (
     order_inbox_id integer NOT NULL,
     sku text NOT NULL,
     shipstation_order_id text NOT NULL,
-    created_at text DEFAULT CURRENT_TIMESTAMP
+    created_at text DEFAULT CURRENT_TIMESTAMP,
+    lot_id integer REFERENCES public.lots(lot_id)
 );
 
 
@@ -1548,6 +1633,9 @@ ALTER TABLE ONLY public.inventory_current
 
 ALTER TABLE ONLY public.inventory_transactions
     ADD CONSTRAINT inventory_transactions_date_sku_transaction_type_quantity_key UNIQUE (date, sku, transaction_type, quantity);
+-- NOTE: migration 009 replaces the above constraint with a functional unique index:
+-- CREATE UNIQUE INDEX inventory_transactions_date_sku_lot_id_type_qty_key
+-- ON inventory_transactions (date, sku, COALESCE(lot_id, -1), transaction_type, quantity);
 
 
 --
@@ -2083,7 +2171,8 @@ CREATE INDEX idx_shipped_orders_date ON public.shipped_orders USING btree (ship_
 -- Name: idx_shipstation_order_line_items_unique; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX idx_shipstation_order_line_items_unique ON public.shipstation_order_line_items USING btree (order_inbox_id, sku);
+-- Migration 009 replaces the simple two-column index with a lot-aware one:
+CREATE UNIQUE INDEX idx_shipstation_order_line_items_unique ON public.shipstation_order_line_items USING btree (order_inbox_id, sku, COALESCE(lot_id, -1));
 
 
 --

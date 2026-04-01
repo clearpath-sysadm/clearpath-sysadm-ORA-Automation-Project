@@ -297,9 +297,9 @@
             <div class="content-area">
                 <!-- Info Banner -->
                 <div class="info-banner">
-                    <div class="info-banner-title">📦 Auto-Calculated FIFO Inventory</div>
+                    <div class="info-banner-title">📦 Transaction-Based FIFO Inventory</div>
                     <div class="info-banner-text">
-                        Current quantity is automatically calculated: <strong>Initial Qty - Shipped + Manual Adjustment</strong>. Lots are sorted by received date (oldest first per SKU). Shipped quantities are automatically deducted from shipped_items table. Use manual adjustments for corrections, damages, or receipts.
+                        Balance is computed live from all inventory transactions (Receive, Ship, Adjust Up/Down, Repack) linked to each lot. Lots are sorted by received date (oldest first per SKU). Use <strong>Record Correction</strong> to post an adjustment for a specific lot.
                     </div>
                 </div>
 
@@ -325,16 +325,16 @@
     <!-- Mobile Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
 
-    <!-- Add/Edit Modal -->
+    <!-- Add/Edit Lot Modal -->
     <div class="modal-overlay" id="lot-modal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title" id="modal-title">Add Lot Inventory</h3>
+                <h3 class="modal-title" id="modal-title">Add Lot</h3>
             </div>
             <div class="modal-body">
                 <form id="lot-form">
                     <input type="hidden" id="lot-id">
-                    
+
                     <div class="form-group">
                         <label class="form-label" for="sku">SKU *</label>
                         <input type="text" class="form-input" id="sku" placeholder="e.g., 17612" required>
@@ -345,16 +345,10 @@
                         <input type="text" class="form-input" id="lot" placeholder="e.g., 250237" required>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="initial-qty">Initial Quantity *</label>
-                        <input type="number" class="form-input" id="initial-qty" min="0" placeholder="e.g., 5000" required>
-                        <small style="color: var(--text-tertiary); font-size: 12px;">Starting inventory for this lot</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="manual-adjustment">Manual Adjustment</label>
-                        <input type="number" class="form-input" id="manual-adjustment" value="0" placeholder="e.g., -50 or +100">
-                        <small style="color: var(--text-tertiary); font-size: 12px;">Use for corrections, damages, or additional receipts (can be negative)</small>
+                    <div class="form-group" id="initial-qty-group">
+                        <label class="form-label" for="initial-qty">Initial Quantity</label>
+                        <input type="number" class="form-input" id="initial-qty" min="0" value="0" placeholder="e.g., 5000">
+                        <small style="color: var(--text-tertiary); font-size: 12px;">Creates an opening Receive transaction. Use 0 if adding retroactively.</small>
                     </div>
 
                     <div class="form-group">
@@ -366,6 +360,7 @@
                         <label class="form-label" for="status">Status *</label>
                         <select class="form-select" id="status" required>
                             <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
                             <option value="depleted">Depleted</option>
                             <option value="quarantine">Quarantine</option>
                         </select>
@@ -380,6 +375,49 @@
             <div class="modal-footer">
                 <button class="btn" onclick="closeModal()">Cancel</button>
                 <button class="btn" onclick="saveLot()">Save Lot</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Correction Modal -->
+    <div class="modal-overlay" id="correction-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Record Inventory Correction</h3>
+            </div>
+            <div class="modal-body">
+                <form id="correction-form">
+                    <input type="hidden" id="correction-lot-id">
+                    <p id="correction-lot-info" style="margin-bottom: 16px; color: var(--text-secondary); font-size: 14px;"></p>
+
+                    <div class="form-group">
+                        <label class="form-label" for="correction-type">Correction Type *</label>
+                        <select class="form-select" id="correction-type" required>
+                            <option value="Adjust Up">Adjust Up (increase balance)</option>
+                            <option value="Adjust Down">Adjust Down (decrease balance)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="correction-amount">Amount *</label>
+                        <input type="number" class="form-input" id="correction-amount" min="1" placeholder="e.g., 50" required>
+                        <small style="color: var(--text-tertiary); font-size: 12px;">Enter a positive number. Direction is set by correction type above.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="correction-date">Date *</label>
+                        <input type="date" class="form-input" id="correction-date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="correction-notes">Notes (Optional)</label>
+                        <textarea class="form-textarea" id="correction-notes" placeholder="Reason for adjustment, damage report, etc."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeCorrectionModal()">Cancel</button>
+                <button class="btn" onclick="saveCorrection()">Record Correction</button>
             </div>
         </div>
     </div>
@@ -482,10 +520,7 @@
             let html = '<div class="table-container"><table><thead><tr>';
             html += '<th>SKU</th>';
             html += '<th>Lot Number</th>';
-            html += '<th>Initial Qty</th>';
-            html += '<th>Shipped</th>';
-            html += '<th>Manual Adj</th>';
-            html += '<th>Current Qty</th>';
+            html += '<th>Balance</th>';
             html += '<th>Received Date</th>';
             html += '<th>Priority (FIFO)</th>';
             html += '<th>Status</th>';
@@ -499,18 +534,16 @@
                     html += '<tr>';
                     html += `<td><strong>${lot.sku}</strong></td>`;
                     html += `<td>${lot.lot}</td>`;
-                    html += `<td>${lot.initial_qty.toLocaleString()}</td>`;
-                    html += `<td style="color: var(--error-red);">-${lot.total_shipped.toLocaleString()}</td>`;
-                    html += `<td style="color: ${lot.manual_adjustment >= 0 ? 'var(--success-green)' : 'var(--error-red)'};">${lot.manual_adjustment >= 0 ? '+' : ''}${lot.manual_adjustment.toLocaleString()}</td>`;
-                    html += `<td><strong style="font-size: 15px;">${lot.current_qty.toLocaleString()}</strong></td>`;
+                    html += `<td><strong style="font-size: 15px;">${lot.balance.toLocaleString()}</strong></td>`;
                     html += `<td>${formatDate(lot.received_date)}</td>`;
-                    
+
                     // Priority indicator (1st = oldest)
                     const priority = index + 1;
                     html += `<td><span class="priority-indicator ${priority === 1 ? 'priority-1' : ''}">#${priority}</span></td>`;
-                    
-                    html += `<td>${getStatusBadge(lot.status, lot.current_qty)}</td>`;
+
+                    html += `<td>${getStatusBadge(lot.status, lot.balance)}</td>`;
                     html += `<td><div class="action-buttons">
+                        <button class="btn btn-sm" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')">Correct</button>
                         <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>
                         <button class="btn btn-sm" onclick="deleteLot(${lot.id})">Delete</button>
                     </div></td>`;
@@ -526,9 +559,7 @@
                 const skuLots = lotsBySKU[sku];
                 skuLots.forEach((lot, index) => {
                     const priority = index + 1;
-                    const adjColor = lot.manual_adjustment >= 0 ? 'var(--success-green)' : 'var(--error-red)';
-                    const adjSign = lot.manual_adjustment >= 0 ? '+' : '';
-                    
+
                     html += `<div class="lot-card">`;
                     html += `<div class="lot-card-header">`;
                     html += `<div>`;
@@ -536,36 +567,28 @@
                     html += `<div class="lot-card-lot">Lot: ${lot.lot}</div>`;
                     html += `</div>`;
                     html += `<div>`;
-                    html += `<div class="lot-card-qty">${lot.current_qty.toLocaleString()}</div>`;
-                    html += `<div class="lot-card-qty-label">Current Qty</div>`;
+                    html += `<div class="lot-card-qty">${lot.balance.toLocaleString()}</div>`;
+                    html += `<div class="lot-card-qty-label">Balance</div>`;
                     html += `</div>`;
                     html += `</div>`;
-                    
+
                     html += `<div class="lot-card-grid">`;
-                    html += `<div class="lot-card-item">`;
-                    html += `<div class="lot-card-item-label">Initial</div>`;
-                    html += `<div class="lot-card-item-value">${lot.initial_qty.toLocaleString()}</div>`;
-                    html += `</div>`;
-                    html += `<div class="lot-card-item">`;
-                    html += `<div class="lot-card-item-label">Shipped</div>`;
-                    html += `<div class="lot-card-item-value" style="color: var(--error-red);">-${lot.total_shipped.toLocaleString()}</div>`;
-                    html += `</div>`;
-                    html += `<div class="lot-card-item">`;
-                    html += `<div class="lot-card-item-label">Adjustment</div>`;
-                    html += `<div class="lot-card-item-value" style="color: ${adjColor};">${adjSign}${lot.manual_adjustment.toLocaleString()}</div>`;
-                    html += `</div>`;
                     html += `<div class="lot-card-item">`;
                     html += `<div class="lot-card-item-label">Received</div>`;
                     html += `<div class="lot-card-item-value">${formatDate(lot.received_date)}</div>`;
                     html += `</div>`;
+                    html += `<div class="lot-card-item">`;
+                    html += `<div class="lot-card-item-label">FIFO Priority</div>`;
+                    html += `<div class="lot-card-item-value">#${priority}</div>`;
                     html += `</div>`;
-                    
+                    html += `</div>`;
+
                     html += `<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">`;
-                    html += `<span class="priority-badge ${priority === 1 ? 'priority-1' : ''}">FIFO #${priority}</span>`;
-                    html += getStatusBadge(lot.status, lot.current_qty);
+                    html += getStatusBadge(lot.status, lot.balance);
                     html += `</div>`;
-                    
+
                     html += `<div class="lot-card-footer">`;
+                    html += `<button class="btn btn-sm" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')">Correct</button>`;
                     html += `<button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>`;
                     html += `<button class="btn btn-sm" onclick="deleteLot(${lot.id})">Delete</button>`;
                     html += `</div>`;
@@ -584,21 +607,24 @@
         }
 
         // Get status badge
-        function getStatusBadge(status, qty) {
+        function getStatusBadge(status, balance) {
             let badgeClass = 'status-active';
             let displayStatus = status;
 
-            if (status === 'depleted' || qty === 0) {
+            if (status === 'depleted' || balance === 0) {
                 badgeClass = 'status-depleted';
                 displayStatus = 'Depleted';
-            } else if (status === 'active' && qty < 1000) {
+            } else if (status === 'quarantine') {
+                badgeClass = 'status-low';
+                displayStatus = 'Quarantine';
+            } else if (status === 'inactive') {
+                badgeClass = 'status-depleted';
+                displayStatus = 'Inactive';
+            } else if (status === 'active' && balance < 1000) {
                 badgeClass = 'status-low';
                 displayStatus = 'Low Stock';
             } else if (status === 'active') {
                 displayStatus = 'Active';
-            } else if (status === 'quarantine') {
-                badgeClass = 'status-low';
-                displayStatus = 'Quarantine';
             }
 
             return `<span class="status-badge ${badgeClass}">${displayStatus}</span>`;
@@ -607,31 +633,34 @@
         // Open add modal
         function openAddModal() {
             editingLotId = null;
-            document.getElementById('modal-title').textContent = 'Add Lot Inventory';
+            document.getElementById('modal-title').textContent = 'Add Lot';
             document.getElementById('lot-form').reset();
             document.getElementById('lot-id').value = '';
-            
+            document.getElementById('initial-qty-group').style.display = '';
+            document.getElementById('initial-qty').value = 0;
+
             // Set today as default received date
             document.getElementById('received-date').valueAsDate = new Date();
-            
+
             document.getElementById('lot-modal').classList.add('active');
         }
 
-        // Edit lot
+        // Edit lot — only metadata; balance is changed via corrections
         function editLot(id) {
             const lot = lots.find(l => l.id === id);
             if (!lot) return;
 
             editingLotId = id;
-            document.getElementById('modal-title').textContent = 'Edit Lot Inventory';
+            document.getElementById('modal-title').textContent = 'Edit Lot';
             document.getElementById('lot-id').value = lot.id;
             document.getElementById('sku').value = lot.sku;
             document.getElementById('lot').value = lot.lot;
-            document.getElementById('initial-qty').value = lot.initial_qty;
-            document.getElementById('manual-adjustment').value = lot.manual_adjustment;
-            document.getElementById('received-date').value = lot.received_date;
+            document.getElementById('received-date').value = lot.received_date || '';
             document.getElementById('status').value = lot.status;
             document.getElementById('notes').value = lot.notes || '';
+
+            // Hide initial quantity (not editable on existing lots)
+            document.getElementById('initial-qty-group').style.display = 'none';
 
             // Disable SKU/Lot editing
             document.getElementById('sku').disabled = true;
@@ -646,49 +675,38 @@
             document.getElementById('lot-form').reset();
             document.getElementById('sku').disabled = false;
             document.getElementById('lot').disabled = false;
-            document.getElementById('manual-adjustment').value = 0;
+            document.getElementById('initial-qty-group').style.display = '';
             editingLotId = null;
         }
 
-        // Save lot
+        // Save lot (create or update)
         async function saveLot() {
-            const sku = document.getElementById('sku').value.trim();
-            const lot = document.getElementById('lot').value.trim();
-            const initialQty = parseInt(document.getElementById('initial-qty').value);
-            const manualAdjustment = parseInt(document.getElementById('manual-adjustment').value || 0);
+            const sku          = document.getElementById('sku').value.trim();
+            const lot          = document.getElementById('lot').value.trim();
             const receivedDate = document.getElementById('received-date').value;
-            const status = document.getElementById('status').value;
-            const notes = document.getElementById('notes').value.trim();
+            const status       = document.getElementById('status').value;
+            const notes        = document.getElementById('notes').value.trim();
 
             if (!sku || !lot || !receivedDate) {
-                alert('Please fill in all required fields');
+                alert('Please fill in SKU, Lot Number, and Received Date');
                 return;
             }
 
-            const lotData = {
-                sku,
-                lot,
-                initial_qty: initialQty,
-                manual_adjustment: manualAdjustment,
-                received_date: receivedDate,
-                status,
-                notes
-            };
+            const lotData = { sku, lot, received_date: receivedDate, status, notes };
+
+            if (!editingLotId) {
+                // Only send initial_qty on create
+                const initialQty = parseInt(document.getElementById('initial-qty').value || 0);
+                lotData.initial_qty = initialQty;
+            }
 
             try {
-                let url = '/api/lot_inventory';
-                let method = 'POST';
-
-                if (editingLotId) {
-                    url = `/api/lot_inventory/${editingLotId}`;
-                    method = 'PUT';
-                }
+                const url    = editingLotId ? `/api/lot_inventory/${editingLotId}` : '/api/lot_inventory';
+                const method = editingLotId ? 'PUT' : 'POST';
 
                 const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(lotData)
                 });
 
@@ -704,6 +722,65 @@
             } catch (error) {
                 console.error('Error:', error);
                 showError('Failed to save lot');
+            }
+        }
+
+        // ── Correction Modal ──────────────────────────────────────────────
+
+        function openCorrectionModal(lotId, sku, lot) {
+            document.getElementById('correction-lot-id').value = lotId;
+            document.getElementById('correction-lot-info').textContent =
+                `SKU: ${sku}  |  Lot: ${lot}`;
+            document.getElementById('correction-form').reset();
+            document.getElementById('correction-date').valueAsDate = new Date();
+            document.getElementById('correction-modal').classList.add('active');
+        }
+
+        function closeCorrectionModal() {
+            document.getElementById('correction-modal').classList.remove('active');
+            document.getElementById('correction-form').reset();
+        }
+
+        async function saveCorrection() {
+            const lotId          = document.getElementById('correction-lot-id').value;
+            const correctionType = document.getElementById('correction-type').value;
+            const amount         = parseInt(document.getElementById('correction-amount').value || 0);
+            const correctionDate = document.getElementById('correction-date').value;
+            const notes          = document.getElementById('correction-notes').value.trim();
+
+            if (!amount || amount <= 0) {
+                alert('Amount must be a positive number');
+                return;
+            }
+            if (!correctionDate) {
+                alert('Date is required');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/lot_inventory/${lotId}/correct`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        correction_type: correctionType,
+                        amount,
+                        date: correctionDate,
+                        notes
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeCorrectionModal();
+                    loadLots();
+                    showSuccess('Correction recorded successfully');
+                } else {
+                    showError(data.error || 'Failed to record correction');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to record correction');
             }
         }
 
@@ -743,10 +820,11 @@
             alert('❌ ' + message);
         }
 
-        // Close modal on ESC key
+        // Close modals on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeModal();
+                closeCorrectionModal();
                 closeMobileMenu();
             }
         });

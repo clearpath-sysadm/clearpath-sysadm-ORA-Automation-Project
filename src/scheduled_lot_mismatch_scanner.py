@@ -49,17 +49,18 @@ def get_active_lot_mappings(conn) -> Dict[str, str]:
     """
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT sku, lot
-        FROM sku_lot
-        WHERE active = 1
+        SELECT s.sku_code, l.lot_number
+        FROM lots l
+        JOIN skus s ON s.sku_id = l.sku_id
+        WHERE l.status = 'active'
     """)
-    
+
     mappings = {}
     for row in cursor.fetchall():
         sku = row[0]
         lot = row[1]
         mappings[sku] = lot
-    
+
     return mappings
 
 

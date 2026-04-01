@@ -99,9 +99,11 @@ def extract_base_sku(sku: str) -> str:
 def get_active_sku_lot(base_sku: str) -> str:
     """Get active lot number for a base SKU"""
     rows = execute_query("""
-        SELECT lot_number FROM sku_lot 
-        WHERE sku = %s AND active = 1 
-        ORDER BY id DESC LIMIT 1
+        SELECT l.lot_number
+        FROM lots l
+        JOIN skus s ON s.sku_id = l.sku_id
+        WHERE s.sku_code = %s AND l.status = 'active'
+        ORDER BY l.lot_id DESC LIMIT 1
     """, (base_sku,))
     return rows[0][0] if rows else None
 

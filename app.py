@@ -2149,6 +2149,7 @@ def api_create_inventory_transaction():
         quantity = data.get('quantity')
         transaction_type = data.get('transaction_type')
         notes = data.get('notes', '')
+        lot_id = data.get('lot_id') or None
         
         if not all([date, sku, quantity, transaction_type]):
             return jsonify({
@@ -2175,10 +2176,12 @@ def api_create_inventory_transaction():
         
         # Insert transaction
         cursor.execute("""
-            INSERT INTO inventory_transactions (date, sku, quantity, transaction_type, notes)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (date, sku, quantity, transaction_type, notes))
-        transaction_id = cursor.lastrowid
+            INSERT INTO inventory_transactions
+                (date, sku, quantity, transaction_type, notes, lot_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (date, sku, quantity, transaction_type, notes, lot_id))
+        transaction_id = cursor.fetchone()[0]
         
         # Update inventory_current based on transaction type
         # Increase: Receive, Adjust Up, Repack
@@ -3405,7 +3408,7 @@ def api_orders_inbox():
                 o.status,
                 oi.sku,
                 SUM(oi.quantity) as total_quantity,
-                sl.lot,
+                l.lot_number,
                 o.shipstation_order_id,
                 o.tracking_number,
                 o.created_at,
@@ -3428,8 +3431,9 @@ def api_orders_inbox():
                 o.ship_postal_code
             FROM orders_inbox o
             INNER JOIN order_items_inbox oi ON o.id = oi.order_inbox_id
-            LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
-            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, sl.lot, o.shipstation_order_id, o.tracking_number, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at, o.tracking_status, o.tracking_status_description, o.exception_description, o.flag_resolved, o.flag_resolved_at, o.ship_postal_code
+            LEFT JOIN skus s_sku ON s_sku.sku_code = oi.sku
+            LEFT JOIN lots l ON l.sku_id = s_sku.sku_id AND l.status = 'active'
+            GROUP BY o.id, o.order_number, o.order_date, o.customer_email, o.status, oi.sku, l.lot_number, o.shipstation_order_id, o.tracking_number, o.created_at, o.failure_reason, o.ship_company, o.ship_state, o.ship_country, o.source_system, o.shipping_service_name, o.shipping_carrier_id, o.is_flagged, o.flag_reason, o.notes, o.flagged_at, o.tracking_status, o.tracking_status_description, o.exception_description, o.flag_resolved, o.flag_resolved_at, o.ship_postal_code
             ORDER BY o.created_at DESC, oi.sku
             LIMIT 1000
         """
@@ -3611,11 +3615,12 @@ def api_order_items(order_id):
             SELECT 
                 oi.sku,
                 oi.quantity,
-                sl.lot,
-                sl.active,
+                l.lot_number,
+                CASE WHEN l.status = 'active' THEN 1 ELSE 0 END,
                 ssli.shipstation_order_id
             FROM order_items_inbox oi
-            LEFT JOIN sku_lot sl ON oi.sku = sl.sku AND sl.active = 1
+            LEFT JOIN skus s_sku ON s_sku.sku_code = oi.sku
+            LEFT JOIN lots l ON l.sku_id = s_sku.sku_id AND l.status = 'active'
             LEFT JOIN shipstation_order_line_items ssli ON oi.order_inbox_id = ssli.order_inbox_id AND oi.sku = ssli.sku
             WHERE oi.order_inbox_id = %s
             ORDER BY oi.sku
@@ -4290,11 +4295,12 @@ def api_upload_orders_to_shipstation():
         conn = get_connection()
         cursor = conn.cursor()
         
-        # Fetch SKU-Lot mappings from sku_lot table (new source of truth)
+        # Fetch SKU-Lot mappings from lots table (active lots)
         cursor.execute("""
-            SELECT sku, lot
-            FROM sku_lot 
-            WHERE active = 1
+            SELECT s.sku_code, l.lot_number
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.status = 'active'
         """)
         sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
         
@@ -4830,51 +4836,58 @@ def api_delete_bundle(bundle_id):
         }), 500
 
 # SKU Lot Management Endpoints
+# These endpoints read/write the unified `lots` table (backed by `skus`).
+# The response shape preserves the original field names (id, sku, lot, active)
+# so existing front-end callers require no changes.
+
 @app.route('/api/sku_lots', methods=['GET'])
 def api_get_sku_lots():
-    """Get all SKU-Lot combinations"""
+    """Get all SKU-Lot combinations from the lots table"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute("""
-            SELECT id, sku, lot, active, created_at, updated_at 
-            FROM sku_lot 
-            ORDER BY sku, lot
+            SELECT l.lot_id,
+                   s.sku_code,
+                   l.lot_number,
+                   l.status,
+                   l.created_at,
+                   l.updated_at
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            ORDER BY s.sku_code, l.lot_number
         """)
-        
+
         rows = cursor.fetchall()
         conn.close()
-        
+
         sku_lots = []
         for row in rows:
             sku_lots.append({
-                'id': row[0],
-                'sku': row[1],
-                'lot': row[2],
-                'active': row[3],
+                'id':         row[0],
+                'sku':        row[1],
+                'lot':        row[2],
+                'active':     1 if row[3] == 'active' else 0,
                 'created_at': row[4],
                 'updated_at': row[5]
             })
-        
+
         return jsonify({
             'success': True,
             'data': sku_lots,
             'count': len(sku_lots)
         })
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/sku_lots', methods=['POST'])
 def api_create_sku_lot():
-    """Create a new SKU-Lot combination"""
+    """Create a new SKU-Lot entry in the lots table"""
     from src.utils.server_logger import get_logger
     server_logger = get_logger()
-    
-    # Get current user for logging
+
     user_name = "unknown"
     user_role = None
     try:
@@ -4885,36 +4898,51 @@ def api_create_sku_lot():
             user_role = user.role
     except:
         pass
-    
+
     try:
         data = request.json
-        
-        # Validate required fields
+
         if not data.get('sku') or not data.get('lot'):
             return jsonify({
                 'success': False,
                 'error': 'SKU and Lot are required'
             }), 400
-        
+
+        incoming_active = data.get('active', 1)
+        new_status = 'active' if incoming_active else 'inactive'
+
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Insert new SKU-Lot
+
+        # Ensure the SKU exists in skus; insert if not
         cursor.execute("""
-            INSERT INTO sku_lot (sku, lot, active)
+            INSERT INTO skus (sku_code)
+            VALUES (%s)
+            ON CONFLICT (sku_code) DO NOTHING
+        """, (data['sku'],))
+        cursor.execute(
+            "SELECT sku_id FROM skus WHERE sku_code = %s", (data['sku'],)
+        )
+        sku_id = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO lots (sku_id, lot_number, status)
             VALUES (%s, %s, %s)
-        """, (data['sku'], data['lot'], data.get('active', 1)))
-        
-        sku_lot_id = cursor.lastrowid
+            RETURNING lot_id
+        """, (sku_id, data['lot'], new_status))
+        lot_id = cursor.fetchone()[0]
+
         conn.commit()
         conn.close()
-        
-        active_status = "active" if data.get('active', 1) else "inactive"
-        server_logger.info(f"SKU-Lot created: SKU {data['sku']} → Lot {data['lot']} ({active_status})", source="SKU-Lot", user=user_name, role=user_role)
-        
+
+        server_logger.info(
+            f"SKU-Lot created: SKU {data['sku']} → Lot {data['lot']} ({new_status})",
+            source="SKU-Lot", user=user_name, role=user_role
+        )
+
         return jsonify({
             'success': True,
-            'sku_lot_id': sku_lot_id,
+            'sku_lot_id': lot_id,
             'message': 'SKU-Lot created successfully'
         })
     except psycopg2.IntegrityError:
@@ -4923,18 +4951,15 @@ def api_create_sku_lot():
             'error': 'This SKU-Lot combination already exists'
         }), 400
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/sku_lots/<int:sku_lot_id>', methods=['PUT'])
 def api_update_sku_lot(sku_lot_id):
-    """Update a SKU-Lot combination"""
+    """Update a SKU-Lot entry in the lots table"""
     from src.utils.server_logger import get_logger
     server_logger = get_logger()
-    
-    # Get current user for logging
+
     user_name = "unknown"
     user_role = None
     try:
@@ -4945,55 +4970,66 @@ def api_update_sku_lot(sku_lot_id):
             user_role = user.role
     except:
         pass
-    
+
     try:
         data = request.json
-        
-        # Validate required fields
+
         if not data.get('sku') or not data.get('lot'):
             return jsonify({
                 'success': False,
                 'error': 'SKU and Lot are required'
             }), 400
-        
+
+        incoming_active = data.get('active', 1)
+        new_status = 'active' if incoming_active else 'inactive'
+
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Update SKU-Lot
+
+        # Ensure the SKU exists (create if new)
         cursor.execute("""
-            UPDATE sku_lot 
-            SET sku = %s, lot = %s, active = %s, updated_at = NOW()
-            WHERE id = %s
-        """, (data['sku'], data['lot'], data.get('active', 1), sku_lot_id))
-        
+            INSERT INTO skus (sku_code)
+            VALUES (%s)
+            ON CONFLICT (sku_code) DO NOTHING
+        """, (data['sku'],))
+        cursor.execute(
+            "SELECT sku_id FROM skus WHERE sku_code = %s", (data['sku'],)
+        )
+        sku_id = cursor.fetchone()[0]
+
+        cursor.execute("""
+            UPDATE lots
+            SET sku_id     = %s,
+                lot_number = %s,
+                status     = %s,
+                updated_at = NOW()
+            WHERE lot_id = %s
+        """, (sku_id, data['lot'], new_status, sku_lot_id))
+
         conn.commit()
         conn.close()
-        
-        active_status = "active" if data.get('active', 1) else "inactive"
-        server_logger.info(f"SKU-Lot #{sku_lot_id} updated: SKU {data['sku']} → Lot {data['lot']} ({active_status})", source="SKU-Lot", user=user_name, role=user_role)
-        
-        return jsonify({
-            'success': True,
-            'message': 'SKU-Lot updated successfully'
-        })
+
+        server_logger.info(
+            f"SKU-Lot #{sku_lot_id} updated: SKU {data['sku']} → Lot {data['lot']} ({new_status})",
+            source="SKU-Lot", user=user_name, role=user_role
+        )
+
+        return jsonify({'success': True, 'message': 'SKU-Lot updated successfully'})
     except psycopg2.IntegrityError:
         return jsonify({
             'success': False,
             'error': 'This SKU-Lot combination already exists'
         }), 400
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/sku_lots/<int:sku_lot_id>', methods=['DELETE'])
 def api_delete_sku_lot(sku_lot_id):
-    """Delete a SKU-Lot combination"""
+    """Delete a SKU-Lot entry from the lots table"""
     from src.utils.server_logger import get_logger
     server_logger = get_logger()
-    
-    # Get current user for logging
+
     user_name = "unknown"
     user_role = None
     try:
@@ -5004,22 +5040,29 @@ def api_delete_sku_lot(sku_lot_id):
             user_role = user.role
     except:
         pass
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Get SKU-Lot info before deleting for logging
-        cursor.execute("SELECT sku, lot FROM sku_lot WHERE id = %s", (sku_lot_id,))
+
+        cursor.execute("""
+            SELECT s.sku_code, l.lot_number
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.lot_id = %s
+        """, (sku_lot_id,))
         row = cursor.fetchone()
         sku_info = f"SKU {row[0]} → Lot {row[1]}" if row else f"ID {sku_lot_id}"
-        
-        cursor.execute("DELETE FROM sku_lot WHERE id = %s", (sku_lot_id,))
-        
+
+        cursor.execute("DELETE FROM lots WHERE lot_id = %s", (sku_lot_id,))
+
         conn.commit()
         conn.close()
-        
-        server_logger.info(f"SKU-Lot deleted: {sku_info}", source="SKU-Lot", user=user_name, role=user_role)
+
+        server_logger.info(
+            f"SKU-Lot deleted: {sku_info}", source="SKU-Lot",
+            user=user_name, role=user_role
+        )
         
         return jsonify({
             'success': True,
@@ -5448,10 +5491,11 @@ def api_db_diagnostics():
         
         # Get all active lots with their updated_at timestamps
         cursor.execute("""
-            SELECT sku, lot, active, updated_at 
-            FROM sku_lot 
-            WHERE active = 1
-            ORDER BY sku
+            SELECT s.sku_code, l.lot_number, 1, l.updated_at
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.status = 'active'
+            ORDER BY s.sku_code
         """)
         active_lots = cursor.fetchall()
         diagnostics['active_lots'] = [
@@ -5459,7 +5503,7 @@ def api_db_diagnostics():
                 'sku': row[0],
                 'lot': row[1],
                 'active': row[2],
-                'updated_at': row[3].isoformat() if row[3] else None
+                'updated_at': row[3] if isinstance(row[3], str) else (row[3].isoformat() if row[3] else None)
             }
             for row in active_lots
         ]
@@ -6550,14 +6594,15 @@ def api_recreate_manual_order(conflict_id):
                 base_sku = parsed.base_sku  # Access attribute, not dict key
                 
                 if base_sku:
-                    # Look up active lot from database
+                    # Look up active lot from lots table
                     cursor.execute("""
-                        SELECT sku, lot 
-                        FROM sku_lot 
-                        WHERE sku = %s AND active = 1
+                        SELECT s.sku_code, l.lot_number
+                        FROM lots l
+                        JOIN skus s ON s.sku_id = l.sku_id
+                        WHERE s.sku_code = %s AND l.status = 'active'
                         LIMIT 1
                     """, (base_sku,))
-                    
+
                     active_lot = cursor.fetchone()
                     if active_lot:
                         active_sku = active_lot[0]
@@ -6690,7 +6735,10 @@ def api_bulk_recreate_manual_orders():
         next_order_num = (max_row[0] if max_row and max_row[0] else 100000) + 1
 
         cursor.execute("""
-            SELECT sku, lot FROM sku_lot WHERE active = 1
+            SELECT s.sku_code, l.lot_number
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.status = 'active'
         """)
         active_lots = {row[0]: row[1] for row in cursor.fetchall()}
 
@@ -7396,102 +7444,116 @@ def api_get_quantity_mismatch():
 
 @app.route('/api/lot_inventory', methods=['GET'])
 def api_get_lot_inventory():
-    """Get all lot inventory records with auto-calculated quantities (sorted by FIFO)"""
+    """Return all lots with their live balance from the lot_balances view (FIFO order)."""
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Get lot inventory with shipped quantities calculated
+
         cursor.execute("""
-            SELECT 
-                li.id,
-                li.sku,
-                li.lot,
-                li.initial_qty,
-                li.manual_adjustment,
-                COALESCE(SUM(si.quantity_shipped), 0) as total_shipped,
-                li.received_date,
-                li.status,
-                li.notes,
-                li.created_at,
-                li.updated_at
-            FROM lot_inventory li
-            LEFT JOIN shipped_items si ON li.sku = si.base_sku AND li.lot = si.sku_lot
-            GROUP BY li.id, li.sku, li.lot, li.initial_qty, li.manual_adjustment, li.received_date, li.status, li.notes, li.created_at, li.updated_at
-            ORDER BY li.sku ASC, li.received_date ASC
+            SELECT
+                lb.lot_id,
+                lb.sku_code,
+                lb.lot_number,
+                lb.balance,
+                lb.received_date,
+                lb.status,
+                lb.notes,
+                lb.created_at,
+                lb.updated_at
+            FROM lot_balances lb
+            ORDER BY lb.sku_code ASC, lb.received_date ASC NULLS LAST
         """)
-        
+
         rows = cursor.fetchall()
         conn.close()
-        
+
         lots = []
         for row in rows:
-            initial_qty = row[3]
-            manual_adjustment = row[4]
-            total_shipped = row[5]
-            current_qty = initial_qty - total_shipped + manual_adjustment
-            
             lots.append({
-                'id': row[0],
-                'sku': row[1],
-                'lot': row[2],
-                'initial_qty': initial_qty,
-                'manual_adjustment': manual_adjustment,
-                'total_shipped': total_shipped,
-                'current_qty': current_qty,
-                'received_date': row[6],
-                'status': row[7],
-                'notes': row[8] if row[8] else '',
-                'created_at': row[9],
-                'updated_at': row[10]
+                'id':            row[0],
+                'sku':           row[1],
+                'lot':           row[2],
+                'balance':       row[3],
+                'received_date': row[4],
+                'status':        row[5],
+                'notes':         row[6] or '',
+                'created_at':    row[7],
+                'updated_at':    row[8]
             })
-        
-        return jsonify({
-            'success': True,
-            'lots': lots,
-            'count': len(lots)
-        })
+
+        return jsonify({'success': True, 'lots': lots, 'count': len(lots)})
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/lot_inventory', methods=['POST'])
 def api_create_lot_inventory():
-    """Create a new lot inventory record"""
+    """Create a new lot.  initial_qty becomes an opening-balance Receive transaction."""
     try:
         data = request.get_json()
-        sku = data.get('sku', '').strip()
-        lot = data.get('lot', '').strip()
-        initial_qty = data.get('initial_qty', 0)
-        manual_adjustment = data.get('manual_adjustment', 0)
-        received_date = data.get('received_date', '')
-        status = data.get('status', 'active')
-        notes = data.get('notes', '').strip()
-        
-        if not sku or not lot or not received_date:
+        sku           = data.get('sku', '').strip()
+        lot_number    = data.get('lot', '').strip()
+        initial_qty   = int(data.get('initial_qty', 0))
+        received_date = data.get('received_date', '').strip()
+        status        = data.get('status', 'active')
+        notes         = data.get('notes', '').strip()
+
+        if not sku or not lot_number or not received_date:
             return jsonify({
                 'success': False,
                 'error': 'SKU, lot, and received date are required'
             }), 400
-        
+
+        valid_statuses = ('active', 'inactive', 'depleted', 'quarantine')
+        if status not in valid_statuses:
+            return jsonify({
+                'success': False,
+                'error': f'status must be one of: {", ".join(valid_statuses)}'
+            }), 400
+
         conn = get_connection()
         cursor = conn.cursor()
-        
+
+        # Ensure SKU exists
         cursor.execute("""
-            INSERT INTO lot_inventory (sku, lot, initial_qty, manual_adjustment, received_date, status, notes)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (sku, lot, int(initial_qty), int(manual_adjustment), received_date, status, notes))
-        
-        lot_id = cursor.lastrowid
+            INSERT INTO skus (sku_code)
+            VALUES (%s)
+            ON CONFLICT (sku_code) DO NOTHING
+        """, (sku,))
+        cursor.execute("SELECT sku_id FROM skus WHERE sku_code = %s", (sku,))
+        sku_id = cursor.fetchone()[0]
+
+        # Insert lot
+        cursor.execute("""
+            INSERT INTO lots (sku_id, lot_number, status, received_date, notes)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING lot_id
+        """, (sku_id, lot_number, status, received_date, notes or None))
+        new_lot_id = cursor.fetchone()[0]
+
+        # Record opening balance as a Receive transaction (if > 0)
+        if initial_qty > 0:
+            cursor.execute("""
+                INSERT INTO inventory_transactions
+                    (date, sku, quantity, transaction_type, notes, lot_id)
+                VALUES (%s, %s, %s, 'Receive', 'Opening balance', %s)
+                ON CONFLICT DO NOTHING
+            """, (received_date, sku, initial_qty, new_lot_id))
+
+            cursor.execute("""
+                UPDATE inventory_current
+                SET current_quantity = current_quantity + %s,
+                    last_updated = CURRENT_TIMESTAMP
+                WHERE sku = %s
+            """, (initial_qty, sku))
+
         conn.commit()
         conn.close()
-        
+
         return jsonify({
             'success': True,
-            'message': 'Lot inventory created successfully',
-            'id': lot_id
+            'message': 'Lot created successfully',
+            'id': new_lot_id
         })
     except psycopg2.IntegrityError:
         return jsonify({
@@ -7499,84 +7561,158 @@ def api_create_lot_inventory():
             'error': 'This SKU-Lot combination already exists'
         }), 400
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/lot_inventory/<int:lot_id>', methods=['PUT'])
 def api_update_lot_inventory(lot_id):
-    """Update an existing lot inventory record (initial qty or manual adjustment)"""
+    """Update lot metadata (received_date, status, notes).
+    Balance corrections must use the /correct endpoint."""
     try:
-        data = request.get_json()
-        initial_qty = data.get('initial_qty')
-        manual_adjustment = data.get('manual_adjustment')
+        data          = request.get_json()
         received_date = data.get('received_date')
-        status = data.get('status')
-        notes = data.get('notes', '')
-        
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE lot_inventory
-            SET initial_qty = %s,
-                manual_adjustment = %s,
-                received_date = %s,
-                status = %s,
-                notes = %s,
-                updated_at = NOW()
-            WHERE id = %s
-        """, (int(initial_qty), int(manual_adjustment), received_date, status, notes, lot_id))
-        
-        if cursor.rowcount == 0:
-            conn.close()
+        status        = data.get('status')
+        notes         = data.get('notes', '')
+
+        valid_statuses = ('active', 'inactive', 'depleted', 'quarantine')
+        if status and status not in valid_statuses:
             return jsonify({
                 'success': False,
-                'error': 'Lot not found'
-            }), 404
-        
+                'error': f'status must be one of: {", ".join(valid_statuses)}'
+            }), 400
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE lots
+            SET received_date = COALESCE(%s, received_date),
+                status        = COALESCE(%s, status),
+                notes         = %s,
+                updated_at    = NOW()
+            WHERE lot_id = %s
+        """, (received_date, status, notes, lot_id))
+
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+
         conn.commit()
         conn.close()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Lot inventory updated successfully'
-        })
+
+        return jsonify({'success': True, 'message': 'Lot updated successfully'})
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/lot_inventory/<int:lot_id>', methods=['DELETE'])
 def api_delete_lot_inventory(lot_id):
-    """Delete a lot inventory record"""
+    """Delete a lot and all of its inventory transactions."""
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
-        cursor.execute("DELETE FROM lot_inventory WHERE id = %s", (lot_id,))
-        
+
+        # Remove transactions first (FK constraint)
+        cursor.execute(
+            "DELETE FROM inventory_transactions WHERE lot_id = %s", (lot_id,)
+        )
+        cursor.execute("DELETE FROM lots WHERE lot_id = %s", (lot_id,))
+
         if cursor.rowcount == 0:
             conn.close()
-            return jsonify({
-                'success': False,
-                'error': 'Lot not found'
-            }), 404
-        
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+
         conn.commit()
         conn.close()
-        
+
+        return jsonify({'success': True, 'message': 'Lot deleted successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/lot_inventory/<int:lot_id>/correct', methods=['POST'])
+def api_correct_lot_inventory(lot_id):
+    """Record an inventory correction (Adjust Up or Adjust Down) for a specific lot."""
+    from src.utils.server_logger import get_logger
+    server_logger = get_logger()
+
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except:
+        pass
+
+    try:
+        data             = request.get_json()
+        correction_type  = data.get('correction_type', '').strip()
+        amount           = int(data.get('amount', 0))
+        correction_date  = data.get('date', '')
+        notes            = data.get('notes', '').strip()
+
+        if correction_type not in ('Adjust Up', 'Adjust Down'):
+            return jsonify({
+                'success': False,
+                'error': 'correction_type must be "Adjust Up" or "Adjust Down"'
+            }), 400
+        if amount <= 0:
+            return jsonify({'success': False, 'error': 'amount must be a positive integer'}), 400
+        if not correction_date:
+            return jsonify({'success': False, 'error': 'date is required'}), 400
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Resolve SKU for the lot
+        cursor.execute("""
+            SELECT s.sku_code
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.lot_id = %s
+        """, (lot_id,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        sku = row[0]
+
+        # Positive quantity stored; sign is derived from correction_type
+        cursor.execute("""
+            INSERT INTO inventory_transactions
+                (date, sku, quantity, transaction_type, notes, lot_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (correction_date, sku, amount, correction_type, notes or None, lot_id))
+        tx_id = cursor.fetchone()[0]
+
+        # Reflect in inventory_current
+        delta = amount if correction_type == 'Adjust Up' else -amount
+        cursor.execute("""
+            UPDATE inventory_current
+            SET current_quantity = current_quantity + %s,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE sku = %s
+        """, (delta, sku))
+
+        conn.commit()
+        conn.close()
+
+        server_logger.info(
+            f"Lot correction: {correction_type} {amount} units for lot_id={lot_id} SKU {sku}",
+            source="Lot Inventory", user=user_name, role=user_role
+        )
+
         return jsonify({
             'success': True,
-            'message': 'Lot inventory deleted successfully'
+            'message': 'Correction recorded successfully',
+            'transaction_id': tx_id
         })
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/order_audit', methods=['GET'])
 def api_order_audit():
@@ -9756,12 +9892,13 @@ def api_admin_force_upload_to_shipstation():
             
             # Step 3: Get active SKU-lot mappings
             cursor.execute("""
-                SELECT sku, lot
-                FROM sku_lot 
-                WHERE active = 1
+                SELECT s.sku_code, l.lot_number
+                FROM lots l
+                JOIN skus s ON s.sku_id = l.sku_id
+                WHERE l.status = 'active'
             """)
             sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
-            
+
             if not sku_lot_map:
                 conn.close()
                 return jsonify({

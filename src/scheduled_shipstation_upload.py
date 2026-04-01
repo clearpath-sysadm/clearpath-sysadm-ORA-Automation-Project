@@ -279,19 +279,22 @@ def upload_pending_orders():
         logger.info(f'Claimed {claimed_count} pending orders for upload (run_id: {run_id})')
         
         # STEP 2: FETCH ONLY THE ORDERS WE JUST CLAIMED
-        # Fetch SKU-Lot mappings
+        # Fetch SKU-Lot mappings from lots table
         cursor.execute("""
-            SELECT sku, lot
-            FROM sku_lot 
-            WHERE active = 1
+            SELECT s.sku_code, l.lot_number, l.lot_id
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.status = 'active'
         """)
-        sku_lot_map = {row[0]: row[1] for row in cursor.fetchall()}
-        
+        _lot_rows = cursor.fetchall()
+        sku_lot_map = {row[0]: row[1] for row in _lot_rows}
+        sku_lot_id_map = {row[0]: row[2] for row in _lot_rows}
+
         # CRITICAL BUSINESS RULE: Orders without valid SKU-Lot mappings CANNOT be uploaded
         if not sku_lot_map:
-            logger.error('🛑 UPLOAD BLOCKED: No active lot numbers found in sku_lot table!')
+            logger.error('🛑 UPLOAD BLOCKED: No active lot numbers found in lots table!')
             logger.error('   BUSINESS RULE: ShipStation should NEVER have orders without valid SKU-Lot mappings')
-            logger.error('   Please ensure sku_lot table has active lot numbers before uploading')
+            logger.error('   Please ensure lots table has active lot numbers before uploading')
             
             # Revert claimed orders back to 'pending' for retry after lots are configured
             cursor.execute("""
@@ -624,11 +627,12 @@ def upload_pending_orders():
                     all_skus = order_sku_info['sku'].split('|')
                     for sku in all_skus:
                         cursor.execute("""
-                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                            VALUES (%s, %s, %s)
-                            ON CONFLICT (order_inbox_id, sku) DO NOTHING
-                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
-                    
+                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id, lot_id)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT DO NOTHING
+                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id,
+                              sku_lot_id_map.get(sku)))
+
                     # Update from 'processing' to 'awaiting_shipment' (clear run_id)
                     cursor.execute("""
                         UPDATE orders_inbox
@@ -638,24 +642,25 @@ def upload_pending_orders():
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = %s
                     """, (shipstation_id, order_sku_info['order_inbox_id']))
-                
+
                 # Check if ANY base SKU overlaps (order + SKU combination exists)
                 elif new_order_base_skus.intersection(existing_base_skus):
                     # DUPLICATE: Same order number + same base SKU exists
                     skipped_count += 1
                     shipstation_id = existing['orderId'] or existing['orderKey']
-                    
+
                     logger.warning(f"Skipped duplicate: Order {order_num_upper} + SKU(s) {new_order_base_skus} already exists in ShipStation")
-                    
+
                     # Track all SKUs for this order
                     all_skus = order_sku_info['sku'].split('|')
                     for sku in all_skus:
                         cursor.execute("""
-                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                            VALUES (%s, %s, %s)
-                            ON CONFLICT (order_inbox_id, sku) DO NOTHING
-                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
-                    
+                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id, lot_id)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT DO NOTHING
+                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id,
+                              sku_lot_id_map.get(sku)))
+
                     # Update from 'processing' to 'awaiting_shipment' (clear run_id)
                     cursor.execute("""
                         UPDATE orders_inbox
@@ -711,11 +716,12 @@ def upload_pending_orders():
                     all_skus = order_sku_info['sku'].split('|')
                     for sku in all_skus:
                         cursor.execute("""
-                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id)
-                            VALUES (%s, %s, %s)
-                            ON CONFLICT (order_inbox_id, sku) DO NOTHING
-                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id))
-                    
+                            INSERT INTO shipstation_order_line_items (order_inbox_id, sku, shipstation_order_id, lot_id)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT DO NOTHING
+                        """, (order_sku_info['order_inbox_id'], sku, shipstation_id,
+                              sku_lot_id_map.get(sku)))
+
                     cursor.execute("""
                         UPDATE orders_inbox
                         SET shipstation_order_id = %s
