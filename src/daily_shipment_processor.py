@@ -21,10 +21,9 @@ from config.settings import (
 
 # Import necessary modules
 from utils.logging_config import setup_logging
-from src.services.data_processing.shipment_processor import (     
+from src.services.data_processing.shipment_processor import (
     process_shipped_items,
     process_shipped_orders,
-    aggregate_weekly_shipped_history # Re-added for weekly aggregation
 )
 # Import database utilities for SQLite operations
 from src.services.database.pg_utils import execute_query, transaction
