@@ -1,0 +1,48 @@
+### Overview
+This implementation plan outlines the necessary steps to shift lot number injection from the SKU field to ShipStation's Custom Field #1, ensuring accurate inventory tracking and maintaining an audit trail for fulfillment.
+
+### Technical Approach
+
+### 1. Fulfillment App Modifications
+
+• **Data Construction:** The fulfillment app already constructs the SKU-Lot combination string from our internal lot tracking data. This string is formatted as "SKU - Lot" (e.g., "17612 - A123B").
+
+• **API Integration Update:** Modify the shipstation-upload worker to populate ShipStation's Custom Field #1 with the newly constructed SKU-Lot combo. This replaces any previous logic that injected lot numbers directly into the SKU field.
+
+• **Local Data Storage:** Ensure that the internal inventory data storage within the fulfillment app remains consistent, as it is the authoritative source for lot numbers. No significant changes to the core inventory data model are anticipated.
+
+• **Schema Validation:** Implement robust validation within the fulfillment app for the SKU-Lot combo string before it is sent to ShipStation. This will prevent malformed lot numbers from entering the system and appearing on shipping labels.
+
+• **Inventory Transactions**: Update inventory transactions to include a dedicated lot data field. Currently, lot numbers are only manually added to notes by fulfillment specialists, and the system does not track lot quantities at a granular level.
+
+### 2. ShipStation Configuration
+
+• **Custom Field Utilization:** Confirm that ShipStation's Custom Field #1 is available and not in use for other critical data.
+
+• **Label Template Mapping:** Update the shipping label templates in ShipStation to map Custom Field #1 to a prominent, visible location on the label. This ensures fulfillment specialists can easily identify the SKU-Lot combination.
+
+### Implementation Steps
+
+• **Data Construction Logic:** Confirmed existing SKU-Lot combo generation in the fulfillment app.
+
+• **Update ShipStation API Worker:** Modify shipstation-upload to use Custom Field #1.
+
+• **Implement Validation:** Add pre-send validation for the SKU-Lot combo.
+
+• **Configure ShipStation Label:** Map Custom Field #1 to the shipping label.
+
+• **Internal Testing:** Conduct thorough testing with various SKU and lot number scenarios.
+
+• **User Acceptance Testing (UAT):** Engage fulfillment specialists to test the new label format and workflow.
+
+### Dependencies
+
+• Confirmation of ShipStation API support for updating Custom Field #1 (already confirmed in previous discussions).
+
+• Availability of fulfillment team for training and UAT.
+
+### Risks & Mitigation
+
+• **Fulfillment Misinterpretation:** Mitigate with comprehensive training and clear documentation on the new label format.
+
+• **Data Corruption:** Mitigate with robust validation in the fulfillment app before data is sent to ShipStation.
