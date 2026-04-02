@@ -465,9 +465,10 @@ def update_order_package_v2(
     length: float,
     width: float,
     height: float,
+    num_packages: int = 1,
 ) -> dict:
     """
-    Set the named custom package preset on a ShipStation V2 shipment.
+    Set the package configuration on a ShipStation V2 shipment.
 
     Constructs shipment_id as 'se-{order_id}' — no extra lookup required.
 
@@ -475,14 +476,22 @@ def update_order_package_v2(
 
     V2 PUT is a full replacement, not a partial update. Required flow:
       1. GET the current shipment to retrieve ship_from, ship_to, carrier_id, etc.
-      2. Replace packages[0] with {package_id, weight} — dimensions must NOT be
-         included because ShipStation custom packages already store their own dims.
+      2. Build packages array based on num_packages:
+         - num_packages == 1: [{package_id, weight}]
+           Dimensions must NOT be sent; custom package preset defines its own dims
+           and the V2 API rejects dimensions when package_id is specified.
+         - num_packages > 1: [{package_code:'package', weight, dimensions}] × N
+           ShipStation silently discards custom package_id for multi-package entries,
+           so we use the generic package code with explicit dimensions to preserve
+           the correct box size for each package.
       3. PUT back the full modified shipment.
 
     V2 weight unit is 'ounce' (not 'ounces' as used by V1).
 
     Returns dict with 'success' bool and 'error' on failure.
     """
+    num_packages = max(1, int(num_packages or 1))
+
     try:
         api_key = os.getenv('PRODUCTION_KEY')
         if not api_key:
@@ -510,18 +519,32 @@ def update_order_package_v2(
 
         shipment = get_response.json()
 
-        # Step 2: Build updated packages — only package_id and weight.
-        # Dimensions must NOT be sent: custom packages already define their own dims,
-        # and the V2 API rejects dimensions when a package_id is specified.
-        shipment['packages'] = [
-            {
-                'package_id': package_id,
-                'weight': {
-                    'value': weight_oz,
-                    'unit': 'ounce',
+        # Step 2: Build packages array
+        if num_packages == 1:
+            # Single package: use named custom preset — dimensions omitted because
+            # the preset already defines them and the API rejects sending both.
+            shipment['packages'] = [
+                {
+                    'package_id': package_id,
+                    'weight': {'value': weight_oz, 'unit': 'ounce'},
+                }
+            ]
+        else:
+            # Multi-package: ShipStation silently discards custom package_id when
+            # it appears more than once in the array, converting to the generic
+            # carrier package type. Use package_code='package' + explicit dimensions
+            # to preserve the correct box size per package.
+            single_pkg = {
+                'package_code': 'package',
+                'weight': {'value': weight_oz, 'unit': 'ounce'},
+                'dimensions': {
+                    'unit': 'inch',
+                    'length': length,
+                    'width': width,
+                    'height': height,
                 },
             }
-        ]
+            shipment['packages'] = [single_pkg] * num_packages
 
         # Step 3: PUT back the full modified shipment
         put_response = make_api_request(
@@ -533,7 +556,9 @@ def update_order_package_v2(
         )
 
         if put_response and put_response.status_code in (200, 204):
-            logger.info(f"V2: set package_id={package_id} on shipment {shipment_id}")
+            logger.info(
+                f"V2: set {num_packages}×package_id={package_id} on shipment {shipment_id}"
+            )
             return {'success': True}
         else:
             status = put_response.status_code if put_response else 'no response'

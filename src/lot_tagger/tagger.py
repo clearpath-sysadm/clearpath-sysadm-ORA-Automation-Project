@@ -182,19 +182,26 @@ def _parse_lot_stamped_sku(sku: str):
     return None
 
 
-def ensure_v2_package(order_id: int, order_number: str, profile: dict) -> dict:
+def ensure_v2_package(order_id: int, order_number: str, profile: dict,
+                      num_packages: int = 1) -> dict:
     """
-    Idempotent V2 named-package setter.
+    Idempotent V2 package setter.
 
-    GETs the V2 shipment once, checks packages[0].package_id against the
-    expected value from `profile`. Only issues a PUT when they differ.
+    GETs the V2 shipment once and checks whether the packages array already
+    matches the expected configuration. Only issues a PUT when it differs.
+
+    Idempotency rules:
+      - num_packages == 1: skip if packages[0].package_id already equals
+                           the expected custom preset id.
+      - num_packages >  1: skip if len(packages) already equals num_packages
+                           (count match is sufficient — multi-package orders
+                           always use the same box type for all packages).
 
     This runs on every tagged order — including ones whose V1 fields are
-    already correct — so the named custom package is always in sync with
-    ShipStation regardless of whether a V1 write was needed.
+    already correct — so the V2 package configuration is always in sync.
 
     Returns:
-        {'action': 'already_correct'} — V2 already has the right package
+        {'action': 'already_correct'} — V2 already has the right configuration
         {'action': 'updated'}         — V2 PUT succeeded
         {'action': 'skipped'}         — no package_id in profile (unsupported SKU)
         {'action': 'error', 'error': str} — GET or PUT failed
@@ -202,6 +209,8 @@ def ensure_v2_package(order_id: int, order_number: str, profile: dict) -> dict:
     package_id = profile.get('package_id')
     if not package_id:
         return {'action': 'skipped'}
+
+    num_packages = max(1, int(num_packages or 1))
 
     api_key = os.getenv('PRODUCTION_KEY')
     if not api_key:
@@ -219,22 +228,46 @@ def ensure_v2_package(order_id: int, order_number: str, profile: dict) -> dict:
 
     shipment = get_resp.json()
     packages = shipment.get('packages') or []
-    current_pkg_id = packages[0].get('package_id') if packages else None
 
-    if current_pkg_id == package_id:
-        logger.debug(f"Order {order_number} V2 package already {package_id} — skipping PUT.")
+    if num_packages == 1:
+        current_pkg_id = packages[0].get('package_id') if packages else None
+        already_correct = (current_pkg_id == package_id)
+    else:
+        already_correct = (len(packages) == num_packages)
+
+    if already_correct:
+        logger.debug(
+            f"Order {order_number} V2 already has {num_packages} package(s) "
+            f"(package_id={package_id}) — skipping PUT."
+        )
         return {'action': 'already_correct'}
 
-    shipment['packages'] = [
-        {
-            'package_id': package_id,
+    if num_packages == 1:
+        shipment['packages'] = [
+            {
+                'package_id': package_id,
+                'weight': {'value': profile['weight_oz'], 'unit': 'ounce'},
+            }
+        ]
+    else:
+        single_pkg = {
+            'package_code': 'package',
             'weight': {'value': profile['weight_oz'], 'unit': 'ounce'},
+            'dimensions': {
+                'unit': 'inch',
+                'length': profile['length'],
+                'width': profile['width'],
+                'height': profile['height'],
+            },
         }
-    ]
+        shipment['packages'] = [single_pkg] * num_packages
 
     put_resp = make_api_request(url=url, method='PUT', headers=headers, data=shipment, timeout=30)
     if put_resp and put_resp.status_code in (200, 204):
-        logger.info(f"V2: set package_id={package_id} on order {order_number} ({shipment_id})")
+        logger.info(
+            f"V2: set {num_packages}×package_id={package_id} on order "
+            f"{order_number} ({shipment_id})"
+        )
         return {'action': 'updated'}
     else:
         status = put_resp.status_code if put_resp else 'no response'
@@ -275,12 +308,13 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             for item in items:
                 parsed = _parse_lot_stamped_sku(str(item.get('sku', '')).strip())
                 if parsed:
-                    stamped_items.append(parsed)
+                    qty = max(1, int(item.get('quantity') or 1))
+                    stamped_items.append((*parsed, qty))
 
             if not stamped_items:
                 return  # Truly untracked — nothing to do
 
-            unique_bases = {base for base, _ in stamped_items}
+            unique_bases = {base for base, _, _ in stamped_items}
             if len(unique_bases) > 1:
                 skus_found = ', '.join(str(item.get('sku', '')).strip() for item in items)
                 cursor = conn.cursor()
@@ -301,16 +335,17 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 )
                 return
 
-            base_sku, exp_cf1 = stamped_items[0]
+            base_sku, exp_cf1, num_packages = stamped_items[0]
             profile = resolve_shipping_profile(order, base_sku)
 
             if _is_fully_enriched(order, exp_cf1, profile):
                 logger.debug(f"Lot-stamped order {order_number} already fully enriched — skipping V1.")
-                v2_result = ensure_v2_package(order_id, order_number, profile)
+                v2_result = ensure_v2_package(order_id, order_number, profile,
+                                              num_packages=num_packages)
                 if v2_result['action'] == 'updated':
                     server_logger.info(
-                        f"V2 package swept to {profile['package_id']} for lot-stamped order "
-                        f"{order_number} (SS ID: {order_id})",
+                        f"V2 package swept to {profile['package_id']} ×{num_packages} "
+                        f"for lot-stamped order {order_number} (SS ID: {order_id})",
                         source="Lot Tagger"
                     )
                 elif v2_result['action'] == 'error':
@@ -354,6 +389,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                         profile['length'],
                         profile['width'],
                         profile['height'],
+                        num_packages=num_packages,
                     )
                     if not v2_result.get('success'):
                         server_logger.error(
@@ -363,8 +399,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                         )
                     else:
                         server_logger.info(
-                            f"V2 package set to {profile['package_id']} for lot-stamped order "
-                            f"{order_number} (SS ID: {order_id})",
+                            f"V2 package set to {profile['package_id']} ×{num_packages} "
+                            f"for lot-stamped order {order_number} (SS ID: {order_id})",
                             source="Lot Tagger"
                         )
                 cursor = conn.cursor()
@@ -378,16 +414,18 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 conn.commit()
             return
 
-        sku     = str(ho_items[0].get('sku', '')).strip()
-        profile = resolve_shipping_profile(order, sku)
+        sku          = str(ho_items[0].get('sku', '')).strip()
+        num_packages = max(1, int(ho_items[0].get('quantity') or 1))
+        profile      = resolve_shipping_profile(order, sku)
 
         if _is_fully_enriched(order, sku, profile):
             logger.debug(f"Order {order_number} (home office) already fully enriched — skipping V1.")
-            v2_result = ensure_v2_package(order_id, order_number, profile)
+            v2_result = ensure_v2_package(order_id, order_number, profile,
+                                          num_packages=num_packages)
             if v2_result['action'] == 'updated':
                 server_logger.info(
-                    f"V2 package swept to {profile['package_id']} for home office order "
-                    f"{order_number} (SS ID: {order_id})",
+                    f"V2 package swept to {profile['package_id']} ×{num_packages} "
+                    f"for home office order {order_number} (SS ID: {order_id})",
                     source="Lot Tagger"
                 )
             elif v2_result['action'] == 'error':
@@ -429,6 +467,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                     profile['length'],
                     profile['width'],
                     profile['height'],
+                    num_packages=num_packages,
                 )
                 if not v2_result.get('success'):
                     server_logger.error(
@@ -438,8 +477,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                     )
                 else:
                     server_logger.info(
-                        f"V2 package set to {profile['package_id']} for home office order "
-                        f"{order_number} (SS ID: {order_id})",
+                        f"V2 package set to {profile['package_id']} ×{num_packages} "
+                        f"for home office order {order_number} (SS ID: {order_id})",
                         source="Lot Tagger"
                     )
         return
@@ -464,8 +503,9 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         )
         return
 
-    item = tracked_items[0]
-    sku  = str(item.get('sku', '')).strip()
+    item         = tracked_items[0]
+    sku          = str(item.get('sku', '')).strip()
+    num_packages = max(1, int(item.get('quantity') or 1))
 
     if sku not in active_lots:
         cursor.execute("""
@@ -488,11 +528,12 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
     if _is_fully_enriched(order, expected_value, profile):
         logger.debug(f"Order {order_number} already fully enriched — skipping V1.")
-        v2_result = ensure_v2_package(order_id, order_number, profile)
+        v2_result = ensure_v2_package(order_id, order_number, profile,
+                                      num_packages=num_packages)
         if v2_result['action'] == 'updated':
             server_logger.info(
-                f"V2 package swept to {profile['package_id']} for order "
-                f"{order_number} (SS ID: {order_id})",
+                f"V2 package swept to {profile['package_id']} ×{num_packages} "
+                f"for order {order_number} (SS ID: {order_id})",
                 source="Lot Tagger"
             )
         elif v2_result['action'] == 'error':
@@ -547,6 +588,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             profile['length'],
             profile['width'],
             profile['height'],
+            num_packages=num_packages,
         )
         if not v2_result.get('success'):
             server_logger.error(
@@ -556,8 +598,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             )
         else:
             server_logger.info(
-                f"V2 package set to {profile['package_id']} for order "
-                f"{order_number} (SS ID: {order_id})",
+                f"V2 package set to {profile['package_id']} ×{num_packages} "
+                f"for order {order_number} (SS ID: {order_id})",
                 source="Lot Tagger"
             )
 
