@@ -99,21 +99,21 @@ def insert_workflow_controls(cursor):
     print("\n⚙️  Setting up workflow controls...")
     
     workflows = [
-        ('xml_import', True, 'XML polling and order import from Google Drive'),
-        ('shipstation_upload', True, 'Upload pending orders to ShipStation'),
-        ('shipstation_sync', True, 'Sync order status from ShipStation'),
-        ('duplicate_scanner', True, 'Monitor and resolve duplicate orders'),
-        ('lot_mismatch_scanner', True, 'Detect lot number discrepancies'),
-        ('orders_cleanup', True, 'Clean up old orders (60+ days)')
+        ('xml_import', True),
+        ('shipstation_upload', True),
+        ('shipstation_sync', True),
+        ('duplicate_scanner', True),
+        ('lot_mismatch_scanner', True),
+        ('orders_cleanup', True),
+        ('lot-tagger', True),
     ]
     
-    for workflow_name, enabled, description in workflows:
+    for workflow_name, enabled in workflows:
         cursor.execute("""
-            INSERT INTO workflow_controls (workflow_name, enabled, description, updated_at)
-            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-            ON CONFLICT (workflow_name) DO UPDATE SET
-                description = EXCLUDED.description
-        """, (workflow_name, enabled, description))
+            INSERT INTO workflow_controls (workflow_name, enabled, updated_by)
+            VALUES (%s, %s, 'system')
+            ON CONFLICT (workflow_name) DO NOTHING
+        """, (workflow_name, enabled))
     
     print(f"   ✅ Configured {len(workflows)} workflow controls")
 

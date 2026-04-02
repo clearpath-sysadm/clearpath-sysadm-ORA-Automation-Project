@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
 LOT NUMBER MISMATCH SCANNER
-Scans orders in ShipStation for lot number mismatches vs active lots in local database.
+Scans awaiting_shipment ShipStation orders and compares customField1
+(format: 'SKU - LOT') against the current FIFO active lot in the local database.
 
-Alerts when SKU-Lot in ShipStation ≠ active lot in local db.
-Provides UI to update SKU-Lot in ShipStation.
+An alert is raised when:
+  - customField1 is non-empty AND
+  - the lot in customField1 differs from the expected FIFO active lot
+
+Orders with an empty customField1 are skipped (lot tagger job, not mismatch scanner).
 
 Safety Design: Manual-only resolution to prevent data loss.
 """
@@ -14,7 +18,7 @@ import sys
 import time
 import logging
 import datetime
-from typing import Dict, List, Any
+from typing import Dict
 from pathlib import Path
 
 project_root = Path(__file__).parent.parent
@@ -22,6 +26,7 @@ sys.path.insert(0, str(project_root))
 
 from src.services.database.pg_utils import transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+from src.lot_tagger.tagger import build_lot_maps
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.api_utils import make_api_request
@@ -30,7 +35,6 @@ from utils.business_hours import is_business_hours, get_sleep_until_business_hou
 server_logger = get_logger()
 SHIPSTATION_ORDERS_ENDPOINT = 'https://ssapi.shipstation.com/orders'
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -40,74 +44,44 @@ logger = logging.getLogger(__name__)
 WORKFLOW_NAME = "lot-mismatch-scanner"
 
 
-def get_active_lot_mappings(conn) -> Dict[str, str]:
-    """
-    Get active lot mappings from local database.
-    
-    Returns:
-        Dict mapping sku -> active lot number
-    """
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT s.sku_code, l.lot_number
-        FROM lots l
-        JOIN skus s ON s.sku_id = l.sku_id
-        WHERE l.status = 'active'
-    """)
-
-    mappings = {}
-    for row in cursor.fetchall():
-        sku = row[0]
-        lot = row[1]
-        mappings[sku] = lot
-
-    return mappings
-
-
 def scan_for_lot_mismatches(api_key: str, api_secret: str):
     """
-    Scan ShipStation orders for lot number mismatches.
-    
-    Compares SKU-Lot in ShipStation vs active lots in local db.
-    Creates alerts for mismatches.
+    Scan ShipStation awaiting_shipment orders for lot number mismatches.
+
+    Reads customField1 (format: 'SKU - LOT') and compares against the FIFO active
+    lot for that SKU. Raises alerts when they differ. Orders with empty customField1
+    are silently skipped — those are the lot tagger's responsibility.
     """
     logger.info("=" * 80)
-    logger.info("🔍 LOT MISMATCH SCANNER STARTED")
+    logger.info("LOT MISMATCH SCANNER STARTED")
     logger.info("=" * 80)
-    
+
     scan_start = datetime.datetime.now()
-    
+
     try:
         with transaction_with_retry() as conn:
-            # Get active lot mappings
-            active_lots = get_active_lot_mappings(conn)
-            logger.info(f"📋 Active lot mappings: {len(active_lots)} SKUs")
-            
-            # Log active lots to server logger for production visibility
+            active_lots, known_skus = build_lot_maps(conn)
+            logger.info(f"Active lots (FIFO): {len(active_lots)} SKUs")
+
             if active_lots:
                 lots_detail = ', '.join([f"{sku}={lot}" for sku, lot in active_lots.items()])
-                server_logger.info(f"Lot mismatch scanner using active lots: {lots_detail}", source="Lot Mismatch")
+                server_logger.info(f"Lot mismatch scanner using active lots (FIFO): {lots_detail}", source="Lot Mismatch")
             else:
-                server_logger.warning("Lot mismatch scanner: No active lots found in sku_lot table!", source="Lot Mismatch")
-            
-            # Fetch orders from ShipStation (last 30 days, awaiting shipment)
-            # We only care about orders that haven't shipped yet
+                server_logger.warning("Lot mismatch scanner: No active lots found!", source="Lot Mismatch")
+
             lookback_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
-            
             params = {
                 'orderStatus': 'awaiting_shipment',
                 'modifyDateStart': lookback_date,
                 'pageSize': 500
             }
-            
-            logger.info(f"🔄 Fetching orders modified since {lookback_date}")
-            
+
+            logger.info(f"Fetching orders modified since {lookback_date}")
+
             all_orders = []
             page = 1
-            
-            # Get authentication headers
             headers = get_shipstation_headers(api_key, api_secret)
-            
+
             while True:
                 params['page'] = page
                 response = make_api_request(
@@ -117,106 +91,109 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                     params=params,
                     timeout=30
                 )
-                
-                # Parse JSON response
+
+                if not response or response.status_code != 200:
+                    logger.error(f"ShipStation API error on page {page}: {response.status_code if response else 'no response'}")
+                    break
+
                 data = response.json()
-                
                 if not data or 'orders' not in data:
                     break
-                
+
                 orders = data['orders']
                 all_orders.extend(orders)
-                
+
                 total_pages = data.get('pages', 1)
-                logger.info(f"📄 Page {page}/{total_pages}: {len(orders)} orders")
-                
+                logger.info(f"Page {page}/{total_pages}: {len(orders)} orders")
+
                 if page >= total_pages:
                     break
-                
+
                 page += 1
-                time.sleep(0.5)  # Rate limiting
-            
-            logger.info(f"✅ Retrieved {len(all_orders)} total orders from ShipStation")
-            
-            # Scan for lot mismatches
+                time.sleep(0.5)
+
+            logger.info(f"Retrieved {len(all_orders)} total awaiting_shipment orders")
+
             mismatches_found = 0
             mismatches_created = 0
-            
             cursor = conn.cursor()
-            
+
             for order in all_orders:
                 order_number = order.get('orderNumber', '').strip()
                 order_id = order.get('orderId')
                 order_status = order.get('orderStatus', '').lower()
-                items = order.get('items', [])
-                
-                for item in items:
-                    sku_raw = str(item.get('sku', '')).strip()
-                    item_id = item.get('orderItemId')
-                    
-                    if not sku_raw:
-                        continue
-                    
-                    # Parse SKU - LOT format
-                    base_sku = None
-                    shipstation_lot = None
-                    
-                    if ' - ' in sku_raw:
-                        sku_parts = sku_raw.split(' - ')
-                        base_sku = sku_parts[0].strip()
-                        shipstation_lot = sku_parts[1].strip() if len(sku_parts) > 1 else None
-                    else:
-                        base_sku = sku_raw
-                        shipstation_lot = None
-                    
-                    # Check if we have an active lot for this SKU
-                    if base_sku not in active_lots:
-                        continue
-                    
-                    active_lot = active_lots[base_sku]
-                    
-                    # Check for mismatch
-                    if shipstation_lot != active_lot:
-                        mismatches_found += 1
-                        
-                        mismatch_msg = f"Lot mismatch found: Order {order_number}, SKU {base_sku} - ShipStation has '{shipstation_lot or 'NONE'}' but active lot is '{active_lot}'"
-                        logger.warning(f"⚠️ {mismatch_msg}")
-                        server_logger.warning(mismatch_msg, source="Lot Mismatch")
-                        
-                        # Create/update alert
-                        cursor.execute("""
-                            INSERT INTO lot_mismatch_alerts (
-                                order_number,
-                                base_sku,
-                                shipstation_lot,
-                                active_lot,
-                                shipstation_order_id,
-                                shipstation_item_id,
-                                order_status,
-                                detected_at
-                            )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                            ON CONFLICT (order_number, base_sku) DO UPDATE
-                            SET shipstation_lot = EXCLUDED.shipstation_lot,
-                                active_lot = EXCLUDED.active_lot,
-                                order_status = EXCLUDED.order_status,
-                                detected_at = CURRENT_TIMESTAMP
-                            WHERE lot_mismatch_alerts.resolved_at IS NULL
-                        """, (
-                            order_number,
-                            base_sku,
-                            shipstation_lot,
-                            active_lot,
-                            str(order_id),
-                            str(item_id),
-                            order_status
-                        ))
-                        
-                        if cursor.rowcount > 0:
-                            mismatches_created += 1
-            
-            # Clear resolved alerts for orders that no longer have mismatches
-            # (e.g., lot was updated manually in ShipStation)
+
+                # Read customField1 from advancedOptions
+                adv = (order.get('advancedOptions') or {})
+                cf1 = (adv.get('customField1') or '').strip()
+
+                # Skip empty — lot tagger hasn't processed this order yet
+                if not cf1:
+                    continue
+
+                # Parse 'SKU - LOT' from customField1
+                if ' - ' not in cf1:
+                    logger.debug(f"Order {order_number} customField1 '{cf1}' not in SKU - LOT format — skipping.")
+                    continue
+
+                parts = cf1.split(' - ', 1)
+                base_sku = parts[0].strip()
+                shipstation_lot = parts[1].strip()
+
+                # Only check SKUs we track
+                if base_sku not in known_skus:
+                    continue
+
+                # SKU tracked but no active lot — skip (lot tagger failure, not mismatch)
+                if base_sku not in active_lots:
+                    continue
+
+                expected_lot = active_lots[base_sku]
+
+                if shipstation_lot == expected_lot:
+                    continue
+
+                # Mismatch detected
+                mismatches_found += 1
+                mismatch_msg = (
+                    f"Lot mismatch: Order {order_number} (SS ID: {order_id}), SKU {base_sku} — "
+                    f"customField1 has lot '{shipstation_lot}' but active FIFO lot is '{expected_lot}'"
+                )
+                logger.warning(mismatch_msg)
+                server_logger.warning(mismatch_msg, source="Lot Mismatch")
+
+                # Upsert alert using UNIQUE (shipstation_order_id)
+                cursor.execute("""
+                    INSERT INTO lot_mismatch_alerts (
+                        order_number,
+                        base_sku,
+                        shipstation_lot,
+                        active_lot,
+                        shipstation_order_id,
+                        order_status,
+                        detected_at
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (shipstation_order_id) DO UPDATE
+                        SET shipstation_lot = EXCLUDED.shipstation_lot,
+                            active_lot = EXCLUDED.active_lot,
+                            order_status = EXCLUDED.order_status,
+                            detected_at = CURRENT_TIMESTAMP
+                        WHERE lot_mismatch_alerts.resolved_at IS NULL
+                """, (
+                    order_number,
+                    base_sku,
+                    shipstation_lot,
+                    expected_lot,
+                    str(order_id),
+                    order_status
+                ))
+
+                if cursor.rowcount > 0:
+                    mismatches_created += 1
+
+            # Auto-resolve alerts for orders that no longer appear in the scan
+            # (e.g., order shipped, or lot corrected)
             cursor.execute("""
                 UPDATE lot_mismatch_alerts
                 SET resolved_at = CURRENT_TIMESTAMP,
@@ -224,107 +201,105 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                 WHERE resolved_at IS NULL
                   AND detected_at < %s
             """, (scan_start,))
-            
+
             auto_resolved = cursor.rowcount
-            
-            # transaction_with_retry() handles commit automatically
-            
-        # Update workflow last run (after transaction completes)
+
         update_workflow_last_run(WORKFLOW_NAME)
-        
+
         elapsed = (datetime.datetime.now() - scan_start).total_seconds()
-        
+
         logger.info("=" * 80)
-        logger.info("📊 SCAN SUMMARY:")
-        logger.info(f"   ⚠️ Lot mismatches found: {mismatches_found}")
-        logger.info(f"   ➕ New/updated alerts: {mismatches_created}")
-        logger.info(f"   ✅ Auto-resolved: {auto_resolved}")
-        logger.info(f"   ⏱️ Duration: {elapsed:.1f}s")
+        logger.info("SCAN SUMMARY:")
+        logger.info(f"   Lot mismatches found: {mismatches_found}")
+        logger.info(f"   New/updated alerts: {mismatches_created}")
+        logger.info(f"   Auto-resolved: {auto_resolved}")
+        logger.info(f"   Duration: {elapsed:.1f}s")
         logger.info("=" * 80)
-        
-        # Log summary to server logger for visibility in UI
+
         if mismatches_found > 0:
-            server_logger.warning(f"Lot mismatch scan complete: {mismatches_found} mismatches found, {mismatches_created} alerts created, {auto_resolved} auto-resolved ({elapsed:.1f}s)", source="Lot Mismatch")
+            server_logger.warning(
+                f"Lot mismatch scan complete: {mismatches_found} mismatches found, "
+                f"{mismatches_created} alerts created/updated, {auto_resolved} auto-resolved ({elapsed:.1f}s)",
+                source="Lot Mismatch"
+            )
         else:
-            server_logger.info(f"Lot mismatch scan complete: No mismatches found, {auto_resolved} auto-resolved ({elapsed:.1f}s)", source="Lot Mismatch")
-        
+            server_logger.info(
+                f"Lot mismatch scan complete: No mismatches found, "
+                f"{auto_resolved} auto-resolved ({elapsed:.1f}s)",
+                source="Lot Mismatch"
+            )
+
     except Exception as e:
-        logger.error(f"❌ Error scanning for lot mismatches: {e}", exc_info=True)
+        logger.error(f"Error scanning for lot mismatches: {e}", exc_info=True)
 
 
 def main():
-    """Main loop for lot mismatch scanner - runs during business hours (Mon-Fri 6 AM - 6 PM CST)"""
-    logger.info(f"🚀 Starting Lot Mismatch Scanner (every 900s)")
-    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
-    
-    # Get ShipStation credentials
+    """Main loop — runs every 15 minutes during business hours (Mon-Fri 6 AM - 6 PM CST)."""
+    logger.info("Starting Lot Mismatch Scanner (every 900s)")
+    logger.info("Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
+
     api_key, api_secret = get_shipstation_credentials()
     if not api_key or not api_secret:
-        logger.critical("❌ Failed to get ShipStation credentials")
+        logger.critical("Failed to get ShipStation credentials")
         return
-    
+
     while True:
         try:
-            # PRIORITY 1: Check business hours BEFORE any database queries
             if not is_business_hours():
                 status = format_business_hours_status()
-                logger.info(f"{status}")
+                logger.info(status)
                 sleep_duration = get_sleep_until_business_hours()
-                logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
+                logger.info(f"Sleeping {sleep_duration}s until business hours")
                 time.sleep(sleep_duration)
                 continue
-            
-            # PRIORITY 2: Check workflow enabled
+
             if not is_workflow_enabled(WORKFLOW_NAME):
-                logger.info(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED - skipping execution")
-            else:
-                heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
-                server_logger.info("Lot mismatch scanner workflow started", source="Scheduler")
-                scan_for_lot_mismatches(api_key, api_secret)
-                heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
-                server_logger.info("Lot mismatch scanner workflow completed", source="Scheduler")
-            
-            logger.info("😴 Next scan in 900 seconds (15 minutes)")
+                logger.info(f"Workflow '{WORKFLOW_NAME}' is DISABLED — sleeping 60s")
+                time.sleep(60)
+                continue
+
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
+            server_logger.info("Lot mismatch scanner workflow started", source="Scheduler")
+            scan_for_lot_mismatches(api_key, api_secret)
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
+            server_logger.info("Lot mismatch scanner workflow completed", source="Scheduler")
+
+            logger.info("Next scan in 900 seconds (15 minutes)")
             time.sleep(900)
-            
+
         except KeyboardInterrupt:
-            logger.info("👋 Lot mismatch scanner stopped by user")
+            logger.info("Lot mismatch scanner stopped by user")
             break
         except Exception as e:
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
-            logger.error(f"❌ Error in main loop: {e}", exc_info=True)
-            logger.info("😴 Retrying in 60 seconds after error")
+            logger.error(f"Error in main loop: {e}", exc_info=True)
+            logger.info("Retrying in 60 seconds after error")
             time.sleep(60)
 
 
 def run_once():
-    """Run a single scan cycle and exit (for manual triggers)"""
-    logger.info(f"🎯 Running one-time lot mismatch scan (manual trigger mode)")
-    logger.info("⏩ Skipping business hours check (manual trigger)")
-    
+    """Run a single scan cycle and exit (for manual triggers)."""
+    logger.info("Running one-time lot mismatch scan (manual trigger mode)")
+
     try:
-        # Get ShipStation credentials
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
-            logger.critical("❌ Failed to get ShipStation credentials")
+            logger.critical("Failed to get ShipStation credentials")
             return
-        
-        # Check if workflow is enabled
+
         if not is_workflow_enabled(WORKFLOW_NAME):
-            logger.warning(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED")
+            logger.warning(f"Workflow '{WORKFLOW_NAME}' is DISABLED")
             return
-        
-        # Run scan once
+
         scan_for_lot_mismatches(api_key, api_secret)
-        logger.info(f"✅ One-time lot mismatch scan complete")
-        
+        logger.info("One-time lot mismatch scan complete")
+
     except Exception as e:
-        logger.error(f"❌ Error in one-time scan: {e}", exc_info=True)
+        logger.error(f"Error in one-time scan: {e}", exc_info=True)
         raise
 
+
 if __name__ == "__main__":
-    # Check if running in one-shot mode (for manual triggers)
-    import sys
     if len(sys.argv) > 1 and sys.argv[1] == '--once':
         run_once()
     else:

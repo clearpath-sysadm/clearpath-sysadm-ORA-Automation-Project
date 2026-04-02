@@ -48,6 +48,10 @@ args = "lot-mismatch-scanner"
 task = "workflow.run"
 args = "stuck-workflow-detector"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "lot-tagger"
+
 [[workflows.workflow]]
 name = "dashboard-server"
 author = "agent"
@@ -133,6 +137,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/scheduled_stuck_workflow_detector.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "lot-tagger"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python src/scheduled_lot_tagger.py"
 
 [workflows.workflow.metadata]
 outputType = "console"

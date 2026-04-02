@@ -6,6 +6,7 @@ import os
 import sys
 import uuid
 import logging
+import threading
 from flask import Flask, jsonify, render_template, send_from_directory, request, session, g
 from datetime import datetime, timedelta, timezone
 import pytz
@@ -513,8 +514,8 @@ def health_check():
         conn.close()
         
         # Check deployment configuration
-        expected_workflows = ['orders-cleanup', 'unified-shipstation-sync', 'shipstation-upload', 
-                             'xml-import', 'duplicate-scanner', 'lot-mismatch-scanner', 'dashboard-server']
+        expected_workflows = ['orders-cleanup', 'unified-shipstation-sync', 'shipstation-upload',
+                             'xml-import', 'duplicate-scanner', 'lot-mismatch-scanner', 'lot-tagger', 'dashboard-server']
         deployment_configured = True  # start_all.sh is configured in .replit [deployment] section
         
         # Overall system health
@@ -838,7 +839,7 @@ def api_automation_status():
                 enabled,
                 last_run_at
             FROM workflow_controls
-            WHERE workflow_name IN ('shipstation-upload', 'xml-import', 'unified-shipstation-sync', 'orders-cleanup', 'weekly-reporter')
+            WHERE workflow_name IN ('shipstation-upload', 'xml-import', 'unified-shipstation-sync', 'orders-cleanup', 'weekly-reporter', 'lot-tagger')
             ORDER BY last_run_at DESC NULLS LAST
         """
         results = execute_query(query)
@@ -848,7 +849,8 @@ def api_automation_status():
             'xml-import': 'XML Import',
             'unified-shipstation-sync': 'ShipStation Sync',
             'orders-cleanup': 'Orders Cleanup',
-            'weekly-reporter': 'Weekly Reporter'
+            'weekly-reporter': 'Weekly Reporter',
+            'lot-tagger': 'Lot Tagger'
         }
         
         workflows_data = []
@@ -6333,89 +6335,44 @@ def api_resolve_lot_mismatch_alert(alert_id):
 
 @app.route('/api/update_lot_in_shipstation', methods=['PUT'])
 def api_update_lot_in_shipstation():
-    """Update SKU-Lot in ShipStation order"""
+    """
+    Manually correct a lot mismatch by writing the correct 'SKU - LOT' value to
+    customField1 of the ShipStation order's advancedOptions.
+
+    Replaces the old approach that mutated item SKUs.
+    """
     try:
-        from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
-        from utils.api_utils import make_api_request
-        
+        from src.services.shipstation.api_client import update_order_custom_fields
+        from src.utils.server_logger import get_logger as _get_logger
+        server_logger = _get_logger()
+
         data = request.get_json()
         order_id = data.get('shipstation_order_id')
-        item_id = data.get('shipstation_item_id')
         new_lot = data.get('new_lot')
         base_sku = data.get('base_sku')
         alert_id = data.get('alert_id')
-        
-        if not all([order_id, item_id, new_lot, base_sku]):
+
+        if not all([order_id, new_lot, base_sku]):
             return jsonify({
                 'success': False,
-                'error': 'Missing required parameters'
+                'error': 'Missing required parameters: shipstation_order_id, new_lot, base_sku'
             }), 400
-        
-        # Get ShipStation credentials
-        api_key, api_secret = get_shipstation_credentials()
-        if not api_key or not api_secret:
+
+        expected_cf1 = f"{base_sku} - {new_lot}"
+        result = update_order_custom_fields(int(order_id), expected_cf1)
+
+        if not result.get('success'):
             return jsonify({
                 'success': False,
-                'error': 'Failed to get ShipStation credentials'
+                'error': result.get('error', 'Failed to update order in ShipStation')
             }), 500
-        
-        # Get headers with auth
-        headers = get_shipstation_headers(api_key, api_secret)
-        headers['Content-Type'] = 'application/json'
-        
-        # Fetch current order from ShipStation
-        order_url = f'https://ssapi.shipstation.com/orders/{order_id}'
-        order_response_obj = make_api_request(
-            order_url,
-            method='GET',
-            headers=headers
+
+        server_logger.info(
+            f"Manual lot correction: order SS ID {order_id}, customField1 set to '{expected_cf1}'",
+            source="Lot Mismatch"
         )
-        
-        if not order_response_obj:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to fetch order from ShipStation'
-            }), 500
-        
-        # Parse JSON response
-        order_data = order_response_obj.json()
-        
-        # Update the item SKU to include new lot
-        new_sku = f"{base_sku} - {new_lot}"
-        old_sku = None
-        
-        for item in order_data.get('items', []):
-            if str(item.get('orderItemId')) == str(item_id):
-                old_sku = item.get('sku')
-                item['sku'] = new_sku
-                server_logger.info(f"Updating ShipStation lot: Order {order_data.get('orderNumber', order_id)}, SKU {base_sku}: '{old_sku}' -> '{new_sku}'", source="Lot Mismatch")
-                break
-        
-        # Update order in ShipStation
-        import json as json_module
-        update_response_obj = make_api_request(
-            'https://ssapi.shipstation.com/orders/createorder',
-            method='POST',
-            headers=headers,
-            data=order_data
-        )
-        
-        if not update_response_obj:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to update order in ShipStation - no response from API'
-            }), 500
-        
-        # Check if ShipStation returned an error
-        if update_response_obj.status_code != 200:
-            error_text = update_response_obj.text if update_response_obj else 'Unknown error'
-            logging.error(f"ShipStation API error (status {update_response_obj.status_code}): {error_text}")
-            return jsonify({
-                'success': False,
-                'error': f'ShipStation API error ({update_response_obj.status_code}): {error_text}'
-            }), 500
-        
-        # Mark alert as resolved
+
+        # Resolve the mismatch alert
         if alert_id:
             conn = get_connection()
             cursor = conn.cursor()
@@ -6427,18 +6384,177 @@ def api_update_lot_in_shipstation():
             """, (alert_id,))
             conn.commit()
             conn.close()
-        
+
         return jsonify({
             'success': True,
-            'message': f'Updated SKU-Lot to {new_sku} in ShipStation',
-            'new_sku': new_sku
+            'message': f"Updated customField1 to '{expected_cf1}' in ShipStation",
+            'new_cf1': expected_cf1
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/webhooks/shipstation/order/<token>', methods=['POST'])
+def webhook_shipstation_order(token):
+    """
+    ShipStation ORDER_NOTIFY webhook receiver.
+
+    ShipStation sends a JSON body with a 'resource_url' pointing to the order.
+    We return 200 immediately and process asynchronously to avoid timeout.
+
+    Security: URL token validates the caller. No HMAC support on ORDER_NOTIFY.
+    """
+    expected_token = os.environ.get('SHIPSTATION_WEBHOOK_TOKEN', '')
+    if not expected_token or token != expected_token:
+        logger.warning(f"Webhook called with invalid token")
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+
+    payload = request.get_json(silent=True) or {}
+    resource_url = payload.get('resource_url') or payload.get('resourceUrl', '')
+
+    if not resource_url:
+        logger.warning("Webhook received with no resource_url — ignoring")
+        return jsonify({'success': True, 'message': 'No resource_url'}), 200
+
+    def _process():
+        try:
+            from src.services.shipstation.api_client import (
+                get_shipstation_credentials, get_shipstation_headers, fetch_order_by_id
+            )
+            from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
+            from src.services.database.pg_utils import get_connection
+            from utils.api_utils import make_api_request
+
+            api_key, api_secret = get_shipstation_credentials()
+            if not api_key or not api_secret:
+                logger.error("Webhook: failed to get ShipStation credentials")
+                return
+
+            headers = get_shipstation_headers(api_key, api_secret)
+            response = make_api_request(resource_url, method='GET', headers=headers, timeout=30)
+            if not response or response.status_code != 200:
+                logger.error(f"Webhook: failed to fetch resource {resource_url}: {response.status_code if response else 'no response'}")
+                return
+
+            data = response.json()
+            # resource_url may return a list (paged) or a single order
+            orders = data.get('orders', [data] if 'orderId' in data else [])
+
+            conn = get_connection()
+            try:
+                active_lots, known_skus = build_lot_maps(conn)
+                for order in orders:
+                    tag_order_lots(order, active_lots, known_skus, conn)
+            finally:
+                conn.close()
+
+        except Exception as exc:
+            logger.error(f"Webhook async processing error: {exc}", exc_info=True)
+
+    t = threading.Thread(target=_process, daemon=True)
+    t.start()
+
+    return jsonify({'success': True, 'message': 'Accepted'}), 200
+
+
+@app.route('/api/lot_tagging_failures', methods=['GET'])
+def api_get_lot_tagging_failures():
+    """Return unresolved lot tagging failures."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, order_number, shipstation_order_id, sku, detected_at, resolved_at, resolved_by
+            FROM lot_tagging_failures
+            WHERE resolved_at IS NULL
+            ORDER BY detected_at DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+
+        failures = [
+            {
+                'id': row[0],
+                'order_number': row[1],
+                'shipstation_order_id': row[2],
+                'sku': row[3],
+                'detected_at': row[4].isoformat() if row[4] else None,
+                'resolved_at': row[5].isoformat() if row[5] else None,
+                'resolved_by': row[6],
+            }
+            for row in rows
+        ]
+
+        return jsonify({'success': True, 'data': failures, 'count': len(failures)})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/lot_tagging_failures/retry', methods=['POST'])
+def api_retry_lot_tagging_failures():
+    """
+    Re-attempt tagging for all unresolved lot_tagging_failures.
+
+    Fetches each failed order from ShipStation and runs tag_order_lots().
+    Useful after new lot numbers are entered or a ShipStation outage clears.
+    """
+    try:
+        from src.services.shipstation.api_client import fetch_order_by_id, get_shipstation_credentials
+        from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
+
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, order_number, shipstation_order_id, sku
+            FROM lot_tagging_failures
+            WHERE resolved_at IS NULL
+            ORDER BY detected_at ASC
+        """)
+        failures = cursor.fetchall()
+
+        if not failures:
+            conn.close()
+            return jsonify({'success': True, 'message': 'No unresolved failures', 'retried': 0})
+
+        active_lots, known_skus = build_lot_maps(conn)
+        retried = 0
+        errors = 0
+
+        for failure_id, order_number, ss_order_id, sku in failures:
+            try:
+                result = fetch_order_by_id(int(ss_order_id), api_key, api_secret)
+                if not result.get('success'):
+                    logger.warning(f"Retry: failed to fetch SS order {ss_order_id}: {result.get('error')}")
+                    errors += 1
+                    continue
+
+                order = result['order']
+                tag_order_lots(order, active_lots, known_skus, conn)
+                retried += 1
+            except Exception as exc:
+                logger.error(f"Retry error for order {order_number}: {exc}", exc_info=True)
+                errors += 1
+
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'message': f'Retry complete: {retried} processed, {errors} errors',
+            'retried': retried,
+            'errors': errors
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/manual_order_conflicts', methods=['GET'])
 def api_get_manual_order_conflicts():

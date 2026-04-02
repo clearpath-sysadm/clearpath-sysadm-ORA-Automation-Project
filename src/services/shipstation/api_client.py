@@ -357,6 +357,117 @@ def fetch_order_by_id(order_id: int, api_key: str = None, api_secret: str = None
         logger.error(f"Error fetching order {order_id} from ShipStation: {e}", exc_info=True)
         return {'success': False, 'error': str(e)}
 
+def update_order_custom_fields(order_id: int, field1_value: str, field2_value: str = None) -> dict:
+    """
+    Update customField1 (and optionally customField2) in ShipStation advancedOptions.
+
+    field1_value should be the full 'SKU - LOT' string (e.g. '17612 - 250237').
+    field2_value is only set when preserving a pre-existing customField1 value.
+
+    Returns dict with 'success' bool and 'error' on failure.
+    """
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        fetch_result = fetch_order_by_id(order_id, api_key, api_secret)
+        if not fetch_result.get('success'):
+            return {'success': False, 'error': fetch_result.get('error', 'Failed to fetch order')}
+
+        order_data = fetch_result['order']
+        if order_data.get('advancedOptions') is None:
+            order_data['advancedOptions'] = {}
+
+        order_data['advancedOptions']['customField1'] = field1_value
+        if field2_value is not None:
+            order_data['advancedOptions']['customField2'] = field2_value
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        headers['Content-Type'] = 'application/json'
+
+        response = make_api_request(
+            url='https://ssapi.shipstation.com/orders/createorder',
+            method='POST',
+            headers=headers,
+            data=order_data,
+            timeout=30
+        )
+
+        if response and response.status_code == 200:
+            logger.info(f"Updated customField1 for order {order_id}: '{field1_value}'")
+            return {'success': True}
+        else:
+            error_msg = f"ShipStation API error {response.status_code if response else 'no response'}"
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error updating custom fields for order {order_id}: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
+def register_order_notify_webhook(target_url: str) -> dict:
+    """
+    Register an ORDER_NOTIFY webhook with ShipStation pointing at target_url.
+
+    target_url must include the SHIPSTATION_WEBHOOK_TOKEN in the path.
+    ShipStation does not return a signing secret — security is the token in the URL.
+
+    Returns dict with 'success' bool, 'already_exists' bool, and 'error' on failure.
+    """
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        headers = get_shipstation_headers(api_key, api_secret)
+
+        # Check for existing ORDER_NOTIFY webhook at this URL
+        list_response = make_api_request(
+            url='https://ssapi.shipstation.com/webhooks',
+            method='GET',
+            headers=headers,
+            timeout=30
+        )
+
+        if list_response and list_response.status_code == 200:
+            existing = list_response.json()
+            for webhook in existing.get('webhooks', []):
+                if (webhook.get('event') == 'ORDER_NOTIFY' and
+                        webhook.get('target_url') == target_url):
+                    logger.info(f"ORDER_NOTIFY webhook already registered: {target_url}")
+                    return {'success': True, 'already_exists': True}
+
+        # Register new webhook
+        payload = {
+            'event': 'ORDER_NOTIFY',
+            'target_url': target_url,
+            'store_id': None,
+            'friendly_name': 'lot-tagger'
+        }
+        headers['Content-Type'] = 'application/json'
+        reg_response = make_api_request(
+            url='https://ssapi.shipstation.com/webhooks/subscribe',
+            method='POST',
+            headers=headers,
+            data=payload,
+            timeout=30
+        )
+
+        if reg_response and reg_response.status_code in (200, 201):
+            logger.info(f"Registered ORDER_NOTIFY webhook: {target_url}")
+            return {'success': True, 'already_exists': False}
+        else:
+            error_msg = f"Webhook registration failed: HTTP {reg_response.status_code if reg_response else 'no response'}"
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error registering ShipStation webhook: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
 def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = True) -> dict:
     """
     Delete an order from ShipStation by order ID.

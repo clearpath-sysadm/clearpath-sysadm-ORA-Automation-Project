@@ -47,7 +47,7 @@ The Oracare Fulfillment System is a production-ready order management platform t
 - Order Management: `orders_inbox`, `order_items_inbox`, `shipped_orders`, `shipped_items`
 - Inventory: `inventory_current`, `inventory_transactions`, `inventory_daily_snapshots`, `lot_inventory`
 - SKU/Bundles: `sku_lot`, `bundle_skus`, `bundle_components`
-- Alerts: `duplicate_order_alerts`, `lot_mismatch_alerts`, `manual_order_conflicts`, `shipping_violations`
+- Alerts: `duplicate_order_alerts`, `lot_mismatch_alerts`, `lot_tagging_failures`, `manual_order_conflicts`, `shipping_violations`
 - System: `workflows`, `workflow_controls`, `configuration_params`, `users`, `workflow_heartbeats`, `stuck_workflow_incidents`
 
 **Frontend Pages (20):**
@@ -62,7 +62,7 @@ The Oracare Fulfillment System is a production-ready order management platform t
 - `logs.html` - Server Logs viewer (Admin only)
 - `email_contacts.html`, `settings.html`, `help.html`, `landing.html` - Utility pages
 
-**Automation Workflows (8):**
+**Automation Workflows (9):**
 | Workflow | Script | Interval |
 |----------|--------|----------|
 | dashboard-server | `app.py` | Continuous |
@@ -71,6 +71,7 @@ The Oracare Fulfillment System is a production-ready order management platform t
 | unified-shipstation-sync | `unified_shipstation_sync.py` | 5 min |
 | duplicate-scanner | `scheduled_duplicate_scanner.py` | 15 min |
 | lot-mismatch-scanner | `scheduled_lot_mismatch_scanner.py` | 15 min |
+| lot-tagger | `scheduled_lot_tagger.py` | 6:30 AM & 12:00 PM CST |
 | stuck-workflow-detector | `scheduled_stuck_workflow_detector.py` | 15 min |
 | orders-cleanup | `scheduled_cleanup.py` | Daily |
 
