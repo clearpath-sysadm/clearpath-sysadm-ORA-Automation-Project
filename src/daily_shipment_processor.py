@@ -16,8 +16,11 @@ if project_root not in sys.path:
 # Import constants and environment detection from settings.py
 from config.settings import (
     SHIPSTATION_SHIPMENTS_ENDPOINT,
+    SHIPSTATION_ORDERS_ENDPOINT,
     IS_CLOUD_ENV, IS_LOCAL_ENV, SERVICE_ACCOUNT_KEY_PATH
 )
+
+KEY_PRODUCT_SKUS = ['17612', '17904', '17914', '18675', '18795']
 
 # Import necessary modules
 from utils.logging_config import setup_logging
@@ -29,8 +32,10 @@ from src.services.data_processing.shipment_processor import (
 from src.services.database.pg_utils import execute_query, transaction
 from src.services.shipstation.api_client import (
     get_shipstation_credentials,
-    fetch_shipstation_shipments
+    fetch_shipstation_shipments,
+    fetch_shipstation_orders_by_order_numbers,
 )
+from src.services.inventory.lot_deduction import deduct_lot_inventory
 # Import week utilities for handling complete vs partial weeks
 from src.services.reporting_logic.week_utils import (
     get_current_week_boundaries,
@@ -273,20 +278,25 @@ def save_shipped_orders_to_db(orders_df):
     return records_saved
 
 
-def save_shipped_items_to_db(items_df):
-    """Save shipped items to database with UPSERT
-    
+def save_shipped_items_to_db(items_df, customField1_map=None):
+    """Save shipped items to database with UPSERT and optional lot inventory deduction.
+
     Schema: shipped_items(ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number)
     UNIQUE(order_number, base_sku, sku_lot)
-    Input DataFrame columns: Ship Date, SKU - Lot, Base SKU, Quantity Shipped, OrderNumber, TrackingNumber
+    Input DataFrame columns: Ship Date, SKU - Lot, Base SKU, Quantity Shipped, OrderNumber,
+                              TrackingNumber, ShipStationOrderId
+
+    When customField1_map is provided (dict keyed by order_number → customField1 string):
+      - Bare-SKU shipped_items records are deleted and replaced with lot-stamped ones.
+      - deduct_lot_inventory() is called for each row to record the deduction.
     """
     if items_df.empty:
         logger.warning("No items to save to database")
         return 0
-    
+
     logger.info(f"Saving {len(items_df)} shipped items to database...")
     records_saved = 0
-    
+
     with transaction() as conn:
         for _, row in items_df.iterrows():
             ship_date = row.get('Ship Date')
@@ -295,18 +305,36 @@ def save_shipped_items_to_db(items_df):
             quantity = row.get('Quantity Shipped')
             order_number = row.get('OrderNumber')
             tracking_number = row.get('TrackingNumber', '')
-            
+            shipstation_order_id = row.get('ShipStationOrderId', '')
+
             if not ship_date or not base_sku or not quantity:
                 logger.warning(f"Skipping row with missing required fields: {row}")
                 continue
-            
-            # Ensure sku_lot is never None/NaN - coalesce to empty string
+
             sku_lot = str(sku_lot) if sku_lot and str(sku_lot) != 'nan' else ''
             tracking_number = str(tracking_number) if tracking_number and str(tracking_number) != 'nan' else ''
-            
-            cursor = conn.cursor()
+            shipstation_order_id = str(shipstation_order_id) if shipstation_order_id and str(shipstation_order_id) != 'nan' else ''
 
-            
+            cf1 = ''
+            if customField1_map and order_number:
+                cf1 = customField1_map.get(str(order_number), '')
+
+            if cf1 and ' - ' in cf1:
+                cf1_parts = cf1.split(' - ', 1)
+                cf1_sku = cf1_parts[0].strip()
+                if cf1_sku == str(base_sku):
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        DELETE FROM shipped_items
+                        WHERE order_number = %s
+                          AND base_sku = %s
+                          AND sku_lot NOT LIKE '%% - %%'
+                    """, (str(order_number), str(base_sku)))
+                    if cursor.rowcount > 0:
+                        logger.debug(f"Deleted {cursor.rowcount} bare-SKU record(s) for {order_number}/{base_sku}")
+                    sku_lot = cf1
+
+            cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO shipped_items (
                     ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number
@@ -317,7 +345,21 @@ def save_shipped_items_to_db(items_df):
                     tracking_number = excluded.tracking_number
             """, (str(ship_date), sku_lot, str(base_sku), int(quantity), str(order_number) if order_number else None, tracking_number))
             records_saved += 1
-    
+
+            if order_number and shipstation_order_id:
+                try:
+                    deduct_lot_inventory(
+                        order_number=str(order_number),
+                        shipstation_order_id=shipstation_order_id,
+                        base_sku=str(base_sku),
+                        customField1_value=cf1,
+                        ship_date=ship_date,
+                        quantity=int(quantity),
+                        conn=conn
+                    )
+                except Exception as _deduct_err:
+                    logger.error(f"Lot deduction failed for order {order_number}: {_deduct_err}", exc_info=True)
+
     logger.info(f"Successfully saved {records_saved} shipped items to database")
     return records_saved
 
@@ -595,10 +637,32 @@ def run_daily_shipment_pull(request=None):
         logger.info("Processing data for Shipped_Orders_Data table...")
         orders_df = process_shipped_orders(non_voided_shipments)  
 
-        # --- 5. Save to Database Tables ---
+        # --- 5. Build customField1 map for lot-tagged key product SKUs ---
+        customField1_map = {}
+        if not items_df.empty:
+            key_order_numbers = items_df[
+                items_df['Base SKU'].isin(KEY_PRODUCT_SKUS)
+            ]['OrderNumber'].dropna().unique().tolist()
+            if key_order_numbers:
+                try:
+                    api_key, api_secret = get_shipstation_credentials()
+                    lot_orders = fetch_shipstation_orders_by_order_numbers(
+                        api_key, api_secret, SHIPSTATION_ORDERS_ENDPOINT, key_order_numbers
+                    )
+                    for lot_order in lot_orders:
+                        on = lot_order.get('orderNumber', '')
+                        adv = lot_order.get('advancedOptions') or {}
+                        cf1 = (adv.get('customField1') or '').strip()
+                        if on and cf1:
+                            customField1_map[on] = cf1
+                    logger.info(f"Built customField1_map: {len(customField1_map)} order(s) with lot stamps out of {len(key_order_numbers)} key-SKU orders")
+                except Exception as _cf1_err:
+                    logger.error(f"Failed to build customField1_map, proceeding without lot stamps: {_cf1_err}", exc_info=True)
+
+        # --- 6. Save to Database Tables ---
         # Save orders first, then items (respects foreign key constraint)
         orders_saved = save_shipped_orders_to_db(orders_df)
-        items_saved = save_shipped_items_to_db(items_df)
+        items_saved = save_shipped_items_to_db(items_df, customField1_map=customField1_map)
 
         # --- 6. Incrementally Update the Weekly Shipped History ---
         logger.info("Fetching existing 52-week history from database...")

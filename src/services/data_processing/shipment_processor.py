@@ -62,6 +62,7 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
         ship_date = shipment.get('shipDate')
         order_number = shipment.get('orderNumber')
         tracking_number = shipment.get('trackingNumber', '')
+        shipstation_order_id = shipment.get('orderId')
         if not ship_date:
             continue  # Skip shipments with no ship date
 
@@ -81,14 +82,15 @@ def process_shipped_items(raw_shipment_data: list) -> pd.DataFrame:
                     'Quantity Shipped': quantity,
                     'Base SKU': base_sku,
                     'OrderNumber': order_number,
-                    'TrackingNumber': tracking_number
+                    'TrackingNumber': tracking_number,
+                    'ShipStationOrderId': str(shipstation_order_id) if shipstation_order_id else ''
                 })
 
     df = pd.DataFrame(extracted_data)
 
     # Ensure columns are in the correct order for the sheet
     if not df.empty:
-        df = df[['Ship Date', 'SKU - Lot', 'Quantity Shipped', 'Base SKU', 'OrderNumber', 'TrackingNumber']]
+        df = df[['Ship Date', 'SKU - Lot', 'Quantity Shipped', 'Base SKU', 'OrderNumber', 'TrackingNumber', 'ShipStationOrderId']]
 
     logger.info(f"Finished processing. Resulting DataFrame has {len(df)} rows.")
     return df

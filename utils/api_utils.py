@@ -1,4 +1,5 @@
 import logging
+import time
 import requests
 import json
 import os
@@ -118,7 +119,8 @@ def make_api_request(url: str, method: str = 'GET', data: dict = None, headers: 
             except ValueError:
                 wait_seconds = 60
             
-            logger.warning(f"Rate limit (429) hit for {url}. Retry-After: {wait_seconds}s. Will retry with exponential backoff.")
+            logger.warning(f"Rate limit (429) hit for {url}. Retry-After: {wait_seconds}s. Sleeping before retry.")
+            time.sleep(wait_seconds)
         else:
             logger.error(f"HTTP Error {status_code} for {url}: {e.response.text}")
         

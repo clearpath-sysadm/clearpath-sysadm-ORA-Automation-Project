@@ -310,6 +310,8 @@ def fetch_shipstation_orders_by_order_numbers(
         except Exception as e:
             logger.error(f"Error fetching order {order_number} from ShipStation: {e}", exc_info=True)
 
+        time.sleep(0.5)
+
     logger.info(f"Retrieved {len(all_orders)} existing orders (per-order lookup)")
     return all_orders
 
