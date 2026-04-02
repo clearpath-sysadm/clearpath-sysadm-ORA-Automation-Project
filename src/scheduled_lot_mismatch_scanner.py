@@ -144,7 +144,9 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                     if cf1 == expected:
                         break  # Correct — no mismatch for this order
 
-                    # Mismatch detected
+                    # Mismatch detected — extract the lot number from customField1 ('SKU - LOT')
+                    cf1_lot = cf1.split(' - ', 1)[1] if ' - ' in cf1 else cf1
+
                     mismatches_found += 1
                     mismatch_msg = (
                         f"Lot mismatch: Order {order_number} (SS ID: {order_id}), SKU {base_sku} — "
@@ -153,7 +155,6 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                     logger.warning(mismatch_msg)
                     server_logger.warning(mismatch_msg, source="Lot Mismatch")
 
-                    # Upsert alert — shipstation_lot stores the full customField1 value as-is
                     cursor.execute("""
                         INSERT INTO lot_mismatch_alerts (
                             order_number,
@@ -174,7 +175,7 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                     """, (
                         order_number,
                         base_sku,
-                        cf1,
+                        cf1_lot,
                         active_lots[base_sku],
                         str(order_id),
                         order_status
