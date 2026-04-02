@@ -6059,8 +6059,9 @@ def webhook_shipstation_order(token):
 
     def _process():
         try:
+            import datetime as _dt
             from src.services.shipstation.api_client import (
-                get_shipstation_credentials, get_shipstation_headers, fetch_order_by_id
+                get_shipstation_credentials, get_shipstation_headers
             )
             from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
             from src.services.database.pg_utils import get_connection
@@ -6080,12 +6081,45 @@ def webhook_shipstation_order(token):
             data = response.json()
             # resource_url may return a list (paged) or a single order
             orders = data.get('orders', [data] if 'orderId' in data else [])
+            # Only tag awaiting_shipment orders — webhook fires for all status changes
+            orders = [o for o in orders if o.get('orderStatus') == 'awaiting_shipment']
 
             conn = get_connection()
             try:
                 active_lots, known_skus = build_lot_maps(conn)
                 for order in orders:
                     tag_order_lots(order, active_lots, known_skus, conn)
+
+                # 24-hour sweep: catch any awaiting_shipment orders with empty customField1
+                # that were missed by prior webhook fires (server restarts, SS retry exhaustion)
+                since = (_dt.datetime.utcnow() - _dt.timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+                sweep_page = 1
+                while True:
+                    sweep_resp = make_api_request(
+                        url='https://ssapi.shipstation.com/orders',
+                        method='GET',
+                        headers=headers,
+                        params={
+                            'orderStatus': 'awaiting_shipment',
+                            'modifyDateStart': since,
+                            'pageSize': 500,
+                            'page': sweep_page,
+                        },
+                        timeout=30
+                    )
+                    if not sweep_resp or sweep_resp.status_code != 200:
+                        break
+                    sweep_data = sweep_resp.json()
+                    sweep_orders = sweep_data.get('orders', [])
+                    untagged = [
+                        o for o in sweep_orders
+                        if not ((o.get('advancedOptions') or {}).get('customField1') or '').strip()
+                    ]
+                    for order in untagged:
+                        tag_order_lots(order, active_lots, known_skus, conn)
+                    if sweep_page >= sweep_data.get('pages', 1):
+                        break
+                    sweep_page += 1
             finally:
                 conn.close()
 
