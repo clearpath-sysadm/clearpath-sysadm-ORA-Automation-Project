@@ -8,7 +8,7 @@ import os
 import logging
 from typing import Dict, Set
 
-from src.services.shipstation.api_client import update_order_custom_fields
+from src.services.shipstation.api_client import update_order_custom_fields, update_order_package_v2
 from src.utils.server_logger import get_logger
 
 logger = logging.getLogger(__name__)
@@ -29,14 +29,14 @@ KNOWN_SKUS_QUERY = "SELECT sku_code FROM skus"
 HOME_OFFICE_SKUS = {'18751', '18760', '18565'}
 
 SKU_SHIPPING_PROFILES = {
-    '17612': {'package_code': 'package', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
-    '17914': {'package_code': 'package', 'length': 11.0, 'width': 11.0, 'height':  8.0, 'weight_oz': 176},
-    '17904': {'package_code': 'package', 'length': 14.0, 'width': 12.0, 'height':  5.0, 'weight_oz': 224},
-    '18675': {'package_code': 'package', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
-    '18795': {'package_code': 'package', 'length':  9.0, 'width':  5.0, 'height':  8.0, 'weight_oz':  80},
-    '18751': {'package_code': 'package', 'length':  9.0, 'width':  5.0, 'height':  7.0, 'weight_oz':  80},
-    '18760': {'package_code': 'package', 'length':  2.0, 'width':  2.0, 'height':  3.0, 'weight_oz':  32},
-    '18565': {'package_code': 'package', 'length':  9.0, 'width':  6.0, 'height':  4.0, 'weight_oz':  48},
+    '17612': {'package_code': 'package', 'package_id': 'se-122675', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
+    '17914': {'package_code': 'package', 'package_id': 'se-122677', 'length': 11.0, 'width': 11.0, 'height':  8.0, 'weight_oz': 176},
+    '17904': {'package_code': 'package', 'package_id': 'se-132840', 'length': 14.0, 'width': 12.0, 'height':  5.0, 'weight_oz': 224},
+    '18675': {'package_code': 'package', 'package_id': 'se-122678', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
+    '18795': {'package_code': 'package', 'package_id': 'se-131836', 'length':  9.0, 'width':  5.0, 'height':  8.0, 'weight_oz':  80},
+    '18751': {'package_code': 'package', 'package_id': 'se-135810', 'length':  9.0, 'width':  5.0, 'height':  7.0, 'weight_oz':  80},
+    '18760': {'package_code': 'package', 'package_id': 'se-135809', 'length':  2.0, 'width':  2.0, 'height':  3.0, 'weight_oz':  32},
+    '18565': {'package_code': 'package', 'package_id': 'se-135808', 'length':  9.0, 'width':  6.0, 'height':  4.0, 'weight_oz':  48},
 }
 
 
@@ -115,6 +115,7 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
         'bill_to_party':  'my_other_account',
         'bill_to_account': bill_to_account,
         'package_code':   profile['package_code'] if profile else None,
+        'package_id':     profile['package_id']   if profile else None,
         'weight_oz':      profile['weight_oz']    if profile else None,
         'length':         profile['length']        if profile else None,
         'width':          profile['width']         if profile else None,
@@ -217,6 +218,27 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 f"Enriched home office order {order_number} (SS ID: {order_id}) SKU={sku}",
                 source="Lot Tagger"
             )
+            if profile.get('package_id'):
+                v2_result = update_order_package_v2(
+                    order_id,
+                    profile['package_id'],
+                    profile['weight_oz'],
+                    profile['length'],
+                    profile['width'],
+                    profile['height'],
+                )
+                if not v2_result.get('success'):
+                    server_logger.error(
+                        f"V2 package update failed for home office order {order_number} "
+                        f"(SS ID: {order_id}): {v2_result.get('error')}",
+                        source="Lot Tagger"
+                    )
+                else:
+                    server_logger.info(
+                        f"V2 package set to {profile['package_id']} for home office order "
+                        f"{order_number} (SS ID: {order_id})",
+                        source="Lot Tagger"
+                    )
         return
 
     cursor = conn.cursor()
@@ -300,6 +322,28 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         f"[{profile['service_code']}, account={profile['bill_to_account']}]",
         source="Lot Tagger"
     )
+
+    if profile.get('package_id'):
+        v2_result = update_order_package_v2(
+            order_id,
+            profile['package_id'],
+            profile['weight_oz'],
+            profile['length'],
+            profile['width'],
+            profile['height'],
+        )
+        if not v2_result.get('success'):
+            server_logger.error(
+                f"V2 package update failed for order {order_number} "
+                f"(SS ID: {order_id}): {v2_result.get('error')}",
+                source="Lot Tagger"
+            )
+        else:
+            server_logger.info(
+                f"V2 package set to {profile['package_id']} for order "
+                f"{order_number} (SS ID: {order_id})",
+                source="Lot Tagger"
+            )
 
     cursor.execute("""
         UPDATE lot_tagging_failures

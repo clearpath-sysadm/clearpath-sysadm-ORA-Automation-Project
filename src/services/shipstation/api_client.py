@@ -458,6 +458,95 @@ def update_order_custom_fields(
         return {'success': False, 'error': str(e)}
 
 
+def update_order_package_v2(
+    order_id: int,
+    package_id: str,
+    weight_oz: float,
+    length: float,
+    width: float,
+    height: float,
+) -> dict:
+    """
+    Set the named custom package preset on a ShipStation V2 shipment.
+
+    Constructs shipment_id as 'se-{order_id}' — no extra lookup required.
+
+    Auth: PRODUCTION_KEY env var as 'API-Key' header (V2-specific credential).
+
+    V2 PUT is a full replacement, not a partial update. Required flow:
+      1. GET the current shipment to retrieve ship_from, ship_to, carrier_id, etc.
+      2. Replace packages[0] with {package_id, weight} — dimensions must NOT be
+         included because ShipStation custom packages already store their own dims.
+      3. PUT back the full modified shipment.
+
+    V2 weight unit is 'ounce' (not 'ounces' as used by V1).
+
+    Returns dict with 'success' bool and 'error' on failure.
+    """
+    try:
+        api_key = os.getenv('PRODUCTION_KEY')
+        if not api_key:
+            return {'success': False, 'error': 'PRODUCTION_KEY environment variable not set'}
+
+        shipment_id = f"se-{order_id}"
+        url = f"https://api.shipstation.com/v2/shipments/{shipment_id}"
+
+        headers = {
+            'API-Key': api_key,
+            'Content-Type': 'application/json',
+        }
+
+        # Step 1: GET current shipment data (required for PUT — it's a full replacement)
+        get_response = make_api_request(
+            url=url,
+            method='GET',
+            headers=headers,
+            timeout=30,
+        )
+        if not get_response or get_response.status_code != 200:
+            status = get_response.status_code if get_response else 'no response'
+            body = get_response.text[:200] if get_response else ''
+            return {'success': False, 'error': f"V2 GET failed {status}: {body}"}
+
+        shipment = get_response.json()
+
+        # Step 2: Build updated packages — only package_id and weight.
+        # Dimensions must NOT be sent: custom packages already define their own dims,
+        # and the V2 API rejects dimensions when a package_id is specified.
+        shipment['packages'] = [
+            {
+                'package_id': package_id,
+                'weight': {
+                    'value': weight_oz,
+                    'unit': 'ounce',
+                },
+            }
+        ]
+
+        # Step 3: PUT back the full modified shipment
+        put_response = make_api_request(
+            url=url,
+            method='PUT',
+            headers=headers,
+            data=shipment,
+            timeout=30,
+        )
+
+        if put_response and put_response.status_code in (200, 204):
+            logger.info(f"V2: set package_id={package_id} on shipment {shipment_id}")
+            return {'success': True}
+        else:
+            status = put_response.status_code if put_response else 'no response'
+            body = put_response.text[:300] if put_response else ''
+            error_msg = f"ShipStation V2 PUT error {status}: {body}"
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error setting V2 package for order {order_id}: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
 def list_carriers() -> dict:
     """
     Fetch the list of connected carriers from ShipStation.
