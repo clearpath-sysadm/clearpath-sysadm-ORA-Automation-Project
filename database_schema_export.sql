@@ -314,6 +314,7 @@ CREATE TABLE public.orders_inbox (
     shipping_service_code text,
     shipping_service_name text,
     tracking_number text,
+    lot_stamp text,
     CONSTRAINT orders_inbox_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'uploaded'::text, 'awaiting_shipment'::text, 'failed'::text, 'synced_manual'::text, 'shipped'::text, 'cancelled'::text, 'on_hold'::text, 'awaiting_payment'::text])))
 );
 

@@ -753,6 +753,7 @@ CREATE TABLE public.orders_inbox (
     flag_resolved boolean DEFAULT false,
     flag_resolved_at timestamp without time zone,
     flag_resolved_by character varying(255),
+    lot_stamp text,
     CONSTRAINT orders_inbox_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'uploaded'::text, 'awaiting_shipment'::text, 'failed'::text, 'synced_manual'::text, 'shipped'::text, 'cancelled'::text, 'on_hold'::text, 'awaiting_payment'::text])))
 );
 
