@@ -114,6 +114,13 @@ def deduct_lot_inventory(
 
         ship_date_str = ship_date.strftime('%Y-%m-%d') if hasattr(ship_date, 'strftime') else str(ship_date)[:10]
 
+        # Sign convention: store POSITIVE quantity for 'Ship' transactions.
+        # The lot_balances VIEW applies "CASE WHEN 'Ship' THEN -it.quantity" so it
+        # negates the stored value when computing balance.  Storing negative here
+        # would produce -(-qty) = +qty, inadvertently INCREASING the balance.
+        # calculate_daily_inventory likewise does eod = bod - shipped_qty, so a
+        # positive shipped_qty correctly decrements inventory.
+        # All existing 'Receive' rows also store positive quantities.
         cursor.execute("""
             INSERT INTO inventory_transactions
                 (date, sku, quantity, transaction_type, lot_id, shipstation_order_id, notes)
