@@ -162,6 +162,26 @@ def _is_fully_enriched(order: dict, expected_cf1: str, profile: dict) -> bool:
     return True
 
 
+def _parse_lot_stamped_sku(sku: str):
+    """
+    Detect compound SKU values used by XML-imported and manually-added orders.
+
+    If sku matches '{base_sku} - {lot}' where base_sku is a key in
+    SKU_SHIPPING_PROFILES, return (base_sku, full_sku_as_cf1).
+    Otherwise return None.
+
+    Examples:
+        '17612 - 260017'  →  ('17612', '17612 - 260017')
+        '17914 - 250297'  →  ('17914', '17914 - 250297')
+        '18760'           →  None  (plain SKU, not lot-stamped)
+        'UNKNOWN - X'     →  None  (base not in SKU_SHIPPING_PROFILES)
+    """
+    parts = sku.split(' - ', 1)
+    if len(parts) == 2 and parts[0].strip() in SKU_SHIPPING_PROFILES:
+        return parts[0].strip(), sku.strip()
+    return None
+
+
 def ensure_v2_package(order_id: int, order_number: str, profile: dict) -> dict:
     """
     Idempotent V2 named-package setter.
@@ -247,6 +267,115 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     if not tracked_items:
         ho_items = [item for item in items if str(item.get('sku', '')).strip() in HOME_OFFICE_SKUS]
         if not ho_items:
+            # --- Lot-stamped SKU path (XML-imported / manually-added orders) ---
+            # These orders carry a compound SKU like '17612 - 260017' instead of
+            # a plain base code.  The lot is embedded in the SKU itself and must
+            # be used as-is for customField1 — do NOT substitute the active lot.
+            stamped_items = []
+            for item in items:
+                parsed = _parse_lot_stamped_sku(str(item.get('sku', '')).strip())
+                if parsed:
+                    stamped_items.append(parsed)
+
+            if not stamped_items:
+                return  # Truly untracked — nothing to do
+
+            unique_bases = {base for base, _ in stamped_items}
+            if len(unique_bases) > 1:
+                skus_found = ', '.join(str(item.get('sku', '')).strip() for item in items)
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO lot_tagging_failures
+                        (order_number, shipstation_order_id, sku, detected_at)
+                    VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (shipstation_order_id) DO UPDATE
+                        SET detected_at = CURRENT_TIMESTAMP,
+                            sku = EXCLUDED.sku
+                    WHERE lot_tagging_failures.resolved_at IS NULL
+                """, (order_number, str(order_id), skus_found))
+                conn.commit()
+                server_logger.warning(
+                    f"Lot-stamped order {order_number} (SS ID: {order_id}) has multiple "
+                    f"base SKUs [{skus_found}]. Logged to lot_tagging_failures.",
+                    source="Lot Tagger"
+                )
+                return
+
+            base_sku, exp_cf1 = stamped_items[0]
+            profile = resolve_shipping_profile(order, base_sku)
+
+            if _is_fully_enriched(order, exp_cf1, profile):
+                logger.debug(f"Lot-stamped order {order_number} already fully enriched — skipping V1.")
+                v2_result = ensure_v2_package(order_id, order_number, profile)
+                if v2_result['action'] == 'updated':
+                    server_logger.info(
+                        f"V2 package swept to {profile['package_id']} for lot-stamped order "
+                        f"{order_number} (SS ID: {order_id})",
+                        source="Lot Tagger"
+                    )
+                elif v2_result['action'] == 'error':
+                    server_logger.error(
+                        f"V2 package sweep failed for lot-stamped order {order_number} "
+                        f"(SS ID: {order_id}): {v2_result.get('error')}",
+                        source="Lot Tagger"
+                    )
+                return
+
+            result = update_order_custom_fields(
+                order_id, exp_cf1, None,
+                carrier_code=profile['carrier_code'],
+                service_code=profile['service_code'],
+                package_code=profile['package_code'],
+                weight_oz=profile['weight_oz'],
+                dim_length=profile['length'],
+                dim_width=profile['width'],
+                dim_height=profile['height'],
+                bill_to_party=profile['bill_to_party'],
+                bill_to_account=profile['bill_to_account'],
+            )
+
+            if not result.get('success'):
+                server_logger.error(
+                    f"Failed to enrich lot-stamped order {order_number} "
+                    f"(SS ID: {order_id}): {result.get('error')}",
+                    source="Lot Tagger"
+                )
+            else:
+                server_logger.info(
+                    f"Enriched lot-stamped order {order_number} (SS ID: {order_id}) "
+                    f"CF1={exp_cf1!r} base_sku={base_sku}",
+                    source="Lot Tagger"
+                )
+                if profile.get('package_id'):
+                    v2_result = update_order_package_v2(
+                        order_id,
+                        profile['package_id'],
+                        profile['weight_oz'],
+                        profile['length'],
+                        profile['width'],
+                        profile['height'],
+                    )
+                    if not v2_result.get('success'):
+                        server_logger.error(
+                            f"V2 package update failed for lot-stamped order {order_number} "
+                            f"(SS ID: {order_id}): {v2_result.get('error')}",
+                            source="Lot Tagger"
+                        )
+                    else:
+                        server_logger.info(
+                            f"V2 package set to {profile['package_id']} for lot-stamped order "
+                            f"{order_number} (SS ID: {order_id})",
+                            source="Lot Tagger"
+                        )
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE lot_tagging_failures
+                    SET resolved_at = CURRENT_TIMESTAMP,
+                        resolved_by = 'auto'
+                    WHERE shipstation_order_id = %s
+                      AND resolved_at IS NULL
+                """, (str(order_id),))
+                conn.commit()
             return
 
         sku     = str(ho_items[0].get('sku', '')).strip()
