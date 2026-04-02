@@ -154,7 +154,7 @@ def _is_fully_enriched(order: dict, expected_cf1: str, profile: dict) -> bool:
         return False
 
     if profile['package_code'] is not None:
-        if (adv.get('packageCode') or '') != profile['package_code']:
+        if (order.get('packageCode') or '') != profile['package_code']:
             return False
 
     return True

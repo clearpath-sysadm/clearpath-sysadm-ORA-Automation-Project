@@ -417,7 +417,7 @@ def update_order_custom_fields(
             order_data['serviceCode'] = service_code
 
         if package_code is not None:
-            order_data['advancedOptions']['packageCode'] = package_code
+            order_data['packageCode'] = package_code
         if bill_to_party is not None:
             order_data['advancedOptions']['billToParty'] = bill_to_party
         if bill_to_account is not None:
