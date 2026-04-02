@@ -841,7 +841,7 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
                         sku_lot = sku
                     else:
                         base_sku = sku
-                        sku_lot = ''
+                        sku_lot = sku
 
                     cursor.execute("""
                         INSERT INTO shipped_items (
@@ -853,21 +853,15 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
                             ship_date = EXCLUDED.ship_date
                     """, (ship_date, sku_lot, base_sku, quantity, order_number))
 
-                    try:
-                        deduct_lot_inventory(
-                            order_number=order_number,
-                            shipstation_order_id=str(order_id),
-                            base_sku=base_sku,
-                            customField1_value=lot_stamp or '',
-                            ship_date=ship_date,
-                            quantity=quantity,
-                            conn=conn
-                        )
-                    except Exception as _deduct_err:
-                        logger.error(
-                            f"❌ Lot deduction failed for order {order_number} / {base_sku}: {_deduct_err}",
-                            exc_info=True
-                        )
+                    deduct_lot_inventory(
+                        order_number=order_number,
+                        shipstation_order_id=str(order_id),
+                        base_sku=base_sku,
+                        customField1_value=lot_stamp or '',
+                        ship_date=ship_date,
+                        quantity=quantity,
+                        conn=conn
+                    )
 
             logger.info(f"✅ Imported SHIPPED BigCommerce order: {order_number} (ship_date: {ship_date})")
             server_logger.info(f"Imported shipped BigCommerce order: {order_number} (ship_date: {ship_date})", source="ShipStation Sync")

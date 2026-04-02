@@ -347,18 +347,15 @@ def save_shipped_items_to_db(items_df, customField1_map=None):
             records_saved += 1
 
             if order_number and shipstation_order_id:
-                try:
-                    deduct_lot_inventory(
-                        order_number=str(order_number),
-                        shipstation_order_id=shipstation_order_id,
-                        base_sku=str(base_sku),
-                        customField1_value=cf1,
-                        ship_date=ship_date,
-                        quantity=int(quantity),
-                        conn=conn
-                    )
-                except Exception as _deduct_err:
-                    logger.error(f"Lot deduction failed for order {order_number}: {_deduct_err}", exc_info=True)
+                deduct_lot_inventory(
+                    order_number=str(order_number),
+                    shipstation_order_id=shipstation_order_id,
+                    base_sku=str(base_sku),
+                    customField1_value=cf1,
+                    ship_date=ship_date,
+                    quantity=int(quantity),
+                    conn=conn
+                )
 
     logger.info(f"Successfully saved {records_saved} shipped items to database")
     return records_saved
