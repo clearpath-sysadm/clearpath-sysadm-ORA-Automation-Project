@@ -10,6 +10,7 @@ from typing import Dict, Set
 
 from src.services.shipstation.api_client import update_order_custom_fields, update_order_package_v2
 from src.utils.server_logger import get_logger
+from utils.api_utils import make_api_request
 
 logger = logging.getLogger(__name__)
 server_logger = get_logger()
@@ -161,6 +162,66 @@ def _is_fully_enriched(order: dict, expected_cf1: str, profile: dict) -> bool:
     return True
 
 
+def ensure_v2_package(order_id: int, order_number: str, profile: dict) -> dict:
+    """
+    Idempotent V2 named-package setter.
+
+    GETs the V2 shipment once, checks packages[0].package_id against the
+    expected value from `profile`. Only issues a PUT when they differ.
+
+    This runs on every tagged order — including ones whose V1 fields are
+    already correct — so the named custom package is always in sync with
+    ShipStation regardless of whether a V1 write was needed.
+
+    Returns:
+        {'action': 'already_correct'} — V2 already has the right package
+        {'action': 'updated'}         — V2 PUT succeeded
+        {'action': 'skipped'}         — no package_id in profile (unsupported SKU)
+        {'action': 'error', 'error': str} — GET or PUT failed
+    """
+    package_id = profile.get('package_id')
+    if not package_id:
+        return {'action': 'skipped'}
+
+    api_key = os.getenv('PRODUCTION_KEY')
+    if not api_key:
+        return {'action': 'error', 'error': 'PRODUCTION_KEY not set'}
+
+    shipment_id = f"se-{order_id}"
+    url         = f"https://api.shipstation.com/v2/shipments/{shipment_id}"
+    headers     = {'API-Key': api_key, 'Content-Type': 'application/json'}
+
+    get_resp = make_api_request(url=url, method='GET', headers=headers, timeout=30)
+    if not get_resp or get_resp.status_code != 200:
+        status = get_resp.status_code if get_resp else 'no response'
+        body   = get_resp.text[:200]  if get_resp else ''
+        return {'action': 'error', 'error': f'V2 GET failed {status}: {body}'}
+
+    shipment = get_resp.json()
+    packages = shipment.get('packages') or []
+    current_pkg_id = packages[0].get('package_id') if packages else None
+
+    if current_pkg_id == package_id:
+        logger.debug(f"Order {order_number} V2 package already {package_id} — skipping PUT.")
+        return {'action': 'already_correct'}
+
+    shipment['packages'] = [
+        {
+            'package_id': package_id,
+            'weight': {'value': profile['weight_oz'], 'unit': 'ounce'},
+        }
+    ]
+
+    put_resp = make_api_request(url=url, method='PUT', headers=headers, data=shipment, timeout=30)
+    if put_resp and put_resp.status_code in (200, 204):
+        logger.info(f"V2: set package_id={package_id} on order {order_number} ({shipment_id})")
+        return {'action': 'updated'}
+    else:
+        status = put_resp.status_code if put_resp else 'no response'
+        body   = put_resp.text[:300]  if put_resp else ''
+        return {'action': 'error', 'error': f'V2 PUT failed {status}: {body}'}
+
+
 def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], conn) -> None:
     """
     Inspect a single ShipStation order and write the correct lot stamp and full
@@ -192,7 +253,20 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         profile = resolve_shipping_profile(order, sku)
 
         if _is_fully_enriched(order, sku, profile):
-            logger.debug(f"Order {order_number} (home office) already fully enriched — skipping.")
+            logger.debug(f"Order {order_number} (home office) already fully enriched — skipping V1.")
+            v2_result = ensure_v2_package(order_id, order_number, profile)
+            if v2_result['action'] == 'updated':
+                server_logger.info(
+                    f"V2 package swept to {profile['package_id']} for home office order "
+                    f"{order_number} (SS ID: {order_id})",
+                    source="Lot Tagger"
+                )
+            elif v2_result['action'] == 'error':
+                server_logger.error(
+                    f"V2 package sweep failed for home office order {order_number} "
+                    f"(SS ID: {order_id}): {v2_result.get('error')}",
+                    source="Lot Tagger"
+                )
             return
 
         result = update_order_custom_fields(
@@ -284,7 +358,20 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     profile        = resolve_shipping_profile(order, sku)
 
     if _is_fully_enriched(order, expected_value, profile):
-        logger.debug(f"Order {order_number} already fully enriched — skipping.")
+        logger.debug(f"Order {order_number} already fully enriched — skipping V1.")
+        v2_result = ensure_v2_package(order_id, order_number, profile)
+        if v2_result['action'] == 'updated':
+            server_logger.info(
+                f"V2 package swept to {profile['package_id']} for order "
+                f"{order_number} (SS ID: {order_id})",
+                source="Lot Tagger"
+            )
+        elif v2_result['action'] == 'error':
+            server_logger.error(
+                f"V2 package sweep failed for order {order_number} "
+                f"(SS ID: {order_id}): {v2_result.get('error')}",
+                source="Lot Tagger"
+            )
         return
 
     adv         = order.get('advancedOptions') or {}
