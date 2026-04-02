@@ -121,10 +121,10 @@ def deduct_lot_inventory(
         """, (
             ship_date_str,
             cf1_sku,
-            -abs(int(quantity)),
+            abs(int(quantity)),
             lot_id,
             str(shipstation_order_id),
-            f"order:{order_number}"
+            order_number
         ))
 
         logger.info(
