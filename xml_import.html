@@ -1091,11 +1091,7 @@
                     <td>${carrierAcctBadge}</td>
                     <td style="white-space: nowrap;">
                         ${order.shipstation_order_id ? order.shipstation_order_id : 
-                            `<button onclick="forceUploadToShipStation('${order.order_number}')" 
-                                     style="padding: 4px 8px; font-size: 11px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;"
-                                     title="Upload this order to ShipStation with current lot numbers">
-                                📤 Upload
-                            </button>`
+                            `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;" title="Order upload disabled — BigCommerce pushes orders directly to ShipStation">—</span>`
                         }
                         ${order.status !== 'pending' ? 
                             `<button onclick="resetOrderToPending('${order.order_number}')" 
@@ -1201,11 +1197,7 @@
                             <span class="order-card-detail-label">ShipStation ID:</span>
                             <span class="order-card-detail-value" style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 ${order.shipstation_order_id ? order.shipstation_order_id : 
-                                    `<button onclick="forceUploadToShipStation('${order.order_number}')" 
-                                             style="padding: 6px 12px; font-size: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;"
-                                             title="Upload this order to ShipStation with current lot numbers">
-                                        📤 Upload
-                                    </button>`
+                                    `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;" title="Order upload disabled — BigCommerce pushes orders directly to ShipStation">—</span>`
                                 }
                                 ${order.status !== 'pending' ? 
                                     `<button onclick="resetOrderToPending('${order.order_number}')" 
@@ -1765,67 +1757,10 @@
             }
         }
 
-        // Force upload order to ShipStation (explicitly global for onclick handlers)
-        window.forceUploadToShipStation = async function(orderNumber) {
-            alert('Order upload is disabled. BigCommerce pushes orders directly to ShipStation.');
-            return;
-            
-            // Find the button that was clicked and show loading state
-            const buttons = document.querySelectorAll(`button[onclick="forceUploadToShipStation('${orderNumber}')"]`);
-            const originalTexts = [];
-            buttons.forEach(btn => {
-                originalTexts.push(btn.innerHTML);
-                btn.disabled = true;
-                btn.innerHTML = '⏳...';
-            });
-            
-            try {
-                const response = await fetch('/api/admin/force_upload_to_shipstation', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        order_number: orderNumber
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Build success message
-                    let message = `Order #${orderNumber} uploaded to ShipStation`;
-                    if (data.shipstation_order_id) {
-                        message += ` (ID: ${data.shipstation_order_id})`;
-                    }
-                    if (data.items_uploaded) {
-                        message += ` - ${data.items_uploaded} item(s), ${data.total_units} unit(s)`;
-                    }
-                    
-                    showAlert(`✅ ${message}`, 'success');
-                    
-                    // Refresh the orders list to show updated status
-                    setTimeout(() => {
-                        loadOrdersInbox();
-                    }, 1000);
-                } else {
-                    showAlert(`❌ ${data.error || 'Failed to upload order to ShipStation'}`, 'error');
-                    
-                    // Reset button state
-                    buttons.forEach((btn, i) => {
-                        btn.disabled = false;
-                        btn.innerHTML = originalTexts[i];
-                    });
-                }
-            } catch (error) {
-                console.error('Upload error:', error);
-                showAlert('❌ Failed to upload order to ShipStation', 'error');
-                
-                // Reset button state
-                buttons.forEach((btn, i) => {
-                    btn.disabled = false;
-                    btn.innerHTML = originalTexts[i];
-                });
-            }
-        }
+        // Order upload to ShipStation is disabled — BigCommerce pushes orders directly.
+        window.forceUploadToShipStation = function() {
+            showAlert('⚠️ Order upload to ShipStation is disabled — BigCommerce pushes orders directly.', 'warning');
+        };
 
         // Reset order status to pending (explicitly global for onclick handlers)
         window.resetOrderToPending = async function(orderNumber) {
