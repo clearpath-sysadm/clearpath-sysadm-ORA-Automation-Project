@@ -521,7 +521,7 @@
             html += '<th>SKU</th>';
             html += '<th>Lot Number</th>';
             html += '<th>Balance</th>';
-            html += '<th>Received Date</th>';
+            html += '<th>Receipts</th>';
             html += '<th>Priority (FIFO)</th>';
             html += '<th>Status</th>';
             html += '<th>Actions</th>';
@@ -535,7 +535,7 @@
                     html += `<td><strong>${lot.sku}</strong></td>`;
                     html += `<td>${lot.lot}</td>`;
                     html += `<td><strong style="font-size: 15px;">${lot.balance.toLocaleString()}</strong></td>`;
-                    html += `<td>${formatDate(lot.received_date)}</td>`;
+                    html += `<td>${formatReceiptCount(lot)}</td>`;
 
                     // Priority indicator (1st = oldest)
                     const priority = index + 1;
@@ -574,8 +574,8 @@
 
                     html += `<div class="lot-card-grid">`;
                     html += `<div class="lot-card-item">`;
-                    html += `<div class="lot-card-item-label">Received</div>`;
-                    html += `<div class="lot-card-item-value">${formatDate(lot.received_date)}</div>`;
+                    html += `<div class="lot-card-item-label">Receipts</div>`;
+                    html += `<div class="lot-card-item-value">${formatReceiptCount(lot)}</div>`;
                     html += `</div>`;
                     html += `<div class="lot-card-item">`;
                     html += `<div class="lot-card-item-label">FIFO Priority</div>`;
@@ -604,6 +604,18 @@
         function formatDate(dateStr) {
             const date = new Date(dateStr);
             return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatReceiptCount(lot) {
+            const count = lot.receive_count || 0;
+            if (count === 0) return '<span style="color:var(--text-secondary);">—</span>';
+            const dates = (lot.receive_dates || []).map(d => {
+                const dt = new Date(d);
+                return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            });
+            const tip = dates.join('&#10;');
+            const label = count === 1 ? '1 receipt' : `${count} receipts`;
+            return `<span title="${tip}" style="cursor:default;border-bottom:1px dotted var(--text-secondary);">${label}</span>`;
         }
 
         // Get status badge

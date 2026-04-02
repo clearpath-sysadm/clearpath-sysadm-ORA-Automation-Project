@@ -7615,8 +7615,14 @@ def api_get_lot_inventory():
                 lb.status,
                 lb.notes,
                 lb.created_at,
-                lb.updated_at
+                lb.updated_at,
+                COUNT(CASE WHEN it.transaction_type = 'Receive' THEN 1 END) AS receive_count,
+                ARRAY_AGG(it.date ORDER BY it.date ASC)
+                    FILTER (WHERE it.transaction_type = 'Receive') AS receive_dates
             FROM lot_balances lb
+            LEFT JOIN inventory_transactions it ON it.lot_id = lb.lot_id
+            GROUP BY lb.lot_id, lb.sku_code, lb.lot_number, lb.balance,
+                     lb.received_date, lb.status, lb.notes, lb.created_at, lb.updated_at
             ORDER BY lb.sku_code ASC, lb.received_date ASC NULLS LAST
         """)
 
@@ -7634,7 +7640,9 @@ def api_get_lot_inventory():
                 'status':        row[5],
                 'notes':         row[6] or '',
                 'created_at':    row[7],
-                'updated_at':    row[8]
+                'updated_at':    row[8],
+                'receive_count': int(row[9]) if row[9] else 0,
+                'receive_dates': list(row[10]) if row[10] else []
             })
 
         return jsonify({'success': True, 'lots': lots, 'count': len(lots)})
