@@ -95,9 +95,15 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
         service_code = 'fedex_ground'
 
     if 'BENCO' in company:
-        bill_to_account = int(os.getenv('BENCO_FEDEX_ACCOUNT_ID', '0'))
+        benco_id = os.getenv('BENCO_FEDEX_ACCOUNT_ID')
+        if not benco_id:
+            raise ValueError("BENCO_FEDEX_ACCOUNT_ID environment variable is not configured")
+        bill_to_account = int(benco_id)
     else:
-        bill_to_account = int(os.getenv('ORACARE_FEDEX_ACCOUNT_ID', '0'))
+        oracare_id = os.getenv('ORACARE_FEDEX_ACCOUNT_ID')
+        if not oracare_id:
+            raise ValueError("ORACARE_FEDEX_ACCOUNT_ID environment variable is not configured")
+        bill_to_account = int(oracare_id)
 
     profile = SKU_SHIPPING_PROFILES.get(sku)
     if profile is None:

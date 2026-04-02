@@ -458,6 +458,73 @@ def update_order_custom_fields(
         return {'success': False, 'error': str(e)}
 
 
+def list_carriers() -> dict:
+    """
+    Fetch the list of connected carriers from ShipStation.
+    GET /carriers
+
+    Returns dict with 'success' bool, 'carriers' list, and 'error' on failure.
+    """
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        response = make_api_request(
+            url='https://ssapi.shipstation.com/carriers',
+            method='GET',
+            headers=headers,
+            timeout=30
+        )
+
+        if response and response.status_code == 200:
+            carriers = response.json()
+            return {'success': True, 'carriers': carriers}
+        else:
+            error_msg = f"ShipStation API error {response.status_code if response else 'no response'}"
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error fetching carriers: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
+def list_packages(carrier_code: str) -> dict:
+    """
+    Fetch the list of packages available for a given carrier.
+    GET /carriers/listpackages?carrierCode=<carrier_code>
+
+    Returns dict with 'success' bool, 'packages' list, and 'error' on failure.
+    """
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        response = make_api_request(
+            url='https://ssapi.shipstation.com/carriers/listpackages',
+            method='GET',
+            headers=headers,
+            params={'carrierCode': carrier_code},
+            timeout=30
+        )
+
+        if response and response.status_code == 200:
+            packages = response.json()
+            return {'success': True, 'packages': packages}
+        else:
+            error_msg = f"ShipStation API error {response.status_code if response else 'no response'}"
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error fetching packages for carrier {carrier_code!r}: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
 def register_order_notify_webhook(target_url: str) -> dict:
     """
     Register an ORDER_NOTIFY webhook with ShipStation pointing at target_url.
