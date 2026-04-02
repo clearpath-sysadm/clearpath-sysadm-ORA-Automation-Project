@@ -123,74 +123,67 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                 order_id = order.get('orderId')
                 order_status = order.get('orderStatus', '').lower()
 
-                # Read customField1 from advancedOptions
-                adv = (order.get('advancedOptions') or {})
-                cf1 = (adv.get('customField1') or '').strip()
+                # Read customField1 at the order level — lot tagger writes 'SKU - LOT' here
+                cf1 = ((order.get('advancedOptions') or {}).get('customField1') or '').strip()
 
-                # Skip empty — lot tagger hasn't processed this order yet
+                # Skip orders with empty customField1 — lot tagger hasn't run yet (not a mismatch)
                 if not cf1:
                     continue
 
-                # Parse 'SKU - LOT' from customField1
-                if ' - ' not in cf1:
-                    logger.debug(f"Order {order_number} customField1 '{cf1}' not in SKU - LOT format — skipping.")
-                    continue
+                # Loop through items to get the tracked SKU for this order.
+                # Auto-split ensures one tracked SKU per order; we stop at the first match.
+                for item in (order.get('items') or []):
+                    base_sku = item.get('sku', '').strip()
 
-                parts = cf1.split(' - ', 1)
-                base_sku = parts[0].strip()
-                shipstation_lot = parts[1].strip()
+                    # Skip untracked SKUs (not in active lots dict, which is built from the skus JOIN)
+                    if base_sku not in active_lots:
+                        continue
 
-                # Only check SKUs we track
-                if base_sku not in known_skus:
-                    continue
+                    expected = f"{base_sku} - {active_lots[base_sku]}"
 
-                # SKU tracked but no active lot — skip (lot tagger failure, not mismatch)
-                if base_sku not in active_lots:
-                    continue
+                    if cf1 == expected:
+                        break  # Correct — no mismatch for this order
 
-                expected_lot = active_lots[base_sku]
+                    # Mismatch detected
+                    mismatches_found += 1
+                    mismatch_msg = (
+                        f"Lot mismatch: Order {order_number} (SS ID: {order_id}), SKU {base_sku} — "
+                        f"customField1 is '{cf1}' but expected '{expected}'"
+                    )
+                    logger.warning(mismatch_msg)
+                    server_logger.warning(mismatch_msg, source="Lot Mismatch")
 
-                if shipstation_lot == expected_lot:
-                    continue
-
-                # Mismatch detected
-                mismatches_found += 1
-                mismatch_msg = (
-                    f"Lot mismatch: Order {order_number} (SS ID: {order_id}), SKU {base_sku} — "
-                    f"customField1 has lot '{shipstation_lot}' but active FIFO lot is '{expected_lot}'"
-                )
-                logger.warning(mismatch_msg)
-                server_logger.warning(mismatch_msg, source="Lot Mismatch")
-
-                # Upsert alert using UNIQUE (shipstation_order_id)
-                cursor.execute("""
-                    INSERT INTO lot_mismatch_alerts (
+                    # Upsert alert — shipstation_lot stores the full customField1 value as-is
+                    cursor.execute("""
+                        INSERT INTO lot_mismatch_alerts (
+                            order_number,
+                            base_sku,
+                            shipstation_lot,
+                            active_lot,
+                            shipstation_order_id,
+                            order_status,
+                            detected_at
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        ON CONFLICT (shipstation_order_id) DO UPDATE
+                            SET shipstation_lot = EXCLUDED.shipstation_lot,
+                                active_lot = EXCLUDED.active_lot,
+                                order_status = EXCLUDED.order_status,
+                                detected_at = CURRENT_TIMESTAMP
+                            WHERE lot_mismatch_alerts.resolved_at IS NULL
+                    """, (
                         order_number,
                         base_sku,
-                        shipstation_lot,
-                        active_lot,
-                        shipstation_order_id,
-                        order_status,
-                        detected_at
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                    ON CONFLICT (shipstation_order_id) DO UPDATE
-                        SET shipstation_lot = EXCLUDED.shipstation_lot,
-                            active_lot = EXCLUDED.active_lot,
-                            order_status = EXCLUDED.order_status,
-                            detected_at = CURRENT_TIMESTAMP
-                        WHERE lot_mismatch_alerts.resolved_at IS NULL
-                """, (
-                    order_number,
-                    base_sku,
-                    shipstation_lot,
-                    expected_lot,
-                    str(order_id),
-                    order_status
-                ))
+                        cf1,
+                        active_lots[base_sku],
+                        str(order_id),
+                        order_status
+                    ))
 
-                if cursor.rowcount > 0:
-                    mismatches_created += 1
+                    if cursor.rowcount > 0:
+                        mismatches_created += 1
+
+                    break  # One tracked SKU per order (auto-split); stop after first match
 
             # Auto-resolve alerts for orders that no longer appear in the scan
             # (e.g., order shipped, or lot corrected)
