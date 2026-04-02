@@ -1,0 +1,72 @@
+#13 - Order Shipping Profile Enrichment
+What & Why
+Currently the lot tagger only writes customField1 to ShipStation. This task extends every order update to also set the correct FedEx account, service type, custom package, and dimensions/weight — all in the same ShipStation API call that already happens during lot injection. The shipping validator already detects when these fields are wrong; this makes the tagger proactively set them correctly instead of just alerting.
+
+Order source architecture: BigCommerce is the storefront. When a customer places an order, BigCommerce pushes it directly to ShipStation automatically — this app has no role in that handoff. This app's lot tagger reads orders from ShipStation's API (GET /orders?orderStatus=awaiting_shipment) and writes lot stamps back to ShipStation via POST /orders/createorder. We do not interact with BigCommerce's API at any point. XML was the old order pipeline and is being retired — all XML automation is disabled; XML import is manual-only.
+
+Auto-split context: ShipStation auto-split is enabled. By the time the lot tagger processes an order, it should always contain exactly one lot-tracked SKU. resolve_shipping_profile() only needs to handle one SKU per call — no multi-SKU resolution logic is needed.
+
+Multi-SKU safety fix (also in this task): Currently, when an order contains more than one tracked SKU (which means auto-split is misconfigured for that SKU), the tagger logs a warning but proceeds with tracked_items[0] — arbitrarily picking the first SKU and stamping its lot. This creates a self-reinforcing incorrect state: every subsequent reconciliation pass sees the stamp it wrote and considers the order "already correctly tagged," so it never self-corrects. The fix: when multiple tracked SKUs are detected, skip tagging entirely and write a lot_tagging_failures record instead. This surfaces the misconfiguration immediately rather than silently locking in a wrong lot.
+
+Business Rules to Implement
+FedEx Account (billToParty + billToMyOtherAccount)
+Default (all orders): billToParty = "my_other_account", billToMyOtherAccount = os.getenv('ORACARE_FEDEX_ACCOUNT_ID')
+Benco orders (identified by shipTo.company containing "BENCO", case-insensitive): use os.getenv('BENCO_FEDEX_ACCOUNT_ID') instead
+BENCO_FEDEX_ACCOUNT_ID secret already exists. Executor must create ORACARE_FEDEX_ACCOUNT_ID secret (value: 556346) before coding. Pass the value as a string — ShipStation's billToMyOtherAccount is a string field, not an integer.
+Service Code (serviceCode)
+Default: fedex_ground
+Hawaiian orders (shipTo.state == "HI"): fedex_2day
+Canadian orders (shipTo.country == "CA"): fedex_international_ground
+Preserve rule (highest priority): If the order already has serviceCode == "fedex_2day", always keep fedex_2day regardless of destination — including Canada. Never downgrade an order that someone explicitly marked as 2-day.
+carrierCode is always fedex
+Package Code + Dimensions + Weight
+Custom packages are configured in ShipStation. The home office SKUs (18751, 18760, 18565) do NOT receive lot injection but DO receive the shipping profile below. ShipStation weight unit is ounces.
+
+SKU	packageCode	L×W×H (in)	Weight (oz)
+17612	17612	12×12×12	352
+17914	17914	11×8×11	176
+17904	17904 (new)	10×10×10	224
+18675	18675	12×12×12	352
+18795	18795	8.25×5×7	80
+18751	18751	8.25×5×7	80
+18760	18760	2×2×3	32
+18565	18565	9×6×4	48
+Executor must verify all 8 package codes exist via GET /carriers/listpackages?carrierCode=fedex before coding. Update the mapping if any code differs from the values in this table. The packageCode for 17904 includes a space and parentheses — verify this exact string.
+
+Orders with Unknown SKUs
+If an order's SKU is not in the profile table (e.g., a new product), skip the package/dimensions/weight fields and log a warning. Do not skip the billing account or service code — those apply to all orders regardless of SKU.
+
+Done looks like
+When the lot tagger processes an order, the same ShipStation write also sets carrierCode, serviceCode, packageCode, weight, dimensions, and billToParty/billToMyOtherAccount
+HI orders → fedex_2day; Canadian orders → fedex_international_ground; all others → fedex_ground; existing fedex_2day is never overwritten
+Benco orders bill to the Benco FedEx account; all others bill to the OracCare account — both read from environment secrets
+Package dimensions and weight match the SKU profile above
+SKUs 18751, 18760, 18565 get shipping profile applied even though they skip lot injection
+ORACARE_FEDEX_ACCOUNT_ID and BENCO_FEDEX_ACCOUNT_ID are read from environment secrets, not hardcoded
+All new fields are added to the same POST that already updates customField1 — no additional API calls
+If an order has more than one tracked SKU (auto-split misconfiguration), tagging is skipped entirely and a lot_tagging_failures record is written — the order is never stamped with an arbitrarily chosen lot
+Out of scope
+Changing the mismatch scanner or shipping validator alert logic
+Any UI changes
+Lot injection for 18751, 18760, 18565
+Adding 18751, 18760, 18565 to KEY_PRODUCT_SKUS (they are home office items and not lot-tracked)
+Tasks
+Setup — Create ORACARE_FEDEX_ACCOUNT_ID secret (value: 556346). Call GET /carriers/listpackages?carrierCode=fedex and verify all 8 custom package codes match the mapping table. Record any discrepancies and update the mapping accordingly before proceeding.
+
+Add carrier discovery helpers — Add list_carriers() and list_packages(carrier_code) wrapper functions to api_client.py for GET /carriers and GET /carriers/listpackages.
+
+Add SKU shipping profile config — In tagger.py, add a SKU_SHIPPING_PROFILES dict (package code, dimensions, weight per SKU) and a resolve_shipping_profile(order, sku) function that returns the correct serviceCode, billToMyOtherAccount, and package/dimensions/weight based on the business rules above.
+
+Extend update_order_custom_fields — Refactor the function in api_client.py to also accept and write shipping profile fields (carrierCode, serviceCode, packageCode, weight, dimensions, billToParty, billToMyOtherAccount) in the same POST /orders/createorder payload. All new fields are optional keyword arguments — the existing lot-only call signature continues to work.
+
+Fix multi-SKU behavior in tag_order_lots() — Change the existing multi-SKU branch so that when len(tracked_items) > 1, the function writes a lot_tagging_failures record and returns without tagging, instead of proceeding with tracked_items[0]. This is a one-line behavioral change in tagger.py.
+
+Integrate shipping profile into tag_order_lots() — After computing customField1, call resolve_shipping_profile() and pass all fields to the updated function. Apply shipping profile to ALL known SKUs (including 18751/18760/18565) even when lot injection is skipped for that SKU.
+
+Test — Run --once and confirm: a standard order gets fedex_ground + OracCare account + correct package/dimensions/weight; a HI order gets fedex_2day; a Canadian order gets fedex_international_ground; a Benco order uses the Benco account; an order already set to fedex_2day is not downgraded; customField1 is still stamped correctly alongside the new fields.
+
+Relevant files
+src/lot_tagger/tagger.py
+src/services/shipstation/api_client.py:359-406
+src/scheduled_lot_tagger.py
+src/services/shipping_validator.py
