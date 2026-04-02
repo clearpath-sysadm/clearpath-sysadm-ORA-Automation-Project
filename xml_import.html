@@ -387,10 +387,10 @@
                                 </div>
                             </div>
                             
-                            <!-- Dynamic Action Buttons (shown conditionally) -->
-                            <button class="btn is-hidden" id="btn-upload-selected" style="background: var(--success-teal); color: white; font-weight: 600; opacity: 0.5; cursor: not-allowed;" disabled title="Upload Selected is disabled - orders upload automatically">
-                                🚀 Upload Selected
-                            </button>
+                            <!-- ShipStation upload disabled — BigCommerce pushes orders directly -->
+                            <span style="font-size: 12px; color: var(--text-muted); font-style: italic; padding: 6px 4px; display: inline-block;">
+                                Order upload to ShipStation is disabled — BigCommerce pushes orders directly.
+                            </span>
                             <button class="btn is-hidden" id="btn-retry-failed" style="background: var(--warning-yellow); color: var(--text-primary); font-weight: 600;">
                                 🔄 Retry Failed
                             </button>
@@ -403,9 +403,6 @@
                                 <span id="dropdown-arrow">▼</span>
                             </button>
                             <div class="dropdown-menu" id="actions-dropdown-menu">
-                                <button id="mobile-btn-upload-selected" class="is-hidden" style="opacity: 0.5; cursor: not-allowed;" disabled title="Upload Selected is disabled - orders upload automatically">
-                                    🚀 Upload Selected
-                                </button>
                                 <button id="mobile-btn-retry-failed" class="is-hidden" onclick="document.getElementById('btn-retry-failed').click(); toggleActionsDropdown();">
                                     🔄 Retry Failed
                                 </button>
@@ -904,8 +901,6 @@
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('orders-tbody');
             const mobileCards = document.getElementById('orders-mobile-cards');
-            const uploadBtn = document.getElementById('btn-upload-selected');
-
             // Store all orders for sorting
             currentOrders = orders;
 
@@ -990,21 +985,7 @@
                     mobileSelectAllContainer.classList.add('is-hidden');
                 }
                 
-                uploadBtn.classList.add('is-hidden');
-                const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
-                if (mobileUploadBtn) mobileUploadBtn.classList.add('is-hidden');
                 return;
-            }
-
-            const hasPending = filteredOrders.some(o => o.status === 'pending');
-            if (hasPending) {
-                uploadBtn.classList.remove('is-hidden');
-                const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
-                if (mobileUploadBtn) mobileUploadBtn.classList.remove('is-hidden');
-            } else {
-                uploadBtn.classList.add('is-hidden');
-                const mobileUploadBtn = document.getElementById('mobile-btn-upload-selected');
-                if (mobileUploadBtn) mobileUploadBtn.classList.add('is-hidden');
             }
 
             // Render desktop table rows
@@ -1388,14 +1369,6 @@
                 updateSelectAll();
             }
         });
-
-        // Upload to ShipStation is disabled — BigCommerce pushes orders directly
-        async function uploadSelectedOrders() {
-            showAlert('⚠️ Order upload is disabled. BigCommerce pushes orders directly to ShipStation.', 'warning');
-        }
-
-        // Upload button handler
-        document.getElementById('btn-upload-selected').addEventListener('click', uploadSelectedOrders);
 
         // Retry failed orders
         async function retryFailedOrders() {
