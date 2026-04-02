@@ -17,7 +17,9 @@ ACTIVE_LOTS_QUERY = """
     SELECT DISTINCT ON (s.sku_code) s.sku_code, l.lot_id, l.lot_number
     FROM lots l
     JOIN skus s ON s.sku_id = l.sku_id
-    WHERE l.status = 'active'
+    JOIN lot_balances lb ON lb.lot_id = l.lot_id
+    WHERE lb.balance > 0
+      AND l.status NOT IN ('quarantine', 'inactive')
     ORDER BY s.sku_code, l.received_date ASC NULLS LAST, l.lot_id ASC
 """
 
