@@ -1593,6 +1593,7 @@ def run_unified_sync():
         elapsed = (datetime.datetime.now() - sync_start).total_seconds()
         logger.info("=" * 80)
         logger.info("📊 SYNC SUMMARY:")
+        logger.info(f"   ✅ New BigCommerce orders imported: {stats.get('new_bigcommerce_imported', 0)}")
         logger.info(f"   ✅ New manual orders imported: {stats['new_manual_imported']}")
         logger.info(f"   🔄 Existing orders updated: {stats['existing_updated']}")
         logger.info(f"   📍 Tracking numbers updated: {stats.get('tracking_updates', 0)}")
@@ -1610,8 +1611,10 @@ def run_unified_sync():
         
         # Server logger summary for admin visibility - now with detailed breakdown
         summary_parts = []
+        if stats.get('new_bigcommerce_imported', 0) > 0:
+            summary_parts.append(f"{stats['new_bigcommerce_imported']} BC imported")
         if stats['new_manual_imported'] > 0:
-            summary_parts.append(f"{stats['new_manual_imported']} imported")
+            summary_parts.append(f"{stats['new_manual_imported']} manual imported")
         if stats['existing_updated'] > 0:
             summary_parts.append(f"{stats['existing_updated']} updated")
         if stats.get('tracking_updates', 0) > 0:

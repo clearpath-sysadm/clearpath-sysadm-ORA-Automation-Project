@@ -463,7 +463,7 @@ def run_scheduled_import():
     The XML pipeline (X-Cart, 10xxxx order numbers) is retired.
     workflow_controls.enabled is set to false for 'xml-import' so this loop
     sleeps continuously when the workflow is disabled.  Manual execution via
-    the dashboard dashboard bypasses this flag and calls import_orders_from_drive()
+    the dashboard bypasses this flag and calls import_orders_from_drive()
     directly.
 
     See migrations/013_disable_xml_import_automation.sql for the migration
