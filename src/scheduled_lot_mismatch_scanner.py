@@ -60,7 +60,7 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
 
     try:
         with transaction_with_retry() as conn:
-            active_lots, known_skus = build_lot_maps(conn)
+            active_lots, _ = build_lot_maps(conn)
             logger.info(f"Active lots (FIFO): {len(active_lots)} SKUs")
 
             if active_lots:
