@@ -702,6 +702,168 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
         return False
 
 
+def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
+    """
+    Import a new BigCommerce-originated order from ShipStation into the local database.
+    These orders have numeric order numbers >= 801,000 and were pushed by BigCommerce to ShipStation.
+    No conflict detection needed — BigCommerce -> ShipStation is the canonical, single-source flow.
+
+    Returns:
+        True if successfully imported, False otherwise
+    """
+    try:
+        order_id = order.get('orderId') or order.get('orderKey')
+        order_number = order.get('orderNumber', '').strip()
+        order_status = order.get('orderStatus', '').lower()
+        customer_email = order.get('customerEmail', '')
+
+        if not order_number:
+            logger.warning(f"⚠️ Skipping BigCommerce order without order_number: {order_id}")
+            return False
+
+        adv = order.get('advancedOptions') or {}
+        lot_stamp = (adv.get('customField1') or '').strip() or None
+
+        carrier_info = extract_carrier_service_info(order)
+
+        ship_to = order.get('shipTo') or {}
+        ship_name = (ship_to.get('name') or '').strip() or None
+        ship_company = (ship_to.get('company') or '').strip() or None
+        ship_street1 = (ship_to.get('street1') or '').strip() or None
+        ship_city = (ship_to.get('city') or '').strip() or None
+        ship_state = (ship_to.get('state') or '').strip() or None
+        ship_postal_code = (ship_to.get('postalCode') or '').strip() or None
+        ship_country = (ship_to.get('country') or '').strip() or None
+        ship_phone = (ship_to.get('phone') or '').strip() or None
+
+        bill_to = order.get('billTo') or {}
+        bill_name = (bill_to.get('name') or '').strip() or None
+        bill_company = (bill_to.get('company') or '').strip() or None
+        bill_street1 = (bill_to.get('street1') or '').strip() or None
+        bill_city = (bill_to.get('city') or '').strip() or None
+        bill_state = (bill_to.get('state') or '').strip() or None
+        bill_postal_code = (bill_to.get('postalCode') or '').strip() or None
+        bill_country = (bill_to.get('country') or '').strip() or None
+        bill_phone = (bill_to.get('phone') or '').strip() or None
+
+        status_mapping = {
+            'awaiting_payment': 'awaiting_payment',
+            'awaiting_shipment': 'pending',
+            'shipped': 'shipped',
+            'on_hold': 'on_hold',
+            'cancelled': 'cancelled'
+        }
+        db_status = status_mapping.get(order_status, order_status)
+
+        order_date_str = order.get('orderDate', '')
+        try:
+            order_date = datetime.datetime.strptime(order_date_str[:10], '%Y-%m-%d').date()
+        except Exception:
+            order_date = datetime.date.today()
+
+        items = order.get('items', [])
+        total_items = sum(item.get('quantity', 0) for item in items)
+        total_amount = order.get('orderTotal', 0)
+        total_amount_cents = int(float(total_amount) * 100) if total_amount else 0
+
+        logger.info(f"📥 Importing NEW BigCommerce order: {order_number} (status: {db_status}, items: {total_items}, lot_stamp: {lot_stamp})")
+
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO orders_inbox (
+                order_number, order_date, customer_email, status, shipstation_order_id,
+                total_items, total_amount_cents,
+                ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+                bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
+                shipping_carrier_code, shipping_carrier_id, shipping_service_code, shipping_service_name,
+                lot_stamp, source_system
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ShipStation')
+            RETURNING id
+        """, (
+            order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents,
+            ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
+            bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
+            carrier_info['carrier_code'], carrier_info['carrier_id'],
+            carrier_info['service_code'], carrier_info['service_name'],
+            lot_stamp
+        ))
+        order_inbox_id = cursor.fetchone()[0]
+
+        for item in items:
+            sku_raw = str(item.get('sku', '')).strip()
+            quantity = item.get('quantity', 0)
+            unit_price = item.get('unitPrice', 0)
+            unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
+
+            if sku_raw and quantity > 0:
+                if ' - ' in sku_raw:
+                    sku_parts = sku_raw.split(' - ')
+                    base_sku = sku_parts[0].strip()
+                    sku_lot = sku_raw
+                else:
+                    base_sku = sku_raw
+                    sku_lot = None
+
+                cursor.execute("""
+                    INSERT INTO order_items_inbox (
+                        order_inbox_id, sku, sku_lot, quantity, unit_price_cents
+                    )
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (order_inbox_id, base_sku, sku_lot, quantity, unit_price_cents))
+                logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
+
+        if order_status == 'shipped':
+            ship_date_str = order.get('shipDate', order_date_str)
+            try:
+                ship_date = datetime.datetime.strptime(ship_date_str[:10], '%Y-%m-%d').date()
+            except Exception:
+                ship_date = order_date
+
+            cursor.execute("""
+                INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (order_number) DO UPDATE
+                SET ship_date = EXCLUDED.ship_date,
+                    shipstation_order_id = EXCLUDED.shipstation_order_id
+            """, (ship_date, order_number, str(order_id)))
+
+            for item in items:
+                sku = str(item.get('sku', '')).strip()
+                quantity = item.get('quantity', 0)
+
+                if sku and quantity > 0:
+                    if ' - ' in sku:
+                        sku_parts = sku.split(' - ')
+                        base_sku = sku_parts[0].strip()
+                        sku_lot = sku
+                    else:
+                        base_sku = sku
+                        sku_lot = sku
+
+                    cursor.execute("""
+                        INSERT INTO shipped_items (
+                            ship_date, sku_lot, base_sku, quantity_shipped, order_number
+                        )
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
+                        SET quantity_shipped = EXCLUDED.quantity_shipped,
+                            ship_date = EXCLUDED.ship_date
+                    """, (ship_date, sku_lot, base_sku, quantity, order_number))
+
+            logger.info(f"✅ Imported SHIPPED BigCommerce order: {order_number} (ship_date: {ship_date})")
+            server_logger.info(f"Imported shipped BigCommerce order: {order_number} (ship_date: {ship_date})", source="ShipStation Sync")
+        else:
+            logger.info(f"✅ Imported BigCommerce order: {order_number} (status: {db_status})")
+            server_logger.info(f"Imported BigCommerce order: {order_number}", source="ShipStation Sync")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"❌ Error importing BigCommerce order {order.get('orderNumber', 'UNKNOWN')}: {e}", exc_info=True)
+        return False
+
+
 def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, conn) -> bool:
     """
     Update status for an EXISTING order in the database.
@@ -760,6 +922,9 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         
         logger.info(f"🔄 Updating EXISTING order: {order_number} → status: {db_status}, items: {total_items}, carrier: {carrier_info['carrier_code']}, service: {carrier_info['service_code']}")
         
+        adv = order.get('advancedOptions') or {}
+        lot_stamp = (adv.get('customField1') or '').strip() or None
+
         # Update order in orders_inbox
         cursor.execute("""
             UPDATE orders_inbox
@@ -770,6 +935,7 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                 shipping_service_name = %s,
                 tracking_number = %s,
                 total_items = %s,
+                lot_stamp = COALESCE(%s, lot_stamp),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
         """, (
@@ -780,6 +946,7 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
             carrier_info['service_name'],
             carrier_info['tracking_number'],
             total_items,
+            lot_stamp,
             local_order_id
         ))
         
@@ -1245,59 +1412,43 @@ def run_unified_sync():
                                 cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                                 continue
                     else:
-                        # POTENTIALLY NEW MANUAL ORDER → Apply filters
-                        
-                        # Filter 1: Must start with "10" (manual orders only)
+                        # POTENTIALLY NEW ORDER → Determine type and route accordingly
                         order_status = order.get('orderStatus', '').lower()
-                        if not order_number.startswith('10'):
-                            # Suppress orphan warnings for BigCommerce migration orders.
-                            # Those orders (numeric order numbers >= 801000) live in a
-                            # separate ShipStation store and will never be in our local DB.
-                            # Logging a warning for each of the 60 K+ migrated orders
-                            # produces noise and triggers false mismatch alerts.
-                            is_bigcommerce_order = (
-                                order_number.isdigit() and int(order_number) >= 801000
-                            )
-                            if order_status == 'awaiting_shipment' and not is_bigcommerce_order:
-                                stats['skipped_awaiting_orphans'] += 1
-                                logger.warning(f"⚠️ ORPHAN: Order {order_number} is awaiting_shipment in ShipStation but NOT in local DB (not a manual order)")
+                        is_bigcommerce_order = order_number.isdigit() and int(order_number) >= 801000
+
+                        if is_bigcommerce_order:
+                            # BigCommerce orders (numeric >= 801,000) → Import if they have key SKUs
+                            if not has_key_product_skus(order):
+                                logger.debug(f"⏭️ Skipping BigCommerce order {order_number} - no key product SKUs")
+                                stats['skipped_no_key_skus'] += 1
+                                cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
+                                continue
+
+                            import_result = import_new_bigcommerce_order(order, conn)
+                            if import_result is True:
+                                stats['new_bigcommerce_imported'] = stats.get('new_bigcommerce_imported', 0) + 1
                             else:
-                                logger.debug(f"⏭️ Skipping {order_number} - not manual (doesn't start with '10')")
+                                stats['errors'] += 1
+                                error_details.append(f"Order {order_number}: Failed to import BigCommerce order")
+                            # Falls through to RELEASE SAVEPOINT below
+
+                        elif order_number.startswith('10'):
+                            # Old XML pipeline orders (10xxxx) → Skip; pipeline retired
+                            logger.debug(f"⏭️ Skipping {order_number} - XML pipeline order (retired)")
                             stats['skipped_not_manual'] += 1
                             cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                             continue
-                        
-                        # Filter 2: Must NOT be from local system
-                        if is_order_from_local_system(str(order_id)):
-                            # Track awaiting_shipment orders that exist in ShipStation but are orphaned
+
+                        else:
+                            # Unrecognized order number format → Skip with orphan warning if awaiting
                             if order_status == 'awaiting_shipment':
                                 stats['skipped_awaiting_orphans'] += 1
-                                logger.warning(f"⚠️ ORPHAN: Order {order_number} is awaiting_shipment in ShipStation, has line items in DB, but orders_inbox record missing/shipped")
+                                logger.warning(f"⚠️ ORPHAN: Order {order_number} is awaiting_shipment in ShipStation but NOT in local DB (unrecognized order format)")
                             else:
-                                logger.debug(f"⏭️ Skipping {order_number} - originated from local system")
-                            stats['skipped_local_origin'] += 1
+                                logger.debug(f"⏭️ Skipping {order_number} - unrecognized order number format")
+                            stats['skipped_not_manual'] += 1
                             cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                             continue
-                        
-                        # Filter 3: Must contain key product SKUs
-                        if not has_key_product_skus(order):
-                            logger.debug(f"⏭️ Skipping {order_number} - no key product SKUs")
-                            stats['skipped_no_key_skus'] += 1
-                            cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
-                            continue
-                        
-                        # All filters passed → Import as NEW manual order
-                        # Returns True=success, None=conflict handled (not an error), False=real failure
-                        import_result = import_new_manual_order(order, conn, api_key, api_secret)
-                        if import_result is True:
-                            stats['new_manual_imported'] += 1
-                        elif import_result is None:
-                            # Conflict detected and handled gracefully - skip without counting as error
-                            stats['conflicts_handled'] = stats.get('conflicts_handled', 0) + 1
-                            logger.debug(f"  Order {order_number} conflict handled - skipping without error")
-                        else:
-                            stats['errors'] += 1
-                            error_details.append(f"Order {order_number}: Failed to import new manual order")
                     
                     # Success - release the savepoint
                     cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
