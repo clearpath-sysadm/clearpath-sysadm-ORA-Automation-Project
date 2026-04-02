@@ -121,7 +121,7 @@ def run_reconciliation():
     # (orders with a wrong value are handled by the mismatch scanner + manual fix)
     untagged = [
         o for o in all_orders
-        if not (o.get('advancedOptions') or {}).get('customField1', '').strip()
+        if not ((o.get('advancedOptions') or {}).get('customField1') or '').strip()
     ]
     logger.info(f"Untagged orders (empty customField1): {len(untagged)}")
 
