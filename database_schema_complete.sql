@@ -403,6 +403,7 @@ CREATE TABLE public.inventory_transactions (
     notes text,
     created_at text DEFAULT CURRENT_TIMESTAMP,
     lot_id integer REFERENCES public.lots(lot_id),
+    shipstation_order_id text,
     CONSTRAINT inventory_transactions_quantity_check CHECK ((quantity <> 0)),
     CONSTRAINT inventory_transactions_transaction_type_check CHECK ((transaction_type = ANY (ARRAY['Receive'::text, 'Ship'::text, 'Adjust Up'::text, 'Adjust Down'::text, 'Repack'::text])))
 );
