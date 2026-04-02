@@ -4,6 +4,7 @@ Lot Tagger — shared tag_order_lots() function.
 Called by both the webhook handler (Flask) and the reconciliation scheduler.
 Callers must build active_lots and known_skus from the DB before calling this.
 """
+import os
 import logging
 from typing import Dict, Set
 
@@ -25,6 +26,19 @@ ACTIVE_LOTS_QUERY = """
 
 KNOWN_SKUS_QUERY = "SELECT sku_code FROM skus"
 
+HOME_OFFICE_SKUS = {'18751', '18760', '18565'}
+
+SKU_SHIPPING_PROFILES = {
+    '17612': {'package_code': 'package', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
+    '17914': {'package_code': 'package', 'length': 11.0, 'width': 11.0, 'height':  8.0, 'weight_oz': 176},
+    '17904': {'package_code': 'package', 'length': 14.0, 'width': 12.0, 'height':  5.0, 'weight_oz': 224},
+    '18675': {'package_code': 'package', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
+    '18795': {'package_code': 'package', 'length':  9.0, 'width':  5.0, 'height':  8.0, 'weight_oz':  80},
+    '18751': {'package_code': 'package', 'length':  9.0, 'width':  5.0, 'height':  7.0, 'weight_oz':  80},
+    '18760': {'package_code': 'package', 'length':  2.0, 'width':  2.0, 'height':  3.0, 'weight_oz':  32},
+    '18565': {'package_code': 'package', 'length':  9.0, 'width':  6.0, 'height':  4.0, 'weight_oz':  48},
+}
+
 
 def build_lot_maps(conn):
     """
@@ -44,43 +58,147 @@ def build_lot_maps(conn):
     return active_lots, known_skus
 
 
+def resolve_shipping_profile(order: dict, sku: str) -> dict:
+    """
+    Derive the correct shipping profile for an order + SKU combination.
+
+    Service code rules (highest priority first):
+      - Preserve existing fedex_2day (never downgrade)
+      - HI destination  → fedex_2day
+      - CA destination  → fedex_international_ground
+      - Default         → fedex_ground
+
+    Billing account:
+      - Company name contains 'BENCO' → BENCO_FEDEX_ACCOUNT_ID (ShipStation shippingProviderId)
+      - All others                    → ORACARE_FEDEX_ACCOUNT_ID
+
+    Package / dimensions / weight come from SKU_SHIPPING_PROFILES.
+    Unknown SKUs get None for those fields — callers must omit them from the payload.
+
+    Returns a dict with keys:
+        carrier_code, service_code, bill_to_party, bill_to_account,
+        package_code, weight_oz, length, width, height
+    """
+    ship_to = order.get('shipTo') or {}
+    state   = (ship_to.get('state')   or '').strip().upper()
+    country = (ship_to.get('country') or '').strip().upper()
+    company = (ship_to.get('company') or '').strip().upper()
+    current_service = (order.get('serviceCode') or '').strip()
+
+    if current_service == 'fedex_2day':
+        service_code = 'fedex_2day'
+    elif state == 'HI':
+        service_code = 'fedex_2day'
+    elif country == 'CA':
+        service_code = 'fedex_international_ground'
+    else:
+        service_code = 'fedex_ground'
+
+    if 'BENCO' in company:
+        bill_to_account = int(os.getenv('BENCO_FEDEX_ACCOUNT_ID', '0'))
+    else:
+        bill_to_account = int(os.getenv('ORACARE_FEDEX_ACCOUNT_ID', '0'))
+
+    profile = SKU_SHIPPING_PROFILES.get(sku)
+    if profile is None:
+        logger.warning(f"SKU {sku!r} not in SKU_SHIPPING_PROFILES — package/dims/weight will not be set")
+
+    return {
+        'carrier_code':   'fedex',
+        'service_code':   service_code,
+        'bill_to_party':  'my_other_account',
+        'bill_to_account': bill_to_account,
+        'package_code':   profile['package_code'] if profile else None,
+        'weight_oz':      profile['weight_oz']    if profile else None,
+        'length':         profile['length']        if profile else None,
+        'width':          profile['width']         if profile else None,
+        'height':         profile['height']        if profile else None,
+    }
+
+
 def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], conn) -> None:
     """
-    Tag a single ShipStation order with the correct SKU - LOT in customField1.
+    Tag a single ShipStation order with the correct SKU - LOT in customField1
+    and apply the full shipping profile (carrier, service, package, dims, weight,
+    billing account) in the same ShipStation API call.
 
     Logic:
-    1. Filter order items to tracked SKUs (in known_skus). Skip silently if none.
-    2. If multiple tracked SKUs present (auto-split should prevent), use first, log warning.
-    3. If SKU has no active lot → write lot_tagging_failures record.
-    4. Three-way customField1 check:
-       - Already correct → skip (idempotent)
-       - Empty → write expected value
-       - Non-empty but wrong → preserve to customField2, write expected value
-    5. On success → mark any existing lot_tagging_failures record resolved.
+    1. Filter order items to tracked SKUs (in known_skus).
+    2. If none found, check for home office SKUs → apply shipping profile only.
+    3. Multi-SKU guard: write lot_tagging_failures record and abort.
+    4. No active lot → write lot_tagging_failures record.
+    5. Extended idempotency: skip only if customField1 correct AND billToMyOtherAccount set.
+    6. Write lot stamp + full shipping profile in one API call.
+    7. Resolve any existing failure record on success.
     """
     order_number = order.get('orderNumber', '').strip()
-    order_id = order.get('orderId')
-    items = order.get('items', [])
+    order_id     = order.get('orderId')
+    items        = order.get('items', [])
 
-    # Filter to tracked SKUs only
     tracked_items = [item for item in items if str(item.get('sku', '')).strip() in known_skus]
 
     if not tracked_items:
-        return
+        ho_items = [item for item in items if str(item.get('sku', '')).strip() in HOME_OFFICE_SKUS]
+        if not ho_items:
+            return
 
-    if len(tracked_items) > 1:
-        skus_found = [item.get('sku') for item in tracked_items]
-        server_logger.warning(
-            f"Order {order_number} (SS ID: {order_id}) has multiple tracked SKUs {skus_found}. "
-            f"Auto-split should prevent this. Processing first SKU only.",
-            source="Lot Tagger"
+        sku = str(ho_items[0].get('sku', '')).strip()
+        adv = order.get('advancedOptions') or {}
+        current_cf1 = (adv.get('customField1') or '').strip()
+
+        if current_cf1 == sku and adv.get('billToMyOtherAccount'):
+            logger.debug(f"Order {order_number} (home office) already enriched — skipping.")
+            return
+
+        profile = resolve_shipping_profile(order, sku)
+        result = update_order_custom_fields(
+            order_id, sku, None,
+            carrier_code=profile['carrier_code'],
+            service_code=profile['service_code'],
+            package_code=profile['package_code'],
+            weight_oz=profile['weight_oz'],
+            dim_length=profile['length'],
+            dim_width=profile['width'],
+            dim_height=profile['height'],
+            bill_to_party=profile['bill_to_party'],
+            bill_to_account=profile['bill_to_account'],
         )
 
-    item = tracked_items[0]
-    sku = str(item.get('sku', '')).strip()
+        if not result.get('success'):
+            server_logger.error(
+                f"Failed to enrich home office order {order_number} (SS ID: {order_id}): {result.get('error')}",
+                source="Lot Tagger"
+            )
+        else:
+            server_logger.info(
+                f"Enriched home office order {order_number} (SS ID: {order_id}) SKU={sku}",
+                source="Lot Tagger"
+            )
+        return
+
     cursor = conn.cursor()
 
-    # SKU tracked but no active lot → failure record
+    if len(tracked_items) > 1:
+        skus_found = ','.join(str(item.get('sku', '')).strip() for item in tracked_items)
+        cursor.execute("""
+            INSERT INTO lot_tagging_failures (order_number, shipstation_order_id, sku, detected_at)
+            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            ON CONFLICT (shipstation_order_id) DO UPDATE
+                SET detected_at = CURRENT_TIMESTAMP,
+                    sku = EXCLUDED.sku
+            WHERE lot_tagging_failures.resolved_at IS NULL
+        """, (order_number, str(order_id), skus_found))
+        conn.commit()
+        server_logger.warning(
+            f"Order {order_number} (SS ID: {order_id}) has multiple tracked SKUs [{skus_found}]. "
+            f"Auto-split should prevent this. Logged to lot_tagging_failures — will retry.",
+            source="Lot Tagger"
+        )
+        return
+
+    item = tracked_items[0]
+    sku  = str(item.get('sku', '')).strip()
+
     if sku not in active_lots:
         cursor.execute("""
             INSERT INTO lot_tagging_failures (order_number, shipstation_order_id, sku, detected_at)
@@ -98,17 +216,15 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         return
 
     expected_value = f"{sku} - {active_lots[sku]}"
-    adv = (order.get('advancedOptions') or {})
-    current_cf1 = adv.get('customField1', '') or ''
-    current_cf1 = current_cf1.strip()
+    adv        = order.get('advancedOptions') or {}
+    current_cf1 = (adv.get('customField1') or '').strip()
 
-    # Already correctly tagged — skip
     if current_cf1 == expected_value:
-        logger.debug(f"Order {order_number} already tagged with '{expected_value}' — skipping.")
-        return
+        if adv.get('billToMyOtherAccount'):
+            logger.debug(f"Order {order_number} already fully enriched — skipping.")
+            return
 
-    # Determine whether to preserve existing value to customField2
-    field2_value = current_cf1 if current_cf1 else None
+    field2_value = current_cf1 if current_cf1 and current_cf1 != expected_value else None
     if field2_value:
         server_logger.warning(
             f"Order {order_number} (SS ID: {order_id}) customField1 pre-set to '{current_cf1}'. "
@@ -116,8 +232,19 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             source="Lot Tagger"
         )
 
-    # Write to ShipStation
-    result = update_order_custom_fields(order_id, expected_value, field2_value)
+    profile = resolve_shipping_profile(order, sku)
+    result  = update_order_custom_fields(
+        order_id, expected_value, field2_value,
+        carrier_code=profile['carrier_code'],
+        service_code=profile['service_code'],
+        package_code=profile['package_code'],
+        weight_oz=profile['weight_oz'],
+        dim_length=profile['length'],
+        dim_width=profile['width'],
+        dim_height=profile['height'],
+        bill_to_party=profile['bill_to_party'],
+        bill_to_account=profile['bill_to_account'],
+    )
 
     if not result.get('success'):
         server_logger.error(
@@ -127,11 +254,11 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         return
 
     server_logger.info(
-        f"Tagged order {order_number} (SS ID: {order_id}) with '{expected_value}'",
+        f"Tagged order {order_number} (SS ID: {order_id}) with '{expected_value}' "
+        f"[{profile['service_code']}, account={profile['bill_to_account']}]",
         source="Lot Tagger"
     )
 
-    # Resolve any existing failure record for this order
     cursor.execute("""
         UPDATE lot_tagging_failures
         SET resolved_at = CURRENT_TIMESTAMP,

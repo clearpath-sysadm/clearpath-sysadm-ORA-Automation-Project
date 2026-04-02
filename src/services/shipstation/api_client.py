@@ -358,12 +358,39 @@ def fetch_order_by_id(order_id: int, api_key: str = None, api_secret: str = None
         logger.error(f"Error fetching order {order_id} from ShipStation: {e}", exc_info=True)
         return {'success': False, 'error': str(e)}
 
-def update_order_custom_fields(order_id: int, field1_value: str, field2_value: str = None) -> dict:
+def update_order_custom_fields(
+    order_id: int,
+    field1_value: str,
+    field2_value: str = None,
+    *,
+    carrier_code: str = None,
+    service_code: str = None,
+    package_code: str = None,
+    weight_oz: float = None,
+    dim_length: float = None,
+    dim_width: float = None,
+    dim_height: float = None,
+    bill_to_party: str = None,
+    bill_to_account: int = None,
+) -> dict:
     """
-    Update customField1 (and optionally customField2) in ShipStation advancedOptions.
+    Update customField1 (and optionally customField2) in ShipStation advancedOptions,
+    and optionally set the full shipping profile in the same POST.
 
     field1_value should be the full 'SKU - LOT' string (e.g. '17612 - 250237').
     field2_value is only set when preserving a pre-existing customField1 value.
+
+    Shipping profile kwargs (all optional):
+        carrier_code    — e.g. 'fedex'
+        service_code    — e.g. 'fedex_ground', 'fedex_2day'
+        package_code    — e.g. 'package'  (goes in advancedOptions)
+        weight_oz       — per-unit weight in ounces (top-level weight field)
+        dim_length/width/height — dimensions in inches (top-level dimensions field)
+        bill_to_party   — e.g. 'my_other_account' (goes in advancedOptions)
+        bill_to_account — ShipStation shippingProviderId as int (goes in advancedOptions)
+
+    When weight_oz or any dim_* is None, that top-level field is left untouched.
+    When package_code is None, advancedOptions.packageCode is left untouched.
 
     Returns dict with 'success' bool and 'error' on failure.
     """
@@ -383,6 +410,29 @@ def update_order_custom_fields(order_id: int, field1_value: str, field2_value: s
         order_data['advancedOptions']['customField1'] = field1_value
         if field2_value is not None:
             order_data['advancedOptions']['customField2'] = field2_value
+
+        if carrier_code is not None:
+            order_data['carrierCode'] = carrier_code
+        if service_code is not None:
+            order_data['serviceCode'] = service_code
+
+        if package_code is not None:
+            order_data['advancedOptions']['packageCode'] = package_code
+        if bill_to_party is not None:
+            order_data['advancedOptions']['billToParty'] = bill_to_party
+        if bill_to_account is not None:
+            order_data['advancedOptions']['billToMyOtherAccount'] = bill_to_account
+
+        if weight_oz is not None:
+            order_data['weight'] = {'value': weight_oz, 'units': 'ounces'}
+
+        if dim_length is not None and dim_width is not None and dim_height is not None:
+            order_data['dimensions'] = {
+                'units': 'inches',
+                'length': dim_length,
+                'width': dim_width,
+                'height': dim_height,
+            }
 
         headers = get_shipstation_headers(api_key, api_secret)
         headers['Content-Type'] = 'application/json'
