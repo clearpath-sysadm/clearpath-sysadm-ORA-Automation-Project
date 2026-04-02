@@ -456,7 +456,19 @@ def import_orders_from_drive():
         return 0
 
 def run_scheduled_import():
-    """Optimized main loop with feature flags and efficient polling"""
+    """
+    Main polling loop for XML order import from Google Drive.
+
+    AUTOMATION DISABLED: xml-import must run on manual trigger only.
+    The XML pipeline (X-Cart, 10xxxx order numbers) is retired.
+    workflow_controls.enabled is set to false for 'xml-import' so this loop
+    sleeps continuously when the workflow is disabled.  Manual execution via
+    the dashboard dashboard bypasses this flag and calls import_orders_from_drive()
+    directly.
+
+    See migrations/013_disable_xml_import_automation.sql for the migration
+    that ensures enabled = false in workflow_controls.
+    """
     # Get feature flags
     fast_polling_enabled = get_feature_flag('fast_polling_enabled', 'false').lower() == 'true'
     fast_polling_interval = int(get_feature_flag('fast_polling_interval', '15'))

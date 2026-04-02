@@ -705,8 +705,23 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
 def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
     """
     Import a new BigCommerce-originated order from ShipStation into the local database.
-    These orders have numeric order numbers >= 801,000 and were pushed by BigCommerce to ShipStation.
-    No conflict detection needed — BigCommerce -> ShipStation is the canonical, single-source flow.
+
+    Order identification: order_number.isdigit() and int(order_number) >= 801000
+    These numeric order numbers come from the BigCommerce → ShipStation integration
+    and are NOT created by our local system.  No conflict detection is needed here;
+    BigCommerce/ShipStation is the single authoritative source for this order type.
+
+    Status mapping (ShipStation → local):
+        awaiting_shipment → 'pending'
+        shipped           → 'shipped'
+        cancelled         → 'cancelled'
+        on_hold           → 'on_hold'
+        awaiting_payment  → 'awaiting_payment'
+        (other)           → pass-through (NOT 'synced_manual')
+
+    lot_stamp: advancedOptions.customField1 from ShipStation is stored in
+    orders_inbox.lot_stamp so the dashboard can display the assigned lot without
+    re-querying ShipStation.
 
     Returns:
         True if successfully imported, False otherwise
