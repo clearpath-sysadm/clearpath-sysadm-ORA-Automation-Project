@@ -6095,8 +6095,10 @@ def webhook_shipstation_order(token):
                 for order in orders:
                     tag_order_lots(order, active_lots, known_skus, conn)
 
-                # 24-hour sweep: catch any awaiting_shipment orders with empty customField1
-                # that were missed by prior webhook fires (server restarts, SS retry exhaustion)
+                # 24-hour sweep: check all awaiting_shipment orders modified in the last
+                # 24 hours for any missing or incorrect enrichment fields.
+                # tag_order_lots() performs a full-field comparison and only writes
+                # to ShipStation when something is actually wrong or missing.
                 since = (_dt.datetime.utcnow() - _dt.timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
                 sweep_page = 1
                 while True:
@@ -6119,12 +6121,7 @@ def webhook_shipstation_order(token):
                         )
                         break
                     sweep_data = sweep_resp.json()
-                    sweep_orders = sweep_data.get('orders', [])
-                    untagged = [
-                        o for o in sweep_orders
-                        if not ((o.get('advancedOptions') or {}).get('customField1') or '').strip()
-                    ]
-                    for order in untagged:
+                    for order in sweep_data.get('orders', []):
                         tag_order_lots(order, active_lots, known_skus, conn)
                     if sweep_page >= sweep_data.get('pages', 1):
                         break

@@ -122,18 +122,57 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
     }
 
 
+def _is_fully_enriched(order: dict, expected_cf1: str, profile: dict) -> bool:
+    """
+    Return True only when every field the tagger owns already matches expected values.
+
+    Fields checked:
+        customField1, carrierCode, serviceCode,
+        advancedOptions.packageCode (when profile has one),
+        advancedOptions.billToParty, advancedOptions.billToMyOtherAccount.
+
+    Weight and dimensions are intentionally excluded: ShipStation recalculates
+    total weight when packages are added, so the stored value will legitimately
+    differ from the per-unit weight after a user adds multiple boxes. Checking
+    those fields would cause a write on every sweep pass for multi-package orders.
+    """
+    adv = order.get('advancedOptions') or {}
+
+    if (adv.get('customField1') or '').strip() != expected_cf1:
+        return False
+
+    if (order.get('carrierCode') or '') != profile['carrier_code']:
+        return False
+
+    if (order.get('serviceCode') or '') != profile['service_code']:
+        return False
+
+    if adv.get('billToParty') != profile['bill_to_party']:
+        return False
+
+    if adv.get('billToMyOtherAccount') != profile['bill_to_account']:
+        return False
+
+    if profile['package_code'] is not None:
+        if (adv.get('packageCode') or '') != profile['package_code']:
+            return False
+
+    return True
+
+
 def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], conn) -> None:
     """
-    Tag a single ShipStation order with the correct SKU - LOT in customField1
-    and apply the full shipping profile (carrier, service, package, dims, weight,
-    billing account) in the same ShipStation API call.
+    Inspect a single ShipStation order and write the correct lot stamp and full
+    shipping profile only when one or more fields need updating.
 
     Logic:
     1. Filter order items to tracked SKUs (in known_skus).
     2. If none found, check for home office SKUs → apply shipping profile only.
     3. Multi-SKU guard: write lot_tagging_failures record and abort.
     4. No active lot → write lot_tagging_failures record.
-    5. Extended idempotency: skip only if customField1 correct AND billToMyOtherAccount set.
+    5. Full-field idempotency: skip only if ALL owned fields already match.
+       Fields: customField1, carrierCode, serviceCode, packageCode,
+               billToParty, billToMyOtherAccount.
     6. Write lot stamp + full shipping profile in one API call.
     7. Resolve any existing failure record on success.
     """
@@ -148,15 +187,13 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         if not ho_items:
             return
 
-        sku = str(ho_items[0].get('sku', '')).strip()
-        adv = order.get('advancedOptions') or {}
-        current_cf1 = (adv.get('customField1') or '').strip()
+        sku     = str(ho_items[0].get('sku', '')).strip()
+        profile = resolve_shipping_profile(order, sku)
 
-        if current_cf1 == sku and adv.get('billToMyOtherAccount'):
-            logger.debug(f"Order {order_number} (home office) already enriched — skipping.")
+        if _is_fully_enriched(order, sku, profile):
+            logger.debug(f"Order {order_number} (home office) already fully enriched — skipping.")
             return
 
-        profile = resolve_shipping_profile(order, sku)
         result = update_order_custom_fields(
             order_id, sku, None,
             carrier_code=profile['carrier_code'],
@@ -222,24 +259,23 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         return
 
     expected_value = f"{sku} - {active_lots[sku]}"
-    adv        = order.get('advancedOptions') or {}
+    profile        = resolve_shipping_profile(order, sku)
+
+    if _is_fully_enriched(order, expected_value, profile):
+        logger.debug(f"Order {order_number} already fully enriched — skipping.")
+        return
+
+    adv         = order.get('advancedOptions') or {}
     current_cf1 = (adv.get('customField1') or '').strip()
-
-    if current_cf1 == expected_value:
-        if adv.get('billToMyOtherAccount'):
-            logger.debug(f"Order {order_number} already fully enriched — skipping.")
-            return
-
     field2_value = current_cf1 if current_cf1 and current_cf1 != expected_value else None
     if field2_value:
         server_logger.warning(
-            f"Order {order_number} (SS ID: {order_id}) customField1 pre-set to '{current_cf1}'. "
+            f"Order {order_number} (SS ID: {order_id}) customField1 currently '{current_cf1}'. "
             f"Moving to customField2 and writing correct lot.",
             source="Lot Tagger"
         )
 
-    profile = resolve_shipping_profile(order, sku)
-    result  = update_order_custom_fields(
+    result = update_order_custom_fields(
         order_id, expected_value, field2_value,
         carrier_code=profile['carrier_code'],
         service_code=profile['service_code'],

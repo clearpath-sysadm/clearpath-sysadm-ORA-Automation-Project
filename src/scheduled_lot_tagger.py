@@ -102,8 +102,10 @@ def _fetch_awaiting_shipment_orders(api_key: str, api_secret: str) -> list:
 
 def run_reconciliation():
     """
-    Fetch all awaiting_shipment orders and tag any with empty customField1.
-    ShipStation has no server-side filter for empty customField1, so we filter locally.
+    Fetch all awaiting_shipment orders and ensure every one is fully enriched:
+    correct lot stamp, carrier, service, package code, and billing account.
+    tag_order_lots() does a full-field comparison and only writes to ShipStation
+    when one or more fields are missing or incorrect.
     """
     logger.info("=" * 70)
     logger.info("LOT TAGGER RECONCILIATION STARTED")
@@ -117,48 +119,39 @@ def run_reconciliation():
     all_orders = _fetch_awaiting_shipment_orders(api_key, api_secret)
     logger.info(f"Total awaiting_shipment orders retrieved: {len(all_orders)}")
 
-    # Filter to orders with empty customField1 only
-    # (orders with a wrong value are handled by the mismatch scanner + manual fix)
-    untagged = [
-        o for o in all_orders
-        if not ((o.get('advancedOptions') or {}).get('customField1') or '').strip()
-    ]
-    logger.info(f"Untagged orders (empty customField1): {len(untagged)}")
-
-    if not untagged:
-        server_logger.info("Lot tagger reconciliation: no untagged orders found.", source="Lot Tagger")
+    if not all_orders:
+        server_logger.info("Lot tagger reconciliation: no awaiting_shipment orders found.", source="Lot Tagger")
         update_workflow_last_run(WORKFLOW_NAME)
         return
 
-    tagged = 0
+    processed = 0
     failed = 0
 
     with transaction_with_retry() as conn:
         active_lots, known_skus = build_lot_maps(conn)
         logger.info(f"Active lots loaded: {len(active_lots)} SKUs | Known SKUs: {len(known_skus)}")
 
-        for order in untagged:
+        for order in all_orders:
             try:
                 tag_order_lots(order, active_lots, known_skus, conn)
-                # Check if customField1 got set (success indicator)
-                order_id = order.get('orderId')
-                order_number = order.get('orderNumber', '')
-                # If no failure was recorded and tag returned normally, count as tagged
-                tagged += 1
+                processed += 1
             except Exception as e:
                 failed += 1
-                logger.error(f"Error tagging order {order.get('orderNumber')}: {e}", exc_info=True)
+                logger.error(f"Error processing order {order.get('orderNumber')}: {e}", exc_info=True)
 
     update_workflow_last_run(WORKFLOW_NAME)
 
-    summary = f"Lot tagger reconciliation complete: {tagged} processed, {failed} errors, {len(untagged)} untagged orders checked."
+    summary = (
+        f"Lot tagger reconciliation complete: {processed} orders checked, "
+        f"{failed} errors, {len(all_orders)} total awaiting shipment."
+    )
     if failed > 0:
         server_logger.warning(summary, source="Lot Tagger")
     else:
         server_logger.info(summary, source="Lot Tagger")
 
     logger.info("=" * 70)
-    logger.info(f"RECONCILIATION COMPLETE — {tagged} processed, {failed} errors")
+    logger.info(f"RECONCILIATION COMPLETE — {processed} checked, {failed} errors")
     logger.info("=" * 70)
 
 
