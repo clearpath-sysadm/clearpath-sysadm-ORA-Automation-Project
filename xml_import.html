@@ -1397,47 +1397,9 @@
             }
         });
 
-        // Upload selected orders to ShipStation
+        // Upload to ShipStation is disabled — BigCommerce pushes orders directly
         async function uploadSelectedOrders() {
-            const checkboxes = document.querySelectorAll('.order-checkbox:checked');
-            
-            if (checkboxes.length === 0) {
-                showAlert('⚠️ Please select at least one order to upload', 'warning');
-                return;
-            }
-
-            const orderIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.orderId));
-            const uploadBtn = document.getElementById('btn-upload-selected');
-            const originalText = uploadBtn.textContent;
-            
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = '⏳ Uploading to ShipStation...';
-
-            try {
-                const response = await fetch('/api/upload_orders_to_shipstation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ order_ids: orderIds })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert(`✅ ${result.message} (Uploaded: ${result.uploaded}, Skipped: ${result.skipped || 0}, Failed: ${result.failed || 0})`, 'success');
-                    loadOrdersInbox();
-                } else {
-                    showAlert('❌ Upload failed: ' + result.error, 'error');
-                    console.error('Upload error:', result);
-                }
-            } catch (error) {
-                showAlert('❌ Error uploading orders: ' + error.message, 'error');
-                console.error('Upload error:', error);
-            } finally {
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = originalText;
-            }
+            showAlert('⚠️ Order upload is disabled. BigCommerce pushes orders directly to ShipStation.', 'warning');
         }
 
         // Upload button handler
@@ -1805,9 +1767,8 @@
 
         // Force upload order to ShipStation (explicitly global for onclick handlers)
         window.forceUploadToShipStation = async function(orderNumber) {
-            if (!confirm(`Upload Order #${orderNumber} to ShipStation?\n\nThis will:\n• Apply the current active lot numbers to all items\n• Create the order in ShipStation\n• Update the local database status to 'uploaded'\n\nMake sure lot numbers are correct before uploading.`)) {
-                return;
-            }
+            alert('Order upload is disabled. BigCommerce pushes orders directly to ShipStation.');
+            return;
             
             // Find the button that was clicked and show loading state
             const buttons = document.querySelectorAll(`button[onclick="forceUploadToShipStation('${orderNumber}')"]`);

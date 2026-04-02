@@ -159,16 +159,15 @@ def fetch_shipstation_shipments(
 def send_all_orders_to_shipstation(orders_payload: list, api_key: str, api_secret: str, create_orders_endpoint: str) -> list:
     """
     Sends a list of orders to ShipStation's createorders endpoint.
-    
-    Args:
-        orders_payload: List of order dictionaries formatted for ShipStation API
-        api_key: ShipStation API Key
-        api_secret: ShipStation API Secret
-        create_orders_endpoint: Full URL for ShipStation createorders API endpoint
-    
-    Returns:
-        list: Results from the API including orderKey, success status, and error messages
+
+    DISABLED: BigCommerce now pushes orders directly to ShipStation.
+    Remove the RuntimeError below to re-enable.
     """
+    raise RuntimeError(
+        "send_all_orders_to_shipstation is disabled. "
+        "BigCommerce pushes orders directly to ShipStation. "
+        "Remove this guard in src/services/shipstation/api_client.py to re-enable."
+    )
     headers = get_shipstation_headers(api_key, api_secret)
     headers["Content-Type"] = "application/json"
     
