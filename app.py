@@ -6051,11 +6051,16 @@ def webhook_shipstation_order(token):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
 
     payload = request.get_json(silent=True) or {}
-    resource_url = payload.get('resource_url') or payload.get('resourceUrl', '')
+    resource_url = (payload.get('resource_url') or payload.get('resourceUrl', '') or '').strip()
 
     if not resource_url:
-        logger.warning("Webhook received with no resource_url — ignoring")
-        return jsonify({'success': True, 'message': 'No resource_url'}), 200
+        logger.warning("Webhook received with no resource_url — rejecting")
+        return jsonify({'success': False, 'error': 'Missing resource_url'}), 400
+
+    # Only allow ShipStation API URLs to prevent SSRF
+    if not resource_url.startswith('https://ssapi.shipstation.com/'):
+        logger.warning(f"Webhook resource_url has unexpected host — rejecting: {resource_url[:100]}")
+        return jsonify({'success': False, 'error': 'Invalid resource_url'}), 400
 
     def _process():
         try:
@@ -6108,6 +6113,10 @@ def webhook_shipstation_order(token):
                         timeout=30
                     )
                     if not sweep_resp or sweep_resp.status_code != 200:
+                        logger.error(
+                            f"Webhook 24h sweep failed on page {sweep_page}: "
+                            f"{sweep_resp.status_code if sweep_resp else 'no response'}"
+                        )
                         break
                     sweep_data = sweep_resp.json()
                     sweep_orders = sweep_data.get('orders', [])
