@@ -7,7 +7,7 @@ when orders enter awaiting_shipment. This scheduler is the reliability backstop:
 it runs twice daily to catch any orders missed by the webhook (server restarts,
 ShipStation retry exhaustion, etc.).
 
-Schedule: 6:30 AM and 12:00 PM CST on business days.
+Schedule: 6:30 AM and 12:00 PM CT on business days.
 
 Also registers the ORDER_NOTIFY webhook with ShipStation on startup (idempotent).
 """
@@ -46,7 +46,7 @@ WORKFLOW_NAME = 'lot-tagger'
 SHIPSTATION_ORDERS_URL = 'https://ssapi.shipstation.com/orders'
 CST = pytz.timezone('US/Central')
 
-# Times at which the full reconciliation scan fires (CST)
+# Times at which the full reconciliation scan fires (CT)
 SCAN_TIMES = [
     datetime.time(6, 30),
     datetime.time(12, 0),
@@ -55,7 +55,7 @@ SCAN_WINDOW_MINUTES = 1
 
 
 def _is_scan_time() -> bool:
-    """Return True if current CST time is within SCAN_WINDOW_MINUTES of a scheduled scan time."""
+    """Return True if current CT time is within SCAN_WINDOW_MINUTES of a scheduled scan time."""
     now_cst = datetime.datetime.now(CST).time().replace(second=0, microsecond=0)
     for target in SCAN_TIMES:
         delta = abs(
@@ -190,7 +190,7 @@ def register_webhook_on_startup():
 
 def main():
     logger.info("Lot Tagger scheduler starting...")
-    logger.info("Schedule: 6:30 AM and 12:00 PM CST on business days")
+    logger.info("Schedule: 6:30 AM and 12:00 PM CT on business days")
 
     register_webhook_on_startup()
 
@@ -223,7 +223,7 @@ def main():
                     heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
                     logger.error(f"Reconciliation error: {e}", exc_info=True)
             else:
-                logger.debug(f"Not a scan time ({now_minute} CST) — sleeping 60s")
+                logger.debug(f"Not a scan time ({now_minute} CT) — sleeping 60s")
 
             time.sleep(60)
 

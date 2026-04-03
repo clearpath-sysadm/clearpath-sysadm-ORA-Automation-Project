@@ -863,7 +863,7 @@ def run_scheduled_upload():
     interval = int(get_feature_flag('fast_polling_interval', '300'))
     
     logger.info(f"🚀 Upload workflow started in PRODUCTION (fast_polling={enabled}, interval={interval}s)")
-    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CT | Weekends OFF")
     
     last_count = 0
     error_count = 0

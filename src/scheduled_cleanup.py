@@ -33,9 +33,9 @@ CLEANUP_INTERVAL = 86400
 
 
 def main():
-    """Run cleanup on a daily schedule during business hours (Mon-Fri 6 AM - 6 PM CST)"""
+    """Run cleanup on a daily schedule during business hours (Mon-Fri 6 AM - 6 PM CT)"""
     logger.info("Starting scheduled cleanup service (runs daily)")
-    logger.info("⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
+    logger.info("⏰ Business Hours: Monday-Friday 6 AM - 6 PM CT | Weekends OFF")
     
     while True:
         try:

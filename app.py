@@ -8214,7 +8214,6 @@ def run_workflow_manually(workflow_name):
         'duplicate-scanner': ['src/scheduled_duplicate_scanner.py', '--once'],
         'lot-mismatch-scanner': ['src/scheduled_lot_mismatch_scanner.py', '--once'],
         'orders-cleanup': ['src/scheduled_cleanup.py', '--once'],
-        'stuck-workflow-detector': ['src/scheduled_stuck_workflow_detector.py', '--once']
     }
     
     try:
@@ -8441,15 +8440,6 @@ def reset_stuck_workflow(workflow_name):
             WHERE name = %s
         """, (workflow_name,))
         
-        cursor.execute("""
-            UPDATE stuck_workflow_incidents
-            SET status = 'resolved',
-                resolved_at = NOW(),
-                resolved_by = %s,
-                resolution_method = 'manual_reset'
-            WHERE workflow_name = %s AND status = 'active'
-        """, (g.user.get('username', 'admin'), workflow_name))
-        
         conn.commit()
         cursor.close()
         conn.close()
@@ -8467,56 +8457,6 @@ def reset_stuck_workflow(workflow_name):
         
     except Exception as e:
         logger.error(f"❌ /api/workflow/{workflow_name}/reset error: {str(e)}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/stuck_workflow_incidents', methods=['GET'])
-@login_required
-def get_stuck_workflow_incidents():
-    """Get stuck workflow incident history"""
-    try:
-        status_filter = request.args.get('status')
-        limit = request.args.get('limit', 50, type=int)
-        
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        query = """
-            SELECT id, workflow_name, detected_at, last_heartbeat, 
-                   expected_interval_seconds, actual_gap_seconds, status,
-                   resolved_at, resolved_by, resolution_method, notes
-            FROM stuck_workflow_incidents
-            WHERE 1=1
-        """
-        params = []
-        
-        if status_filter:
-            query += " AND status = %s"
-            params.append(status_filter)
-        
-        query += " ORDER BY detected_at DESC LIMIT %s"
-        params.append(limit)
-        
-        cursor.execute(query, params)
-        incidents = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        
-        return jsonify([{
-            'id': inc[0],
-            'workflow_name': inc[1],
-            'detected_at': inc[2].isoformat() if inc[2] else None,
-            'last_heartbeat': inc[3].isoformat() if inc[3] else None,
-            'expected_interval_seconds': inc[4],
-            'actual_gap_seconds': inc[5],
-            'status': inc[6],
-            'resolved_at': inc[7].isoformat() if inc[7] else None,
-            'resolved_by': inc[8],
-            'resolution_method': inc[9],
-            'notes': inc[10]
-        } for inc in incidents])
-        
-    except Exception as e:
-        logger.error(f"❌ /api/stuck_workflow_incidents error: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/workflow_heartbeats/<workflow_name>', methods=['GET'])
@@ -11061,44 +11001,12 @@ def recreate_order():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-def ensure_stuck_workflow_detector_exists():
-    """Ensure stuck-workflow-detector is registered in workflows and workflow_controls tables."""
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT name FROM workflows WHERE name = 'stuck-workflow-detector'")
-        if not cursor.fetchone():
-            cursor.execute("""
-                INSERT INTO workflows (name, display_name, status, expected_interval_seconds, enabled)
-                VALUES ('stuck-workflow-detector', 'Stuck Workflow Detector', 'completed', 900, 1)
-            """)
-            logger.info("Created stuck-workflow-detector entry in workflows table")
-        
-        cursor.execute("SELECT workflow_name FROM workflow_controls WHERE workflow_name = 'stuck-workflow-detector'")
-        if not cursor.fetchone():
-            cursor.execute("""
-                INSERT INTO workflow_controls (workflow_name, enabled)
-                VALUES ('stuck-workflow-detector', true)
-            """)
-            logger.info("Created stuck-workflow-detector entry in workflow_controls table")
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        logger.error(f"Error ensuring stuck-workflow-detector exists: {e}")
-
-
 if __name__ == '__main__':
     # Initialize file logging
     from src.utils.server_logger import get_logger
     server_logger = get_logger()
     server_logger.info('Dashboard server starting...', source='app')
-    
-    # Ensure stuck-workflow-detector is registered
-    ensure_stuck_workflow_detector_exists()
-    
+
     # Bind to 0.0.0.0 on PORT env var (default 5000) for Replit
     port = int(os.environ.get('PORT', os.environ.get('FLASK_PORT', 5000)))
     app.run(host='0.0.0.0', port=port, debug=False)

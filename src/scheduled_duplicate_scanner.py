@@ -511,9 +511,9 @@ def scan_for_duplicates():
         return False
 
 def run_scheduled_scanner():
-    """Main loop - runs every 15 minutes during business hours (Mon-Fri 6 AM - 6 PM CST)"""
+    """Main loop - runs every 15 minutes during business hours (Mon-Fri 6 AM - 6 PM CT)"""
     logger.info(f"🚀 Duplicate Scanner started (scanning every {SCAN_INTERVAL_SECONDS // 60} minutes)")
-    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CT | Weekends OFF")
     
     while True:
         try:

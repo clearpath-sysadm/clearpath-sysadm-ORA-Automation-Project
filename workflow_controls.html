@@ -165,37 +165,6 @@
                 <div class="card" style="margin-top: 24px;">
                     <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
                         <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
-                            <span>🏥</span> Stuck Workflow Incidents
-                        </h3>
-                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
-                            History of detected stuck workflows. The system automatically detects when workflows stop responding and can auto-reset them.
-                        </p>
-                    </div>
-                    <div style="padding: 20px;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Workflow</th>
-                                    <th>Detected</th>
-                                    <th>Duration Stuck</th>
-                                    <th>Status</th>
-                                    <th>Resolution</th>
-                                </tr>
-                            </thead>
-                            <tbody id="incidents-table">
-                                <tr>
-                                    <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-tertiary);">
-                                        Loading incidents...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="card" style="margin-top: 24px;">
-                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
-                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
                             <span>📢</span> Admin Alert Bar
                         </h3>
                         <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
@@ -460,53 +429,6 @@
             }
         }
 
-        async function loadIncidents() {
-            try {
-                const response = await fetch('/api/stuck_workflow_incidents?limit=20');
-                const incidents = await response.json();
-                
-                const tbody = document.getElementById('incidents-table');
-                
-                if (!incidents || incidents.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-tertiary);">
-                                No stuck workflow incidents recorded
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                tbody.innerHTML = '';
-                incidents.forEach(inc => {
-                    const tr = document.createElement('tr');
-                    const statusBadge = inc.status === 'active' 
-                        ? '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">Active</span>'
-                        : '<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">Resolved</span>';
-                    
-                    const durationText = inc.actual_gap_seconds 
-                        ? `${Math.round(inc.actual_gap_seconds / 60)} minutes`
-                        : 'Unknown';
-                    
-                    const resolutionText = inc.resolution_method 
-                        ? `${inc.resolution_method} by ${inc.resolved_by || 'system'}`
-                        : '-';
-                    
-                    tr.innerHTML = `
-                        <td><strong>${WORKFLOW_INFO[inc.workflow_name]?.name || inc.workflow_name}</strong></td>
-                        <td>${formatRelativeTime(inc.detected_at)}</td>
-                        <td>${durationText}</td>
-                        <td>${statusBadge}</td>
-                        <td>${resolutionText}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (error) {
-                console.error('Failed to load incidents:', error);
-            }
-        }
-
         function formatRelativeTime(timestamp) {
             if (!timestamp) return 'Never';
             
@@ -627,7 +549,6 @@
                 if (result.success) {
                     alert(`Workflow "${name}" has been reset successfully.`);
                     loadWorkflows();
-                    loadIncidents();
                 } else {
                     alert(`Failed to reset workflow: ${result.error || 'Unknown error'}`);
                 }
@@ -1630,10 +1551,8 @@
         loadWorkflows();
         loadWatermark();
         loadAdminAlert();
-        loadIncidents();
         setInterval(loadWorkflows, 5000);
         setInterval(loadWatermark, 30000);
-        setInterval(loadIncidents, 30000);
     </script>
     <!-- Interactive Training Tours -->
     <script src="/static/tour.js"></script>

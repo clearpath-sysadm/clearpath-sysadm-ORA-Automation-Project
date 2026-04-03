@@ -124,7 +124,7 @@ def format_business_hours_status() -> str:
         now = datetime.datetime.now(central)
         
         day_name = now.strftime('%A')
-        current_time = now.strftime('%I:%M %p CST')
+        current_time = now.strftime('%I:%M %p %Z')
         
         if is_business_hours():
             return f"✅ BUSINESS HOURS | {day_name} {current_time} | Active"

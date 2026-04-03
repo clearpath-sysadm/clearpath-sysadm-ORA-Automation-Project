@@ -478,7 +478,7 @@ def run_scheduled_import():
     
     logger.info(f"🚀 XML import workflow started (fast_polling={fast_polling_enabled}, interval={interval}s)")
     logger.info(f"📁 Data retention: {DATA_RETENTION_DAYS} days")
-    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CT | Weekends OFF")
     
     error_count = 0
     max_errors = 5

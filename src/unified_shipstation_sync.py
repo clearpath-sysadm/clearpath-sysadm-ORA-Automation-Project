@@ -1665,9 +1665,9 @@ def run_unified_sync():
 
 
 def main():
-    """Main loop - runs every 5 minutes during business hours (Mon-Fri 6 AM - 6 PM CST)"""
+    """Main loop - runs every 5 minutes during business hours (Mon-Fri 6 AM - 6 PM CT)"""
     logger.info(f"🚀 Starting Unified ShipStation Sync (every {SYNC_INTERVAL_SECONDS}s)")
-    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
+    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CT | Weekends OFF")
     
     while True:
         try:

@@ -228,9 +228,9 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
 
 
 def main():
-    """Main loop — runs every 15 minutes during business hours (Mon-Fri 6 AM - 6 PM CST)."""
+    """Main loop — runs every 15 minutes during business hours (Mon-Fri 6 AM - 6 PM CT)."""
     logger.info("Starting Lot Mismatch Scanner (every 900s)")
-    logger.info("Business Hours: Monday-Friday 6 AM - 6 PM CST | Weekends OFF")
+    logger.info("Business Hours: Monday-Friday 6 AM - 6 PM CT | Weekends OFF")
 
     api_key, api_secret = get_shipstation_credentials()
     if not api_key or not api_secret:
