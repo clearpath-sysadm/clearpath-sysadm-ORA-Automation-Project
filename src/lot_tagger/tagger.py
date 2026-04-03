@@ -124,42 +124,67 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
     }
 
 
+def _get_mismatched_fields(order: dict, expected_cf1: str, profile: dict) -> list:
+    """
+    Return a list of field names that differ from the expected profile values.
+    An empty list means the order is fully enriched (no write needed).
+
+    Fields checked:
+        customField1, carrierCode, serviceCode, packageCode (when profile has one),
+        billToParty, billToMyOtherAccount, weight, dimensions.
+    """
+    adv  = order.get('advancedOptions') or {}
+    wt   = order.get('weight') or {}
+    dims = order.get('dimensions') or {}
+    mismatched = []
+
+    if (adv.get('customField1') or '').strip() != expected_cf1:
+        mismatched.append('customField1')
+
+    if (order.get('carrierCode') or '') != profile['carrier_code']:
+        mismatched.append('carrierCode')
+
+    if (order.get('serviceCode') or '') != profile['service_code']:
+        mismatched.append('serviceCode')
+
+    if adv.get('billToParty') != profile['bill_to_party']:
+        mismatched.append('billToParty')
+
+    if adv.get('billToMyOtherAccount') != profile['bill_to_account']:
+        mismatched.append('billToMyOtherAccount')
+
+    if profile['package_code'] is not None:
+        if (order.get('packageCode') or '') != profile['package_code']:
+            mismatched.append('packageCode')
+
+    if profile.get('weight_oz') is not None:
+        try:
+            if round(float(wt.get('value') or 0), 1) != round(float(profile['weight_oz']), 1):
+                mismatched.append('weight')
+        except (TypeError, ValueError):
+            mismatched.append('weight')
+
+    if profile.get('length') is not None:
+        try:
+            if (round(float(dims.get('length') or 0), 1) != round(float(profile['length']), 1) or
+                    round(float(dims.get('width') or 0), 1) != round(float(profile['width']), 1) or
+                    round(float(dims.get('height') or 0), 1) != round(float(profile['height']), 1)):
+                mismatched.append('dimensions')
+        except (TypeError, ValueError):
+            mismatched.append('dimensions')
+
+    return mismatched
+
+
 def _is_fully_enriched(order: dict, expected_cf1: str, profile: dict) -> bool:
     """
     Return True only when every field the tagger owns already matches expected values.
 
     Fields checked:
-        customField1, carrierCode, serviceCode,
-        advancedOptions.packageCode (when profile has one),
-        advancedOptions.billToParty, advancedOptions.billToMyOtherAccount.
-
-    Weight and dimensions are intentionally excluded: ShipStation recalculates
-    total weight when packages are added, so the stored value will legitimately
-    differ from the per-unit weight after a user adds multiple boxes. Checking
-    those fields would cause a write on every sweep pass for multi-package orders.
+        customField1, carrierCode, serviceCode, packageCode (when profile has one),
+        billToParty, billToMyOtherAccount, weight, dimensions.
     """
-    adv = order.get('advancedOptions') or {}
-
-    if (adv.get('customField1') or '').strip() != expected_cf1:
-        return False
-
-    if (order.get('carrierCode') or '') != profile['carrier_code']:
-        return False
-
-    if (order.get('serviceCode') or '') != profile['service_code']:
-        return False
-
-    if adv.get('billToParty') != profile['bill_to_party']:
-        return False
-
-    if adv.get('billToMyOtherAccount') != profile['bill_to_account']:
-        return False
-
-    if profile['package_code'] is not None:
-        if (order.get('packageCode') or '') != profile['package_code']:
-            return False
-
-    return True
+    return len(_get_mismatched_fields(order, expected_cf1, profile)) == 0
 
 
 def _parse_lot_stamped_sku(sku: str):
@@ -338,8 +363,9 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             base_sku, exp_cf1, num_packages = stamped_items[0]
             profile = resolve_shipping_profile(order, base_sku)
 
-            if _is_fully_enriched(order, exp_cf1, profile):
-                logger.debug(f"Lot-stamped order {order_number} already fully enriched — skipping V1.")
+            mismatched = _get_mismatched_fields(order, exp_cf1, profile)
+            if not mismatched:
+                logger.debug(f"Lot-stamped order {order_number} already correct — skipped.")
                 v2_result = ensure_v2_package(order_id, order_number, profile,
                                               num_packages=num_packages)
                 if v2_result['action'] == 'updated':
@@ -377,8 +403,9 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 )
             else:
                 server_logger.info(
-                    f"Enriched lot-stamped order {order_number} (SS ID: {order_id}) "
-                    f"CF1={exp_cf1!r} base_sku={base_sku}",
+                    f"Corrected {len(mismatched)} field(s) on lot-stamped order "
+                    f"{order_number} (SS ID: {order_id}) CF1={exp_cf1!r} "
+                    f"base_sku={base_sku} fields={mismatched}",
                     source="Lot Tagger"
                 )
                 if profile.get('package_id'):
@@ -418,8 +445,9 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         num_packages = max(1, int(ho_items[0].get('quantity') or 1))
         profile      = resolve_shipping_profile(order, sku)
 
-        if _is_fully_enriched(order, sku, profile):
-            logger.debug(f"Order {order_number} (home office) already fully enriched — skipping V1.")
+        mismatched = _get_mismatched_fields(order, sku, profile)
+        if not mismatched:
+            logger.debug(f"Order {order_number} (home office) already correct — skipped.")
             v2_result = ensure_v2_package(order_id, order_number, profile,
                                           num_packages=num_packages)
             if v2_result['action'] == 'updated':
@@ -455,8 +483,10 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 source="Lot Tagger"
             )
         else:
+            _tag_action = "Freshly tagged" if not (order.get('advancedOptions') or {}).get('customField1') else f"Corrected {len(mismatched)} field(s) on"
             server_logger.info(
-                f"Enriched home office order {order_number} (SS ID: {order_id}) SKU={sku}",
+                f"{_tag_action} home office order {order_number} (SS ID: {order_id}) "
+                f"SKU={sku} fields={mismatched}",
                 source="Lot Tagger"
             )
             if profile.get('package_id'):
@@ -526,8 +556,9 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     expected_value = f"{sku} - {active_lots[sku]}"
     profile        = resolve_shipping_profile(order, sku)
 
-    if _is_fully_enriched(order, expected_value, profile):
-        logger.debug(f"Order {order_number} already fully enriched — skipping V1.")
+    mismatched = _get_mismatched_fields(order, expected_value, profile)
+    if not mismatched:
+        logger.debug(f"Order {order_number} already correct — skipped.")
         v2_result = ensure_v2_package(order_id, order_number, profile,
                                       num_packages=num_packages)
         if v2_result['action'] == 'updated':
@@ -574,11 +605,19 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         )
         return
 
-    server_logger.info(
-        f"Tagged order {order_number} (SS ID: {order_id}) with '{expected_value}' "
-        f"[{profile['service_code']}, account={profile['bill_to_account']}]",
-        source="Lot Tagger"
-    )
+    if not current_cf1:
+        server_logger.info(
+            f"Freshly tagged order {order_number} (SS ID: {order_id}) with '{expected_value}' "
+            f"[{profile['service_code']}, account={profile['bill_to_account']}]",
+            source="Lot Tagger"
+        )
+    else:
+        server_logger.info(
+            f"Corrected {len(mismatched)} field(s) on order {order_number} (SS ID: {order_id}) "
+            f"lot='{expected_value}' [{profile['service_code']}, account={profile['bill_to_account']}] "
+            f"fields={mismatched}",
+            source="Lot Tagger"
+        )
 
     if profile.get('package_id'):
         v2_result = update_order_package_v2(
