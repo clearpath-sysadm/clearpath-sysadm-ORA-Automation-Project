@@ -31,8 +31,8 @@ HOME_OFFICE_SKUS = {'18751', '18760', '18565'}
 
 SKU_SHIPPING_PROFILES = {
     '17612': {'package_code': 'package', 'package_id': 'se-122675', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
-    '17914': {'package_code': 'package', 'package_id': 'se-122677', 'length': 11.0, 'width': 11.0, 'height':  8.0, 'weight_oz': 176},
-    '17904': {'package_code': 'package', 'package_id': 'se-132840', 'length': 14.0, 'width': 12.0, 'height':  5.0, 'weight_oz': 224},
+    '17914': {'package_code': 'package', 'package_id': 'se-122677', 'length': 11.0, 'width': 11.0, 'height':  8.0, 'weight_oz': 240},
+    '17904': {'package_code': 'package', 'package_id': 'se-132840', 'length': 14.0, 'width': 12.0, 'height':  5.0, 'weight_oz': 160},
     '18675': {'package_code': 'package', 'package_id': 'se-122678', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
     '18795': {'package_code': 'package', 'package_id': 'se-131836', 'length':  9.0, 'width':  5.0, 'height':  8.0, 'weight_oz':  80},
     '18751': {'package_code': 'package', 'package_id': 'se-135810', 'length':  9.0, 'width':  5.0, 'height':  7.0, 'weight_oz':  80},
