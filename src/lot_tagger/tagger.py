@@ -6,6 +6,7 @@ Callers must build active_lots and known_skus from the DB before calling this.
 """
 import os
 import logging
+from datetime import datetime, timezone
 from typing import Dict, Set
 
 from src.services.shipstation.api_client import update_order_custom_fields, update_order_package_v2
@@ -287,7 +288,15 @@ def ensure_v2_package(order_id: int, order_number: str, profile: dict,
         }
         shipment['packages'] = [single_pkg] * num_packages
 
-    put_resp = make_api_request(url=url, method='PUT', headers=headers, data=shipment, timeout=30)
+    # ShipStation V2 rejects PUTs where ship_date is in the past.  Always
+    # reset to today so old orders (created before today) don't receive 400.
+    shipment['ship_date'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT00:00:00Z')
+
+    try:
+        put_resp = make_api_request(url=url, method='PUT', headers=headers, data=shipment, timeout=30)
+    except Exception as e:
+        return {'action': 'error', 'error': str(e)}
+
     if put_resp and put_resp.status_code in (200, 204):
         logger.info(
             f"V2: set {num_packages}×package_id={package_id} on order "

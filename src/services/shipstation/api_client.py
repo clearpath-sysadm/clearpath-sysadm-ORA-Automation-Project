@@ -11,6 +11,7 @@ import time
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 # Add the project root to the Python path to enable imports from a parent directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
@@ -545,6 +546,10 @@ def update_order_package_v2(
                 },
             }
             shipment['packages'] = [single_pkg] * num_packages
+
+        # ShipStation V2 rejects PUTs where ship_date is in the past.  Always
+        # reset to today so old orders (created before today) don't receive 400.
+        shipment['ship_date'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT00:00:00Z')
 
         # Step 3: PUT back the full modified shipment
         put_response = make_api_request(
