@@ -62,7 +62,7 @@ The Oracare Fulfillment System is a production-ready order management platform t
 - `logs.html` - Server Logs viewer (Admin only)
 - `email_contacts.html`, `settings.html`, `help.html`, `landing.html` - Utility pages
 
-**Automation Workflows (9):**
+**Automation Workflows (10):**
 | Workflow | Script | Interval |
 |----------|--------|----------|
 | dashboard-server | `app.py` | Continuous |
@@ -71,7 +71,8 @@ The Oracare Fulfillment System is a production-ready order management platform t
 | unified-shipstation-sync | `unified_shipstation_sync.py` | 5 min |
 | duplicate-scanner | `scheduled_duplicate_scanner.py` | 15 min |
 | lot-mismatch-scanner | `scheduled_lot_mismatch_scanner.py` | 15 min |
-| lot-tagger | `scheduled_lot_tagger.py` | 6:30 AM & 12:00 PM CST |
+| lot-tagger | `scheduled_lot_tagger.py` | 6:30 AM & 12:00 PM CT |
+| batch-processor | `scheduled_batch_processor.py` | 12:00 PM CT (business days) |
 | stuck-workflow-detector | `scheduled_stuck_workflow_detector.py` | 15 min |
 | orders-cleanup | `scheduled_cleanup.py` | Daily |
 
@@ -134,6 +135,7 @@ X-Cart → XML → Google Drive → xml-import → orders_inbox
 - **Bulk Dedup Tool (Feb 2026):** One-click bulk resolution of manual order conflicts. Processes all pending conflicts: recreates actionable orders (awaiting_shipment/on_hold) with sequential new order numbers and deletes old duplicates from ShipStation; auto-resolves shipped/cancelled conflicts. Uses PostgreSQL advisory lock (73001) to prevent concurrent execution. Dashboard button available in alert banner and conflict details modal. API: `POST /api/manual_order_conflicts/bulk_recreate` (admin-only).
 - **Duplicate Scanner Filter (Feb 2026):** `identify_duplicates()` in `scheduled_duplicate_scanner.py` now filters out groups where ALL orders have terminal statuses (shipped/cancelled). Only flags actionable duplicates with at least one awaiting_shipment/on_hold order.
 - **Orphan Cleanup Endpoint (Feb 25, 2026):** `POST /api/admin/cleanup_orphan_orders` endpoint for deleting orphaned ShipStation orders by order number range. Supports dry_run mode, backs up orders to `deleted_shipstation_orders` before deletion, rate-limited API calls. Used to clean up 28 orphan orders (100893-100920) from failed first bulk dedup run. All 27 bulk dedup conflicts (100591-100617 → 100921-100947) confirmed fully resolved.
+- **Batch Label Processor (Apr 7, 2026):** New `batch-processor` workflow (`src/scheduled_batch_processor.py`) automates the daily noon batch label run for the Axiom warehouse. At 12:00 PM CT on business days it calls three new V2 API functions (`v2_get_pending_axiom_shipments`, `v2_create_batch`, `v2_process_batch_labels`) in `api_client.py` to fetch all pending Axiom shipments, bundle them into a V2 batch, and trigger label processing. `AXIOM_WAREHOUSE_ID = 'se-299625'` added to `config/settings.py`. Workflow registered in both DB tables (`workflows`, `workflow_controls`) with `enabled=false` — enable from the dashboard when ready to go live. Dev-blocked via same `REPL_SLUG=workspace` check as the upload service.
 - **Inventory Deduction Fix (Apr 7, 2026):** Fixed a critical gap where `update_existing_order_status()` in `unified_shipstation_sync.py` never called `deduct_lot_inventory()` when an existing order transitioned to shipped status. This was the primary path for all shipments (imported as awaiting_shipment, later marked shipped by ShipStation sync). As a result, zero Ship transactions had ever been recorded despite 1,238 shipped orders. Fix: added deduction loop at the end of `update_existing_order_status` mirroring the existing BigCommerce import path. Idempotency guard (keyed on lot_id + shipstation_order_id + 'Ship') prevents double-deduction on re-runs. Backfill script: `src/backfill_inventory_deductions.py` — fetches `customField1` from ShipStation for each historical shipped order and records missing deductions. Orders shipped before lot tagger was running (no customField1 in ShipStation) are logged and skipped cleanly.
 
 ## Important Notes

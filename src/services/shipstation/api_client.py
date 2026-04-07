@@ -803,3 +803,165 @@ def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = Tru
     except Exception as e:
         logger.error(f"Error deleting order {order_id} from ShipStation: {e}", exc_info=True)
         return {'success': False, 'error': str(e)}
+
+
+def v2_get_pending_axiom_shipments() -> dict:
+    """
+    Fetch all pending shipments for the Axiom warehouse from ShipStation V2.
+
+    Paginates automatically if the result set exceeds 500 entries.
+    Auth: PRODUCTION_KEY as 'API-Key' header (V2-specific credential).
+
+    Returns dict with 'success' bool, 'shipment_ids' list, and 'error' on failure.
+    """
+    from config.settings import settings
+    try:
+        api_key = os.getenv('PRODUCTION_KEY')
+        if not api_key:
+            return {'success': False, 'error': 'PRODUCTION_KEY environment variable not set'}
+
+        headers = {
+            'API-Key': api_key,
+            'Content-Type': 'application/json',
+        }
+
+        shipment_ids = []
+        page = 1
+
+        while True:
+            response = make_api_request(
+                url='https://api.shipstation.com/v2/shipments',
+                method='GET',
+                headers=headers,
+                params={
+                    'shipment_status': 'pending',
+                    'warehouse_id': settings.AXIOM_WAREHOUSE_ID,
+                    'page_size': 500,
+                    'page': page,
+                },
+                timeout=30,
+            )
+
+            if not response or response.status_code != 200:
+                status = response.status_code if response else 'no response'
+                body = response.text[:200] if response else ''
+                return {'success': False, 'error': f"V2 GET /shipments failed {status}: {body}"}
+
+            data = response.json()
+            batch = data.get('shipments', [])
+            for shipment in batch:
+                sid = shipment.get('shipment_id')
+                if sid:
+                    shipment_ids.append(sid)
+
+            total_pages = data.get('pages', 1)
+            logger.info(f"V2 shipments page {page}/{total_pages}: {len(batch)} pending")
+
+            if page >= total_pages:
+                break
+            page += 1
+
+        logger.info(f"V2 pending Axiom shipments total: {len(shipment_ids)}")
+        return {'success': True, 'shipment_ids': shipment_ids}
+
+    except Exception as e:
+        logger.error(f"Error fetching V2 pending Axiom shipments: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
+def v2_create_batch(shipment_ids: list) -> dict:
+    """
+    Create a ShipStation V2 batch from a list of shipment IDs.
+
+    POST /v2/batches
+    Auth: PRODUCTION_KEY as 'API-Key' header.
+
+    Returns dict with 'success' bool, 'batch_id' str, and 'error' on failure.
+    """
+    from config.settings import settings
+    try:
+        api_key = os.getenv('PRODUCTION_KEY')
+        if not api_key:
+            return {'success': False, 'error': 'PRODUCTION_KEY environment variable not set'}
+
+        headers = {
+            'API-Key': api_key,
+            'Content-Type': 'application/json',
+        }
+
+        payload = {
+            'shipment_ids': shipment_ids,
+            'warehouse_id': settings.AXIOM_WAREHOUSE_ID,
+        }
+
+        response = make_api_request(
+            url='https://api.shipstation.com/v2/batches',
+            method='POST',
+            headers=headers,
+            data=payload,
+            timeout=30,
+        )
+
+        if response and response.status_code in (200, 201):
+            data = response.json()
+            batch_id = data.get('batch_id') or data.get('id')
+            logger.info(f"V2 batch created: {batch_id} ({len(shipment_ids)} shipments)")
+            return {'success': True, 'batch_id': batch_id, 'response': data}
+        else:
+            status = response.status_code if response else 'no response'
+            body = response.text[:300] if response else ''
+            error_msg = f"V2 POST /batches failed {status}: {body}"
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error creating V2 batch: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
+def v2_process_batch_labels(batch_id: str, ship_date: str) -> dict:
+    """
+    Trigger label processing for a ShipStation V2 batch.
+
+    POST /v2/batches/{batch_id}/process/labels
+    Auth: PRODUCTION_KEY as 'API-Key' header.
+
+    Args:
+        batch_id: The batch ID returned by v2_create_batch.
+        ship_date: ISO date string (YYYY-MM-DD) — typically today.
+
+    Returns dict with 'success' bool and 'error' on failure.
+    """
+    try:
+        api_key = os.getenv('PRODUCTION_KEY')
+        if not api_key:
+            return {'success': False, 'error': 'PRODUCTION_KEY environment variable not set'}
+
+        headers = {
+            'API-Key': api_key,
+            'Content-Type': 'application/json',
+        }
+
+        payload = {'ship_date': ship_date}
+
+        response = make_api_request(
+            url=f'https://api.shipstation.com/v2/batches/{batch_id}/process/labels',
+            method='POST',
+            headers=headers,
+            data=payload,
+            timeout=30,
+        )
+
+        if response and response.status_code in (200, 204):
+            logger.info(f"V2 batch {batch_id} label processing triggered (ship_date={ship_date})")
+            return {'success': True}
+        else:
+            status = response.status_code if response else 'no response'
+            body = response.text[:300] if response else ''
+            error_msg = f"V2 POST /batches/{batch_id}/process/labels failed {status}: {body}"
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error processing V2 batch {batch_id} labels: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
