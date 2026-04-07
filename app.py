@@ -499,7 +499,7 @@ def health_check():
                 'watermark_age_minutes': watermark_age_minutes,
                 'health': watermark_health,
                 'status': watermark_status,
-                'last_watermark': watermark_dt.strftime('%b %d, %I:%M %p')
+                'last_watermark': watermark_formatted
             }
         else:
             sync_health = {
@@ -5918,7 +5918,7 @@ def api_get_lot_mismatch_alerts():
                 'shipstation_order_id': row[5],
                 'shipstation_item_id': row[6],
                 'order_status': row[7],
-                'detected_at': row[8]
+                'detected_at': row[8].isoformat() if row[8] else None
             })
         
         conn.close()
@@ -6300,7 +6300,7 @@ def api_get_manual_order_conflicts():
                 'shipstation_order_id': row[2],
                 'customer_name': row[3],
                 'original_ship_date': row[4].strftime('%Y-%m-%d') if row[4] else None,
-                'detected_at': row[5].strftime('%Y-%m-%d %H:%M:%S') if row[5] else None,
+                'detected_at': row[5].isoformat() if row[5] else None,
                 'resolution_status': row[6],
                 'original_company': row[7],
                 'original_items': row[8] if row[8] else [],

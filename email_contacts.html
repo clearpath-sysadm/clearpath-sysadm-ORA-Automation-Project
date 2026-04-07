@@ -202,6 +202,7 @@
     </div>
 
     <script src="/static/dark-mode.js"></script>
+    <script src="/static/timezone-utils.js"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/alert-bar.js"></script>
 
@@ -282,7 +283,7 @@
             }
             
             tbody.innerHTML = contacts.map(contact => {
-                const createdDate = contact.created_at ? new Date(contact.created_at).toLocaleDateString() : 'N/A';
+                const createdDate = contact.created_at ? formatDate(contact.created_at) : 'N/A';
                 return `
                     <tr>
                         <td>${contact.email}</td>

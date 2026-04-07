@@ -51,7 +51,38 @@ SCAN_TIMES = [
     datetime.time(6, 30),
     datetime.time(12, 0),
 ]
-SCAN_WINDOW_MINUTES = 1
+SCAN_WINDOW_MINUTES = 5
+
+
+def _should_run_startup_catchup() -> bool:
+    """
+    Return True if the last successful reconciliation was more than 6 hours ago (or has
+    never run), indicating a catch-up scan is needed immediately on startup.
+
+    The threshold of 6 hours sits safely above the ~5.5-hour interval between the two
+    scheduled scans (6:30 AM and 12:00 PM CT), so a normal restart that immediately
+    follows a completed scan will never trigger an unwanted duplicate run.
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT last_run_at FROM workflow_controls WHERE workflow_name = %s",
+            (WORKFLOW_NAME,)
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if not row or not row[0]:
+            return True
+        last_run = row[0]
+        if last_run.tzinfo is None:
+            last_run = pytz.UTC.localize(last_run)
+        gap_hours = (datetime.datetime.now(pytz.UTC) - last_run).total_seconds() / 3600
+        return gap_hours > 6
+    except Exception as e:
+        logger.warning(f"Could not check startup catch-up condition: {e}")
+        return False
 
 
 def _is_scan_time() -> bool:
@@ -194,6 +225,17 @@ def main():
 
     register_webhook_on_startup()
 
+    if _should_run_startup_catchup():
+        logger.info("Startup catch-up: last run was over 6 hours ago — running reconciliation now.")
+        server_logger.info(
+            "Startup catch-up scan triggered (last successful run was over 6 hours ago).",
+            source="Lot Tagger"
+        )
+        try:
+            run_reconciliation()
+        except Exception as e:
+            logger.error(f"Startup catch-up reconciliation error: {e}", exc_info=True)
+
     last_scan_minute = None
 
     while True:
@@ -211,7 +253,7 @@ def main():
                 time.sleep(60)
                 continue
 
-            # Time-of-day gate: only run at 6:30 AM or 12:00 PM CST (within 1 min window)
+            # Time-of-day gate: only run at 6:30 AM or 12:00 PM CST (within 5 min window)
             now_minute = datetime.datetime.now(CST).strftime('%H:%M')
             if _is_scan_time() and now_minute != last_scan_minute:
                 last_scan_minute = now_minute

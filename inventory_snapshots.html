@@ -215,6 +215,7 @@
     </div>
 
     <script src="/static/dark-mode.js"></script>
+    <script src="/static/timezone-utils.js"></script>
     <script>
         function toggleAdmin() {
             const items = document.getElementById('admin-items');
@@ -334,7 +335,7 @@
                                 </span>
                             </td>
                             <td style="color: var(--text-secondary); font-size: 12px;">
-                                ${snapshot.created_at ? new Date(snapshot.created_at).toLocaleString() : '-'}
+                                ${snapshot.created_at ? formatDateTime(snapshot.created_at) : '-'}
                             </td>
                         </tr>
                     `).join('');

@@ -671,10 +671,27 @@ def register_order_notify_webhook(target_url: str) -> dict:
         if list_response and list_response.status_code == 200:
             existing = list_response.json()
             for webhook in existing.get('webhooks', []):
-                if (webhook.get('event') == 'ORDER_NOTIFY' and
-                        webhook.get('target_url') == target_url):
+                if webhook.get('HookType') != 'ORDER_NOTIFY':
+                    continue
+                webhook_url = webhook.get('Url', '')
+                webhook_id = webhook.get('WebHookID')
+                if webhook_url == target_url:
                     logger.info(f"ORDER_NOTIFY webhook already registered: {target_url}")
                     return {'success': True, 'already_exists': True}
+                # Stale webhook pointing to a different (dead) URL — delete it
+                if webhook_id:
+                    del_headers = {**headers, 'Content-Type': 'application/json'}
+                    del_response = make_api_request(
+                        url=f'https://ssapi.shipstation.com/webhooks/{webhook_id}',
+                        method='DELETE',
+                        headers=del_headers,
+                        timeout=30
+                    )
+                    if del_response and del_response.status_code in (200, 204):
+                        logger.info(f"Deleted stale ORDER_NOTIFY webhook {webhook_id} → {webhook_url}")
+                    else:
+                        status = del_response.status_code if del_response else 'no response'
+                        logger.warning(f"Failed to delete stale webhook {webhook_id}: HTTP {status}")
 
         # Register new webhook
         payload = {

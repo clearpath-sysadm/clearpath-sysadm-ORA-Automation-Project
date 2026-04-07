@@ -984,7 +984,7 @@
             if (diffMins < 1) return 'Just now';
             if (diffMins < 60) return `${diffMins}m ago`;
             if (diffHours < 24) return `${diffHours}h ago`;
-            return then.toLocaleDateString();
+            return formatDate(then);
         }
 
         // Update production health card
@@ -1150,11 +1150,7 @@
                             fedexTitle.textContent = '✅ FedEx Pickup Completed';
                             // Parse UTC timestamp and convert to local time
                             const completedTime = new Date(stats.data.fedex_pickup_completed_at + 'Z');
-                            const localTime = completedTime.toLocaleTimeString('en-US', { 
-                                hour: 'numeric', 
-                                minute: '2-digit',
-                                hour12: true 
-                            });
+                            const localTime = formatTime(completedTime);
                             fedexMessage.textContent = `Pickup scheduled at ${localTime}`;
                             fedexBtn.style.display = 'none';
                             fedexAlert.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
@@ -1647,11 +1643,11 @@
                         html += `<td style="padding: 8px; ${textStyle}">${detail.customer_company || '-'}</td>`;
                         html += `<td style="padding: 8px; ${textStyle}">${detail.order_status}</td>`;
                         html += `<td style="padding: 8px; ${textStyle}">${itemsDisplay}</td>`;
-                        html += `<td style="padding: 8px; ${textStyle}">${new Date(detail.create_date).toLocaleDateString()}</td>`;
+                        html += `<td style="padding: 8px; ${textStyle}">${formatDate(detail.create_date)}</td>`;
                         html += `<td style="padding: 8px;">`;
                         
                         if (isDeleted) {
-                            const deletedDate = detail.deleted_at ? new Date(detail.deleted_at).toLocaleDateString() : '';
+                            const deletedDate = detail.deleted_at ? formatDate(detail.deleted_at) : '';
                             html += `<div style="display: flex; flex-direction: column; gap: 4px;"><span style="padding: 6px 10px; background: #dc2626; color: white; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; text-align: center;">DELETED FROM SHIPSTATION</span><span style="font-size: 11px; color: #6b7280; text-align: center;">${deletedDate}</span></div>`;
                         } else {
                             html += `<div style="display: flex; gap: 6px;">`;
@@ -1705,7 +1701,7 @@
                         html += `<td style="padding: 8px;">${match.ship_company || 'N/A'}</td>`;
                         html += `<td style="padding: 8px;">${match.status}</td>`;
                         html += `<td style="padding: 8px; font-size: 11px;">${itemsDisplay}</td>`;
-                        html += `<td style="padding: 8px;">${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'N/A'}</td>`;
+                        html += `<td style="padding: 8px;">${match.created_at ? formatDate(match.created_at) : 'N/A'}</td>`;
                         
                         // Add Sync Items button if no items
                         if (!hasItems && match.shipstation_order_id) {
@@ -2147,7 +2143,7 @@
                 html += `<td style="padding: 12px 8px; font-size: 12px;">${alert.order_status}</td>`;
                 
                 // Detected
-                html += `<td style="padding: 12px 8px; font-size: 12px; color: var(--text-tertiary);">${new Date(alert.detected_at).toLocaleDateString()}</td>`;
+                html += `<td style="padding: 12px 8px; font-size: 12px; color: var(--text-tertiary);">${formatDate(alert.detected_at)}</td>`;
                 
                 // Action Button
                 html += '<td style="padding: 12px 8px; text-align: center;">';
@@ -2478,7 +2474,7 @@
                 html += '<tbody>';
                 html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">Original Ship Date</td><td style="padding: 8px;">${conflict.original_ship_date || 'N/A'}</td></tr>`;
                 html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">ShipStation Order ID</td><td style="padding: 8px; font-family: monospace; font-size: 11px;">${conflict.shipstation_order_id}</td></tr>`;
-                html += `<tr><td style="padding: 8px; font-weight: 600;">Detected</td><td style="padding: 8px;">${conflict.detected_at}</td></tr>`;
+                html += `<tr><td style="padding: 8px; font-weight: 600;">Detected</td><td style="padding: 8px;">${formatDateTime(conflict.detected_at)}</td></tr>`;
                 html += '</tbody></table>';
                 
                 // Side-by-side comparison of orders

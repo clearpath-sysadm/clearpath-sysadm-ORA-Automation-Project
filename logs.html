@@ -569,6 +569,7 @@
         </main>
     </div>
 
+    <script src="/static/timezone-utils.js"></script>
     <script>
         let autoRefreshInterval = null;
         let searchTimeout = null;
@@ -907,16 +908,7 @@
                     utcString = isoString + 'Z';
                 }
                 const date = new Date(utcString);
-                return date.toLocaleString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true,
-                    timeZoneName: 'short'
-                });
+                return formatDateTimeWithSeconds(date);
             } catch (e) {
                 return isoString;
             }
