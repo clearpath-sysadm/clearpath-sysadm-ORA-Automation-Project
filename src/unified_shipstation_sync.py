@@ -1034,6 +1034,45 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                         
                         logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
         
+        # INVENTORY DEDUCTION: When an existing order transitions to 'shipped',
+        # record a lot deduction for each key-SKU line item.
+        # The idempotency guard inside deduct_lot_inventory (keyed on
+        # lot_id + shipstation_order_id + 'Ship') prevents double-deduction
+        # if this order is seen again in a future sync cycle.
+        if db_status == 'shipped' and items:
+            from src.services.inventory.lot_deduction import deduct_lot_inventory
+
+            order_id = order.get('orderId') or order.get('orderKey')
+            ship_date_str = order.get('shipDate', '')
+            try:
+                ship_date = datetime.datetime.strptime(ship_date_str[:10], '%Y-%m-%d').date()
+            except Exception:
+                ship_date = datetime.date.today()
+
+            cf1 = (lot_stamp or '').strip()
+
+            for item in items:
+                sku_raw = str(item.get('sku', '')).strip()
+                quantity = item.get('quantity', 0)
+
+                if not sku_raw or quantity <= 0:
+                    continue
+
+                base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+
+                if base_sku not in KEY_PRODUCT_SKUS:
+                    continue
+
+                deduct_lot_inventory(
+                    order_number=order_number,
+                    shipstation_order_id=str(order_id),
+                    base_sku=base_sku,
+                    customField1_value=cf1,
+                    ship_date=ship_date,
+                    quantity=quantity,
+                    conn=conn
+                )
+
         logger.info(f"✅ Updated order {order_number} status to '{db_status}'")
         return True
         
