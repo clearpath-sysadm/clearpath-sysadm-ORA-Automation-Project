@@ -826,6 +826,7 @@ def v2_get_pending_axiom_shipments() -> dict:
         }
 
         shipment_ids = []
+        skipped = 0
         page = 1
 
         while True:
@@ -835,7 +836,6 @@ def v2_get_pending_axiom_shipments() -> dict:
                 headers=headers,
                 params={
                     'shipment_status': 'pending',
-                    'warehouse_id': settings.AXIOM_WAREHOUSE_ID,
                     'page_size': 500,
                     'page': page,
                 },
@@ -849,19 +849,35 @@ def v2_get_pending_axiom_shipments() -> dict:
 
             data = response.json()
             batch = data.get('shipments', [])
+            page_axiom = 0
             for shipment in batch:
                 sid = shipment.get('shipment_id')
-                if sid:
-                    shipment_ids.append(sid)
+                wh = shipment.get('warehouse_id')
+                if not sid:
+                    continue
+                # Client-side filter: only include shipments from the Axiom warehouse.
+                # The warehouse_id query param is not reliably honored by the V2 API.
+                if wh != settings.AXIOM_WAREHOUSE_ID:
+                    skipped += 1
+                    logger.debug(f"Skipping shipment {sid} — warehouse {wh} is not Axiom")
+                    continue
+                shipment_ids.append(sid)
+                page_axiom += 1
 
             total_pages = data.get('pages', 1)
-            logger.info(f"V2 shipments page {page}/{total_pages}: {len(batch)} pending")
+            logger.info(
+                f"V2 shipments page {page}/{total_pages}: "
+                f"{page_axiom} Axiom, {len(batch) - page_axiom} non-Axiom (skipped)"
+            )
 
             if page >= total_pages:
                 break
             page += 1
 
-        logger.info(f"V2 pending Axiom shipments total: {len(shipment_ids)}")
+        logger.info(
+            f"V2 pending Axiom shipments: {len(shipment_ids)} included, "
+            f"{skipped} non-Axiom skipped"
+        )
         return {'success': True, 'shipment_ids': shipment_ids}
 
     except Exception as e:
