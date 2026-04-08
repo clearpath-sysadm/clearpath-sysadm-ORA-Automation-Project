@@ -56,10 +56,14 @@ def _is_batch_time() -> bool:
 
 
 def _is_dev_blocked() -> bool:
-    """Return True if running in a dev workspace and ALLOW_DEV_UPLOAD is not set."""
+    """Return True if running in a dev workspace and neither DEV_WORKERS_ACTIVE
+    nor ALLOW_DEV_UPLOAD is set to 'true'."""
     repl_slug = os.getenv('REPL_SLUG', '').lower()
     environment = os.getenv('ENVIRONMENT', '').lower()
-    allow_dev = os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
+    allow_dev = (
+        os.getenv('DEV_WORKERS_ACTIVE', '').lower() == 'true'
+        or os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
+    )
 
     if 'workspace' in repl_slug:
         is_dev = True

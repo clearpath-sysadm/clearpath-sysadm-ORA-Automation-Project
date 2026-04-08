@@ -30,7 +30,7 @@ from src.lot_tagger.tagger import build_lot_maps
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.api_utils import make_api_request
-from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status, is_dev_silent
 
 server_logger = get_logger()
 SHIPSTATION_ORDERS_ENDPOINT = 'https://ssapi.shipstation.com/orders'
@@ -239,6 +239,11 @@ def main():
 
     while True:
         try:
+            if is_dev_silent():
+                logger.debug("DEV SILENT MODE — set DEV_WORKERS_ACTIVE=true in Secrets to enable.")
+                time.sleep(60)
+                continue
+
             if not is_business_hours():
                 status = format_business_hours_status()
                 logger.info(status)

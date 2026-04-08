@@ -207,10 +207,13 @@ def upload_pending_orders():
     # This prevents accidental uploads even if workflow-level checks fail
     repl_slug = os.getenv('REPL_SLUG', '').lower()
     environment = os.getenv('ENVIRONMENT', '').lower()
-    allow_dev_upload = os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
-    
+    allow_dev_upload = (
+        os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
+        or os.getenv('DEV_WORKERS_ACTIVE', '').lower() == 'true'
+    )
+
     # Block workspace environments - REPL_SLUG takes priority over ENVIRONMENT
-    # OVERRIDE: Set ALLOW_DEV_UPLOAD=true in Secrets to enable dev uploads (use with caution!)
+    # OVERRIDE: Set DEV_WORKERS_ACTIVE=true or ALLOW_DEV_UPLOAD=true in Secrets to enable
     if 'workspace' in repl_slug and not allow_dev_upload:
         logger.warning(f"🛑 UPLOAD BLOCKED: Workspace environment detected (REPL_SLUG={repl_slug})")
         logger.warning("   Uploads are only allowed in production deployments, not workspaces")
@@ -821,18 +824,20 @@ def run_scheduled_upload():
     # ============================================
     repl_slug = os.getenv('REPL_SLUG', '').lower()
     environment = os.getenv('ENVIRONMENT', '').lower()
-    allow_dev_upload = os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
-    
-    # Detect development environment
+    allow_dev_upload = (
+        os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
+        or os.getenv('DEV_WORKERS_ACTIVE', '').lower() == 'true'
+    )
+
     # CRITICAL FIX: REPL_SLUG takes priority - if it contains "workspace", block uploads
-    # OVERRIDE: Set ALLOW_DEV_UPLOAD=true in Secrets to enable dev uploads (use with caution!)
+    # OVERRIDE: Set DEV_WORKERS_ACTIVE=true or ALLOW_DEV_UPLOAD=true in Secrets to enable
     if 'workspace' in repl_slug:
-        is_dev = True  # Always block workspace environments
+        is_dev = True
     elif environment == 'production':
-        is_dev = False  # Only trust ENVIRONMENT=production if REPL_SLUG is not workspace
+        is_dev = False
     else:
-        is_dev = True  # Default to blocking (safe default)
-    
+        is_dev = True
+
     if is_dev and not allow_dev_upload:
         logger.warning("=" * 80)
         logger.warning("🛑 UPLOAD SERVICE DISABLED IN DEVELOPMENT ENVIRONMENT")
@@ -949,15 +954,18 @@ def run_once():
     # SAFETY: Check environment
     repl_slug = os.getenv('REPL_SLUG', '').lower()
     environment = os.getenv('ENVIRONMENT', '').lower()
-    allow_dev_upload = os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
-    
+    allow_dev_upload = (
+        os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
+        or os.getenv('DEV_WORKERS_ACTIVE', '').lower() == 'true'
+    )
+
     if 'workspace' in repl_slug:
         is_dev = True
     elif environment == 'production':
         is_dev = False
     else:
         is_dev = True
-    
+
     if is_dev and not allow_dev_upload:
         logger.error("=" * 80)
         logger.error("🛑 UPLOAD BLOCKED: Running in development/workspace environment")

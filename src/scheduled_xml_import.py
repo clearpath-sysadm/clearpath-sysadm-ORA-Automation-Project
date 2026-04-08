@@ -18,7 +18,7 @@ from src.services.google_drive.api_client import list_xml_files_from_folder, fet
 from src.services.database import get_connection, transaction_with_retry, is_workflow_enabled, update_workflow_last_run
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
-from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status, is_dev_silent
 import defusedxml.ElementTree as ET
 
 WORKFLOW_NAME = 'xml-import'
@@ -485,6 +485,12 @@ def run_scheduled_import():
     
     while True:
         try:
+            # PRIORITY 0: Dev workspace silence guard
+            if is_dev_silent():
+                logger.debug("DEV SILENT MODE — set DEV_WORKERS_ACTIVE=true in Secrets to enable.")
+                time.sleep(60)
+                continue
+
             # PRIORITY 1: Check business hours BEFORE any database queries
             if not is_business_hours():
                 status = format_business_hours_status()

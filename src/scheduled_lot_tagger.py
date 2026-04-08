@@ -29,11 +29,11 @@ from src.services.database.pg_utils import (
 from src.services.shipstation.api_client import (
     get_shipstation_credentials, get_shipstation_headers, register_order_notify_webhook
 )
-from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
+from src.lot_tagger.tagger import build_lot_maps, tag_order_lots, verify_tagging_results
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.api_utils import make_api_request
-from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status, is_dev_silent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -170,6 +170,15 @@ def run_reconciliation():
                 failed += 1
                 logger.error(f"Error processing order {order.get('orderNumber')}: {e}", exc_info=True)
 
+        try:
+            qa = verify_tagging_results(all_orders, active_lots, known_skus, conn)
+            logger.info(
+                f"QA: {qa['tagged_correctly']}/{qa['total_tracked']} tracked orders correct, "
+                f"{qa['untagged_or_wrong']} untagged/wrong."
+            )
+        except Exception as e:
+            logger.error(f"QA verification failed: {e}", exc_info=True)
+
     update_workflow_last_run(WORKFLOW_NAME)
 
     summary = (
@@ -188,6 +197,14 @@ def run_reconciliation():
 
 def register_webhook_on_startup():
     """Register the ORDER_NOTIFY webhook with ShipStation (idempotent)."""
+    # Never register from the dev workspace — prod always owns the ORDER_NOTIFY webhook.
+    # Dev catches missed orders via the twice-daily reconciliation sweep instead.
+    # This guard is unconditional: even DEV_WORKERS_ACTIVE=true does not override it.
+    repl_slug = os.getenv('REPL_SLUG', '').lower()
+    if 'workspace' in repl_slug:
+        logger.info("Dev workspace — skipping webhook registration (prod always owns the webhook).")
+        return
+
     token = os.getenv('SHIPSTATION_WEBHOOK_TOKEN')
     if not token:
         logger.warning("SHIPSTATION_WEBHOOK_TOKEN not set — skipping webhook registration.")
@@ -225,7 +242,7 @@ def main():
 
     register_webhook_on_startup()
 
-    if _should_run_startup_catchup():
+    if not is_dev_silent() and _should_run_startup_catchup():
         logger.info("Startup catch-up: last run was over 6 hours ago — running reconciliation now.")
         server_logger.info(
             "Startup catch-up scan triggered (last successful run was over 6 hours ago).",
@@ -240,6 +257,11 @@ def main():
 
     while True:
         try:
+            if is_dev_silent():
+                logger.debug("DEV SILENT MODE — set DEV_WORKERS_ACTIVE=true in Secrets to enable.")
+                time.sleep(60)
+                continue
+
             if not is_business_hours():
                 status = format_business_hours_status()
                 logger.info(status)

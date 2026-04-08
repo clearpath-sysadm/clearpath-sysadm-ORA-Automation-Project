@@ -67,7 +67,7 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
     Service code rules (highest priority first):
       - Preserve existing fedex_2day (never downgrade)
       - HI destination  → fedex_2day
-      - CA destination  → fedex_international_ground
+      - CA destination  → fedex_ground_international
       - Default         → fedex_ground
 
     Billing account:
@@ -80,6 +80,11 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
     Returns a dict with keys:
         carrier_code, service_code, bill_to_party, bill_to_account,
         package_code, weight_oz, length, width, height
+
+    NOTE: internationalOptions (customs declarations) are intentionally never
+    set by the tagger. ShipStation auto-populates these when destination country
+    is CA. Never add internationalOptions to the update payload — it would
+    overwrite ShipStation's existing customs data with null values.
     """
     ship_to = order.get('shipTo') or {}
     state   = (ship_to.get('state')   or '').strip().upper()
@@ -92,7 +97,7 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
     elif state == 'HI':
         service_code = 'fedex_2day'
     elif country == 'CA':
-        service_code = 'fedex_international_ground'
+        service_code = 'fedex_ground_international'
     else:
         service_code = 'fedex_ground'
 
@@ -659,3 +664,142 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
           AND resolved_at IS NULL
     """, (str(order_id),))
     conn.commit()
+
+
+def verify_tagging_results(
+    orders: list,
+    active_lots: Dict[str, str],
+    known_skus: Set[str],
+    conn,
+) -> dict:
+    """
+    QA verification pass over the orders processed by the reconciliation run.
+
+    Scans the in-memory order list (no extra API calls) and checks whether each
+    tracked order has the expected customField1.  Reports a summary and creates a
+    production_incidents record when failures are found.
+
+    'Tracked' orders are those with a known SKU or a lot-stamped compound SKU.
+    Home-office-only orders are excluded (they have no customField1 requirement).
+
+    Returns:
+        {
+            'total_checked': int,       # total awaiting_shipment orders inspected
+            'total_tracked': int,       # orders with tracked or lot-stamped SKUs
+            'tagged_correctly': int,    # tracked orders whose customField1 is correct
+            'untagged_or_wrong': int,   # tracked orders with missing/wrong customField1
+        }
+    """
+    total_tracked = 0
+    tagged_correctly = 0
+    untagged_or_wrong = 0
+    failures = []
+
+    for order in orders:
+        order_number = order.get('orderNumber', '').strip()
+        order_id     = order.get('orderId')
+        items        = order.get('items', [])
+        current_cf1  = ((order.get('advancedOptions') or {}).get('customField1') or '').strip()
+
+        tracked_items = [item for item in items if str(item.get('sku', '')).strip() in known_skus]
+
+        if tracked_items:
+            unique_skus = list({str(item.get('sku', '')).strip() for item in tracked_items})
+            if len(unique_skus) > 1:
+                continue
+            sku = unique_skus[0]
+            lot_number = active_lots.get(sku)
+            if not lot_number:
+                continue
+            expected_cf1 = f"{sku} - {lot_number}"
+            total_tracked += 1
+            if current_cf1 == expected_cf1:
+                tagged_correctly += 1
+            else:
+                untagged_or_wrong += 1
+                failures.append((order_number, order_id, expected_cf1, current_cf1))
+            continue
+
+        stamped_items = []
+        for item in items:
+            parsed = _parse_lot_stamped_sku(str(item.get('sku', '')).strip())
+            if parsed:
+                stamped_items.append(parsed)
+
+        if stamped_items:
+            unique_bases = {base for base, _ in stamped_items}
+            if len(unique_bases) > 1:
+                continue
+            _, expected_cf1 = stamped_items[0]
+            total_tracked += 1
+            if current_cf1 == expected_cf1:
+                tagged_correctly += 1
+            else:
+                untagged_or_wrong += 1
+                failures.append((order_number, order_id, expected_cf1, current_cf1))
+
+    summary = {
+        'total_checked': len(orders),
+        'total_tracked': total_tracked,
+        'tagged_correctly': tagged_correctly,
+        'untagged_or_wrong': untagged_or_wrong,
+    }
+
+    failure_detail = '; '.join(
+        f"{on}(SS:{oid}) exp='{ex}' got='{ac}'"
+        for on, oid, ex, ac in failures[:5]
+    )
+    if len(failures) > 5:
+        failure_detail += f' ... and {len(failures) - 5} more'
+
+    if untagged_or_wrong == 0:
+        server_logger.info(
+            f"LOT TAGGER QA PASS: {tagged_correctly}/{total_tracked} tracked orders correctly tagged "
+            f"({len(orders)} total awaiting_shipment scanned).",
+            source="Lot Tagger"
+        )
+    else:
+        server_logger.error(
+            f"LOT TAGGER QA FAIL: {untagged_or_wrong}/{total_tracked} tracked orders have "
+            f"missing or incorrect customField1 after tagging run. {failure_detail}",
+            source="Lot Tagger"
+        )
+
+        try:
+            cursor = conn.cursor()
+            title = (
+                f"Lot Tagger QA: {untagged_or_wrong} orders untagged/wrong after reconciliation"
+            )
+            cursor.execute(
+                """
+                SELECT id FROM production_incidents
+                WHERE title = %s AND status = 'new'
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                (title,)
+            )
+            if not cursor.fetchone():
+                cursor.execute(
+                    """
+                    INSERT INTO production_incidents (title, description, severity, reported_by)
+                    VALUES (%s, %s, 'high', 'lot-tagger (automated)')
+                    """,
+                    (
+                        title,
+                        (
+                            f"{untagged_or_wrong} of {total_tracked} tracked awaiting_shipment orders "
+                            f"still have missing or wrong customField1 after the reconciliation run. "
+                            f"Failures: {failure_detail}"
+                        ),
+                    )
+                )
+                conn.commit()
+                server_logger.error(
+                    "Production incident opened for lot tagger QA failure.",
+                    source="Lot Tagger"
+                )
+            cursor.close()
+        except Exception as exc:
+            logger.error(f"Failed to create production incident for QA failure: {exc}", exc_info=True)
+
+    return summary

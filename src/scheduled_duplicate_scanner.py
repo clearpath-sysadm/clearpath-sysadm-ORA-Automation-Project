@@ -22,7 +22,7 @@ from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from config.settings import settings
 from utils.api_utils import make_api_request
-from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status
+from utils.business_hours import is_business_hours, get_sleep_until_business_hours, format_business_hours_status, is_dev_silent
 
 WORKFLOW_NAME = 'duplicate-scanner'
 server_logger = get_logger()
@@ -517,6 +517,12 @@ def run_scheduled_scanner():
     
     while True:
         try:
+            # PRIORITY 0: Dev workspace silence guard
+            if is_dev_silent():
+                logger.debug("DEV SILENT MODE — set DEV_WORKERS_ACTIVE=true in Secrets to enable.")
+                time.sleep(60)
+                continue
+
             # PRIORITY 1: Check business hours BEFORE any database queries
             if not is_business_hours():
                 status = format_business_hours_status()

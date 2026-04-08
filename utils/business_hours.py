@@ -140,6 +140,34 @@ def format_business_hours_status() -> str:
         return f"⚠️ Error getting status: {e}"
 
 
+def is_dev_silent() -> bool:
+    """
+    Return True when running in a dev workspace and DEV_WORKERS_ACTIVE is not 'true'.
+
+    When True, workers should sleep without making any API or DB calls.
+    Set DEV_WORKERS_ACTIVE=true in Secrets only when actively developing
+    against the live ShipStation account.
+
+    Detection logic:
+      - REPL_SLUG contains 'workspace'  → dev workspace (default block)
+      - ENVIRONMENT == 'production'     → trusted prod only when REPL_SLUG is absent
+      - Anything else                   → treated as dev (safe default)
+    """
+    import os
+    repl_slug = os.getenv('REPL_SLUG', '').lower()
+    environment = os.getenv('ENVIRONMENT', '').lower()
+    dev_active = os.getenv('DEV_WORKERS_ACTIVE', '').lower() == 'true'
+
+    if 'workspace' in repl_slug:
+        is_dev = True
+    elif environment == 'production':
+        is_dev = False
+    else:
+        is_dev = True
+
+    return is_dev and not dev_active
+
+
 if __name__ == '__main__':
     # Test the business hours logic
     print("Business Hours Utility - Test Mode")
