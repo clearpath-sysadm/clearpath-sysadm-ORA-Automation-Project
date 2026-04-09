@@ -365,6 +365,7 @@ def extract_carrier_service_info(order: Dict[Any, Any]) -> Dict[str, Any]:
     if service_code:
         service_name_map = {
             'fedex_2day': 'FedEx 2Day',
+            'fedex_ground_international': 'FedEx International Ground',
             'fedex_international_ground': 'FedEx International Ground',
             'fedex_ground': 'FedEx Ground',
             'fedex_home_delivery': 'FedEx Home Delivery',

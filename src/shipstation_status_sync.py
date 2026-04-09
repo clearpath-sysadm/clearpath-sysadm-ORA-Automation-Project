@@ -182,6 +182,7 @@ def update_order_status(local_order: Dict[str, Any], shipstation_order: Dict[str
             # Map common service codes to names
             service_name_map = {
                 'fedex_2day': 'FedEx 2Day',
+                'fedex_ground_international': 'FedEx International Ground',
                 'fedex_international_ground': 'FedEx International Ground',
                 'fedex_ground': 'FedEx Ground',
                 'fedex_home_delivery': 'FedEx Home Delivery',
@@ -318,6 +319,7 @@ def sync_order_from_shipstation(shipstation_order: Dict[str, Any], conn=None) ->
         if service_code:
             service_name_map = {
                 'fedex_2day': 'FedEx 2Day',
+                'fedex_ground_international': 'FedEx International Ground',
                 'fedex_international_ground': 'FedEx International Ground',
                 'fedex_ground': 'FedEx Ground',
                 'fedex_home_delivery': 'FedEx Home Delivery',
@@ -542,6 +544,7 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
             if service_code:
                 service_name_map = {
                     'fedex_2day': 'FedEx 2Day',
+                    'fedex_ground_international': 'FedEx International Ground',
                     'fedex_international_ground': 'FedEx International Ground',
                     'fedex_ground': 'FedEx Ground',
                     'fedex_home_delivery': 'FedEx Home Delivery',

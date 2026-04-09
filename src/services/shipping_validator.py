@@ -95,7 +95,7 @@ def validate_order_shipping(order: Dict[str, Any]) -> tuple[str, List[Dict[str, 
     
     # Rule 2: Canadian orders should use FedEx International Ground
     if ship_country in ['CA', 'CANADA']:
-        expected_service = 'fedex_international_ground'
+        expected_service = 'fedex_ground_international'
         if service_code != expected_service:
             violations.append({
                 'order_inbox_id': order_id,
