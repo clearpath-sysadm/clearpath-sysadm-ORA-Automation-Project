@@ -11008,6 +11008,18 @@ if __name__ == '__main__':
     server_logger = get_logger()
     server_logger.info('Dashboard server starting...', source='app')
 
+    # Run startup migrations (dedup + constraint enforcement) before serving traffic
+    try:
+        from src.services.database.startup_migrations import run_all as run_startup_migrations
+        from src.services.database.pg_utils import get_connection
+        _mig_conn = get_connection()
+        try:
+            run_startup_migrations(_mig_conn)
+        finally:
+            _mig_conn.close()
+    except Exception as _mig_exc:
+        logger.error(f'Startup migrations failed: {_mig_exc}', exc_info=True)
+
     # Bind to 0.0.0.0 on PORT env var (default 5000) for Replit
     port = int(os.environ.get('PORT', os.environ.get('FLASK_PORT', 5000)))
     app.run(host='0.0.0.0', port=port, debug=False)

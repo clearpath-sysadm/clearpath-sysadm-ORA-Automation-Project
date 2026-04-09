@@ -155,33 +155,44 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                     logger.warning(mismatch_msg)
                     server_logger.warning(mismatch_msg, source="Lot Mismatch")
 
+                    # Check whether an unresolved alert already exists for this order
                     cursor.execute("""
-                        INSERT INTO lot_mismatch_alerts (
+                        SELECT id FROM lot_mismatch_alerts
+                        WHERE shipstation_order_id = %s
+                          AND resolved_at IS NULL
+                        LIMIT 1
+                    """, (str(order_id),))
+                    existing = cursor.fetchone()
+
+                    if existing:
+                        cursor.execute("""
+                            UPDATE lot_mismatch_alerts
+                               SET shipstation_lot = %s,
+                                   active_lot = %s,
+                                   order_status = %s,
+                                   detected_at = CURRENT_TIMESTAMP
+                             WHERE id = %s
+                        """, (cf1_lot, active_lots[base_sku], order_status, existing[0]))
+                    else:
+                        cursor.execute("""
+                            INSERT INTO lot_mismatch_alerts (
+                                order_number,
+                                base_sku,
+                                shipstation_lot,
+                                active_lot,
+                                shipstation_order_id,
+                                order_status,
+                                detected_at
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        """, (
                             order_number,
                             base_sku,
-                            shipstation_lot,
-                            active_lot,
-                            shipstation_order_id,
-                            order_status,
-                            detected_at
-                        )
-                        VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                        ON CONFLICT (shipstation_order_id) DO UPDATE
-                            SET shipstation_lot = EXCLUDED.shipstation_lot,
-                                active_lot = EXCLUDED.active_lot,
-                                order_status = EXCLUDED.order_status,
-                                detected_at = CURRENT_TIMESTAMP
-                            WHERE lot_mismatch_alerts.resolved_at IS NULL
-                    """, (
-                        order_number,
-                        base_sku,
-                        cf1_lot,
-                        active_lots[base_sku],
-                        str(order_id),
-                        order_status
-                    ))
-
-                    if cursor.rowcount > 0:
+                            cf1_lot,
+                            active_lots[base_sku],
+                            str(order_id),
+                            order_status
+                        ))
                         mismatches_created += 1
 
                     break  # One tracked SKU per order (auto-split); stop after first match
