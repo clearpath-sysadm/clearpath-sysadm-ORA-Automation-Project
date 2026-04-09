@@ -4,7 +4,7 @@ Business Hours Utility
 Centralized business hours checking for all automation workflows.
 
 BUSINESS HOURS:
-- Monday - Friday: 6 AM - 6 PM Central Time (CST/CDT)
+- Monday - Friday: 6 AM - 6 PM Central Time (CT)
 - Saturday: OFF
 - Sunday: OFF
 
@@ -22,8 +22,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-BUSINESS_START_HOUR = 6   # 6 AM CST
-BUSINESS_END_HOUR = 18    # 6 PM CST (18:00 in 24-hour format)
+BUSINESS_START_HOUR = 6   # 6 AM CT
+BUSINESS_END_HOUR = 18    # 6 PM CT (18:00 in 24-hour format)
 TIMEZONE = 'America/Chicago'  # Central Time
 
 

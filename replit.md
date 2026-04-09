@@ -62,7 +62,7 @@ The Oracare Fulfillment System is a production-ready order management platform t
 - `logs.html` - Server Logs viewer (Admin only)
 - `email_contacts.html`, `settings.html`, `help.html`, `landing.html` - Utility pages
 
-**Automation Workflows (10):**
+**Automation Workflows (9):**
 | Workflow | Script | Interval |
 |----------|--------|----------|
 | dashboard-server | `app.py` | Continuous |
@@ -73,12 +73,11 @@ The Oracare Fulfillment System is a production-ready order management platform t
 | lot-mismatch-scanner | `scheduled_lot_mismatch_scanner.py` | 15 min |
 | lot-tagger | `scheduled_lot_tagger.py` | 6:30 AM & 12:00 PM CT |
 | batch-processor | `scheduled_batch_processor.py` | 12:00 PM CT (business days) |
-| stuck-workflow-detector | `scheduled_stuck_workflow_detector.py` | 15 min |
 | orders-cleanup | `scheduled_cleanup.py` | Daily |
 
-**Workflow Health Monitoring:** Automatic detection of stuck workflows via heartbeat system. All workflows log heartbeats (started/completed/error phases) to `workflow_heartbeats` table. Detector runs every 15 minutes, creates incidents in `stuck_workflow_incidents`, and can auto-reset stuck workflows.
+**Workflow Health Monitoring:** All workflows log heartbeats (started/completed/error phases) to `workflow_heartbeats` table. Health status visible on Workflow Controls page (health badges, reset buttons, incident history). APIs: `/api/workflow_health`, `/api/workflow/{name}/reset`, `/api/stuck_workflow_incidents`.
 
-**Business Hours:** Monday-Friday 6 AM - 6 PM CST (64% compute reduction)
+**Business Hours:** Monday-Friday 6 AM - 6 PM CT (64% compute reduction)
 
 ### Role-Based Access Control
 - **Admin:** Full system access including all CRUD, reports (EOD/EOW/EOM), charge reports, workflow controls

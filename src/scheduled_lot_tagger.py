@@ -275,7 +275,7 @@ def main():
                 time.sleep(60)
                 continue
 
-            # Time-of-day gate: only run at 6:30 AM or 12:00 PM CST (within 5 min window)
+            # Time-of-day gate: only run at 6:30 AM or 12:00 PM CT (within 5 min window)
             now_minute = datetime.datetime.now(CST).strftime('%H:%M')
             if _is_scan_time() and now_minute != last_scan_minute:
                 last_scan_minute = now_minute

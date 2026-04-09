@@ -50,10 +50,6 @@ echo "Starting lot mismatch scanner (every 15 min)..."
 python src/scheduled_lot_mismatch_scanner.py 2>&1 &
 LOT_PID=$!
 
-echo "Starting stuck workflow detector (every 15 min)..."
-python src/scheduled_stuck_workflow_detector.py 2>&1 &
-STUCK_PID=$!
-
 # Give background processes a moment to start
 sleep 1
 
@@ -66,7 +62,6 @@ echo "   - Cleanup: PID $CLEANUP_PID"
 echo "   - Units Refresh: PID $UNITS_PID"
 echo "   - Duplicate Scanner: PID $DUP_PID"
 echo "   - Lot Mismatch Scanner: PID $LOT_PID"
-echo "   - Stuck Workflow Detector: PID $STUCK_PID"
 echo "   - Weekly Reporter: MANUAL (EOW button)"
 echo "================================================"
 echo ""
@@ -80,4 +75,4 @@ exec python app.py
 
 # If Flask exits, kill background processes
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Dashboard stopped, shutting down background processes..."
-kill $XML_PID $UPLOAD_PID $UNIFIED_PID $CLEANUP_PID $UNITS_PID $DUP_PID $LOT_PID $STUCK_PID 2>/dev/null
+kill $XML_PID $UPLOAD_PID $UNIFIED_PID $CLEANUP_PID $UNITS_PID $DUP_PID $LOT_PID 2>/dev/null
