@@ -75,10 +75,16 @@ def _is_dev_blocked() -> bool:
     return is_dev and not allow_dev
 
 
-def run_batch_job():
+def run_batch_job() -> str:
     """
     Fetch all pending Axiom shipments, create a V2 batch, and trigger label processing.
     Logs results to the server logger for visibility in the dashboard.
+
+    Returns one of:
+        'completed' — batch created and labels triggered successfully
+        'skipped'   — no pending Axiom shipments; nothing to do
+        'blocked'   — running in dev workspace and upload not enabled
+        'error'     — an API call failed (details already logged)
     """
     today_ct = datetime.datetime.now(CST)
     ship_date = today_ct.strftime('%Y-%m-%d')
@@ -97,7 +103,7 @@ def run_batch_job():
             "Batch processor blocked: running in workspace environment.",
             source="Batch Processor"
         )
-        return
+        return 'blocked'
 
     result = v2_get_pending_axiom_shipments()
     if not result.get('success'):
@@ -107,7 +113,7 @@ def run_batch_job():
             f"Batch processor failed to fetch pending shipments: {error}",
             source="Batch Processor"
         )
-        return
+        return 'error'
 
     shipment_ids = result['shipment_ids']
 
@@ -118,8 +124,7 @@ def run_batch_job():
             source="Batch Processor"
         )
         update_workflow_last_run(WORKFLOW_NAME)
-        heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_pending_shipments'})
-        return
+        return 'skipped'
 
     logger.info(f"Found {len(shipment_ids)} pending Axiom shipment(s) — creating batch...")
 
@@ -131,7 +136,7 @@ def run_batch_job():
             f"Batch processor failed to create batch ({len(shipment_ids)} shipments): {error}",
             source="Batch Processor"
         )
-        return
+        return 'error'
 
     batch_id = batch_result['batch_id']
     logger.info(f"Batch created: {batch_id} — triggering label processing...")
@@ -144,7 +149,7 @@ def run_batch_job():
             f"Batch {batch_id} created but label processing failed: {error}",
             source="Batch Processor"
         )
-        return
+        return 'error'
 
     update_workflow_last_run(WORKFLOW_NAME)
 
@@ -157,6 +162,7 @@ def run_batch_job():
     logger.info(f"BATCH PROCESSOR COMPLETE — {len(shipment_ids)} shipments, batch {batch_id}")
     logger.info("=" * 70)
     server_logger.info(summary, source="Batch Processor")
+    return 'completed'
 
 
 def main():
@@ -193,8 +199,13 @@ def main():
                 last_batch_minute = now_minute
                 heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
                 try:
-                    run_batch_job()
-                    heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
+                    status = run_batch_job()
+                    if status == 'skipped':
+                        heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_pending_shipments'})
+                    elif status == 'error':
+                        heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'reason': 'api_call_failed'})
+                    else:
+                        heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
                 except Exception as e:
                     heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
                     logger.error(f"Batch job error: {e}", exc_info=True)
