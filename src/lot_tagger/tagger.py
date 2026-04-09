@@ -768,15 +768,14 @@ def verify_tagging_results(
         try:
             cursor = conn.cursor()
             title = (
-                f"Lot Tagger QA: {untagged_or_wrong} orders untagged/wrong after reconciliation"
+                f"Lot Tagger QA: {untagged_or_wrong} order(s) untagged/wrong after reconciliation"
             )
             cursor.execute(
                 """
                 SELECT id FROM production_incidents
-                WHERE title = %s AND status = 'new'
+                WHERE title LIKE 'Lot Tagger QA%' AND status = 'new'
                 ORDER BY created_at DESC LIMIT 1
                 """,
-                (title,)
             )
             if not cursor.fetchone():
                 cursor.execute(
