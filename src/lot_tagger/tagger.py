@@ -4,6 +4,7 @@ Lot Tagger — shared tag_order_lots() function.
 Called by both the webhook handler (Flask) and the reconciliation scheduler.
 Callers must build active_lots and known_skus from the DB before calling this.
 """
+import hashlib
 import os
 import logging
 from datetime import datetime, timezone
@@ -767,15 +768,21 @@ def verify_tagging_results(
 
         try:
             cursor = conn.cursor()
-            # Build a deterministic title keyed on the sorted set of failing order
-            # numbers so that identical failure sets deduplicate via exact match,
-            # while a different set of failing orders generates a new incident.
+            # Build a collision-proof title keyed on the exact sorted set of
+            # failing order numbers. A short SHA-256 hash of the full sorted list
+            # is embedded in the title so that:
+            #   • exact same failure set  → same title  → deduplicated (no new incident)
+            #   • any different set       → different title → new incident created
+            # The human-readable truncated list is kept for operator visibility.
             failing_order_nums = sorted(on for on, oid, ex, ac in failures)
+            order_hash = hashlib.sha256(
+                ','.join(failing_order_nums).encode()
+            ).hexdigest()[:8]
             if len(failing_order_nums) <= 5:
                 order_key = ', '.join(failing_order_nums)
             else:
                 order_key = ', '.join(failing_order_nums[:5]) + f' (+{len(failing_order_nums) - 5} more)'
-            title = f"Lot Tagger QA: [{order_key}] untagged/wrong after reconciliation"
+            title = f"Lot Tagger QA: [{order_key}] untagged/wrong [ref:{order_hash}]"
             cursor.execute(
                 """
                 SELECT id FROM production_incidents
