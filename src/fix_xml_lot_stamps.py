@@ -65,14 +65,17 @@ def lookup_order_by_number(order_number: str, headers: dict) -> dict | None:
     return orders[0]
 
 
-def fix_order(order_number: str, headers: dict) -> bool:
+def fix_order(order_number: str, headers: dict) -> str:
     """
     Look up order_number, update CF1 to CORRECT_CF1 if needed, then verify V2 package.
-    Returns True on full success.
+    Returns:
+        'ok'        — completed without error (already correct or updated)
+        'not_found' — order does not exist in ShipStation (already shipped/removed)
+        'error'     — API call failed
     """
     order = lookup_order_by_number(order_number, headers)
     if order is None:
-        return False
+        return 'not_found'
 
     order_id = order.get('orderId')
     status = order.get('orderStatus', '')
@@ -90,13 +93,13 @@ def fix_order(order_number: str, headers: dict) -> bool:
         result = update_order_custom_fields(order_id, CORRECT_CF1, None)
         if not result.get('success'):
             logger.error(f"Order {order_number}: CF1 update failed — {result.get('error')}")
-            return False
+            return 'error'
         logger.info(f"Order {order_number}: CF1 updated successfully")
 
     profile = SKU_SHIPPING_PROFILES.get(BASE_SKU)
     if not profile:
         logger.warning(f"Order {order_number}: SKU {BASE_SKU} not in SKU_SHIPPING_PROFILES — skipping V2")
-        return True
+        return 'ok'
 
     v2_result = ensure_v2_package(order_id, order_number, profile, num_packages=1)
     action = v2_result.get('action')
@@ -108,9 +111,9 @@ def fix_order(order_number: str, headers: dict) -> bool:
         logger.info(f"Order {order_number}: V2 package skipped (no package_id in profile)")
     else:
         logger.error(f"Order {order_number}: V2 package error — {v2_result.get('error')}")
-        return False
+        return 'error'
 
-    return True
+    return 'ok'
 
 
 def main():
@@ -128,19 +131,20 @@ def main():
     results = {}
     for order_number in ORDER_NUMBERS:
         logger.info(f"--- Processing order {order_number} ---")
-        success = fix_order(order_number, headers)
-        results[order_number] = success
+        outcome = fix_order(order_number, headers)
+        results[order_number] = outcome
         time.sleep(0.5)
 
     logger.info("=" * 60)
     logger.info("RESULTS:")
-    for order_number, success in results.items():
-        status = "OK" if success else "NOT FOUND / FAILED"
-        logger.info(f"  Order {order_number}: {status}")
+    for order_number, outcome in results.items():
+        label = {'ok': 'OK', 'not_found': 'NOT FOUND (already shipped/removed)', 'error': 'ERROR'}.get(outcome, outcome)
+        logger.info(f"  Order {order_number}: {label}")
 
-    logger.info(
-        "Note: orders not found in ShipStation were likely already shipped or removed."
-    )
+    errors = [o for o, r in results.items() if r == 'error']
+    if errors:
+        logger.error(f"Errors on orders: {errors}")
+        sys.exit(1)
     logger.info("Fix script complete.")
 
 
