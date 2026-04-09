@@ -767,15 +767,22 @@ def verify_tagging_results(
 
         try:
             cursor = conn.cursor()
-            title = (
-                f"Lot Tagger QA: {untagged_or_wrong} order(s) untagged/wrong after reconciliation"
-            )
+            # Build a deterministic title keyed on the sorted set of failing order
+            # numbers so that identical failure sets deduplicate via exact match,
+            # while a different set of failing orders generates a new incident.
+            failing_order_nums = sorted(on for on, oid, ex, ac in failures)
+            if len(failing_order_nums) <= 5:
+                order_key = ', '.join(failing_order_nums)
+            else:
+                order_key = ', '.join(failing_order_nums[:5]) + f' (+{len(failing_order_nums) - 5} more)'
+            title = f"Lot Tagger QA: [{order_key}] untagged/wrong after reconciliation"
             cursor.execute(
                 """
                 SELECT id FROM production_incidents
-                WHERE title LIKE 'Lot Tagger QA%' AND status = 'new'
+                WHERE title = %s AND status = 'new'
                 ORDER BY created_at DESC LIMIT 1
                 """,
+                (title,)
             )
             if not cursor.fetchone():
                 cursor.execute(
@@ -788,6 +795,7 @@ def verify_tagging_results(
                         (
                             f"{untagged_or_wrong} of {total_tracked} tracked awaiting_shipment orders "
                             f"still have missing or wrong customField1 after the reconciliation run. "
+                            f"Order numbers: {order_key}. "
                             f"Failures: {failure_detail}"
                         ),
                     )
