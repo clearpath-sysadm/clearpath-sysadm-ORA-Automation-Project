@@ -118,6 +118,7 @@ def run_batch_job():
             source="Batch Processor"
         )
         update_workflow_last_run(WORKFLOW_NAME)
+        heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_pending_shipments'})
         return
 
     logger.info(f"Found {len(shipment_ids)} pending Axiom shipment(s) — creating batch...")
