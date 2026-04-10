@@ -20,6 +20,7 @@ import logging
 import datetime
 import time
 from typing import List, Dict, Any, Tuple
+import psycopg2
 
 # Add project root to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -1742,6 +1743,10 @@ def main():
         except KeyboardInterrupt:
             logger.info("⛔ Unified sync stopped by user")
             break
+        except psycopg2.OperationalError as e:
+            logger.error(f"🔌 DB connection error in sync loop: {e}")
+            logger.info("🔁 DB may be cold/waking — retrying in 60 seconds")
+            time.sleep(60)
         except Exception as e:
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
             logger.error(f"❌ Error in sync loop: {e}", exc_info=True)

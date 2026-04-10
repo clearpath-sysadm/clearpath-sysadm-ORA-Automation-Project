@@ -48,8 +48,13 @@ def _get_pool():
                     minconn=2,
                     maxconn=20,
                     dsn=DATABASE_URL,
+                    connect_timeout=10,
+                    keepalives=1,
+                    keepalives_idle=30,
+                    keepalives_interval=10,
+                    keepalives_count=5,
                 )
-                logger.info("PostgreSQL connection pool initialised (min=2, max=20)")
+                logger.info("PostgreSQL connection pool initialised (min=2, max=20, connect_timeout=10s)")
     return _pool
 
 

@@ -405,6 +405,35 @@ def _ensure_time_logs_table(cursor):
     logger.info("startup_migrations: time_logs table ensured")
 
 
+def _cleanup_stale_scanner_rows(cursor):
+    """
+    Remove orphaned duplicate-scanner and lot-mismatch-scanner rows from
+    workflow_controls.
+
+    These were created by the original duplicate/mismatch scanner workflows
+    (removed in Task #34). The backing scripts, API routes, and Replit
+    workflows are all gone, but the DB rows remained in production because
+    the Task #34 cleanup only ran against dev. This migration deletes them
+    so the Workflow Controls page no longer shows stale entries.
+
+    Safe to run repeatedly — idempotent DELETE with no side effects.
+    Runs in both dev and production.
+    """
+    stale = ('duplicate-scanner', 'lot-mismatch-scanner')
+    cursor.execute(
+        "DELETE FROM workflow_controls WHERE workflow_name = ANY(%s)",
+        (list(stale),)
+    )
+    removed = cursor.rowcount
+    if removed:
+        logger.info(
+            f"startup_migrations: removed {removed} stale scanner row(s) "
+            f"from workflow_controls: {stale}"
+        )
+    else:
+        logger.info("startup_migrations: no stale scanner rows found in workflow_controls")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -417,6 +446,7 @@ def run_all(conn):
             _reconcile_shipstation_lot_ids(cur)
             _ensure_shipstation_line_items_index(cur)
             _ensure_time_logs_table(cur)
+            _cleanup_stale_scanner_rows(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
