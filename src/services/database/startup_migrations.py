@@ -152,6 +152,67 @@ def _seed_production_lots(cursor):
     logger.info("startup_migrations: inserted 5 opening-balance Receive transactions")
 
 
+def _reconcile_shipstation_lot_ids(cursor):
+    """
+    Backfill lot_id on shipstation_order_line_items rows that are missing it.
+
+    Background: before the lots/skus tables were seeded, the lot tagger could
+    not set lot_id on line items it processed.  The correct lot number is
+    already stored in order_items_inbox.sku_lot (format: '{sku} - {lot_number}')
+    so we can recover lot_id by joining through that field.
+
+    Safe to run repeatedly — WHERE lot_id IS NULL means already-tagged rows
+    are never touched.  Runs in both dev and production (idempotent).
+
+    IMPORTANT: inventory_transactions rows with lot_id=NULL are intentionally
+    left alone.  The opening-balance Receive transactions seeded on 2026-04-10
+    already capture their net effect; backfilling those would cause
+    double-deductions in the lot_balances VIEW.
+    """
+    cursor.execute("""
+        SELECT COUNT(*) FROM shipstation_order_line_items
+        WHERE lot_id IS NULL
+          AND sku IN ('17612', '17904', '17914', '18675', '18795')
+    """)
+    pending = cursor.fetchone()[0]
+
+    if pending == 0:
+        logger.info("startup_migrations: shipstation_order_line_items — all lot_ids populated, skipping reconciliation")
+        return
+
+    logger.warning(
+        f"startup_migrations: shipstation_order_line_items — {pending} rows missing lot_id, reconciling"
+    )
+
+    cursor.execute("""
+        UPDATE shipstation_order_line_items soli
+        SET lot_id = l.lot_id
+        FROM orders_inbox oi,
+             order_items_inbox oii,
+             lots l
+        WHERE soli.order_inbox_id = oi.id
+          AND oii.order_inbox_id = oi.id
+          AND oii.sku = soli.sku
+          AND l.lot_number = TRIM(SPLIT_PART(oii.sku_lot, ' - ', 2))
+          AND soli.lot_id IS NULL
+          AND oii.sku_lot IS NOT NULL
+          AND oii.sku_lot != ''
+          AND soli.sku IN ('17612', '17904', '17914', '18675', '18795')
+    """)
+    updated = cursor.rowcount
+    still_null = pending - updated
+
+    if still_null > 0:
+        logger.warning(
+            f"startup_migrations: shipstation_order_line_items — updated {updated}, "
+            f"{still_null} rows still have lot_id=NULL (no matching sku_lot data)"
+        )
+    else:
+        logger.info(
+            f"startup_migrations: shipstation_order_line_items — reconciled {updated} rows successfully"
+        )
+
+
 def _validate_production_lots(cursor):
     """
     Post-seed validation — runs after commit so it reads durable data.
@@ -340,6 +401,7 @@ def run_all(conn):
         with conn.cursor() as cur:
             _dedup_lot_mismatch_alerts(cur)
             _seed_production_lots(cur)
+            _reconcile_shipstation_lot_ids(cur)
             _ensure_shipstation_line_items_index(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
