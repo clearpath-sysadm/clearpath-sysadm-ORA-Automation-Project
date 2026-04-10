@@ -535,6 +535,10 @@
                                     🔄 Lot Recon
                                     <div class="btn-status" id="lot-recon-status"></div>
                                 </button>
+                                <button class="btn" onclick="runRetagAll()" id="btn-retag-all" title="Force-push current active lot to CF1 on all awaiting-shipment orders in ShipStation">
+                                    🏷️ Re-tag All
+                                    <div class="btn-status" id="retag-all-status"></div>
+                                </button>
                             </div>
                         </div>
                         <div id="weeklyReportLoading" style="padding: 20px; text-align: center; color: var(--text-tertiary);">Loading weekly report...</div>
@@ -2935,6 +2939,36 @@
             }
         }
 
+        // Force Re-tag All Button Handler
+        async function runRetagAll() {
+            const btn = document.getElementById('btn-retag-all');
+            const statusDiv = document.getElementById('retag-all-status');
+            const originalStatus = statusDiv.textContent;
+
+            btn.disabled = true;
+            statusDiv.textContent = 'Running...';
+            btn.style.opacity = '0.6';
+
+            try {
+                const response = await fetch('/api/reports/retag_all', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    await loadReportStatus();
+                } else {
+                    throw new Error(result.error || 'Failed to run re-tag sweep');
+                }
+            } catch (error) {
+                console.error('Error running re-tag sweep:', error);
+                alert('Error running re-tag sweep: ' + error.message);
+                statusDiv.textContent = originalStatus;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
         // Lot Reconciliation Button Handler
         async function runLotRecon() {
             const btn = document.getElementById('btn-lot-recon');
@@ -2983,6 +3017,9 @@
                     }
                     if (result.data.LOT_RECON) {
                         document.getElementById('lot-recon-status').textContent = formatWorkflowTimestamp(result.data.LOT_RECON.run_date);
+                    }
+                    if (result.data.RETAG_ALL) {
+                        document.getElementById('retag-all-status').textContent = formatWorkflowTimestamp(result.data.RETAG_ALL.run_date);
                     }
                 }
             } catch (error) {

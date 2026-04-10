@@ -339,7 +339,7 @@ ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'cha
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
 # upgrade to database advisory locks (pg_advisory_lock) for system-wide concurrency protection.
-_report_locks = {'EOD': False, 'EOW': False, 'EOM': False, 'LOT_RECON': False}
+_report_locks = {'EOD': False, 'EOW': False, 'EOM': False, 'LOT_RECON': False, 'RETAG_ALL': False}
 
 @app.route('/')
 @login_required
@@ -3287,6 +3287,167 @@ def api_run_lot_recon():
             except Exception:
                 pass
         _report_locks['LOT_RECON'] = False
+
+
+@app.route('/api/reports/retag_all', methods=['POST'])
+@login_required
+def api_retag_all():
+    """
+    Force re-tag ALL awaiting_shipment orders in ShipStation with the CURRENT
+    active lot from the DB, regardless of what is currently in CF1 or the item SKU.
+
+    This differs from the normal webhook lot-tagger which trusts lot-stamped compound
+    SKUs (e.g. '17612 - 260017'). This endpoint always uses the DB-authoritative active
+    lot, so it will correct orders where an old lot was embedded in the item SKU.
+
+    Idempotent: orders already correct are skipped (no redundant API write).
+    """
+    import datetime
+    import logging
+    from src.services.database.pg_utils import get_connection, log_report_run
+    from src.services.shipstation.api_client import (
+        get_shipstation_credentials, get_shipstation_headers,
+        update_order_custom_fields
+    )
+    from src.lot_tagger.tagger import ACTIVE_LOTS_QUERY, resolve_shipping_profile
+    from src.utils.server_logger import get_logger
+    from utils.api_utils import make_api_request
+
+    logger = logging.getLogger(__name__)
+    server_logger = get_logger()
+
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except Exception:
+        pass
+
+    server_logger.info("Force re-tag sweep started", source="Reports", user=user_name, role=user_role)
+
+    if _report_locks['RETAG_ALL']:
+        return jsonify({'success': False, 'error': 'Re-tag sweep already running'}), 409
+
+    _report_locks['RETAG_ALL'] = True
+    conn = None
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(ACTIVE_LOTS_QUERY)
+        active_lots = {row[0]: row[2] for row in cursor.fetchall()}
+        conn.close()
+        conn = None
+
+        if not active_lots:
+            log_report_run('RETAG_ALL', datetime.date.today(), 'failed', 'No active lots found in DB')
+            return jsonify({'success': False, 'error': 'No active lots in database'}), 500
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        TRACKED_SKUS = set(active_lots.keys())
+
+        updated = 0
+        skipped = 0
+        failed = 0
+        page = 1
+
+        while True:
+            resp = make_api_request(
+                url='https://ssapi.shipstation.com/orders',
+                method='GET',
+                headers=headers,
+                params={'orderStatus': 'awaiting_shipment', 'pageSize': 500, 'page': page},
+                timeout=30
+            )
+            if not resp or resp.status_code != 200:
+                logger.error(f"ShipStation API failed on page {page}: {resp.status_code if resp else 'no response'}")
+                break
+
+            data = resp.json()
+            orders = data.get('orders', [])
+
+            for order in orders:
+                order_id = order.get('orderId')
+                order_number = order.get('orderNumber', '')
+                items = order.get('items', [])
+
+                # Determine the base SKU for this order — strip lot suffix if present
+                base_sku = None
+                for item in items:
+                    raw_sku = str(item.get('sku', '')).strip()
+                    # Handle compound "17612 - 260017" → base = "17612"
+                    candidate = raw_sku.split(' - ')[0].strip() if ' - ' in raw_sku else raw_sku
+                    if candidate in TRACKED_SKUS:
+                        base_sku = candidate
+                        break
+
+                if not base_sku:
+                    continue
+
+                expected_cf1 = f"{base_sku} - {active_lots[base_sku]}"
+                current_cf1 = ((order.get('advancedOptions') or {}).get('customField1') or '').strip()
+
+                if current_cf1 == expected_cf1:
+                    skipped += 1
+                    continue
+
+                profile = resolve_shipping_profile(order, base_sku)
+                num_packages = max(1, int(items[0].get('quantity') or 1))
+                field2_value = current_cf1 if current_cf1 and current_cf1 != expected_cf1 else None
+
+                result = update_order_custom_fields(
+                    order_id, expected_cf1, field2_value,
+                    carrier_code=profile['carrier_code'],
+                    service_code=profile['service_code'],
+                    package_code=profile['package_code'],
+                    weight_oz=profile['weight_oz'],
+                    dim_length=profile['length'],
+                    dim_width=profile['width'],
+                    dim_height=profile['height'],
+                    bill_to_party=profile['bill_to_party'],
+                    bill_to_account=profile['bill_to_account'],
+                )
+
+                if result.get('success'):
+                    updated += 1
+                    server_logger.info(
+                        f"Re-tagged order {order_number} (SS ID: {order_id}): "
+                        f"CF1 '{current_cf1}' → '{expected_cf1}'",
+                        source="Reports", user=user_name
+                    )
+                else:
+                    failed += 1
+                    logger.error(f"Failed to re-tag order {order_number}: {result.get('error')}")
+
+            if page >= data.get('pages', 1):
+                break
+            page += 1
+
+        msg = f"Re-tag complete: {updated} updated, {skipped} already correct, {failed} failed"
+        status = 'failed' if failed > 0 and updated == 0 else 'success'
+        log_report_run('RETAG_ALL', datetime.date.today(), status, msg)
+        server_logger.info(msg, source="Reports", user=user_name)
+
+        return jsonify({'success': True, 'message': msg})
+
+    except Exception as e:
+        logger.error(f"Force re-tag sweep failed: {e}", exc_info=True)
+        log_report_run('RETAG_ALL', datetime.date.today(), 'failed', str(e))
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        _report_locks['RETAG_ALL'] = False
 
 
 @app.route('/api/reports/status', methods=['GET'])
