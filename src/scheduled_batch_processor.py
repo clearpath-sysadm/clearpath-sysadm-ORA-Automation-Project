@@ -139,6 +139,21 @@ def run_batch_job() -> str:
         return 'error'
 
     batch_id = batch_result['batch_id']
+
+    if not is_workflow_enabled('batch-processor-labels'):
+        update_workflow_last_run(WORKFLOW_NAME)
+        summary = (
+            f"Batch processor complete: batch {batch_id} created with "
+            f"{len(shipment_ids)} shipment(s). Label processing SKIPPED — "
+            f"disabled via dashboard control."
+        )
+        logger.info("=" * 70)
+        logger.info(f"BATCH PROCESSOR COMPLETE (no labels) — {len(shipment_ids)} shipments, batch {batch_id}")
+        logger.info("Label processing is disabled via 'batch-processor-labels' control.")
+        logger.info("=" * 70)
+        server_logger.info(summary, source="Batch Processor")
+        return 'completed'
+
     logger.info(f"Batch created: {batch_id} — triggering label processing...")
 
     label_result = v2_process_batch_labels(batch_id, ship_date)
