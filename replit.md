@@ -43,12 +43,13 @@ The Oracare Fulfillment System is a production-ready order management platform t
 
 ### Key Components
 
-**Database Tables (37 total):**
+**Database Tables (38 total):**
 - Order Management: `orders_inbox`, `order_items_inbox`, `shipped_orders`, `shipped_items`
 - Inventory: `inventory_current`, `inventory_transactions`, `inventory_daily_snapshots`, `lot_inventory`
 - SKU/Bundles: `sku_lot`, `bundle_skus`, `bundle_components`
 - Alerts: `duplicate_order_alerts`, `lot_mismatch_alerts`, `lot_tagging_failures`, `manual_order_conflicts`, `shipping_violations`
 - System: `workflows`, `workflow_controls`, `configuration_params`, `users`, `workflow_heartbeats`, `stuck_workflow_incidents`
+- Time Tracking: `time_logs`
 
 **Frontend Pages (20):**
 - `index.html` - Main dashboard (DEFAULT VIEW)
@@ -136,6 +137,7 @@ X-Cart → XML → Google Drive → xml-import → orders_inbox
 - **Orphan Cleanup Endpoint (Feb 25, 2026):** `POST /api/admin/cleanup_orphan_orders` endpoint for deleting orphaned ShipStation orders by order number range. Supports dry_run mode, backs up orders to `deleted_shipstation_orders` before deletion, rate-limited API calls. Used to clean up 28 orphan orders (100893-100920) from failed first bulk dedup run. All 27 bulk dedup conflicts (100591-100617 → 100921-100947) confirmed fully resolved.
 - **Batch Label Processor (Apr 7, 2026):** New `batch-processor` workflow (`src/scheduled_batch_processor.py`) automates the daily noon batch label run for the Axiom warehouse. At 12:00 PM CT on business days it calls three new V2 API functions (`v2_get_pending_axiom_shipments`, `v2_create_batch`, `v2_process_batch_labels`) in `api_client.py` to fetch all pending Axiom shipments, bundle them into a V2 batch, and trigger label processing. `AXIOM_WAREHOUSE_ID = 'se-299625'` added to `config/settings.py`. Workflow registered in both DB tables (`workflows`, `workflow_controls`) with `enabled=true`. Dev-blocked via same `REPL_SLUG=workspace` check as the upload service.
 - **Inventory Deduction Fix (Apr 7, 2026):** Fixed a critical gap where `update_existing_order_status()` in `unified_shipstation_sync.py` never called `deduct_lot_inventory()` when an existing order transitioned to shipped status. This was the primary path for all shipments (imported as awaiting_shipment, later marked shipped by ShipStation sync). As a result, zero Ship transactions had ever been recorded despite 1,238 shipped orders. Fix: added deduction loop at the end of `update_existing_order_status` mirroring the existing BigCommerce import path. Idempotency guard (keyed on lot_id + shipstation_order_id + 'Ship') prevents double-deduction on re-runs. Backfill script: `src/backfill_inventory_deductions.py` — fetches `customField1` from ShipStation for each historical shipped order and records missing deductions. Orders shipped before lot tagger was running (no customField1 in ShipStation) are logged and skipped cleanly.
+- **Time Spent Logging (Apr 10, 2026):** Lightweight time-tracking widget added to the main dashboard. New `time_logs` table (auto-created via startup migration): user_id, user_display_name, log_date, hours_spent (0.25 increments, min 0.25 max 24), notes, created_at. Full CRUD: `POST /api/time_logs`, `GET /api/time_logs`, `PUT /api/time_logs/<id>`, `DELETE /api/time_logs/<id>`. Auth guard extended with `ALL_USERS_WRITE_ROUTES`/`ALL_USERS_WRITE_PATTERNS` — any authenticated user may create/edit/delete their own entries; admins can edit/delete any entry. Dashboard widget shows a form (date, hours dropdown, notes) and a recent-entries table with Edit/Delete actions per row.
 - **XML Lot Stamp Fix + Cleanup (Apr 9, 2026):** (1) Created and ran `src/fix_xml_lot_stamps.py` to correct stale lot 250070 stamps on XML-imported orders 10206–10210. Orders 10206 and 10210 found in ShipStation — both already had correct CF1 `"17612 - 260017"` and V2 package preset `se-122675`; orders 10207–10209 no longer present (already shipped/removed). (2) Removed stuck-workflow-detector: script was already deleted; removed startup/kill from `start_all.sh`; no `workflow_controls` DB row existed. (3) Fixed timezone display labels: "CST/CDT" → "CT" in `utils/business_hours.py` docstring and comments; "12:00 PM CST" → "12:00 PM CT" comment in `scheduled_lot_tagger.py`. All functional timezone logic (`pytz.timezone('US/Central')` and `%Z` strftime) was already correct.
 
 ## Dev/Prod Environment Isolation

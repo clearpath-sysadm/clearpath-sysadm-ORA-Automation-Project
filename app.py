@@ -128,6 +128,14 @@ def enforce_api_auth():
     VIEWER_ALLOWED_WRITE_PATTERNS = [
         '/api/incidents/',  # All users can add notes/screenshots to incidents
     ]
+
+    # Routes where any authenticated user may use any write method (ownership enforced in handler)
+    ALL_USERS_WRITE_ROUTES = {
+        '/api/time_logs',
+    }
+    ALL_USERS_WRITE_PATTERNS = [
+        '/api/time_logs/',
+    ]
     
     # Check if route is public
     if request.path in PUBLIC_ROUTES:
@@ -170,6 +178,13 @@ def enforce_api_auth():
         (request.path in VIEWER_ALLOWED_WRITE_ROUTES or
          any(request.path.startswith(pattern) for pattern in VIEWER_ALLOWED_WRITE_PATTERNS))
     )
+
+    # Check if this is an all-users write route (any method allowed; ownership enforced in handler)
+    is_all_users_write = (
+        request.method in modifying_methods and
+        (request.path in ALL_USERS_WRITE_ROUTES or
+         any(request.path.startswith(pattern) for pattern in ALL_USERS_WRITE_PATTERNS))
+    )
     
     # Admin-only routes
     if request.path in ADMIN_ONLY_ROUTES:
@@ -201,6 +216,14 @@ def enforce_api_auth():
                 'role': current_user.role
             }), 403
     
+    # All-users write routes — any authenticated user may write; handler enforces ownership
+    elif is_all_users_write:
+        if not current_user.is_authenticated:
+            return jsonify({
+                'error': 'Authentication required',
+                'authenticated': False
+            }), 401
+
     # All other modifying operations require admin (unless viewer-allowed)
     elif request.method in modifying_methods and not is_viewer_allowed_write:
         if not current_user.is_authenticated:
@@ -11265,6 +11288,174 @@ def recreate_order():
     
     except Exception as e:
         logger.error(f'Error in recreate order: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ─── Time Logs ────────────────────────────────────────────────────────────────
+
+def _build_display_name(user):
+    """Return a human-readable display name for a User object."""
+    first = (user.first_name or '').strip()
+    last = (user.last_name or '').strip()
+    full = f"{first} {last}".strip()
+    return full if full else (user.email or user.id)
+
+
+def _valid_hours(value):
+    """Return True if value is a valid hours_spent (multiple of 0.25, 0.25-24)."""
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return False
+    if v < 0.25 or v > 24:
+        return False
+    # Must be a multiple of 0.25
+    return round(v * 4) == v * 4
+
+
+@app.route('/api/time_logs', methods=['GET'])
+@login_required
+def get_time_logs():
+    """Return the 30 most recent time log entries (all users)."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, user_id, user_display_name, log_date, hours_spent, notes, created_at
+            FROM time_logs
+            ORDER BY log_date DESC, created_at DESC
+            LIMIT 30
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        entries = []
+        for row in rows:
+            entry_id, user_id, display_name, log_date, hours_spent, notes, created_at = row
+            entries.append({
+                'id': entry_id,
+                'user_id': user_id,
+                'user_display_name': display_name,
+                'log_date': log_date.isoformat() if log_date else None,
+                'hours_spent': float(hours_spent),
+                'notes': notes or '',
+                'created_at': created_at.isoformat() if created_at else None,
+            })
+        return jsonify({'success': True, 'entries': entries})
+    except Exception as e:
+        logger.error(f'Error fetching time logs: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/time_logs', methods=['POST'])
+@login_required
+def create_time_log():
+    """Insert a new time log entry for the currently logged-in user."""
+    try:
+        data = request.get_json() or {}
+        log_date = data.get('log_date')
+        hours_spent = data.get('hours_spent')
+        notes = (data.get('notes') or '').strip() or None
+
+        if not log_date:
+            return jsonify({'success': False, 'error': 'log_date is required'}), 400
+        if not _valid_hours(hours_spent):
+            return jsonify({'success': False, 'error': 'hours_spent must be a multiple of 0.25 between 0.25 and 24'}), 400
+
+        display_name = _build_display_name(current_user)
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO time_logs (user_id, user_display_name, log_date, hours_spent, notes)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, created_at
+        """, (current_user.id, display_name, log_date, float(hours_spent), notes))
+        row = cursor.fetchone()
+        conn.commit()
+        conn.close()
+        return jsonify({
+            'success': True,
+            'entry': {
+                'id': row[0],
+                'user_id': current_user.id,
+                'user_display_name': display_name,
+                'log_date': log_date,
+                'hours_spent': float(hours_spent),
+                'notes': notes or '',
+                'created_at': row[1].isoformat() if row[1] else None,
+            }
+        }), 201
+    except Exception as e:
+        logger.error(f'Error creating time log: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/time_logs/<int:entry_id>', methods=['PUT'])
+@login_required
+def update_time_log(entry_id):
+    """Update an existing time log entry. Only the owner or an admin may edit."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id FROM time_logs WHERE id = %s", (entry_id,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Entry not found'}), 404
+
+        owner_id = row[0]
+        if current_user.id != owner_id and current_user.role != 'admin':
+            conn.close()
+            return jsonify({'success': False, 'error': 'You can only edit your own time log entries'}), 403
+
+        data = request.get_json() or {}
+        log_date = data.get('log_date')
+        hours_spent = data.get('hours_spent')
+        notes = (data.get('notes') or '').strip() or None
+
+        if not log_date:
+            conn.close()
+            return jsonify({'success': False, 'error': 'log_date is required'}), 400
+        if not _valid_hours(hours_spent):
+            conn.close()
+            return jsonify({'success': False, 'error': 'hours_spent must be a multiple of 0.25 between 0.25 and 24'}), 400
+
+        cursor.execute("""
+            UPDATE time_logs
+            SET log_date = %s, hours_spent = %s, notes = %s
+            WHERE id = %s
+        """, (log_date, float(hours_spent), notes, entry_id))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f'Error updating time log {entry_id}: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/time_logs/<int:entry_id>', methods=['DELETE'])
+@login_required
+def delete_time_log(entry_id):
+    """Delete a time log entry. Only the owner or an admin may delete."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id FROM time_logs WHERE id = %s", (entry_id,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Entry not found'}), 404
+
+        owner_id = row[0]
+        if current_user.id != owner_id and current_user.role != 'admin':
+            conn.close()
+            return jsonify({'success': False, 'error': 'You can only delete your own time log entries'}), 403
+
+        cursor.execute("DELETE FROM time_logs WHERE id = %s", (entry_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f'Error deleting time log {entry_id}: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

@@ -560,6 +560,80 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Time Log Section -->
+                <section id="time-log-section">
+                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Time Log</h2>
+
+                    <!-- Edit Modal -->
+                    <div id="time-log-edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+                        <div style="background:var(--bg-primary); border-radius:12px; padding:28px; width:420px; max-width:95vw; box-shadow:var(--shadow-lg);">
+                            <h3 style="margin-bottom:20px; font-size:16px; font-weight:600;">Edit Time Entry</h3>
+                            <input type="hidden" id="tl-edit-id">
+                            <div style="margin-bottom:16px;">
+                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Date</label>
+                                <input type="date" id="tl-edit-date" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;">
+                            </div>
+                            <div style="margin-bottom:16px;">
+                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Hours Spent</label>
+                                <select id="tl-edit-hours" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;"></select>
+                            </div>
+                            <div style="margin-bottom:20px;">
+                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Notes</label>
+                                <textarea id="tl-edit-notes" rows="3" placeholder="What did you work on?" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; resize:vertical; font-family:inherit;"></textarea>
+                            </div>
+                            <div id="tl-edit-error" style="display:none; color:var(--critical-red); font-size:13px; margin-bottom:12px;"></div>
+                            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                                <button onclick="closeEditModal()" style="padding:8px 18px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:14px;">Cancel</button>
+                                <button onclick="saveEditEntry()" style="padding:8px 18px; border:none; border-radius:8px; background:var(--accent-blue); color:white; cursor:pointer; font-size:14px; font-weight:600;">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+
+                            <!-- Log Form -->
+                            <div style="flex:0 0 300px; min-width:240px;">
+                                <div style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.4px;">Log Time</div>
+                                <div style="margin-bottom:12px;">
+                                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Date</label>
+                                    <input type="date" id="tl-date" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;">
+                                </div>
+                                <div style="margin-bottom:12px;">
+                                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Hours Spent</label>
+                                    <select id="tl-hours" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;"></select>
+                                </div>
+                                <div style="margin-bottom:14px;">
+                                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Notes</label>
+                                    <textarea id="tl-notes" rows="2" placeholder="What did you work on?" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; resize:vertical; font-family:inherit;"></textarea>
+                                </div>
+                                <div id="tl-form-error" style="display:none; color:var(--critical-red); font-size:12px; margin-bottom:10px;"></div>
+                                <button id="tl-submit-btn" onclick="submitTimeLog()" style="width:100%; padding:9px; border:none; border-radius:8px; background:var(--accent-blue); color:white; font-size:14px; font-weight:600; cursor:pointer;">Log Time</button>
+                            </div>
+
+                            <!-- Entries Table -->
+                            <div style="flex:1; min-width:0; overflow-x:auto;">
+                                <div style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.4px;">Recent Entries</div>
+                                <div id="tl-loading" style="color:var(--text-tertiary); font-size:13px; padding:8px 0;">Loading...</div>
+                                <table id="tl-table" style="display:none; width:100%; border-collapse:collapse;">
+                                    <thead>
+                                        <tr style="border-bottom:2px solid var(--border-color);">
+                                            <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Date</th>
+                                            <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Who</th>
+                                            <th style="text-align:right; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Hours</th>
+                                            <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px;">Notes</th>
+                                            <th style="padding:8px 10px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tl-tbody"></tbody>
+                                </table>
+                                <div id="tl-empty" style="display:none; color:var(--text-tertiary); font-size:13px; padding:8px 0;">No entries yet.</div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
@@ -3216,6 +3290,180 @@
             }
         }
 
+        // ─── Time Log ─────────────────────────────────────────────────────────────
+
+        // Build hours dropdown options (0.25 → 24.00 in 0.25 increments)
+        function buildHoursOptions(selectEl, selectedValue) {
+            selectEl.innerHTML = '';
+            for (let h = 0.25; h <= 24; h = Math.round((h + 0.25) * 100) / 100) {
+                const opt = document.createElement('option');
+                opt.value = h;
+                opt.textContent = h % 1 === 0 ? `${h}.00 hrs` : `${h} hrs`;
+                if (selectedValue && parseFloat(selectedValue) === h) opt.selected = true;
+                selectEl.appendChild(opt);
+            }
+            if (!selectedValue) selectEl.value = '1';
+        }
+
+        // Set today's date on the log form
+        function setTodayDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('tl-date').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Format a YYYY-MM-DD date string for display
+        function formatLogDate(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Current user id (populated on DOMContentLoaded after auth)
+        let _tlCurrentUserId = null;
+        let _tlCurrentRole = null;
+
+        async function loadTimeLogEntries() {
+            const loading = document.getElementById('tl-loading');
+            const table = document.getElementById('tl-table');
+            const empty = document.getElementById('tl-empty');
+            loading.style.display = 'block';
+            table.style.display = 'none';
+            empty.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/time_logs');
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                loading.style.display = 'none';
+                if (!data.entries || data.entries.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                const tbody = document.getElementById('tl-tbody');
+                tbody.innerHTML = data.entries.map(e => {
+                    const isOwner = _tlCurrentUserId && e.user_id === _tlCurrentUserId;
+                    const isAdmin = _tlCurrentRole === 'admin';
+                    const canEdit = isOwner || isAdmin;
+                    const hours = Number(e.hours_spent).toFixed(2);
+                    const hoursLabel = parseFloat(hours) % 1 === 0 ? `${parseInt(hours)}h` : `${parseFloat(hours)}h`;
+                    return `
+                        <tr style="border-bottom:1px solid var(--border-color);">
+                            <td style="padding:9px 10px; font-size:13px; white-space:nowrap;">${escapeHtml(formatLogDate(e.log_date))}</td>
+                            <td style="padding:9px 10px; font-size:13px; white-space:nowrap;">${escapeHtml(e.user_display_name)}</td>
+                            <td style="padding:9px 10px; font-size:13px; text-align:right; font-weight:600; white-space:nowrap;">${hoursLabel}</td>
+                            <td style="padding:9px 10px; font-size:13px; color:var(--text-secondary);">${escapeHtml(e.notes || '')}</td>
+                            <td style="padding:9px 10px; white-space:nowrap; text-align:right;">
+                                ${canEdit ? `
+                                <button onclick="openEditModal(${e.id}, '${escapeHtml(e.log_date)}', ${e.hours_spent}, ${JSON.stringify(escapeHtml(e.notes || ''))})"
+                                    style="margin-right:6px; padding:3px 10px; border:1px solid var(--border-color); border-radius:6px; background:transparent; cursor:pointer; font-size:12px; color:var(--text-secondary);">
+                                    Edit
+                                </button>
+                                <button onclick="deleteTimeLog(${e.id})"
+                                    style="padding:3px 10px; border:1px solid var(--critical-red); border-radius:6px; background:transparent; cursor:pointer; font-size:12px; color:var(--critical-red);">
+                                    Delete
+                                </button>` : ''}
+                            </td>
+                        </tr>`;
+                }).join('');
+                table.style.display = 'table';
+            } catch (err) {
+                loading.style.display = 'none';
+                empty.style.display = 'block';
+                empty.textContent = 'Error loading entries: ' + err.message;
+            }
+        }
+
+        async function submitTimeLog() {
+            const btn = document.getElementById('tl-submit-btn');
+            const errEl = document.getElementById('tl-form-error');
+            const date = document.getElementById('tl-date').value;
+            const hours = document.getElementById('tl-hours').value;
+            const notes = document.getElementById('tl-notes').value.trim();
+
+            errEl.style.display = 'none';
+            if (!date) { errEl.textContent = 'Please select a date.'; errEl.style.display = 'block'; return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                const res = await fetch('/api/time_logs', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ log_date: date, hours_spent: parseFloat(hours), notes })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+                document.getElementById('tl-notes').value = '';
+                await loadTimeLogEntries();
+            } catch (err) {
+                errEl.textContent = 'Error: ' + err.message;
+                errEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Log Time';
+            }
+        }
+
+        function openEditModal(id, logDate, hoursSpent, notes) {
+            document.getElementById('tl-edit-id').value = id;
+            document.getElementById('tl-edit-date').value = logDate;
+            buildHoursOptions(document.getElementById('tl-edit-hours'), hoursSpent);
+            document.getElementById('tl-edit-notes').value = notes;
+            document.getElementById('tl-edit-error').style.display = 'none';
+            const modal = document.getElementById('time-log-edit-modal');
+            modal.style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('time-log-edit-modal').style.display = 'none';
+        }
+
+        async function saveEditEntry() {
+            const id = document.getElementById('tl-edit-id').value;
+            const date = document.getElementById('tl-edit-date').value;
+            const hours = document.getElementById('tl-edit-hours').value;
+            const notes = document.getElementById('tl-edit-notes').value.trim();
+            const errEl = document.getElementById('tl-edit-error');
+
+            errEl.style.display = 'none';
+            if (!date) { errEl.textContent = 'Please select a date.'; errEl.style.display = 'block'; return; }
+
+            try {
+                const res = await fetch(`/api/time_logs/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ log_date: date, hours_spent: parseFloat(hours), notes })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+                closeEditModal();
+                await loadTimeLogEntries();
+            } catch (err) {
+                errEl.textContent = 'Error: ' + err.message;
+                errEl.style.display = 'block';
+            }
+        }
+
+        async function deleteTimeLog(id) {
+            if (!confirm('Delete this time entry?')) return;
+            try {
+                const res = await fetch(`/api/time_logs/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+                await loadTimeLogEntries();
+            } catch (err) {
+                alert('Error deleting entry: ' + err.message);
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────────────────
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             checkAutoShipDay();
@@ -3223,6 +3471,25 @@
             loadWeeklyReport();
             loadReportStatus();
             populateUserWidget();
+
+            // Time log setup
+            buildHoursOptions(document.getElementById('tl-hours'), null);
+            buildHoursOptions(document.getElementById('tl-edit-hours'), null);
+            setTodayDate();
+
+            // Capture current user id and role for ownership UI
+            fetch('/api/auth/status').then(r => r.json()).then(d => {
+                if (d.authenticated && d.user) {
+                    _tlCurrentUserId = d.user.id;
+                    _tlCurrentRole = d.user.role;
+                }
+                loadTimeLogEntries();
+            }).catch(() => loadTimeLogEntries());
+
+            // Close edit modal on backdrop click
+            document.getElementById('time-log-edit-modal').addEventListener('click', function(e) {
+                if (e.target === this) closeEditModal();
+            });
         });
     </script>
     

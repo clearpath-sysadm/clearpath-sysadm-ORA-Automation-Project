@@ -391,6 +391,29 @@ def _ensure_shipstation_line_items_index(cursor):
     )
 
 
+def _ensure_time_logs_table(cursor):
+    """
+    Create the time_logs table if it doesn't already exist.
+
+    Captures who logged time, the date, hours spent (in 0.25 increments),
+    and an optional note. Runs in both dev and production.
+    """
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS time_logs (
+            id              SERIAL PRIMARY KEY,
+            user_id         TEXT NOT NULL,
+            user_display_name TEXT NOT NULL,
+            log_date        DATE NOT NULL,
+            hours_spent     NUMERIC(5, 2) NOT NULL
+                            CHECK (hours_spent >= 0.25 AND hours_spent <= 24
+                                   AND MOD(hours_spent * 4, 1) = 0),
+            notes           TEXT,
+            created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    logger.info("startup_migrations: time_logs table ensured")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -403,6 +426,7 @@ def run_all(conn):
             _seed_production_lots(cur)
             _reconcile_shipstation_lot_ids(cur)
             _ensure_shipstation_line_items_index(cur)
+            _ensure_time_logs_table(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
