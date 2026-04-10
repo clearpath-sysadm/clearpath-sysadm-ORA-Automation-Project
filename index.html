@@ -522,6 +522,87 @@
                     </div>
                 </section>
 
+                <!-- Time Log Section (collapsible) -->
+                <section id="time-log-section" style="margin-bottom: 0;">
+                    <!-- Edit Modal — fixed-position, unaffected by collapse state -->
+                    <div id="time-log-edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+                        <div style="background:var(--bg-primary); border-radius:12px; padding:28px; width:420px; max-width:95vw; box-shadow:var(--shadow-lg);">
+                            <h3 style="margin-bottom:20px; font-size:16px; font-weight:600;">Edit Time Entry</h3>
+                            <input type="hidden" id="tl-edit-id">
+                            <div style="margin-bottom:16px;">
+                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Date</label>
+                                <input type="date" id="tl-edit-date" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;">
+                            </div>
+                            <div style="margin-bottom:16px;">
+                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Hours Spent</label>
+                                <select id="tl-edit-hours" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;"></select>
+                            </div>
+                            <div style="margin-bottom:20px;">
+                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Notes</label>
+                                <textarea id="tl-edit-notes" rows="3" placeholder="What did you work on?" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; resize:vertical; font-family:inherit;"></textarea>
+                            </div>
+                            <div id="tl-edit-error" style="display:none; color:var(--critical-red); font-size:13px; margin-bottom:12px;"></div>
+                            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                                <button onclick="closeEditModal()" style="padding:8px 18px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:14px;">Cancel</button>
+                                <button onclick="saveEditEntry()" style="padding:8px 18px; border:none; border-radius:8px; background:var(--accent-blue); color:white; cursor:pointer; font-size:14px; font-weight:600;">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Collapsible header -->
+                    <div onclick="toggleTimeLog()" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:14px 0 14px; user-select:none; border-top:1px solid var(--border-color);">
+                        <h2 style="font-size:14px; font-weight:600; color:var(--text-tertiary); margin:0; text-transform:uppercase; letter-spacing:0.5px;">Time Log</h2>
+                        <span id="tl-chevron" style="color:var(--text-tertiary); font-size:12px; transition:transform 0.2s; display:inline-block;">▼</span>
+                    </div>
+
+                    <!-- Collapsible body — hidden by default -->
+                    <div id="tl-body" style="display:none; padding-bottom:20px;">
+                        <div class="card">
+                            <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+
+                                <!-- Log Form -->
+                                <div style="flex:0 0 300px; min-width:240px;">
+                                    <div style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.4px;">Log Time</div>
+                                    <div style="margin-bottom:12px;">
+                                        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Date</label>
+                                        <input type="date" id="tl-date" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;">
+                                    </div>
+                                    <div style="margin-bottom:12px;">
+                                        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Hours Spent</label>
+                                        <select id="tl-hours" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;"></select>
+                                    </div>
+                                    <div style="margin-bottom:14px;">
+                                        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Notes</label>
+                                        <textarea id="tl-notes" rows="2" placeholder="What did you work on?" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; resize:vertical; font-family:inherit;"></textarea>
+                                    </div>
+                                    <div id="tl-form-error" style="display:none; color:var(--critical-red); font-size:12px; margin-bottom:10px;"></div>
+                                    <button id="tl-submit-btn" onclick="submitTimeLog()" style="width:100%; padding:9px; border:none; border-radius:8px; background:var(--accent-blue); color:white; font-size:14px; font-weight:600; cursor:pointer;">Log Time</button>
+                                </div>
+
+                                <!-- Entries Table -->
+                                <div style="flex:1; min-width:0; overflow-x:auto;">
+                                    <div style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.4px;">Recent Entries</div>
+                                    <div id="tl-loading" style="color:var(--text-tertiary); font-size:13px; padding:8px 0;">Loading...</div>
+                                    <table id="tl-table" style="display:none; width:100%; border-collapse:collapse;">
+                                        <thead>
+                                            <tr style="border-bottom:2px solid var(--border-color);">
+                                                <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Date</th>
+                                                <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Who</th>
+                                                <th style="text-align:right; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Hours</th>
+                                                <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px;">Notes</th>
+                                                <th style="padding:8px 10px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tl-tbody"></tbody>
+                                    </table>
+                                    <div id="tl-empty" style="display:none; color:var(--text-tertiary); font-size:13px; padding:8px 0;">No entries yet.</div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Inventory Risk Section -->
                 <section>
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Inventory Risk</h2>
@@ -582,79 +663,6 @@
                     </div>
                 </section>
 
-                <!-- Time Log Section -->
-                <section id="time-log-section">
-                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Time Log</h2>
-
-                    <!-- Edit Modal -->
-                    <div id="time-log-edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-                        <div style="background:var(--bg-primary); border-radius:12px; padding:28px; width:420px; max-width:95vw; box-shadow:var(--shadow-lg);">
-                            <h3 style="margin-bottom:20px; font-size:16px; font-weight:600;">Edit Time Entry</h3>
-                            <input type="hidden" id="tl-edit-id">
-                            <div style="margin-bottom:16px;">
-                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Date</label>
-                                <input type="date" id="tl-edit-date" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;">
-                            </div>
-                            <div style="margin-bottom:16px;">
-                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Hours Spent</label>
-                                <select id="tl-edit-hours" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;"></select>
-                            </div>
-                            <div style="margin-bottom:20px;">
-                                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Notes</label>
-                                <textarea id="tl-edit-notes" rows="3" placeholder="What did you work on?" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; resize:vertical; font-family:inherit;"></textarea>
-                            </div>
-                            <div id="tl-edit-error" style="display:none; color:var(--critical-red); font-size:13px; margin-bottom:12px;"></div>
-                            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                                <button onclick="closeEditModal()" style="padding:8px 18px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:14px;">Cancel</button>
-                                <button onclick="saveEditEntry()" style="padding:8px 18px; border:none; border-radius:8px; background:var(--accent-blue); color:white; cursor:pointer; font-size:14px; font-weight:600;">Save Changes</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
-
-                            <!-- Log Form -->
-                            <div style="flex:0 0 300px; min-width:240px;">
-                                <div style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.4px;">Log Time</div>
-                                <div style="margin-bottom:12px;">
-                                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Date</label>
-                                    <input type="date" id="tl-date" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;">
-                                </div>
-                                <div style="margin-bottom:12px;">
-                                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Hours Spent</label>
-                                    <select id="tl-hours" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px;"></select>
-                                </div>
-                                <div style="margin-bottom:14px;">
-                                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px;">Notes</label>
-                                    <textarea id="tl-notes" rows="2" placeholder="What did you work on?" style="width:100%; padding:7px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; resize:vertical; font-family:inherit;"></textarea>
-                                </div>
-                                <div id="tl-form-error" style="display:none; color:var(--critical-red); font-size:12px; margin-bottom:10px;"></div>
-                                <button id="tl-submit-btn" onclick="submitTimeLog()" style="width:100%; padding:9px; border:none; border-radius:8px; background:var(--accent-blue); color:white; font-size:14px; font-weight:600; cursor:pointer;">Log Time</button>
-                            </div>
-
-                            <!-- Entries Table -->
-                            <div style="flex:1; min-width:0; overflow-x:auto;">
-                                <div style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.4px;">Recent Entries</div>
-                                <div id="tl-loading" style="color:var(--text-tertiary); font-size:13px; padding:8px 0;">Loading...</div>
-                                <table id="tl-table" style="display:none; width:100%; border-collapse:collapse;">
-                                    <thead>
-                                        <tr style="border-bottom:2px solid var(--border-color);">
-                                            <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Date</th>
-                                            <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Who</th>
-                                            <th style="text-align:right; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">Hours</th>
-                                            <th style="text-align:left; padding:8px 10px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px;">Notes</th>
-                                            <th style="padding:8px 10px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tl-tbody"></tbody>
-                                </table>
-                                <div id="tl-empty" style="display:none; color:var(--text-tertiary); font-size:13px; padding:8px 0;">No entries yet.</div>
-                            </div>
-
-                        </div>
-                    </div>
-                </section>
             </div>
         </main>
     </div>
@@ -3312,6 +3320,14 @@
         }
 
         // ─── Time Log ─────────────────────────────────────────────────────────────
+
+        function toggleTimeLog() {
+            const body = document.getElementById('tl-body');
+            const chevron = document.getElementById('tl-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+        }
 
         // Build hours dropdown options (0.25 → 24.00 in 0.25 increments)
         function buildHoursOptions(selectEl, selectedValue) {
