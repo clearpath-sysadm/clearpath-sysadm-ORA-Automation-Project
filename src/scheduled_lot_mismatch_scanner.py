@@ -116,6 +116,7 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
 
             mismatches_found = 0
             mismatches_created = 0
+            mismatches_updated = 0
             cursor = conn.cursor()
 
             for order in all_orders:
@@ -173,6 +174,7 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
                                    detected_at = CURRENT_TIMESTAMP
                              WHERE id = %s
                         """, (cf1_lot, active_lots[base_sku], order_status, existing[0]))
+                        mismatches_updated += 1
                     else:
                         cursor.execute("""
                             INSERT INTO lot_mismatch_alerts (
@@ -216,15 +218,17 @@ def scan_for_lot_mismatches(api_key: str, api_secret: str):
         logger.info("=" * 80)
         logger.info("SCAN SUMMARY:")
         logger.info(f"   Lot mismatches found: {mismatches_found}")
-        logger.info(f"   New/updated alerts: {mismatches_created}")
-        logger.info(f"   Auto-resolved: {auto_resolved}")
-        logger.info(f"   Duration: {elapsed:.1f}s")
+        logger.info(f"   New alerts created:   {mismatches_created}")
+        logger.info(f"   Existing updated:     {mismatches_updated}")
+        logger.info(f"   Auto-resolved:        {auto_resolved}")
+        logger.info(f"   Duration:             {elapsed:.1f}s")
         logger.info("=" * 80)
 
         if mismatches_found > 0:
             server_logger.warning(
                 f"Lot mismatch scan complete: {mismatches_found} mismatches found, "
-                f"{mismatches_created} alerts created/updated, {auto_resolved} auto-resolved ({elapsed:.1f}s)",
+                f"{mismatches_created} new alerts, {mismatches_updated} updated, "
+                f"{auto_resolved} auto-resolved ({elapsed:.1f}s)",
                 source="Lot Mismatch"
             )
         else:
