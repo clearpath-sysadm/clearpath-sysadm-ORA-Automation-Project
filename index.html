@@ -754,14 +754,14 @@
 
         // Show/hide skeletons
         function showSkeletons() {
-            for (let i = 1; i <= 8; i++) {
+            for (let i = 1; i <= 11; i++) {
                 document.getElementById(`stat-skeleton-${i}`).classList.remove('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.add('hidden'));
         }
 
         function hideSkeletons() {
-            for (let i = 1; i <= 8; i++) {
+            for (let i = 1; i <= 11; i++) {
                 document.getElementById(`stat-skeleton-${i}`).classList.add('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.remove('hidden'));
