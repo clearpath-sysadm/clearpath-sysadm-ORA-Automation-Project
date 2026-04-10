@@ -11313,6 +11313,20 @@ def _valid_hours(value):
     return round(v * 4) == v * 4
 
 
+def _parse_log_date(value):
+    """
+    Parse a YYYY-MM-DD date string.
+    Returns a datetime.date on success, raises ValueError with a clear message otherwise.
+    """
+    from datetime import date as _date
+    if not value or not isinstance(value, str):
+        raise ValueError("log_date is required and must be a string")
+    try:
+        return _date.fromisoformat(value.strip())
+    except ValueError:
+        raise ValueError(f"log_date '{value}' is not a valid date — expected YYYY-MM-DD")
+
+
 @app.route('/api/time_logs', methods=['GET'])
 @login_required
 def get_time_logs():
@@ -11352,12 +11366,13 @@ def create_time_log():
     """Insert a new time log entry for the currently logged-in user."""
     try:
         data = request.get_json() or {}
-        log_date = data.get('log_date')
         hours_spent = data.get('hours_spent')
         notes = (data.get('notes') or '').strip() or None
 
-        if not log_date:
-            return jsonify({'success': False, 'error': 'log_date is required'}), 400
+        try:
+            log_date = _parse_log_date(data.get('log_date'))
+        except ValueError as date_err:
+            return jsonify({'success': False, 'error': str(date_err)}), 400
         if not _valid_hours(hours_spent):
             return jsonify({'success': False, 'error': 'hours_spent must be a multiple of 0.25 between 0.25 and 24'}), 400
 
@@ -11408,13 +11423,14 @@ def update_time_log(entry_id):
             return jsonify({'success': False, 'error': 'You can only edit your own time log entries'}), 403
 
         data = request.get_json() or {}
-        log_date = data.get('log_date')
         hours_spent = data.get('hours_spent')
         notes = (data.get('notes') or '').strip() or None
 
-        if not log_date:
+        try:
+            log_date = _parse_log_date(data.get('log_date'))
+        except ValueError as date_err:
             conn.close()
-            return jsonify({'success': False, 'error': 'log_date is required'}), 400
+            return jsonify({'success': False, 'error': str(date_err)}), 400
         if not _valid_hours(hours_spent):
             conn.close()
             return jsonify({'success': False, 'error': 'hours_spent must be a multiple of 0.25 between 0.25 and 24'}), 400
