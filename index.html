@@ -405,6 +405,9 @@
                         <div class="skeleton skeleton-card" id="stat-skeleton-6"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-7"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-8"></div>
+                        <div class="skeleton skeleton-card" id="stat-skeleton-9"></div>
+                        <div class="skeleton skeleton-card" id="stat-skeleton-10"></div>
+                        <div class="skeleton skeleton-card" id="stat-skeleton-11"></div>
 
                         <!-- Actual Stats -->
                         <!-- ShipStation Count -->
@@ -497,6 +500,24 @@
                             </div>
                             <div class="stat-label">Production Health</div>
                             <div class="stat-change" id="prod-health-detail">Loading...</div>
+                        </div>
+                        <!-- System Activity: Orders Today -->
+                        <div class="stat-card hidden" data-stat-card id="pulse-orders-today-card">
+                            <div class="stat-value" id="pulse-orders-today-value" style="font-size: 28px;">—</div>
+                            <div class="stat-label">New Orders Today</div>
+                            <div class="stat-change" id="pulse-orders-today-sub" style="font-size: 11px; color: var(--text-tertiary);">Since midnight CT</div>
+                        </div>
+                        <!-- System Activity: Last New Order -->
+                        <div class="stat-card hidden" data-stat-card id="pulse-last-order-card">
+                            <div class="stat-value" id="pulse-last-order-value" style="font-size: 18px; font-weight: 600;">—</div>
+                            <div class="stat-label">Last New Order</div>
+                            <div class="stat-change" id="pulse-last-order-sub" style="font-size: 11px; color: var(--text-tertiary);">—</div>
+                        </div>
+                        <!-- System Activity: Last Reconciliation Sweep -->
+                        <div class="stat-card hidden" data-stat-card id="pulse-last-sync-card">
+                            <div class="stat-value" id="pulse-last-sync-value" style="font-size: 18px; font-weight: 600;">—</div>
+                            <div class="stat-label">Last Reconciliation</div>
+                            <div class="stat-change" id="pulse-last-sync-sub" style="font-size: 11px; color: var(--text-tertiary);">ShipStation sync</div>
                         </div>
                     </div>
                 </section>
@@ -3473,12 +3494,67 @@
         // ──────────────────────────────────────────────────────────────────────────
 
         // Initialize
+        function _pulseRelativeTime(isoStr) {
+            if (!isoStr) return '—';
+            const d = new Date(isoStr);
+            if (isNaN(d)) return '—';
+            const diffMs = Date.now() - d.getTime();
+            const diffMin = Math.floor(diffMs / 60000);
+            if (diffMin < 2)  return 'Just now';
+            if (diffMin < 60) return `${diffMin} min ago`;
+            const diffH = Math.floor(diffMin / 60);
+            if (diffH < 24)   return `${diffH}h ago`;
+            const diffD = Math.floor(diffH / 24);
+            if (diffD === 1)   return 'Yesterday';
+            if (diffD < 14)   return `${diffD}d ago`;
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function _pulseAbsTime(isoStr) {
+            if (!isoStr) return '';
+            const d = new Date(isoStr);
+            if (isNaN(d)) return '';
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+                   ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        async function loadSystemPulse() {
+            try {
+                const res = await fetch('/api/system_pulse');
+                const data = await res.json();
+                if (!data.success) return;
+
+                document.getElementById('pulse-orders-today-value').textContent = data.orders_today ?? '—';
+
+                const lastOrderEl  = document.getElementById('pulse-last-order-value');
+                const lastOrderSub = document.getElementById('pulse-last-order-sub');
+                lastOrderEl.textContent  = _pulseRelativeTime(data.last_order_at);
+                lastOrderSub.textContent = _pulseAbsTime(data.last_order_at) || 'No orders recorded';
+
+                const lastSyncEl  = document.getElementById('pulse-last-sync-value');
+                const lastSyncSub = document.getElementById('pulse-last-sync-sub');
+                lastSyncEl.textContent  = _pulseRelativeTime(data.last_sync_at);
+                lastSyncSub.textContent = _pulseAbsTime(data.last_sync_at) || 'No sync recorded';
+
+                // Colour-code the sync recency: orange if > 6 hours, red if > 24 hours
+                if (data.last_sync_at) {
+                    const syncAgeH = (Date.now() - new Date(data.last_sync_at).getTime()) / 3600000;
+                    lastSyncEl.style.color = syncAgeH > 24
+                        ? 'var(--critical-red)'
+                        : syncAgeH > 6
+                            ? 'var(--accent-orange, #f59e0b)'
+                            : 'inherit';
+                }
+            } catch (_) {}
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             checkAutoShipDay();
             loadDashboardData();
             loadWeeklyReport();
             loadReportStatus();
             populateUserWidget();
+            loadSystemPulse();
 
             // Time log setup
             buildHoursOptions(document.getElementById('tl-hours'), null);

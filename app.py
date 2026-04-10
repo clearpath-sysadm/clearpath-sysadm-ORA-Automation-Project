@@ -11475,6 +11475,54 @@ def delete_time_log(entry_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/system_pulse')
+@login_required
+def system_pulse():
+    """
+    Returns a quick-view snapshot of system activity:
+      - orders_today: count of orders_inbox rows created since midnight Central Time
+      - last_order_at: ISO timestamp of the most recently created order (or null)
+      - last_sync_at: ISO timestamp of the last completed unified-shipstation-sync (or null)
+    """
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT
+                COUNT(*) FILTER (
+                    WHERE created_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'US/Central')
+                ) AS orders_today,
+                MAX(created_at) AS last_order_at
+            FROM orders_inbox
+        """)
+        row = cur.fetchone()
+        orders_today = int(row[0]) if row else 0
+        last_order_at = row[1] if row else None
+
+        cur.execute("""
+            SELECT heartbeat_at
+            FROM workflow_heartbeats
+            WHERE workflow_name = 'unified-shipstation-sync'
+              AND execution_phase = 'completed'
+            ORDER BY heartbeat_at DESC
+            LIMIT 1
+        """)
+        sync_row = cur.fetchone()
+        last_sync_at = sync_row[0] if sync_row else None
+
+        conn.close()
+        return jsonify({
+            'success': True,
+            'orders_today': orders_today,
+            'last_order_at': last_order_at.isoformat() if last_order_at else None,
+            'last_sync_at': last_sync_at.isoformat() if last_sync_at else None,
+        })
+    except Exception as e:
+        logger.error(f'Error fetching system pulse: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Initialize file logging
     from src.utils.server_logger import get_logger
