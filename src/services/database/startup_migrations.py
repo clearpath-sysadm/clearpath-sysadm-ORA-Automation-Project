@@ -6,8 +6,11 @@ Failures are logged but do not crash the app.
 """
 
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+
+IS_PRODUCTION = os.getenv('REPLIT_DEPLOYMENT') == '1'
 
 
 def _dedup_lot_mismatch_alerts(cursor):
@@ -59,6 +62,16 @@ def _ensure_shipstation_line_items_index(cursor):
     Safe to call repeatedly — checks for the column and index before acting.
     Logs an ERROR (non-fatal) if index creation fails so the issue is visible.
     """
+    # Only run in production — in dev this step is intentionally skipped so that
+    # Replit's schema comparison sees no COALESCE index in dev and generates only
+    # simple ADD COLUMN / DROP INDEX statements (avoiding its operator-class bug).
+    if not IS_PRODUCTION:
+        logger.info(
+            "startup_migrations: skipping shipstation_order_line_items index "
+            "creation in dev environment"
+        )
+        return
+
     # Skip if lot_id column doesn't exist yet (Replit migration hasn't run)
     cursor.execute("""
         SELECT 1 FROM information_schema.columns
