@@ -38,14 +38,6 @@ args = "xml-import"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "duplicate-scanner"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "lot-mismatch-scanner"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "lot-tagger"
 
 [[workflows.workflow.tasks]]
@@ -104,28 +96,6 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python src/scheduled_xml_import.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "duplicate-scanner"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python src/scheduled_duplicate_scanner.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "lot-mismatch-scanner"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python src/scheduled_lot_mismatch_scanner.py"
 
 [workflows.workflow.metadata]
 outputType = "console"

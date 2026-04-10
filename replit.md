@@ -63,18 +63,18 @@ The Oracare Fulfillment System is a production-ready order management platform t
 - `logs.html` - Server Logs viewer (Admin only)
 - `email_contacts.html`, `settings.html`, `help.html`, `landing.html` - Utility pages
 
-**Automation Workflows (9):**
+**Automation Workflows (7):**
 | Workflow | Script | Interval |
 |----------|--------|----------|
 | dashboard-server | `app.py` | Continuous |
 | xml-import | `scheduled_xml_import.py` | 5 min |
 | shipstation-upload | `scheduled_shipstation_upload.py` | 5 min |
 | unified-shipstation-sync | `unified_shipstation_sync.py` | 5 min |
-| duplicate-scanner | `scheduled_duplicate_scanner.py` | 15 min |
-| lot-mismatch-scanner | `scheduled_lot_mismatch_scanner.py` | 15 min |
 | lot-tagger | `scheduled_lot_tagger.py` | 6:30 AM & 12:00 PM CT |
 | batch-processor | `scheduled_batch_processor.py` | 12:00 PM CT (business days) |
 | orders-cleanup | `scheduled_cleanup.py` | Daily |
+
+**Retired workflows (removed):** `duplicate-scanner`, `lot-mismatch-scanner` — tables (`duplicate_order_alerts`, `lot_mismatch_alerts`) kept as historical data but all UI, API routes, and scanner scripts deleted.
 
 **Workflow Health Monitoring:** All workflows log heartbeats (started/completed/error phases) to `workflow_heartbeats` table. Health status visible on Workflow Controls page (health badges, reset buttons, incident history). APIs: `/api/workflow_health`, `/api/workflow/{name}/reset`, `/api/stuck_workflow_incidents`.
 

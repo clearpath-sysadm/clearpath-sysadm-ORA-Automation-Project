@@ -13,42 +13,6 @@ logger = logging.getLogger(__name__)
 IS_PRODUCTION = os.getenv('REPLIT_DEPLOYMENT') == '1'
 
 
-def _dedup_lot_mismatch_alerts(cursor):
-    """
-    Remove duplicate shipstation_order_id rows from lot_mismatch_alerts,
-    keeping the earliest row (lowest id) per order ID.
-
-    Background: the table used to allow one row per (order_number, base_sku),
-    so multi-SKU orders could accumulate several rows under the same
-    shipstation_order_id. The current design requires exactly one row per
-    shipstation_order_id (the scanner uses a SELECT pre-check before INSERT).
-    """
-    cursor.execute("""
-        SELECT COUNT(*) - COUNT(DISTINCT shipstation_order_id)
-        FROM lot_mismatch_alerts
-    """)
-    extra = cursor.fetchone()[0]
-
-    if extra == 0:
-        logger.info("startup_migrations: lot_mismatch_alerts — no duplicates, skipping dedup")
-        return 0
-
-    logger.warning(
-        f"startup_migrations: lot_mismatch_alerts — found {extra} duplicate rows, deduplicating"
-    )
-
-    cursor.execute("""
-        DELETE FROM lot_mismatch_alerts
-        WHERE id NOT IN (
-            SELECT MIN(id)
-            FROM lot_mismatch_alerts
-            GROUP BY shipstation_order_id
-        )
-    """)
-    deleted = cursor.rowcount
-    logger.info(f"startup_migrations: lot_mismatch_alerts — deleted {deleted} duplicate rows")
-    return deleted
-
 
 def _seed_production_lots(cursor):
     """
@@ -449,7 +413,6 @@ def run_all(conn):
     """
     try:
         with conn.cursor() as cur:
-            _dedup_lot_mismatch_alerts(cur)
             _seed_production_lots(cur)
             _reconcile_shipstation_lot_ids(cur)
             _ensure_shipstation_line_items_index(cur)
