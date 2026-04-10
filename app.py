@@ -339,7 +339,7 @@ ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'cha
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
 # upgrade to database advisory locks (pg_advisory_lock) for system-wide concurrency protection.
-_report_locks = {'EOD': False, 'EOW': False, 'EOM': False}
+_report_locks = {'EOD': False, 'EOW': False, 'EOM': False, 'LOT_RECON': False}
 
 @app.route('/')
 @login_required
@@ -3183,6 +3183,111 @@ def api_run_eom():
     finally:
         # Always release the lock
         _report_locks['EOM'] = False
+
+@app.route('/api/reports/lot_recon', methods=['POST'])
+@login_required
+def api_run_lot_recon():
+    """
+    Lot Reconciliation — backfill lot_id on shipstation_order_line_items rows
+    where the lot number is known from order_items_inbox.sku_lot but lot_id was
+    never set (e.g. during an outage when the lots table was empty).
+    Idempotent: rows with lot_id already set are never touched.
+    """
+    import datetime
+    import logging
+    from src.services.database.pg_utils import get_connection, log_report_run
+    from src.utils.server_logger import get_logger
+
+    logger = logging.getLogger(__name__)
+    server_logger = get_logger()
+
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except Exception:
+        pass
+
+    server_logger.info("Lot reconciliation sweep started", source="Reports", user=user_name, role=user_role)
+
+    if _report_locks['LOT_RECON']:
+        return jsonify({
+            'success': False,
+            'error': 'Lot reconciliation already running'
+        }), 409
+
+    _report_locks['LOT_RECON'] = True
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT COUNT(*) FROM shipstation_order_line_items
+            WHERE lot_id IS NULL
+              AND sku IN ('17612', '17904', '17914', '18675', '18795')
+        """)
+        pending = cursor.fetchone()[0]
+
+        if pending == 0:
+            log_report_run('LOT_RECON', datetime.date.today(), 'success',
+                           'No untagged rows — nothing to reconcile')
+            return jsonify({
+                'success': True,
+                'message': 'Nothing to reconcile — all lot_ids already populated'
+            })
+
+        cursor.execute("""
+            UPDATE shipstation_order_line_items soli
+            SET lot_id = l.lot_id
+            FROM orders_inbox oi,
+                 order_items_inbox oii,
+                 lots l
+            WHERE soli.order_inbox_id = oi.id
+              AND oii.order_inbox_id = oi.id
+              AND oii.sku = soli.sku
+              AND l.lot_number = TRIM(SPLIT_PART(oii.sku_lot, ' - ', 2))
+              AND soli.lot_id IS NULL
+              AND oii.sku_lot IS NOT NULL
+              AND oii.sku_lot != ''
+              AND soli.sku IN ('17612', '17904', '17914', '18675', '18795')
+        """)
+        updated = cursor.rowcount
+        conn.commit()
+
+        still_null = pending - updated
+        if still_null > 0:
+            msg = f'Reconciled {updated} rows; {still_null} rows still unmatched (no sku_lot data)'
+            log_report_run('LOT_RECON', datetime.date.today(), 'success', msg)
+            server_logger.warning(msg, source="Reports", user=user_name)
+        else:
+            msg = f'Reconciled {updated} rows — all lot_ids populated'
+            log_report_run('LOT_RECON', datetime.date.today(), 'success', msg)
+            server_logger.info(msg, source="Reports", user=user_name)
+
+        return jsonify({'success': True, 'message': msg})
+
+    except Exception as e:
+        if conn:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        logger.error(f"Lot reconciliation failed: {e}", exc_info=True)
+        log_report_run('LOT_RECON', datetime.date.today(), 'failed', str(e))
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        _report_locks['LOT_RECON'] = False
+
 
 @app.route('/api/reports/status', methods=['GET'])
 def api_report_status():

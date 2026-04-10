@@ -531,6 +531,10 @@
                                     💰 EOM
                                     <div class="btn-status" id="eom-status"></div>
                                 </button>
+                                <button class="btn" onclick="runLotRecon()" id="btn-lot-recon" title="Backfill lot_id on any order line items missing it">
+                                    🔄 Lot Recon
+                                    <div class="btn-status" id="lot-recon-status"></div>
+                                </button>
                             </div>
                         </div>
                         <div id="weeklyReportLoading" style="padding: 20px; text-align: center; color: var(--text-tertiary);">Loading weekly report...</div>
@@ -2931,6 +2935,36 @@
             }
         }
 
+        // Lot Reconciliation Button Handler
+        async function runLotRecon() {
+            const btn = document.getElementById('btn-lot-recon');
+            const statusDiv = document.getElementById('lot-recon-status');
+            const originalStatus = statusDiv.textContent;
+
+            btn.disabled = true;
+            statusDiv.textContent = 'Running...';
+            btn.style.opacity = '0.6';
+
+            try {
+                const response = await fetch('/api/reports/lot_recon', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    await loadReportStatus();
+                } else {
+                    throw new Error(result.error || 'Failed to run lot reconciliation');
+                }
+            } catch (error) {
+                console.error('Error running lot reconciliation:', error);
+                alert('Error running lot reconciliation: ' + error.message);
+                statusDiv.textContent = originalStatus;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
         // Load button status indicators
         async function loadReportStatus() {
             try {
@@ -2946,6 +2980,9 @@
                     }
                     if (result.data.EOM) {
                         document.getElementById('eom-status').textContent = formatWorkflowTimestamp(result.data.EOM.run_date);
+                    }
+                    if (result.data.LOT_RECON) {
+                        document.getElementById('lot-recon-status').textContent = formatWorkflowTimestamp(result.data.LOT_RECON.run_date);
                     }
                 }
             } catch (error) {
