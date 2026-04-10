@@ -3325,6 +3325,8 @@
         // Current user id (populated on DOMContentLoaded after auth)
         let _tlCurrentUserId = null;
         let _tlCurrentRole = null;
+        // Keyed by entry id — used by openEditModal to safely retrieve entry data
+        let _tlEntries = {};
 
         async function loadTimeLogEntries() {
             const loading = document.getElementById('tl-loading');
@@ -3345,6 +3347,10 @@
                     return;
                 }
 
+                // Cache entries by id so openEditModal can retrieve them safely
+                _tlEntries = {};
+                data.entries.forEach(e => { _tlEntries[e.id] = e; });
+
                 const tbody = document.getElementById('tl-tbody');
                 tbody.innerHTML = data.entries.map(e => {
                     const isOwner = _tlCurrentUserId && e.user_id === _tlCurrentUserId;
@@ -3360,7 +3366,7 @@
                             <td style="padding:9px 10px; font-size:13px; color:var(--text-secondary);">${escapeHtml(e.notes || '')}</td>
                             <td style="padding:9px 10px; white-space:nowrap; text-align:right;">
                                 ${canEdit ? `
-                                <button onclick="openEditModal(${e.id}, '${escapeHtml(e.log_date)}', ${e.hours_spent}, ${JSON.stringify(escapeHtml(e.notes || ''))})"
+                                <button onclick="openEditModal(${e.id})"
                                     style="margin-right:6px; padding:3px 10px; border:1px solid var(--border-color); border-radius:6px; background:transparent; cursor:pointer; font-size:12px; color:var(--text-secondary);">
                                     Edit
                                 </button>
@@ -3410,11 +3416,13 @@
             }
         }
 
-        function openEditModal(id, logDate, hoursSpent, notes) {
+        function openEditModal(id) {
+            const entry = _tlEntries[id];
+            if (!entry) return;
             document.getElementById('tl-edit-id').value = id;
-            document.getElementById('tl-edit-date').value = logDate;
-            buildHoursOptions(document.getElementById('tl-edit-hours'), hoursSpent);
-            document.getElementById('tl-edit-notes').value = notes;
+            document.getElementById('tl-edit-date').value = entry.log_date;
+            buildHoursOptions(document.getElementById('tl-edit-hours'), entry.hours_spent);
+            document.getElementById('tl-edit-notes').value = entry.notes || '';
             document.getElementById('tl-edit-error').style.display = 'none';
             const modal = document.getElementById('time-log-edit-modal');
             modal.style.display = 'flex';
