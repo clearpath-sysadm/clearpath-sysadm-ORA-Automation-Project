@@ -393,7 +393,8 @@ def _ensure_shipstation_line_items_index(cursor):
 
 def _ensure_time_logs_table(cursor):
     """
-    Create the time_logs table if it doesn't already exist.
+    Create the time_logs table if it doesn't already exist, then
+    conditionally add the FK to users if the users table is present.
 
     Captures who logged time, the date, hours spent (in 0.25 increments),
     and an optional note. Runs in both dev and production.
@@ -411,6 +412,32 @@ def _ensure_time_logs_table(cursor):
             created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     """)
+
+    # Add FK constraint to users if: users table exists AND constraint not yet added
+    cursor.execute("""
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'users'
+    """)
+    if cursor.fetchone():
+        cursor.execute("""
+            SELECT 1 FROM information_schema.table_constraints
+            WHERE table_name = 'time_logs'
+              AND constraint_name = 'time_logs_user_id_fkey'
+        """)
+        if not cursor.fetchone():
+            cursor.execute("""
+                ALTER TABLE time_logs
+                ADD CONSTRAINT time_logs_user_id_fkey
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            """)
+            logger.info("startup_migrations: time_logs_user_id_fkey FK constraint added")
+        else:
+            logger.info("startup_migrations: time_logs_user_id_fkey already present")
+    else:
+        logger.warning(
+            "startup_migrations: users table not found — time_logs FK constraint skipped"
+        )
+
     logger.info("startup_migrations: time_logs table ensured")
 
 
