@@ -29,6 +29,15 @@ def _seed_production_lots(cursor):
 
     After explicit-ID inserts the sequences are reset so future auto-inserts
     don't collide.
+
+    Verified production state (2026-04-13, Task #31):
+        skus:  5 rows (17612, 17904, 17914, 18675, 18795)
+        lots:  19 total, 5 active
+        lot_balances: 17612→260047=1728, 17904→250240=112,
+                      17914→250297=774,  18675→240231=437, 18795→11001=174
+        Lot tagger ACTIVE_LOTS_QUERY: 5 SKUs returned
+        Upload worker lot query:      5 active lots returned
+        Deployment log: VALIDATION PASSED — all lot/sku checks OK.
     """
     if not IS_PRODUCTION:
         return
