@@ -42,6 +42,10 @@ echo "Starting ShipStation units refresh..."
 python src/shipstation_units_refresher.py 2>&1 &
 UNITS_PID=$!
 
+echo "Starting lot tagger (6:00 AM and 12:00 PM CDT, with startup catch-up)..."
+python src/scheduled_lot_tagger.py 2>&1 &
+LOT_TAGGER_PID=$!
+
 # Give background processes a moment to start
 sleep 1
 
@@ -52,6 +56,7 @@ echo "   - ShipStation Upload: PID $UPLOAD_PID"
 echo "   - Unified ShipStation Sync: PID $UNIFIED_PID"
 echo "   - Cleanup: PID $CLEANUP_PID"
 echo "   - Units Refresh: PID $UNITS_PID"
+echo "   - Lot Tagger: PID $LOT_TAGGER_PID"
 echo "   - Weekly Reporter: MANUAL (EOW button)"
 echo "================================================"
 echo ""
@@ -65,4 +70,4 @@ exec python app.py
 
 # If Flask exits, kill background processes
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Dashboard stopped, shutting down background processes..."
-kill $XML_PID $UPLOAD_PID $UNIFIED_PID $CLEANUP_PID $UNITS_PID 2>/dev/null
+kill $XML_PID $UPLOAD_PID $UNIFIED_PID $CLEANUP_PID $UNITS_PID $LOT_TAGGER_PID 2>/dev/null

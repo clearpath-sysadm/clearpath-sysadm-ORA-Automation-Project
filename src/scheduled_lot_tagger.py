@@ -7,7 +7,7 @@ when orders enter awaiting_shipment. This scheduler is the reliability backstop:
 it runs twice daily to catch any orders missed by the webhook (server restarts,
 ShipStation retry exhaustion, etc.).
 
-Schedule: 6:30 AM and 12:00 PM CT on business days.
+Schedule: 6:00 AM and 12:00 PM CDT on business days.
 
 Also registers the ORDER_NOTIFY webhook with ShipStation on startup (idempotent).
 """
@@ -46,9 +46,9 @@ WORKFLOW_NAME = 'lot-tagger'
 SHIPSTATION_ORDERS_URL = 'https://ssapi.shipstation.com/orders'
 CST = pytz.timezone('US/Central')
 
-# Times at which the full reconciliation scan fires (CT)
+# Times at which the full reconciliation scan fires (CDT)
 SCAN_TIMES = [
-    datetime.time(6, 30),
+    datetime.time(6, 0),
     datetime.time(12, 0),
 ]
 SCAN_WINDOW_MINUTES = 5
@@ -59,8 +59,8 @@ def _should_run_startup_catchup() -> bool:
     Return True if the last successful reconciliation was more than 6 hours ago (or has
     never run), indicating a catch-up scan is needed immediately on startup.
 
-    The threshold of 6 hours sits safely above the ~5.5-hour interval between the two
-    scheduled scans (6:30 AM and 12:00 PM CT), so a normal restart that immediately
+    The threshold of 6 hours sits at the ~6-hour interval between the two
+    scheduled scans (6:00 AM and 12:00 PM CDT), so a normal restart that immediately
     follows a completed scan will never trigger an unwanted duplicate run.
     """
     try:
@@ -86,7 +86,7 @@ def _should_run_startup_catchup() -> bool:
 
 
 def _is_scan_time() -> bool:
-    """Return True if current CT time is within SCAN_WINDOW_MINUTES of a scheduled scan time."""
+    """Return True if current CDT time is within SCAN_WINDOW_MINUTES of a scheduled scan time."""
     now_cst = datetime.datetime.now(CST).time().replace(second=0, microsecond=0)
     for target in SCAN_TIMES:
         delta = abs(
@@ -238,7 +238,7 @@ def register_webhook_on_startup():
 
 def main():
     logger.info("Lot Tagger scheduler starting...")
-    logger.info("Schedule: 6:30 AM and 12:00 PM CT on business days")
+    logger.info("Schedule: 6:00 AM and 12:00 PM CDT on business days")
 
     register_webhook_on_startup()
 
@@ -275,7 +275,7 @@ def main():
                 time.sleep(60)
                 continue
 
-            # Time-of-day gate: only run at 6:30 AM or 12:00 PM CT (within 5 min window)
+            # Time-of-day gate: only run at 6:00 AM or 12:00 PM CDT (within 5 min window)
             now_minute = datetime.datetime.now(CST).strftime('%H:%M')
             if _is_scan_time() and now_minute != last_scan_minute:
                 last_scan_minute = now_minute
