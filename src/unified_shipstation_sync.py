@@ -591,7 +591,11 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             order_date = datetime.datetime.strptime(order_date_str[:10], '%Y-%m-%d').date()
         except:
             order_date = datetime.date.today()
-        
+        try:
+            order_datetime = datetime.datetime.strptime(order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+        except:
+            order_datetime = None
+
         # Get order items
         items = order.get('items', [])
         total_items = sum(item.get('quantity', 0) for item in items)
@@ -606,17 +610,17 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO orders_inbox (
-                order_number, order_date, customer_email, status, shipstation_order_id,
+                order_number, order_date, order_datetime, customer_email, status, shipstation_order_id,
                 total_items, total_amount_cents,
                 ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                 bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
                 shipping_carrier_code, shipping_carrier_id, shipping_service_code, shipping_service_name,
                 source_system
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ShipStation Manual')
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ShipStation Manual')
             RETURNING id
         """, (
-            order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents,
+            order_number, order_date, order_datetime, customer_email, db_status, str(order_id), total_items, total_amount_cents,
             ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
             bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
             carrier_info['carrier_code'], carrier_info['carrier_id'], 
@@ -777,6 +781,10 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
             order_date = datetime.datetime.strptime(order_date_str[:10], '%Y-%m-%d').date()
         except Exception:
             order_date = datetime.date.today()
+        try:
+            order_datetime = datetime.datetime.strptime(order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+        except Exception:
+            order_datetime = None
 
         items = order.get('items', [])
         total_items = sum(item.get('quantity', 0) for item in items)
@@ -788,17 +796,17 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO orders_inbox (
-                order_number, order_date, customer_email, status, shipstation_order_id,
+                order_number, order_date, order_datetime, customer_email, status, shipstation_order_id,
                 total_items, total_amount_cents,
                 ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
                 bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
                 shipping_carrier_code, shipping_carrier_id, shipping_service_code, shipping_service_name,
                 lot_stamp, source_system
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ShipStation')
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ShipStation')
             RETURNING id
         """, (
-            order_number, order_date, customer_email, db_status, str(order_id), total_items, total_amount_cents,
+            order_number, order_date, order_datetime, customer_email, db_status, str(order_id), total_items, total_amount_cents,
             ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
             bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone,
             carrier_info['carrier_code'], carrier_info['carrier_id'],

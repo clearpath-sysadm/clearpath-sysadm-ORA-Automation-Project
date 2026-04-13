@@ -489,6 +489,31 @@ def _resolve_false_positive_incident_8(cursor):
         logger.info("startup_migrations: resolved false-positive production_incident #8")
 
 
+def _add_order_datetime_column(cursor):
+    """
+    Add order_datetime TIMESTAMPTZ column to orders_inbox and backfill existing rows.
+
+    order_datetime stores the full ShipStation orderDate (with time, UTC) rather
+    than just the date portion.  It powers the noon-to-noon CDT shipping-window
+    count on the dashboard ("New Orders Today").
+
+    Idempotent: ADD COLUMN IF NOT EXISTS prevents failures on re-runs.
+    Backfill: existing rows receive  order_date::timestamptz + 12h  (noon UTC) as a
+    reasonable approximation — all rows are guaranteed to have a non-null order_date.
+    """
+    cursor.execute("""
+        ALTER TABLE orders_inbox
+        ADD COLUMN IF NOT EXISTS order_datetime TIMESTAMPTZ
+    """)
+    cursor.execute("""
+        UPDATE orders_inbox
+        SET order_datetime = order_date::timestamptz + INTERVAL '12 hours'
+        WHERE order_datetime IS NULL
+          AND order_date IS NOT NULL
+    """)
+    logger.info("startup_migrations: order_datetime column ensured and backfilled")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -503,6 +528,7 @@ def run_all(conn):
             _ensure_time_logs_table(cur)
             _cleanup_stale_scanner_rows(cur)
             _resolve_false_positive_incident_8(cur)
+            _add_order_datetime_column(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:

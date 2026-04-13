@@ -7018,17 +7018,24 @@ def api_sync_manual_order_from_shipstation(conflict_id):
             else:
                 # Create new order in orders_inbox
                 logger.info(f"➕ Creating NEW local order: {order_number} | Status: {db_status}, Items: {total_items}")
-                
+
+                _raw_order_date = ss_order.get('orderDate', original_ship_date) or ''
+                try:
+                    _order_datetime = datetime.datetime.strptime(_raw_order_date[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+                except Exception:
+                    _order_datetime = None
+
                 cursor.execute("""
                     INSERT INTO orders_inbox 
-                        (order_number, order_date, customer_name, company_name, status, 
+                        (order_number, order_date, order_datetime, customer_name, company_name, status, 
                          shipping_carrier_code, shipping_service_code, tracking_number,
                          total_items, shipstation_order_id, created_at, updated_at, data_source)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'shipstation_sync')
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'shipstation_sync')
                     RETURNING id
                 """, (
                     order_number,
-                    ss_order.get('orderDate', original_ship_date),
+                    _raw_order_date,
+                    _order_datetime,
                     customer_name,
                     company_name,
                     db_status,
@@ -8985,6 +8992,11 @@ def api_admin_sync_order_from_shipstation():
         shipstation_order_id = ss_order.get('orderId')
         order_status = ss_order.get('orderStatus', 'unknown')
         order_date = ss_order.get('orderDate')  # Get order date from ShipStation
+        _order_date_str = order_date or ''
+        try:
+            _order_datetime = datetime.datetime.strptime(_order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+        except Exception:
+            _order_datetime = None
         ship_to = ss_order.get('shipTo', {})
         customer_name = ship_to.get('name', '')
         company_name = ship_to.get('company', '')
@@ -9029,16 +9041,17 @@ def api_admin_sync_order_from_shipstation():
             # Update/insert into orders_inbox
             cursor.execute("""
                 INSERT INTO orders_inbox (
-                    order_number, shipstation_order_id, status, order_date,
+                    order_number, shipstation_order_id, status, order_date, order_datetime,
                     ship_name, ship_company,
                     tracking_number, shipping_carrier_code, shipping_service_code,
                     created_at, updated_at
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ON CONFLICT (order_number) DO UPDATE SET
                     shipstation_order_id = EXCLUDED.shipstation_order_id,
                     status = EXCLUDED.status,
                     order_date = EXCLUDED.order_date,
+                    order_datetime = EXCLUDED.order_datetime,
                     ship_name = EXCLUDED.ship_name,
                     ship_company = EXCLUDED.ship_company,
                     tracking_number = EXCLUDED.tracking_number,
@@ -9046,7 +9059,7 @@ def api_admin_sync_order_from_shipstation():
                     shipping_service_code = EXCLUDED.shipping_service_code,
                     updated_at = CURRENT_TIMESTAMP
             """, (
-                order_number, shipstation_order_id, db_status, order_date,
+                order_number, shipstation_order_id, db_status, order_date, _order_datetime,
                 customer_name, company_name,
                 tracking_number, carrier_code, service_code
             ))
@@ -10613,9 +10626,16 @@ def system_pulse():
         cur.execute("""
             SELECT
                 COUNT(*) FILTER (
-                    WHERE created_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'US/Central')
+                    WHERE order_datetime IS NOT NULL
+                      AND order_datetime >= (
+                        CASE
+                          WHEN EXTRACT(HOUR FROM NOW() AT TIME ZONE 'US/Central') >= 12
+                          THEN DATE_TRUNC('day', NOW() AT TIME ZONE 'US/Central') + INTERVAL '12 hours'
+                          ELSE DATE_TRUNC('day', NOW() AT TIME ZONE 'US/Central') - INTERVAL '12 hours'
+                        END
+                      ) AT TIME ZONE 'US/Central'
                 ) AS orders_today,
-                MAX(created_at) AS last_order_at
+                MAX(order_datetime) AS last_order_at
             FROM orders_inbox
             WHERE source_system != 'X-Cart'
         """)
@@ -10632,11 +10652,17 @@ def system_pulse():
         last_sync_at = sync_row[0] if sync_row else None
 
         conn.close()
+
+        # last_order_at is timestamptz — isoformat() already includes offset
+        last_order_at_str = last_order_at.isoformat() if last_order_at else None
+        # last_sync_at is timestamp without time zone (UTC) — append Z so browser parses as UTC
+        last_sync_at_str = (last_sync_at.isoformat() + 'Z') if last_sync_at else None
+
         return jsonify({
             'success': True,
             'orders_today': orders_today,
-            'last_order_at': last_order_at.isoformat() if last_order_at else None,
-            'last_sync_at': last_sync_at.isoformat() if last_sync_at else None,
+            'last_order_at': last_order_at_str,
+            'last_sync_at': last_sync_at_str,
         })
     except Exception as e:
         logger.error(f'Error fetching system pulse: {e}', exc_info=True)
