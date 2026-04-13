@@ -200,8 +200,8 @@ def register_webhook_on_startup():
     # Never register from the dev workspace — prod always owns the ORDER_NOTIFY webhook.
     # Dev catches missed orders via the twice-daily reconciliation sweep instead.
     # This guard is unconditional: even DEV_WORKERS_ACTIVE=true does not override it.
-    repl_slug = os.getenv('REPL_SLUG', '').lower()
-    if 'workspace' in repl_slug:
+    # REPLIT_DEV_DOMAIN is only present in the dev workspace, never in the production container.
+    if os.getenv('REPLIT_DEV_DOMAIN'):
         logger.info("Dev workspace — skipping webhook registration (prod always owns the webhook).")
         return
 
