@@ -262,11 +262,10 @@ def allowed_file(filename):
 
 def record_shipstation_order_deletion(shipstation_order_id, order_number=None, deleted_by=None, customer_data=None):
     """
-    Record a ShipStation order deletion in the database for duplicate alert auto-resolution.
+    Record a ShipStation order deletion in the database.
     
     This helper function is called by all deletion endpoints to ensure consistent tracking
-    of deleted orders. The duplicate scanner uses this table to auto-resolve alerts when
-    all duplicate records have been deleted.
+    of deleted orders.
     
     IDEMPOTENT: Returns success=True even if deletion was already recorded (ON CONFLICT DO NOTHING).
     This allows safe retries and consistent behavior across all deletion endpoints.
