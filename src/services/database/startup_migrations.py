@@ -443,6 +443,40 @@ def _cleanup_stale_scanner_rows(cursor):
         logger.info("startup_migrations: no stale scanner rows found in workflow_controls")
 
 
+def _resolve_false_positive_incident_8(cursor):
+    """
+    Close production_incident #8 which was a false positive.
+
+    Root cause: verify_tagging_results() checked the pre-tagging in-memory order
+    snapshot, so orders correctly tagged during the startup catch-up sweep still
+    showed customField1='' in memory. Fixed in tagger.py by writing the new value
+    back to the in-memory dict after each successful ShipStation API update.
+
+    Idempotent: only updates when status is still 'new'.
+    """
+    cursor.execute(
+        """
+        UPDATE production_incidents
+        SET status     = 'resolved',
+            cause      = 'QA check read the pre-tagging in-memory order snapshot. '
+                         'Orders 862266/862270/862271/862272 were correctly tagged in '
+                         'ShipStation during the startup catch-up sweep, but the Python '
+                         'dicts in all_orders were not updated in memory, so QA saw stale '
+                         'empty customField1 values and raised a false alarm.',
+            resolution = 'False positive confirmed by user ShipStation review. '
+                         'Fixed in tagger.py: all three tagging paths (tracked-SKU, '
+                         'lot-stamped SKU, home-office SKU) now write the new customField1 '
+                         'value back to the in-memory order dict immediately after a '
+                         'successful API update, so subsequent QA checks see post-tagging state.',
+            updated_at = NOW()
+        WHERE id = 8
+          AND status = 'new'
+        """,
+    )
+    if cursor.rowcount:
+        logger.info("startup_migrations: resolved false-positive production_incident #8")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -456,6 +490,7 @@ def run_all(conn):
             _ensure_shipstation_line_items_index(cur)
             _ensure_time_logs_table(cur)
             _cleanup_stale_scanner_rows(cur)
+            _resolve_false_positive_incident_8(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
