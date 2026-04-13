@@ -453,7 +453,19 @@ def _resolve_false_positive_incident_8(cursor):
     back to the in-memory dict after each successful ShipStation API update.
 
     Idempotent: only updates when status is still 'new'.
+    Safe: skips silently when the production_incidents table does not exist.
     """
+    cursor.execute(
+        """
+        SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE table_name = 'production_incidents'
+        )
+        """
+    )
+    if not cursor.fetchone()[0]:
+        return
+
     cursor.execute(
         """
         UPDATE production_incidents
