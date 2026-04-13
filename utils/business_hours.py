@@ -149,22 +149,12 @@ def is_dev_silent() -> bool:
     against the live ShipStation account.
 
     Detection logic:
-      - REPL_SLUG contains 'workspace'  → dev workspace (default block)
-      - ENVIRONMENT == 'production'     → trusted prod only when REPL_SLUG is absent
-      - Anything else                   → treated as dev (safe default)
+      - REPLIT_DEV_DOMAIN is set   → dev workspace (only present in dev, never in production)
+      - REPLIT_DEV_DOMAIN is unset → production container
     """
     import os
-    repl_slug = os.getenv('REPL_SLUG', '').lower()
-    environment = os.getenv('ENVIRONMENT', '').lower()
     dev_active = os.getenv('DEV_WORKERS_ACTIVE', '').lower() == 'true'
-
-    if 'workspace' in repl_slug:
-        is_dev = True
-    elif environment == 'production':
-        is_dev = False
-    else:
-        is_dev = True
-
+    is_dev = bool(os.getenv('REPLIT_DEV_DOMAIN'))
     return is_dev and not dev_active
 
 
