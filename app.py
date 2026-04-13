@@ -10653,9 +10653,10 @@ def system_pulse():
 
         conn.close()
 
-        # last_order_at is timestamptz — isoformat() already includes offset
-        last_order_at_str = last_order_at.isoformat() if last_order_at else None
-        # last_sync_at is timestamp without time zone (UTC) — append Z so browser parses as UTC
+        # Both fields represent UTC — use explicit Z suffix so browser parses as UTC.
+        # last_order_at is timestamptz (isoformat gives +00:00); replace with Z for consistency.
+        # last_sync_at is timestamp without time zone (stored as UTC); append Z directly.
+        last_order_at_str = last_order_at.isoformat().replace('+00:00', 'Z') if last_order_at else None
         last_sync_at_str = (last_sync_at.isoformat() + 'Z') if last_sync_at else None
 
         return jsonify({
