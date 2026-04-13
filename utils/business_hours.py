@@ -149,12 +149,13 @@ def is_dev_silent() -> bool:
     against the live ShipStation account.
 
     Detection logic:
-      - REPLIT_DEV_DOMAIN is set   → dev workspace (only present in dev, never in production)
-      - REPLIT_DEV_DOMAIN is unset → production container
+      - REPLIT_DEPLOYMENT == '1' → production container (runtime-managed by Replit,
+                                   cannot be overridden by user-configured secrets)
+      - anything else            → dev workspace
     """
     import os
     dev_active = os.getenv('DEV_WORKERS_ACTIVE', '').lower() == 'true'
-    is_dev = bool(os.getenv('REPLIT_DEV_DOMAIN'))
+    is_dev = os.getenv('REPLIT_DEPLOYMENT') != '1'
     return is_dev and not dev_active
 
 
