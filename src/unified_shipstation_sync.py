@@ -20,6 +20,7 @@ import logging
 import datetime
 import time
 from typing import List, Dict, Any, Tuple
+from zoneinfo import ZoneInfo
 import psycopg2
 
 # Add project root to path
@@ -586,13 +587,15 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
         db_status = status_mapping.get(order_status, 'synced_manual')
         
         # Parse order date
+        # ShipStation API returns timestamps in Pacific time (PDT/PST = America/Los_Angeles),
+        # not UTC. Label them correctly so the stored UTC value is accurate.
         order_date_str = order.get('orderDate', '')
         try:
             order_date = datetime.datetime.strptime(order_date_str[:10], '%Y-%m-%d').date()
         except:
             order_date = datetime.date.today()
         try:
-            order_datetime = datetime.datetime.strptime(order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+            order_datetime = datetime.datetime.strptime(order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=ZoneInfo('America/Los_Angeles'))
         except:
             order_datetime = None
 
@@ -776,13 +779,15 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
         }
         db_status = status_mapping.get(order_status, order_status)
 
+        # ShipStation API returns timestamps in Pacific time (PDT/PST = America/Los_Angeles),
+        # not UTC. Label them correctly so the stored UTC value is accurate.
         order_date_str = order.get('orderDate', '')
         try:
             order_date = datetime.datetime.strptime(order_date_str[:10], '%Y-%m-%d').date()
         except Exception:
             order_date = datetime.date.today()
         try:
-            order_datetime = datetime.datetime.strptime(order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+            order_datetime = datetime.datetime.strptime(order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=ZoneInfo('America/Los_Angeles'))
         except Exception:
             order_datetime = None
 

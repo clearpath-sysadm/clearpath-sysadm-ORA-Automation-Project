@@ -549,6 +549,48 @@ def _fix_inventory_transactions_unique_index(cursor):
     logger.info("startup_migrations: inventory_transactions unique index rebuilt (per-order)")
 
 
+def _fix_shipstation_timestamp_timezone(cursor):
+    """
+    ShipStation's API returns timestamps in Pacific time (PDT/PST = America/Los_Angeles),
+    not UTC.  Previous import code called .replace(tzinfo=utc) which mislabeled them,
+    causing every order_datetime to be stored 7 hours too early.
+
+    Proof (confirmed 2026-04-14):
+      order 862300 — ShipStation UI shows imported at 8:29 AM CDT
+      API createDate = 06:29 (Pacific) → treated as UTC → displayed as 1:29 AM CDT (wrong)
+      06:29 PDT (UTC-7) → 13:29 UTC → 8:29 AM CDT (correct)
+
+    This migration:
+      1. Adds a boolean guard column _datetime_tz_corrected (idempotency).
+      2. Adds +7 hours to every non-X-Cart order_datetime that was set from a real
+         ShipStation timestamp.  "Real" timestamps are identified by NOT matching the
+         noon-UTC backfill pattern (order_date::timestamptz + 12h) applied during
+         Task #37 for pre-existing historical rows.
+      3. Marks corrected rows with _datetime_tz_corrected = TRUE so the UPDATE is
+         skipped on every subsequent server restart.
+
+    Excluded:
+      - X-Cart orders  (different source system, timestamps handled separately)
+      - Noon-backfill rows  (approximate historical values; adjusting them would add
+        spurious precision to already-approximate data)
+    """
+    cursor.execute("""
+        ALTER TABLE orders_inbox
+        ADD COLUMN IF NOT EXISTS _datetime_tz_corrected BOOLEAN NOT NULL DEFAULT FALSE
+    """)
+    cursor.execute("""
+        UPDATE orders_inbox
+        SET
+            order_datetime         = order_datetime + INTERVAL '7 hours',
+            _datetime_tz_corrected = TRUE
+        WHERE _datetime_tz_corrected = FALSE
+          AND order_datetime IS NOT NULL
+          AND source_system != 'X-Cart'
+          AND order_datetime != (order_date::timestamptz + INTERVAL '12 hours')
+    """)
+    logger.info("startup_migrations: ShipStation timezone offset corrected (+7h applied to real timestamps)")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -565,6 +607,7 @@ def run_all(conn):
             _resolve_false_positive_incident_8(cur)
             _add_order_datetime_column(cur)
             _fix_inventory_transactions_unique_index(cur)
+            _fix_shipstation_timestamp_timezone(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:

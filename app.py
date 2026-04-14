@@ -7021,7 +7021,9 @@ def api_sync_manual_order_from_shipstation(conflict_id):
 
                 _raw_order_date = ss_order.get('orderDate', original_ship_date) or ''
                 try:
-                    _order_datetime = datetime.datetime.strptime(_raw_order_date[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+                    # ShipStation timestamps are in Pacific time (PDT/PST), not UTC
+                    from zoneinfo import ZoneInfo as _ZoneInfo
+                    _order_datetime = datetime.datetime.strptime(_raw_order_date[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=_ZoneInfo('America/Los_Angeles'))
                 except Exception:
                     _order_datetime = None
 
@@ -8994,7 +8996,9 @@ def api_admin_sync_order_from_shipstation():
         order_date = ss_order.get('orderDate')  # Get order date from ShipStation
         _order_date_str = order_date or ''
         try:
-            _order_datetime = datetime.datetime.strptime(_order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+            # ShipStation timestamps are in Pacific time (PDT/PST), not UTC
+            from zoneinfo import ZoneInfo as _ZoneInfo
+            _order_datetime = datetime.datetime.strptime(_order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=_ZoneInfo('America/Los_Angeles'))
         except Exception:
             _order_datetime = None
         ship_to = ss_order.get('shipTo', {})
