@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS promo_sku_replacement_log (
     order_number TEXT NOT NULL,
     promo_sku    TEXT NOT NULL,
     base_sku     TEXT NOT NULL,
-    status       TEXT NOT NULL,
+    status       TEXT NOT NULL
+                 CONSTRAINT promo_sku_replacement_log_status_check
+                 CHECK (status IN ('replaced', 'failed', 'verify_failed', 'skipped')),
     error_reason TEXT,
     processed_at TIMESTAMPTZ DEFAULT NOW()
 );

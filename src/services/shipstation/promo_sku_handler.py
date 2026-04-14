@@ -16,13 +16,15 @@ SKU (mapped in the sku_promotions table), this handler:
      log row to 'failed' so the next run can retry cleanly
   7. Returns the replacement order so the lot-tagger processes it normally
 
-Logging contract — exactly one canonical row per attempt in promo_sku_replacement_log:
-  'pending'      → written immediately before delete (intent record)
-  'replaced'     → updated from pending on successful delete
-  'failed'       → updated from pending if delete fails, or inserted directly on
-                   create/verify failures (those never reach pending)
-  'verify_failed'→ inserted directly when verification rejects the replacement
-  'skipped'      → inserted directly when no promo SKU found or idempotency guard fires
+Logging contract — exactly one canonical row per attempt in promo_sku_replacement_log.
+Valid statuses (enforced by DB CHECK constraint):
+  'replaced'     → written before delete call (documents intent); left as-is on
+                   successful delete; UPDATED to 'failed' if delete fails
+  'failed'       → inserted directly on create/verify failure, or updated from
+                   'replaced' if the final ShipStation delete call fails
+  'verify_failed'→ inserted directly when field verification rejects the replacement
+  'skipped'      → inserted directly when no promo SKU is found, or idempotency
+                   guard fires (original already replaced)
 
 Called from:
   - app.py webhook immediate loop
@@ -336,7 +338,7 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
 
         _record_deletion(conn, order)
         log_id = _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
-                            'pending', 'intent record — delete in progress')
+                            'replaced')
 
         delete_result = delete_order_from_shipstation(order_id, fetch_details_first=False)
         if not delete_result.get('success'):
@@ -352,8 +354,6 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
             _write_tagging_failure(conn, order_number, order_id,
                                    detected_promo_sku, f"cancel original failed: {error}")
             return order
-
-        _update_log_status(conn, log_id, 'replaced')
         server_logger.info(
             f"Replaced promo order {order_number}: "
             f"{detected_promo_sku} → {detected_base_sku} "
