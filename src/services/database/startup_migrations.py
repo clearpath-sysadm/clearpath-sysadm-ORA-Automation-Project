@@ -574,10 +574,22 @@ def _fix_shipstation_timestamp_timezone(cursor):
       - Noon-backfill rows  (approximate historical values; adjusting them would add
         spurious precision to already-approximate data)
     """
+    # Step 1: Add the guard column with DEFAULT FALSE so all pre-existing rows
+    # are initially marked as "not yet corrected".  New rows inserted after this
+    # migration runs will also start as FALSE until Step 3 changes the default.
     cursor.execute("""
         ALTER TABLE orders_inbox
         ADD COLUMN IF NOT EXISTS _datetime_tz_corrected BOOLEAN NOT NULL DEFAULT FALSE
     """)
+
+    # Step 2: Correct all pre-existing rows that have real ShipStation timestamps.
+    # Exclusions:
+    #   - _datetime_tz_corrected = TRUE  → already corrected, skip (idempotency)
+    #   - order_datetime IS NULL          → no timestamp to correct
+    #   - source_system IS NOT DISTINCT FROM 'X-Cart'  → different source, unaffected
+    #     (IS DISTINCT FROM handles NULLs correctly; != does not)
+    #   - noon-backfill pattern           → approximate historical value from Task #37;
+    #     adjusting would add false precision to already-imprecise data
     cursor.execute("""
         UPDATE orders_inbox
         SET
@@ -585,8 +597,16 @@ def _fix_shipstation_timestamp_timezone(cursor):
             _datetime_tz_corrected = TRUE
         WHERE _datetime_tz_corrected = FALSE
           AND order_datetime IS NOT NULL
-          AND source_system != 'X-Cart'
-          AND order_datetime != (order_date::timestamptz + INTERVAL '12 hours')
+          AND source_system IS DISTINCT FROM 'X-Cart'
+          AND order_datetime IS DISTINCT FROM (order_date::timestamptz + INTERVAL '12 hours')
+    """)
+
+    # Step 3: Change the column default to TRUE so any rows inserted AFTER this
+    # migration (i.e. from the fixed parser) are born already-correct and will
+    # never be shifted again on subsequent restarts.
+    cursor.execute("""
+        ALTER TABLE orders_inbox
+        ALTER COLUMN _datetime_tz_corrected SET DEFAULT TRUE
     """)
     logger.info("startup_migrations: ShipStation timezone offset corrected (+7h applied to real timestamps)")
 
