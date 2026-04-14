@@ -220,12 +220,23 @@ def register_webhook_on_startup():
         )
         return
 
-    domain = os.getenv('REPLIT_DEV_DOMAIN') or os.getenv('REPLIT_DOMAINS', '').split(',')[0].strip()
+    domain = os.getenv('REPLIT_DOMAINS', '').split(',')[0].strip() or os.getenv('REPLIT_DEV_DOMAIN', '')
     if not domain:
         logger.warning("Could not determine public domain — skipping webhook registration.")
         return
 
+    if 'picard.replit.dev' in domain:
+        logger.error(
+            f"WEBHOOK DOMAIN SANITY CHECK FAILED: resolved domain looks like a dev workspace URL "
+            f"({domain}) but we are in a production container (REPLIT_DEPLOYMENT=1). "
+            f"REPLIT_DOMAINS='{os.getenv('REPLIT_DOMAINS', '')}' "
+            f"REPLIT_DEV_DOMAIN='{os.getenv('REPLIT_DEV_DOMAIN', '')}'. "
+            f"Skipping webhook registration to avoid pointing ShipStation at the wrong server."
+        )
+        return
+
     target_url = f"https://{domain}/webhooks/shipstation/order/{token}"
+    logger.info(f"Registering ORDER_NOTIFY webhook to production domain: {domain}")
     result = register_order_notify_webhook(target_url)
 
     if result.get('success'):
