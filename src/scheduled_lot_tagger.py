@@ -255,7 +255,10 @@ def main():
     logger.info("Lot Tagger scheduler starting...")
     logger.info("Schedule: 6:00 AM and 12:00 PM CDT on business days")
 
-    register_webhook_on_startup()
+    try:
+        register_webhook_on_startup()
+    except Exception as e:
+        logger.warning(f"Webhook registration failed on startup (will retry next run): {e}")
 
     is_production = os.getenv('REPLIT_DEPLOYMENT') == '1'
     if not is_dev_silent() and (is_production or _should_run_startup_catchup()):
