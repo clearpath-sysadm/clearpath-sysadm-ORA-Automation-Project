@@ -362,7 +362,7 @@ ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'cha
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
 # upgrade to database advisory locks (pg_advisory_lock) for system-wide concurrency protection.
-_report_locks = {'EOD': False, 'EOW': False, 'EOM': False, 'LOT_RECON': False, 'RETAG_ALL': False}
+_report_locks = {'EOD': False, 'EOW': False, 'EOM': False, 'LOT_RECON': False, 'RETAG_ALL': False, 'PROMO_SWEEP': False}
 
 @app.route('/')
 @login_required
@@ -3333,6 +3333,7 @@ def api_retag_all():
         update_order_custom_fields
     )
     from src.lot_tagger.tagger import ACTIVE_LOTS_QUERY, resolve_shipping_profile
+    from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
     from src.utils.server_logger import get_logger
     from utils.api_utils import make_api_request
 
@@ -3357,6 +3358,7 @@ def api_retag_all():
 
     _report_locks['RETAG_ALL'] = True
     conn = None
+    promo_conn = None
     try:
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
@@ -3375,6 +3377,7 @@ def api_retag_all():
 
         headers = get_shipstation_headers(api_key, api_secret)
         TRACKED_SKUS = set(active_lots.keys())
+        promo_conn = get_connection()
 
         updated = 0
         skipped = 0
@@ -3397,6 +3400,9 @@ def api_retag_all():
             orders = data.get('orders', [])
 
             for order in orders:
+                # Run promo SKU check first — replaces the order if a promo SKU is detected
+                order = handle_promo_sku_order(order, promo_conn, headers)
+
                 order_id = order.get('orderId')
                 order_number = order.get('orderNumber', '')
                 items = order.get('items', [])
@@ -3470,7 +3476,70 @@ def api_retag_all():
                 conn.close()
             except Exception:
                 pass
+        if promo_conn:
+            try:
+                promo_conn.close()
+            except Exception:
+                pass
         _report_locks['RETAG_ALL'] = False
+
+
+@app.route('/api/reports/promo_sweep', methods=['POST'])
+@login_required
+def api_promo_sweep():
+    """
+    Manually trigger the full lot-tagger reconciliation sweep, including promo SKU
+    replacement. Equivalent to the twice-daily scheduled run in scheduled_lot_tagger.py.
+
+    Runs in a background thread and returns immediately. Results appear in the
+    server logs and in the PROMO_SWEEP entry of /api/reports/status.
+    """
+    import datetime
+    import threading
+    import logging
+    from src.services.database.pg_utils import log_report_run
+    from src.scheduled_lot_tagger import run_reconciliation
+    from src.utils.server_logger import get_logger
+
+    logger = logging.getLogger(__name__)
+    server_logger = get_logger()
+
+    user_name = "unknown"
+    user_role = None
+    try:
+        from src.auth.middleware import get_current_user
+        user = get_current_user()
+        if user and user.is_authenticated:
+            user_name = user.first_name or user.email or "unknown"
+            user_role = user.role
+    except Exception:
+        pass
+
+    if _report_locks['PROMO_SWEEP']:
+        return jsonify({'success': False, 'error': 'Promo sweep already running'}), 409
+
+    _report_locks['PROMO_SWEEP'] = True
+    server_logger.info("Manual promo sweep started", source="Reports", user=user_name, role=user_role)
+
+    def _run():
+        try:
+            run_reconciliation()
+            log_report_run('PROMO_SWEEP', datetime.date.today(), 'success',
+                           'Manual promo sweep completed')
+            server_logger.info("Manual promo sweep complete", source="Reports", user=user_name)
+        except Exception as e:
+            logger.error(f"Manual promo sweep failed: {e}", exc_info=True)
+            log_report_run('PROMO_SWEEP', datetime.date.today(), 'failed', str(e))
+            server_logger.error(f"Manual promo sweep failed: {e}", source="Reports", user=user_name)
+        finally:
+            _report_locks['PROMO_SWEEP'] = False
+
+    threading.Thread(target=_run, daemon=True).start()
+
+    return jsonify({
+        'success': True,
+        'message': 'Promo sweep started — results will appear in the server logs'
+    })
 
 
 @app.route('/api/reports/status', methods=['GET'])
@@ -5990,74 +6059,9 @@ def webhook_shipstation_order(token):
 
     def _process():
         try:
-            import datetime as _dt
-            from src.services.shipstation.api_client import (
-                get_shipstation_credentials, get_shipstation_headers
-            )
-            from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
-            from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
-            from src.services.database.pg_utils import get_connection
-            from utils.api_utils import make_api_request
-
-            api_key, api_secret = get_shipstation_credentials()
-            if not api_key or not api_secret:
-                logger.error("Webhook: failed to get ShipStation credentials")
-                return
-
-            headers = get_shipstation_headers(api_key, api_secret)
-            response = make_api_request(resource_url, method='GET', headers=headers, timeout=30)
-            if not response or response.status_code != 200:
-                logger.error(f"Webhook: failed to fetch resource {resource_url}: {response.status_code if response else 'no response'}")
-                return
-
-            data = response.json()
-            # resource_url may return a list (paged) or a single order
-            orders = data.get('orders', [data] if 'orderId' in data else [])
-            # Only tag awaiting_shipment orders — webhook fires for all status changes
-            orders = [o for o in orders if o.get('orderStatus') == 'awaiting_shipment']
-
-            conn = get_connection()
-            try:
-                active_lots, known_skus = build_lot_maps(conn)
-                for order in orders:
-                    order = handle_promo_sku_order(order, conn, headers)
-                    tag_order_lots(order, active_lots, known_skus, conn)
-
-                # 24-hour sweep: check all awaiting_shipment orders modified in the last
-                # 24 hours for any missing or incorrect enrichment fields.
-                # tag_order_lots() performs a full-field comparison and only writes
-                # to ShipStation when something is actually wrong or missing.
-                since = (_dt.datetime.utcnow() - _dt.timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
-                sweep_page = 1
-                while True:
-                    sweep_resp = make_api_request(
-                        url='https://ssapi.shipstation.com/orders',
-                        method='GET',
-                        headers=headers,
-                        params={
-                            'orderStatus': 'awaiting_shipment',
-                            'modifyDateStart': since,
-                            'pageSize': 500,
-                            'page': sweep_page,
-                        },
-                        timeout=30
-                    )
-                    if not sweep_resp or sweep_resp.status_code != 200:
-                        logger.error(
-                            f"Webhook 24h sweep failed on page {sweep_page}: "
-                            f"{sweep_resp.status_code if sweep_resp else 'no response'}"
-                        )
-                        break
-                    sweep_data = sweep_resp.json()
-                    for order in sweep_data.get('orders', []):
-                        order = handle_promo_sku_order(order, conn, headers)
-                        tag_order_lots(order, active_lots, known_skus, conn)
-                    if sweep_page >= sweep_data.get('pages', 1):
-                        break
-                    sweep_page += 1
-            finally:
-                conn.close()
-
+            from src.scheduled_lot_tagger import run_reconciliation
+            logger.info(f"Webhook: running full reconciliation sweep (triggered by {resource_url[:80]})")
+            run_reconciliation()
         except Exception as exc:
             logger.error(f"Webhook async processing error: {exc}", exc_info=True)
         finally:

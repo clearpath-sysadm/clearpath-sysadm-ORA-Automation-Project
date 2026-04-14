@@ -139,18 +139,18 @@ def run_reconciliation():
     tag_order_lots() does a full-field comparison and only writes to ShipStation
     when one or more fields are missing or incorrect.
     """
-    logger.info("=" * 70)
-    logger.info("LOT TAGGER RECONCILIATION STARTED")
-    logger.info("=" * 70)
+    server_logger.info("=" * 70, source="Lot Tagger")
+    server_logger.info("LOT TAGGER RECONCILIATION STARTED", source="Lot Tagger")
+    server_logger.info("=" * 70, source="Lot Tagger")
 
     api_key, api_secret = get_shipstation_credentials()
     if not api_key or not api_secret:
-        logger.error("Failed to get ShipStation credentials — aborting.")
+        server_logger.error("Failed to get ShipStation credentials — aborting.", source="Lot Tagger")
         return
 
     ss_headers = get_shipstation_headers(api_key, api_secret)
     all_orders = _fetch_awaiting_shipment_orders(api_key, api_secret)
-    logger.info(f"Total awaiting_shipment orders retrieved: {len(all_orders)}")
+    server_logger.info(f"Total awaiting_shipment orders retrieved: {len(all_orders)}", source="Lot Tagger")
 
     if not all_orders:
         server_logger.info("Lot tagger reconciliation: no awaiting_shipment orders found.", source="Lot Tagger")
@@ -162,7 +162,7 @@ def run_reconciliation():
 
     with transaction_with_retry() as conn:
         active_lots, known_skus = build_lot_maps(conn)
-        logger.info(f"Active lots loaded: {len(active_lots)} SKUs | Known SKUs: {len(known_skus)}")
+        server_logger.info(f"Active lots loaded: {len(active_lots)} SKUs | Known SKUs: {len(known_skus)}", source="Lot Tagger")
 
         for order in all_orders:
             try:
@@ -171,13 +171,15 @@ def run_reconciliation():
                 processed += 1
             except Exception as e:
                 failed += 1
+                server_logger.error(f"Error processing order {order.get('orderNumber')}: {e}", source="Lot Tagger")
                 logger.error(f"Error processing order {order.get('orderNumber')}: {e}", exc_info=True)
 
         try:
             qa = verify_tagging_results(all_orders, active_lots, known_skus, conn)
-            logger.info(
+            server_logger.info(
                 f"QA: {qa['tagged_correctly']}/{qa['total_tracked']} tracked orders correct, "
-                f"{qa['untagged_or_wrong']} untagged/wrong."
+                f"{qa['untagged_or_wrong']} untagged/wrong.",
+                source="Lot Tagger"
             )
         except Exception as e:
             logger.error(f"QA verification failed: {e}", exc_info=True)
@@ -193,9 +195,9 @@ def run_reconciliation():
     else:
         server_logger.info(summary, source="Lot Tagger")
 
-    logger.info("=" * 70)
-    logger.info(f"RECONCILIATION COMPLETE — {processed} checked, {failed} errors")
-    logger.info("=" * 70)
+    server_logger.info("=" * 70, source="Lot Tagger")
+    server_logger.info(f"RECONCILIATION COMPLETE — {processed} checked, {failed} errors", source="Lot Tagger")
+    server_logger.info("=" * 70, source="Lot Tagger")
 
 
 def register_webhook_on_startup():
