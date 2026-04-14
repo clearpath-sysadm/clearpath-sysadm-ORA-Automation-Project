@@ -42,6 +42,7 @@ from src.services.shipstation.api_client import (
     create_replacement_order,
     fetch_order_by_id,
     delete_order_from_shipstation,
+    cancel_order_in_shipstation,
 )
 
 logger = logging.getLogger(__name__)
@@ -441,9 +442,9 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
         log_id = _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                             'replaced')
 
-        delete_result = delete_order_from_shipstation(order_id, fetch_details_first=False)
-        if not delete_result.get('success'):
-            error = delete_result.get('error', 'delete failed')
+        cancel_result = cancel_order_in_shipstation(order_id)
+        if not cancel_result.get('success'):
+            error = cancel_result.get('error', 'cancel failed')
             server_logger.error(
                 f"Failed to cancel original promo order {order_number} "
                 f"(SS ID: {order_id}) after successful replacement: {error}",

@@ -740,6 +740,51 @@ def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = Tru
         return {'success': False, 'error': str(e)}
 
 
+def cancel_order_in_shipstation(order_id: int) -> dict:
+    """
+    Cancel a ShipStation order by setting its orderStatus to 'cancelled'.
+
+    Uses POST /orders/createorder with only orderId + orderStatus so ShipStation
+    updates the existing order in-place rather than creating a new one.
+
+    Returns:
+        {'success': bool, 'error': str (on failure)}
+    """
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        headers['Content-Type'] = 'application/json'
+
+        logger.info(f"Cancelling order in ShipStation: Order ID {order_id}")
+
+        response = make_api_request(
+            url='https://ssapi.shipstation.com/orders/createorder',
+            method='POST',
+            headers=headers,
+            data={'orderId': order_id, 'orderStatus': 'cancelled'},
+            timeout=30,
+        )
+
+        if response and response.status_code == 200:
+            logger.info(f"✅ Successfully cancelled order {order_id} in ShipStation")
+            return {'success': True}
+        else:
+            error_msg = (
+                f"Failed to cancel order {order_id}: HTTP "
+                f"{response.status_code if response else 'no response'} — "
+                f"{response.text[:200] if response else ''}"
+            )
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error cancelling order {order_id} in ShipStation: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
 def create_replacement_order(original_order: dict, promo_sku: str, base_sku: str) -> dict:
     """
     Create a new ShipStation order that is identical to original_order except
