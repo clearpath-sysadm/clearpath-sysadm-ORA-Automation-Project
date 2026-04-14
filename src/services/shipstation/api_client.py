@@ -740,10 +740,11 @@ def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = Tru
         return {'success': False, 'error': str(e)}
 
 
-def create_replacement_order(original_order: dict, base_sku: str) -> dict:
+def create_replacement_order(original_order: dict, promo_sku: str, base_sku: str) -> dict:
     """
     Create a new ShipStation order that is identical to original_order except
-    the SKU in every line item is replaced with base_sku.
+    the specific promo SKU line item(s) are replaced with the base SKU.
+    All other line items are left unchanged.
 
     Key payload mutations (required so ShipStation creates a NEW order):
       - orderId  removed — omitting forces creation instead of update
@@ -751,6 +752,11 @@ def create_replacement_order(original_order: dict, base_sku: str) -> dict:
                            BigCommerce idempotency key and updating the original
 
     The user-facing orderNumber is preserved unchanged.
+
+    Args:
+        original_order: Full ShipStation order dict
+        promo_sku:      The promotional SKU to replace
+        base_sku:       The base fulfillment SKU to use instead
 
     Returns:
         {'success': bool, 'order': dict, 'error': str (optional)}
@@ -769,7 +775,8 @@ def create_replacement_order(original_order: dict, base_sku: str) -> dict:
         new_items = []
         for item in payload.get('items', []):
             new_item = dict(item)
-            new_item['sku'] = base_sku
+            if str(new_item.get('sku') or '').strip() == promo_sku:
+                new_item['sku'] = base_sku
             new_items.append(new_item)
         payload['items'] = new_items
 

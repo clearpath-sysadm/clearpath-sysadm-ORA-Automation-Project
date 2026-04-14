@@ -18,9 +18,10 @@ SKU (mapped in the sku_promotions table), this handler:
 
 Logging contract — exactly one canonical row per attempt in promo_sku_replacement_log.
 Valid statuses (enforced by DB CHECK constraint):
-  'replaced'     → written before delete call (documents intent); left as-is on
-                   successful delete; UPDATED to 'failed' if delete fails
-  'failed'       → inserted directly on create/verify failure, or updated from
+  'replaced'     → written before delete call (documents intent per spec);
+                   left as-is if delete succeeds; UPDATED (not a new row) to
+                   'failed' if delete call fails
+  'failed'       → inserted directly on create/verify failure; or updated from
                    'replaced' if the final ShipStation delete call fails
   'verify_failed'→ inserted directly when field verification rejects the replacement
   'skipped'      → inserted directly when no promo SKU is found, or idempotency
@@ -44,7 +45,15 @@ from src.services.shipstation.api_client import (
 logger = logging.getLogger(__name__)
 server_logger = get_logger()
 
-EXCLUDED_COMPARISON_KEYS = frozenset({'orderId', 'orderKey'})
+EXCLUDED_COMPARISON_KEYS = frozenset({
+    'orderId', 'orderKey',
+    'createDate', 'modifyDate',
+})
+
+EXCLUDED_ITEM_COMPARISON_KEYS = frozenset({
+    'orderItemId',
+    'createDate', 'modifyDate',
+})
 
 
 def _load_promo_map(conn) -> dict:
@@ -218,6 +227,8 @@ def _verify_replacement(original: dict, replacement: dict, base_sku: str) -> lis
     else:
         for i, (oi, ri) in enumerate(zip(orig_items, repl_items)):
             for item_key, orig_item_val in oi.items():
+                if item_key in EXCLUDED_ITEM_COMPARISON_KEYS:
+                    continue
                 if _is_empty(orig_item_val):
                     continue
                 if item_key == 'sku':
@@ -289,7 +300,7 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                        'skipped', 'already processed (idempotency guard)')
             return order
 
-        create_result = create_replacement_order(order, detected_base_sku)
+        create_result = create_replacement_order(order, detected_promo_sku, detected_base_sku)
         if not create_result.get('success'):
             error = create_result.get('error', 'unknown error')
             server_logger.error(
