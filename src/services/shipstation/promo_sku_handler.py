@@ -199,13 +199,18 @@ def _is_empty(val) -> bool:
     return val is None or val == '' or val == [] or val == {}
 
 
-def _verify_replacement(original: dict, replacement: dict, base_sku: str) -> list:
+def _verify_replacement(original: dict, replacement: dict,
+                        promo_sku: str, base_sku: str) -> list:
     """
     Compare ALL populated top-level fields from the original order against the
-    replacement order. The only permitted difference is the SKU within each line item.
+    replacement order.
+
+    SKU rule per line item:
+      - If original item SKU == promo_sku → replacement must have base_sku
+      - Otherwise → replacement must preserve the original SKU unchanged
 
     Returns a list of mismatch descriptions (empty list means verification passed).
-    Fields orderId and orderKey are intentionally excluded — they differ by design.
+    orderId, orderKey, createDate, and modifyDate are excluded — they differ by design.
     """
     mismatches = []
 
@@ -232,9 +237,11 @@ def _verify_replacement(original: dict, replacement: dict, base_sku: str) -> lis
                 if _is_empty(orig_item_val):
                     continue
                 if item_key == 'sku':
-                    if ri.get('sku') != base_sku:
+                    orig_item_sku = str(orig_item_val).strip()
+                    expected_sku  = base_sku if orig_item_sku == promo_sku else orig_item_sku
+                    if ri.get('sku') != expected_sku:
                         mismatches.append(
-                            f"items[{i}].sku: expected {base_sku!r}, "
+                            f"items[{i}].sku: expected {expected_sku!r}, "
                             f"got {ri.get('sku')!r}"
                         )
                     continue
@@ -332,7 +339,8 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
             return order
 
         fetched_replacement = verify_result['order']
-        mismatches = _verify_replacement(order, fetched_replacement, detected_base_sku)
+        mismatches = _verify_replacement(order, fetched_replacement,
+                                         detected_promo_sku, detected_base_sku)
         if mismatches:
             top_mismatches = mismatches[:5]
             error = f"field mismatches: {top_mismatches}"
