@@ -1,0 +1,49 @@
+Understood. Since BigCommerce needs the distinct SKU for reporting but the fulfillment team needs a unified workflow, we will use a **"Shadow Item Replacement"** strategy within ShipStation.
+
+Here is the technical description and requirements for your development team to implement this via the API.
+
+---
+
+## **Project Title: Buy-X-Get-Y Line Item Transformation**
+
+### **1. Executive Summary**
+To support marketing analytics in BigCommerce, "Free" items are imported as unique SKUs (e.g., `17613`). However, for fulfillment and inventory accuracy, these must be treated as the base SKU (`17612`). Since native line items cannot be edited, the system will programmatically append the correct SKU and mark the original as "Non-Shippable" to prevent double-shipping and specialist confusion.
+
+### **2. Workflow Logic (The API Bridge)**
+The integration must monitor the **Order Created** or **Order Awaiting Shipment** webhook and execute the following logic:
+
+1.  **Detection:** Scan the `lineItems` array for any SKU matching the "Free" pattern (e.g., `17613`).
+2.  **Validation:** Ensure the order is in a status that allows modification (`awaiting_shipment`).
+3.  **The "Shadow" Addition:** Use the `POST /orders/createorder` (update mode) to add a **new** line item to the existing Order ID with:
+    * `SKU`: The base version (e.g., `17612`).
+    * `Quantity`: Matches the quantity of the free SKU found.
+    * `Weight`: Matches the base SKU profile.
+4.  **The "Ghosting" of the Original:** Update the original free SKU (`17613`) on that order by setting:
+    * `isFreeLineItem`: true
+    * `adjustment`: true (to zero out cost/weight if necessary).
+    * **Note:** We keep the original item on the order for record-keeping but visually distinguish it for the specialist.
+
+### **3. Strategic Use of "Do Not Notify Marketplace"**
+When the fulfillment specialist prints the label for the modified order, the API call to ShipStation or the internal automation must ensure the **Notify Marketplace** flag is handled correctly:
+
+* **Requirement:** When the shipment is created, ShipStation must send the tracking number back to BigCommerce for the **Original Order ID**.
+* **Safety:** Because we are not changing the Order ID, only the line items inside, BigCommerce will receive the fulfillment update for the order as a whole.
+* **Result:** BigCommerce sees the order as "Shipped," satisfying their reporting, while our physical inventory was deducted from the correct base SKU (`17612`) in ShipStation.
+
+---
+
+### **4. Technical Requirements for Developers**
+
+* **Field Mapping:** Create a lookup table (e.g., in a Replit Secret or Database) that maps `Free SKU -> Base SKU` (e.g., `17613: 17612`).
+* **Tagging:** Upon successful transformation, apply a specific ShipStation **Tag** (e.g., "SKU_CONSOLIDATED") so specialists know the order has been processed by the script.
+* **Error Handling:** If the script fails to add the base SKU, the order must be tagged "CONSOLIDATION_FAILED" to prevent it from being shipped with the wrong inventory data.
+* **API Concurrency:** Ensure the script handles BigCommerce's `resource_url` thin-payload by fetching the full order object before attempting the transformation.
+
+### **5. Practical Reasons for this Approach**
+* **No Inventory Feedback Loop:** Since you aren't tracking inventory in BigCommerce, we don't need to worry about "syncing back" the change; we only care about the fulfillment status.
+* **Audit Trail:** By adding a line item instead of deleting one, the ShipStation Audit Report will show exactly when the 17612 was added and by which API Key.
+* **Specialist Clarity:** The fulfillment team will see a single, consistent SKU list (`17612`) for picking, reducing manual errors.
+
+---
+
+**Does this technical structure align with how you want the developers to handle the "Ghosting" of the 17613 SKU?**
