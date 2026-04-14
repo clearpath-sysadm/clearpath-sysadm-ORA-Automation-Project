@@ -257,10 +257,12 @@ def main():
 
     register_webhook_on_startup()
 
-    if not is_dev_silent() and _should_run_startup_catchup():
-        logger.info("Startup catch-up: last run was over 6 hours ago — running reconciliation now.")
+    is_production = os.getenv('REPLIT_DEPLOYMENT') == '1'
+    if not is_dev_silent() and (is_production or _should_run_startup_catchup()):
+        reason = "production redeploy" if is_production else "last run was over 6 hours ago"
+        logger.info(f"Startup reconciliation triggered: {reason}.")
         server_logger.info(
-            "Startup catch-up scan triggered (last successful run was over 6 hours ago).",
+            f"Startup reconciliation triggered: {reason}.",
             source="Lot Tagger"
         )
         try:
