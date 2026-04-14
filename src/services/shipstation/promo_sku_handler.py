@@ -4,16 +4,19 @@ Promotional SKU Order Replacement Handler
 When a ShipStation order enters awaiting_shipment and contains a promotional
 SKU (mapped in the sku_promotions table), this handler:
 
-  1. Creates a replacement order with the base SKU (identical in all other fields)
-  2. Verifies the replacement matches the original (only SKU may differ)
-  3. Documents the original locally BEFORE any destructive action
-  4. Cancels the original promo-SKU order in ShipStation
-  5. Returns the replacement order so the caller (lot-tagger) processes it
+  1. Logs a 'skipped' row if no promo SKU is found (for audit completeness)
+  2. Guards idempotency via deleted_shipstation_orders
+  3. Creates a replacement order with the base SKU (all other fields identical)
+  4. Fetches and verifies the replacement matches the original (only SKU may differ)
+  5. Documents the original locally BEFORE any destructive action
+  6. Cancels the original promo-SKU order in ShipStation
+     — If cancellation fails, rolls back the local record so the next run can retry
+  7. Returns the replacement order so the caller (lot-tagger) processes it normally
 
 All outcomes (replaced / failed / verify_failed / skipped) are written to
 promo_sku_replacement_log for future dashboard reporting.
-On failure, a row is also written to lot_tagging_failures so specialists see
-it in the existing error dashboard.
+On failure, a row is also written to lot_tagging_failures so specialists see it
+in the existing error dashboard.
 
 Called from:
   - app.py webhook immediate loop
@@ -22,7 +25,6 @@ Called from:
 """
 import json
 import logging
-from datetime import datetime, timezone
 
 from src.utils.server_logger import get_logger
 from src.services.shipstation.api_client import (
@@ -34,8 +36,13 @@ from src.services.shipstation.api_client import (
 logger = logging.getLogger(__name__)
 server_logger = get_logger()
 
-FIELDS_TO_COMPARE = ('shipTo', 'billTo', 'customerEmail', 'orderNumber',
-                     'carrierCode', 'serviceCode', 'amountPaid', 'taxAmount')
+FIELDS_TO_COMPARE = (
+    'shipTo', 'billTo', 'customerEmail', 'orderNumber',
+    'carrierCode', 'serviceCode', 'amountPaid', 'taxAmount',
+    'requestedShippingService', 'confirmation',
+    'giftMessage', 'internalNotes', 'customerNotes',
+    'dimensions', 'weight', 'advancedOptions',
+)
 
 
 def _load_promo_map(conn) -> dict:
@@ -60,7 +67,7 @@ def _write_log(conn, order_number: str, promo_sku: str, base_sku: str,
         logger.error(f"Failed to write promo_sku_replacement_log: {e}")
 
 
-def _write_tagging_failure(conn, order_number: str, shipstation_order_id: str,
+def _write_tagging_failure(conn, order_number: str, shipstation_order_id,
                            promo_sku: str, reason: str) -> None:
     """Record the failure in lot_tagging_failures so it surfaces in the dashboard."""
     try:
@@ -79,7 +86,7 @@ def _write_tagging_failure(conn, order_number: str, shipstation_order_id: str,
         logger.error(f"Failed to write lot_tagging_failures: {e}")
 
 
-def _already_processed(conn, original_order_id: int) -> bool:
+def _already_processed(conn, original_order_id) -> bool:
     """Return True if this original SS order ID was already replaced."""
     cursor = conn.cursor()
     cursor.execute("""
@@ -96,9 +103,9 @@ def _record_deletion(conn, original_order: dict) -> None:
     Write the original promo-SKU order to deleted_shipstation_orders BEFORE
     the DELETE API call so there is always a local record even if deletion fails.
     """
-    ship_to  = original_order.get('shipTo') or {}
-    bill_to  = original_order.get('billTo') or {}
-    items    = original_order.get('items', [])
+    ship_to = original_order.get('shipTo') or {}
+    bill_to = original_order.get('billTo') or {}
+    items   = original_order.get('items', [])
     items_json = json.dumps([
         {'sku': i.get('sku'), 'quantity': i.get('quantity'), 'name': i.get('name')}
         for i in items
@@ -134,28 +141,49 @@ def _record_deletion(conn, original_order: dict) -> None:
     conn.commit()
 
 
+def _rollback_deletion_record(conn, original_order_id) -> None:
+    """
+    Remove the pre-written deleted_shipstation_orders record if the ShipStation
+    DELETE call failed, so the next reconciliation run can retry the replacement.
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM deleted_shipstation_orders
+            WHERE shipstation_order_id = %s
+              AND deleted_by = 'promo_sku_replacement'
+        """, (original_order_id,))
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Failed to rollback deleted_shipstation_orders for {original_order_id}: {e}")
+
+
 def _verify_replacement(original: dict, replacement: dict, base_sku: str) -> list:
     """
-    Compare key fields between the original and replacement orders.
-    Returns a list of mismatched field names (empty = all good).
-    The only permitted difference is the SKU in line items.
+    Compare all meaningful fields between the original and replacement orders.
+    Returns a list of mismatched field descriptions (empty list = all good).
+    The only permitted difference is the SKU in each line item.
     """
     mismatches = []
 
     for field in FIELDS_TO_COMPARE:
-        if original.get(field) != replacement.get(field):
-            mismatches.append(field)
+        orig_val = original.get(field)
+        repl_val = replacement.get(field)
+        if orig_val != repl_val:
+            mismatches.append(f"{field}: {orig_val!r} != {repl_val!r}")
 
-    orig_items  = original.get('items', [])
-    repl_items  = replacement.get('items', [])
+    orig_items = original.get('items', [])
+    repl_items = replacement.get('items', [])
     if len(orig_items) != len(repl_items):
-        mismatches.append('items_count')
+        mismatches.append(f"items_count: {len(orig_items)} != {len(repl_items)}")
     else:
         for i, (oi, ri) in enumerate(zip(orig_items, repl_items)):
             if oi.get('quantity') != ri.get('quantity'):
-                mismatches.append(f'items[{i}].quantity')
+                mismatches.append(f"items[{i}].quantity: {oi.get('quantity')} != {ri.get('quantity')}")
             if ri.get('sku') != base_sku:
-                mismatches.append(f'items[{i}].sku_not_base')
+                mismatches.append(f"items[{i}].sku: expected {base_sku!r}, got {ri.get('sku')!r}")
+            if oi.get('unitPrice') != ri.get('unitPrice'):
+                mismatches.append(f"items[{i}].unitPrice: {oi.get('unitPrice')} != {ri.get('unitPrice')}")
 
     return mismatches
 
@@ -173,100 +201,124 @@ def handle_promo_sku_order(order: dict, conn) -> dict:
     order_id     = order.get('orderId')
     items        = order.get('items', [])
 
-    promo_map = _load_promo_map(conn)
-    if not promo_map:
-        return order
+    try:
+        promo_map = _load_promo_map(conn)
 
-    detected_promo_sku = None
-    detected_base_sku  = None
-    for item in items:
-        sku = str(item.get('sku') or '').strip()
-        if sku in promo_map:
-            detected_promo_sku = sku
-            detected_base_sku  = promo_map[sku]
-            break
+        if not promo_map:
+            return order
 
-    if not detected_promo_sku:
-        return order
+        detected_promo_sku = None
+        detected_base_sku  = None
+        for item in items:
+            sku = str(item.get('sku') or '').strip()
+            if sku in promo_map:
+                detected_promo_sku = sku
+                detected_base_sku  = promo_map[sku]
+                break
 
-    server_logger.info(
-        f"Promo SKU detected on order {order_number} "
-        f"(SS ID: {order_id}): {detected_promo_sku} → {detected_base_sku}",
-        source="Promo SKU Handler"
-    )
+        if not detected_promo_sku:
+            _write_log(conn, order_number, 'none', 'none',
+                       'skipped', 'no promo SKU detected in order')
+            return order
 
-    if _already_processed(conn, order_id):
         server_logger.info(
-            f"Order {order_number} (SS ID: {order_id}) already replaced — skipping.",
+            f"Promo SKU detected on order {order_number} "
+            f"(SS ID: {order_id}): {detected_promo_sku} → {detected_base_sku}",
             source="Promo SKU Handler"
         )
-        _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
-                   'skipped', 'already processed (idempotency guard)')
-        return order
 
-    create_result = create_replacement_order(order, detected_base_sku)
-    if not create_result.get('success'):
-        error = create_result.get('error', 'unknown error')
-        server_logger.error(
-            f"Failed to create replacement for order {order_number} "
-            f"(SS ID: {order_id}): {error}",
-            source="Promo SKU Handler"
-        )
-        _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
-                   'failed', f"create failed: {error}")
-        _write_tagging_failure(conn, order_number, order_id,
-                               detected_promo_sku, f"create failed: {error}")
-        return order
+        if _already_processed(conn, order_id):
+            server_logger.info(
+                f"Order {order_number} (SS ID: {order_id}) already replaced — skipping.",
+                source="Promo SKU Handler"
+            )
+            _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
+                       'skipped', 'already processed (idempotency guard)')
+            return order
 
-    new_order    = create_result['order']
-    new_order_id = new_order.get('orderId')
+        create_result = create_replacement_order(order, detected_base_sku)
+        if not create_result.get('success'):
+            error = create_result.get('error', 'unknown error')
+            server_logger.error(
+                f"Failed to create replacement for order {order_number} "
+                f"(SS ID: {order_id}): {error}",
+                source="Promo SKU Handler"
+            )
+            _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
+                       'failed', f"create failed: {error}")
+            _write_tagging_failure(conn, order_number, order_id,
+                                   detected_promo_sku, f"create failed: {error}")
+            return order
 
-    verify_result = fetch_order_by_id(new_order_id)
-    if not verify_result.get('success'):
-        error = verify_result.get('error', 'fetch failed')
-        server_logger.error(
-            f"Could not fetch replacement order {new_order_id} for verification "
-            f"(original: {order_number}): {error}",
-            source="Promo SKU Handler"
-        )
-        _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
-                   'verify_failed', f"fetch failed: {error}")
-        _write_tagging_failure(conn, order_number, order_id,
-                               detected_promo_sku, f"verify fetch failed: {error}")
-        return order
+        new_order    = create_result['order']
+        new_order_id = new_order.get('orderId')
 
-    fetched_replacement = verify_result['order']
-    mismatches = _verify_replacement(order, fetched_replacement, detected_base_sku)
-    if mismatches:
-        error = f"field mismatches: {mismatches}"
-        server_logger.error(
-            f"Replacement order {new_order_id} failed verification for "
-            f"original {order_number}: {error}",
-            source="Promo SKU Handler"
-        )
-        _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
-                   'verify_failed', error)
-        _write_tagging_failure(conn, order_number, order_id,
-                               detected_promo_sku, error)
-        return order
+        verify_result = fetch_order_by_id(new_order_id)
+        if not verify_result.get('success'):
+            error = verify_result.get('error', 'fetch failed')
+            server_logger.error(
+                f"Could not fetch replacement order {new_order_id} for verification "
+                f"(original: {order_number}): {error}",
+                source="Promo SKU Handler"
+            )
+            _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
+                       'verify_failed', f"fetch failed: {error}")
+            _write_tagging_failure(conn, order_number, order_id,
+                                   detected_promo_sku, f"verify fetch failed: {error}")
+            return order
 
-    _record_deletion(conn, order)
-    _write_log(conn, order_number, detected_promo_sku, detected_base_sku, 'replaced')
+        fetched_replacement = verify_result['order']
+        mismatches = _verify_replacement(order, fetched_replacement, detected_base_sku)
+        if mismatches:
+            error = f"field mismatches: {mismatches[:5]}"
+            server_logger.error(
+                f"Replacement order {new_order_id} failed verification for "
+                f"original {order_number}: {error}",
+                source="Promo SKU Handler"
+            )
+            _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
+                       'verify_failed', error)
+            _write_tagging_failure(conn, order_number, order_id,
+                                   detected_promo_sku, error)
+            return order
 
-    delete_result = delete_order_from_shipstation(order_id, fetch_details_first=False)
-    if not delete_result.get('success'):
-        error = delete_result.get('error', 'delete failed')
-        server_logger.error(
-            f"Failed to cancel original promo order {order_number} "
-            f"(SS ID: {order_id}) after successful replacement: {error}",
-            source="Promo SKU Handler"
-        )
-    else:
+        _record_deletion(conn, order)
+        _write_log(conn, order_number, detected_promo_sku, detected_base_sku, 'replaced')
+
+        delete_result = delete_order_from_shipstation(order_id, fetch_details_first=False)
+        if not delete_result.get('success'):
+            error = delete_result.get('error', 'delete failed')
+            server_logger.error(
+                f"Failed to cancel original promo order {order_number} "
+                f"(SS ID: {order_id}) after successful replacement: {error}",
+                source="Promo SKU Handler"
+            )
+            _rollback_deletion_record(conn, order_id)
+            _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
+                       'failed', f"cancel original failed: {error}")
+            _write_tagging_failure(conn, order_number, order_id,
+                                   detected_promo_sku, f"cancel original failed: {error}")
+            return order
+
         server_logger.info(
             f"Replaced promo order {order_number}: "
             f"{detected_promo_sku} → {detected_base_sku} "
             f"(old SS ID: {order_id}, new SS ID: {new_order_id})",
             source="Promo SKU Handler"
         )
+        return fetched_replacement
 
-    return fetched_replacement
+    except Exception as exc:
+        logger.error(
+            f"Unhandled exception in handle_promo_sku_order for {order_number} "
+            f"(SS ID: {order_id}): {exc}",
+            exc_info=True
+        )
+        try:
+            _write_log(conn, order_number, 'error', 'error',
+                       'failed', f"unhandled exception: {exc}")
+            _write_tagging_failure(conn, order_number, order_id,
+                                   'PROMO_HANDLER', f"unhandled exception: {exc}")
+        except Exception as log_err:
+            logger.error(f"Could not write failure logs for {order_number}: {log_err}")
+        return order
