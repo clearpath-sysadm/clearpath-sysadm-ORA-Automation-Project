@@ -6059,9 +6059,66 @@ def webhook_shipstation_order(token):
 
     def _process():
         try:
+            import time
+            from utils.api_utils import make_api_request
+            from src.services.shipstation.api_client import (
+                get_shipstation_credentials, get_shipstation_headers,
+            )
+            from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
+            from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
+            from src.services.database.pg_utils import transaction_with_retry
             from src.scheduled_lot_tagger import run_reconciliation
-            logger.info(f"Webhook: running full reconciliation sweep (triggered by {resource_url[:80]})")
+
+            # ── Step 1: immediately process the triggering order(s) ──────────
+            # ShipStation provides a resource_url pointing directly at the
+            # order(s) that just changed.  Fetching it avoids the race condition
+            # where a brand-new order hasn't yet appeared in the paginated
+            # awaiting_shipment list that run_reconciliation() would query.
+            logger.info(f"Webhook: fetching triggering orders from {resource_url[:80]}")
+            api_key, api_secret = get_shipstation_credentials()
+            ss_headers = get_shipstation_headers(api_key, api_secret)
+
+            resp = make_api_request(
+                url=resource_url,
+                method='GET',
+                headers=ss_headers,
+                timeout=15,
+            )
+
+            if resp and resp.status_code == 200:
+                triggering_orders = resp.json().get('orders', [])
+                logger.info(f"Webhook: {len(triggering_orders)} triggering order(s) — processing immediately")
+                if triggering_orders:
+                    with transaction_with_retry() as conn:
+                        active_lots, known_skus = build_lot_maps(conn)
+                        for order in triggering_orders:
+                            try:
+                                order = handle_promo_sku_order(order, conn, ss_headers)
+                                tag_order_lots(order, active_lots, known_skus, conn)
+                                logger.info(f"Webhook: immediately processed order {order.get('orderNumber')}")
+                            except Exception as _order_err:
+                                logger.error(
+                                    f"Webhook: error on immediate processing of "
+                                    f"{order.get('orderNumber')}: {_order_err}",
+                                    exc_info=True,
+                                )
+            else:
+                logger.warning(
+                    f"Webhook: could not fetch triggering orders "
+                    f"(status {resp.status_code if resp else 'no response'}) "
+                    f"— will rely on full sweep"
+                )
+
+            # ── Step 2: brief pause so ShipStation fully settles ─────────────
+            # Covers split/BOGO orders where ShipStation creates multiple
+            # sub-orders within the same second and the API may lag slightly.
+            logger.info("Webhook: pausing 15s before full reconciliation sweep")
+            time.sleep(15)
+
+            # ── Step 3: full sweep — catches anything else in the queue ───────
+            logger.info("Webhook: running full reconciliation sweep")
             run_reconciliation()
+
         except Exception as exc:
             logger.error(f"Webhook async processing error: {exc}", exc_info=True)
         finally:
