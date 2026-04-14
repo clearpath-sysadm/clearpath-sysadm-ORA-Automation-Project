@@ -634,6 +634,35 @@ def _clear_sync_interval_health_check(cursor):
     logger.info("startup_migrations: unified-shipstation-sync expected_interval_seconds cleared (schedule changed to 3x daily)")
 
 
+def _seed_sku_promotions(cursor):
+    """
+    Ensure all active promo-SKU → base-SKU mappings exist in sku_promotions.
+
+    Uses ON CONFLICT (promo_sku) DO UPDATE so the row is created if missing
+    and corrected if it exists with the wrong base_sku or active=FALSE.
+
+    Runs in both dev and production.  The four canonical mappings are:
+        17613 → 17612   (promo ring → base ring)
+        17905 → 17904
+        17915 → 17914
+        18676 → 18675   (promo toothbrush → base toothbrush)
+
+    18795 (toothpaste) is intentionally excluded — no promo variant.
+    """
+    cursor.execute("""
+        INSERT INTO sku_promotions (promo_sku, base_sku, active)
+        VALUES
+            ('17613', '17612', TRUE),
+            ('17905', '17904', TRUE),
+            ('17915', '17914', TRUE),
+            ('18676', '18675', TRUE)
+        ON CONFLICT (promo_sku) DO UPDATE
+            SET base_sku = EXCLUDED.base_sku,
+                active   = EXCLUDED.active
+    """)
+    logger.info(f"startup_migrations: sku_promotions — {cursor.rowcount} row(s) upserted")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -652,6 +681,7 @@ def run_all(conn):
             _fix_inventory_transactions_unique_index(cur)
             _fix_shipstation_timestamp_timezone(cur)
             _clear_sync_interval_health_check(cur)
+            _seed_sku_promotions(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
