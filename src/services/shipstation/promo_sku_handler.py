@@ -158,7 +158,8 @@ def _record_deletion(conn, original_order: dict) -> None:
             order_total_cents, order_date, items_json
         ) VALUES (%s, %s, NOW(), 'promo_sku_replacement',
                   %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT DO NOTHING
+        ON CONFLICT (shipstation_order_id)
+        DO UPDATE SET deleted_by = 'promo_sku_replacement', deleted_at = NOW()
     """, (
         original_order.get('orderId'),
         original_order.get('orderNumber'),
@@ -199,6 +200,48 @@ def _is_empty(val) -> bool:
     return val is None or val == '' or val == [] or val == {}
 
 
+def _values_match(orig_val, repl_val) -> bool:
+    """
+    Type-aware equality check that tolerates ShipStation API normalization.
+
+    Two specific cases are handled beyond plain equality:
+
+    1. Numeric string vs float — SS GET returns amounts as strings ("49.99")
+       while createorder responses return them as floats (49.99).  Python's
+       '49.99' != 49.99 is True, which would cause a false verify_failed on
+       every real promo order.
+
+    2. Dict subset — SS back-fills extra keys in dict fields (e.g. storeId,
+       customField2) on the createorder round-trip.  We verify that every
+       non-empty key present in the original exists with the same value in the
+       replacement; extra keys added by SS are ignored.
+    """
+    if orig_val == repl_val:
+        return True
+
+    if isinstance(orig_val, str) and isinstance(repl_val, (int, float)):
+        try:
+            return float(orig_val) == float(repl_val)
+        except (ValueError, TypeError):
+            pass
+
+    if isinstance(orig_val, (int, float)) and isinstance(repl_val, str):
+        try:
+            return float(orig_val) == float(repl_val)
+        except (ValueError, TypeError):
+            pass
+
+    if isinstance(orig_val, dict) and isinstance(repl_val, dict):
+        for k, v in orig_val.items():
+            if _is_empty(v):
+                continue
+            if not _values_match(v, repl_val.get(k)):
+                return False
+        return True
+
+    return False
+
+
 def _verify_replacement(original: dict, replacement: dict,
                         promo_sku: str, base_sku: str) -> list:
     """
@@ -211,6 +254,10 @@ def _verify_replacement(original: dict, replacement: dict,
 
     Returns a list of mismatch descriptions (empty list means verification passed).
     orderId, orderKey, createDate, and modifyDate are excluded — they differ by design.
+
+    Uses _values_match() rather than plain equality to tolerate:
+      - Numeric type normalization (string "49.99" vs float 49.99)
+      - Dict field back-filling by ShipStation (advancedOptions gets extra keys)
     """
     mismatches = []
 
@@ -220,7 +267,7 @@ def _verify_replacement(original: dict, replacement: dict,
         if _is_empty(orig_val):
             continue
         repl_val = replacement.get(key)
-        if orig_val != repl_val:
+        if not _values_match(orig_val, repl_val):
             safe_orig = repr(orig_val)[:120]
             safe_repl = repr(repl_val)[:120]
             mismatches.append(f"{key}: {safe_orig} != {safe_repl}")
@@ -246,7 +293,7 @@ def _verify_replacement(original: dict, replacement: dict,
                         )
                     continue
                 repl_item_val = ri.get(item_key)
-                if orig_item_val != repl_item_val:
+                if not _values_match(orig_item_val, repl_item_val):
                     mismatches.append(
                         f"items[{i}].{item_key}: {orig_item_val!r} != {repl_item_val!r}"
                     )
@@ -268,10 +315,17 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
     Returns:
         The replacement order dict on success, or the original order dict if
         no replacement was needed or if any step failed.
+
+    Concurrency:
+        A PostgreSQL session-level advisory lock keyed on the ShipStation order
+        ID is acquired as soon as a promo SKU is detected.  If another session
+        already holds the lock the call returns immediately (logs 'skipped').
+        The lock is released in the finally block regardless of outcome.
     """
-    order_number = (order.get('orderNumber') or '').strip()
-    order_id     = order.get('orderId')
-    items        = order.get('items', [])
+    order_number  = (order.get('orderNumber') or '').strip()
+    order_id      = order.get('orderId')
+    items         = order.get('items', [])
+    lock_acquired = False
 
     try:
         promo_map = _load_promo_map(conn)
@@ -288,8 +342,6 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 break
 
         if not detected_promo_sku:
-            _write_log(conn, order_number, 'none', 'none',
-                       'skipped', 'no promo SKU detected in order')
             return order
 
         server_logger.info(
@@ -297,6 +349,20 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
             f"(SS ID: {order_id}): {detected_promo_sku} → {detected_base_sku}",
             source="Promo SKU Handler"
         )
+
+        if order_id is not None:
+            cursor = conn.cursor()
+            cursor.execute("SELECT pg_try_advisory_lock(%s)", (int(order_id),))
+            lock_acquired = cursor.fetchone()[0]
+            if not lock_acquired:
+                server_logger.info(
+                    f"Advisory lock busy for order {order_number} (SS ID: {order_id}) "
+                    f"— concurrent processing in progress, skipping.",
+                    source="Promo SKU Handler"
+                )
+                _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
+                           'skipped', 'concurrent processing (advisory lock busy)')
+                return order
 
         if _already_processed(conn, order_id):
             server_logger.info(
@@ -355,7 +421,6 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                                    detected_promo_sku, error)
             return order
 
-        _record_deletion(conn, order)
         log_id = _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                             'replaced')
 
@@ -367,12 +432,13 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 f"(SS ID: {order_id}) after successful replacement: {error}",
                 source="Promo SKU Handler"
             )
-            _rollback_deletion_record(conn, order_id)
             _update_log_status(conn, log_id, 'failed',
                                f"cancel original failed: {error}")
             _write_tagging_failure(conn, order_number, order_id,
                                    detected_promo_sku, f"cancel original failed: {error}")
             return order
+
+        _record_deletion(conn, order)
         server_logger.info(
             f"Replaced promo order {order_number}: "
             f"{detected_promo_sku} → {detected_base_sku} "
@@ -397,3 +463,14 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 f"Could not write failure logs for {order_number}: {log_err}"
             )
         return order
+
+    finally:
+        if lock_acquired and order_id is not None:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT pg_advisory_unlock(%s)", (int(order_id),))
+                cursor.fetchone()
+            except Exception as unlock_err:
+                logger.warning(
+                    f"Failed to release advisory lock for order {order_id}: {unlock_err}"
+                )

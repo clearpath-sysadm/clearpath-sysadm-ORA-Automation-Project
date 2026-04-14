@@ -772,11 +772,16 @@ def create_replacement_order(original_order: dict, promo_sku: str, base_sku: str
         payload.pop('orderId', None)
         payload.pop('orderKey', None)
 
+        _STRIP_ITEM_KEYS = frozenset({'orderItemId', 'createDate', 'modifyDate'})
         new_items = []
         for item in payload.get('items', []):
             new_item = dict(item)
+            for k in _STRIP_ITEM_KEYS:
+                new_item.pop(k, None)
             if str(new_item.get('sku') or '').strip() == promo_sku:
                 new_item['sku'] = base_sku
+                if str(new_item.get('fulfillmentSku') or '').strip() == promo_sku:
+                    new_item['fulfillmentSku'] = base_sku
             new_items.append(new_item)
         payload['items'] = new_items
 
