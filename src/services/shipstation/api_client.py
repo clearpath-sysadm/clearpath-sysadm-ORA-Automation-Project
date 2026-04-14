@@ -740,20 +740,51 @@ def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = Tru
         return {'success': False, 'error': str(e)}
 
 
-def cancel_order_in_shipstation(order_id: int) -> dict:
+def cancel_order_in_shipstation(order_id: int, order_data: dict = None) -> dict:
     """
     Cancel a ShipStation order by setting its orderStatus to 'cancelled'.
 
-    Uses POST /orders/createorder with only orderId + orderStatus so ShipStation
-    updates the existing order in-place rather than creating a new one.
+    ShipStation's createorder endpoint requires the full order payload on update
+    (a minimal {orderId, orderStatus} body returns 400). Either the full order
+    dict can be passed in directly (preferred, avoids an extra API call) or it
+    will be fetched automatically.
+
+    Args:
+        order_id:   ShipStation order ID to cancel
+        order_data: Full ShipStation order dict (optional — fetched if omitted)
 
     Returns:
         {'success': bool, 'error': str (on failure)}
     """
+    _READONLY_KEYS = frozenset({
+        'createDate', 'modifyDate', 'userId',
+        'externallyFulfilled', 'externallyFulfilledBy',
+        'externallyFulfilledById', 'externallyFulfilledByName',
+        'labelMessages',
+    })
+
     try:
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
             return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        if order_data is None:
+            fetch_result = fetch_order_by_id(order_id, api_key, api_secret)
+            if not fetch_result.get('success') or not fetch_result.get('order'):
+                return {'success': False,
+                        'error': f"Could not fetch order {order_id} for cancellation: "
+                                 f"{fetch_result.get('error', 'unknown')}"}
+            order_data = fetch_result['order']
+
+        import copy
+        payload = copy.deepcopy(order_data)
+        payload['orderStatus'] = 'cancelled'
+        for key in _READONLY_KEYS:
+            payload.pop(key, None)
+
+        for item in payload.get('items', []):
+            for k in ('createDate', 'modifyDate'):
+                item.pop(k, None)
 
         headers = get_shipstation_headers(api_key, api_secret)
         headers['Content-Type'] = 'application/json'
@@ -764,7 +795,7 @@ def cancel_order_in_shipstation(order_id: int) -> dict:
             url='https://ssapi.shipstation.com/orders/createorder',
             method='POST',
             headers=headers,
-            data={'orderId': order_id, 'orderStatus': 'cancelled'},
+            data=payload,
             timeout=30,
         )
 

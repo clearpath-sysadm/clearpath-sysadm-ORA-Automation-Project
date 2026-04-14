@@ -442,7 +442,7 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
         log_id = _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                             'replaced')
 
-        cancel_result = cancel_order_in_shipstation(order_id)
+        cancel_result = cancel_order_in_shipstation(order_id, order_data=order)
         if not cancel_result.get('success'):
             error = cancel_result.get('error', 'cancel failed')
             server_logger.error(
