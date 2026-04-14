@@ -10628,11 +10628,7 @@ def system_pulse():
                 COUNT(*) FILTER (
                     WHERE order_datetime IS NOT NULL
                       AND order_datetime >= (
-                        CASE
-                          WHEN EXTRACT(HOUR FROM NOW() AT TIME ZONE 'US/Central') >= 12
-                          THEN DATE_TRUNC('day', NOW() AT TIME ZONE 'US/Central') + INTERVAL '12 hours'
-                          ELSE DATE_TRUNC('day', NOW() AT TIME ZONE 'US/Central') - INTERVAL '12 hours'
-                        END
+                        DATE_TRUNC('day', NOW() AT TIME ZONE 'US/Central') - INTERVAL '12 hours'
                       ) AT TIME ZONE 'US/Central'
                 ) AS orders_today,
                 MAX(order_datetime) AS last_order_at

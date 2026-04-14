@@ -1634,9 +1634,9 @@ def run_unified_sync():
                 # Log detailed errors for debugging
                 for detail in error_details:
                     logger.error(f"   ERROR DETAIL: {detail}")
-                # Rollback transaction to avoid partial commits
-                error_summary = "; ".join([d.split('\n')[0] for d in error_details[:5]])  # First line of first 5 errors
-                raise Exception(f"Processing failed with {stats['errors']} errors: {error_summary}")
+                # Do NOT raise here — successfully processed orders must be committed.
+                # Per-order SAVEPOINTs already isolated each failure; only the failed
+                # orders were rolled back.  Raising would discard all good imports too.
         
         # Comprehensive summary logging
         elapsed = (datetime.datetime.now() - sync_start).total_seconds()

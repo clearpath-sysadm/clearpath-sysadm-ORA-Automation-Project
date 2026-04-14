@@ -514,6 +514,41 @@ def _add_order_datetime_column(cursor):
     logger.info("startup_migrations: order_datetime column ensured and backfilled")
 
 
+def _fix_inventory_transactions_unique_index(cursor):
+    """
+    Replace the over-broad unique index on inventory_transactions with a
+    correct per-order index.
+
+    Problem (discovered 2026-04-14):
+      The existing index  inventory_transactions_date_sku_lot_id_type_qty_key
+      is defined on  (date, sku, COALESCE(lot_id,-1), quantity, transaction_type).
+      This prevents two DIFFERENT orders from shipping the same lot/sku/qty on
+      the same day — a legitimate scenario.  The sync's pre-check guards against
+      true double-deduction using (lot_id, shipstation_order_id, 'Ship'), but the
+      old index fires first and aborts the transaction, causing every sync run to
+      roll back ALL successfully imported orders via the raise-on-error path.
+
+    Fix:
+      1. Drop the old index (IF EXISTS — safe to repeat).
+      2. Create a new partial unique index on
+           (lot_id, shipstation_order_id, transaction_type)
+         WHERE shipstation_order_id IS NOT NULL.
+         This matches the pre-check exactly and allows different orders to each
+         deduct the same lot on the same day.
+
+    Idempotent: IF NOT EXISTS / IF EXISTS guards make repeated runs safe.
+    """
+    cursor.execute("""
+        DROP INDEX IF EXISTS inventory_transactions_date_sku_lot_id_type_qty_key
+    """)
+    cursor.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS inventory_transactions_lot_ss_type_key
+        ON inventory_transactions (lot_id, shipstation_order_id, transaction_type)
+        WHERE shipstation_order_id IS NOT NULL
+    """)
+    logger.info("startup_migrations: inventory_transactions unique index rebuilt (per-order)")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -529,6 +564,7 @@ def run_all(conn):
             _cleanup_stale_scanner_rows(cur)
             _resolve_false_positive_incident_8(cur)
             _add_order_datetime_column(cur)
+            _fix_inventory_transactions_unique_index(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
