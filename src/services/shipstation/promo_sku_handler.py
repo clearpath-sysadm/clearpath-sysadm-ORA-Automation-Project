@@ -4,28 +4,30 @@ Promotional SKU Order Replacement Handler
 When a ShipStation order enters awaiting_shipment and contains a promotional
 SKU (mapped in the sku_promotions table), this handler:
 
-  1. Logs a 'skipped' row if no promo SKU is found (for audit completeness)
+  1. Returns early (no log row) if no promo SKU is detected in the order
   2. Guards idempotency via deleted_shipstation_orders
-  3. Creates a replacement order with the base SKU (all other fields identical)
-  4. Fetches and verifies every populated field in the replacement matches the
-     original — the ONLY permitted difference is the SKU in each line item
-  5. Writes a 'pending' intent record to promo_sku_replacement_log and
-     documents the original in deleted_shipstation_orders BEFORE any deletion
-  6. Cancels the original promo-SKU order in ShipStation; on success updates
-     the log row to 'replaced'; on failure rolls back local records and updates
-     log row to 'failed' so the next run can retry cleanly
-  7. Returns the replacement order so the lot-tagger processes it normally
+  3. Acquires a PostgreSQL session-level advisory lock keyed on the SS order ID
+     to prevent concurrent duplicate replacements across callers
+  4. Creates a replacement order with the base SKU (all other fields identical)
+  5. Fetches the replacement back from ShipStation and verifies every populated
+     field matches the original — the ONLY permitted difference is the SKU
+  6. On verify failure: deletes the orphaned replacement from ShipStation,
+     logs 'verify_failed', writes a lot_tagging_failures alert, returns original
+  7. Logs 'replaced', cancels the original promo-SKU order in ShipStation,
+     records the deletion, and returns the replacement so the lot-tagger runs normally
+  8. On delete failure: updates the log row to 'failed' (no deleted_orders row
+     is written since deletion never succeeded) and alerts via lot_tagging_failures
 
 Logging contract — exactly one canonical row per attempt in promo_sku_replacement_log.
 Valid statuses (enforced by DB CHECK constraint):
-  'replaced'     → written before delete call (documents intent per spec);
-                   left as-is if delete succeeds; UPDATED (not a new row) to
-                   'failed' if delete call fails
-  'failed'       → inserted directly on create/verify failure; or updated from
-                   'replaced' if the final ShipStation delete call fails
-  'verify_failed'→ inserted directly when field verification rejects the replacement
-  'skipped'      → inserted directly when no promo SKU is found, or idempotency
-                   guard fires (original already replaced)
+  'replaced'     → written just before the delete call; left as-is if everything
+                   succeeds; UPDATED (not a new row) to 'failed' if delete fails
+  'failed'       → inserted directly on create failure; or updated from 'replaced'
+                   if the ShipStation delete call fails
+  'verify_failed'→ inserted directly when fetch or field verification fails;
+                   the orphaned replacement is cleaned up from ShipStation first
+  'skipped'      → inserted when the idempotency guard fires or the advisory lock
+                   is busy (concurrent session already processing this order)
 
 Called from:
   - app.py webhook immediate loop
@@ -176,25 +178,6 @@ def _record_deletion(conn, original_order: dict) -> None:
     conn.commit()
 
 
-def _rollback_deletion_record(conn, original_order_id) -> None:
-    """
-    Remove the pre-written deleted_shipstation_orders record if the ShipStation
-    DELETE call failed, so the next reconciliation run can retry the replacement.
-    """
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            DELETE FROM deleted_shipstation_orders
-            WHERE shipstation_order_id = %s
-              AND deleted_by = 'promo_sku_replacement'
-        """, (original_order_id,))
-        conn.commit()
-    except Exception as e:
-        logger.error(
-            f"Failed to rollback deleted_shipstation_orders for {original_order_id}: {e}"
-        )
-
-
 def _is_empty(val) -> bool:
     """Return True if a field value is considered unpopulated."""
     return val is None or val == '' or val == [] or val == {}
@@ -322,18 +305,18 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
         already holds the lock the call returns immediately (logs 'skipped').
         The lock is released in the finally block regardless of outcome.
     """
-    order_number  = (order.get('orderNumber') or '').strip()
-    order_id      = order.get('orderId')
-    items         = order.get('items', [])
-    lock_acquired = False
+    order_number       = (order.get('orderNumber') or '').strip()
+    order_id           = order.get('orderId')
+    items              = order.get('items', [])
+    lock_acquired      = False
+    detected_promo_sku = None
+    detected_base_sku  = None
 
     try:
         promo_map = _load_promo_map(conn)
         if not promo_map:
             return order
 
-        detected_promo_sku = None
-        detected_base_sku  = None
         for item in items:
             sku = str(item.get('sku') or '').strip()
             if sku in promo_map:
@@ -398,6 +381,14 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 f"(original: {order_number}): {error}",
                 source="Promo SKU Handler"
             )
+            if new_order_id is not None:
+                cleanup = delete_order_from_shipstation(new_order_id, fetch_details_first=False)
+                if not cleanup.get('success'):
+                    logger.warning(
+                        f"Could not clean up orphaned replacement {new_order_id} "
+                        f"after fetch failure for {order_number}: "
+                        f"{cleanup.get('error', 'unknown')}"
+                    )
             _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                        'verify_failed', f"fetch failed: {error}")
             _write_tagging_failure(conn, order_number, order_id,
@@ -415,6 +406,14 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 f"original {order_number}: {error}",
                 source="Promo SKU Handler"
             )
+            if new_order_id is not None:
+                cleanup = delete_order_from_shipstation(new_order_id, fetch_details_first=False)
+                if not cleanup.get('success'):
+                    logger.warning(
+                        f"Could not clean up orphaned replacement {new_order_id} "
+                        f"after verify failure for {order_number}: "
+                        f"{cleanup.get('error', 'unknown')}"
+                    )
             _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                        'verify_failed', error)
             _write_tagging_failure(conn, order_number, order_id,
@@ -438,7 +437,20 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                                    detected_promo_sku, f"cancel original failed: {error}")
             return order
 
-        _record_deletion(conn, order)
+        try:
+            _record_deletion(conn, order)
+        except Exception as rec_err:
+            logger.error(
+                f"Failed to record deletion for {order_number} (SS ID: {order_id}) "
+                f"after successful delete — idempotency guard will be missing: {rec_err}"
+            )
+            _update_log_status(conn, log_id, 'failed',
+                               f"record_deletion failed after successful delete: {rec_err}")
+            _write_tagging_failure(conn, order_number, order_id,
+                                   detected_promo_sku,
+                                   f"record_deletion failed: {rec_err}")
+            return order
+
         server_logger.info(
             f"Replaced promo order {order_number}: "
             f"{detected_promo_sku} → {detected_base_sku} "
@@ -454,10 +466,12 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
             exc_info=True
         )
         try:
-            _write_log(conn, order_number, 'error', 'error',
+            promo_sku_for_log = detected_promo_sku or 'unknown'
+            base_sku_for_log  = detected_base_sku  or 'unknown'
+            _write_log(conn, order_number, promo_sku_for_log, base_sku_for_log,
                        'failed', f"unhandled exception: {exc}")
             _write_tagging_failure(conn, order_number, order_id,
-                                   'PROMO_HANDLER', f"unhandled exception: {exc}")
+                                   promo_sku_for_log, f"unhandled exception: {exc}")
         except Exception as log_err:
             logger.error(
                 f"Could not write failure logs for {order_number}: {log_err}"
