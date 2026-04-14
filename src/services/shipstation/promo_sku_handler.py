@@ -55,6 +55,11 @@ EXCLUDED_COMPARISON_KEYS = frozenset({
 EXCLUDED_ITEM_COMPARISON_KEYS = frozenset({
     'orderItemId',
     'createDate', 'modifyDate',
+    'productId',
+})
+
+EXCLUDED_ADVANCED_OPTIONS_KEYS = frozenset({
+    'mergedOrSplit', 'mergedIds', 'parentId',
 })
 
 
@@ -250,6 +255,13 @@ def _verify_replacement(original: dict, replacement: dict,
         if _is_empty(orig_val):
             continue
         repl_val = replacement.get(key)
+        if key == 'advancedOptions' and isinstance(orig_val, dict):
+            orig_val = {k: v for k, v in orig_val.items()
+                        if k not in EXCLUDED_ADVANCED_OPTIONS_KEYS}
+            repl_val = {k: v for k, v in (repl_val or {}).items()
+                        if k not in EXCLUDED_ADVANCED_OPTIONS_KEYS}
+            if _is_empty(orig_val):
+                continue
         if not _values_match(orig_val, repl_val):
             safe_orig = repr(orig_val)[:120]
             safe_repl = repr(repl_val)[:120]
@@ -326,7 +338,7 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
 
         if not detected_promo_sku:
             item_skus = [str(item.get('sku') or '').strip() for item in items]
-            server_logger.debug(
+            server_logger.info(
                 f"No promo SKU on order {order_number} (SS ID: {order_id}) — "
                 f"item SKUs scanned: {item_skus}",
                 source="Promo SKU Handler"
