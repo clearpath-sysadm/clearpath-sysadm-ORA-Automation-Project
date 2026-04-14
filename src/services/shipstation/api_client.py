@@ -740,6 +740,71 @@ def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = Tru
         return {'success': False, 'error': str(e)}
 
 
+def create_replacement_order(original_order: dict, base_sku: str) -> dict:
+    """
+    Create a new ShipStation order that is identical to original_order except
+    the SKU in every line item is replaced with base_sku.
+
+    Key payload mutations (required so ShipStation creates a NEW order):
+      - orderId  removed — omitting forces creation instead of update
+      - orderKey removed — omitting prevents ShipStation matching on the
+                           BigCommerce idempotency key and updating the original
+
+    The user-facing orderNumber is preserved unchanged.
+
+    Returns:
+        {'success': bool, 'order': dict, 'error': str (optional)}
+    """
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        import copy
+        payload = copy.deepcopy(original_order)
+
+        payload.pop('orderId', None)
+        payload.pop('orderKey', None)
+
+        new_items = []
+        for item in payload.get('items', []):
+            new_item = dict(item)
+            new_item['sku'] = base_sku
+            new_items.append(new_item)
+        payload['items'] = new_items
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        headers['Content-Type'] = 'application/json'
+
+        response = make_api_request(
+            url='https://ssapi.shipstation.com/orders/createorder',
+            method='POST',
+            headers=headers,
+            data=payload,
+            timeout=30,
+        )
+
+        if response and response.status_code == 200:
+            new_order = response.json()
+            logger.info(
+                f"Created replacement order #{new_order.get('orderNumber')} "
+                f"(SS ID: {new_order.get('orderId')}) with base SKU {base_sku}"
+            )
+            return {'success': True, 'order': new_order}
+        else:
+            error_msg = (
+                f"ShipStation createorder failed: HTTP "
+                f"{response.status_code if response else 'no response'} — "
+                f"{response.text[:200] if response else ''}"
+            )
+            logger.error(error_msg)
+            return {'success': False, 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error creating replacement order: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+
 def v2_get_pending_axiom_shipments() -> dict:
     """
     Fetch all pending shipments for the Axiom warehouse from ShipStation V2.

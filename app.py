@@ -5995,6 +5995,7 @@ def webhook_shipstation_order(token):
                 get_shipstation_credentials, get_shipstation_headers
             )
             from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
+            from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
             from src.services.database.pg_utils import get_connection
             from utils.api_utils import make_api_request
 
@@ -6019,6 +6020,7 @@ def webhook_shipstation_order(token):
             try:
                 active_lots, known_skus = build_lot_maps(conn)
                 for order in orders:
+                    order = handle_promo_sku_order(order, conn)
                     tag_order_lots(order, active_lots, known_skus, conn)
 
                 # 24-hour sweep: check all awaiting_shipment orders modified in the last
@@ -6048,6 +6050,7 @@ def webhook_shipstation_order(token):
                         break
                     sweep_data = sweep_resp.json()
                     for order in sweep_data.get('orders', []):
+                        order = handle_promo_sku_order(order, conn)
                         tag_order_lots(order, active_lots, known_skus, conn)
                     if sweep_page >= sweep_data.get('pages', 1):
                         break

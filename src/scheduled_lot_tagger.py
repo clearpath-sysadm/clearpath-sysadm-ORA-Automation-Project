@@ -30,6 +30,7 @@ from src.services.shipstation.api_client import (
     get_shipstation_credentials, get_shipstation_headers, register_order_notify_webhook
 )
 from src.lot_tagger.tagger import build_lot_maps, tag_order_lots, verify_tagging_results
+from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.api_utils import make_api_request
@@ -164,6 +165,7 @@ def run_reconciliation():
 
         for order in all_orders:
             try:
+                order = handle_promo_sku_order(order, conn)
                 tag_order_lots(order, active_lots, known_skus, conn)
                 processed += 1
             except Exception as e:
