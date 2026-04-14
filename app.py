@@ -9,6 +9,7 @@ import logging
 import threading
 from flask import Flask, jsonify, render_template, send_from_directory, request, session, g
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 import pytz
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -7022,8 +7023,7 @@ def api_sync_manual_order_from_shipstation(conflict_id):
                 _raw_order_date = ss_order.get('orderDate', original_ship_date) or ''
                 try:
                     # ShipStation timestamps are in Pacific time (PDT/PST), not UTC
-                    from zoneinfo import ZoneInfo as _ZoneInfo
-                    _order_datetime = datetime.datetime.strptime(_raw_order_date[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=_ZoneInfo('America/Los_Angeles'))
+                    _order_datetime = datetime.datetime.strptime(_raw_order_date[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=ZoneInfo('America/Los_Angeles'))
                 except Exception:
                     _order_datetime = None
 
@@ -8997,8 +8997,7 @@ def api_admin_sync_order_from_shipstation():
         _order_date_str = order_date or ''
         try:
             # ShipStation timestamps are in Pacific time (PDT/PST), not UTC
-            from zoneinfo import ZoneInfo as _ZoneInfo
-            _order_datetime = datetime.datetime.strptime(_order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=_ZoneInfo('America/Los_Angeles'))
+            _order_datetime = datetime.datetime.strptime(_order_date_str[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=ZoneInfo('America/Los_Angeles'))
         except Exception:
             _order_datetime = None
         ship_to = ss_order.get('shipTo', {})
