@@ -2628,7 +2628,7 @@
             const diffMin = Math.floor(diffMs / 60000);
             if (diffMin < 2)  return 'Just now';
             if (diffMin < 60) return `${diffMin} min ago`;
-            const diffH = Math.floor(diffMin / 60);
+            const diffH = Math.round(diffMin / 60);
             if (diffH < 24)   return `${diffH}h ago`;
             const diffD = Math.floor(diffH / 24);
             if (diffD === 1)   return 'Yesterday';
