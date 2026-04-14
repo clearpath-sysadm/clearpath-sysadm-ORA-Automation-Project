@@ -6057,6 +6057,19 @@ def webhook_shipstation_order(token):
 
         except Exception as exc:
             logger.error(f"Webhook async processing error: {exc}", exc_info=True)
+        finally:
+            # Trigger a full sync on every webhook — success or failure.
+            # Uses --once mode which skips business-hours and runs immediately.
+            import subprocess as _sp
+            try:
+                _sp.Popen(
+                    ['python', 'src/unified_shipstation_sync.py', '--once'],
+                    stdout=_sp.DEVNULL,
+                    stderr=_sp.DEVNULL,
+                )
+                logger.info("Webhook: triggered unified-shipstation-sync --once")
+            except Exception as _trigger_err:
+                logger.error(f"Webhook: failed to trigger sync subprocess — {_trigger_err}")
 
     t = threading.Thread(target=_process, daemon=True)
     t.start()

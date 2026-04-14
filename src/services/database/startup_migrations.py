@@ -611,6 +611,29 @@ def _fix_shipstation_timestamp_timezone(cursor):
     logger.info("startup_migrations: ShipStation timezone offset corrected (+7h applied to real timestamps)")
 
 
+def _clear_sync_interval_health_check(cursor):
+    """
+    The unified-shipstation-sync workflow previously ran every 5 minutes, so
+    expected_interval_seconds was set to 300.  The schedule has changed to
+    3 fixed times per day (6 AM / 12 PM / 12:30 PM CDT) plus webhook triggers.
+    The longest legitimate gap between runs is now ~17.5 hours (overnight), so
+    the 300-second interval would fire constant false 'stuck' alarms.
+
+    Setting expected_interval_seconds to NULL opts this workflow out of the
+    time-based health check entirely.  Heartbeat-based monitoring (workflow_heartbeats)
+    continues to capture whether the workflow is alive when it actually runs.
+
+    Idempotent: IF NOT EXISTS / UPDATE is safe to run on every restart.
+    """
+    cursor.execute("""
+        UPDATE workflows
+        SET expected_interval_seconds = NULL
+        WHERE name = 'unified-shipstation-sync'
+          AND expected_interval_seconds IS NOT NULL
+    """)
+    logger.info("startup_migrations: unified-shipstation-sync expected_interval_seconds cleared (schedule changed to 3x daily)")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -628,6 +651,7 @@ def run_all(conn):
             _add_order_datetime_column(cur)
             _fix_inventory_transactions_unique_index(cur)
             _fix_shipstation_timestamp_timezone(cur)
+            _clear_sync_interval_health_check(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:

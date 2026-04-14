@@ -3,7 +3,8 @@
 Unified ShipStation Sync Service
 
 Consolidates manual order sync and status sync into a single watermark-based workflow.
-Runs every 5 minutes to efficiently sync both new manual orders and status updates.
+Runs at three fixed times per day (6:00 AM, 12:00 PM, 12:30 PM CDT) and is also
+triggered on every ShipStation webhook (success or failure) via --once mode.
 
 Key Features:
 - Single watermark-based incremental sync (no duplicate API calls)
@@ -56,8 +57,43 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 KEY_PRODUCT_SKUS = ['17612', '17904', '17914', '18675', '18795']
-SYNC_INTERVAL_SECONDS = 300  # 5 minutes
 WORKFLOW_NAME = 'unified-shipstation-sync'
+
+# Fixed daily run times in CDT/CST (America/Chicago).
+# ZoneInfo handles CDT↔CST transitions automatically.
+_SCHEDULE_TZ = ZoneInfo('America/Chicago')
+_DAILY_RUN_TIMES = [(6, 0), (12, 0), (12, 30)]  # (hour, minute)
+
+
+def _next_scheduled_run() -> datetime.datetime:
+    """
+    Return the next scheduled run as a timezone-aware CDT/CST datetime.
+    Slots: 6:00 AM, 12:00 PM, 12:30 PM America/Chicago.
+    If all today's slots have passed, returns the first slot tomorrow.
+    """
+    now = datetime.datetime.now(tz=_SCHEDULE_TZ)
+    today = now.date()
+    for h, m in _DAILY_RUN_TIMES:
+        slot = datetime.datetime(today.year, today.month, today.day,
+                                 h, m, 0, tzinfo=_SCHEDULE_TZ)
+        if slot > now:
+            return slot
+    tomorrow = today + datetime.timedelta(days=1)
+    h, m = _DAILY_RUN_TIMES[0]
+    return datetime.datetime(tomorrow.year, tomorrow.month, tomorrow.day,
+                             h, m, 0, tzinfo=_SCHEDULE_TZ)
+
+
+def _interruptible_sleep(total_seconds: float, chunk: int = 300) -> None:
+    """
+    Sleep for total_seconds in chunk-sized pieces so that KeyboardInterrupt
+    and dev-silent/enabled checks can take effect within `chunk` seconds
+    rather than waiting out the full (potentially overnight) sleep.
+    """
+    remaining = max(0.0, total_seconds)
+    while remaining > 0:
+        time.sleep(min(chunk, remaining))
+        remaining -= chunk
 
 
 def get_last_sync_timestamp() -> str:
@@ -1719,10 +1755,15 @@ def run_unified_sync():
 
 
 def main():
-    """Main loop - runs every 5 minutes during business hours (Mon-Fri 6 AM - 6 PM CT)"""
-    logger.info(f"🚀 Starting Unified ShipStation Sync (every {SYNC_INTERVAL_SECONDS}s)")
-    logger.info(f"⏰ Business Hours: Monday-Friday 6 AM - 6 PM CT | Weekends OFF")
-    
+    """
+    Main loop — runs at 6:00 AM, 12:00 PM, and 12:30 PM CDT/CST daily.
+    Webhook-triggered runs are handled separately via --once mode (run_once()).
+    Sleeps between scheduled times in 5-minute chunks so KeyboardInterrupt
+    and enabled/dev-silent checks remain responsive during long overnight gaps.
+    """
+    logger.info("🚀 Starting Unified ShipStation Sync — scheduled 3x daily")
+    logger.info("⏰ Schedule: 6:00 AM | 12:00 PM | 12:30 PM  (America/Chicago, DST-aware)")
+
     while True:
         try:
             # PRIORITY 0: Dev workspace silence guard
@@ -1731,28 +1772,28 @@ def main():
                 time.sleep(60)
                 continue
 
-            # PRIORITY 1: Check business hours BEFORE any database queries
-            if not check_business_hours():
-                status = format_business_hours_status()
-                logger.info(f"{status}")
-                sleep_duration = get_sleep_until_business_hours()
-                logger.info(f"💤 Database sleeping for {sleep_duration}s to reduce compute time")
-                time.sleep(sleep_duration)
+            # Compute next slot and sleep until then (chunked for responsiveness)
+            nxt = _next_scheduled_run()
+            sleep_secs = (nxt - datetime.datetime.now(tz=_SCHEDULE_TZ)).total_seconds()
+            nxt_label = nxt.strftime('%I:%M %p %Z on %Y-%m-%d')
+            logger.info(f"⏰ Next scheduled run: {nxt_label}  (sleeping {sleep_secs:.0f}s)")
+            _interruptible_sleep(sleep_secs)
+
+            # Re-check dev-silent after waking (env may have changed)
+            if is_dev_silent():
+                logger.debug("DEV SILENT MODE — skipping scheduled run.")
                 continue
-            
-            # PRIORITY 2: Check if workflow enabled
+
+            # PRIORITY 1: Check if workflow enabled
             if not is_workflow_enabled(WORKFLOW_NAME):
-                logger.info(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED - sleeping 60s")
-                time.sleep(60)
+                logger.info(f"⏸️ Workflow '{WORKFLOW_NAME}' is DISABLED — skipping scheduled run")
                 continue
-            
-            # Run sync during business hours
+
+            # Run the scheduled sync
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
             run_unified_sync()
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
-            logger.info(f"😴 Next sync in {SYNC_INTERVAL_SECONDS} seconds")
-            time.sleep(SYNC_INTERVAL_SECONDS)
-            
+
         except KeyboardInterrupt:
             logger.info("⛔ Unified sync stopped by user")
             break
@@ -1763,8 +1804,8 @@ def main():
         except Exception as e:
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
             logger.error(f"❌ Error in sync loop: {e}", exc_info=True)
-            logger.info(f"🔁 Retrying in {SYNC_INTERVAL_SECONDS} seconds")
-            time.sleep(SYNC_INTERVAL_SECONDS)
+            logger.info("🔁 Will retry at next scheduled time")
+            time.sleep(60)
 
 
 def run_once():
