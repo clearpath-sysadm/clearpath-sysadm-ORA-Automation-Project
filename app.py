@@ -10633,7 +10633,11 @@ def delete_time_log(entry_id):
 def system_pulse():
     """
     Returns a quick-view snapshot of system activity:
-      - orders_today: count of orders_inbox rows created since midnight Central Time
+      - orders_since_last_ship: count of non-cancelled, non-X-Cart orders_inbox rows
+        whose order_datetime::date falls after the most recent ship_date in shipped_orders.
+        Falls back to the last 7 days if shipped_orders is empty.
+      - last_ship_date: ISO date string of the most recent ship_date (e.g. "2026-04-10"),
+        or null if shipped_orders is empty.
       - last_order_at: ISO timestamp of the most recently created order (or null)
       - last_sync_at: ISO timestamp of the last completed unified-shipstation-sync (or null)
     """
@@ -10641,20 +10645,40 @@ def system_pulse():
         conn = get_connection()
         cur = conn.cursor()
 
-        cur.execute("""
-            SELECT
-                COUNT(*) FILTER (
-                    WHERE order_datetime IS NOT NULL
-                      AND order_datetime >= (
-                        DATE_TRUNC('day', NOW() AT TIME ZONE 'US/Central') - INTERVAL '12 hours'
-                      ) AT TIME ZONE 'US/Central'
-                ) AS orders_today,
-                MAX(order_datetime) AS last_order_at
-            FROM orders_inbox
-            WHERE source_system != 'X-Cart'
-        """)
+        # Determine last ship date from shipped_orders (stored as text, cast to date).
+        # Falls back to 7 days ago if the table is empty.
+        cur.execute("SELECT MAX(ship_date)::date FROM shipped_orders")
+        ship_row = cur.fetchone()
+        last_ship_date = ship_row[0] if ship_row and ship_row[0] else None
+
+        if last_ship_date:
+            cur.execute("""
+                SELECT
+                    COUNT(*) FILTER (
+                        WHERE order_datetime IS NOT NULL
+                          AND order_datetime::date > %s
+                          AND source_system != 'X-Cart'
+                          AND status NOT IN ('cancelled')
+                    ) AS orders_since_last_ship,
+                    MAX(order_datetime) AS last_order_at
+                FROM orders_inbox
+            """, (last_ship_date,))
+        else:
+            # Fallback: shipped_orders empty — count last 7 days
+            cur.execute("""
+                SELECT
+                    COUNT(*) FILTER (
+                        WHERE order_datetime IS NOT NULL
+                          AND order_datetime >= NOW() - INTERVAL '7 days'
+                          AND source_system != 'X-Cart'
+                          AND status NOT IN ('cancelled')
+                    ) AS orders_since_last_ship,
+                    MAX(order_datetime) AS last_order_at
+                FROM orders_inbox
+            """)
+
         row = cur.fetchone()
-        orders_today = int(row[0]) if row else 0
+        orders_since_last_ship = int(row[0]) if row else 0
         last_order_at = row[1] if row else None
 
         cur.execute("""
@@ -10667,15 +10691,17 @@ def system_pulse():
 
         conn.close()
 
-        # Both fields represent UTC — use explicit Z suffix so browser parses as UTC.
         # last_order_at is timestamptz (isoformat gives +00:00); replace with Z for consistency.
         # last_sync_at is timestamp without time zone (stored as UTC); append Z directly.
+        # last_ship_date is a Python date object — format as ISO string (YYYY-MM-DD).
         last_order_at_str = last_order_at.isoformat().replace('+00:00', 'Z') if last_order_at else None
         last_sync_at_str = (last_sync_at.isoformat() + 'Z') if last_sync_at else None
+        last_ship_date_str = last_ship_date.isoformat() if last_ship_date else None
 
         return jsonify({
             'success': True,
-            'orders_today': orders_today,
+            'orders_since_last_ship': orders_since_last_ship,
+            'last_ship_date': last_ship_date_str,
             'last_order_at': last_order_at_str,
             'last_sync_at': last_sync_at_str,
         })
