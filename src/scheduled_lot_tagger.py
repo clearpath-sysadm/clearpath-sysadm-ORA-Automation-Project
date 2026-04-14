@@ -148,6 +148,7 @@ def run_reconciliation():
         logger.error("Failed to get ShipStation credentials — aborting.")
         return
 
+    ss_headers = get_shipstation_headers(api_key, api_secret)
     all_orders = _fetch_awaiting_shipment_orders(api_key, api_secret)
     logger.info(f"Total awaiting_shipment orders retrieved: {len(all_orders)}")
 
@@ -165,7 +166,7 @@ def run_reconciliation():
 
         for order in all_orders:
             try:
-                order = handle_promo_sku_order(order, conn)
+                order = handle_promo_sku_order(order, conn, ss_headers)
                 tag_order_lots(order, active_lots, known_skus, conn)
                 processed += 1
             except Exception as e:

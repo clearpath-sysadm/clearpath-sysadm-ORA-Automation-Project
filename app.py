@@ -6020,7 +6020,7 @@ def webhook_shipstation_order(token):
             try:
                 active_lots, known_skus = build_lot_maps(conn)
                 for order in orders:
-                    order = handle_promo_sku_order(order, conn)
+                    order = handle_promo_sku_order(order, conn, headers)
                     tag_order_lots(order, active_lots, known_skus, conn)
 
                 # 24-hour sweep: check all awaiting_shipment orders modified in the last
@@ -6050,7 +6050,7 @@ def webhook_shipstation_order(token):
                         break
                     sweep_data = sweep_resp.json()
                     for order in sweep_data.get('orders', []):
-                        order = handle_promo_sku_order(order, conn)
+                        order = handle_promo_sku_order(order, conn, headers)
                         tag_order_lots(order, active_lots, known_skus, conn)
                     if sweep_page >= sweep_data.get('pages', 1):
                         break

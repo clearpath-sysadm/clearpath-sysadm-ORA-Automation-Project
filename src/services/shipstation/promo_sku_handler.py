@@ -7,16 +7,22 @@ SKU (mapped in the sku_promotions table), this handler:
   1. Logs a 'skipped' row if no promo SKU is found (for audit completeness)
   2. Guards idempotency via deleted_shipstation_orders
   3. Creates a replacement order with the base SKU (all other fields identical)
-  4. Fetches and verifies the replacement matches the original (only SKU may differ)
-  5. Documents the original locally BEFORE any destructive action
-  6. Cancels the original promo-SKU order in ShipStation
-     — If cancellation fails, rolls back the local record so the next run can retry
-  7. Returns the replacement order so the caller (lot-tagger) processes it normally
+  4. Fetches and verifies every populated field in the replacement matches the
+     original — the ONLY permitted difference is the SKU in each line item
+  5. Writes a 'pending' intent record to promo_sku_replacement_log and
+     documents the original in deleted_shipstation_orders BEFORE any deletion
+  6. Cancels the original promo-SKU order in ShipStation; on success updates
+     the log row to 'replaced'; on failure rolls back local records and updates
+     log row to 'failed' so the next run can retry cleanly
+  7. Returns the replacement order so the lot-tagger processes it normally
 
-All outcomes (replaced / failed / verify_failed / skipped) are written to
-promo_sku_replacement_log for future dashboard reporting.
-On failure, a row is also written to lot_tagging_failures so specialists see it
-in the existing error dashboard.
+Logging contract — exactly one canonical row per attempt in promo_sku_replacement_log:
+  'pending'      → written immediately before delete (intent record)
+  'replaced'     → updated from pending on successful delete
+  'failed'       → updated from pending if delete fails, or inserted directly on
+                   create/verify failures (those never reach pending)
+  'verify_failed'→ inserted directly when verification rejects the replacement
+  'skipped'      → inserted directly when no promo SKU found or idempotency guard fires
 
 Called from:
   - app.py webhook immediate loop
@@ -36,13 +42,7 @@ from src.services.shipstation.api_client import (
 logger = logging.getLogger(__name__)
 server_logger = get_logger()
 
-FIELDS_TO_COMPARE = (
-    'shipTo', 'billTo', 'customerEmail', 'orderNumber',
-    'carrierCode', 'serviceCode', 'amountPaid', 'taxAmount',
-    'requestedShippingService', 'confirmation',
-    'giftMessage', 'internalNotes', 'customerNotes',
-    'dimensions', 'weight', 'advancedOptions',
-)
+EXCLUDED_COMPARISON_KEYS = frozenset({'orderId', 'orderKey'})
 
 
 def _load_promo_map(conn) -> dict:
@@ -53,18 +53,41 @@ def _load_promo_map(conn) -> dict:
 
 
 def _write_log(conn, order_number: str, promo_sku: str, base_sku: str,
-               status: str, error_reason: str = None) -> None:
-    """Insert a row into promo_sku_replacement_log."""
+               status: str, error_reason: str = None) -> int | None:
+    """
+    Insert a row into promo_sku_replacement_log and return the new row id.
+    Returns None on error (logged internally).
+    """
     try:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO promo_sku_replacement_log
                 (order_number, promo_sku, base_sku, status, error_reason, processed_at)
             VALUES (%s, %s, %s, %s, %s, NOW())
+            RETURNING id
         """, (order_number, promo_sku, base_sku, status, error_reason))
+        row = cursor.fetchone()
         conn.commit()
+        return row[0] if row else None
     except Exception as e:
         logger.error(f"Failed to write promo_sku_replacement_log: {e}")
+        return None
+
+
+def _update_log_status(conn, log_id: int, status: str, error_reason: str = None) -> None:
+    """Update the status (and optionally error_reason) of an existing log row."""
+    if log_id is None:
+        return
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE promo_sku_replacement_log
+               SET status = %s, error_reason = %s
+             WHERE id = %s
+        """, (status, error_reason, log_id))
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Failed to update promo_sku_replacement_log row {log_id}: {e}")
 
 
 def _write_tagging_failure(conn, order_number: str, shipstation_order_id,
@@ -155,22 +178,36 @@ def _rollback_deletion_record(conn, original_order_id) -> None:
         """, (original_order_id,))
         conn.commit()
     except Exception as e:
-        logger.error(f"Failed to rollback deleted_shipstation_orders for {original_order_id}: {e}")
+        logger.error(
+            f"Failed to rollback deleted_shipstation_orders for {original_order_id}: {e}"
+        )
+
+
+def _is_empty(val) -> bool:
+    """Return True if a field value is considered unpopulated."""
+    return val is None or val == '' or val == [] or val == {}
 
 
 def _verify_replacement(original: dict, replacement: dict, base_sku: str) -> list:
     """
-    Compare all meaningful fields between the original and replacement orders.
-    Returns a list of mismatched field descriptions (empty list = all good).
-    The only permitted difference is the SKU in each line item.
+    Compare ALL populated top-level fields from the original order against the
+    replacement order. The only permitted difference is the SKU within each line item.
+
+    Returns a list of mismatch descriptions (empty list means verification passed).
+    Fields orderId and orderKey are intentionally excluded — they differ by design.
     """
     mismatches = []
 
-    for field in FIELDS_TO_COMPARE:
-        orig_val = original.get(field)
-        repl_val = replacement.get(field)
+    for key, orig_val in original.items():
+        if key in EXCLUDED_COMPARISON_KEYS or key == 'items':
+            continue
+        if _is_empty(orig_val):
+            continue
+        repl_val = replacement.get(key)
         if orig_val != repl_val:
-            mismatches.append(f"{field}: {orig_val!r} != {repl_val!r}")
+            safe_orig = repr(orig_val)[:120]
+            safe_repl = repr(repl_val)[:120]
+            mismatches.append(f"{key}: {safe_orig} != {safe_repl}")
 
     orig_items = original.get('items', [])
     repl_items = replacement.get('items', [])
@@ -178,20 +215,35 @@ def _verify_replacement(original: dict, replacement: dict, base_sku: str) -> lis
         mismatches.append(f"items_count: {len(orig_items)} != {len(repl_items)}")
     else:
         for i, (oi, ri) in enumerate(zip(orig_items, repl_items)):
-            if oi.get('quantity') != ri.get('quantity'):
-                mismatches.append(f"items[{i}].quantity: {oi.get('quantity')} != {ri.get('quantity')}")
-            if ri.get('sku') != base_sku:
-                mismatches.append(f"items[{i}].sku: expected {base_sku!r}, got {ri.get('sku')!r}")
-            if oi.get('unitPrice') != ri.get('unitPrice'):
-                mismatches.append(f"items[{i}].unitPrice: {oi.get('unitPrice')} != {ri.get('unitPrice')}")
+            for item_key, orig_item_val in oi.items():
+                if _is_empty(orig_item_val):
+                    continue
+                if item_key == 'sku':
+                    if ri.get('sku') != base_sku:
+                        mismatches.append(
+                            f"items[{i}].sku: expected {base_sku!r}, "
+                            f"got {ri.get('sku')!r}"
+                        )
+                    continue
+                repl_item_val = ri.get(item_key)
+                if orig_item_val != repl_item_val:
+                    mismatches.append(
+                        f"items[{i}].{item_key}: {orig_item_val!r} != {repl_item_val!r}"
+                    )
 
     return mismatches
 
 
-def handle_promo_sku_order(order: dict, conn) -> dict:
+def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
     """
     Main entry point. Inspect a single awaiting_shipment order for promo SKUs
     and execute the replacement workflow if applicable.
+
+    Args:
+        order:   ShipStation order dict (awaiting_shipment status expected)
+        conn:    Active DB connection
+        headers: ShipStation auth headers (optional; internal API calls fetch
+                 credentials independently if not provided)
 
     Returns:
         The replacement order dict on success, or the original order dict if
@@ -203,7 +255,6 @@ def handle_promo_sku_order(order: dict, conn) -> dict:
 
     try:
         promo_map = _load_promo_map(conn)
-
         if not promo_map:
             return order
 
@@ -270,7 +321,8 @@ def handle_promo_sku_order(order: dict, conn) -> dict:
         fetched_replacement = verify_result['order']
         mismatches = _verify_replacement(order, fetched_replacement, detected_base_sku)
         if mismatches:
-            error = f"field mismatches: {mismatches[:5]}"
+            top_mismatches = mismatches[:5]
+            error = f"field mismatches: {top_mismatches}"
             server_logger.error(
                 f"Replacement order {new_order_id} failed verification for "
                 f"original {order_number}: {error}",
@@ -283,7 +335,8 @@ def handle_promo_sku_order(order: dict, conn) -> dict:
             return order
 
         _record_deletion(conn, order)
-        _write_log(conn, order_number, detected_promo_sku, detected_base_sku, 'replaced')
+        log_id = _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
+                            'pending', 'intent record — delete in progress')
 
         delete_result = delete_order_from_shipstation(order_id, fetch_details_first=False)
         if not delete_result.get('success'):
@@ -294,12 +347,13 @@ def handle_promo_sku_order(order: dict, conn) -> dict:
                 source="Promo SKU Handler"
             )
             _rollback_deletion_record(conn, order_id)
-            _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
-                       'failed', f"cancel original failed: {error}")
+            _update_log_status(conn, log_id, 'failed',
+                               f"cancel original failed: {error}")
             _write_tagging_failure(conn, order_number, order_id,
                                    detected_promo_sku, f"cancel original failed: {error}")
             return order
 
+        _update_log_status(conn, log_id, 'replaced')
         server_logger.info(
             f"Replaced promo order {order_number}: "
             f"{detected_promo_sku} → {detected_base_sku} "
@@ -320,5 +374,7 @@ def handle_promo_sku_order(order: dict, conn) -> dict:
             _write_tagging_failure(conn, order_number, order_id,
                                    'PROMO_HANDLER', f"unhandled exception: {exc}")
         except Exception as log_err:
-            logger.error(f"Could not write failure logs for {order_number}: {log_err}")
+            logger.error(
+                f"Could not write failure logs for {order_number}: {log_err}"
+            )
         return order
