@@ -6060,10 +6060,12 @@ def webhook_shipstation_order(token):
         finally:
             # Trigger a full sync on every webhook — success or failure.
             # Uses --once mode which skips business-hours and runs immediately.
+            # sys.executable ensures the same Python interpreter is used in all
+            # environments (dev, staging, production) without relying on PATH.
             import subprocess as _sp
             try:
                 _sp.Popen(
-                    ['python', 'src/unified_shipstation_sync.py', '--once'],
+                    [sys.executable, 'src/unified_shipstation_sync.py', '--once'],
                     stdout=_sp.DEVNULL,
                     stderr=_sp.DEVNULL,
                 )
