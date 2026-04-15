@@ -1,0 +1,74 @@
+#46 - Harden Promo SKU Replacement Verification
+What & Why
+Two issues in promo_sku_handler.py caused a duplicate free-case shipment (order 862369):
+
+Verify step compares catalog-derived fields — The replacement verification compares every non-excluded field from the original ShipStation order against what ShipStation returns after creating the replacement. ShipStation recalculates catalog fields (weight, product name, image URL, UPC, unit price) from its own product catalog for the new order. When the base SKU has different catalog data than the promo SKU, these comparisons produce false verify_failed results even though the replacement was created correctly. The weight field was the direct trigger for the 862369 incident.
+
+Orphan cleanup failure is silent — When a verify_failed fires and the orphaned replacement order cannot be deleted from ShipStation, the code logs only a logger.warning(). This goes to the raw deployment console only — nothing surfaces in the dashboard, no incident is created. The orphan then lingers in ShipStation and can ship, as happened with 862369.
+
+Done looks like
+The verify step uses an explicit whitelist of fields only. All catalog-derived fields (name, imageUrl, upc, unitPrice, weight, productId) are no longer compared.
+When orphan deletion fails after either a fetch-fail or a verify-fail, a server_logger.error() is written (visible on /logs.html) AND a production incident row is inserted into lot_tagging_failures (surfaces on the main dashboard incident panel), with the order number and the orphan's ShipStation order ID.
+A legitimate verify failure (e.g. wrong address, wrong quantity, wrong SKU swap) still fires correctly — the whitelist covers the fields that actually validate the replacement.
+Existing EXCLUDED_COMPARISON_KEYS, EXCLUDED_ITEM_COMPARISON_KEYS, and EXCLUDED_ADVANCED_OPTIONS_KEYS constants are removed and replaced by the whitelist approach.
+Fields to compare (whitelist)
+Order-level fields:
+
+Field	Why it matters
+orderNumber	Confirms replacement is tied to the right original order
+orderStatus	Must be awaiting_shipment
+shipTo	Right customer, right shipping address
+billTo	Right billing info — copied verbatim, must match
+customerEmail	Customer identity
+requestedShippingService	Customer's requested shipping tier
+serviceCode	Actual ShipStation service routing — early-warning catch if lost. Note: the lot tagger also protects this independently: it preserves fedex_2day if already set and forces it for HI state, so 2-day and Hawaiian orders are covered even if this check were to miss.
+carrierCode	Carrier pairing for serviceCode — verified together
+advancedOptions.storeId	Sub-field only — controls which ShipStation store owns the order; wrong store breaks routing
+Per-item fields (applied to each line item):
+
+Field	Why it matters
+sku	Verified with promo→base swap logic: promo SKU (e.g. 17613) must become base SKU (e.g. 17612); all other SKUs must be unchanged. Items where the original SKU is blank or null (e.g. coupon/discount lines like TRUBLU26) must be skipped — do not attempt SKU comparison for those items.
+quantity	Right number of units
+Item count: Total number of line items must match between original and replacement.
+
+Implementation rules for the whitelist approach:
+
+For every whitelisted field, apply the same _is_empty guard as the current code: if the field is null, blank, empty list, or empty dict on the original, skip the comparison for that field. Do not fail verification because a whitelisted field is absent on the original.
+For advancedOptions.storeId: check only this sub-field. If advancedOptions itself is null/absent on the original, skip the check.
+The item-count check (len(orig_items) != len(repl_items)) must be preserved exactly as-is.
+Fields explicitly NOT compared:
+
+Field	Reason excluded
+name, imageUrl, upc, unitPrice (item-level)	Catalog-derived — ShipStation recalculates from base SKU catalog; will differ from promo SKU by design
+weight, dimensions	Catalog-derived — root cause of the 862369 incident
+productId, orderItemId, fulfillmentSku	Identity/catalog fields managed by ShipStation
+orderId, orderKey, createDate, modifyDate	Differ by design on every new order
+tagIds	ShipStation automations re-fire on any new order creation and re-apply tags (2-day, Benco, etc.) — timing of automation run means tags won't be present at verify time
+orderTotal, amountPaid	ShipStation is used for shipping only, not financial tracking
+advancedOptions.customField1/2/3	Lot tagger sets these after replacement — may differ intentionally
+advancedOptions.mergedOrSplit, mergedIds, parentId	ShipStation internal merge/split tracking
+paymentMethod, paymentDate, confirmation, internalNotes, customerNotes, giftMessage	Not operationally meaningful for replacement validation
+Orphan hardening — implementation details
+There are two places in handle_promo_sku_order where orphan cleanup silently fails with logger.warning(). Both must be fixed:
+
+Fetch-fail path (lines 407–412): when fetch_order_by_id fails and the orphan delete fails
+Verify-fail path (lines 432–437): when _verify_replacement returns mismatches and the orphan delete fails
+In both cases, replace logger.warning() with:
+
+server_logger.error() — surfaces immediately on /logs.html
+Insert a lot_tagging_failures row using new_order_id (the orphan's ShipStation order ID, not order_id which is the original's). The lot_tagging_failures table has a UNIQUE constraint on shipstation_order_id — using the orphan's ID correctly creates a separate incident row distinct from the verify_failed row already written for the original order.
+Out of scope
+Changes to how replacement orders are created (create_replacement_order in api_client.py)
+Changes to handle_promo_sku_order flow outside the verify and cleanup steps
+Modifying the lot_tagging_failures schema
+Investigating or fixing order 862380's items_count mismatch (separate bug)
+Tasks
+Refactor _verify_replacement to whitelist — Replace the current "compare everything minus exclusions" logic with the explicit whitelist above. Preserve the _is_empty guard for every field. Handle blank-SKU items by skipping their SKU check. For advancedOptions, check only storeId. Keep the item-count check unchanged. Remove the now-unnecessary EXCLUDED_COMPARISON_KEYS, EXCLUDED_ITEM_COMPARISON_KEYS, and EXCLUDED_ADVANCED_OPTIONS_KEYS constants.
+
+Harden both orphan cleanup failure paths — In both the fetch-fail path (lines 407–412) and the verify-fail path (lines 432–437), replace logger.warning() with server_logger.error() and insert a lot_tagging_failures row using the orphan's new_order_id as the shipstation_order_id.
+
+Relevant files
+src/services/shipstation/promo_sku_handler.py:51-66,253-299,397-442
+src/services/shipstation/api_client.py:824-898
+src/lot_tagger/tagger.py:96-105
+src/utils/server_logger.py

@@ -1,0 +1,101 @@
+#46 - Harden Promo SKU Replacement Verification
+What & Why
+Two issues in promo_sku_handler.py caused a duplicate free-case shipment (order 862369):
+
+Verify step compares catalog-derived fields — The replacement verification compares every non-excluded field from the original ShipStation order against what ShipStation returns after creating the replacement. ShipStation recalculates catalog fields (weight, product name, image URL, UPC, unit price) from its own product catalog for the new order. When the base SKU has different catalog data than the promo SKU, these comparisons produce false verify_failed results even though the replacement was created correctly. The weight field was the direct trigger for the 862369 incident.
+
+Orphan cleanup failure is silent — When a verify_failed fires and the orphaned replacement order cannot be deleted from ShipStation, the code logs only a logger.warning(). This goes to the raw deployment console only — nothing surfaces in the dashboard, no alert is raised. The orphan then lingers in ShipStation and can ship, as happened with 862369.
+
+Done looks like
+The verify step uses an explicit whitelist of fields only. All catalog-derived fields (name, imageUrl, upc, unitPrice, weight, productId) are no longer compared.
+When orphan deletion fails after either a fetch-fail or a verify-fail, two things happen: a server_logger.error() is written (visible on /logs.html), AND the red admin alert bar is activated on every dashboard page with a message identifying the order number and ShipStation orphan order ID — the bar stays red and non-dismissable until manually cleared by an admin after resolving the orphan.
+If a previous admin alert message already exists, the orphan message is appended to it (| separator), preserving both messages up to the 255-character column limit.
+A legitimate verify failure (e.g. wrong address, wrong quantity, wrong SKU swap) still fires correctly — the whitelist covers the fields that actually validate the replacement.
+Existing EXCLUDED_COMPARISON_KEYS, EXCLUDED_ITEM_COMPARISON_KEYS, and EXCLUDED_ADVANCED_OPTIONS_KEYS constants are removed and replaced by the whitelist approach.
+Fields to compare (whitelist)
+Order-level fields:
+
+Field	Why it matters
+orderNumber	Confirms replacement is tied to the right original order
+orderStatus	Must be awaiting_shipment
+shipTo	Right customer, right shipping address
+billTo	Right billing info — copied verbatim, must match
+customerEmail	Customer identity
+requestedShippingService	Customer's requested shipping tier
+serviceCode	Actual ShipStation service routing — early-warning catch if lost. Note: the lot tagger also protects this independently — it preserves fedex_2day if already set and forces it for HI state, so 2-day and Hawaiian orders are safe even if this check were to miss.
+carrierCode	Carrier pairing for serviceCode — verified together
+advancedOptions.storeId	Sub-field only — extract as (original.get('advancedOptions') or {}).get('storeId') and compare as a scalar using the standard _is_empty + _values_match pattern.
+Per-item fields (applied to each line item):
+
+Field	Why it matters
+sku	Verified with promo→base swap logic: promo SKU (e.g. 17613) must become base SKU (e.g. 17612); all other SKUs must be unchanged. If the original item's SKU is blank or null (e.g. a BigCommerce coupon line), skip that item's SKU check entirely.
+quantity	Right number of units
+Item count: Total number of line items must match between original and replacement.
+
+Implementation rules
+Whitelist approach:
+
+Iterate over the whitelisted fields explicitly rather than iterating original.items() and excluding.
+For every whitelisted field, apply the existing _is_empty guard (line 189): if the field is null, blank, empty list, or empty dict on the original, skip the comparison for that field. Do not fail verification because a whitelisted field is absent on the original.
+The item-count check (len(orig_items) != len(repl_items)) must be preserved exactly as-is.
+The existing _values_match helper (line 194) must be kept and used for all field comparisons — it handles numeric string normalization and dict subset matching which are still needed for shipTo, billTo, and other dict/numeric fields.
+The existing _is_empty helper (line 189) must be kept. Only the three EXCLUDED_* constants are removed.
+Orphan hardening — extract _cleanup_orphan helper: The two orphan cleanup blocks (fetch-fail: lines 405–412, verify-fail: lines 430–437) are structurally identical — both attempt deletion and need the same hardening applied. Extract a single private helper:
+
+_cleanup_orphan(conn, new_order_id, order_number, detected_promo_sku, context)
+
+where context is a short string describing the failure reason (e.g. "fetch failed" or "verify failed"). Both paths call this helper instead of duplicating the logic. The hardening lives in one place, and fixing one path automatically fixes the other.
+
+Inside _cleanup_orphan, when deletion fails:
+
+Call server_logger.error() with source "Promo SKU Handler" — permanent log record visible on /logs.html.
+Write directly to the admin_alerts table using a single UPSERT that concatenates onto any existing message:
+INSERT INTO admin_alerts (id, message, is_active, updated_at, updated_by)
+VALUES (1, <orphan_message>, true, NOW(), 'system')
+ON CONFLICT (id) DO UPDATE SET
+    message = CASE
+        WHEN admin_alerts.message IS NULL OR TRIM(admin_alerts.message) = ''
+        THEN EXCLUDED.message
+        ELSE LEFT(admin_alerts.message || ' | ' || EXCLUDED.message, 255)
+    END,
+    is_active = true,
+    updated_at = NOW(),
+    updated_by = 'system'
+
+where <orphan_message> is formatted as: "⚠️ ORPHAN #{order_number} (SS {new_order_id}): deletion failed after {context}. Manual cancel required."
+
+This activates the red pulsing banner on every dashboard page immediately, visible to all users within 30 seconds (the alert bar's polling interval). The banner remains non-dismissable until an admin manually clears it in workflow controls after resolving the orphan in ShipStation. If multiple orphan failures occur, each one is appended — no existing message is ever overwritten.
+
+Do NOT call _write_tagging_failure() for orphan failures — that table has no active dashboard display. Use the admin alert bar instead.
+
+server_logger is already imported at line 49 — no new import needed. Use get_connection() for the alert DB write (same pattern as other handlers in the file).
+
+Fields explicitly NOT compared:
+
+Field	Reason excluded
+name, imageUrl, upc, unitPrice (item-level)	Catalog-derived — ShipStation recalculates from base SKU catalog; will differ from promo SKU by design
+weight, dimensions	Catalog-derived — root cause of the 862369 incident
+productId, orderItemId, fulfillmentSku	Identity/catalog fields managed by ShipStation
+orderId, orderKey, createDate, modifyDate	Differ by design on every new order
+tagIds	ShipStation automations re-fire on any new order creation and re-apply tags — timing means tags won't be present at verify time
+orderTotal, amountPaid	ShipStation is used for shipping only, not financial tracking
+advancedOptions.customField1/2/3	Lot tagger sets these after replacement — may differ intentionally
+advancedOptions.mergedOrSplit, mergedIds, parentId	ShipStation internal merge/split tracking
+paymentMethod, paymentDate, confirmation, internalNotes, customerNotes, giftMessage	Not operationally meaningful for replacement validation
+Out of scope
+Changes to how replacement orders are created (create_replacement_order in api_client.py)
+Changes to handle_promo_sku_order flow outside the verify and cleanup steps
+Modifying the lot_tagging_failures schema or adding a dashboard panel for it
+Investigating or fixing order 862380's items_count mismatch (separate bug)
+Tasks
+Refactor _verify_replacement to whitelist — Replace the current "compare everything minus exclusions" logic with the explicit whitelist above. Preserve _is_empty and _values_match helpers. Handle blank-SKU items by skipping their SKU check. For advancedOptions, check only storeId as a scalar. Keep the item-count check unchanged. Remove only the three EXCLUDED_* constants.
+
+Extract _cleanup_orphan and harden both paths — Extract the shared orphan cleanup logic into a _cleanup_orphan private helper. Replace both logger.warning() calls (lines 408 and 433) with calls to this helper. The helper calls server_logger.error() and writes the concatenating UPSERT to admin_alerts using get_connection(). The message format is "⚠️ ORPHAN #{order_number} (SS {new_order_id}): deletion failed after {context}. Manual cancel required.".
+
+Relevant files
+src/services/shipstation/promo_sku_handler.py:51-66,114-130,189-233,236-299,397-442
+src/services/shipstation/api_client.py:824-898
+src/lot_tagger/tagger.py:96-105
+src/utils/server_logger.py
+static/js/alert-bar.js
+app.py:602-661
