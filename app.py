@@ -9006,6 +9006,7 @@ def api_admin_delete_order():
                 'shipstation_order_id': shipstation_order_id,
                 'order_number': actual_order_number,
                 'customer_name': customer_data.get('customer_name'),
+                'already_cancelled': already_cancelled,
                 'already_deleted': already_cancelled,
             })
         else:

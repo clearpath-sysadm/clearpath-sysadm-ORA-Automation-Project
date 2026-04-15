@@ -1018,12 +1018,12 @@
                 
                 if (data.success) {
                     // Show success in button
-                    deleteBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;">✅ Deleted!</span>';
+                    deleteBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;">✅ Cancelled!</span>';
                     
-                    // Show appropriate message based on whether it was already deleted
-                    const message = data.already_deleted 
-                        ? `Order ${orderNumber} was already deleted - Updating duplicate alerts...`
-                        : `Order ${orderNumber} deleted successfully - Refreshing duplicate alerts...`;
+                    // Show appropriate message based on whether it was already cancelled
+                    const message = (data.already_cancelled || data.already_deleted)
+                        ? `Order ${orderNumber} was already cancelled - Updating duplicate alerts...`
+                        : `Order ${orderNumber} cancelled successfully - Refreshing duplicate alerts...`;
                     
                     showToast(message, 'success');
                     
