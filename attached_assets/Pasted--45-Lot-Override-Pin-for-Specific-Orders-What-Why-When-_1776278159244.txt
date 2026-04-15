@@ -1,0 +1,31 @@
+#45 - Lot Override / Pin for Specific Orders
+What & Why
+When a customer explicitly requests a specific lot number (e.g., because the current active lot is near expiry and they want the newer lot), staff manually set CF1 in ShipStation to the requested lot. The lot tagger sweeps the order on the next reconciliation run, sees CF1 doesn't match the active lot from the DB, and silently reverts it — undoing the customer request.
+
+Add a "pin" mechanism: a DB record that locks a specific order to a specific lot. The lot tagger honours the pin and uses the pinned lot as the expected CF1 value instead of the active lot. If something else overwrites CF1, the tagger restores the pin. The pin clears automatically when the order ships.
+
+Done looks like
+Staff can pin an order to any available lot for its SKU directly from the dashboard (a "Pin Lot" action on awaiting-shipment orders).
+Pinned orders show a visible indicator (e.g., pin icon or highlighted row) in the dashboard.
+Once pinned, the lot tagger never reverts CF1 — it either leaves it alone (if already correct) or actively restores the pinned lot if something overwrote it.
+Staff can remove a pin to restore normal FIFO behaviour.
+Pins on shipped/cancelled orders are automatically pruned each reconciliation run.
+Out of scope
+Pinning orders directly in ShipStation (no ShipStation tag-based locking).
+Bulk pinning of multiple orders at once.
+Changing the active lot in the DB — this only overrides per-order, not globally.
+Tasks
+Create lot_overrides table — Add a startup migration (idempotent CREATE TABLE IF NOT EXISTS) for lot_overrides (shipstation_order_id BIGINT PRIMARY KEY, order_number TEXT, sku TEXT, pinned_lot TEXT, pinned_cf1 TEXT, pinned_by TEXT, note TEXT, created_at TIMESTAMPTZ DEFAULT NOW()). pinned_cf1 stores the full expected CF1 string (e.g., "17612 - 260047") so the tagger can use it directly.
+
+API endpoints — Add two authenticated endpoints: POST /api/orders/pin_lot (body: shipstation_order_id, order_number, sku, pinned_lot, note) which upserts a row in lot_overrides and immediately updates CF1 in ShipStation; and DELETE /api/orders/pin_lot/<shipstation_order_id> which removes the pin and triggers a normal re-tag on the next sweep.
+
+Lot tagger integration — At the start of run_reconciliation(), load all {shipstation_order_id: pinned_cf1} rows from lot_overrides into a dict. For each order, if its SS order ID is in the override dict, use pinned_cf1 as the expected CF1 value instead of computing it from active_lots. Prune stale overrides at start of each run (DELETE WHERE ss order ID not in current awaiting-shipment set). Log clearly when a pin is being honoured: [Lot Tagger] Honouring lot pin on order 862371: 17612 - 260052.
+
+Dashboard UI — On awaiting-shipment order rows/cards, add a "Pin Lot" action that opens a small modal. The modal shows the order number, current active lot, and a dropdown of all available (non-expired) lots for that SKU plus a note field. On submit, calls the pin endpoint and refreshes the row to show a pin indicator. Add an "Unpin" action to pinned orders that calls the DELETE endpoint.
+
+Relevant files
+src/lot_tagger/tagger.py:318-640
+src/scheduled_lot_tagger.py:135-200
+src/services/database/startup_migrations.py
+app.py:3487-3530
+index.html
