@@ -135,12 +135,20 @@ def transaction_with_retry(max_retries=10, initial_delay_ms=50):
             finally:
                 conn.close()
         except psycopg2.Error as e:
-            # PostgreSQL deadlock or serialization error
-            if ("deadlock" in str(e).lower() or "serialize" in str(e).lower()) and retry_count < max_retries:
+            err_lower = str(e).lower()
+            is_retryable = (
+                "deadlock"                          in err_lower
+                or "serialize"                      in err_lower
+                or "ssl connection has been closed" in err_lower
+                or "connection already closed"      in err_lower
+                or "server closed the connection"   in err_lower
+            )
+            if is_retryable and retry_count < max_retries:
                 retry_count += 1
                 wait_time = delay_ms / 1000.0
                 logger.warning(
-                    f"Database conflict, retry {retry_count}/{max_retries} after {delay_ms}ms"
+                    f"Database connection error (retry {retry_count}/{max_retries} "
+                    f"after {delay_ms}ms): {e}"
                 )
                 time.sleep(wait_time)
                 delay_ms *= 2
