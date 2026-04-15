@@ -51,12 +51,14 @@ server_logger = get_logger()
 EXCLUDED_COMPARISON_KEYS = frozenset({
     'orderId', 'orderKey',
     'createDate', 'modifyDate',
+    'weight',
 })
 
 EXCLUDED_ITEM_COMPARISON_KEYS = frozenset({
     'orderItemId',
     'createDate', 'modifyDate',
     'productId',
+    'weight',
 })
 
 EXCLUDED_ADVANCED_OPTIONS_KEYS = frozenset({
