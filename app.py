@@ -3332,7 +3332,7 @@ def api_retag_all():
         get_shipstation_credentials, get_shipstation_headers,
         update_order_custom_fields
     )
-    from src.lot_tagger.tagger import ACTIVE_LOTS_QUERY, resolve_shipping_profile
+    from src.lot_tagger.tagger import ACTIVE_LOTS_QUERY, LOT_OVERRIDE_TAG_ID, resolve_shipping_profile
     from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
     from src.utils.server_logger import get_logger
     from utils.api_utils import make_api_request
@@ -3422,6 +3422,16 @@ def api_retag_all():
 
                 expected_cf1 = f"{base_sku} - {active_lots[base_sku]}"
                 current_cf1 = ((order.get('advancedOptions') or {}).get('customField1') or '').strip()
+                lot_override = LOT_OVERRIDE_TAG_ID in (order.get('tagIds') or [])
+
+                if lot_override:
+                    server_logger.info(
+                        f"[Retag All] Lot Override tag present on order {order_number} (SS ID: {order_id})"
+                        f" — skipping CF1 update.",
+                        source="Reports", user=user_name
+                    )
+                    skipped += 1
+                    continue
 
                 if current_cf1 == expected_cf1:
                     skipped += 1
