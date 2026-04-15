@@ -299,6 +299,7 @@ def update_order_custom_fields(
     field1_value: str,
     field2_value: str = None,
     *,
+    skip_cf1: bool = False,
     carrier_code: str = None,
     service_code: str = None,
     package_code: str = None,
@@ -343,7 +344,8 @@ def update_order_custom_fields(
         if order_data.get('advancedOptions') is None:
             order_data['advancedOptions'] = {}
 
-        order_data['advancedOptions']['customField1'] = field1_value
+        if not skip_cf1:
+            order_data['advancedOptions']['customField1'] = field1_value
         if field2_value is not None:
             order_data['advancedOptions']['customField2'] = field2_value
 

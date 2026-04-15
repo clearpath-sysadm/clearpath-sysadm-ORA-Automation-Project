@@ -576,16 +576,17 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     profile        = resolve_shipping_profile(order, sku)
 
     tag_ids = order.get('tagIds') or []
-    if LOT_OVERRIDE_TAG_ID in tag_ids:
-        current_cf1 = (order.get('advancedOptions') or {}).get('customField1', '').strip()
+    lot_override = LOT_OVERRIDE_TAG_ID in tag_ids
+    if lot_override:
         server_logger.info(
             f"[Lot Tagger] Lot Override tag present on order {order_number} (SS ID: {order_id})"
-            f" — skipping CF1 update. Current CF1: '{current_cf1}'",
+            f" — skipping CF1 update.",
             source="Lot Tagger"
         )
-        expected_value = current_cf1 if current_cf1 else expected_value
 
     mismatched = _get_mismatched_fields(order, expected_value, profile)
+    if lot_override:
+        mismatched = [f for f in mismatched if f != 'customField1']
     if not mismatched:
         logger.debug(f"Order {order_number} already correct — skipped.")
         v2_result = ensure_v2_package(order_id, order_number, profile,
@@ -606,7 +607,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
     adv         = order.get('advancedOptions') or {}
     current_cf1 = (adv.get('customField1') or '').strip()
-    field2_value = current_cf1 if current_cf1 and current_cf1 != expected_value else None
+    field2_value = current_cf1 if not lot_override and current_cf1 and current_cf1 != expected_value else None
     if field2_value:
         server_logger.warning(
             f"Order {order_number} (SS ID: {order_id}) customField1 currently '{current_cf1}'. "
@@ -616,6 +617,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
     result = update_order_custom_fields(
         order_id, expected_value, field2_value,
+        skip_cf1=lot_override,
         carrier_code=profile['carrier_code'],
         service_code=profile['service_code'],
         package_code=profile['package_code'],
