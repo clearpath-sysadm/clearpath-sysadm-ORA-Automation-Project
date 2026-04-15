@@ -342,7 +342,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     if lot_override:
         server_logger.info(
             f"[Lot Tagger] Lot Override tag present on order {order_number} (SS ID: {order_id})"
-            f" — CF1 will not be modified.",
+            f" — skipping CF1 update.",
             source="Lot Tagger"
         )
 
@@ -437,7 +437,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                     f"base_sku={base_sku} fields={mismatched}",
                     source="Lot Tagger"
                 )
-                order.setdefault('advancedOptions', {})['customField1'] = exp_cf1
+                if not lot_override:
+                    order.setdefault('advancedOptions', {})['customField1'] = exp_cf1
                 if profile.get('package_id'):
                     v2_result = update_order_package_v2(
                         order_id,
@@ -522,7 +523,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 f"SKU={sku} fields={mismatched}",
                 source="Lot Tagger"
             )
-            order.setdefault('advancedOptions', {})['customField1'] = sku
+            if not lot_override:
+                order.setdefault('advancedOptions', {})['customField1'] = sku
             if profile.get('package_id'):
                 v2_result = update_order_package_v2(
                     order_id,
@@ -655,7 +657,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             f"fields={mismatched}",
             source="Lot Tagger"
         )
-    order.setdefault('advancedOptions', {})['customField1'] = expected_value
+    if not lot_override:
+        order.setdefault('advancedOptions', {})['customField1'] = expected_value
 
     if profile.get('package_id'):
         v2_result = update_order_package_v2(
