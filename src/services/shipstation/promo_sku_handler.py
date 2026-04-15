@@ -117,8 +117,7 @@ def _write_tagging_failure(conn, order_number: str, shipstation_order_id,
         logger.error(f"Failed to write lot_tagging_failures: {e}")
 
 
-def _cleanup_orphan(conn, new_order_id, order_number: str,
-                    detected_promo_sku: str, context: str) -> None:
+def _cleanup_orphan(conn, new_order_id, order_number: str, context: str) -> None:
     """
     Attempt to delete an orphaned replacement order from ShipStation.
 
@@ -134,12 +133,11 @@ def _cleanup_orphan(conn, new_order_id, order_number: str,
          resolving the orphan in ShipStation.
 
     Args:
-        conn:               Active DB connection (passed through from handle_promo_sku_order)
-        new_order_id:       ShipStation order ID of the orphaned replacement
-        order_number:       Human-readable order number (e.g. "862369")
-        detected_promo_sku: The promo SKU that triggered this replacement
-        context:            Short description of why cleanup is needed
-                            (e.g. "fetch failed" or "verify failed")
+        conn:         Active DB connection (passed through from handle_promo_sku_order)
+        new_order_id: ShipStation order ID of the orphaned replacement
+        order_number: Human-readable order number (e.g. "862369")
+        context:      Short description of why cleanup is needed
+                      (e.g. "fetch failed" or "verify failed")
     """
     cleanup = delete_order_from_shipstation(new_order_id, fetch_details_first=False)
     if cleanup.get('success'):
@@ -349,7 +347,7 @@ def _verify_replacement(original: dict, replacement: dict,
             orig_item_sku = str(oi.get('sku') or '').strip()
             if orig_item_sku:
                 expected_sku = base_sku if orig_item_sku == promo_sku else orig_item_sku
-                if ri.get('sku') != expected_sku:
+                if not _values_match(expected_sku, ri.get('sku')):
                     mismatches.append(
                         f"items[{i}].sku: expected {expected_sku!r}, "
                         f"got {ri.get('sku')!r}"
@@ -471,8 +469,7 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 source="Promo SKU Handler"
             )
             if new_order_id is not None:
-                _cleanup_orphan(conn, new_order_id, order_number,
-                                detected_promo_sku, "fetch failed")
+                _cleanup_orphan(conn, new_order_id, order_number, "fetch failed")
             _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                        'verify_failed', f"fetch failed: {error}")
             _write_tagging_failure(conn, order_number, order_id,
@@ -491,8 +488,7 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 source="Promo SKU Handler"
             )
             if new_order_id is not None:
-                _cleanup_orphan(conn, new_order_id, order_number,
-                                detected_promo_sku, "verify failed")
+                _cleanup_orphan(conn, new_order_id, order_number, "verify failed")
             _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                        'verify_failed', error)
             _write_tagging_failure(conn, order_number, order_id,
