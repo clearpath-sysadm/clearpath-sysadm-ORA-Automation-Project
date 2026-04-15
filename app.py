@@ -261,25 +261,25 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def record_shipstation_order_deletion(shipstation_order_id, order_number=None, deleted_by=None, customer_data=None):
+def record_shipstation_order_deletion(shipstation_order_id, order_number=None, deleted_by=None,
+                                      customer_data=None, action_type='cancelled'):
     """
-    Record a ShipStation order deletion in the database.
-    
-    This helper function is called by all deletion endpoints to ensure consistent tracking
-    of deleted orders.
-    
-    IDEMPOTENT: Returns success=True even if deletion was already recorded (ON CONFLICT DO NOTHING).
-    This allows safe retries and consistent behavior across all deletion endpoints.
-    
+    Record a ShipStation order cancellation/deletion in the database.
+
+    Called by all cancellation endpoints to ensure consistent audit tracking.
+
+    IDEMPOTENT: Returns success=True even if already recorded (ON CONFLICT DO NOTHING).
+
     Args:
-        shipstation_order_id (int): The ShipStation order ID that was deleted
+        shipstation_order_id (int): The ShipStation order ID that was acted on
         order_number (str, optional): The order number for logging purposes
-        deleted_by (str, optional): Username/email of who deleted the order (defaults to 'system')
-        customer_data (dict, optional): Customer data captured before deletion:
+        deleted_by (str, optional): Username/email of who cancelled the order (defaults to 'system')
+        customer_data (dict, optional): Customer data captured before cancellation:
             - customer_name, customer_email, customer_company
             - ship_to_name, ship_to_city, ship_to_state
             - order_total_cents, order_date, items_json
-        
+        action_type (str): 'cancelled' (default) or 'deleted' for legacy rows
+
     Returns:
         dict: {'success': bool, 'message': str, 'already_deleted': bool, 'error': str (optional)}
     """
@@ -287,8 +287,7 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Determine who deleted this order
+
         if deleted_by is None:
             try:
                 if current_user and current_user.is_authenticated:
@@ -297,8 +296,7 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
                     deleted_by = 'system'
             except:
                 deleted_by = 'system'
-        
-        # Extract customer data if provided
+
         customer_data = customer_data or {}
         customer_name = customer_data.get('customer_name')
         customer_email = customer_data.get('customer_email')
@@ -309,43 +307,42 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
         order_total_cents = customer_data.get('order_total_cents')
         order_date = customer_data.get('order_date')
         items_json = json.dumps(customer_data.get('items_json')) if customer_data.get('items_json') else None
-        
-        # Record the deletion with customer data (idempotent with ON CONFLICT)
+
         cursor.execute("""
-            INSERT INTO deleted_shipstation_orders 
-            (shipstation_order_id, order_number, deleted_at, deleted_by,
+            INSERT INTO deleted_shipstation_orders
+            (shipstation_order_id, order_number, deleted_at, deleted_by, action_type,
              customer_name, customer_email, customer_company,
              ship_to_name, ship_to_city, ship_to_state,
              order_total_cents, order_date, items_json)
-            VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (shipstation_order_id) DO NOTHING
             RETURNING shipstation_order_id
-        """, (shipstation_order_id, order_number, deleted_by,
+        """, (shipstation_order_id, order_number, deleted_by, action_type,
               customer_name, customer_email, customer_company,
               ship_to_name, ship_to_city, ship_to_state,
               order_total_cents, order_date, items_json))
-        
+
         inserted = cursor.fetchone()
         conn.commit()
         conn.close()
-        
+
         if inserted:
-            # New deletion record created - log to server logger for admin visibility
             customer_display = customer_name or customer_email or 'Unknown'
-            logger.info(f"✅ Recorded deletion of order {shipstation_order_id} (Order #{order_number}, Customer: {customer_display}) by {deleted_by}")
-            server_logger.info(f"Order deleted: #{order_number} (SS ID: {shipstation_order_id}, Customer: {customer_display}) by {deleted_by}", source="ShipStation")
+            logger.info(f"✅ Recorded {action_type} for order {shipstation_order_id} "
+                        f"(Order #{order_number}, Customer: {customer_display}) by {deleted_by}")
+            server_logger.info(f"Order {action_type}: #{order_number} (SS ID: {shipstation_order_id}, "
+                               f"Customer: {customer_display}) by {deleted_by}", source="ShipStation")
             return {
                 'success': True,
                 'already_deleted': False,
-                'message': f'Deletion recorded for order {shipstation_order_id}'
+                'message': f'Action recorded for order {shipstation_order_id}'
             }
         else:
-            # Record already exists (ON CONFLICT triggered) - still a success!
-            logger.debug(f"ℹ️  Deletion already tracked for order {shipstation_order_id} (Order #{order_number})")
+            logger.debug(f"ℹ️  Action already tracked for order {shipstation_order_id} (Order #{order_number})")
             return {
                 'success': True,
                 'already_deleted': True,
-                'message': f'Deletion already tracked for order {shipstation_order_id}'
+                'message': f'Action already tracked for order {shipstation_order_id}'
             }
         
     except Exception as e:
@@ -8972,49 +8969,48 @@ def api_admin_delete_order():
                 'error': 'ShipStation Order ID must be a number'
             }), 400
         
-        from src.services.shipstation.api_client import delete_order_from_shipstation
-        
-        # Delete from ShipStation (fetches order details first for audit trail)
-        logger.info(f"Admin order deletion requested: ShipStation ID {shipstation_order_id}, Order Number: {order_number or 'Not provided'}")
-        result = delete_order_from_shipstation(shipstation_order_id)
-        
-        # Use order number from ShipStation if not provided
+        from datetime import date as _date
+        from src.services.shipstation.api_client import cancel_order_in_shipstation
+
+        cf3_stamp = f"admin:cancelled {_date.today().isoformat()}"
+        logger.info(f"Admin order cancellation requested: ShipStation ID {shipstation_order_id}, Order Number: {order_number or 'Not provided'}")
+        result = cancel_order_in_shipstation(shipstation_order_id, custom_field3=cf3_stamp)
+
         actual_order_number = result.get('order_number') or order_number
-        customer_data = result.get('customer_data', {})
-        
-        # Check if order was already deleted (404 Not Found)
-        already_deleted = False
+        customer_data = result.get('customer_data') or {}
+
+        already_cancelled = False
         if not result['success']:
             error_msg = result.get('error', '')
             if '404' in error_msg or 'not found' in error_msg.lower():
-                logger.info(f"ℹ️  Order {shipstation_order_id} already deleted from ShipStation")
-                already_deleted = True
-        
-        if result['success'] or already_deleted:
+                logger.info(f"ℹ️  Order {shipstation_order_id} not found in ShipStation (already cancelled/removed)")
+                already_cancelled = True
+
+        if result['success'] or already_cancelled:
             if result['success']:
                 customer_name = customer_data.get('customer_name', 'Unknown')
-                logger.info(f"✅ Successfully deleted order {shipstation_order_id} (#{actual_order_number}, Customer: {customer_name}) from ShipStation")
-            
-            # Record deletion with customer data for duplicate alert auto-resolution
+                logger.info(f"✅ Successfully cancelled order {shipstation_order_id} (#{actual_order_number}, Customer: {customer_name}) in ShipStation")
+
             track_result = record_shipstation_order_deletion(
-                shipstation_order_id, 
+                shipstation_order_id,
                 actual_order_number,
-                customer_data=customer_data
+                customer_data=customer_data,
+                action_type='cancelled',
             )
             if not track_result['success'] and not track_result.get('already_deleted'):
-                logger.warning(f"⚠️  Failed to track deletion in database: {track_result.get('error')}")
-            
+                logger.warning(f"⚠️  Failed to track cancellation in database: {track_result.get('error')}")
+
             return jsonify({
                 'success': True,
-                'message': f'Order {shipstation_order_id} {"already deleted" if already_deleted else "successfully deleted from ShipStation"}',
+                'message': f'Order {shipstation_order_id} {"already cancelled" if already_cancelled else "successfully cancelled in ShipStation"}',
                 'shipstation_order_id': shipstation_order_id,
                 'order_number': actual_order_number,
                 'customer_name': customer_data.get('customer_name'),
-                'already_deleted': already_deleted,
+                'already_deleted': already_cancelled,
             })
         else:
-            error_msg = result.get('error', 'Failed to delete order')
-            logger.error(f"❌ Failed to delete order {shipstation_order_id}: {error_msg}")
+            error_msg = result.get('error', 'Failed to cancel order')
+            logger.error(f"❌ Failed to cancel order {shipstation_order_id}: {error_msg}")
             return jsonify({
                 'success': False,
                 'error': error_msg
@@ -10056,9 +10052,10 @@ def cleanup_orphan_orders():
         if (end_order - start_order + 1) > 50:
             return jsonify({'success': False, 'error': 'Range too large, max 50 orders at a time'}), 400
 
+        from datetime import date as _date
         from src.services.shipstation.api_client import (
             get_shipstation_credentials, get_shipstation_headers,
-            delete_order_from_shipstation
+            cancel_order_in_shipstation
         )
         from utils.api_utils import make_api_request
         from config import settings
@@ -10069,6 +10066,7 @@ def cleanup_orphan_orders():
 
         headers = get_shipstation_headers(api_key, api_secret)
         results = []
+        cf3_stamp = f"orphan-cleanup:{_date.today().isoformat()}"
 
         for order_num in range(start_order, end_order + 1):
             order_number_str = str(order_num)
@@ -10113,7 +10111,7 @@ def cleanup_orphan_orders():
                     }
 
                     if dry_run:
-                        entry['status'] = 'would_delete'
+                        entry['status'] = 'would_cancel'
                         results.append(entry)
                     else:
                         customer_data = {
@@ -10128,20 +10126,22 @@ def cleanup_orphan_orders():
                             'items_json': [{'sku': i.get('sku'), 'quantity': i.get('quantity'), 'name': i.get('name')} for i in items]
                         }
 
-                        record_shipstation_order_deletion(
-                            ss_id, order_number_str,
-                            deleted_by='orphan_cleanup',
-                            customer_data=customer_data
+                        del_result = cancel_order_in_shipstation(
+                            ss_id, order_data=ss_order, custom_field3=cf3_stamp
                         )
-
-                        del_result = delete_order_from_shipstation(ss_id, fetch_details_first=False)
                         if del_result.get('success'):
-                            entry['status'] = 'deleted'
-                            logger.info(f"Orphan cleanup: deleted order {order_number_str} (SS ID {ss_id}, {customer_name})")
+                            entry['status'] = 'cancelled'
+                            logger.info(f"Orphan cleanup: cancelled order {order_number_str} (SS ID {ss_id}, {customer_name})")
+                            record_shipstation_order_deletion(
+                                ss_id, order_number_str,
+                                deleted_by='orphan_cleanup',
+                                customer_data=customer_data,
+                                action_type='cancelled',
+                            )
                         else:
-                            entry['status'] = 'delete_failed'
+                            entry['status'] = 'cancel_failed'
                             entry['error'] = del_result.get('error', 'Unknown')
-                            logger.error(f"Orphan cleanup: FAILED to delete {order_number_str} SS ID {ss_id}: {del_result.get('error')}")
+                            logger.error(f"Orphan cleanup: FAILED to cancel {order_number_str} SS ID {ss_id}: {del_result.get('error')}")
 
                         results.append(entry)
                         time.sleep(0.6)
@@ -10305,8 +10305,8 @@ def recreate_order():
     
     try:
         from src.services.shipstation.api_client import (
-            get_shipstation_credentials, get_shipstation_headers, 
-            send_all_orders_to_shipstation, delete_order_from_shipstation
+            get_shipstation_credentials, get_shipstation_headers,
+            send_all_orders_to_shipstation, cancel_order_in_shipstation
         )
         from utils.api_utils import make_api_request
         from config import settings
@@ -10455,20 +10455,22 @@ def recreate_order():
                 return jsonify({'success': False, 'error': 'No response from ShipStation create order API'}), 500
         
         elif action == 'delete':
-            # Step 3: Delete the old order (with confirmation) and clean up local DB
+            # Step 3: Cancel the old order (with confirmation) and clean up local DB
             old_order_id = data.get('old_order_id')
             if not old_order_id:
                 return jsonify({'success': False, 'error': 'Old order ID is required'}), 400
-            
+
             confirmed = data.get('confirmed', False)
             if not confirmed:
-                return jsonify({'success': False, 'error': 'Deletion must be confirmed'}), 400
-            
-            result = delete_order_from_shipstation(old_order_id, fetch_details_first=True)
-            
+                return jsonify({'success': False, 'error': 'Cancellation must be confirmed'}), 400
+
+            from datetime import date as _date
+            cf3_stamp = f"admin:renumbered {_date.today().isoformat()}"
+            result = cancel_order_in_shipstation(old_order_id, custom_field3=cf3_stamp)
+
             if result.get('success'):
-                logger.info(f"Admin deleted old order {wrong_order_number} (SS ID: {old_order_id}) after recreating as {correct_order_number}")
-                
+                logger.info(f"Admin cancelled old order {wrong_order_number} (SS ID: {old_order_id}) after recreating as {correct_order_number}")
+
                 # Also clean up local database records for the old order
                 local_cleanup_message = ""
                 try:
@@ -10512,13 +10514,13 @@ def recreate_order():
                 
                 return jsonify({
                     'success': True,
-                    'message': f'Old order {wrong_order_number} deleted successfully.{local_cleanup_message}',
+                    'message': f'Old order {wrong_order_number} cancelled successfully.{local_cleanup_message}',
                     'customer_data': result.get('customer_data'),
                     'local_cleanup': local_cleanup_message
                 })
             else:
-                return jsonify({'success': False, 'error': result.get('error', 'Delete failed')}), 500
-        
+                return jsonify({'success': False, 'error': result.get('error', 'Cancel failed')}), 500
+
         else:
             return jsonify({'success': False, 'error': 'Invalid action. Use fetch, create, or delete'}), 400
     

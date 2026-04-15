@@ -664,22 +664,21 @@ def register_order_notify_webhook(target_url: str) -> dict:
 
 def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = True) -> dict:
     """
-    Delete an order from ShipStation by order ID.
-    Optionally fetches order details before deletion for audit/tracking purposes.
-    
-    Args:
-        order_id: The ShipStation order ID to delete
-        fetch_details_first: If True, fetch order details before deleting for audit trail
-        
-    Returns:
-        dict: {
-            'success': bool, 
-            'message': str, 
-            'order_number': str (if fetched),
-            'customer_data': dict (if fetched) - includes customer_name, customer_email, etc.
-            'error': str (optional)
-        }
+    DEPRECATED — do not call this function.
+
+    All order removals must go through cancel_order_in_shipstation() so that
+    orders remain visible in ShipStation with a CF3 audit stamp.
+
+    The two X-Cart-era endpoints in app.py (~6748 bulk_dedup, ~6874
+    confirm_delete) bypass this function via raw make_api_request DELETE calls
+    and are NOT protected by this guard.
     """
+    import traceback
+    logger.error(
+        "delete_order_from_shipstation called — this function is DEPRECATED. "
+        "Use cancel_order_in_shipstation() instead. "
+        f"Caller: {''.join(traceback.format_stack(limit=4))}"
+    )
     try:
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
@@ -745,7 +744,11 @@ def delete_order_from_shipstation(order_id: int, fetch_details_first: bool = Tru
         return {'success': False, 'error': str(e)}
 
 
-def cancel_order_in_shipstation(order_id: int, order_data: dict = None) -> dict:
+def cancel_order_in_shipstation(
+    order_id: int,
+    order_data: dict = None,
+    custom_field3: str = None,
+) -> dict:
     """
     Cancel a ShipStation order by setting its orderStatus to 'cancelled'.
 
@@ -755,11 +758,19 @@ def cancel_order_in_shipstation(order_id: int, order_data: dict = None) -> dict:
     will be fetched automatically.
 
     Args:
-        order_id:   ShipStation order ID to cancel
-        order_data: Full ShipStation order dict (optional — fetched if omitted)
+        order_id:      ShipStation order ID to cancel
+        order_data:    Full ShipStation order dict (optional — fetched if omitted)
+        custom_field3: Optional string written to advancedOptions.customField3 in
+                       the same POST so cancellation + audit stamp are one API call.
+                       E.g. 'orphan:verify-failed 2026-04-15'
 
     Returns:
-        {'success': bool, 'error': str (on failure)}
+        {
+            'success': bool,
+            'order_number': str | None,   # populated when order_data was fetched internally
+            'customer_data': dict | None, # populated when order_data was fetched internally
+            'error': str                  # present on failure only
+        }
     """
     _READONLY_KEYS = frozenset({
         'createDate', 'modifyDate', 'userId',
@@ -771,15 +782,44 @@ def cancel_order_in_shipstation(order_id: int, order_data: dict = None) -> dict:
     try:
         api_key, api_secret = get_shipstation_credentials()
         if not api_key or not api_secret:
-            return {'success': False, 'error': 'ShipStation credentials not found'}
+            return {'success': False, 'error': 'ShipStation credentials not found',
+                    'order_number': None, 'customer_data': None}
+
+        order_number = None
+        customer_data = None
 
         if order_data is None:
             fetch_result = fetch_order_by_id(order_id, api_key, api_secret)
             if not fetch_result.get('success') or not fetch_result.get('order'):
                 return {'success': False,
                         'error': f"Could not fetch order {order_id} for cancellation: "
-                                 f"{fetch_result.get('error', 'unknown')}"}
+                                 f"{fetch_result.get('error', 'unknown')}",
+                        'order_number': None, 'customer_data': None}
             order_data = fetch_result['order']
+            order_number = order_data.get('orderNumber')
+            bill_to = order_data.get('billTo') or {}
+            ship_to = order_data.get('shipTo') or {}
+            items   = order_data.get('items', [])
+            customer_data = {
+                'customer_name':    bill_to.get('name') or ship_to.get('name'),
+                'customer_email':   order_data.get('customerEmail'),
+                'customer_company': bill_to.get('company') or ship_to.get('company'),
+                'ship_to_name':     ship_to.get('name'),
+                'ship_to_city':     ship_to.get('city'),
+                'ship_to_state':    ship_to.get('state'),
+                'order_total_cents': (
+                    int(float(order_data.get('orderTotal', 0)) * 100)
+                    if order_data.get('orderTotal') else None
+                ),
+                'order_date': (
+                    order_data.get('orderDate', '')[:10]
+                    if order_data.get('orderDate') else None
+                ),
+                'items_json': [
+                    {'sku': i.get('sku'), 'quantity': i.get('quantity'), 'name': i.get('name')}
+                    for i in items
+                ],
+            }
 
         import copy
         payload = copy.deepcopy(order_data)
@@ -791,10 +831,14 @@ def cancel_order_in_shipstation(order_id: int, order_data: dict = None) -> dict:
             for k in ('createDate', 'modifyDate'):
                 item.pop(k, None)
 
+        if custom_field3 is not None:
+            payload.setdefault('advancedOptions', {})['customField3'] = custom_field3
+
         headers = get_shipstation_headers(api_key, api_secret)
         headers['Content-Type'] = 'application/json'
 
-        logger.info(f"Cancelling order in ShipStation: Order ID {order_id}")
+        logger.info(f"Cancelling order in ShipStation: Order ID {order_id}"
+                    + (f" (CF3: {custom_field3!r})" if custom_field3 else ""))
 
         response = make_api_request(
             url='https://ssapi.shipstation.com/orders/createorder',
@@ -806,7 +850,7 @@ def cancel_order_in_shipstation(order_id: int, order_data: dict = None) -> dict:
 
         if response and response.status_code == 200:
             logger.info(f"✅ Successfully cancelled order {order_id} in ShipStation")
-            return {'success': True}
+            return {'success': True, 'order_number': order_number, 'customer_data': customer_data}
         else:
             error_msg = (
                 f"Failed to cancel order {order_id}: HTTP "
@@ -814,11 +858,12 @@ def cancel_order_in_shipstation(order_id: int, order_data: dict = None) -> dict:
                 f"{response.text[:200] if response else ''}"
             )
             logger.error(error_msg)
-            return {'success': False, 'error': error_msg}
+            return {'success': False, 'error': error_msg,
+                    'order_number': order_number, 'customer_data': customer_data}
 
     except Exception as e:
         logger.error(f"Error cancelling order {order_id} in ShipStation: {e}", exc_info=True)
-        return {'success': False, 'error': str(e)}
+        return {'success': False, 'error': str(e), 'order_number': None, 'customer_data': None}
 
 
 def create_replacement_order(original_order: dict, promo_sku: str, base_sku: str) -> dict:

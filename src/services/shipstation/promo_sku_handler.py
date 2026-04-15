@@ -40,12 +40,12 @@ Called from:
 """
 import json
 import logging
+from datetime import date
 
 from src.utils.server_logger import get_logger
 from src.services.shipstation.api_client import (
     create_replacement_order,
     fetch_order_by_id,
-    delete_order_from_shipstation,
     cancel_order_in_shipstation,
 )
 
@@ -119,11 +119,11 @@ def _write_tagging_failure(conn, order_number: str, shipstation_order_id,
 
 def _cleanup_orphan(conn, new_order_id, order_number: str, context: str) -> None:
     """
-    Attempt to delete an orphaned replacement order from ShipStation.
+    Cancel an orphaned replacement order in ShipStation and stamp customField3.
 
     Called when the replacement order cannot be verified (either because the
-    fetch failed or because field verification failed). If the deletion
-    succeeds, returns silently. If deletion fails — leaving a live order in
+    fetch failed or because field verification failed). If the cancellation
+    succeeds, returns silently. If cancellation fails — leaving a live order in
     ShipStation that could ship — two things happen:
 
       1. server_logger.error() writes a permanent record visible on /logs.html
@@ -139,13 +139,16 @@ def _cleanup_orphan(conn, new_order_id, order_number: str, context: str) -> None
         context:      Short description of why cleanup is needed
                       (e.g. "fetch failed" or "verify failed")
     """
-    cleanup = delete_order_from_shipstation(new_order_id, fetch_details_first=False)
+    today = date.today().isoformat()
+    cf3_context = context.replace(' ', '-')
+    cf3_stamp = f"orphan:{cf3_context} {today}"
+    cleanup = cancel_order_in_shipstation(new_order_id, custom_field3=cf3_stamp)
     if cleanup.get('success'):
         return
 
     cleanup_error = cleanup.get('error', 'unknown')
     server_logger.error(
-        f"Could not clean up orphaned replacement {new_order_id} "
+        f"Could not cancel orphaned replacement {new_order_id} "
         f"after {context} for order {order_number}: {cleanup_error}. "
         f"Manual cancellation in ShipStation required to prevent duplicate shipment.",
         source="Promo SKU Handler"
@@ -153,7 +156,7 @@ def _cleanup_orphan(conn, new_order_id, order_number: str, context: str) -> None
 
     orphan_msg = (
         f"\u26a0\ufe0f ORPHAN #{order_number} (SS {new_order_id}): "
-        f"deletion failed after {context}. Manual cancel required."
+        f"cancellation failed after {context}. Manual cancel required."
     )
     try:
         cursor = conn.cursor()
@@ -192,8 +195,11 @@ def _already_processed(conn, original_order_id) -> bool:
 
 def _record_deletion(conn, original_order: dict) -> None:
     """
-    Write the original promo-SKU order to deleted_shipstation_orders BEFORE
-    the DELETE API call so there is always a local record even if deletion fails.
+    Write the original promo-SKU order to deleted_shipstation_orders after
+    cancel_order_in_shipstation succeeds so there is a permanent local audit
+    record. The table name and deleted_by='promo_sku_replacement' value must
+    never change — _already_processed() queries exactly this combination as
+    the idempotency guard for every promo order processed.
     """
     ship_to = original_order.get('shipTo') or {}
     bill_to = original_order.get('billTo') or {}
@@ -210,14 +216,15 @@ def _record_deletion(conn, original_order: dict) -> None:
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO deleted_shipstation_orders (
-            shipstation_order_id, order_number, deleted_at, deleted_by,
+            shipstation_order_id, order_number, deleted_at, deleted_by, action_type,
             customer_name, customer_email, customer_company,
             ship_to_name, ship_to_city, ship_to_state,
             order_total_cents, order_date, items_json
-        ) VALUES (%s, %s, NOW(), 'promo_sku_replacement',
+        ) VALUES (%s, %s, NOW(), 'promo_sku_replacement', 'cancelled',
                   %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (shipstation_order_id)
-        DO UPDATE SET deleted_by = 'promo_sku_replacement', deleted_at = NOW()
+        DO UPDATE SET deleted_by = 'promo_sku_replacement', deleted_at = NOW(),
+                      action_type = 'cancelled'
     """, (
         original_order.get('orderId'),
         original_order.get('orderNumber'),

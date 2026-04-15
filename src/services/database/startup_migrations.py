@@ -634,6 +634,23 @@ def _clear_sync_interval_health_check(cursor):
     logger.info("startup_migrations: unified-shipstation-sync expected_interval_seconds cleared (schedule changed to 3x daily)")
 
 
+def _add_action_type_to_deleted_orders(cursor):
+    """
+    Add action_type VARCHAR(20) NOT NULL DEFAULT 'deleted' to deleted_shipstation_orders.
+
+    Distinguishes rows that represent true ShipStation deletions (legacy, action_type='deleted')
+    from the new cancel-with-CF3-stamp policy (action_type='cancelled').
+
+    DEFAULT 'deleted' preserves the semantics of all existing rows, which were
+    written by the old delete_order_from_shipstation path.
+    """
+    cursor.execute("""
+        ALTER TABLE deleted_shipstation_orders
+        ADD COLUMN IF NOT EXISTS action_type VARCHAR(20) NOT NULL DEFAULT 'deleted'
+    """)
+    logger.info("startup_migrations: deleted_shipstation_orders.action_type column ensured")
+
+
 def _seed_sku_promotions(cursor):
     """
     Ensure all active promo-SKU → base-SKU mappings exist in sku_promotions.
@@ -682,6 +699,7 @@ def run_all(conn):
             _fix_shipstation_timestamp_timezone(cur)
             _clear_sync_interval_health_check(cur)
             _seed_sku_promotions(cur)
+            _add_action_type_to_deleted_orders(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
