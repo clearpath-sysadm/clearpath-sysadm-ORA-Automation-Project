@@ -31,6 +31,8 @@ KNOWN_SKUS_QUERY = "SELECT sku_code FROM skus"
 
 HOME_OFFICE_SKUS = {'18751', '18760', '18565'}
 
+LOT_OVERRIDE_TAG_ID = 49832
+
 SKU_SHIPPING_PROFILES = {
     '17612': {'package_code': 'package', 'package_id': 'se-122675', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
     '17914': {'package_code': 'package', 'package_id': 'se-122677', 'length': 11.0, 'width': 11.0, 'height':  8.0, 'weight_oz': 240},
@@ -572,6 +574,16 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
     expected_value = f"{sku} - {active_lots[sku]}"
     profile        = resolve_shipping_profile(order, sku)
+
+    tag_ids = order.get('tagIds') or []
+    if LOT_OVERRIDE_TAG_ID in tag_ids:
+        current_cf1 = (order.get('advancedOptions') or {}).get('customField1', '').strip()
+        server_logger.info(
+            f"[Lot Tagger] Lot Override tag present on order {order_number} (SS ID: {order_id})"
+            f" — skipping CF1 update. Current CF1: '{current_cf1}'",
+            source="Lot Tagger"
+        )
+        expected_value = current_cf1 if current_cf1 else expected_value
 
     mismatched = _get_mismatched_fields(order, expected_value, profile)
     if not mismatched:
