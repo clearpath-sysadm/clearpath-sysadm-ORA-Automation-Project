@@ -384,7 +384,10 @@ def update_order_custom_fields(
         )
 
         if response and response.status_code == 200:
-            logger.info(f"Updated customField1 for order {order_id}: '{field1_value}'")
+            if skip_cf1:
+                logger.info(f"Updated shipping profile for order {order_id} (CF1 intentionally skipped — Lot Override)")
+            else:
+                logger.info(f"Updated customField1 for order {order_id}: '{field1_value}'")
             return {'success': True}
         else:
             error_msg = f"ShipStation API error {response.status_code if response else 'no response'}"

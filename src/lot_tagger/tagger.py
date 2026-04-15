@@ -337,6 +337,15 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     order_id     = order.get('orderId')
     items        = order.get('items', [])
 
+    tag_ids      = order.get('tagIds') or []
+    lot_override = LOT_OVERRIDE_TAG_ID in tag_ids
+    if lot_override:
+        server_logger.info(
+            f"[Lot Tagger] Lot Override tag present on order {order_number} (SS ID: {order_id})"
+            f" — CF1 will not be modified.",
+            source="Lot Tagger"
+        )
+
     tracked_items = [item for item in items if str(item.get('sku', '')).strip() in known_skus]
 
     if not tracked_items:
@@ -381,6 +390,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             profile = resolve_shipping_profile(order, base_sku)
 
             mismatched = _get_mismatched_fields(order, exp_cf1, profile)
+            if lot_override:
+                mismatched = [f for f in mismatched if f != 'customField1']
             if not mismatched:
                 logger.debug(f"Lot-stamped order {order_number} already correct — skipped.")
                 v2_result = ensure_v2_package(order_id, order_number, profile,
@@ -401,6 +412,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
             result = update_order_custom_fields(
                 order_id, exp_cf1, None,
+                skip_cf1=lot_override,
                 carrier_code=profile['carrier_code'],
                 service_code=profile['service_code'],
                 package_code=profile['package_code'],
@@ -464,6 +476,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         profile      = resolve_shipping_profile(order, sku)
 
         mismatched = _get_mismatched_fields(order, sku, profile)
+        if lot_override:
+            mismatched = [f for f in mismatched if f != 'customField1']
         if not mismatched:
             logger.debug(f"Order {order_number} (home office) already correct — skipped.")
             v2_result = ensure_v2_package(order_id, order_number, profile,
@@ -484,6 +498,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
         result = update_order_custom_fields(
             order_id, sku, None,
+            skip_cf1=lot_override,
             carrier_code=profile['carrier_code'],
             service_code=profile['service_code'],
             package_code=profile['package_code'],
@@ -574,15 +589,6 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
     expected_value = f"{sku} - {active_lots[sku]}"
     profile        = resolve_shipping_profile(order, sku)
-
-    tag_ids = order.get('tagIds') or []
-    lot_override = LOT_OVERRIDE_TAG_ID in tag_ids
-    if lot_override:
-        server_logger.info(
-            f"[Lot Tagger] Lot Override tag present on order {order_number} (SS ID: {order_id})"
-            f" — skipping CF1 update.",
-            source="Lot Tagger"
-        )
 
     mismatched = _get_mismatched_fields(order, expected_value, profile)
     if lot_override:
