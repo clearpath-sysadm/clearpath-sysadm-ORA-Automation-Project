@@ -6725,11 +6725,11 @@ def api_bulk_recreate_manual_orders():
 
                 cr2.execute("""
                     INSERT INTO deleted_shipstation_orders
-                    (shipstation_order_id, order_number, deleted_at, deleted_by,
+                    (shipstation_order_id, order_number, deleted_at, deleted_by, action_type,
                      customer_name, customer_email, customer_company,
                      ship_to_name, ship_to_city, ship_to_state,
                      order_total_cents, order_date, items_json)
-                    VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, CURRENT_TIMESTAMP, %s, 'deleted', %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (shipstation_order_id) DO NOTHING
                 """, (
                     int(ss_order_id), old_order_number, f'bulk_dedup:{user_name}',
@@ -10155,8 +10155,8 @@ def cleanup_orphan_orders():
             time.sleep(0.6)
 
         found = [r for r in results if r['status'] != 'not_found']
-        deleted = [r for r in results if r['status'] == 'deleted']
-        would_delete = [r for r in results if r['status'] == 'would_delete']
+        cancelled = [r for r in results if r['status'] == 'cancelled']
+        would_cancel = [r for r in results if r['status'] == 'would_cancel']
 
         summary = {
             'dry_run': dry_run,
@@ -10166,10 +10166,10 @@ def cleanup_orphan_orders():
             'not_found': len([r for r in results if r['status'] == 'not_found']),
         }
         if dry_run:
-            summary['would_delete'] = len(would_delete)
+            summary['would_cancel'] = len(would_cancel)
         else:
-            summary['deleted'] = len(deleted)
-            summary['failed'] = len([r for r in results if r['status'] == 'delete_failed'])
+            summary['cancelled'] = len(cancelled)
+            summary['failed'] = len([r for r in results if r['status'] == 'cancel_failed'])
 
         logger.info(f"Orphan cleanup complete: {json.dumps(summary)}")
         return jsonify({'success': True, 'summary': summary, 'results': results})
