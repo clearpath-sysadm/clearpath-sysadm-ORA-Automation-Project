@@ -728,6 +728,13 @@ def verify_tagging_results(
         items        = order.get('items', [])
         current_cf1  = ((order.get('advancedOptions') or {}).get('customField1') or '').strip()
 
+        if LOT_OVERRIDE_TAG_ID in (order.get('tagIds') or []):
+            logger.debug(
+                f"QA: order {order_number} (SS ID: {order_id}) has Lot Override tag — "
+                f"excluded from CF1 QA check."
+            )
+            continue
+
         tracked_items = [item for item in items if str(item.get('sku', '')).strip() in known_skus]
 
         if tracked_items:
