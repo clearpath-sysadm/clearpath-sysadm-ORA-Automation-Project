@@ -9,10 +9,14 @@ SKU (mapped in the sku_promotions table), this handler:
   3. Acquires a PostgreSQL session-level advisory lock keyed on the SS order ID
      to prevent concurrent duplicate replacements across callers
   4. Creates a replacement order with the base SKU (all other fields identical)
-  5. Fetches the replacement back from ShipStation and verifies every populated
-     field matches the original — the ONLY permitted difference is the SKU
+  5. Fetches the replacement back from ShipStation and verifies a whitelist of
+     operationally significant fields — catalog-derived fields (weight, dimensions,
+     name, unitPrice, imageUrl, upc, productId) are excluded because ShipStation
+     recalculates them from its own catalog when a new order is created
   6. On verify failure: deletes the orphaned replacement from ShipStation,
-     logs 'verify_failed', writes a lot_tagging_failures alert, returns original
+     logs 'verify_failed', writes a lot_tagging_failures alert, returns original.
+     If the orphan deletion itself fails, activates the red admin alert bar on all
+     dashboard pages so the live risk is immediately visible.
   7. Logs 'replaced', cancels the original promo-SKU order in ShipStation,
      records the deletion, and returns the replacement so the lot-tagger runs normally
   8. On delete failure: updates the log row to 'failed' (no deleted_orders row
@@ -47,23 +51,6 @@ from src.services.shipstation.api_client import (
 
 logger = logging.getLogger(__name__)
 server_logger = get_logger()
-
-EXCLUDED_COMPARISON_KEYS = frozenset({
-    'orderId', 'orderKey',
-    'createDate', 'modifyDate',
-    'weight',
-})
-
-EXCLUDED_ITEM_COMPARISON_KEYS = frozenset({
-    'orderItemId',
-    'createDate', 'modifyDate',
-    'productId',
-    'weight',
-})
-
-EXCLUDED_ADVANCED_OPTIONS_KEYS = frozenset({
-    'mergedOrSplit', 'mergedIds', 'parentId',
-})
 
 
 def _load_promo_map(conn) -> dict:
@@ -128,6 +115,69 @@ def _write_tagging_failure(conn, order_number: str, shipstation_order_id,
         conn.commit()
     except Exception as e:
         logger.error(f"Failed to write lot_tagging_failures: {e}")
+
+
+def _cleanup_orphan(conn, new_order_id, order_number: str,
+                    detected_promo_sku: str, context: str) -> None:
+    """
+    Attempt to delete an orphaned replacement order from ShipStation.
+
+    Called when the replacement order cannot be verified (either because the
+    fetch failed or because field verification failed). If the deletion
+    succeeds, returns silently. If deletion fails — leaving a live order in
+    ShipStation that could ship — two things happen:
+
+      1. server_logger.error() writes a permanent record visible on /logs.html
+      2. The admin_alerts table is updated via a concatenating UPSERT so the
+         red pulsing alert bar appears on every dashboard page within 30 seconds.
+         The banner is non-dismissable until an admin manually clears it after
+         resolving the orphan in ShipStation.
+
+    Args:
+        conn:               Active DB connection (passed through from handle_promo_sku_order)
+        new_order_id:       ShipStation order ID of the orphaned replacement
+        order_number:       Human-readable order number (e.g. "862369")
+        detected_promo_sku: The promo SKU that triggered this replacement
+        context:            Short description of why cleanup is needed
+                            (e.g. "fetch failed" or "verify failed")
+    """
+    cleanup = delete_order_from_shipstation(new_order_id, fetch_details_first=False)
+    if cleanup.get('success'):
+        return
+
+    cleanup_error = cleanup.get('error', 'unknown')
+    server_logger.error(
+        f"Could not clean up orphaned replacement {new_order_id} "
+        f"after {context} for order {order_number}: {cleanup_error}. "
+        f"Manual cancellation in ShipStation required to prevent duplicate shipment.",
+        source="Promo SKU Handler"
+    )
+
+    orphan_msg = (
+        f"\u26a0\ufe0f ORPHAN #{order_number} (SS {new_order_id}): "
+        f"deletion failed after {context}. Manual cancel required."
+    )
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO admin_alerts (id, message, is_active, updated_at, updated_by)
+            VALUES (1, %s, true, NOW(), 'system')
+            ON CONFLICT (id) DO UPDATE SET
+                message = CASE
+                    WHEN admin_alerts.message IS NULL OR TRIM(admin_alerts.message) = ''
+                    THEN EXCLUDED.message
+                    ELSE LEFT(admin_alerts.message || ' | ' || EXCLUDED.message, 255)
+                END,
+                is_active = true,
+                updated_at = NOW(),
+                updated_by = 'system'
+        """, (orphan_msg,))
+        conn.commit()
+    except Exception as alert_err:
+        logger.error(
+            f"Failed to write orphan admin alert for order {order_number} "
+            f"(SS ID {new_order_id}): {alert_err}"
+        )
 
 
 def _already_processed(conn, original_order_id) -> bool:
@@ -236,15 +286,29 @@ def _values_match(orig_val, repl_val) -> bool:
 def _verify_replacement(original: dict, replacement: dict,
                         promo_sku: str, base_sku: str) -> list:
     """
-    Compare ALL populated top-level fields from the original order against the
-    replacement order.
+    Verify a replacement order against the original using an explicit whitelist.
+
+    Only operationally significant fields are compared. Catalog-derived fields
+    (weight, dimensions, name, unitPrice, imageUrl, upc, productId) are
+    intentionally excluded — ShipStation recalculates them from its own product
+    catalog when a new order is created with a different SKU. This was the root
+    cause of the 862369 incident (weight 352 oz vs 704 oz → false verify_failed).
+
+    Whitelisted order-level fields:
+      orderNumber, orderStatus, shipTo, billTo, customerEmail,
+      requestedShippingService, serviceCode, carrierCode,
+      advancedOptions.storeId (scalar only)
+
+    Whitelisted per-item fields:
+      sku (with promo→base swap logic; blank/null SKUs are skipped entirely),
+      quantity
 
     SKU rule per line item:
+      - If original item SKU is blank/null → skip SKU check (BigCommerce coupon lines)
       - If original item SKU == promo_sku → replacement must have base_sku
       - Otherwise → replacement must preserve the original SKU unchanged
 
     Returns a list of mismatch descriptions (empty list means verification passed).
-    orderId, orderKey, createDate, and modifyDate are excluded — they differ by design.
 
     Uses _values_match() rather than plain equality to tolerate:
       - Numeric type normalization (string "49.99" vs float 49.99)
@@ -252,48 +316,52 @@ def _verify_replacement(original: dict, replacement: dict,
     """
     mismatches = []
 
-    for key, orig_val in original.items():
-        if key in EXCLUDED_COMPARISON_KEYS or key == 'items':
-            continue
+    # Order-level whitelist
+    for key in ('orderNumber', 'orderStatus', 'shipTo', 'billTo',
+                'customerEmail', 'requestedShippingService',
+                'serviceCode', 'carrierCode'):
+        orig_val = original.get(key)
         if _is_empty(orig_val):
             continue
         repl_val = replacement.get(key)
-        if key == 'advancedOptions' and isinstance(orig_val, dict):
-            orig_val = {k: v for k, v in orig_val.items()
-                        if k not in EXCLUDED_ADVANCED_OPTIONS_KEYS}
-            repl_val = {k: v for k, v in (repl_val or {}).items()
-                        if k not in EXCLUDED_ADVANCED_OPTIONS_KEYS}
-            if _is_empty(orig_val):
-                continue
         if not _values_match(orig_val, repl_val):
             safe_orig = repr(orig_val)[:120]
             safe_repl = repr(repl_val)[:120]
             mismatches.append(f"{key}: {safe_orig} != {safe_repl}")
 
+    # advancedOptions.storeId — scalar check only
+    orig_store_id = (original.get('advancedOptions') or {}).get('storeId')
+    if not _is_empty(orig_store_id):
+        repl_store_id = (replacement.get('advancedOptions') or {}).get('storeId')
+        if not _values_match(orig_store_id, repl_store_id):
+            mismatches.append(
+                f"advancedOptions.storeId: {orig_store_id!r} != {repl_store_id!r}"
+            )
+
+    # Item count
     orig_items = original.get('items', [])
     repl_items = replacement.get('items', [])
     if len(orig_items) != len(repl_items):
         mismatches.append(f"items_count: {len(orig_items)} != {len(repl_items)}")
     else:
         for i, (oi, ri) in enumerate(zip(orig_items, repl_items)):
-            for item_key, orig_item_val in oi.items():
-                if item_key in EXCLUDED_ITEM_COMPARISON_KEYS:
-                    continue
-                if _is_empty(orig_item_val):
-                    continue
-                if item_key == 'sku':
-                    orig_item_sku = str(orig_item_val).strip()
-                    expected_sku  = base_sku if orig_item_sku == promo_sku else orig_item_sku
-                    if ri.get('sku') != expected_sku:
-                        mismatches.append(
-                            f"items[{i}].sku: expected {expected_sku!r}, "
-                            f"got {ri.get('sku')!r}"
-                        )
-                    continue
-                repl_item_val = ri.get(item_key)
-                if not _values_match(orig_item_val, repl_item_val):
+            # SKU — skip blank/null items (e.g. BigCommerce coupon lines)
+            orig_item_sku = str(oi.get('sku') or '').strip()
+            if orig_item_sku:
+                expected_sku = base_sku if orig_item_sku == promo_sku else orig_item_sku
+                if ri.get('sku') != expected_sku:
                     mismatches.append(
-                        f"items[{i}].{item_key}: {orig_item_val!r} != {repl_item_val!r}"
+                        f"items[{i}].sku: expected {expected_sku!r}, "
+                        f"got {ri.get('sku')!r}"
+                    )
+
+            # Quantity
+            orig_qty = oi.get('quantity')
+            if not _is_empty(orig_qty):
+                repl_qty = ri.get('quantity')
+                if not _values_match(orig_qty, repl_qty):
+                    mismatches.append(
+                        f"items[{i}].quantity: {orig_qty!r} != {repl_qty!r}"
                     )
 
     return mismatches
@@ -403,13 +471,8 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 source="Promo SKU Handler"
             )
             if new_order_id is not None:
-                cleanup = delete_order_from_shipstation(new_order_id, fetch_details_first=False)
-                if not cleanup.get('success'):
-                    logger.warning(
-                        f"Could not clean up orphaned replacement {new_order_id} "
-                        f"after fetch failure for {order_number}: "
-                        f"{cleanup.get('error', 'unknown')}"
-                    )
+                _cleanup_orphan(conn, new_order_id, order_number,
+                                detected_promo_sku, "fetch failed")
             _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                        'verify_failed', f"fetch failed: {error}")
             _write_tagging_failure(conn, order_number, order_id,
@@ -428,13 +491,8 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                 source="Promo SKU Handler"
             )
             if new_order_id is not None:
-                cleanup = delete_order_from_shipstation(new_order_id, fetch_details_first=False)
-                if not cleanup.get('success'):
-                    logger.warning(
-                        f"Could not clean up orphaned replacement {new_order_id} "
-                        f"after verify failure for {order_number}: "
-                        f"{cleanup.get('error', 'unknown')}"
-                    )
+                _cleanup_orphan(conn, new_order_id, order_number,
+                                detected_promo_sku, "verify failed")
             _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                        'verify_failed', error)
             _write_tagging_failure(conn, order_number, order_id,
