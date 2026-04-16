@@ -174,7 +174,12 @@ def run_reconciliation():
         cur.execute(
             "SELECT shipstation_order_id FROM lot_tagging_failures WHERE resolved_at IS NULL"
         )
-        unresolved_ltf_ids = {int(row[0]) for row in cur.fetchall()}
+        unresolved_ltf_ids = set()
+        for row in cur.fetchall():
+            try:
+                unresolved_ltf_ids.add(int(row[0]))
+            except (ValueError, TypeError):
+                logger.warning(f"[Skip Cache] Non-numeric lot_tagging_failures.shipstation_order_id skipped: {row[0]!r}")
         cur.close()
 
         # (b) Load skip cache into {order_id_int: modify_date} dict
