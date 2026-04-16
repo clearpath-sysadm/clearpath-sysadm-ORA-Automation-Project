@@ -622,7 +622,14 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
         log_id = _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                             'replaced')
 
-        _clear_promo_hold(order_id)
+        tag_ok = _clear_promo_hold(order_id)
+        if not tag_ok:
+            logger.warning(
+                f"handle_promo_sku_order: PROMO HOLD tag removal failed for order "
+                f"{order_number} (SS {order_id}). Proceeding with cancel anyway — "
+                f"the cancel overwrites the visual tag state; stale tag will persist "
+                f"until manually removed in ShipStation."
+            )
 
         cancel_result = cancel_order_in_shipstation(order_id, order_data=order)
         if not cancel_result.get('success'):
