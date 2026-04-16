@@ -711,6 +711,7 @@ def _backfill_promo_lot_tagging_resolved_at(cursor):
            SET resolved_at  = NOW(),
                resolved_by  = 'backfill'
          WHERE ltf.resolved_at IS NULL
+           AND ltf.sku LIKE '%%[PROMO:%%'
            AND EXISTS (
                SELECT 1
                  FROM promo_sku_replacement_log prl

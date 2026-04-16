@@ -6452,20 +6452,26 @@ def api_resolve_promo_sku_issue(order_number):
         today = _date.today().isoformat()
         cf3_stamp = f"resolved:manual {today}"
         api_key, api_secret = get_shipstation_credentials()
-        if api_key and api_secret:
-            cf3_result = update_order_custom_fields(
-                ss_order_id,
-                field1_value='',
-                skip_cf1=True,
-                field3_value=cf3_stamp,
-            )
-            if not cf3_result.get('success'):
-                conn.close()
-                return jsonify({
-                    'success': False,
-                    'error': f'Tag removed but CF3 stamp failed for order {order_number}: '
-                             f'{cf3_result.get("error")}. Please stamp CF3 manually.'
-                }), 502
+        if not api_key or not api_secret:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'ShipStation credentials unavailable — cannot write CF3 audit stamp. '
+                         'Check SHIPSTATION_API_KEY / SHIPSTATION_API_SECRET secrets.'
+            }), 503
+        cf3_result = update_order_custom_fields(
+            ss_order_id,
+            field1_value='',
+            skip_cf1=True,
+            field3_value=cf3_stamp,
+        )
+        if not cf3_result.get('success'):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f'Tag removed but CF3 stamp failed for order {order_number}: '
+                         f'{cf3_result.get("error")}. Please stamp CF3 manually.'
+            }), 502
 
         _promo_write_log(conn, order_number, promo_sku, '', 'manually_resolved',
                          f'manually resolved via dashboard {today}')

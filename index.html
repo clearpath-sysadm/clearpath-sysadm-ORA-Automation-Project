@@ -2345,16 +2345,6 @@
             await loadPromoSkuIssues();
         }
 
-        function escapeHtml(str) {
-            if (str == null) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
         // Poll every 60 s while the section is visible
         function startPromoIssuesPoll() {
             if (promoIssuesPollTimer) return;
