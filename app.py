@@ -6277,10 +6277,11 @@ def api_get_promo_sku_issues():
                 ltf.detected_at,
                 prl.error_reason,
                 prl.status,
-                prl.processed_at
+                prl.processed_at,
+                prl.base_sku
             FROM lot_tagging_failures ltf
             LEFT JOIN LATERAL (
-                SELECT error_reason, status, processed_at
+                SELECT error_reason, status, processed_at, base_sku
                 FROM promo_sku_replacement_log
                 WHERE order_number = ltf.order_number
                 ORDER BY processed_at DESC
@@ -6303,6 +6304,7 @@ def api_get_promo_sku_issues():
                 'error_reason': row[5],
                 'status': row[6],
                 'last_attempt_at': row[7].isoformat() if row[7] else None,
+                'base_sku': row[8],
             }
             for row in rows
         ]

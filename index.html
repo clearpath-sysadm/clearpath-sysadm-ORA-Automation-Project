@@ -608,7 +608,7 @@
                             <thead>
                                 <tr style="border-bottom: 2px solid var(--border-color);">
                                     <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">Order</th>
-                                    <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">Promo SKU</th>
+                                    <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">Promo → Base SKU</th>
                                     <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px;">Last Error</th>
                                     <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">Detected</th>
                                     <th style="padding: 8px 10px;"></th>
@@ -2272,18 +2272,20 @@
 
                 tbody.innerHTML = '';
                 result.data.forEach(issue => {
-                    const promoSku = (issue.sku || '').split(' [PROMO:')[0].trim();
-                    const ageMs    = issue.detected_at ? (Date.now() - new Date(issue.detected_at).getTime()) : 0;
-                    const ageHrs   = Math.round(ageMs / 3600000);
-                    const ageLabel = ageHrs < 1 ? '< 1h ago' : ageHrs + 'h ago';
-                    const reason   = issue.error_reason || issue.status || '—';
+                    const promoSku  = (issue.sku || '').split(' [PROMO:')[0].trim();
+                    const baseSku   = issue.base_sku || '?';
+                    const skuLabel  = promoSku + ' → ' + baseSku;
+                    const ageMs     = issue.detected_at ? (Date.now() - new Date(issue.detected_at).getTime()) : 0;
+                    const ageHrs    = Math.round(ageMs / 3600000);
+                    const ageLabel  = ageHrs < 1 ? '< 1h ago' : ageHrs + 'h ago';
+                    const reason    = issue.error_reason || issue.status || '—';
                     const reasonShort = reason.length > 80 ? reason.slice(0, 80) + '…' : reason;
 
                     const tr = document.createElement('tr');
                     tr.style.cssText = 'border-bottom: 1px solid var(--border-color);';
                     tr.innerHTML = `
                         <td style="padding: 10px; font-size: 13px; font-weight: 600; white-space: nowrap;">${escapeHtml(issue.order_number)}</td>
-                        <td style="padding: 10px; font-size: 13px; font-family: monospace; white-space: nowrap;">${escapeHtml(promoSku)}</td>
+                        <td style="padding: 10px; font-size: 13px; font-family: monospace; white-space: nowrap;">${escapeHtml(skuLabel)}</td>
                         <td style="padding: 10px; font-size: 12px; color: var(--text-secondary); max-width: 320px; word-break: break-word;" title="${escapeHtml(reason)}">${escapeHtml(reasonShort)}</td>
                         <td style="padding: 10px; font-size: 12px; color: var(--text-tertiary); white-space: nowrap;">${escapeHtml(ageLabel)}</td>
                         <td style="padding: 10px; white-space: nowrap;">
