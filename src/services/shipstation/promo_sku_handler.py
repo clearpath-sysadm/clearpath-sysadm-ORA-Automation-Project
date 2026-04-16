@@ -47,10 +47,126 @@ from src.services.shipstation.api_client import (
     create_replacement_order,
     fetch_order_by_id,
     cancel_order_in_shipstation,
+    update_order_custom_fields,
+    apply_promo_hold_tag,
+    remove_promo_hold_tag,
 )
 
 logger = logging.getLogger(__name__)
 server_logger = get_logger()
+
+
+def _write_admin_alert(conn, message: str) -> None:
+    """
+    Upsert a message into the admin_alerts table (id=1) so the red pulsing
+    alert bar appears on every dashboard page within 30 seconds.
+
+    If an existing message is present, the new message is appended with ' | '
+    up to 255 characters.  is_active is always forced to True so the bar
+    is non-dismissable until an admin manually clears it.
+
+    Shared helper: used by _cleanup_orphan and all promo failure paths.
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO admin_alerts (id, message, is_active, updated_at, updated_by)
+            VALUES (1, %s, true, NOW(), 'system')
+            ON CONFLICT (id) DO UPDATE SET
+                message = CASE
+                    WHEN admin_alerts.message IS NULL OR TRIM(admin_alerts.message) = ''
+                    THEN EXCLUDED.message
+                    ELSE LEFT(admin_alerts.message || ' | ' || EXCLUDED.message, 255)
+                END,
+                is_active = true,
+                updated_at = NOW(),
+                updated_by = 'system'
+        """, (message,))
+        conn.commit()
+    except Exception as alert_err:
+        logger.error(f"Failed to write admin alert: {alert_err}")
+
+
+def _apply_promo_hold(order_id, reason: str) -> None:
+    """
+    Apply the '⚠️ PROMO HOLD' ShipStation tag to order_id then stamp CF3.
+
+    Tag is applied first so that update_order_custom_fields (which fetches
+    the current order before POSTing) sees the new tagId and preserves it.
+
+    reason must be one of: 'verify-failed', 'create-failed',
+    'cancel-original-failed'.  CF3 stamp format:
+        promo-hold:<reason> YYYY-MM-DD
+
+    Non-fatal: logs warnings on API failures but never raises.
+    """
+    if order_id is None:
+        return
+    today = date.today().isoformat()
+    cf3 = f"promo-hold:{reason} {today}"
+
+    tag_result = apply_promo_hold_tag(int(order_id))
+    if not tag_result.get('success'):
+        logger.warning(
+            f"_apply_promo_hold: tag failed for order {order_id}: "
+            f"{tag_result.get('error')}"
+        )
+
+    cf3_result = update_order_custom_fields(
+        int(order_id),
+        field1_value='',
+        skip_cf1=True,
+        field3_value=cf3,
+    )
+    if not cf3_result.get('success'):
+        logger.warning(
+            f"_apply_promo_hold: CF3 stamp failed for order {order_id}: "
+            f"{cf3_result.get('error')}"
+        )
+
+
+def _clear_promo_hold(order_id) -> None:
+    """
+    Remove the '⚠️ PROMO HOLD' ShipStation tag from order_id.
+
+    Called on the success path before cancelling the original promo order.
+    The cancel call overwrites CF3 with the standard audit stamp, so no
+    separate CF3 clear is needed here.
+
+    Non-fatal: logs a warning on API failure but never raises.
+    """
+    if order_id is None:
+        return
+    result = remove_promo_hold_tag(int(order_id))
+    if not result.get('success'):
+        logger.warning(
+            f"_clear_promo_hold: failed to remove tag from order {order_id}: "
+            f"{result.get('error')}"
+        )
+
+
+def _resolve_tagging_failure(conn, order_number: str, resolved_by: str) -> None:
+    """
+    Write resolved_at / resolved_by to lot_tagging_failures for order_number.
+
+    Only updates rows where resolved_at IS NULL to avoid double-stamping.
+    Non-fatal: logs on error but never raises.
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE lot_tagging_failures
+               SET resolved_at = NOW(),
+                   resolved_by = %s
+             WHERE order_number = %s
+               AND resolved_at IS NULL
+        """, (resolved_by, order_number))
+        conn.commit()
+    except Exception as e:
+        logger.error(
+            f"_resolve_tagging_failure: failed to update lot_tagging_failures "
+            f"for {order_number}: {e}"
+        )
 
 
 def _load_promo_map(conn) -> dict:
@@ -158,27 +274,7 @@ def _cleanup_orphan(conn, new_order_id, order_number: str, context: str) -> None
         f"\u26a0\ufe0f ORPHAN #{order_number} (SS {new_order_id}): "
         f"cancellation failed after {context}. Manual cancel required."
     )
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO admin_alerts (id, message, is_active, updated_at, updated_by)
-            VALUES (1, %s, true, NOW(), 'system')
-            ON CONFLICT (id) DO UPDATE SET
-                message = CASE
-                    WHEN admin_alerts.message IS NULL OR TRIM(admin_alerts.message) = ''
-                    THEN EXCLUDED.message
-                    ELSE LEFT(admin_alerts.message || ' | ' || EXCLUDED.message, 255)
-                END,
-                is_active = true,
-                updated_at = NOW(),
-                updated_by = 'system'
-        """, (orphan_msg,))
-        conn.commit()
-    except Exception as alert_err:
-        logger.error(
-            f"Failed to write orphan admin alert for order {order_number} "
-            f"(SS ID {new_order_id}): {alert_err}"
-        )
+    _write_admin_alert(conn, orphan_msg)
 
 
 def _already_processed(conn, original_order_id) -> bool:
@@ -462,6 +558,12 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                        'failed', f"create failed: {error}")
             _write_tagging_failure(conn, order_number, order_id,
                                    detected_promo_sku, f"create failed: {error}")
+            _apply_promo_hold(order_id, 'create-failed')
+            _write_admin_alert(
+                conn,
+                f"\u26a0\ufe0f PROMO HOLD #{order_number}: replacement create failed. "
+                f"Check Promo SKU Issues panel."
+            )
             return order
 
         new_order    = create_result['order']
@@ -481,6 +583,12 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                        'verify_failed', f"fetch failed: {error}")
             _write_tagging_failure(conn, order_number, order_id,
                                    detected_promo_sku, f"verify fetch failed: {error}")
+            _apply_promo_hold(order_id, 'verify-failed')
+            _write_admin_alert(
+                conn,
+                f"\u26a0\ufe0f PROMO HOLD #{order_number}: verify fetch failed. "
+                f"Check Promo SKU Issues panel."
+            )
             return order
 
         fetched_replacement = verify_result['order']
@@ -500,10 +608,18 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                        'verify_failed', error)
             _write_tagging_failure(conn, order_number, order_id,
                                    detected_promo_sku, error)
+            _apply_promo_hold(order_id, 'verify-failed')
+            _write_admin_alert(
+                conn,
+                f"\u26a0\ufe0f PROMO HOLD #{order_number}: verify failed ({error[:80]}). "
+                f"Check Promo SKU Issues panel."
+            )
             return order
 
         log_id = _write_log(conn, order_number, detected_promo_sku, detected_base_sku,
                             'replaced')
+
+        _clear_promo_hold(order_id)
 
         cancel_result = cancel_order_in_shipstation(order_id, order_data=order)
         if not cancel_result.get('success'):
@@ -517,6 +633,12 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                                f"cancel original failed: {error}")
             _write_tagging_failure(conn, order_number, order_id,
                                    detected_promo_sku, f"cancel original failed: {error}")
+            _apply_promo_hold(order_id, 'cancel-original-failed')
+            _write_admin_alert(
+                conn,
+                f"\u26a0\ufe0f PROMO HOLD #{order_number}: cancel-original failed after "
+                f"replacement. Check Promo SKU Issues panel."
+            )
             return order
 
         try:
@@ -532,6 +654,8 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
                                    detected_promo_sku,
                                    f"record_deletion failed: {rec_err}")
             return order
+
+        _resolve_tagging_failure(conn, order_number, 'promo_sku_replacement')
 
         server_logger.info(
             f"Replaced promo order {order_number}: "

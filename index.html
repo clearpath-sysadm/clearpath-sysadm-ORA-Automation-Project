@@ -589,6 +589,36 @@
                     </div>
                 </section>
 
+                <!-- Promo SKU Issues Section -->
+                <section id="promo-sku-issues-section">
+                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Promo SKU Issues</h2>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span>⚠️</span> Promo SKU Replacement Failures
+                            </div>
+                            <button class="btn" onclick="loadPromoSkuIssues()" id="btn-promo-issues-refresh" title="Refresh list">
+                                🔄 Refresh
+                            </button>
+                        </div>
+                        <div id="promo-issues-loading" style="padding: 16px 0; color: var(--text-tertiary); font-size: 13px;">Loading…</div>
+                        <div id="promo-issues-empty" style="display: none; padding: 16px 0; color: var(--text-tertiary); font-size: 13px;">✅ No unresolved promo SKU issues.</div>
+                        <div id="promo-issues-error" style="display: none; padding: 8px 0; color: var(--critical-red); font-size: 13px;"></div>
+                        <table id="promo-issues-table" style="display: none; width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color);">
+                                    <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">Order</th>
+                                    <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">Promo SKU</th>
+                                    <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px;">Last Error</th>
+                                    <th style="text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">Detected</th>
+                                    <th style="padding: 8px 10px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="promo-issues-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <!-- Inventory Risk Section -->
                 <section>
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Inventory Risk</h2>
@@ -2209,7 +2239,127 @@
             }
         }
 
-        // Load button status indicators
+        // ── Promo SKU Issues panel ────────────────────────────────────────────
+        let promoIssuesPollTimer = null;
+
+        async function loadPromoSkuIssues() {
+            const loading = document.getElementById('promo-issues-loading');
+            const empty   = document.getElementById('promo-issues-empty');
+            const errDiv  = document.getElementById('promo-issues-error');
+            const table   = document.getElementById('promo-issues-table');
+            const tbody   = document.getElementById('promo-issues-tbody');
+
+            loading.style.display = 'block';
+            empty.style.display   = 'none';
+            errDiv.style.display  = 'none';
+            table.style.display   = 'none';
+
+            try {
+                const resp   = await fetch('/api/promo-sku/issues');
+                const result = await resp.json();
+                loading.style.display = 'none';
+
+                if (!result.success) {
+                    errDiv.textContent  = 'Error: ' + (result.error || 'Unknown error');
+                    errDiv.style.display = 'block';
+                    return;
+                }
+
+                if (!result.data || result.data.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                result.data.forEach(issue => {
+                    const promoSku = (issue.sku || '').split(' [PROMO:')[0].trim();
+                    const ageMs    = issue.detected_at ? (Date.now() - new Date(issue.detected_at).getTime()) : 0;
+                    const ageHrs   = Math.round(ageMs / 3600000);
+                    const ageLabel = ageHrs < 1 ? '< 1h ago' : ageHrs + 'h ago';
+                    const reason   = issue.error_reason || issue.status || '—';
+                    const reasonShort = reason.length > 80 ? reason.slice(0, 80) + '…' : reason;
+
+                    const tr = document.createElement('tr');
+                    tr.style.cssText = 'border-bottom: 1px solid var(--border-color);';
+                    tr.innerHTML = `
+                        <td style="padding: 10px; font-size: 13px; font-weight: 600; white-space: nowrap;">${escapeHtml(issue.order_number)}</td>
+                        <td style="padding: 10px; font-size: 13px; font-family: monospace; white-space: nowrap;">${escapeHtml(promoSku)}</td>
+                        <td style="padding: 10px; font-size: 12px; color: var(--text-secondary); max-width: 320px; word-break: break-word;" title="${escapeHtml(reason)}">${escapeHtml(reasonShort)}</td>
+                        <td style="padding: 10px; font-size: 12px; color: var(--text-tertiary); white-space: nowrap;">${escapeHtml(ageLabel)}</td>
+                        <td style="padding: 10px; white-space: nowrap;">
+                            <button
+                                onclick="retryPromoIssue('${escapeHtml(issue.order_number)}')"
+                                style="margin-right: 6px; padding: 4px 10px; font-size: 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;">
+                                🔄 Retry
+                            </button>
+                            <button
+                                onclick="resolvePromoIssue('${escapeHtml(issue.order_number)}')"
+                                style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;">
+                                ✅ Resolve
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                table.style.display = 'table';
+
+            } catch (err) {
+                loading.style.display = 'none';
+                errDiv.textContent    = 'Failed to load promo issues: ' + err.message;
+                errDiv.style.display  = 'block';
+            }
+        }
+
+        async function retryPromoIssue(orderNumber) {
+            if (!confirm(`Retry promo SKU replacement for order ${orderNumber}?`)) return;
+            try {
+                const resp   = await fetch(`/api/promo-sku/issues/${encodeURIComponent(orderNumber)}/retry`, { method: 'POST' });
+                const result = await resp.json();
+                if (result.success) {
+                    alert(`✅ Retry triggered for order ${orderNumber}. Refresh in a moment to see the updated status.`);
+                } else {
+                    alert(`❌ Retry failed: ${result.error || 'Unknown error'}`);
+                }
+            } catch (err) {
+                alert('Error retrying: ' + err.message);
+            }
+            await loadPromoSkuIssues();
+        }
+
+        async function resolvePromoIssue(orderNumber) {
+            if (!confirm(`Mark order ${orderNumber} as manually resolved?\n\nThis removes the PROMO HOLD tag and stamps the order's CF3 field. Use this only after confirming in ShipStation that the order is handled correctly.`)) return;
+            try {
+                const resp   = await fetch(`/api/promo-sku/issues/${encodeURIComponent(orderNumber)}/resolve`, { method: 'POST' });
+                const result = await resp.json();
+                if (result.success) {
+                    alert(`✅ Order ${orderNumber} marked as resolved.`);
+                } else {
+                    alert(`❌ Resolve failed: ${result.error || 'Unknown error'}`);
+                }
+            } catch (err) {
+                alert('Error resolving: ' + err.message);
+            }
+            await loadPromoSkuIssues();
+        }
+
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Poll every 60 s while the section is visible
+        function startPromoIssuesPoll() {
+            if (promoIssuesPollTimer) return;
+            promoIssuesPollTimer = setInterval(loadPromoSkuIssues, 60000);
+        }
+
+        // ── Load button status indicators ─────────────────────────────────────
         async function loadReportStatus() {
             try {
                 const response = await fetch('/api/reports/status');
@@ -2701,6 +2851,8 @@
             loadDashboardData();
             loadWeeklyReport();
             loadReportStatus();
+            loadPromoSkuIssues();
+            startPromoIssuesPoll();
             populateUserWidget();
             loadSystemPulse();
 

@@ -6255,6 +6255,187 @@ def api_retry_lot_tagging_failures():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/promo-sku/issues', methods=['GET'])
+def api_get_promo_sku_issues():
+    """
+    Return all unresolved promo SKU replacement failures.
+
+    Filters lot_tagging_failures where the sku column contains '[PROMO:'
+    (written by _write_tagging_failure in promo_sku_handler) and resolved_at
+    IS NULL.  Joins promo_sku_replacement_log to surface the latest error
+    reason for display in the dashboard panel.
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT
+                ltf.id,
+                ltf.order_number,
+                ltf.shipstation_order_id,
+                ltf.sku,
+                ltf.detected_at,
+                prl.error_reason,
+                prl.status,
+                prl.processed_at
+            FROM lot_tagging_failures ltf
+            LEFT JOIN LATERAL (
+                SELECT error_reason, status, processed_at
+                FROM promo_sku_replacement_log
+                WHERE order_number = ltf.order_number
+                ORDER BY processed_at DESC
+                LIMIT 1
+            ) prl ON TRUE
+            WHERE ltf.sku LIKE '%%[PROMO:%%'
+              AND ltf.resolved_at IS NULL
+            ORDER BY ltf.detected_at DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+
+        issues = [
+            {
+                'id': row[0],
+                'order_number': row[1],
+                'shipstation_order_id': row[2],
+                'sku': row[3],
+                'detected_at': row[4].isoformat() if row[4] else None,
+                'error_reason': row[5],
+                'status': row[6],
+                'last_attempt_at': row[7].isoformat() if row[7] else None,
+            }
+            for row in rows
+        ]
+        return jsonify({'success': True, 'data': issues, 'count': len(issues)})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/promo-sku/issues/<order_number>/retry', methods=['POST'])
+def api_retry_promo_sku_issue(order_number):
+    """
+    Re-attempt promo SKU replacement for a single order.
+
+    Fetches the order from ShipStation and runs handle_promo_sku_order().
+    Analogous to /api/lot_tagging_failures/retry but targets the promo handler.
+    """
+    try:
+        from src.services.shipstation.api_client import fetch_order_by_id, get_shipstation_credentials
+        from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
+
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT shipstation_order_id
+            FROM lot_tagging_failures
+            WHERE order_number = %s
+              AND sku LIKE '%%[PROMO:%%'
+              AND resolved_at IS NULL
+            ORDER BY detected_at DESC
+            LIMIT 1
+        """, (order_number,))
+        row = cursor.fetchone()
+
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': f'No unresolved promo issue found for order {order_number}'}), 404
+
+        ss_order_id = int(row[0])
+
+        result = fetch_order_by_id(ss_order_id, api_key, api_secret)
+        if not result.get('success'):
+            conn.close()
+            return jsonify({'success': False, 'error': f"Could not fetch order from ShipStation: {result.get('error')}"}), 502
+
+        order = result['order']
+        handle_promo_sku_order(order, conn)
+        conn.close()
+
+        return jsonify({'success': True, 'message': f'Retry triggered for order {order_number}'})
+
+    except Exception as e:
+        logger.error(f'api_retry_promo_sku_issue error for {order_number}: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/promo-sku/issues/<order_number>/resolve', methods=['POST'])
+def api_resolve_promo_sku_issue(order_number):
+    """
+    Manually resolve a promo SKU replacement failure.
+
+    Looks up shipstation_order_id from lot_tagging_failures, removes the
+    PROMO HOLD tag, stamps CF3 with 'resolved:manual YYYY-MM-DD', writes a
+    'manually_resolved' row to promo_sku_replacement_log, and marks the
+    lot_tagging_failures row as resolved.
+    """
+    try:
+        from datetime import date as _date
+        from src.services.shipstation.promo_sku_handler import (
+            _write_log as _promo_write_log,
+            _resolve_tagging_failure,
+            _clear_promo_hold,
+        )
+        from src.services.shipstation.api_client import (
+            update_order_custom_fields,
+            get_shipstation_credentials,
+        )
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT shipstation_order_id, sku
+            FROM lot_tagging_failures
+            WHERE order_number = %s
+              AND sku LIKE '%%[PROMO:%%'
+              AND resolved_at IS NULL
+            ORDER BY detected_at DESC
+            LIMIT 1
+        """, (order_number,))
+        row = cursor.fetchone()
+
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': f'No unresolved promo issue found for order {order_number}'}), 404
+
+        ss_order_id = int(row[0])
+        raw_sku = row[1] or ''
+        promo_sku = raw_sku.split(' [PROMO:')[0].strip()
+
+        _clear_promo_hold(ss_order_id)
+
+        today = _date.today().isoformat()
+        cf3_stamp = f"resolved:manual {today}"
+        api_key, api_secret = get_shipstation_credentials()
+        if api_key and api_secret:
+            cf3_result = update_order_custom_fields(
+                ss_order_id,
+                field1_value='',
+                skip_cf1=True,
+                field3_value=cf3_stamp,
+            )
+            if not cf3_result.get('success'):
+                logger.warning(
+                    f'api_resolve_promo_sku_issue: CF3 stamp failed for order '
+                    f'{order_number} (SS {ss_order_id}): {cf3_result.get("error")}'
+                )
+
+        _promo_write_log(conn, order_number, promo_sku, '', 'manually_resolved',
+                         f'manually resolved via dashboard {today}')
+        _resolve_tagging_failure(conn, order_number, 'manual')
+        conn.close()
+
+        return jsonify({'success': True, 'message': f'Order {order_number} marked as resolved'})
+
+    except Exception as e:
+        logger.error(f'api_resolve_promo_sku_issue error for {order_number}: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/manual_order_conflicts', methods=['GET'])
 def api_get_manual_order_conflicts():
     """Get all pending manual order conflicts with proposed new order numbers"""

@@ -299,6 +299,7 @@ def update_order_custom_fields(
     field1_value: str,
     field2_value: str = None,
     *,
+    field3_value: str = None,
     skip_cf1: bool = False,
     carrier_code: str = None,
     service_code: str = None,
@@ -311,11 +312,12 @@ def update_order_custom_fields(
     bill_to_account: int = None,
 ) -> dict:
     """
-    Update customField1 (and optionally customField2) in ShipStation advancedOptions,
+    Update customField1 (and optionally customField2/3) in ShipStation advancedOptions,
     and optionally set the full shipping profile in the same POST.
 
     field1_value should be the full 'SKU - LOT' string (e.g. '17612 - 250237').
     field2_value is only set when preserving a pre-existing customField1 value.
+    field3_value when set writes customField3 (e.g. promo-hold audit stamps).
 
     Shipping profile kwargs (all optional):
         carrier_code    — e.g. 'fedex'
@@ -348,6 +350,8 @@ def update_order_custom_fields(
             order_data['advancedOptions']['customField1'] = field1_value
         if field2_value is not None:
             order_data['advancedOptions']['customField2'] = field2_value
+        if field3_value is not None:
+            order_data['advancedOptions']['customField3'] = field3_value
 
         if carrier_code is not None:
             order_data['carrierCode'] = carrier_code
@@ -397,6 +401,166 @@ def update_order_custom_fields(
     except Exception as e:
         logger.error(f"Error updating custom fields for order {order_id}: {e}", exc_info=True)
         return {'success': False, 'error': str(e)}
+
+
+_PROMO_HOLD_TAG_ID_CACHE: dict = {}
+_PROMO_HOLD_TAG_NAME = '⚠️ PROMO HOLD'
+_PROMO_HOLD_TAG_COLOR = '#FF0000'
+
+
+def _get_promo_hold_tag_id() -> int | None:
+    """
+    Lazily resolve the ShipStation tag ID for '⚠️ PROMO HOLD', creating it if
+    it does not exist.  Result is cached in the module-level dict so subsequent
+    calls in the same process are free.
+
+    Returns the tag ID (int) or None on any API failure.
+    """
+    if 'id' in _PROMO_HOLD_TAG_ID_CACHE:
+        return _PROMO_HOLD_TAG_ID_CACHE['id']
+
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            logger.error('_get_promo_hold_tag_id: ShipStation credentials not found')
+            return None
+
+        headers = get_shipstation_headers(api_key, api_secret)
+
+        resp = make_api_request(
+            url='https://ssapi.shipstation.com/accounts/listtags',
+            method='GET',
+            headers=headers,
+            timeout=30,
+        )
+        if not resp or resp.status_code != 200:
+            logger.error(
+                f'_get_promo_hold_tag_id: GET /accounts/listtags failed '
+                f'{resp.status_code if resp else "no response"}'
+            )
+            return None
+
+        for tag in resp.json():
+            if tag.get('name') == _PROMO_HOLD_TAG_NAME:
+                tag_id = tag['tagId']
+                _PROMO_HOLD_TAG_ID_CACHE['id'] = tag_id
+                logger.info(f'_get_promo_hold_tag_id: found existing tag id={tag_id}')
+                return tag_id
+
+        create_headers = {**headers, 'Content-Type': 'application/json'}
+        create_resp = make_api_request(
+            url='https://ssapi.shipstation.com/accounts/addtag',
+            method='POST',
+            headers=create_headers,
+            data={'name': _PROMO_HOLD_TAG_NAME, 'color': _PROMO_HOLD_TAG_COLOR},
+            timeout=30,
+        )
+        if not create_resp or create_resp.status_code not in (200, 201):
+            logger.error(
+                f'_get_promo_hold_tag_id: POST /accounts/addtag failed '
+                f'{create_resp.status_code if create_resp else "no response"}'
+            )
+            return None
+
+        tag_id = create_resp.json().get('tagId')
+        if tag_id:
+            _PROMO_HOLD_TAG_ID_CACHE['id'] = tag_id
+            logger.info(f'_get_promo_hold_tag_id: created new tag id={tag_id}')
+        return tag_id
+
+    except Exception as exc:
+        logger.error(f'_get_promo_hold_tag_id: unexpected error: {exc}', exc_info=True)
+        return None
+
+
+def apply_promo_hold_tag(order_id: int) -> dict:
+    """
+    Apply the '⚠️ PROMO HOLD' ShipStation tag to an order.
+
+    Uses POST /orders/addtag. Non-fatal on failure — logs a warning but does
+    not raise so the caller can still proceed with other failure-path actions.
+
+    Returns dict with 'success' bool and 'error' on failure.
+    """
+    tag_id = _get_promo_hold_tag_id()
+    if tag_id is None:
+        msg = 'apply_promo_hold_tag: could not resolve PROMO HOLD tag ID'
+        logger.warning(msg)
+        return {'success': False, 'error': msg}
+
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        headers['Content-Type'] = 'application/json'
+
+        resp = make_api_request(
+            url='https://ssapi.shipstation.com/orders/addtag',
+            method='POST',
+            headers=headers,
+            data={'orderId': order_id, 'tagId': tag_id},
+            timeout=30,
+        )
+        if resp and resp.status_code in (200, 204):
+            logger.info(f'apply_promo_hold_tag: tagged order {order_id}')
+            return {'success': True}
+
+        status = resp.status_code if resp else 'no response'
+        body = resp.text[:200] if resp else ''
+        error_msg = f'POST /orders/addtag failed {status}: {body}'
+        logger.warning(f'apply_promo_hold_tag: {error_msg}')
+        return {'success': False, 'error': error_msg}
+
+    except Exception as exc:
+        logger.error(f'apply_promo_hold_tag: error for order {order_id}: {exc}', exc_info=True)
+        return {'success': False, 'error': str(exc)}
+
+
+def remove_promo_hold_tag(order_id: int) -> dict:
+    """
+    Remove the '⚠️ PROMO HOLD' ShipStation tag from an order.
+
+    Uses POST /orders/removetag. Non-fatal — a missing tag (204 / 200) is
+    treated as success since the desired end state (tag absent) is reached.
+
+    Returns dict with 'success' bool and 'error' on failure.
+    """
+    tag_id = _get_promo_hold_tag_id()
+    if tag_id is None:
+        msg = 'remove_promo_hold_tag: could not resolve PROMO HOLD tag ID'
+        logger.warning(msg)
+        return {'success': False, 'error': msg}
+
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        headers['Content-Type'] = 'application/json'
+
+        resp = make_api_request(
+            url='https://ssapi.shipstation.com/orders/removetag',
+            method='POST',
+            headers=headers,
+            data={'orderId': order_id, 'tagId': tag_id},
+            timeout=30,
+        )
+        if resp and resp.status_code in (200, 204):
+            logger.info(f'remove_promo_hold_tag: tag removed from order {order_id}')
+            return {'success': True}
+
+        status = resp.status_code if resp else 'no response'
+        body = resp.text[:200] if resp else ''
+        error_msg = f'POST /orders/removetag failed {status}: {body}'
+        logger.warning(f'remove_promo_hold_tag: {error_msg}')
+        return {'success': False, 'error': error_msg}
+
+    except Exception as exc:
+        logger.error(f'remove_promo_hold_tag: error for order {order_id}: {exc}', exc_info=True)
+        return {'success': False, 'error': str(exc)}
 
 
 def update_order_package_v2(

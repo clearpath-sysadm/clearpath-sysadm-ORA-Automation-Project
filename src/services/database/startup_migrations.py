@@ -651,6 +651,85 @@ def _add_action_type_to_deleted_orders(cursor):
     logger.info("startup_migrations: deleted_shipstation_orders.action_type column ensured")
 
 
+def _add_manually_resolved_status(cursor):
+    """
+    Extend the CHECK constraint on promo_sku_replacement_log.status to include
+    the 'manually_resolved' value, which is written by the new resolve endpoint.
+
+    Strategy:
+      1. Skip entirely if the constraint already includes 'manually_resolved'
+         (idempotency — subsequent boots are free).
+      2. Otherwise drop the old constraint (IF EXISTS) and recreate it with the
+         expanded value list.
+
+    Runs in both dev and production.
+    """
+    cursor.execute("""
+        SELECT pg_get_constraintdef(c.oid)
+        FROM pg_constraint c
+        JOIN pg_class t ON t.oid = c.conrelid
+        WHERE c.conname = 'promo_sku_replacement_log_status_check'
+          AND t.relname = 'promo_sku_replacement_log'
+    """)
+    row = cursor.fetchone()
+    if row and 'manually_resolved' in row[0]:
+        logger.info("startup_migrations: promo_sku_replacement_log status constraint already includes manually_resolved — skipping")
+        return
+
+    cursor.execute("""
+        ALTER TABLE promo_sku_replacement_log
+        DROP CONSTRAINT IF EXISTS promo_sku_replacement_log_status_check
+    """)
+    cursor.execute("""
+        ALTER TABLE promo_sku_replacement_log
+        ADD CONSTRAINT promo_sku_replacement_log_status_check
+        CHECK (status IN ('replaced', 'failed', 'verify_failed', 'skipped', 'manually_resolved'))
+    """)
+    logger.info("startup_migrations: promo_sku_replacement_log status constraint updated (added manually_resolved)")
+
+
+def _backfill_promo_lot_tagging_resolved_at(cursor):
+    """
+    Close stale lot_tagging_failures rows for promo SKU orders that have
+    already been successfully replaced.
+
+    Problem: before Task #48, the success path of handle_promo_sku_order did
+    not write resolved_at to lot_tagging_failures.  Orders that failed then
+    self-recovered (e.g. 862369, 862371) remain with resolved_at IS NULL and
+    appear as false positives in the new Promo SKU Issues dashboard panel.
+
+    Fix: set resolved_at = NOW(), resolved_by = 'backfill' on any
+    lot_tagging_failures row whose order_number has at least one 'replaced'
+    row in promo_sku_replacement_log.  Only touches rows where resolved_at IS
+    NULL to avoid overwriting rows already resolved by the new code path.
+
+    Idempotent: WHERE resolved_at IS NULL guard makes re-runs safe.
+    Runs in both dev and production.
+    """
+    cursor.execute("""
+        UPDATE lot_tagging_failures ltf
+           SET resolved_at  = NOW(),
+               resolved_by  = 'backfill'
+         WHERE ltf.resolved_at IS NULL
+           AND EXISTS (
+               SELECT 1
+                 FROM promo_sku_replacement_log prl
+                WHERE prl.order_number = ltf.order_number
+                  AND prl.status       = 'replaced'
+           )
+    """)
+    updated = cursor.rowcount
+    if updated:
+        logger.info(
+            f"startup_migrations: backfilled resolved_at on {updated} "
+            f"lot_tagging_failures row(s) for already-replaced promo orders"
+        )
+    else:
+        logger.info(
+            "startup_migrations: no stale promo lot_tagging_failures to backfill"
+        )
+
+
 def _seed_sku_promotions(cursor):
     """
     Ensure all active promo-SKU → base-SKU mappings exist in sku_promotions.
@@ -700,6 +779,8 @@ def run_all(conn):
             _clear_sync_interval_health_check(cur)
             _seed_sku_promotions(cur)
             _add_action_type_to_deleted_orders(cur)
+            _add_manually_resolved_status(cur)
+            _backfill_promo_lot_tagging_resolved_at(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
