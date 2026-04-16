@@ -125,24 +125,27 @@ def _apply_promo_hold(order_id, reason: str) -> None:
         )
 
 
-def _clear_promo_hold(order_id) -> None:
+def _clear_promo_hold(order_id) -> bool:
     """
     Remove the '⚠️ PROMO HOLD' ShipStation tag from order_id.
 
-    Called on the success path before cancelling the original promo order.
-    The cancel call overwrites CF3 with the standard audit stamp, so no
-    separate CF3 clear is needed here.
+    Called on the success path before cancelling the original promo order,
+    and on the manual resolve path.
 
-    Non-fatal: logs a warning on API failure but never raises.
+    Returns True on success or when order_id is None (nothing to do).
+    Returns False and logs a warning when the ShipStation API call fails,
+    so callers can decide whether to abort.
     """
     if order_id is None:
-        return
+        return True
     result = remove_promo_hold_tag(int(order_id))
     if not result.get('success'):
         logger.warning(
             f"_clear_promo_hold: failed to remove tag from order {order_id}: "
             f"{result.get('error')}"
         )
+        return False
+    return True
 
 
 def _resolve_tagging_failure(conn, order_number: str, resolved_by: str) -> None:

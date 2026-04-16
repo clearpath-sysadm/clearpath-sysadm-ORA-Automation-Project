@@ -598,25 +598,57 @@ def auth_status():
 # Admin Alert API Endpoints
 @app.route('/api/admin/alert')
 def get_admin_alert():
-    """Get current admin alert for all users"""
+    """Get current admin alert for all users.
+
+    In addition to the manually set admin_alerts row, always checks for
+    unresolved promo SKU replacement failures.  If any exist the response
+    forces is_active=True so the alert bar fires even when the failures
+    pre-date the current deployment.
+    """
     try:
         conn = get_connection()
         cursor = conn.cursor()
+
         cursor.execute("""
             SELECT id, message, is_active, updated_at, updated_by
             FROM admin_alerts
             WHERE id = 1
         """)
         row = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM lot_tagging_failures
+            WHERE sku LIKE '%%[PROMO:%%'
+              AND resolved_at IS NULL
+        """)
+        promo_count = (cursor.fetchone() or [0])[0]
         conn.close()
-        
+
+        manual_active  = bool(row and row[2])
+        manual_message = (row[1] or '') if row else ''
+        updated_at     = row[3].isoformat() if row and row[3] else None
+        updated_by     = row[4] if row else None
+
+        if promo_count > 0:
+            noun = 'issue' if promo_count == 1 else 'issues'
+            promo_msg = f'⚠️ {promo_count} promo SKU replacement {noun} require attention — see Promo SKU Issues panel.'
+            combined  = (f'{manual_message}  |  {promo_msg}' if manual_active and manual_message else promo_msg)
+            return jsonify({
+                'id': row[0] if row else 1,
+                'message': combined,
+                'is_active': True,
+                'updated_at': updated_at,
+                'updated_by': updated_by,
+            })
+
         if row:
             return jsonify({
                 'id': row[0],
-                'message': row[1] or '',
-                'is_active': row[2],
-                'updated_at': row[3].isoformat() if row[3] else None,
-                'updated_by': row[4]
+                'message': manual_message,
+                'is_active': manual_active,
+                'updated_at': updated_at,
+                'updated_by': updated_by,
             })
         return jsonify({'message': '', 'is_active': False})
     except Exception as e:
@@ -6408,7 +6440,14 @@ def api_resolve_promo_sku_issue(order_number):
         raw_sku = row[1] or ''
         promo_sku = raw_sku.split(' [PROMO:')[0].strip()
 
-        _clear_promo_hold(ss_order_id)
+        tag_removed = _clear_promo_hold(ss_order_id)
+        if not tag_removed:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f'Could not remove PROMO HOLD tag from ShipStation order {ss_order_id}. '
+                         f'Please remove the tag manually in ShipStation, then retry.'
+            }), 502
 
         today = _date.today().isoformat()
         cf3_stamp = f"resolved:manual {today}"
@@ -6421,10 +6460,12 @@ def api_resolve_promo_sku_issue(order_number):
                 field3_value=cf3_stamp,
             )
             if not cf3_result.get('success'):
-                logger.warning(
-                    f'api_resolve_promo_sku_issue: CF3 stamp failed for order '
-                    f'{order_number} (SS {ss_order_id}): {cf3_result.get("error")}'
-                )
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': f'Tag removed but CF3 stamp failed for order {order_number}: '
+                             f'{cf3_result.get("error")}. Please stamp CF3 manually.'
+                }), 502
 
         _promo_write_log(conn, order_number, promo_sku, '', 'manually_resolved',
                          f'manually resolved via dashboard {today}')
