@@ -107,9 +107,10 @@ def _apply_promo_hold(order_id, reason: str) -> None:
 
     tag_result = apply_promo_hold_tag(int(order_id))
     if not tag_result.get('success'):
-        logger.warning(
+        server_logger.warning(
             f"_apply_promo_hold: tag failed for order {order_id}: "
-            f"{tag_result.get('error')}"
+            f"{tag_result.get('error')}",
+            source="Promo SKU Handler"
         )
 
     cf3_result = update_order_custom_fields(
@@ -119,9 +120,10 @@ def _apply_promo_hold(order_id, reason: str) -> None:
         field3_value=cf3,
     )
     if not cf3_result.get('success'):
-        logger.warning(
+        server_logger.warning(
             f"_apply_promo_hold: CF3 stamp failed for order {order_id}: "
-            f"{cf3_result.get('error')}"
+            f"{cf3_result.get('error')}",
+            source="Promo SKU Handler"
         )
 
 
@@ -498,6 +500,14 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
     lock_acquired      = False
     detected_promo_sku = None
     detected_base_sku  = None
+
+    if (order.get('orderStatus') or '').lower() == 'cancelled':
+        server_logger.info(
+            f"Order {order_number} (SS ID: {order_id}) is already cancelled "
+            f"— skipping promo replacement.",
+            source="Promo SKU Handler"
+        )
+        return order
 
     try:
         promo_map = _load_promo_map(conn)
