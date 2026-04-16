@@ -6,3 +6,9 @@ id = "4b_JXHzPkbyK9VltEbriV"
 uri = "file://docs/IMPLEMENTATION_REPORT.md"
 type = "text"
 title = "Oracare Fulfillment — Implementation Report"
+
+[[outputs]]
+id = "E-huXY8NZ_0hzqpmORKMm"
+uri = "file://april_15_promo_overshipment_report.csv"
+type = "table"
+title = "April 15 Promo Over-Shipment Report"
