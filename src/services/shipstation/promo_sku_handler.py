@@ -89,7 +89,7 @@ def _write_admin_alert(conn, message: str) -> None:
 
 def _apply_promo_hold(order_id, reason: str) -> None:
     """
-    Apply the '⚠️ PROMO HOLD' ShipStation tag to order_id then stamp CF3.
+    Apply the 'Promo Hold' ShipStation tag to order_id then stamp CF3.
 
     Tag is applied first so that update_order_custom_fields (which fetches
     the current order before POSTing) sees the new tagId and preserves it.
@@ -127,7 +127,7 @@ def _apply_promo_hold(order_id, reason: str) -> None:
 
 def _clear_promo_hold(order_id) -> bool:
     """
-    Remove the '⚠️ PROMO HOLD' ShipStation tag from order_id.
+    Remove the 'Promo Hold' ShipStation tag from order_id.
 
     Called on the success path before cancelling the original promo order,
     and on the manual resolve path.

@@ -404,13 +404,13 @@ def update_order_custom_fields(
 
 
 _PROMO_HOLD_TAG_ID_CACHE: dict = {}
-_PROMO_HOLD_TAG_NAME = '⚠️ PROMO HOLD'
-_PROMO_HOLD_TAG_COLOR = '#FF0000'
+_PROMO_HOLD_TAG_NAME = 'Promo Hold'
+_PROMO_HOLD_TAG_COLOR = '#E80505'
 
 
 def _get_promo_hold_tag_id() -> int | None:
     """
-    Lazily resolve the ShipStation tag ID for '⚠️ PROMO HOLD', creating it if
+    Lazily resolve the ShipStation tag ID for 'Promo Hold', creating it if
     it does not exist.  Result is cached in the module-level dict so subsequent
     calls in the same process are free.
 
@@ -475,7 +475,7 @@ def _get_promo_hold_tag_id() -> int | None:
 
 def apply_promo_hold_tag(order_id: int) -> dict:
     """
-    Apply the '⚠️ PROMO HOLD' ShipStation tag to an order.
+    Apply the 'Promo Hold' ShipStation tag to an order.
 
     Uses POST /orders/addtag. Non-fatal on failure — logs a warning but does
     not raise so the caller can still proceed with other failure-path actions.
@@ -520,7 +520,7 @@ def apply_promo_hold_tag(order_id: int) -> dict:
 
 def remove_promo_hold_tag(order_id: int) -> dict:
     """
-    Remove the '⚠️ PROMO HOLD' ShipStation tag from an order.
+    Remove the 'Promo Hold' ShipStation tag from an order.
 
     Uses POST /orders/removetag. Non-fatal — a missing tag (204 / 200) is
     treated as success since the desired end state (tag absent) is reached.
