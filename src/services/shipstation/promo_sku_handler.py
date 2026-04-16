@@ -523,7 +523,7 @@ def handle_promo_sku_order(order: dict, conn, headers=None) -> dict:
 
         if not detected_promo_sku:
             item_skus = [str(item.get('sku') or '').strip() for item in items]
-            server_logger.info(
+            server_logger.debug(
                 f"No promo SKU on order {order_number} (SS ID: {order_id}) — "
                 f"item SKUs scanned: {item_skus}",
                 source="Promo SKU Handler"

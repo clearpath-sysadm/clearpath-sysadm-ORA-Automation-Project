@@ -138,6 +138,11 @@ def run_reconciliation():
     correct lot stamp, carrier, service, package code, and billing account.
     tag_order_lots() does a full-field comparison and only writes to ShipStation
     when one or more fields are missing or incorrect.
+
+    Skip cache: orders confirmed clean on a previous sweep are skipped if
+    ShipStation's modifyDate has not advanced and they have no unresolved
+    lot_tagging_failures entry.  The cache is self-pruning — stale entries
+    (orders no longer awaiting_shipment) are deleted at the start of each run.
     """
     server_logger.info("=" * 70, source="Lot Tagger")
     server_logger.info("LOT TAGGER RECONCILIATION STARTED", source="Lot Tagger")
@@ -158,17 +163,87 @@ def run_reconciliation():
         return
 
     processed = 0
-    failed = 0
+    failed    = 0
+    skipped   = 0
 
     with transaction_with_retry() as conn:
+        current_order_ids = {int(o['orderId']) for o in all_orders if o.get('orderId')}
+
+        # (a) Bulk-load unresolved LTF IDs — TEXT column, cast to int
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT shipstation_order_id FROM lot_tagging_failures WHERE resolved_at IS NULL"
+        )
+        unresolved_ltf_ids = {int(row[0]) for row in cur.fetchall()}
+        cur.close()
+
+        # (b) Load skip cache into {order_id_int: modify_date} dict
+        cur = conn.cursor()
+        cur.execute("SELECT shipstation_order_id, modify_date FROM reconciliation_skip_cache")
+        skip_cache = {row[0]: row[1] for row in cur.fetchall()}
+        cur.close()
+
+        # (c) Prune stale entries (orders no longer awaiting_shipment)
+        stale_ids = [oid for oid in skip_cache if oid not in current_order_ids]
+        if stale_ids:
+            cur = conn.cursor()
+            cur.execute(
+                "DELETE FROM reconciliation_skip_cache WHERE shipstation_order_id = ANY(%s)",
+                (stale_ids,)
+            )
+            cur.close()
+            conn.commit()
+            server_logger.info(
+                f"[Skip Cache] Pruned {len(stale_ids)} stale entries.",
+                source="Lot Tagger"
+            )
+
         active_lots, known_skus = build_lot_maps(conn)
         server_logger.info(f"Active lots loaded: {len(active_lots)} SKUs | Known SKUs: {len(known_skus)}", source="Lot Tagger")
 
         for order in all_orders:
+            original_order_id = order.get('orderId')
+            order_id_int      = int(original_order_id) if original_order_id is not None else None
+            modify_date       = order.get('modifyDate') or ''
+
+            # (d) Skip check — confirmed clean + modifyDate unchanged + no LTF
+            if (
+                order_id_int is not None
+                and order_id_int in skip_cache
+                and skip_cache[order_id_int] == modify_date
+                and order_id_int not in unresolved_ltf_ids
+            ):
+                skipped += 1
+                continue
+
             try:
                 order = handle_promo_sku_order(order, conn, ss_headers)
                 tag_order_lots(order, active_lots, known_skus, conn)
                 processed += 1
+
+                # (e) Cache upsert — skip if replacement occurred or LTF unresolved
+                returned_order_id = order.get('orderId')
+                if returned_order_id != original_order_id:
+                    server_logger.info(
+                        f"[Skip Cache] Replacement detected: original SS ID {original_order_id} "
+                        f"→ new SS ID {returned_order_id}. Not caching either order.",
+                        source="Lot Tagger"
+                    )
+                else:
+                    returned_id_int = int(returned_order_id) if returned_order_id is not None else None
+                    if returned_id_int is not None and returned_id_int not in unresolved_ltf_ids:
+                        cur = conn.cursor()
+                        cur.execute("""
+                            INSERT INTO reconciliation_skip_cache
+                                (shipstation_order_id, order_number, modify_date, confirmed_at)
+                            VALUES (%s, %s, %s, NOW())
+                            ON CONFLICT (shipstation_order_id) DO UPDATE
+                                SET modify_date  = EXCLUDED.modify_date,
+                                    confirmed_at = EXCLUDED.confirmed_at
+                        """, (returned_id_int, order.get('orderNumber'), modify_date))
+                        cur.close()
+                        conn.commit()
+
             except Exception as e:
                 failed += 1
                 server_logger.error(f"Error processing order {order.get('orderNumber')}: {e}", source="Lot Tagger")
@@ -187,8 +262,9 @@ def run_reconciliation():
     update_workflow_last_run(WORKFLOW_NAME)
 
     summary = (
-        f"Lot tagger reconciliation complete: {processed} orders checked, "
-        f"{failed} errors, {len(all_orders)} total awaiting shipment."
+        f"Lot tagger reconciliation complete: {processed} processed, "
+        f"{skipped} skipped (confirmed clean), {failed} errors, "
+        f"{len(all_orders)} total awaiting shipment."
     )
     if failed > 0:
         server_logger.warning(summary, source="Lot Tagger")
@@ -196,7 +272,10 @@ def run_reconciliation():
         server_logger.info(summary, source="Lot Tagger")
 
     server_logger.info("=" * 70, source="Lot Tagger")
-    server_logger.info(f"RECONCILIATION COMPLETE — {processed} checked, {failed} errors", source="Lot Tagger")
+    server_logger.info(
+        f"RECONCILIATION COMPLETE — {processed} processed, {skipped} skipped, {failed} errors",
+        source="Lot Tagger"
+    )
     server_logger.info("=" * 70, source="Lot Tagger")
 
 

@@ -731,6 +731,34 @@ def _backfill_promo_lot_tagging_resolved_at(cursor):
         )
 
 
+def _create_reconciliation_skip_cache(cursor):
+    """
+    Create the reconciliation_skip_cache table if it does not already exist.
+
+    Each row records a single awaiting_shipment order that was confirmed clean
+    (lot tag correct, no promo SKU, no unresolved lot_tagging_failures) on the
+    most recent reconciliation sweep.  Subsequent sweeps skip these orders
+    entirely if ShipStation's modifyDate has not advanced since the cache entry
+    was written.
+
+    The table is self-pruning: run_reconciliation() deletes rows whose
+    shipstation_order_id is no longer in the current awaiting_shipment set at
+    the start of every sweep.
+
+    CREATE TABLE IF NOT EXISTS is idempotent — safe to call on every boot.
+    Runs in both dev and production.
+    """
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reconciliation_skip_cache (
+            shipstation_order_id BIGINT PRIMARY KEY,
+            order_number         TEXT,
+            modify_date          TEXT,
+            confirmed_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    logger.info("startup_migrations: reconciliation_skip_cache table ensured")
+
+
 def _seed_sku_promotions(cursor):
     """
     Ensure all active promo-SKU → base-SKU mappings exist in sku_promotions.
@@ -782,6 +810,7 @@ def run_all(conn):
             _add_action_type_to_deleted_orders(cur)
             _add_manually_resolved_status(cur)
             _backfill_promo_lot_tagging_resolved_at(cur)
+            _create_reconciliation_skip_cache(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
