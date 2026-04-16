@@ -1,0 +1,25 @@
+#44 - Plan
+Plan file: .local/tasks/reconciliation-skip-cache.md
+
+What
+Add a reconciliation_skip_cache PostgreSQL table so the lot-tagger sweep can skip orders that are already confirmed clean and haven't been edited in ShipStation since the last run. Also fix the no-promo-SKU log line from server_logger.info to server_logger.debug (folded in from cancelled Task #43).
+
+Why
+Every sweep currently processes all awaiting-shipment orders regardless of whether they've changed — hundreds of per-order DB queries and potential ShipStation writes per run. The skip cache uses ShipStation's modifyDate as a staleness signal so only new or recently edited orders get processed. The initial paginated SS fetch still happens every sweep (unavoidable — needed for modifyDate values) but is not the bottleneck.
+
+Key implementation notes
+Log fix — Change server_logger.info → server_logger.debug at promo_sku_handler.py line 526 (shifted from 514-521 by Task #50 guard).
+
+Migration — CREATE TABLE IF NOT EXISTS reconciliation_skip_cache (shipstation_order_id BIGINT PRIMARY KEY, order_number TEXT, modify_date TEXT, confirmed_at TIMESTAMPTZ). Register in startup_migrations.run_all().
+
+Skip logic in run_reconciliation(): a. Bulk-load all unresolved lot_tagging_failures order IDs into a Python set (one query — not per order). b. Load entire skip cache into {ss_order_id: modify_date} dict. c. Prune stale cache entries (DELETE WHERE ss_order_id NOT IN current awaiting set). d. Per order: capture original_order_id = order.get('orderId') BEFORE calling handle_promo_sku_order. Skip (increment skipped counter) if orderId is in cache AND modifyDate matches AND not in unresolved LTF set. e. After successful processing (no exception): if order.get('orderId') == original_order_id AND not in unresolved LTF set → upsert to cache with current modifyDate.
+
+Replacement detection — If order.get('orderId') != original_order_id after handle_promo_sku_order, log a note and do NOT upsert to cache. Original is cancelled (auto-pruned next sweep); replacement is a new SS ID processed fresh.
+
+Cache population is unconditional on success — tag_order_lots returns None so "no changes made" cannot be detected from the caller. Always upsert on successful processing. If lot-tagger did update the order, SS advances its modifyDate — next sweep sees mismatch, re-processes (finds it correct), caches new modifyDate. Two sweeps to stabilize is acceptable.
+
+Relevant files
+src/services/shipstation/promo_sku_handler.py:524-530
+src/scheduled_lot_tagger.py:135-200
+src/services/database/startup_migrations.py
+src/lot_tagger/tagger.py (read-only — must not be modified)
