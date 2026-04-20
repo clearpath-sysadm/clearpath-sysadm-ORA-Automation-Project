@@ -2843,12 +2843,13 @@ def api_run_eod():
         days_stale = (today - _current_as_of).days
 
         # Build chunk end-dates.
-        # Catch-up mode (days_stale > CHUNK_DAYS): every chunk including the final one
-        # gets an explicit --end-date so the processor skips the per-order ShipStation
-        # lot-tag API calls (which would hit the 40 req/min rate limit and timeout).
-        # Normal daily mode: single chunk with no end-date so lot-tags are fetched.
+        # Catch-up mode (days_stale > 1, i.e. more than yesterday): every chunk including
+        # the final one gets an explicit --end-date so the processor skips the per-order
+        # ShipStation lot-tag API calls (which hit the 40 req/min rate limit and timeout).
+        # Normal daily mode (exactly 1 day stale): single chunk with no end-date so
+        # lot-tags are fetched as usual for yesterday's shipments.
         _chunk_ends = []
-        if days_stale > CHUNK_DAYS:
+        if days_stale > 1:
             _d = _current_as_of
             while _d + datetime.timedelta(days=CHUNK_DAYS) < today:
                 _d = _d + datetime.timedelta(days=CHUNK_DAYS)
