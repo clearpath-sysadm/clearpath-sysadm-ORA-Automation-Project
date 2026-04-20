@@ -1209,7 +1209,6 @@ def v2_create_batch(shipment_ids: list) -> dict:
 
         payload = {
             'shipment_ids': shipment_ids,
-            'warehouse_id': settings.AXIOM_WAREHOUSE_ID,
         }
 
         response = make_api_request(
@@ -1223,8 +1222,9 @@ def v2_create_batch(shipment_ids: list) -> dict:
         if response and response.status_code in (200, 201):
             data = response.json()
             batch_id = data.get('batch_id') or data.get('id')
-            logger.info(f"V2 batch created: {batch_id} ({len(shipment_ids)} shipments)")
-            return {'success': True, 'batch_id': batch_id, 'response': data}
+            shipment_count = data.get('count', len(shipment_ids))
+            logger.info(f"V2 batch created: {batch_id} ({shipment_count} shipments confirmed by API, {len(shipment_ids)} requested)")
+            return {'success': True, 'batch_id': batch_id, 'shipment_count': shipment_count, 'response': data}
         else:
             status = response.status_code if response else 'no response'
             body = response.text[:300] if response else ''

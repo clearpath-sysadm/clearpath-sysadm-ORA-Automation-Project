@@ -22,7 +22,7 @@ import pytz
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.services.database.pg_utils import is_workflow_enabled, update_workflow_last_run
+from src.services.database.pg_utils import is_workflow_enabled, update_workflow_last_run, get_connection
 from src.services.shipstation.api_client import (
     v2_get_pending_axiom_shipments,
     v2_create_batch,
@@ -75,6 +75,45 @@ def _is_dev_blocked() -> bool:
     return is_dev and not allow_dev
 
 
+def _already_batched_today(today_str: str) -> bool:
+    """Return True if a batch was already created today (CT date), checked via DB.
+    Fails open (returns False) on DB errors so a genuine first run is never blocked."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT value FROM configuration_params "
+            "WHERE category = 'BatchProcessor' AND parameter_name = 'last_batch_date' AND sku = ''",
+        )
+        row = cursor.fetchone()
+        conn.close()
+        return bool(row and row[0] == today_str)
+    except Exception as e:
+        logger.warning(f"Could not read last_batch_date from DB (failing open): {e}")
+        return False
+
+
+def _record_batch_run(today_str: str, batch_id: str) -> None:
+    """Persist today's batch date to configuration_params so restarts skip re-firing."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO configuration_params (category, parameter_name, sku, value, notes, last_updated)
+            VALUES ('BatchProcessor', 'last_batch_date', '', %s, %s, NOW()::text)
+            ON CONFLICT (category, parameter_name, sku)
+            DO UPDATE SET value = EXCLUDED.value, notes = EXCLUDED.notes, last_updated = NOW()::text
+            """,
+            (today_str, f"batch_id={batch_id}"),
+        )
+        conn.commit()
+        conn.close()
+        logger.info(f"Recorded batch run: date={today_str}, batch_id={batch_id}")
+    except Exception as e:
+        logger.warning(f"Could not persist last_batch_date to DB: {e}")
+
+
 def run_batch_job() -> str:
     """
     Fetch all pending Axiom shipments, create a V2 batch, and trigger label processing.
@@ -82,7 +121,7 @@ def run_batch_job() -> str:
 
     Returns one of:
         'completed' — batch created and labels triggered successfully
-        'skipped'   — no pending Axiom shipments; nothing to do
+        'skipped'   — no pending Axiom shipments; nothing to do OR already ran today
         'blocked'   — running in dev workspace and upload not enabled
         'error'     — an API call failed (details already logged)
     """
@@ -104,6 +143,14 @@ def run_batch_job() -> str:
             source="Batch Processor"
         )
         return 'blocked'
+
+    if _already_batched_today(ship_date):
+        logger.info(f"Batch already created today ({ship_date}) — skipping to prevent duplicates.")
+        server_logger.info(
+            f"Batch processor: already ran today ({ship_date}). Skipping duplicate run.",
+            source="Batch Processor"
+        )
+        return 'skipped'
 
     result = v2_get_pending_axiom_shipments()
     if not result.get('success'):
@@ -139,6 +186,7 @@ def run_batch_job() -> str:
         return 'error'
 
     batch_id = batch_result['batch_id']
+    _record_batch_run(ship_date, batch_id)
 
     if not is_workflow_enabled('batch-processor-labels'):
         update_workflow_last_run(WORKFLOW_NAME)
