@@ -2842,14 +2842,20 @@ def api_run_eod():
 
         days_stale = (today - _current_as_of).days
 
-        # Build chunk end-dates; final entry is None meaning "run to today"
+        # Build chunk end-dates.
+        # Catch-up mode (days_stale > CHUNK_DAYS): every chunk including the final one
+        # gets an explicit --end-date so the processor skips the per-order ShipStation
+        # lot-tag API calls (which would hit the 40 req/min rate limit and timeout).
+        # Normal daily mode: single chunk with no end-date so lot-tags are fetched.
         _chunk_ends = []
         if days_stale > CHUNK_DAYS:
             _d = _current_as_of
             while _d + datetime.timedelta(days=CHUNK_DAYS) < today:
                 _d = _d + datetime.timedelta(days=CHUNK_DAYS)
                 _chunk_ends.append(_d)
-        _chunk_ends.append(None)
+            _chunk_ends.append(today)  # Final catch-up chunk: explicit date → skips lot-tag fetch
+        else:
+            _chunk_ends.append(None)  # Normal daily: no end-date → lot-tags fetched as usual
 
         logger.info(f"EOD: {days_stale} days stale → {len(_chunk_ends)} pass(es) of up to {CHUNK_DAYS} days each")
 
@@ -2969,12 +2975,12 @@ def api_run_eod():
             
     except subprocess.TimeoutExpired:
         try:
-            log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>250s per chunk)')
+            log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>90s per chunk)')
         except Exception:
             pass
         return jsonify({
             'success': False,
-            'error': 'EOD timed out (>250s per chunk)'
+            'error': 'EOD timed out (>90s per chunk)'
         }), 500
     except Exception as e:
         try:
