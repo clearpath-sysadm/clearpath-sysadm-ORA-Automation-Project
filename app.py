@@ -2828,7 +2828,10 @@ def api_run_eod():
         # --- Chunked catch-up: process large stale windows in 4-day passes ---
         from src.services.database.pg_utils import execute_query as _cfg_query
         CHUNK_DAYS = 4
-        PER_CHUNK_TIMEOUT = 90  # seconds per chunk; catch-up chunks skip lot-tag API calls so ~30-60s each
+        # 300s per chunk: allows the bulk shipments fetch to survive one 60s rate-limit
+        # sleep (Retry-After) plus ~30-60s of actual processing. Lot-tag per-order calls
+        # are skipped in catch-up mode, so the only API traffic is paginated shipments.
+        PER_CHUNK_TIMEOUT = 300
 
         today = datetime.date.today()
         _as_of_rows = _cfg_query("""
@@ -2976,12 +2979,12 @@ def api_run_eod():
             
     except subprocess.TimeoutExpired:
         try:
-            log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>90s per chunk)')
+            log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>300s per chunk)')
         except Exception:
             pass
         return jsonify({
             'success': False,
-            'error': 'EOD timed out (>90s per chunk)'
+            'error': 'EOD timed out (>300s per chunk)'
         }), 500
     except Exception as e:
         try:
