@@ -2825,15 +2825,62 @@ def api_run_eod():
     
     _report_locks['EOD'] = True
     try:
-        # Run the daily shipment processor
-        result = subprocess.run(
-            ['python', 'src/daily_shipment_processor.py'],
-            cwd=project_root,
-            capture_output=True,
-            text=True,
-            timeout=300
-        )
-        
+        # --- Chunked catch-up: process large stale windows in 4-day passes ---
+        from src.services.database.pg_utils import execute_query as _cfg_query
+        CHUNK_DAYS = 4
+        PER_CHUNK_TIMEOUT = 250  # seconds per chunk; 4 days of orders comfortably fits
+
+        today = datetime.date.today()
+        _as_of_rows = _cfg_query("""
+            SELECT value FROM configuration_params
+            WHERE category = 'System' AND parameter_name = 'inventory_as_of_date' AND sku = ''
+        """)
+        if _as_of_rows and _as_of_rows[0][0]:
+            _current_as_of = datetime.date.fromisoformat(_as_of_rows[0][0][:10])
+        else:
+            _current_as_of = today - datetime.timedelta(days=1)
+
+        days_stale = (today - _current_as_of).days
+
+        # Build chunk end-dates; final entry is None meaning "run to today"
+        _chunk_ends = []
+        if days_stale > CHUNK_DAYS:
+            _d = _current_as_of
+            while _d + datetime.timedelta(days=CHUNK_DAYS) < today:
+                _d = _d + datetime.timedelta(days=CHUNK_DAYS)
+                _chunk_ends.append(_d)
+        _chunk_ends.append(None)
+
+        logger.info(f"EOD: {days_stale} days stale → {len(_chunk_ends)} pass(es) of up to {CHUNK_DAYS} days each")
+
+        result = None
+        for _chunk_end in _chunk_ends:
+            _cmd = ['python', 'src/daily_shipment_processor.py']
+            if _chunk_end is not None:
+                _cmd += ['--end-date', _chunk_end.strftime('%Y-%m-%d')]
+
+            result = subprocess.run(
+                _cmd,
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+                timeout=PER_CHUNK_TIMEOUT
+            )
+
+            if result.returncode != 0:
+                try:
+                    log_report_run('EOD', today, 'failed', f'Error (chunk {_chunk_end}): {result.stderr[:200]}')
+                except Exception:
+                    pass
+                server_logger.error(
+                    f"EOD chunk failed at {_chunk_end}: {result.stderr[:200]}",
+                    source="Reports", user=user_name, role=user_role
+                )
+                return jsonify({'success': False, 'error': f'EOD failed: {result.stderr}'}), 500
+
+            logger.info(f"EOD chunk to {_chunk_end} completed (returncode=0)")
+
+        # All chunks succeeded — run post-processing once
         if result.returncode == 0:
             # Log subprocess output for debugging
             if result.stderr:
@@ -2921,13 +2968,19 @@ def api_run_eod():
             }), 500
             
     except subprocess.TimeoutExpired:
-        log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>180s)')
+        try:
+            log_report_run('EOD', datetime.date.today(), 'failed', 'Timeout (>250s per chunk)')
+        except Exception:
+            pass
         return jsonify({
             'success': False,
-            'error': 'EOD timed out (>180s)'
+            'error': 'EOD timed out (>250s per chunk)'
         }), 500
     except Exception as e:
-        log_report_run('EOD', datetime.date.today(), 'failed', str(e))
+        try:
+            log_report_run('EOD', datetime.date.today(), 'failed', str(e)[:200])
+        except Exception:
+            pass
         return jsonify({
             'success': False,
             'error': str(e)

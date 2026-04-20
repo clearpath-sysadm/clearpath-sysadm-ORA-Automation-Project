@@ -527,14 +527,16 @@ def backfill_weekly_history_from_shipped_items(target_skus=None, cutoff_date='20
     return {'weeks_processed': len(distinct_weeks), 'records_updated': records_updated}
 
 
-def run_daily_shipment_pull(request=None):
+def run_daily_shipment_pull(request=None, end_date=None):
     """
     Main function for the daily shipment processor.
-    Pulls a 32-day rolling window of shipment data from ShipStation and
-    saves to SQLite database tables: shipped_orders, shipped_items, weekly_shipped_history.
+    Pulls shipment data from ShipStation and saves to the database.
 
     Args:
         request: The request object from a Google Cloud Function trigger (optional).
+        end_date: Optional date string (YYYY-MM-DD) to cap the fetch window. When
+                  provided, only shipments up to this date are fetched. Used by the
+                  Flask EOD route to process large catch-up windows in smaller chunks.
     """
 
     logger.info("--- Starting Daily Shipment Processor ---")
@@ -566,7 +568,15 @@ def run_daily_shipment_pull(request=None):
 
         # --- 2. Determine Date Range (Using "As Of" Date) ---
         today = datetime.date.today()
-        end_date_str = today.strftime('%Y-%m-%d')
+        if end_date:
+            try:
+                end_date_str = datetime.datetime.strptime(end_date, '%Y-%m-%d').date().strftime('%Y-%m-%d')
+                today = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid --end-date '{end_date}', falling back to today")
+                end_date_str = today.strftime('%Y-%m-%d')
+        else:
+            end_date_str = today.strftime('%Y-%m-%d')
         
         # Query the "as_of_date" from configuration_params (most recent shipment date processed)
         as_of_date_rows = execute_query("""
@@ -843,7 +853,12 @@ def run_daily_shipment_pull(request=None):
 
 # This allows the script to be run directly for testing purposes
 if __name__ == "__main__":
-    run_daily_shipment_pull()
+    import argparse
+    _parser = argparse.ArgumentParser()
+    _parser.add_argument('--end-date', type=str, default=None,
+                         help='Cap fetch window to this date (YYYY-MM-DD). Used by chunked EOD.')
+    _args, _ = _parser.parse_known_args()
+    run_daily_shipment_pull(end_date=_args.end_date)
 
 # Google Cloud Function entry point
 def daily_shipment_processor_http_trigger(request):
