@@ -113,6 +113,15 @@ def calculate_current_inventory(initial_inventory: dict, inventory_transactions_
     """
     Calculates the current inventory by applying initial values (as of 9/19/2025) and transactions AFTER that baseline date.
     Initial inventory (9/19/2025) + receives/repacks/adjustments AFTER 9/19 - shipments AFTER 9/19 = Current inventory
+
+    IMPORTANT — Ship rows from inventory_transactions are intentionally absent from the DataFrame passed here.
+    All shipment deductions come from shipped_items (via shipped_items_df). The loading queries in
+    daily_shipment_processor.py and weekly_reporter.py exclude Ship rows WHERE shipstation_order_id IS NOT NULL
+    before building the DataFrame. Those rows are lot-deduction entries written by deduct_lot_inventory and
+    duplicate what is already in shipped_items. Manual Ship rows (shipstation_order_id IS NULL) are still
+    passed through because they represent shipments with no shipped_items counterpart.
+    DO NOT remove that upstream filter — doing so reintroduces a double-deduction bug that understates
+    inventory for all lot-tagged SKUs by a cumulative growing amount.
     """
     try:
         # Baseline date when InitialInventory was set

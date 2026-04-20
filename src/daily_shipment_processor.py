@@ -707,9 +707,14 @@ def run_daily_shipment_pull(request=None, end_date=None):
         logger.info(f"Loaded initial inventory for {len(initial_inventory)} SKUs")
         
         # Get inventory transactions
+        # Ship rows WHERE shipstation_order_id IS NOT NULL are lot-deduction entries written by
+        # deduct_lot_inventory. Those same shipments are already recorded in shipped_items, so
+        # including them here would subtract every lot-tagged shipment twice. Manual Ship rows
+        # (shipstation_order_id IS NULL) are kept because they have no shipped_items counterpart.
         transactions_rows = execute_query("""
             SELECT date as Date, sku as SKU, quantity as Quantity, transaction_type as TransactionType
             FROM inventory_transactions
+            WHERE NOT (transaction_type = 'Ship' AND shipstation_order_id IS NOT NULL)
             ORDER BY date
         """)
         transactions_df = pd.DataFrame(transactions_rows, columns=['Date', 'SKU', 'Quantity', 'TransactionType']) if transactions_rows else pd.DataFrame(columns=['Date', 'SKU', 'Quantity', 'TransactionType'])

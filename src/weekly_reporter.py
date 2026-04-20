@@ -121,9 +121,14 @@ def get_inventory_transactions_from_db():
     """Get inventory transactions from database"""
     logger.info("Loading inventory transactions from database...")
     try:
+        # Ship rows WHERE shipstation_order_id IS NOT NULL are lot-deduction entries written by
+        # deduct_lot_inventory. Those same shipments are already recorded in shipped_items, so
+        # including them here would subtract every lot-tagged shipment twice. Manual Ship rows
+        # (shipstation_order_id IS NULL) are kept because they have no shipped_items counterpart.
         rows = execute_query("""
             SELECT date, sku, quantity, transaction_type, notes
             FROM inventory_transactions
+            WHERE NOT (transaction_type = 'Ship' AND shipstation_order_id IS NOT NULL)
             ORDER BY date DESC
         """)
         
