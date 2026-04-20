@@ -93,8 +93,10 @@ def _already_batched_today(today_str: str) -> bool:
         return False
 
 
-def _record_batch_run(today_str: str, batch_id: str) -> None:
-    """Persist today's batch date to configuration_params so restarts skip re-firing."""
+def _record_batch_run(today_str: str, batch_id: str) -> bool:
+    """Persist today's batch date to configuration_params so restarts skip re-firing.
+    Returns True on success, False on failure. Callers should treat False as an error
+    to prevent silent duplicate-batch risk on future restarts."""
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -110,8 +112,11 @@ def _record_batch_run(today_str: str, batch_id: str) -> None:
         conn.commit()
         conn.close()
         logger.info(f"Recorded batch run: date={today_str}, batch_id={batch_id}")
+        return True
     except Exception as e:
-        logger.warning(f"Could not persist last_batch_date to DB: {e}")
+        logger.error(f"CRITICAL: Could not persist last_batch_date to DB after batch creation — "
+                     f"duplicate batch risk on restart: {e}")
+        return False
 
 
 def run_batch_job() -> str:
@@ -150,7 +155,7 @@ def run_batch_job() -> str:
             f"Batch processor: already ran today ({ship_date}). Skipping duplicate run.",
             source="Batch Processor"
         )
-        return 'skipped'
+        return 'skipped_duplicate'
 
     result = v2_get_pending_axiom_shipments()
     if not result.get('success'):
@@ -186,7 +191,25 @@ def run_batch_job() -> str:
         return 'error'
 
     batch_id = batch_result['batch_id']
-    _record_batch_run(ship_date, batch_id)
+    confirmed_count = batch_result.get('shipment_count', len(shipment_ids))
+    if confirmed_count == 0:
+        logger.warning(
+            f"Batch {batch_id} created but API reports 0 shipments — "
+            f"payload may have been rejected silently. Requested: {len(shipment_ids)}."
+        )
+        server_logger.warning(
+            f"Batch {batch_id} created with 0 shipments (requested {len(shipment_ids)}) — "
+            f"investigate API payload or ShipStation configuration.",
+            source="Batch Processor"
+        )
+
+    if not _record_batch_run(ship_date, batch_id):
+        server_logger.error(
+            f"Batch {batch_id} created but could not persist run date to DB. "
+            f"Restarting within the noon window may create a duplicate batch.",
+            source="Batch Processor"
+        )
+        return 'error'
 
     if not is_workflow_enabled('batch-processor-labels'):
         update_workflow_last_run(WORKFLOW_NAME)
@@ -265,6 +288,8 @@ def main():
                     status = run_batch_job()
                     if status == 'skipped':
                         heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_pending_shipments'})
+                    elif status == 'skipped_duplicate':
+                        heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'already_ran_today'})
                     elif status == 'error':
                         heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'reason': 'api_call_failed'})
                     else:
