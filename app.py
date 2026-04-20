@@ -2828,7 +2828,7 @@ def api_run_eod():
         # --- Chunked catch-up: process large stale windows in 4-day passes ---
         from src.services.database.pg_utils import execute_query as _cfg_query
         CHUNK_DAYS = 4
-        PER_CHUNK_TIMEOUT = 250  # seconds per chunk; 4 days of orders comfortably fits
+        PER_CHUNK_TIMEOUT = 90  # seconds per chunk; catch-up chunks skip lot-tag API calls so ~30-60s each
 
         today = datetime.date.today()
         _as_of_rows = _cfg_query("""

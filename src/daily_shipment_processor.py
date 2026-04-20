@@ -645,8 +645,15 @@ def run_daily_shipment_pull(request=None, end_date=None):
         orders_df = process_shipped_orders(non_voided_shipments)  
 
         # --- 5. Build customField1 map for lot-tagged key product SKUs ---
+        # Skip during catch-up chunks (end_date is set): the per-order ShipStation API
+        # calls hit the 40 req/min rate limit for large windows, adding 60s penalty
+        # sleeps that blow past any viable timeout. Lot tags for gap-period orders will
+        # be null in shipped_items.sku_lot — acceptable since the lot-tagger already
+        # stamped them in ShipStation. Normal daily EOD (end_date=None) fetches as usual.
         customField1_map = {}
-        if not items_df.empty:
+        if end_date is not None:
+            logger.info(f"Catch-up mode (end_date={end_date}): skipping per-order lot-tag API calls to avoid rate-limit timeouts. sku_lot will be null for this window.")
+        elif not items_df.empty:
             key_order_numbers = items_df[
                 items_df['Base SKU'].isin(KEY_PRODUCT_SKUS)
             ]['OrderNumber'].dropna().unique().tolist()
