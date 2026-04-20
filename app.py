@@ -2831,7 +2831,7 @@ def api_run_eod():
             cwd=project_root,
             capture_output=True,
             text=True,
-            timeout=180
+            timeout=300
         )
         
         if result.returncode == 0:
@@ -2999,7 +2999,7 @@ def api_run_eow():
             env={**os.environ, 'DEV_MODE': '1'},
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=180
         )
         
         if result.returncode == 0:
@@ -3021,10 +3021,10 @@ def api_run_eow():
             
     except subprocess.TimeoutExpired:
         week_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
-        log_report_run('EOW', week_start, 'failed', 'Timeout (>120s)')
+        log_report_run('EOW', week_start, 'failed', 'Timeout (>300s EOD prereq or >180s weekly reporter)')
         return jsonify({
             'success': False,
-            'error': 'EOW timed out (>120s)'
+            'error': 'EOW timed out (>300s EOD prereq or >180s weekly reporter)'
         }), 500
     except Exception as e:
         week_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())

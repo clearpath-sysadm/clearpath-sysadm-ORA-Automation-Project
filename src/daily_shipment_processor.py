@@ -677,20 +677,6 @@ def run_daily_shipment_pull(request=None):
         
         history_saved = save_weekly_history_to_db(updated_history_df)
 
-        # Backfill all weeks from Aug 2025 onwards using shipped_items as the authoritative
-        # source. This self-heals any historical undercount from the prior overwrite bug and
-        # is idempotent — safe to run on every processor invocation.
-        logger.info("Running weekly history backfill from shipped_items to correct any historical undercount...")
-        backfill_result = backfill_weekly_history_from_shipped_items(target_skus=target_skus)
-        logger.info(f"Backfill result: {backfill_result}")
-
-        # Reload history from DB after backfill so the rolling average reflects all corrections.
-        # The in-memory updated_history_df was built before the backfill ran, so it may contain
-        # pre-correction values. Reading from DB here guarantees we use the authoritative data.
-        logger.info("Reloading weekly history from DB after backfill for accurate rolling average...")
-        updated_history_df = get_weekly_history_from_db(target_skus)
-        logger.info(f"Reloaded history: {len(updated_history_df)} week rows across {len(target_skus)} SKUs")
-        
         # --- 7. Calculate and Update Current Inventory ---
         logger.info("Calculating current inventory...")
         
