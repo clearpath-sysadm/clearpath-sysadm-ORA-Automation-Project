@@ -1,0 +1,162 @@
+[
+  {
+    "id": 1959,
+    "date": "2026-04-17",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "notes": "862369",
+    "running_balance": "25886"
+  },
+  {
+    "id": 1956,
+    "date": "2026-04-17",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "notes": "862424",
+    "running_balance": "25887"
+  },
+  {
+    "id": 1954,
+    "date": "2026-04-17",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "notes": "862420",
+    "running_balance": "25892"
+  },
+  {
+    "id": 1953,
+    "date": "2026-04-17",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "notes": "862433",
+    "running_balance": "25897"
+  },
+  {
+    "id": 1952,
+    "date": "2026-04-17",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "notes": "862428",
+    "running_balance": "25902"
+  },
+  {
+    "id": 1951,
+    "date": "2026-04-17",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "notes": "862437",
+    "running_balance": "25907"
+  },
+  {
+    "id": 1950,
+    "date": "2026-04-16",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "notes": "862402",
+    "running_balance": "25912"
+  },
+  {
+    "id": 1949,
+    "date": "2026-04-16",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "notes": "862378",
+    "running_balance": "25913"
+  },
+  {
+    "id": 1946,
+    "date": "2026-04-16",
+    "quantity": 12,
+    "transaction_type": "Ship",
+    "notes": "862403",
+    "running_balance": "25918"
+  },
+  {
+    "id": 1945,
+    "date": "2026-04-16",
+    "quantity": 12,
+    "transaction_type": "Ship",
+    "notes": "862406",
+    "running_balance": "25930"
+  },
+  {
+    "id": 1944,
+    "date": "2026-04-16",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "notes": "862399",
+    "running_balance": "25942"
+  },
+  {
+    "id": 1943,
+    "date": "2026-04-16",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "notes": "862389",
+    "running_balance": "25947"
+  },
+  {
+    "id": 1851,
+    "date": "2026-04-17",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "notes": "862437",
+    "running_balance": "25952"
+  },
+  {
+    "id": 1850,
+    "date": "2026-04-17",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "notes": "862436",
+    "running_balance": "25953"
+  },
+  {
+    "id": 1849,
+    "date": "2026-04-17",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "notes": "862433",
+    "running_balance": "25955"
+  },
+  {
+    "id": 1848,
+    "date": "2026-04-17",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "notes": "862432",
+    "running_balance": "25956"
+  },
+  {
+    "id": 1846,
+    "date": "2026-04-17",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "notes": "862429",
+    "running_balance": "25958"
+  },
+  {
+    "id": 1845,
+    "date": "2026-04-17",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "notes": "862428",
+    "running_balance": "25960"
+  },
+  {
+    "id": 1843,
+    "date": "2026-04-17",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "notes": "862426",
+    "running_balance": "25961"
+  },
+  {
+    "id": 1842,
+    "date": "2026-04-17",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "notes": "862425",
+    "running_balance": "25964"
+  }
+]
