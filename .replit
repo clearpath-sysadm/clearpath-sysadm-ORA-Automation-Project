@@ -141,3 +141,7 @@ TZ = "America/Chicago"
 
 [userenv.shared]
 ORACARE_FEDEX_ACCOUNT_ID = "556346"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 60000
