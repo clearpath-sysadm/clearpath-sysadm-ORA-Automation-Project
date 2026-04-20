@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Batch Processor — Noon CDT Label Automation
+Batch Processor — Noon CT Batch Creation
 
 Runs once per business day at 12:00 PM CT. Fetches all pending Axiom shipments
-from ShipStation V2, bundles them into a batch, and triggers label processing.
+from ShipStation V2 and bundles them into a batch. Labels are NOT created
+automatically — print them from within ShipStation after the batch is ready.
 
 Schedule: 12:00 PM CT on business days.
 
@@ -26,7 +27,6 @@ from src.services.database.pg_utils import is_workflow_enabled, update_workflow_
 from src.services.shipstation.api_client import (
     v2_get_pending_axiom_shipments,
     v2_create_batch,
-    v2_process_batch_labels,
 )
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
@@ -211,38 +211,10 @@ def run_batch_job() -> str:
         )
         return 'error'
 
-    if not is_workflow_enabled('batch-processor-labels'):
-        update_workflow_last_run(WORKFLOW_NAME)
-        summary = (
-            f"Batch processor complete: batch {batch_id} created with "
-            f"{len(shipment_ids)} shipment(s). Label processing SKIPPED — "
-            f"disabled via dashboard control."
-        )
-        logger.info("=" * 70)
-        logger.info(f"BATCH PROCESSOR COMPLETE (no labels) — {len(shipment_ids)} shipments, batch {batch_id}")
-        logger.info("Label processing is disabled via 'batch-processor-labels' control.")
-        logger.info("=" * 70)
-        server_logger.info(summary, source="Batch Processor")
-        return 'completed'
-
-    logger.info(f"Batch created: {batch_id} — triggering label processing...")
-
-    label_result = v2_process_batch_labels(batch_id, ship_date)
-    if not label_result.get('success'):
-        error = label_result.get('error', 'unknown error')
-        logger.error(f"Failed to process batch labels: {error}")
-        server_logger.error(
-            f"Batch {batch_id} created but label processing failed: {error}",
-            source="Batch Processor"
-        )
-        return 'error'
-
     update_workflow_last_run(WORKFLOW_NAME)
-
     summary = (
         f"Batch processor complete: batch {batch_id} created with "
-        f"{len(shipment_ids)} shipment(s), labels processing triggered "
-        f"(ship_date={ship_date})."
+        f"{len(shipment_ids)} shipment(s). Labels not created — print from ShipStation."
     )
     logger.info("=" * 70)
     logger.info(f"BATCH PROCESSOR COMPLETE — {len(shipment_ids)} shipments, batch {batch_id}")
