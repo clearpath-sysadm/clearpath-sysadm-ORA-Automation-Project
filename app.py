@@ -2851,7 +2851,7 @@ def api_run_eod():
     import datetime
     import subprocess
     import logging
-    from src.services.database.pg_utils import log_report_run
+    from src.services.database.pg_utils import eod_done_today, log_report_run
     from src.utils.server_logger import get_logger
     
     logger = logging.getLogger(__name__)
@@ -2877,7 +2877,14 @@ def api_run_eod():
             'success': False,
             'error': 'EOD report is already running. Please wait for it to complete.'
         }), 409
-    
+
+    # Same-day guard: prevent re-running EOD if already completed today
+    if eod_done_today():
+        return jsonify({
+            'success': False,
+            'error': 'EOD has already been run today. Re-running would cause duplicate shipment processing. If you need to force a re-run, contact your administrator.'
+        }), 409
+
     _report_locks['EOD'] = True
     try:
         # --- Chunked catch-up: process large stale windows in 4-day passes ---
