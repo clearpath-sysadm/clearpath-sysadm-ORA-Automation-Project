@@ -32,9 +32,14 @@ def deduct_lot_inventory(
 
     Rules:
     - Skips silently if customField1_value is empty (lot tagger hasn't run yet).
-    - Skips silently if base_sku doesn't match the SKU prefix in customField1_value
-      (this item isn't the one the lot stamp covers).
+    - Primary SKU path: if base_sku matches the SKU in customField1, deduct from that
+      named lot directly.
+    - Secondary SKU path: if base_sku does NOT match the SKU in customField1 (multi-SKU
+      order), looks up base_sku's own active lot and deducts against it. Falls back to
+      lot_id=NULL if no active lot exists (still recorded for audit trail, logged at WARNING).
     - Guards against double-deduction using (lot_id, shipstation_order_id, 'Ship').
+      NULL-lot path uses (sku IS NULL, shipstation_order_id, 'Ship') because
+      WHERE lot_id = NULL is always false in SQL.
     - Uses 'Ship' (capital S) as transaction_type — the lot_balances VIEW requires it.
     - inventory_transactions.date is a TEXT column; ship_date is inserted as 'YYYY-MM-DD'.
     - After a successful deduction, marks the lot as 'depleted' if balance <= 0.
@@ -51,7 +56,7 @@ def deduct_lot_inventory(
 
     Returns:
         True  — deduction was inserted.
-        False — skipped (no customField1, SKU mismatch, already deducted, or lot not found).
+        False — skipped (no customField1, already deducted, or lot not found for primary SKU).
     """
     cf1 = (customField1_value or '').strip()
     if not cf1:
@@ -67,11 +72,102 @@ def deduct_lot_inventory(
     lot_number = parts[1].strip()
 
     if cf1_sku != base_sku:
-        logger.debug(
-            f"Skipping deduction for order {order_number} / {base_sku}: "
-            f"customField1 SKU '{cf1_sku}' doesn't match item SKU"
+        # Multi-SKU order: customField1 stamps the primary SKU (cf1_sku), but this
+        # item is a secondary SKU (base_sku).  Look up base_sku's active lot and
+        # record the deduction against it instead of silently skipping.
+        logger.info(
+            f"Multi-SKU order {order_number}: cf1 stamps '{cf1_sku}', "
+            f"looking up active lot for secondary SKU '{base_sku}'"
         )
-        return False
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT l.lot_id
+                FROM lots l
+                JOIN skus s ON l.sku_id = s.sku_id
+                WHERE s.sku_code = %s AND l.status = 'active'
+                LIMIT 1
+            """, (base_sku,))
+            secondary_lot_row = cursor.fetchone()
+            secondary_lot_id = secondary_lot_row[0] if secondary_lot_row else None
+
+            if secondary_lot_id is None:
+                logger.warning(
+                    f"No active lot for secondary SKU '{base_sku}' in order {order_number}. "
+                    f"Recording deduction with lot_id=NULL for audit trail."
+                )
+                # NULL fallback: WHERE lot_id = NULL is always false in SQL, so use IS NULL
+                cursor.execute("""
+                    SELECT id FROM inventory_transactions
+                    WHERE sku = %s
+                      AND lot_id IS NULL
+                      AND shipstation_order_id = %s
+                      AND transaction_type = 'Ship'
+                    LIMIT 1
+                """, (base_sku, str(shipstation_order_id)))
+            else:
+                # Lot found: same guard as the primary SKU path
+                cursor.execute("""
+                    SELECT id FROM inventory_transactions
+                    WHERE lot_id = %s
+                      AND shipstation_order_id = %s
+                      AND transaction_type = 'Ship'
+                    LIMIT 1
+                """, (secondary_lot_id, str(shipstation_order_id)))
+
+            if cursor.fetchone():
+                logger.debug(
+                    f"Skipping secondary deduction for order {order_number} / {base_sku}: "
+                    f"already deducted (lot_id={secondary_lot_id}, ss_order_id={shipstation_order_id})"
+                )
+                return False
+
+            ship_date_str = ship_date.strftime('%Y-%m-%d') if hasattr(ship_date, 'strftime') else str(ship_date)[:10]
+
+            cursor.execute("""
+                INSERT INTO inventory_transactions
+                    (date, sku, quantity, transaction_type, lot_id, shipstation_order_id, notes)
+                VALUES (%s, %s, %s, 'Ship', %s, %s, %s)
+            """, (
+                ship_date_str,
+                base_sku,               # use base_sku, NOT cf1_sku
+                abs(int(quantity)),
+                secondary_lot_id,       # may be None (NULL lot fallback)
+                str(shipstation_order_id),
+                order_number
+            ))
+
+            logger.info(
+                f"Deducted {quantity} units from secondary SKU '{base_sku}' "
+                f"(lot_id={secondary_lot_id}) for order {order_number} (ss_id={shipstation_order_id})"
+            )
+
+            # Depletion check — only when a real lot_id was found
+            if secondary_lot_id is not None:
+                cursor.execute("""
+                    SELECT balance FROM lot_balances WHERE lot_id = %s
+                """, (secondary_lot_id,))
+                balance_row = cursor.fetchone()
+                if balance_row is not None and balance_row[0] <= 0:
+                    cursor.execute("""
+                        UPDATE lots SET status = 'depleted', updated_at = CURRENT_TIMESTAMP
+                        WHERE lot_id = %s AND status NOT IN ('depleted', 'quarantine', 'inactive')
+                    """, (secondary_lot_id,))
+                    if cursor.rowcount > 0:
+                        logger.info(
+                            f"Lot (lot_id={secondary_lot_id}, sku='{base_sku}') marked as depleted "
+                            f"(balance={balance_row[0]})"
+                        )
+
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Error deducting secondary lot inventory for order {order_number} / {base_sku}: {e}",
+                exc_info=True
+            )
+            raise
 
     if not lot_number:
         logger.warning(f"Skipping deduction for order {order_number}: empty lot number in customField1 '{cf1}'")
