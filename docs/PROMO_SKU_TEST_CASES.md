@@ -75,6 +75,42 @@ Use these cases to verify that promo SKU replacement fixes are holding across th
 
 ---
 
+## BigCommerce Orders to Place
+
+These are the exact orders your customer should enter in BigCommerce for each test. Use a real test shipping address each time.
+
+**Promo SKU reference:**
+| Promo SKU (enter this) | Maps to Base SKU | Product |
+|------------------------|------------------|---------|
+| 17613 | 17612 | PT Kit |
+| 17905 | 17904 | Travel Kit |
+| 17915 | 17914 | PPR Kit |
+| 18676 | 18675 | Ortho Protect |
+
+---
+
+**TC-01** — Place an order with **1x SKU 17613** only. Nothing else in the cart.
+
+**TC-02** — Place an order with **1x SKU 17613** and **1x SKU 17904** (a regular non-promo item) in the same cart.
+
+**TC-03** — Place an order with **1x SKU 17613** and **1x SKU 17905** in the same cart (two different promo SKUs together).
+
+**TC-04 / TC-05** — Same order as TC-01. After it appears in ShipStation, check Custom Field 1 on the replacement order for the lot stamp.
+
+**TC-06** — Same order as TC-01. No special setup needed — this test verifies the replacement goes through even if ShipStation's catalog has different weights for 17613 vs 17612.
+
+**TC-07** — No order needed. Pull up recent entries in `promo_sku_replacement_log` where status is not `replaced` to find a prior failure, or check the dashboard for the admin alert bar.
+
+**TC-08** — Same order as TC-01. This is a backend/log check — confirm only one replacement order was created in ShipStation for that BC order number.
+
+**TC-09 / TC-10 / TC-11** — Same order as TC-01. After it ships, run the inventory queries to verify deductions.
+
+**TC-12** — Same order as TC-01. After replacement appears in ShipStation, confirm the order number shown starts with `BC-`.
+
+**TC-13** — Same order as TC-01. After the replacement ships and tracking is entered, confirm the tracking number is visible on the original order in BigCommerce.
+
+---
+
 ## Suggested Test Order
 
 Run in this sequence for maximum coverage with minimum effort:
