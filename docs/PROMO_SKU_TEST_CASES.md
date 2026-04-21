@@ -2,20 +2,22 @@
 
 Use these cases to verify that promo SKU replacement fixes are holding across the full fulfillment pipeline.
 
+**How promo SKUs work:** A promo SKU is always one higher than the base SKU (e.g., 17613 is the promo for 17612). 97% of the time a promo SKU appears on an order paired with at least one paid product (Buy X Get Y Free). There is an edge case where the promo SKU arrives alone with no paid item. OraPro Paste Peppermint (18795) has no promo SKU and will not be used as a free item.
+
 ---
 
 ## Core Replacement Flow
 
-**TC-01 — Single-item promo order**
-- Order contains only a promo SKU (e.g., 17613).
-- Expected: Original order is cancelled in ShipStation, a replacement order is created with the base SKU (17612), and the replacement carries the same shipping address and BC order number.
+**TC-01 — Standard Buy X Get Y order (most common case)**
+- Order contains a paid base SKU plus its promo SKU as the free item.
+- Expected: Promo SKU is replaced with the base SKU, paid item is untouched, replacement carries the same shipping address and BC order number.
 
-**TC-02 — Mixed-item promo order**
-- Order contains a promo SKU plus one or more regular items.
-- Expected: Only the promo SKU is swapped. Every other line item on the replacement is identical to the original.
+**TC-02 — Promo SKU with no paid product (edge case)**
+- Order contains only a promo SKU, no paid item in the cart.
+- Expected: System still replaces the promo SKU correctly. Does not error out or get stuck because there is no paid companion product.
 
 **TC-03 — Multiple promo SKUs on one order**
-- Order contains two or more promo items.
+- Order contains two or more promo items (e.g., 17613 and 17905 together).
 - Expected: All promo SKUs are replaced correctly. No line items are dropped or duplicated.
 
 ---
@@ -77,11 +79,11 @@ Use these cases to verify that promo SKU replacement fixes are holding across th
 
 ## BigCommerce Orders to Place
 
-These are the exact orders your customer should enter in BigCommerce for each test. Use a real test shipping address each time.
+Use a real test shipping address each time. All promo SKUs follow the same pattern — the promo SKU is always the base SKU + 1. OraPro Paste (18795) has no promo SKU and is not included.
 
 **Promo SKU reference:**
-| Promo SKU (enter this) | Maps to Base SKU | Product |
-|------------------------|------------------|---------|
+| Promo SKU (enter this) | Paired Base SKU | Product |
+|------------------------|-----------------|---------|
 | 17613 | 17612 | PT Kit |
 | 17905 | 17904 | Travel Kit |
 | 17915 | 17914 | PPR Kit |
@@ -89,25 +91,42 @@ These are the exact orders your customer should enter in BigCommerce for each te
 
 ---
 
-**TC-01** — Place an order with **1x SKU 17613** only. Nothing else in the cart.
+### Standard Buy X Get Y orders (run one per promo SKU)
 
-**TC-02** — Place an order with **1x SKU 17613** and **1x SKU 17904** (a regular non-promo item) in the same cart.
+Each of these tests the normal case — a customer buys a product and gets the same product free.
 
-**TC-03** — Place an order with **1x SKU 17613** and **1x SKU 17905** in the same cart (two different promo SKUs together).
+| Order | Cart Contents |
+|-------|--------------|
+| Order A | 1x **17612** (paid) + 1x **17613** (free promo) |
+| Order B | 1x **17904** (paid) + 1x **17905** (free promo) |
+| Order C | 1x **17914** (paid) + 1x **17915** (free promo) |
+| Order D | 1x **18675** (paid) + 1x **18676** (free promo) |
 
-**TC-04 / TC-05** — Same order as TC-01. After it appears in ShipStation, check Custom Field 1 on the replacement order for the lot stamp.
+These cover TC-01, TC-04, TC-05, TC-06, TC-08, TC-09, TC-10, TC-11, TC-12, and TC-13.
 
-**TC-06** — Same order as TC-01. No special setup needed — this test verifies the replacement goes through even if ShipStation's catalog has different weights for 17613 vs 17612.
+---
 
-**TC-07** — No order needed. Pull up recent entries in `promo_sku_replacement_log` where status is not `replaced` to find a prior failure, or check the dashboard for the admin alert bar.
+### Edge case — Promo SKU with no paid product (run once)
 
-**TC-08** — Same order as TC-01. This is a backend/log check — confirm only one replacement order was created in ShipStation for that BC order number.
+| Order | Cart Contents |
+|-------|--------------|
+| Order E | 1x **17613** only — no paid item |
 
-**TC-09 / TC-10 / TC-11** — Same order as TC-01. After it ships, run the inventory queries to verify deductions.
+This covers TC-02. Confirms the system handles a standalone promo SKU without erroring out.
 
-**TC-12** — Same order as TC-01. After replacement appears in ShipStation, confirm the order number shown starts with `BC-`.
+---
 
-**TC-13** — Same order as TC-01. After the replacement ships and tracking is entered, confirm the tracking number is visible on the original order in BigCommerce.
+### Multi-promo order (run once)
+
+| Order | Cart Contents |
+|-------|--------------|
+| Order F | 1x **17613** + 1x **17905** (two different promo SKUs, no paid items) |
+
+This covers TC-03. Confirms both are replaced and nothing is dropped.
+
+---
+
+**TC-07** — No order needed. Check recent entries in `promo_sku_replacement_log` where status is not `replaced`, or look for the red admin alert bar on the dashboard.
 
 ---
 
