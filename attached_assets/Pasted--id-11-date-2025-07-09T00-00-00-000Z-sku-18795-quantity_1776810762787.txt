@@ -1,0 +1,2297 @@
+[
+  {
+    "id": 11,
+    "date": "2025-07-09T00:00:00.000Z",
+    "sku": "18795",
+    "quantity": 933,
+    "transaction_type": "Receive",
+    "lot_id": 7,
+    "notes": "11001"
+  },
+  {
+    "id": 31,
+    "date": "2025-09-12T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 680,
+    "transaction_type": "Receive",
+    "lot_id": 11,
+    "notes": "250297"
+  },
+  {
+    "id": 67,
+    "date": "2025-09-18T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 860,
+    "transaction_type": "Receive",
+    "lot_id": 11,
+    "notes": "250297"
+  },
+  {
+    "id": 116,
+    "date": "2026-03-18T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 576,
+    "transaction_type": "Receive",
+    "lot_id": 19,
+    "notes": "260047"
+  },
+  {
+    "id": 117,
+    "date": "2026-03-24T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 576,
+    "transaction_type": "Receive",
+    "lot_id": 19,
+    "notes": "260047"
+  },
+  {
+    "id": 123,
+    "date": "2026-03-27T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 576,
+    "transaction_type": "Receive",
+    "lot_id": 19,
+    "notes": "260047"
+  },
+  {
+    "id": 135,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862233"
+  },
+  {
+    "id": 137,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862238"
+  },
+  {
+    "id": 138,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862241"
+  },
+  {
+    "id": 140,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862244"
+  },
+  {
+    "id": 141,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862245"
+  },
+  {
+    "id": 144,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862247"
+  },
+  {
+    "id": 145,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862249"
+  },
+  {
+    "id": 146,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862250"
+  },
+  {
+    "id": 147,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 15,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862251"
+  },
+  {
+    "id": 152,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 53,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862254"
+  },
+  {
+    "id": 155,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862256"
+  },
+  {
+    "id": 1706,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862243"
+  },
+  {
+    "id": 1707,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862246"
+  },
+  {
+    "id": 1708,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862252"
+  },
+  {
+    "id": 1709,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862253"
+  },
+  {
+    "id": 1710,
+    "date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862255"
+  },
+  {
+    "id": 309,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862257"
+  },
+  {
+    "id": 310,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862258"
+  },
+  {
+    "id": 313,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862265"
+  },
+  {
+    "id": 315,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862270"
+  },
+  {
+    "id": 317,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862272"
+  },
+  {
+    "id": 319,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 10,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862274"
+  },
+  {
+    "id": 1711,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862260"
+  },
+  {
+    "id": 1712,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862261"
+  },
+  {
+    "id": 1713,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862266"
+  },
+  {
+    "id": 1714,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862271"
+  },
+  {
+    "id": 1715,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862273"
+  },
+  {
+    "id": 1716,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862275"
+  },
+  {
+    "id": 1717,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862276"
+  },
+  {
+    "id": 1718,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862277"
+  },
+  {
+    "id": 1719,
+    "date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862279"
+  },
+  {
+    "id": 1720,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862284"
+  },
+  {
+    "id": 1721,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862285"
+  },
+  {
+    "id": 1722,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862287"
+  },
+  {
+    "id": 1723,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862288"
+  },
+  {
+    "id": 1724,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862289"
+  },
+  {
+    "id": 1725,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862291"
+  },
+  {
+    "id": 1726,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862292"
+  },
+  {
+    "id": 1727,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862294"
+  },
+  {
+    "id": 1728,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862295"
+  },
+  {
+    "id": 1729,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862296"
+  },
+  {
+    "id": 1730,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862297"
+  },
+  {
+    "id": 1731,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862300"
+  },
+  {
+    "id": 1732,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862301"
+  },
+  {
+    "id": 1733,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862302"
+  },
+  {
+    "id": 1734,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862303"
+  },
+  {
+    "id": 1735,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862304"
+  },
+  {
+    "id": 1736,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862305"
+  },
+  {
+    "id": 1737,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862306"
+  },
+  {
+    "id": 1738,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862307"
+  },
+  {
+    "id": 1739,
+    "date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862308"
+  },
+  {
+    "id": 1740,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862309"
+  },
+  {
+    "id": 1741,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862310"
+  },
+  {
+    "id": 1742,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862311"
+  },
+  {
+    "id": 1743,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862312"
+  },
+  {
+    "id": 1744,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862313"
+  },
+  {
+    "id": 1745,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862314"
+  },
+  {
+    "id": 1746,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862315"
+  },
+  {
+    "id": 1747,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862318"
+  },
+  {
+    "id": 1748,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862323"
+  },
+  {
+    "id": 1749,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862324"
+  },
+  {
+    "id": 1750,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862325"
+  },
+  {
+    "id": 1751,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862332"
+  },
+  {
+    "id": 1752,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862334"
+  },
+  {
+    "id": 1753,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862335"
+  },
+  {
+    "id": 1754,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862337"
+  },
+  {
+    "id": 1755,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862338"
+  },
+  {
+    "id": 1756,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862339"
+  },
+  {
+    "id": 1757,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862340"
+  },
+  {
+    "id": 1758,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862341"
+  },
+  {
+    "id": 1759,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862343"
+  },
+  {
+    "id": 1760,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862344"
+  },
+  {
+    "id": 1761,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862345"
+  },
+  {
+    "id": 1762,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862346"
+  },
+  {
+    "id": 1763,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862349"
+  },
+  {
+    "id": 1764,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862350"
+  },
+  {
+    "id": 1765,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862351"
+  },
+  {
+    "id": 1766,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862352"
+  },
+  {
+    "id": 1767,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862355"
+  },
+  {
+    "id": 1768,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862357"
+  },
+  {
+    "id": 1769,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862358"
+  },
+  {
+    "id": 1770,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862361"
+  },
+  {
+    "id": 1771,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862362"
+  },
+  {
+    "id": 1772,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862365"
+  },
+  {
+    "id": 1773,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862366"
+  },
+  {
+    "id": 1774,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862368"
+  },
+  {
+    "id": 1775,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862369"
+  },
+  {
+    "id": 1776,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862370"
+  },
+  {
+    "id": 1777,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862372"
+  },
+  {
+    "id": 1778,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862373"
+  },
+  {
+    "id": 1779,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862316"
+  },
+  {
+    "id": 1780,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862317"
+  },
+  {
+    "id": 1781,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862319"
+  },
+  {
+    "id": 1782,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862320"
+  },
+  {
+    "id": 1783,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862321"
+  },
+  {
+    "id": 1784,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862322"
+  },
+  {
+    "id": 1785,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862333"
+  },
+  {
+    "id": 1786,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862342"
+  },
+  {
+    "id": 1787,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 8,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862347"
+  },
+  {
+    "id": 1788,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 8,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862359"
+  },
+  {
+    "id": 1789,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862360"
+  },
+  {
+    "id": 1790,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862363"
+  },
+  {
+    "id": 1791,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862364"
+  },
+  {
+    "id": 1792,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862367"
+  },
+  {
+    "id": 1793,
+    "date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862371"
+  },
+  {
+    "id": 1794,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 576,
+    "transaction_type": "Receive",
+    "lot_id": 20,
+    "notes": "260082"
+  },
+  {
+    "id": 1795,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862374"
+  },
+  {
+    "id": 1796,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862375"
+  },
+  {
+    "id": 1797,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862376"
+  },
+  {
+    "id": 1798,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862377"
+  },
+  {
+    "id": 1799,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862378"
+  },
+  {
+    "id": 1800,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862379"
+  },
+  {
+    "id": 1801,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862381"
+  },
+  {
+    "id": 1802,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862382"
+  },
+  {
+    "id": 1803,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862383"
+  },
+  {
+    "id": 1804,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862384"
+  },
+  {
+    "id": 1805,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862385"
+  },
+  {
+    "id": 1806,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862386"
+  },
+  {
+    "id": 1807,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862387"
+  },
+  {
+    "id": 1808,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862388"
+  },
+  {
+    "id": 1809,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862389"
+  },
+  {
+    "id": 1810,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862391"
+  },
+  {
+    "id": 1811,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 6,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862392"
+  },
+  {
+    "id": 1812,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862393"
+  },
+  {
+    "id": 1813,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 6,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862394"
+  },
+  {
+    "id": 1814,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862395"
+  },
+  {
+    "id": 1815,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862396"
+  },
+  {
+    "id": 1816,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862397"
+  },
+  {
+    "id": 1817,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862398"
+  },
+  {
+    "id": 1818,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862399"
+  },
+  {
+    "id": 1819,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862400"
+  },
+  {
+    "id": 1820,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862401"
+  },
+  {
+    "id": 1821,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862402"
+  },
+  {
+    "id": 1822,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862403"
+  },
+  {
+    "id": 1823,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862404"
+  },
+  {
+    "id": 1824,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862405"
+  },
+  {
+    "id": 1825,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862406"
+  },
+  {
+    "id": 1826,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862407"
+  },
+  {
+    "id": 1827,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862408"
+  },
+  {
+    "id": 1943,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862389"
+  },
+  {
+    "id": 1944,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862399"
+  },
+  {
+    "id": 1945,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 12,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862406"
+  },
+  {
+    "id": 1946,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 12,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862403"
+  },
+  {
+    "id": 1947,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862375"
+  },
+  {
+    "id": 1948,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862375"
+  },
+  {
+    "id": 1949,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862378"
+  },
+  {
+    "id": 1950,
+    "date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862402"
+  },
+  {
+    "id": 1828,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862409"
+  },
+  {
+    "id": 1829,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862410"
+  },
+  {
+    "id": 1830,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862411"
+  },
+  {
+    "id": 1831,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862412"
+  },
+  {
+    "id": 1832,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862413"
+  },
+  {
+    "id": 1833,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862414"
+  },
+  {
+    "id": 1834,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862415"
+  },
+  {
+    "id": 1835,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862418"
+  },
+  {
+    "id": 1836,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862419"
+  },
+  {
+    "id": 1837,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862420"
+  },
+  {
+    "id": 1838,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862421"
+  },
+  {
+    "id": 1839,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862422"
+  },
+  {
+    "id": 1840,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862423"
+  },
+  {
+    "id": 1841,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862424"
+  },
+  {
+    "id": 1842,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862425"
+  },
+  {
+    "id": 1843,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862426"
+  },
+  {
+    "id": 1844,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862427"
+  },
+  {
+    "id": 1845,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862428"
+  },
+  {
+    "id": 1846,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862429"
+  },
+  {
+    "id": 1847,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862431"
+  },
+  {
+    "id": 1848,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862432"
+  },
+  {
+    "id": 1849,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862433"
+  },
+  {
+    "id": 1850,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862436"
+  },
+  {
+    "id": 1851,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862437"
+  },
+  {
+    "id": 1951,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862437"
+  },
+  {
+    "id": 1952,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862428"
+  },
+  {
+    "id": 1953,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862433"
+  },
+  {
+    "id": 1954,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862420"
+  },
+  {
+    "id": 1955,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862409"
+  },
+  {
+    "id": 1956,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862424"
+  },
+  {
+    "id": 1957,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862414"
+  },
+  {
+    "id": 1958,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "18795",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 7,
+    "notes": "862419"
+  },
+  {
+    "id": 1959,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862369"
+  },
+  {
+    "id": 1960,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862410"
+  },
+  {
+    "id": 1961,
+    "date": "2026-04-17T00:00:00.000Z",
+    "sku": "18795",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 7,
+    "notes": "862426"
+  },
+  {
+    "id": 1963,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862438"
+  },
+  {
+    "id": 1964,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862439"
+  },
+  {
+    "id": 1965,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862440"
+  },
+  {
+    "id": 1966,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862441"
+  },
+  {
+    "id": 1967,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862442"
+  },
+  {
+    "id": 1968,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862447"
+  },
+  {
+    "id": 1969,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862448"
+  },
+  {
+    "id": 1970,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862449"
+  },
+  {
+    "id": 1971,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862450"
+  },
+  {
+    "id": 1977,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 12,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "100633"
+  },
+  {
+    "id": 1978,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862440"
+  },
+  {
+    "id": 1979,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862438"
+  },
+  {
+    "id": 1980,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862447"
+  },
+  {
+    "id": 1981,
+    "date": "2026-04-20T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862450"
+  },
+  {
+    "id": 1983,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 86,
+    "transaction_type": "Adjust Up",
+    "lot_id": 12,
+    "notes": "Baseline receive backfill — lot 240231"
+  },
+  {
+    "id": 1984,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 253,
+    "transaction_type": "Adjust Up",
+    "lot_id": 19,
+    "notes": "Lot balance correction — reconciling duplicate ship entries Apr 16-17 "
+  },
+  {
+    "id": 1985,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 821,
+    "transaction_type": "Adjust Down",
+    "lot_id": 11,
+    "notes": "Lot balance correction"
+  },
+  {
+    "id": 1986,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 414,
+    "transaction_type": "Adjust Up",
+    "lot_id": 4,
+    "notes": "Reconcile lot inventory"
+  },
+  {
+    "id": 1987,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862451"
+  },
+  {
+    "id": 1988,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862452"
+  },
+  {
+    "id": 1989,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "18795",
+    "quantity": 6,
+    "transaction_type": "Ship",
+    "lot_id": 7,
+    "notes": "862453"
+  },
+  {
+    "id": 1990,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 10,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862454"
+  },
+  {
+    "id": 1991,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862456"
+  },
+  {
+    "id": 1992,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862457"
+  },
+  {
+    "id": 1993,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862458"
+  },
+  {
+    "id": 1994,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862459"
+  },
+  {
+    "id": 1995,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862460"
+  },
+  {
+    "id": 1996,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862461"
+  },
+  {
+    "id": 1997,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862463"
+  },
+  {
+    "id": 1998,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862464"
+  },
+  {
+    "id": 1999,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862465"
+  },
+  {
+    "id": 2000,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862466"
+  },
+  {
+    "id": 2001,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862467"
+  },
+  {
+    "id": 2002,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862468"
+  },
+  {
+    "id": 2003,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862469"
+  },
+  {
+    "id": 2004,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862470"
+  },
+  {
+    "id": 2005,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862471"
+  },
+  {
+    "id": 2006,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862472"
+  },
+  {
+    "id": 2007,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862473"
+  },
+  {
+    "id": 2008,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862474"
+  },
+  {
+    "id": 2009,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862475"
+  },
+  {
+    "id": 2010,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862479"
+  },
+  {
+    "id": 2011,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 4,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862480"
+  },
+  {
+    "id": 2012,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 6,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862481"
+  },
+  {
+    "id": 2013,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 3,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862482"
+  },
+  {
+    "id": 2015,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862484"
+  },
+  {
+    "id": 2016,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17904",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 12,
+    "notes": "862487"
+  },
+  {
+    "id": 2017,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862488"
+  },
+  {
+    "id": 2018,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862489"
+  },
+  {
+    "id": 2019,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862490"
+  },
+  {
+    "id": 2020,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862491"
+  },
+  {
+    "id": 2021,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862492"
+  },
+  {
+    "id": 2022,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862493"
+  },
+  {
+    "id": 2023,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862451"
+  },
+  {
+    "id": 2024,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 30,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862454"
+  },
+  {
+    "id": 2025,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 12,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862482"
+  },
+  {
+    "id": 2026,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862481"
+  },
+  {
+    "id": 2027,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862489"
+  },
+  {
+    "id": 2028,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 6,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862487"
+  },
+  {
+    "id": 2029,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862459"
+  },
+  {
+    "id": 2030,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862470"
+  },
+  {
+    "id": 2031,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862489"
+  },
+  {
+    "id": 2032,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 5,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862457"
+  },
+  {
+    "id": 2033,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 19,
+    "notes": "862483"
+  },
+  {
+    "id": 2034,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "18675",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 4,
+    "notes": "862483"
+  },
+  {
+    "id": 2035,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862489"
+  },
+  {
+    "id": 2036,
+    "date": "2026-04-21T00:00:00.000Z",
+    "sku": "17914",
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "lot_id": 11,
+    "notes": "862482"
+  }
+]
