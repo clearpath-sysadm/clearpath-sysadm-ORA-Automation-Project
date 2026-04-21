@@ -909,20 +909,25 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
                         base_sku = sku
                         sku_lot = sku
 
-                    # If customField1 lot stamp is available and matches this item's
-                    # base_sku, upgrade sku_lot to the full lot-tagged value and clean
-                    # up any stale bare-SKU record before inserting.
+                    # If customField1 lot stamp is available and its base SKU matches
+                    # this item's base_sku, upgrade sku_lot to the full lot-tagged value.
                     cf1 = (lot_stamp or '').strip()
                     if cf1 and ' - ' in cf1:
                         cf1_parts = cf1.split(' - ', 1)
                         if cf1_parts[0].strip() == base_sku:
-                            cursor.execute("""
-                                DELETE FROM shipped_items
-                                WHERE order_number = %s
-                                  AND base_sku = %s
-                                  AND sku_lot NOT LIKE '%% - %%'
-                            """, (order_number, base_sku))
                             sku_lot = cf1
+
+                    # Clean up any stale bare-SKU row for this (order, base_sku) whenever
+                    # we are about to insert a lot-stamped row.  This covers both primary
+                    # SKUs (whose sku_lot was just upgraded via CF1 above) and secondary
+                    # SKUs (whose lot stamp comes directly from the SS item sku field).
+                    if ' - ' in sku_lot:
+                        cursor.execute("""
+                            DELETE FROM shipped_items
+                            WHERE order_number = %s
+                              AND base_sku = %s
+                              AND sku_lot NOT LIKE '%% - %%'
+                        """, (order_number, base_sku))
 
                     cursor.execute("""
                         INSERT INTO shipped_items (

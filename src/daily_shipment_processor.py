@@ -323,16 +323,22 @@ def save_shipped_items_to_db(items_df, customField1_map=None):
                 cf1_parts = cf1.split(' - ', 1)
                 cf1_sku = cf1_parts[0].strip()
                 if cf1_sku == str(base_sku):
-                    cursor = conn.cursor()
-                    cursor.execute("""
-                        DELETE FROM shipped_items
-                        WHERE order_number = %s
-                          AND base_sku = %s
-                          AND sku_lot NOT LIKE '%% - %%'
-                    """, (str(order_number), str(base_sku)))
-                    if cursor.rowcount > 0:
-                        logger.debug(f"Deleted {cursor.rowcount} bare-SKU record(s) for {order_number}/{base_sku}")
                     sku_lot = cf1
+
+            # Clean up any stale bare-SKU row for this (order, base_sku) whenever
+            # we are about to insert a lot-stamped row.  This covers both primary
+            # SKUs (whose sku_lot was just upgraded via CF1 above) and secondary
+            # SKUs (whose lot stamp comes directly from the shipment data).
+            if ' - ' in str(sku_lot):
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM shipped_items
+                    WHERE order_number = %s
+                      AND base_sku = %s
+                      AND sku_lot NOT LIKE '%% - %%'
+                """, (str(order_number), str(base_sku)))
+                if cursor.rowcount > 0:
+                    logger.debug(f"Deleted {cursor.rowcount} bare-SKU record(s) for {order_number}/{base_sku}")
 
             cursor = conn.cursor()
             cursor.execute("""
