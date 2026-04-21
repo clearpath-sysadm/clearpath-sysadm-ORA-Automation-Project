@@ -42,8 +42,8 @@ from src.services.reporting_logic.week_utils import (
     is_week_complete,
     get_prior_complete_week_boundaries
 )
-from src.services.reporting_logic.inventory_calculations import calculate_current_inventory
-from src.services.reporting_logic.average_calculations import calculate_12_month_rolling_average
+# inventory_calculations and average_calculations imports removed (Task #67):
+# lot_balances VIEW is now the live source of truth — no periodic recalculation needed.
 
 
 
@@ -700,115 +700,72 @@ def run_daily_shipment_pull(request=None, end_date=None):
         
         history_saved = save_weekly_history_to_db(updated_history_df)
 
-        # --- 7. Calculate and Update Current Inventory ---
-        logger.info("Calculating current inventory...")
-        
-        # Get initial inventory from configuration
-        initial_inventory_rows = execute_query("""
-            SELECT sku, value 
-            FROM configuration_params 
-            WHERE category = 'InitialInventory'
-        """)
-        initial_inventory = {str(row[0]): int(row[1]) for row in initial_inventory_rows} if initial_inventory_rows else {}
-        logger.info(f"Loaded initial inventory for {len(initial_inventory)} SKUs")
-        
-        # Get inventory transactions
-        # Ship rows WHERE shipstation_order_id IS NOT NULL are lot-deduction entries written by
-        # deduct_lot_inventory. Those same shipments are already recorded in shipped_items, so
-        # including them here would subtract every lot-tagged shipment twice. Manual Ship rows
-        # (shipstation_order_id IS NULL) are kept because they have no shipped_items counterpart.
-        transactions_rows = execute_query("""
-            SELECT date as Date, sku as SKU, quantity as Quantity, transaction_type as TransactionType
-            FROM inventory_transactions
-            WHERE NOT (transaction_type = 'Ship' AND shipstation_order_id IS NOT NULL)
-            ORDER BY date
-        """)
-        transactions_df = pd.DataFrame(transactions_rows, columns=['Date', 'SKU', 'Quantity', 'TransactionType']) if transactions_rows else pd.DataFrame(columns=['Date', 'SKU', 'Quantity', 'TransactionType'])
-        if not transactions_df.empty:
-            transactions_df['Date'] = pd.to_datetime(transactions_df['Date']).dt.date
-        
-        # Get all shipped items
-        shipped_items_rows = execute_query("""
-            SELECT ship_date as Date, base_sku as SKU, quantity_shipped as Quantity_Shipped
-            FROM shipped_items
-            ORDER BY ship_date
-        """)
-        shipped_items_df = pd.DataFrame(shipped_items_rows, columns=['Date', 'SKU', 'Quantity_Shipped']) if shipped_items_rows else pd.DataFrame(columns=['Date', 'SKU', 'Quantity_Shipped'])
-        if not shipped_items_df.empty:
-            shipped_items_df['Date'] = pd.to_datetime(shipped_items_df['Date']).dt.date
-        
-        # Get current week boundaries for the calculation
-        current_week_start, current_week_end = get_current_week_boundaries()
-        
-        # Calculate current inventory
-        current_inventory_df = calculate_current_inventory(
-            initial_inventory=initial_inventory,
-            inventory_transactions_df=transactions_df,
-            shipped_items_df=shipped_items_df,
-            key_skus=target_skus,
-            current_week_start_date=current_week_start,
-            current_week_end_date=current_week_end
-        )
-        
-        # Calculate rolling averages using the UPDATED history (includes today's shipments)
-        # Transform wide-format history to long-format for rolling average calculation
-        if not updated_history_df.empty:
-            # Melt the wide format into long format: (Start Date, SKU, Quantity)
-            history_long = updated_history_df.melt(
-                id_vars=['Start Date', 'Stop Date'],
-                var_name='SKU',
-                value_name='ShippedQuantity'
-            )
-            # Rename 'Start Date' to 'Date' for compatibility with rolling average function
-            history_long.rename(columns={'Start Date': 'Date'}, inplace=True)
-            
-            # Calculate rolling averages
-            rolling_avg_df = calculate_12_month_rolling_average(history_long[['Date', 'SKU', 'ShippedQuantity']])
-        else:
-            # No history data - create empty rolling average dataframe
-            rolling_avg_df = pd.DataFrame(columns=['SKU', '12-Month Rolling Average'])
-        
-        # Merge inventory and averages
-        if not current_inventory_df.empty and not rolling_avg_df.empty:
-            inventory_with_avg = current_inventory_df.merge(
-                rolling_avg_df,
-                on='SKU',
-                how='left'
-            )
-            inventory_with_avg['12-Month Rolling Average'] = inventory_with_avg['12-Month Rolling Average'].fillna(0).astype(int)
-        else:
-            inventory_with_avg = current_inventory_df.copy()
-            inventory_with_avg['12-Month Rolling Average'] = 0
-        
-        # Save to inventory_current table
-        inventory_saved = 0
-        with transaction() as conn:
-            cursor = conn.cursor()
-            for _, row in inventory_with_avg.iterrows():
-                sku = str(row['SKU'])
-                qty = int(row['Quantity'])
-                weekly_avg = int(row.get('12-Month Rolling Average', 0))
-                
-                # Determine alert level
-                if qty <= 50:
-                    alert_level = 'critical'
-                elif qty <= 100:
-                    alert_level = 'low'
-                else:
-                    alert_level = 'normal'
-                
-                cursor.execute("""
-                    INSERT INTO inventory_current (sku, current_quantity, weekly_avg_cents, alert_level, reorder_point, last_updated)
-                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                    ON CONFLICT (sku) DO UPDATE SET
-                        current_quantity = EXCLUDED.current_quantity,
-                        weekly_avg_cents = EXCLUDED.weekly_avg_cents,
-                        alert_level = EXCLUDED.alert_level,
-                        last_updated = CURRENT_TIMESTAMP
-                """, (sku, qty, weekly_avg, alert_level, 50))
-                inventory_saved += 1
-        
-        logger.info(f"Updated inventory_current table with {inventory_saved} SKUs")
+        # --- 7. Daily Reconciliation: shipped_items vs lot_deductions (Task #67) ---
+        # inventory_current UPSERT removed. lot_balances VIEW is the live source of truth.
+        # Instead, compare what ShipStation says was shipped with what our Ship transactions
+        # recorded, and write discrepancies to inventory_reconciliation_log for review.
+        logger.info("Running daily reconciliation: shipped_items vs Ship transactions...")
+        recon_written = 0
+        try:
+            if items_df is not None and not items_df.empty:
+                ship_dates = items_df['Ship Date'].dt.date.unique().tolist()
+            else:
+                ship_dates = []
+
+            if ship_dates:
+                with transaction() as recon_conn:
+                    recon_cursor = recon_conn.cursor()
+                    for ship_date in ship_dates:
+                        ship_date_str = str(ship_date)
+
+                        # What ShipStation says was shipped on this date (per SKU)
+                        recon_cursor.execute("""
+                            SELECT base_sku, SUM(quantity_shipped)
+                            FROM shipped_items
+                            WHERE ship_date = %s
+                            GROUP BY base_sku
+                        """, (ship_date_str,))
+                        si_by_sku = {str(r[0]): int(r[1]) for r in recon_cursor.fetchall()}
+
+                        # What our Ship transactions recorded for this date (per SKU)
+                        recon_cursor.execute("""
+                            SELECT sku, SUM(quantity)
+                            FROM inventory_transactions
+                            WHERE transaction_type = 'Ship'
+                              AND date = %s
+                            GROUP BY sku
+                        """, (ship_date_str,))
+                        lt_by_sku = {str(r[0]): int(r[1]) for r in recon_cursor.fetchall()}
+
+                        all_skus = set(si_by_sku) | set(lt_by_sku)
+                        for sku in all_skus:
+                            si_qty = si_by_sku.get(sku, 0)
+                            lt_qty = lt_by_sku.get(sku, 0)
+                            gap = lt_qty - si_qty
+                            gap_pct = round(abs(gap) / si_qty * 100, 2) if si_qty > 0 else None
+                            alert_threshold = 5
+                            is_flagged = abs(gap) >= alert_threshold
+
+                            recon_cursor.execute("""
+                                INSERT INTO inventory_reconciliation_log
+                                    (ship_date, run_date, sku,
+                                     shipped_items_qty, lot_deduction_qty,
+                                     gap, gap_pct, alert_threshold, is_flagged)
+                                VALUES (%s, CURRENT_DATE, %s, %s, %s, %s, %s, %s, %s)
+                                ON CONFLICT (ship_date, sku) DO UPDATE SET
+                                    run_date          = CURRENT_DATE,
+                                    shipped_items_qty = EXCLUDED.shipped_items_qty,
+                                    lot_deduction_qty = EXCLUDED.lot_deduction_qty,
+                                    gap               = EXCLUDED.gap,
+                                    gap_pct           = EXCLUDED.gap_pct,
+                                    is_flagged        = EXCLUDED.is_flagged
+                            """, (ship_date_str, sku, si_qty, lt_qty,
+                                  gap, gap_pct, alert_threshold, is_flagged))
+                            recon_written += 1
+
+            logger.info(f"Reconciliation complete: wrote {recon_written} rows to inventory_reconciliation_log")
+        except Exception as recon_err:
+            logger.warning(f"Reconciliation loop failed (non-fatal): {recon_err}", exc_info=True)
         
         # --- 7b. Save "As Of" Date for Inventory Report ---
         # Get the most recent ship date from the fetched shipments
@@ -832,7 +789,7 @@ def run_daily_shipment_pull(request=None, end_date=None):
             logger.info(f"Updated inventory 'As Of' date to: {date_str}")
         
         # --- 8. Update Workflow Status ---
-        total_records = items_saved + orders_saved + history_saved + inventory_saved
+        total_records = items_saved + orders_saved + history_saved + recon_written
         duration = (datetime.datetime.now() - workflow_start_time).total_seconds()
         
         with transaction() as conn:
@@ -847,7 +804,7 @@ def run_daily_shipment_pull(request=None, end_date=None):
             """, (total_records, int(duration)))
         
         logger.info(f"--- Daily Shipment Processor finished successfully! ---")
-        logger.info(f"Total records processed: {total_records} (items: {items_saved}, orders: {orders_saved}, history: {history_saved}, inventory: {inventory_saved})")
+        logger.info(f"Total records processed: {total_records} (items: {items_saved}, orders: {orders_saved}, history: {history_saved}, recon: {recon_written})")
         return "Process completed successfully", 200
 
     except Exception as e:

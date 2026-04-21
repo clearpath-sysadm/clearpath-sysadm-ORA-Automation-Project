@@ -788,6 +788,81 @@ def _seed_sku_promotions(cursor):
     logger.info(f"startup_migrations: sku_promotions — {cursor.rowcount} row(s) upserted")
 
 
+def _create_inventory_architecture_objects(cursor):
+    """
+    Task #67: create the objects that make lot_balances the single source of truth.
+
+    Step 1 — inventory_summary VIEW
+    Step 2 — inventory_reconciliation_log table
+    Step 3 — ReorderPoint rows in configuration_params
+    Step 18 — COMMENT ON TABLE inventory_current (deprecation marker)
+
+    All guards use IF NOT EXISTS / ON CONFLICT so this is safe to run on every boot.
+    """
+    # Step 1: inventory_summary VIEW
+    # Uses status != 'quarantine' (not IN ('active','depleted')) because inactive lots
+    # can carry substantial non-zero balances (e.g. lot 260082 has 576 units, inactive).
+    cursor.execute("""
+        SELECT EXISTS (
+            SELECT 1 FROM pg_views WHERE viewname = 'inventory_summary'
+        )
+    """)
+    if not cursor.fetchone()[0]:
+        cursor.execute("""
+            CREATE VIEW inventory_summary AS
+            SELECT sku_code AS sku, SUM(balance) AS current_quantity
+            FROM lot_balances
+            WHERE status != 'quarantine'
+            GROUP BY sku_code
+        """)
+        logger.info("startup_migrations: inventory_summary VIEW created")
+    else:
+        logger.info("startup_migrations: inventory_summary VIEW already exists — skipping")
+
+    # Step 2: inventory_reconciliation_log table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS inventory_reconciliation_log (
+            id                 serial PRIMARY KEY,
+            ship_date          date NOT NULL,
+            run_date           date NOT NULL,
+            sku                text NOT NULL,
+            shipped_items_qty  int NOT NULL DEFAULT 0,
+            lot_deduction_qty  int NOT NULL DEFAULT 0,
+            gap                int NOT NULL DEFAULT 0,
+            gap_pct            numeric,
+            alert_threshold    int NOT NULL DEFAULT 5,
+            is_flagged         bool NOT NULL DEFAULT false,
+            notes              text,
+            created_at         timestamptz DEFAULT now(),
+            UNIQUE (ship_date, sku)
+        )
+    """)
+    logger.info("startup_migrations: inventory_reconciliation_log table ensured")
+
+    # Step 3: migrate reorder_point values into configuration_params.
+    # All five key SKUs currently have reorder_point = 50 (confirmed from production).
+    cursor.execute("""
+        INSERT INTO configuration_params (category, parameter_name, sku, value) VALUES
+            ('ReorderPoint', 'reorder_point', '17612', '50'),
+            ('ReorderPoint', 'reorder_point', '17904', '50'),
+            ('ReorderPoint', 'reorder_point', '17914', '50'),
+            ('ReorderPoint', 'reorder_point', '18675', '50'),
+            ('ReorderPoint', 'reorder_point', '18795', '50')
+        ON CONFLICT (category, parameter_name, sku) DO NOTHING
+    """)
+    if cursor.rowcount > 0:
+        logger.info(f"startup_migrations: inserted {cursor.rowcount} ReorderPoint row(s) into configuration_params")
+    else:
+        logger.info("startup_migrations: ReorderPoint rows already present in configuration_params — skipping")
+
+    # Step 18: deprecation marker on inventory_current
+    cursor.execute("""
+        COMMENT ON TABLE inventory_current IS
+            'DEPRECATED as of 2026-04-21. Replaced by inventory_summary VIEW derived from lot_balances. Retained 30 days for rollback. No automated process should write to this table.'
+    """)
+    logger.info("startup_migrations: inventory_current COMMENT (deprecation marker) set")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -811,6 +886,7 @@ def run_all(conn):
             _add_manually_resolved_status(cur)
             _backfill_promo_lot_tagging_resolved_at(cur)
             _create_reconciliation_skip_cache(cur)
+            _create_inventory_architecture_objects(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:

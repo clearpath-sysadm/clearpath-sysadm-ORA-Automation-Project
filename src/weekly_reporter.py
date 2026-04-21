@@ -12,8 +12,7 @@ if project_root not in sys.path:
 # Import database utilities
 from src.services.database.pg_utils import execute_query, upsert, transaction, is_workflow_enabled, update_workflow_last_run
 
-# Import inventory and average calculations from their modules
-from src.services.reporting_logic.inventory_calculations import calculate_current_inventory
+# Import average calculations (inventory_calculations removed — lot_balances is now source of truth)
 from src.services.reporting_logic.average_calculations import calculate_12_month_rolling_average
 
 # Import centralized configuration settings
@@ -295,28 +294,8 @@ def generate_weekly_inventory_report():
     })
     logger.debug(f"Step 2 Complete: Fetched {len(weekly_shipped_history_df)} rows of weekly shipped history.")
 
-    # 3. Get Transactional Data for Current Inventory Calculation from database
-    inventory_transactions_df = get_inventory_transactions_from_db()
-    shipped_items_df = get_shipped_items_from_db()
-    logger.debug(f"Step 3 Complete: Fetched {len(inventory_transactions_df)} inventory transactions and {len(shipped_items_df)} shipped items.")
-
-    # 4. Get initial inventory and calculate current inventory
-    initial_inventory = get_initial_inventory_from_db()
-    from datetime import datetime, timedelta
-    current_week_end_date = datetime.now().date()
-    current_week_start_date = current_week_end_date - timedelta(days=7)
-    current_inventory_df = calculate_current_inventory(
-        initial_inventory, 
-        inventory_transactions_df, 
-        shipped_items_df, 
-        key_skus_list, 
-        current_week_start_date, 
-        current_week_end_date
-    )
-    if current_inventory_df is None or current_inventory_df.empty:
-        logger.error("Failed to calculate current inventory. Aborting.")
-        return
-    logger.debug(f"Step 4 Complete: Calculated current inventory for {len(current_inventory_df)} SKUs.")
+    # Steps 3+4 removed (Task #67): inventory_current is retired.
+    # lot_balances VIEW is the live source of truth — no re-calculation needed here.
 
     # 5. Calculate 12-Month Rolling Average
     rolling_average_df = calculate_12_month_rolling_average(weekly_shipped_history_df)
@@ -325,13 +304,9 @@ def generate_weekly_inventory_report():
         return
     logger.debug(f"Step 5 Complete: Calculated rolling average for {len(rolling_average_df)} SKUs.")
 
-    # 6. Save Results to Database (replaces Google Sheets write)
-    if current_inventory_df.empty:
-        logger.warning("Current inventory data is empty. Cannot save to database.")
-        return
-    
-    save_inventory_to_db(current_inventory_df, rolling_average_df, product_names_map)
-    logger.debug(f"Step 6 Complete: Saved inventory data to database.")
+    # Step 6 removed (Task #67): save_inventory_to_db (which wrote to inventory_current) retired.
+    # lot_balances VIEW auto-updates from inventory_transactions — no periodic overwrite needed.
+    logger.debug("Step 6 skipped (Task #67): lot_balances is now the live source of truth.")
 
     logger.info("--- Weekly Inventory Report Generation Finished ---")
 

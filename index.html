@@ -1163,7 +1163,7 @@
             try {
                 const [statsRes, alertsRes, automationRes, shipstationRes, localDbRes, onHoldRes] = await Promise.all([
                     fetch('/api/dashboard_stats'),
-                    fetch('/api/inventory_alerts'),
+                    fetch('/api/inventory/alerts'),
                     fetch('/api/automation_status'),
                     fetch('/api/shipstation/units_to_ship'),
                     fetch('/api/local/awaiting_shipment_count'),

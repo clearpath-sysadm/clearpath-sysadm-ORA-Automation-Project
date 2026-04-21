@@ -819,67 +819,47 @@ def api_dashboard_stats():
             'error': str(e)
         }), 500
 
-@app.route('/api/inventory_alerts')
-def api_get_inventory_alerts():
-    """Get inventory alerts for dashboard"""
-    try:
-        query = """
-            SELECT 
-                sku,
-                product_name,
-                current_quantity,
-                alert_level,
-                reorder_point,
-                last_updated
-            FROM inventory_current
-            WHERE sku IN ('17612', '17904', '17914', '18675', '18795')
-            ORDER BY 
-                CASE alert_level 
-                    WHEN 'critical' THEN 1
-                    WHEN 'warning' THEN 2
-                    ELSE 3
-                END,
-                current_quantity ASC
-        """
-        results = execute_query(query)
-        
-        alerts = []
-        for row in results:
-            sku = row[0]
-            product_name = row[1] or f'Product {sku}'
-            current_qty = row[2] or 0
-            alert_level = row[3] or 'normal'
-            reorder_point = row[4] or 100
-            
-            # Map alert_level to severity and create message
-            if alert_level == 'critical':
-                severity = 'critical'
-                message = f'Low Stock: {current_qty} units remaining'
-            elif alert_level == 'warning' or alert_level == 'low':
-                severity = 'warning'
-                message = f'Reorder Point: {current_qty} units remaining'
-            else:
-                severity = 'normal'
-                message = f'Normal Stock: {current_qty} units available'
-            
-            alerts.append({
-                'base_sku': sku,
-                'product_name': product_name,
-                'current_quantity': current_qty,
-                'severity': severity,
-                'message': message
-            })
-        
-        return jsonify({
-            'success': True,
-            'data': alerts,
-            'count': len(alerts)
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+def _get_inventory_summary_with_names():
+    """Query inventory_summary joined with product names from configuration_params.
+    Returns list of (sku, current_quantity, product_name) tuples, ordered by sku.
+    """
+    return execute_query("""
+        SELECT inv.sku, inv.current_quantity, cp.parameter_name AS product_name
+        FROM inventory_summary inv
+        LEFT JOIN configuration_params cp
+               ON cp.sku = inv.sku AND cp.category = 'Key Products'
+        ORDER BY inv.sku
+    """) or []
+
+
+def _get_reorder_points():
+    """Return dict of {sku: reorder_point} from configuration_params (category='ReorderPoint')."""
+    rows = execute_query("""
+        SELECT sku, CAST(value AS INTEGER) AS reorder_point
+        FROM configuration_params
+        WHERE category = 'ReorderPoint'
+    """)
+    return {row[0]: row[1] for row in rows} if rows else {}
+
+
+def _compute_rolling_avg(skus):
+    """52-week per-SKU weekly shipping average from weekly_shipped_history.
+    start_date is stored as text — cast to date for the interval comparison.
+    Returns dict of {sku: float}.
+    """
+    if not skus:
+        return {}
+    placeholders = ','.join(['%s'] * len(skus))
+    rows = execute_query(f"""
+        SELECT sku,
+               SUM(quantity_shipped)::numeric
+                 / NULLIF(COUNT(DISTINCT start_date), 0) AS weekly_avg
+        FROM weekly_shipped_history
+        WHERE start_date::date >= CURRENT_DATE - INTERVAL '52 weeks'
+          AND sku IN ({placeholders})
+        GROUP BY sku
+    """, tuple(skus))
+    return {row[0]: float(row[1]) if row[1] else 0.0 for row in rows} if rows else {}
 
 @app.route('/api/automation_status')
 def api_automation_status():
@@ -1929,39 +1909,29 @@ def api_kpis():
 
 @app.route('/api/inventory/alerts')
 def api_inventory_alerts():
-    """Get inventory alerts"""
+    """Get inventory alerts — reads from inventory_summary + configuration_params.
+    Returns SKUs where current_quantity < reorder_point (from ReorderPoint config).
+    """
     try:
-        query = """
-            SELECT 
-                sku,
-                product_name,
-                current_quantity,
-                reorder_point,
-                alert_level,
-                last_updated
-            FROM inventory_current
-            WHERE alert_level != 'normal'
-            ORDER BY 
-                CASE alert_level 
-                    WHEN 'critical' THEN 1
-                    WHEN 'low' THEN 2
-                    ELSE 3
-                END,
-                last_updated DESC
-        """
-        results = execute_query(query)
-        
+        rows = _get_inventory_summary_with_names()
+        reorder_points = _get_reorder_points()
+
         alerts = []
-        for row in results:
-            alerts.append({
-                'sku': row[0],
-                'product_name': row[1],
-                'current_quantity': row[2],
-                'reorder_point': row[3],
-                'alert_level': row[4],
-                'last_updated': row[5]
-            })
-        
+        for row in rows:
+            sku = str(row[0])
+            current_qty = int(row[1]) if row[1] is not None else 0
+            product_name = row[2] or f'Product {sku}'
+            reorder_point = reorder_points.get(sku, 50)
+
+            if current_qty < reorder_point:
+                alerts.append({
+                    'sku': sku,
+                    'product_name': product_name,
+                    'current_quantity': current_qty,
+                    'reorder_point': reorder_point,
+                    'is_flagged': True
+                })
+
         return jsonify(alerts)
     except Exception as e:
         return jsonify({
@@ -2187,21 +2157,29 @@ def api_get_inventory_transactions():
 
 @app.route('/api/lots_by_sku/<sku>', methods=['GET'])
 def api_lots_by_sku(sku):
-    """Return all lots for a given SKU, ordered by received_date for FIFO display."""
+    """Return all lots for a given SKU with current balance, ordered FIFO.
+    Balance comes from lot_balances VIEW (LEFT JOIN so lots with no transactions show 0).
+    """
     try:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT l.lot_id, l.lot_number, l.status, l.received_date
+            SELECT l.lot_id, l.lot_number, l.status, l.received_date,
+                   COALESCE(lb.balance, 0) AS balance
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
+            LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
             WHERE s.sku_code = %s
             ORDER BY l.received_date ASC NULLS LAST, l.lot_id ASC
         """, (sku,))
         rows = cursor.fetchall()
         conn.close()
         return jsonify([
-            {'lot_id': r[0], 'lot_number': r[1], 'status': r[2], 'received_date': str(r[3]) if r[3] else ''}
+            {
+                'lot_id': r[0], 'lot_number': r[1], 'status': r[2],
+                'received_date': str(r[3]) if r[3] else '',
+                'balance': int(r[4])
+            }
             for r in rows
         ])
     except Exception as e:
@@ -2284,10 +2262,24 @@ def api_create_inventory_transaction():
                     )
                 }), 400
 
+        # Step 9: lot_id required for all manual lot-affecting types.
+        # lot_balances VIEW only counts rows where lot_id IS NOT NULL, so a transaction
+        # entered without a lot has no effect on the live balance — confusing to operators.
+        LOT_REQUIRED_TYPES = ['Receive', 'Adjust Up', 'Adjust Down', 'Repack']
+        if transaction_type in LOT_REQUIRED_TYPES and lot_id is None:
+            return jsonify({
+                'success': False,
+                'error': (
+                    f'{transaction_type} transactions require a lot. '
+                    f'Select the lot this transaction applies to from the lot dropdown.'
+                )
+            }), 400
+
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Insert transaction
+
+        # Insert transaction — lot_balances VIEW recalculates automatically from
+        # inventory_transactions, so no secondary UPDATE to inventory_current is needed.
         cursor.execute("""
             INSERT INTO inventory_transactions
                 (date, sku, quantity, transaction_type, notes, lot_id)
@@ -2295,43 +2287,10 @@ def api_create_inventory_transaction():
             RETURNING id
         """, (date, sku, quantity, transaction_type, notes, lot_id))
         transaction_id = cursor.fetchone()[0]
-        
-        # Update inventory_current based on transaction type
-        # Increase: Receive, Adjust Up, Repack
-        # Decrease: Ship, Adjust Down
-        if transaction_type in ['Receive', 'Adjust Up', 'Repack']:
-            delta = quantity
-        else:  # Ship, Adjust Down
-            delta = -quantity
-        
-        # Update current quantity in inventory_current
-        cursor.execute("""
-            UPDATE inventory_current 
-            SET current_quantity = current_quantity + %s,
-                last_updated = CURRENT_TIMESTAMP
-            WHERE sku = %s
-        """, (delta, sku))
-        
-        # If SKU doesn't exist in inventory_current, we need to handle it
-        # (though this shouldn't happen for valid SKUs)
-        if cursor.rowcount == 0:
-            # Get product name from configuration
-            cursor.execute("""
-                SELECT parameter_name FROM configuration_params 
-                WHERE category = 'Key Products' AND sku = %s
-            """, (sku,))
-            result = cursor.fetchone()
-            product_name = result[0] if result else 'Unknown Product'
-            
-            # Insert new record
-            cursor.execute("""
-                INSERT INTO inventory_current (sku, product_name, current_quantity, weekly_avg_cents, alert_level, reorder_point)
-                VALUES (%s, %s, %s, 0, 'normal', 50)
-            """, (sku, product_name, max(0, delta)))
-        
+
         conn.commit()
         conn.close()
-        
+
         server_logger.info(f"Inventory transaction created: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
         
         return jsonify({
@@ -2421,10 +2380,21 @@ def api_update_inventory_transaction(transaction_id):
                     )
                 }), 400
 
+        # Step 9: lot_id required for manual lot-affecting types (same guard as create path).
+        LOT_REQUIRED_TYPES = ['Receive', 'Adjust Up', 'Adjust Down', 'Repack']
+        if transaction_type in LOT_REQUIRED_TYPES and lot_id is None:
+            return jsonify({
+                'success': False,
+                'error': (
+                    f'{transaction_type} transactions require a lot. '
+                    f'Select the lot this transaction applies to from the lot dropdown.'
+                )
+            }), 400
+
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Get old transaction to reverse its effect
+
+        # Get old transaction (needed to check it exists)
         cursor.execute("""
             SELECT sku, quantity, transaction_type 
             FROM inventory_transactions 
@@ -2440,40 +2410,15 @@ def api_update_inventory_transaction(transaction_id):
             }), 404
         
         old_sku, old_quantity, old_type = old_transaction
-        
-        # Reverse old transaction effect
-        if old_type in ['Receive', 'Adjust Up', 'Repack']:
-            old_delta = -old_quantity  # Reverse the increase
-        else:
-            old_delta = old_quantity  # Reverse the decrease
-        
-        cursor.execute("""
-            UPDATE inventory_current 
-            SET current_quantity = current_quantity + %s,
-                last_updated = CURRENT_TIMESTAMP
-            WHERE sku = %s
-        """, (old_delta, old_sku))
-        
-        # Update the transaction
+
+        # Update the transaction — lot_balances VIEW recalculates automatically.
+        # No secondary UPDATE to inventory_current is needed.
         cursor.execute("""
             UPDATE inventory_transactions 
             SET date = %s, sku = %s, quantity = %s, transaction_type = %s, notes = %s, lot_id = %s
             WHERE id = %s
         """, (date, sku, quantity, transaction_type, notes, lot_id, transaction_id))
-        
-        # Apply new transaction effect
-        if transaction_type in ['Receive', 'Adjust Up', 'Repack']:
-            new_delta = quantity
-        else:
-            new_delta = -quantity
-        
-        cursor.execute("""
-            UPDATE inventory_current 
-            SET current_quantity = current_quantity + %s,
-                last_updated = CURRENT_TIMESTAMP
-            WHERE sku = %s
-        """, (new_delta, sku))
-        
+
         conn.commit()
         conn.close()
         
@@ -2527,21 +2472,9 @@ def api_delete_inventory_transaction(transaction_id):
             }), 404
         
         sku, quantity, transaction_type = transaction
-        
-        # Reverse transaction effect on inventory_current
-        if transaction_type in ['Receive', 'Adjust Up', 'Repack']:
-            delta = -quantity  # Reverse the increase
-        else:
-            delta = quantity  # Reverse the decrease
-        
-        cursor.execute("""
-            UPDATE inventory_current 
-            SET current_quantity = current_quantity + %s,
-                last_updated = CURRENT_TIMESTAMP
-            WHERE sku = %s
-        """, (delta, sku))
-        
-        # Now delete the transaction
+
+        # Delete the transaction — lot_balances VIEW recalculates automatically.
+        # No reversal UPDATE to inventory_current is needed.
         cursor.execute("DELETE FROM inventory_transactions WHERE id = %s", (transaction_id,))
         conn.commit()
         conn.close()
@@ -2647,50 +2580,55 @@ def api_inventory_snapshots():
 @app.route('/api/physical_count_adjustment', methods=['POST'])
 def api_physical_count_adjustment():
     """
-    Create inventory adjustment from physical count.
-    Tracks user, timezone, and requires admin for adjustments > 4 units.
+    Create inventory adjustment from physical count — lot-aware (Step 10).
+    Reads the baseline from lot_balances for the given lot_id, computes delta,
+    inserts an Adjust Up/Down transaction with lot_id set.
+    Requires admin for adjustments > 4 units.
     """
     try:
         from datetime import datetime
         from pytz import timezone as pytz_timezone
-        
+
         data = request.get_json()
         sku = data.get('sku')
+        lot_id = data.get('lot_id')
         physical_count = data.get('physical_count')
         reason = data.get('reason', '').strip()
         user_timezone = data.get('user_timezone', 'UTC')
-        
-        if not all([sku, physical_count is not None, reason]):
+
+        if not all([sku, lot_id is not None, physical_count is not None, reason]):
             return jsonify({
                 'success': False,
-                'error': 'Missing required fields: sku, physical_count, reason'
+                'error': 'Missing required fields: sku, lot_id, physical_count, reason'
             }), 400
-        
+
+        lot_id = int(lot_id)
         physical_count = int(physical_count)
         if physical_count < 0:
             return jsonify({
                 'success': False,
                 'error': 'Physical count cannot be negative'
             }), 400
-        
+
         conn = get_connection()
         cursor = conn.cursor()
-        
+
+        # Read current lot balance from lot_balances VIEW (live, lot-specific)
         cursor.execute("""
-            SELECT current_quantity FROM inventory_current WHERE sku = %s
-        """, (sku,))
+            SELECT balance FROM lot_balances WHERE lot_id = %s
+        """, (lot_id,))
         result = cursor.fetchone()
-        
+
         if not result:
             conn.close()
             return jsonify({
                 'success': False,
-                'error': f'SKU {sku} not found in inventory'
+                'error': f'Lot {lot_id} not found'
             }), 404
-        
-        system_quantity = result[0]
-        difference = physical_count - system_quantity
-        
+
+        lot_balance = int(result[0])
+        difference = physical_count - lot_balance
+
         if difference == 0:
             conn.close()
             return jsonify({
@@ -2698,7 +2636,7 @@ def api_physical_count_adjustment():
                 'message': 'No adjustment needed - counts match',
                 'difference': 0
             })
-        
+
         if abs(difference) > 4 and current_user.role != 'admin':
             conn.close()
             return jsonify({
@@ -2707,47 +2645,45 @@ def api_physical_count_adjustment():
                 'requires_admin': True,
                 'difference': difference
             }), 403
-        
+
         transaction_type = 'Adjust Up' if difference > 0 else 'Adjust Down'
         quantity = abs(difference)
-        
+
         try:
             tz = pytz_timezone(user_timezone)
             local_time = datetime.now(tz)
             formatted_time = local_time.strftime('%Y-%m-%d %I:%M %p %Z')
         except:
             formatted_time = datetime.now().strftime('%Y-%m-%d %I:%M %p UTC')
-        
+
         user_name = f"{current_user.first_name} {current_user.last_name}".strip() or current_user.email
-        detailed_notes = f"Physical count adjustment: {reason} | Adjusted by: {user_name} | Time: {formatted_time} | System: {system_quantity} → Physical: {physical_count} (Δ{difference:+d})"
-        
+        detailed_notes = (
+            f"Physical count adjustment: {reason} | Adjusted by: {user_name} | "
+            f"Time: {formatted_time} | Lot balance: {lot_balance} → Physical: {physical_count} (Δ{difference:+d})"
+        )
+
         today = datetime.now().strftime('%Y-%m-%d')
-        
+
+        # Insert with lot_id — lot_balances VIEW recalculates automatically.
+        # No UPDATE inventory_current — that table is retired (Task #67).
         cursor.execute("""
-            INSERT INTO inventory_transactions 
-            (date, sku, quantity, transaction_type, notes, created_at)
-            VALUES (%s, %s, %s, %s, %s, NOW())
-        """, (today, sku, quantity, transaction_type, detailed_notes))
-        
-        cursor.execute("""
-            UPDATE inventory_current 
-            SET current_quantity = %s, 
-                last_updated = NOW()
-            WHERE sku = %s
-        """, (physical_count, sku))
-        
+            INSERT INTO inventory_transactions
+            (date, sku, quantity, transaction_type, notes, lot_id, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+        """, (today, sku, quantity, transaction_type, detailed_notes, lot_id))
+
         conn.commit()
         conn.close()
-        
+
         return jsonify({
             'success': True,
-            'message': f'Inventory adjusted: {system_quantity} → {physical_count} ({difference:+d} units)',
+            'message': f'Lot {lot_id} adjusted: {lot_balance} → {physical_count} ({difference:+d} units)',
             'difference': difference,
             'transaction_type': transaction_type,
             'adjusted_by': user_name,
             'timestamp': formatted_time
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -2756,51 +2692,45 @@ def api_physical_count_adjustment():
 
 @app.route('/api/weekly_inventory_report', methods=['GET'])
 def api_weekly_inventory_report():
-    """Get weekly inventory report with current quantities and rolling averages"""
+    """Get weekly inventory report — reads from lot_balances via inventory_summary.
+    Steps 4+6: current_qty from inventory_summary, rolling avg from weekly_shipped_history.
+    """
     try:
-        query = """
-            SELECT 
-                sku,
-                product_name,
-                current_quantity,
-                weekly_avg_cents,
-                alert_level,
-                reorder_point,
-                last_updated
-            FROM inventory_current
+        KEY_SKUS = ['17612', '17904', '17914', '18675', '18795']
+
+        inv_rows = _get_inventory_summary_with_names()
+        reorder_points = _get_reorder_points()
+        rolling_avgs = _compute_rolling_avg(KEY_SKUS)
+
+        last_updated_rows = execute_query("""
+            SELECT sku, MAX(created_at)
+            FROM inventory_transactions
             WHERE sku IN ('17612', '17904', '17914', '18675', '18795')
-            ORDER BY sku
-        """
-        results = execute_query(query)
-        
-        # Get pallet configuration
-        pallet_query = """
+            GROUP BY sku
+        """) or []
+        last_updated = {str(r[0]): str(r[1]) if r[1] else None for r in last_updated_rows}
+
+        pallet_results = execute_query("""
             SELECT sku, CAST(value AS INTEGER) as units_per_pallet
             FROM configuration_params
             WHERE category = 'PalletConfig' AND parameter_name = 'PalletCount'
-            AND sku IN ('17612', '17904', '17914', '18675', '18795')
-        """
-        pallet_results = execute_query(pallet_query)
+              AND sku IN ('17612', '17904', '17914', '18675', '18795')
+        """) or []
         pallet_config = {str(row[0]): row[1] for row in pallet_results}
-        
+
         report = []
-        for row in results:
+        for row in inv_rows:
             sku = str(row[0])
-            product_name = row[1] or f'Product {sku}'  # Use database value
-            current_qty = row[2] or 0
-            weekly_avg_cents = row[3] or 0
-            
-            # Note: Despite the column name, values are stored as whole units, not cents
-            weekly_avg = float(weekly_avg_cents) if weekly_avg_cents else 0.0
-            
-            # Calculate estimated days left
+            current_qty = int(row[1]) if row[1] is not None else 0
+            product_name = row[2] or f'Product {sku}'
+            weekly_avg = rolling_avgs.get(sku, 0.0)
+
             if weekly_avg > 0:
-                daily_consumption = weekly_avg / 7.0  # Convert weekly to daily
+                daily_consumption = weekly_avg / 7.0
                 days_left = round(current_qty / daily_consumption) if daily_consumption > 0 else 999
             else:
-                days_left = 999  # Infinite/unknown if no consumption history
-            
-            # Calculate pallet breakdown for physical inventory verification
+                days_left = 999
+
             units_per_pallet = pallet_config.get(sku, 0)
             if units_per_pallet > 0:
                 full_pallets = current_qty // units_per_pallet
@@ -2808,31 +2738,29 @@ def api_weekly_inventory_report():
             else:
                 full_pallets = 0
                 partial_units = current_qty
-            
+
             report.append({
                 'sku': sku,
                 'product_name': product_name,
                 'current_quantity': current_qty,
                 'rolling_avg_52_weeks': weekly_avg,
                 'days_left': days_left,
-                'reorder_point': row[5] or 0,
-                'last_updated': row[6],
+                'reorder_point': reorder_points.get(sku, 50),
+                'last_updated': last_updated.get(sku),
                 'full_pallets': full_pallets,
                 'partial_units': partial_units,
                 'units_per_pallet': units_per_pallet
             })
-        
-        # Get the "As Of" date from configuration_params
-        as_of_date_query = """
+
+        as_of_date_result = execute_query("""
             SELECT value
             FROM configuration_params
-            WHERE category = 'System' 
-                AND parameter_name = 'inventory_as_of_date'
-                AND sku = ''
-        """
-        as_of_date_result = execute_query(as_of_date_query)
+            WHERE category = 'System'
+              AND parameter_name = 'inventory_as_of_date'
+              AND sku = ''
+        """)
         as_of_date = as_of_date_result[0][0] if as_of_date_result and as_of_date_result[0][0] else None
-        
+
         return jsonify({
             'success': True,
             'data': report,
@@ -2994,9 +2922,9 @@ def api_run_eod():
                 snapshot_conn = get_connection()
                 cursor = snapshot_conn.cursor()
                 
-                # Get current EOD inventory from inventory_current
+                # Get current EOD inventory from inventory_summary (lot_balances-derived, live)
                 cursor.execute("""
-                    SELECT sku, current_quantity FROM inventory_current 
+                    SELECT sku, current_quantity FROM inventory_summary
                     WHERE sku IN ('17612', '17904', '17914', '18675', '18795')
                 """)
                 current_inventory = cursor.fetchall()
@@ -3722,6 +3650,62 @@ def api_report_status():
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/reports/reconciliation_log', methods=['GET'])
+def api_reconciliation_log():
+    """Step 15: Return recent rows from inventory_reconciliation_log.
+    Schema: one row per (ship_date, sku).
+    gap = lot_deduction_qty - shipped_items_qty (negative = under-deducted).
+    gap_pct = ABS(gap) / shipped_items_qty * 100.
+    Supports ?sku=, ?limit=, ?days= query params.
+    """
+    try:
+        sku_filter = request.args.get('sku')
+        limit = min(int(request.args.get('limit', 200)), 1000)
+        days = int(request.args.get('days', 30))
+
+        if sku_filter:
+            rows = execute_query(f"""
+                SELECT ship_date, run_date, sku,
+                       shipped_items_qty, lot_deduction_qty,
+                       gap, gap_pct, alert_threshold, is_flagged, notes
+                FROM inventory_reconciliation_log
+                WHERE ship_date >= CURRENT_DATE - INTERVAL '{days} days'
+                  AND sku = %s
+                ORDER BY ship_date DESC, sku
+                LIMIT %s
+            """, (sku_filter, limit))
+        else:
+            rows = execute_query(f"""
+                SELECT ship_date, run_date, sku,
+                       shipped_items_qty, lot_deduction_qty,
+                       gap, gap_pct, alert_threshold, is_flagged, notes
+                FROM inventory_reconciliation_log
+                WHERE ship_date >= CURRENT_DATE - INTERVAL '{days} days'
+                ORDER BY ship_date DESC, sku
+                LIMIT %s
+            """, (limit,))
+
+        data = [
+            {
+                'ship_date': str(r[0]),
+                'run_date': str(r[1]),
+                'sku': r[2],
+                'shipped_items_qty': r[3],
+                'lot_deduction_qty': r[4],
+                'gap': r[5],
+                'gap_pct': float(r[6]) if r[6] is not None else None,
+                'alert_threshold': r[7],
+                'is_flagged': r[8],
+                'notes': r[9],
+            }
+            for r in rows
+        ] if rows else []
+
+        return jsonify({'success': True, 'data': data, 'count': len(data)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/weekly_shipped_history', methods=['GET'])
 def api_weekly_shipped_history():
@@ -7766,12 +7750,8 @@ def api_create_lot_inventory():
                 ON CONFLICT DO NOTHING
             """, (received_date, sku, initial_qty, new_lot_id))
 
-            cursor.execute("""
-                UPDATE inventory_current
-                SET current_quantity = current_quantity + %s,
-                    last_updated = CURRENT_TIMESTAMP
-                WHERE sku = %s
-            """, (initial_qty, sku))
+            # inventory_current write removed (Task #67): lot_balances VIEW recalculates
+            # automatically from inventory_transactions, so the Receive row above is sufficient.
 
         conn.commit()
         conn.close()
