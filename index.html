@@ -846,7 +846,7 @@
                                     📦 ${palletBreakdown}
                                 </span>
                             </td>
-                            <td style="text-align: right;">${item.rolling_avg_52_weeks}</td>
+                            <td style="text-align: right;">${Math.round(item.rolling_avg_52_weeks)}</td>
                             <td style="text-align: center;">
                                 <span class="badge badge-${statusClass}">
                                     <span class="status-indicator status-${statusClass === 'critical' ? 'red' : statusClass === 'warning' ? 'yellow' : 'green'}"></span>
@@ -977,7 +977,7 @@
                             <span style="font-size: 0.85em; color: #666;">SKU: ${escapeHtml(String(item.sku))}</span>
                         </td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(String(item.current_quantity))}</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${escapeHtml(String(item.rolling_avg_52_weeks))}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${escapeHtml(String(Math.round(item.rolling_avg_52_weeks)))}</td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${escapeHtml(String(daysLeft))}</td>
                     </tr>
                 `;}).join('');
@@ -1004,7 +1004,7 @@
                     const productName = (item.product_name || item.sku).padEnd(25);
                     const sku = String(item.sku).padEnd(6);
                     const current = String(item.current_quantity).padStart(11);
-                    const avg = String(item.rolling_avg_52_weeks).padStart(11);
+                    const avg = String(Math.round(item.rolling_avg_52_weeks)).padStart(11);
                     const daysLeft = item.days_left >= 999 ? '∞' : String(item.days_left);
                     const daysLeftPadded = daysLeft.padStart(9);
                     return `${productName} | ${sku} | ${current} | ${avg} | ${daysLeftPadded}`;

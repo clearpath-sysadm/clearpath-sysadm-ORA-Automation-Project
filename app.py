@@ -845,21 +845,22 @@ def _get_reorder_points():
 def _compute_rolling_avg(skus):
     """52-week per-SKU weekly shipping average from weekly_shipped_history.
     start_date is stored as text — cast to date for the interval comparison.
-    Returns dict of {sku: float}.
+    Divides by 52 (not by the count of weeks with shipments) so that weeks
+    with zero shipments are correctly counted as zero rather than excluded.
+    Returns dict of {sku: int}.
     """
     if not skus:
         return {}
     placeholders = ','.join(['%s'] * len(skus))
     rows = execute_query(f"""
         SELECT sku,
-               SUM(quantity_shipped)::numeric
-                 / NULLIF(COUNT(DISTINCT start_date), 0) AS weekly_avg
+               SUM(quantity_shipped)::numeric / 52.0 AS weekly_avg
         FROM weekly_shipped_history
         WHERE start_date::date >= CURRENT_DATE - INTERVAL '52 weeks'
           AND sku IN ({placeholders})
         GROUP BY sku
     """, tuple(skus))
-    return {row[0]: float(row[1]) if row[1] else 0.0 for row in rows} if rows else {}
+    return {row[0]: round(float(row[1])) if row[1] else 0 for row in rows} if rows else {}
 
 @app.route('/api/automation_status')
 def api_automation_status():
