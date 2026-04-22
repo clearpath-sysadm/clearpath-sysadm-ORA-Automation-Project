@@ -10236,7 +10236,7 @@ def shipstation_backfill_sync():
 def api_resync_shipped_deductions():
     """
     Re-run inventory deductions for shipped orders that have no inventory_transactions row.
-    Useful for recovering orders missed while the webhook pipeline was broken.
+    Quantities are fetched live from ShipStation so stale local quantities are never used.
 
     Optional JSON body:
         ship_date_start: 'YYYY-MM-DD'
@@ -10244,7 +10244,13 @@ def api_resync_shipped_deductions():
     """
     from src.services.inventory.lot_deduction import deduct_lot_inventory
     from src.services.database.pg_utils import transaction_with_retry
+    from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+    from config.settings import SHIPSTATION_ORDERS_ENDPOINT
+    from utils.api_utils import make_api_request
     import datetime as _dt
+    import time as _time
+
+    _KEY_SKUS = {'17612', '17904', '17914', '18675', '18795'}
 
     try:
         data = request.get_json(silent=True) or {}
@@ -10260,62 +10266,97 @@ def api_resync_shipped_deductions():
             date_filter += " AND so.ship_date <= %s"
             date_params.append(ship_date_end)
 
+        # Step 1: find shipped, lot-stamped orders with no existing Ship transaction.
+        # One row per order — quantities come from ShipStation, not the local DB.
         with transaction_with_retry() as conn:
             cursor = conn.cursor()
-
             cursor.execute(f"""
-                SELECT
+                SELECT DISTINCT
                     oi.order_number,
                     oi.shipstation_order_id,
-                    oi.lot_stamp,
-                    oii.sku        AS base_sku,
-                    oii.quantity,
-                    COALESCE(so.ship_date::text, CURRENT_DATE::text) AS ship_date
+                    oi.lot_stamp
                 FROM orders_inbox oi
-                JOIN order_items_inbox oii ON oii.order_inbox_id = oi.id
                 LEFT JOIN shipped_orders so ON so.order_number = oi.order_number
-                LEFT JOIN inventory_transactions it2
-                       ON it2.shipstation_order_id = oi.shipstation_order_id
-                      AND it2.transaction_type = 'Ship'
                 WHERE oi.status = 'shipped'
                   AND oi.lot_stamp IS NOT NULL
                   AND oi.shipstation_order_id IS NOT NULL
-                  AND oii.sku = ANY(%s)
-                  AND it2.id IS NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM inventory_transactions it2
+                      WHERE it2.shipstation_order_id = oi.shipstation_order_id
+                        AND it2.transaction_type = 'Ship'
+                  )
                   {date_filter}
                 ORDER BY oi.order_number
-            """, [['17612', '17904', '17914', '18675', '18795']] + date_params)
-
+            """, date_params)
             rows = cursor.fetchall()
 
         if not rows:
-            return jsonify({'success': True, 'message': 'No missing deductions found', 'processed': 0})
+            return jsonify({'success': True, 'message': 'No missing deductions found',
+                            'deducted': 0, 'skipped': 0, 'total_rows_found': 0})
+
+        # Step 2: fetch live quantities from ShipStation and deduct.
+        api_key, api_secret = get_shipstation_credentials()
+        ss_headers = get_shipstation_headers(api_key, api_secret)
 
         deducted = 0
         skipped = 0
         errors = []
 
         with transaction_with_retry() as conn:
-            for order_number, ss_order_id, lot_stamp, base_sku, quantity, ship_date in rows:
+            for order_number, ss_order_id, lot_stamp in rows:
                 try:
-                    ship_date_obj = _dt.date.fromisoformat(str(ship_date)[:10])
-                    result = deduct_lot_inventory(
-                        order_number=order_number,
-                        shipstation_order_id=str(ss_order_id),
-                        base_sku=base_sku,
-                        customField1_value=lot_stamp or '',
-                        ship_date=ship_date_obj,
-                        quantity=quantity,
-                        conn=conn,
+                    # Fetch live order from ShipStation.
+                    resp = make_api_request(
+                        url=f"{SHIPSTATION_ORDERS_ENDPOINT}/{ss_order_id}",
+                        method='GET',
+                        headers=ss_headers,
+                        timeout=30,
                     )
-                    if result:
-                        deducted += 1
-                        logger.info(f"Resync: deducted {quantity} units of {base_sku} for order {order_number}")
-                    else:
-                        skipped += 1
+                    if not resp or resp.status_code != 200:
+                        errors.append(f"{order_number}: ShipStation fetch failed (HTTP {resp.status_code if resp else 'no response'})")
+                        logger.error(f"Resync: failed to fetch SS order {ss_order_id} for {order_number}")
+                        continue
+
+                    ss_order = resp.json()
+
+                    # Parse ship date from the live order.
+                    ship_date_str = ss_order.get('shipDate', '')
+                    try:
+                        ship_date_obj = _dt.date.fromisoformat(ship_date_str[:10])
+                    except Exception:
+                        ship_date_obj = _dt.date.today()
+
+                    # Deduct each key-SKU line item using the live quantity.
+                    for item in ss_order.get('items', []):
+                        sku_raw = str(item.get('sku', '')).strip()
+                        quantity = item.get('quantity', 0)
+                        if not sku_raw or quantity <= 0:
+                            continue
+                        base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                        if base_sku not in _KEY_SKUS:
+                            continue
+
+                        result = deduct_lot_inventory(
+                            order_number=order_number,
+                            shipstation_order_id=str(ss_order_id),
+                            base_sku=base_sku,
+                            customField1_value=lot_stamp or '',
+                            ship_date=ship_date_obj,
+                            quantity=quantity,
+                            conn=conn,
+                        )
+                        if result:
+                            deducted += 1
+                            logger.info(f"Resync: deducted {quantity} units of {base_sku} for order {order_number}")
+                        else:
+                            skipped += 1
+
                 except Exception as _row_err:
-                    errors.append(f"{order_number}/{base_sku}: {_row_err}")
-                    logger.error(f"Resync error for {order_number}/{base_sku}: {_row_err}", exc_info=True)
+                    errors.append(f"{order_number}: {_row_err}")
+                    logger.error(f"Resync error for {order_number}: {_row_err}", exc_info=True)
+
+                # Stay under ShipStation's rate limit (500 req/hr).
+                _time.sleep(0.5)
 
         user_email = current_user.email if current_user.is_authenticated else 'unknown'
         server_logger.info(

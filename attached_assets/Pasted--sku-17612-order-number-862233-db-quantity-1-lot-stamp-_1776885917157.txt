@@ -1,0 +1,1430 @@
+[
+  {
+    "sku": "17612",
+    "order_number": "862233",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862238",
+    "db_quantity": 5,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862243",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862246",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862249",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862252",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862255",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862256",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862257",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862260",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862261",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862265",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862266",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862270",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862271",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862273",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862274",
+    "db_quantity": 10,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862275",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862276",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862277",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862279",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862284",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862285",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862287",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862288",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862289",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862291",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862292",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862294",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862296",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862297",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862300",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862302",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862303",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862304",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862305",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862306",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862307",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862308",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862309",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862310",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862311",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862314",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862316",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862317",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862318",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862319",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862320",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862321",
+    "db_quantity": 5,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862322",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862323",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862324",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862325",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862334",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862335",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862337",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862338",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862339",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862340",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862341",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862342",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862343",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862344",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862345",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862346",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862347",
+    "db_quantity": 8,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862350",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862352",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862355",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862357",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862359",
+    "db_quantity": 8,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862360",
+    "db_quantity": 5,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862361",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862362",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862363",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862364",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862366",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862367",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862368",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862369",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862371",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862372",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862373",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862374",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862376",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862377",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862378",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862379",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862381",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862383",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862384",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862385",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862387",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862388",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862389",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862391",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862392",
+    "db_quantity": 6,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862393",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862394",
+    "db_quantity": 6,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862395",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862396",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862399",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862400",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862401",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862402",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862403",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862404",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862406",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862407",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862410",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862411",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862419",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862420",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862421",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862422",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862424",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862425",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862426",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862428",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862429",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862432",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862433",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862436",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862437",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862438",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862439",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862440",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862441",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862442",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862447",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862448",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862449",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862450",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862451",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862452",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862454",
+    "db_quantity": 10,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862456",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862457",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862458",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862459",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862460",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862463",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862464",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862465",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862466",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862467",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862468",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862469",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862470",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862471",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862472",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862473",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862474",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862480",
+    "db_quantity": 4,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862481",
+    "db_quantity": 6,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862482",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862489",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862491",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862492",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862493",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862495",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862496",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862501",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862502",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862504",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862505",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862506",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862507",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862508",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862510",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862512",
+    "db_quantity": 3,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862515",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862516",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862517",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862525",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862527",
+    "db_quantity": 2,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862528",
+    "db_quantity": 5,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862529",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17612",
+    "order_number": "862531",
+    "db_quantity": 1,
+    "lot_stamp": "17612 - 260047"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862247",
+    "db_quantity": 2,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862258",
+    "db_quantity": 2,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862272",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862301",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862332",
+    "db_quantity": 4,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862349",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862351",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862358",
+    "db_quantity": 2,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862365",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862375",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862386",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862412",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862418",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862479",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862487",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17904",
+    "order_number": "862532",
+    "db_quantity": 1,
+    "lot_stamp": "17904 - 250240"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862244",
+    "db_quantity": 2,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862245",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862250",
+    "db_quantity": 4,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862253",
+    "db_quantity": 4,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862333",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862370",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862382",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862397",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862405",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862408",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862409",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862414",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862431",
+    "db_quantity": 2,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862461",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862475",
+    "db_quantity": 3,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862484",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862488",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862490",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862497",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862498",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862500",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862503",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862511",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862514",
+    "db_quantity": 2,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "17914",
+    "order_number": "862518",
+    "db_quantity": 1,
+    "lot_stamp": "17914 - 250297"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862241",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862251",
+    "db_quantity": 15,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862254",
+    "db_quantity": 53,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862295",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862312",
+    "db_quantity": 2,
+    "lot_stamp": "18675 - 260052"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862313",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862315",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862398",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862413",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862415",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862423",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862427",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862483",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 260052"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862513",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 260052"
+  },
+  {
+    "sku": "18675",
+    "order_number": "862530",
+    "db_quantity": 1,
+    "lot_stamp": "18675 - 240231"
+  },
+  {
+    "sku": "18795",
+    "order_number": "862453",
+    "db_quantity": 6,
+    "lot_stamp": "18795 - 11001"
+  },
+  {
+    "sku": "18795",
+    "order_number": "862499",
+    "db_quantity": 1,
+    "lot_stamp": "18795 - 11001"
+  },
+  {
+    "sku": "18795",
+    "order_number": "862509",
+    "db_quantity": 5,
+    "lot_stamp": "18795 - 11001"
+  }
+]

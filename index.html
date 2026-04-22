@@ -2275,11 +2275,16 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    statusDiv.textContent = `✅ ${result.deducted} deducted`;
-                    const errCount = result.errors ? result.errors.length : 0;
-                    const msg = `Resync complete:\n• ${result.deducted} deductions created\n• ${result.skipped} already existed (skipped)\n• ${result.total_rows_found} total orders checked` +
-                        (errCount > 0 ? `\n\n⚠️ ${errCount} error(s):\n${result.errors.join('\n')}` : '');
-                    alert(msg);
+                    if (result.message) {
+                        statusDiv.textContent = '✅ Done';
+                        alert(result.message);
+                    } else {
+                        statusDiv.textContent = `✅ ${result.deducted} deducted`;
+                        const errCount = result.errors ? result.errors.length : 0;
+                        const msg = `Resync complete:\n• ${result.deducted} deductions created\n• ${result.skipped} already existed (skipped)\n• ${result.total_rows_found} total orders checked` +
+                            (errCount > 0 ? `\n\n⚠️ ${errCount} error(s):\n${result.errors.join('\n')}` : '');
+                        alert(msg);
+                    }
                 } else {
                     statusDiv.textContent = '❌ Failed';
                     alert('Resync failed: ' + (result.error || 'Unknown error'));
