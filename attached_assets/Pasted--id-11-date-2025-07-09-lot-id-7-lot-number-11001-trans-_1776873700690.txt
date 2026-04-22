@@ -1,0 +1,192 @@
+[
+  {
+    "id": 11,
+    "date": "2025-07-09",
+    "lot_id": 7,
+    "lot_number": "11001",
+    "transaction_type": "Receive",
+    "quantity": 933,
+    "running_balance": "933",
+    "notes": "11001"
+  },
+  {
+    "id": 1958,
+    "date": "2026-04-17",
+    "lot_id": 7,
+    "lot_number": "11001",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "running_balance": "934",
+    "notes": "862419"
+  },
+  {
+    "id": 1961,
+    "date": "2026-04-17",
+    "lot_id": 7,
+    "lot_number": "11001",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "running_balance": "935",
+    "notes": "862426"
+  },
+  {
+    "id": 1989,
+    "date": "2026-04-21",
+    "lot_id": 7,
+    "lot_number": "11001",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "running_balance": "941",
+    "notes": "862453"
+  },
+  {
+    "id": 12,
+    "date": "2025-07-09",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Receive",
+    "quantity": 935,
+    "running_balance": "935",
+    "notes": "11002"
+  },
+  {
+    "id": 13,
+    "date": "2025-07-09",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Receive",
+    "quantity": 1018,
+    "running_balance": "1953",
+    "notes": "11003"
+  },
+  {
+    "id": 14,
+    "date": "2025-07-09",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Receive",
+    "quantity": 1034,
+    "running_balance": "2987",
+    "notes": "11004"
+  },
+  {
+    "id": 15,
+    "date": "2025-07-09",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Receive",
+    "quantity": 556,
+    "running_balance": "3543",
+    "notes": "11005"
+  },
+  {
+    "id": 16,
+    "date": "2025-07-09",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Receive",
+    "quantity": 996,
+    "running_balance": "4539",
+    "notes": "11006"
+  },
+  {
+    "id": 17,
+    "date": "2025-07-09",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Receive",
+    "quantity": 766,
+    "running_balance": "5305",
+    "notes": "11007"
+  },
+  {
+    "id": 19,
+    "date": "2025-07-16",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Receive",
+    "quantity": 996,
+    "running_balance": "6301",
+    "notes": "11008"
+  },
+  {
+    "id": 20,
+    "date": "2025-07-16",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Receive",
+    "quantity": 594,
+    "running_balance": "6895",
+    "notes": "11009"
+  },
+  {
+    "id": 69,
+    "date": "2025-10-01",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Adjust Down",
+    "quantity": 1,
+    "running_balance": "6896",
+    "notes": "Shipped UPS"
+  },
+  {
+    "id": 84,
+    "date": "2025-10-31",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Adjust Up",
+    "quantity": 3,
+    "running_balance": "6899",
+    "notes": "Physical count adjustment: Physical count | Adjusted by: Nathan Neely | Time: 2025-10-31 03:00 PM CDT | System: 7668 → Physical: 7671 (Δ+3)"
+  },
+  {
+    "id": 86,
+    "date": "2025-11-04",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Adjust Up",
+    "quantity": 1,
+    "running_balance": "6900",
+    "notes": "Physical count adjustment: Physical Count | Adjusted by: Nathan Neely | Time: 2025-11-04 04:35 PM CST | System: 7670 → Physical: 7671 (Δ+1)"
+  },
+  {
+    "id": 97,
+    "date": "2025-12-05",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Adjust Down",
+    "quantity": 12,
+    "running_balance": "6912",
+    "notes": "Physical count adjustment: physical count / 12-05-2025 G | Adjusted by: None None | Time: 2025-12-05 01:48 PM CST | System: 7623 → Physical: 7611 (Δ-12)"
+  },
+  {
+    "id": 100,
+    "date": "2025-12-31",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Adjust Up",
+    "quantity": 10,
+    "running_balance": "6922",
+    "notes": "Physical count adjustment: This count has been off for some time.  Nathan to investigate root cause. | Adjusted by: None None | Time: 2025-12-31 04:32 PM CST | System: 7591 → Physical: 7601 (Δ+10)"
+  },
+  {
+    "id": 119,
+    "date": "2026-03-16",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Ship",
+    "quantity": 444,
+    "running_balance": "7366",
+    "notes": "11001"
+  },
+  {
+    "id": 120,
+    "date": "2026-03-16",
+    "lot_id": null,
+    "lot_number": null,
+    "transaction_type": "Ship",
+    "quantity": 222,
+    "running_balance": "7588",
+    "notes": "11002"
+  }
+]
