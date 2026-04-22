@@ -64,7 +64,7 @@ WORKFLOW_NAME = 'unified-shipstation-sync'
 # Fixed daily run times in CDT/CST (America/Chicago).
 # ZoneInfo handles CDT↔CST transitions automatically.
 _SCHEDULE_TZ = ZoneInfo('America/Chicago')
-_DAILY_RUN_TIMES = [(6, 0), (12, 0), (12, 30)]  # (hour, minute)
+_DAILY_RUN_TIMES = [(6, 0), (12, 0), (12, 30), (15, 0)]  # (hour, minute)
 
 
 def _next_scheduled_run() -> datetime.datetime:

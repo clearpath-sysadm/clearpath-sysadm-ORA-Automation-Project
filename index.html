@@ -661,6 +661,10 @@
                                     🔍 Promo Sweep
                                     <div class="btn-status" id="promo-sweep-status"></div>
                                 </button>
+                                <button class="btn" onclick="runInventoryResync()" id="btn-inv-resync" title="Re-create missing inventory deductions for shipped orders that have a lot stamp but no inventory_transactions row">
+                                    🔁 Resync Deductions
+                                    <div class="btn-status" id="inv-resync-status"></div>
+                                </button>
                             </div>
                         </div>
                         <div id="weeklyReportLoading" style="padding: 20px; text-align: center; color: var(--text-tertiary);">Loading weekly report...</div>
@@ -2245,6 +2249,49 @@
             } finally {
                 btn.disabled = false;
                 btn.style.opacity = '1';
+            }
+        }
+
+        async function runInventoryResync() {
+            const today = new Date().toISOString().slice(0, 10);
+            const dateStart = prompt('Ship date start (YYYY-MM-DD):', today);
+            if (dateStart === null) return;
+            const dateEnd = prompt('Ship date end (YYYY-MM-DD):', today);
+            if (dateEnd === null) return;
+
+            const btn = document.getElementById('btn-inv-resync');
+            const statusDiv = document.getElementById('inv-resync-status');
+
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            statusDiv.textContent = '⏳';
+
+            try {
+                const response = await fetch('/api/admin/resync-shipped-deductions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ship_date_start: dateStart, ship_date_end: dateEnd })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    statusDiv.textContent = `✅ ${result.deducted} deducted`;
+                    const errCount = result.errors ? result.errors.length : 0;
+                    const msg = `Resync complete:\n• ${result.deducted} deductions created\n• ${result.skipped} already existed (skipped)\n• ${result.total_rows_found} total orders checked` +
+                        (errCount > 0 ? `\n\n⚠️ ${errCount} error(s):\n${result.errors.join('\n')}` : '');
+                    alert(msg);
+                } else {
+                    statusDiv.textContent = '❌ Failed';
+                    alert('Resync failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error running inventory resync:', error);
+                statusDiv.textContent = '❌ Error';
+                alert('Error running resync: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                setTimeout(() => { statusDiv.textContent = ''; }, 8000);
             }
         }
 
