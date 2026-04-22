@@ -202,7 +202,7 @@
                 </div>
 
                 <div class="card">
-                    <div class="table-container">
+                    <div class="table-container" style="overflow-x:auto;">
                         <div id="loading" class="loading">
                             <div class="spinner"></div>
                             <p>Loading transactions...</p>
@@ -459,13 +459,13 @@
                     ? `<span style="font-family:monospace;font-size:13px;">${t.lot_number}</span>`
                     : `<span style="color:var(--text-tertiary);">—</span>`;
                 return `
-                    <tr data-transaction-id="${t.id}">
+                    <tr data-transaction-id="${t.id}" style="white-space:nowrap;">
                         <td>${t.date}</td>
                         <td><strong>${t.sku}</strong></td>
                         <td>${lotDisplay}</td>
                         <td>${t.quantity}</td>
                         <td><span class="badge ${badgeClass}">${t.transaction_type}</span></td>
-                        <td>${t.notes || '-'}</td>
+                        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;" title="${(t.notes || '').replace(/"/g, '&quot;')}">${t.notes || '-'}</td>
                         <td>
                             <div class="action-buttons">
                                 <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
