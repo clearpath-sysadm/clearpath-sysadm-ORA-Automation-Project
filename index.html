@@ -2066,8 +2066,17 @@
                 if (result.success) {
                     // Refresh weekly inventory report on dashboard
                     await loadWeeklyReport();
-                    
-                    alert('✅ ' + result.message);
+
+                    let msg = '✅ ' + result.message;
+                    const discrepancies = result.discrepancies || [];
+                    if (discrepancies.length > 0) {
+                        msg += '\n\n⚠️ ' + discrepancies.length + ' inventory discrepancy row(s) flagged:\n';
+                        discrepancies.forEach(d => {
+                            msg += `  • ${d.ship_date} SKU ${d.sku}: shipped=${d.shipped_items_qty}, deducted=${d.lot_deduction_qty}, gap=${d.gap}\n`;
+                        });
+                        msg += '\nSee the Reconciliation Log for details.';
+                    }
+                    alert(msg);
                     await loadReportStatus();
                 } else {
                     throw new Error(result.error || 'Failed to run EOD');

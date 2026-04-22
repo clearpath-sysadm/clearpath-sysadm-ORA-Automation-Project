@@ -243,6 +243,56 @@ def parse_and_lookup(raw_sku: str, conn, create_missing_lots: bool = True) -> Tu
     return (sku_id, lot_id, parsed.shipstation_raw)
 
 
+def extract_cf1(order_dict: dict) -> str:
+    """
+    Extract and strip customField1 from a raw ShipStation order dict.
+
+    Use this at any call site that receives a raw ShipStation order dict
+    (i.e. where advancedOptions is still nested inside the order).
+
+    Args:
+        order_dict: Raw ShipStation order dict containing 'advancedOptions'.
+
+    Returns:
+        Stripped customField1 string, or empty string if absent.
+
+    Example:
+        >>> extract_cf1({'advancedOptions': {'customField1': '17612 - 260047'}})
+        '17612 - 260047'
+        >>> extract_cf1({})
+        ''
+    """
+    adv = order_dict.get('advancedOptions') or {}
+    return (adv.get('customField1') or '').strip()
+
+
+def parse_cf1(cf1: str) -> Optional[Tuple[str, str]]:
+    """
+    Parse a customField1 lot-stamp string into (sku, lot_number).
+
+    customField1 format: "SKU - LotNumber" (e.g. "17612 - 260047").
+    The split uses maxsplit=1 so lot numbers that happen to contain
+    ' - ' are preserved intact.
+
+    Args:
+        cf1: The customField1 string to parse.
+
+    Returns:
+        (sku.strip(), lot_number.strip()) if the ' - ' separator is
+        present, None otherwise.
+
+    Example:
+        >>> parse_cf1('17612 - 260047')
+        ('17612', '260047')
+        >>> parse_cf1('17612')
+        None
+    """
+    if not cf1 or ' - ' not in cf1:
+        return None
+    parts = cf1.split(' - ', 1)
+    return (parts[0].strip(), parts[1].strip())
+
+
 # Convenience function for testing
 def test_parser():
     """Test the parser with various inputs"""

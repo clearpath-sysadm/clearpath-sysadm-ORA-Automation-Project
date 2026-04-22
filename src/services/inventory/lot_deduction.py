@@ -1,8 +1,9 @@
 """
 Shared lot inventory deduction helper.
 
-Called by both the daily shipment processor and the unified ShipStation sync
-whenever a shipped order needs to be reflected in inventory_transactions.
+Called by unified_shipstation_sync whenever a shipped order needs to be
+reflected in inventory_transactions. The daily shipment processor (EOD)
+no longer calls this — EOD is read-only with respect to inventory.
 """
 
 import logging
@@ -12,6 +13,8 @@ import os
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
+
+from src.services.data_processing.sku_lot_parser import parse_cf1
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +70,7 @@ def deduct_lot_inventory(
         logger.debug(f"Skipping deduction for order {order_number}: customField1 '{cf1}' has no ' - ' separator")
         return False
 
-    parts = cf1.split(' - ', 1)
-    cf1_sku = parts[0].strip()
-    lot_number = parts[1].strip()
+    cf1_sku, lot_number = parse_cf1(cf1)
 
     if cf1_sku != base_sku:
         # Multi-SKU order: customField1 stamps the primary SKU (cf1_sku), but this

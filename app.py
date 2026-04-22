@@ -2779,7 +2779,7 @@ def api_run_eod():
     import datetime
     import subprocess
     import logging
-    from src.services.database.pg_utils import eod_done_today, log_report_run
+    from src.services.database.pg_utils import log_report_run
     from src.utils.server_logger import get_logger
     
     logger = logging.getLogger(__name__)
@@ -2804,13 +2804,6 @@ def api_run_eod():
         return jsonify({
             'success': False,
             'error': 'EOD report is already running. Please wait for it to complete.'
-        }), 409
-
-    # Same-day guard: prevent re-running EOD if already completed today
-    if eod_done_today():
-        return jsonify({
-            'success': False,
-            'error': 'EOD has already been run today. Re-running would cause duplicate shipment processing. If you need to force a re-run, contact your administrator.'
         }), 409
 
     _report_locks['EOD'] = True
@@ -2948,6 +2941,36 @@ def api_run_eod():
                 logger.warning(f"Failed to save daily snapshot: {snap_error}")
                 # Don't fail EOD if snapshot fails
             
+            # Query flagged inventory discrepancies for the current sync window
+            discrepancies = []
+            try:
+                from src.services.database.pg_utils import execute_query as _recon_query
+                _recon_rows = _recon_query("""
+                    SELECT ship_date, sku, shipped_items_qty, lot_deduction_qty,
+                           gap, gap_pct, alert_threshold
+                    FROM inventory_reconciliation_log
+                    WHERE is_flagged = true
+                      AND ship_date >= CURRENT_DATE - INTERVAL '7 days'
+                    ORDER BY ship_date DESC, sku
+                """)
+                if _recon_rows:
+                    discrepancies = [
+                        {
+                            'ship_date': str(r[0]),
+                            'sku': r[1],
+                            'shipped_items_qty': r[2],
+                            'lot_deduction_qty': r[3],
+                            'gap': r[4],
+                            'gap_pct': float(r[5]) if r[5] is not None else None,
+                            'alert_threshold': r[6],
+                        }
+                        for r in _recon_rows
+                    ]
+                if discrepancies:
+                    logger.warning(f"EOD: {len(discrepancies)} flagged inventory discrepancy row(s) detected")
+            except Exception as _disc_err:
+                logger.warning(f"Failed to query inventory discrepancies: {_disc_err}")
+
             # Log success
             log_report_run('EOD', datetime.date.today(), 'success', 'Daily inventory updated successfully')
             server_logger.info(f"EOD report completed successfully", source="Reports", user=user_name, role=user_role)
@@ -2955,7 +2978,8 @@ def api_run_eod():
             return jsonify({
                 'success': True,
                 'message': success_message,
-                'reconciliation': reconciliation_summary
+                'reconciliation': reconciliation_summary,
+                'discrepancies': discrepancies,
             })
         else:
             # Log failure

@@ -43,6 +43,8 @@ from src.services.shipstation.tracking_service import (
 )
 from src.services.ghost_order_backfill import backfill_ghost_orders
 from src.utils.server_logger import get_logger
+from src.services.data_processing.sku_lot_parser import extract_cf1, parse_cf1
+from src.services.inventory.shipped_items_service import upsert_shipped_item
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.api_utils import make_api_request
 
@@ -781,8 +783,7 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
             logger.warning(f"⚠️ Skipping BigCommerce order without order_number: {order_id}")
             return False
 
-        adv = order.get('advancedOptions') or {}
-        lot_stamp = (adv.get('customField1') or '').strip() or None
+        lot_stamp = extract_cf1(order) or None
 
         carrier_info = extract_carrier_service_info(order)
 
@@ -912,32 +913,18 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
                     # If customField1 lot stamp is available and its base SKU matches
                     # this item's base_sku, upgrade sku_lot to the full lot-tagged value.
                     cf1 = (lot_stamp or '').strip()
-                    if cf1 and ' - ' in cf1:
-                        cf1_parts = cf1.split(' - ', 1)
-                        if cf1_parts[0].strip() == base_sku:
-                            sku_lot = cf1
+                    parsed = parse_cf1(cf1)
+                    if parsed and parsed[0] == base_sku:
+                        sku_lot = cf1
 
-                    # Clean up any stale bare-SKU row for this (order, base_sku) whenever
-                    # we are about to insert a lot-stamped row.  This covers both primary
-                    # SKUs (whose sku_lot was just upgraded via CF1 above) and secondary
-                    # SKUs (whose lot stamp comes directly from the SS item sku field).
-                    if ' - ' in sku_lot:
-                        cursor.execute("""
-                            DELETE FROM shipped_items
-                            WHERE order_number = %s
-                              AND base_sku = %s
-                              AND sku_lot NOT LIKE '%% - %%'
-                        """, (order_number, base_sku))
-
-                    cursor.execute("""
-                        INSERT INTO shipped_items (
-                            ship_date, sku_lot, base_sku, quantity_shipped, order_number
-                        )
-                        VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
-                        SET quantity_shipped = EXCLUDED.quantity_shipped,
-                            ship_date = EXCLUDED.ship_date
-                    """, (ship_date, sku_lot, base_sku, quantity, order_number))
+                    upsert_shipped_item(
+                        conn=conn,
+                        ship_date=ship_date,
+                        sku_lot=sku_lot,
+                        base_sku=base_sku,
+                        quantity=quantity,
+                        order_number=order_number,
+                    )
 
                     deduct_lot_inventory(
                         order_number=order_number,
@@ -1020,8 +1007,7 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         
         logger.info(f"🔄 Updating EXISTING order: {order_number} → status: {db_status}, items: {total_items}, carrier: {carrier_info['carrier_code']}, service: {carrier_info['service_code']}")
         
-        adv = order.get('advancedOptions') or {}
-        lot_stamp = (adv.get('customField1') or '').strip() or None
+        lot_stamp = extract_cf1(order) or None
 
         # Update order in orders_inbox
         cursor.execute("""

@@ -35,7 +35,8 @@ from src.services.shipstation.api_client import (
     fetch_shipstation_shipments,
     fetch_shipstation_orders_by_order_numbers,
 )
-from src.services.inventory.lot_deduction import deduct_lot_inventory
+from src.services.data_processing.sku_lot_parser import parse_cf1
+from src.services.inventory.shipped_items_service import upsert_shipped_item
 # Import week utilities for handling complete vs partial weeks
 from src.services.reporting_logic.week_utils import (
     get_current_week_boundaries,
@@ -279,7 +280,7 @@ def save_shipped_orders_to_db(orders_df):
 
 
 def save_shipped_items_to_db(items_df, customField1_map=None):
-    """Save shipped items to database with UPSERT and optional lot inventory deduction.
+    """Save shipped items to the shipped_items table via UPSERT.
 
     Schema: shipped_items(ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number)
     UNIQUE(order_number, base_sku, sku_lot)
@@ -287,8 +288,13 @@ def save_shipped_items_to_db(items_df, customField1_map=None):
                               TrackingNumber, ShipStationOrderId
 
     When customField1_map is provided (dict keyed by order_number → customField1 string):
-      - Bare-SKU shipped_items records are deleted and replaced with lot-stamped ones.
-      - deduct_lot_inventory() is called for each row to record the deduction.
+      - If the customField1 SKU matches this row's base_sku, sku_lot is upgraded to the
+        full lot-stamped value (e.g. '17612' → '17612 - 260047') before the UPSERT.
+      - Any stale bare-SKU row for the same (order_number, base_sku) is deleted first.
+
+    Inventory deduction (inventory_transactions Ship rows) is NOT performed here.
+    That responsibility belongs exclusively to unified_shipstation_sync, which records
+    deductions in real time as orders transition to 'shipped'.
     """
     if items_df.empty:
         logger.warning("No items to save to database")
@@ -319,49 +325,20 @@ def save_shipped_items_to_db(items_df, customField1_map=None):
             if customField1_map and order_number:
                 cf1 = customField1_map.get(str(order_number), '')
 
-            if cf1 and ' - ' in cf1:
-                cf1_parts = cf1.split(' - ', 1)
-                cf1_sku = cf1_parts[0].strip()
-                if cf1_sku == str(base_sku):
-                    sku_lot = cf1
+            parsed = parse_cf1(cf1)
+            if parsed and parsed[0] == str(base_sku):
+                sku_lot = cf1
 
-            # Clean up any stale bare-SKU row for this (order, base_sku) whenever
-            # we are about to insert a lot-stamped row.  This covers both primary
-            # SKUs (whose sku_lot was just upgraded via CF1 above) and secondary
-            # SKUs (whose lot stamp comes directly from the shipment data).
-            if ' - ' in str(sku_lot):
-                cursor = conn.cursor()
-                cursor.execute("""
-                    DELETE FROM shipped_items
-                    WHERE order_number = %s
-                      AND base_sku = %s
-                      AND sku_lot NOT LIKE '%% - %%'
-                """, (str(order_number), str(base_sku)))
-                if cursor.rowcount > 0:
-                    logger.debug(f"Deleted {cursor.rowcount} bare-SKU record(s) for {order_number}/{base_sku}")
-
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO shipped_items (
-                    ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number
-                ) VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT(order_number, base_sku, sku_lot) DO UPDATE SET
-                    ship_date = excluded.ship_date,
-                    quantity_shipped = excluded.quantity_shipped,
-                    tracking_number = excluded.tracking_number
-            """, (str(ship_date), sku_lot, str(base_sku), int(quantity), str(order_number) if order_number else None, tracking_number))
+            upsert_shipped_item(
+                conn=conn,
+                ship_date=ship_date,
+                sku_lot=sku_lot,
+                base_sku=str(base_sku),
+                quantity=int(quantity),
+                order_number=order_number,
+                tracking_number=tracking_number or None,
+            )
             records_saved += 1
-
-            if order_number and shipstation_order_id:
-                deduct_lot_inventory(
-                    order_number=str(order_number),
-                    shipstation_order_id=shipstation_order_id,
-                    base_sku=str(base_sku),
-                    customField1_value=cf1,
-                    ship_date=ship_date,
-                    quantity=int(quantity),
-                    conn=conn
-                )
 
     logger.info(f"Successfully saved {records_saved} shipped items to database")
     return records_saved
