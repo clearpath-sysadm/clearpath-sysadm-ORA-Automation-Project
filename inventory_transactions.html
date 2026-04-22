@@ -169,7 +169,10 @@
                 <div class="card" style="margin-bottom: 16px;">
                     <div class="card-header">
                         <h2 class="card-title">📦 Current Lot Balances</h2>
-                        <button class="btn" onclick="loadLotBalances()" style="font-size:13px;">↻ Refresh</button>
+                        <div style="display:flex;gap:8px;">
+                            <button id="toggleEmptyBtn" class="btn" onclick="toggleEmptyLots()" style="font-size:13px;">Show All</button>
+                            <button class="btn" onclick="loadLotBalances()" style="font-size:13px;">↻ Refresh</button>
+                        </div>
                     </div>
                     <div class="card-body" style="padding: 0;">
                         <div id="lot-balances-container">
@@ -324,15 +327,25 @@
         });
 
         let allTransactions = [];
+        let showAllLots = false;
 
         // ── Lot Balances Summary ──────────────────────────────────────
+        function toggleEmptyLots() {
+            showAllLots = !showAllLots;
+            const btn = document.getElementById('toggleEmptyBtn');
+            if (btn) btn.textContent = showAllLots ? 'Hide Empty' : 'Show All';
+            loadLotBalances();
+        }
+
         async function loadLotBalances() {
             const container = document.getElementById('lot-balances-container');
             try {
                 const res = await fetch('/api/lot_inventory');
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error);
-                const lots = data.lots;
+                const allLots = data.lots;
+                const hiddenCount = allLots.filter(l => l.balance === 0 && (l.status === 'inactive' || l.status === 'depleted')).length;
+                const lots = showAllLots ? allLots : allLots.filter(l => !(l.balance === 0 && (l.status === 'inactive' || l.status === 'depleted')));
                 if (lots.length === 0) {
                     container.innerHTML = '<div style="padding:16px;color:var(--text-tertiary);">No lots found.</div>';
                     return;
@@ -344,6 +357,9 @@
                     if (s === 'quarantine') return `<span style="background:#7c3aed;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Quarantine</span>`;
                     return `<span style="background:var(--border-color);color:var(--text-secondary);padding:2px 8px;border-radius:12px;font-size:11px;">Inactive</span>`;
                 };
+                const hiddenNote = (!showAllLots && hiddenCount > 0)
+                    ? `<tr><td colspan="5" style="padding:10px 16px;text-align:center;color:var(--text-tertiary);font-size:12px;">${hiddenCount} zero-balance lot${hiddenCount !== 1 ? 's' : ''} hidden</td></tr>`
+                    : '';
                 container.innerHTML = `
                     <table style="width:100%;border-collapse:collapse;">
                         <thead>
@@ -364,6 +380,7 @@
                                 <td style="padding:10px 16px;text-align:right;font-weight:700;font-size:16px;">${l.balance.toLocaleString()}</td>
                                 <td style="padding:10px 16px;color:var(--text-secondary);font-size:13px;">${l.received_date || '—'}</td>
                             </tr>`).join('')}
+                            ${hiddenNote}
                         </tbody>
                     </table>`;
             } catch (err) {
