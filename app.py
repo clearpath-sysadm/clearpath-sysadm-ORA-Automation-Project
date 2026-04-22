@@ -2005,18 +2005,17 @@ def api_sync_shipstation():
         def run_sync():
             """Run sync in background thread"""
             try:
-                result = subprocess.run(
-                    ['python3', 'src/daily_shipment_processor.py'],
-                    cwd=project_root,
-                    capture_output=True,
-                    text=True,
-                    timeout=120
-                )
-                print(f"Sync completed with return code: {result.returncode}")
-                if result.stdout:
-                    print(f"Sync output: {result.stdout}")
-                if result.stderr:
-                    print(f"Sync errors: {result.stderr}")
+                _sync_log = os.path.join(project_root, 'logs', 'unified_shipstation_sync.log')
+                os.makedirs(os.path.dirname(_sync_log), exist_ok=True)
+                with open(_sync_log, 'ab') as _log_fh:
+                    result = subprocess.run(
+                        [sys.executable, 'src/unified_shipstation_sync.py', '--once'],
+                        cwd=project_root,
+                        stdout=_log_fh,
+                        stderr=_log_fh,
+                        timeout=120
+                    )
+                print(f"Manual unified sync completed with return code: {result.returncode}")
             except Exception as e:
                 print(f"Sync error: {e}")
         
@@ -6242,17 +6241,22 @@ def webhook_shipstation_order(token):
             from src.services.database.pg_utils import transaction_with_retry
             from src.scheduled_lot_tagger import run_reconciliation
 
+            # Fetch credentials once — reused in Step 1 and Step 4.
+            api_key, api_secret = get_shipstation_credentials()
+            ss_headers = get_shipstation_headers(api_key, api_secret)
+
+            # Collect ShipStation order IDs from Step 1 for re-fetch in Step 4.
+            _triggering_ss_order_ids = []
+
             # ── Step 1: immediately process the triggering order(s) ──────────
             # ShipStation provides a resource_url pointing directly at the
             # order(s) that just changed.  Fetching it avoids the race condition
             # where a brand-new order hasn't yet appeared in the paginated
             # awaiting_shipment list that run_reconciliation() would query.
             # Isolated in its own try/except so any failure here never prevents
-            # Steps 2 and 3 (the full reconciliation sweep) from running.
+            # Steps 2, 3 and 4 from running.
             try:
                 logger.info(f"Webhook: fetching triggering orders from {resource_url[:80]}")
-                api_key, api_secret = get_shipstation_credentials()
-                ss_headers = get_shipstation_headers(api_key, api_secret)
 
                 resp = make_api_request(
                     url=resource_url,
@@ -6264,6 +6268,9 @@ def webhook_shipstation_order(token):
                 if resp and resp.status_code == 200:
                     triggering_orders = resp.json().get('orders', [])
                     logger.info(f"Webhook: {len(triggering_orders)} triggering order(s) — processing immediately")
+                    _triggering_ss_order_ids = [
+                        o.get('orderId') for o in triggering_orders if o.get('orderId')
+                    ]
                     if triggering_orders:
                         with transaction_with_retry() as conn:
                             active_lots, known_skus = build_lot_maps(conn)
@@ -6301,6 +6308,69 @@ def webhook_shipstation_order(token):
             logger.info("Webhook: running full reconciliation sweep")
             run_reconciliation()
 
+            # ── Step 4: create inventory transactions for shipped orders ──────
+            # Re-fetch each triggering order by ID — customField1 now reflects
+            # the lot stamp written by the lot-tagger in Step 1.  Call
+            # update_existing_order_status which persists carrier/tracking data
+            # and calls deduct_lot_inventory for key-SKU items.
+            # The idempotency guard inside deduct_lot_inventory prevents
+            # double-deductions if the scheduled sync later picks up the same order.
+            if _triggering_ss_order_ids:
+                try:
+                    from src.unified_shipstation_sync import (
+                        update_existing_order_status, order_exists_locally,
+                    )
+                    logger.info(
+                        f"Webhook: Step 4 — processing {len(_triggering_ss_order_ids)} "
+                        f"triggering order(s) for shipping data + inventory deduction"
+                    )
+                    with transaction_with_retry() as conn:
+                        for ss_order_id in _triggering_ss_order_ids:
+                            try:
+                                fresh_resp = make_api_request(
+                                    url=f'https://ssapi.shipstation.com/orders/{ss_order_id}',
+                                    method='GET',
+                                    headers=ss_headers,
+                                    timeout=15,
+                                )
+                                if not fresh_resp or fresh_resp.status_code != 200:
+                                    logger.warning(
+                                        f"Webhook: Step 4 — could not re-fetch order {ss_order_id} "
+                                        f"(status {fresh_resp.status_code if fresh_resp else 'no response'})"
+                                    )
+                                    continue
+                                fresh_order = fresh_resp.json()
+                                order_number = fresh_order.get('orderNumber', '')
+                                order_status = fresh_order.get('orderStatus', '').lower()
+                                if order_status != 'shipped':
+                                    logger.debug(
+                                        f"Webhook: Step 4 — order {order_number} "
+                                        f"is '{order_status}', not shipped — skipping"
+                                    )
+                                    continue
+                                exists, local_order_id, _ = order_exists_locally(order_number, conn)
+                                if not exists:
+                                    logger.info(
+                                        f"Webhook: Step 4 — order {order_number} not in local DB — skipping"
+                                    )
+                                    continue
+                                success = update_existing_order_status(fresh_order, local_order_id, conn)
+                                if success:
+                                    logger.info(
+                                        f"Webhook: Step 4 — inventory deduction complete for order {order_number}"
+                                    )
+                                else:
+                                    logger.warning(
+                                        f"Webhook: Step 4 — update_existing_order_status returned False for {order_number}"
+                                    )
+                            except Exception as _inner_err:
+                                logger.error(
+                                    f"Webhook: Step 4 error on order {ss_order_id}: {_inner_err}",
+                                    exc_info=True,
+                                )
+                except Exception as _step4_err:
+                    logger.error(f"Webhook: Step 4 failed: {_step4_err}", exc_info=True)
+
         except Exception as exc:
             logger.error(f"Webhook async processing error: {exc}", exc_info=True)
         finally:
@@ -6308,13 +6378,18 @@ def webhook_shipstation_order(token):
             # Uses --once mode which skips business-hours and runs immediately.
             # sys.executable ensures the same Python interpreter is used in all
             # environments (dev, staging, production) without relying on PATH.
+            # Output is routed to the sync log file (not DEVNULL) so failures
+            # are visible in deployment logs.
             import subprocess as _sp
             try:
-                _sp.Popen(
-                    [sys.executable, 'src/unified_shipstation_sync.py', '--once'],
-                    stdout=_sp.DEVNULL,
-                    stderr=_sp.DEVNULL,
-                )
+                _sync_log = os.path.join(project_root, 'logs', 'unified_shipstation_sync.log')
+                os.makedirs(os.path.dirname(_sync_log), exist_ok=True)
+                with open(_sync_log, 'ab') as _log_fh:
+                    _sp.Popen(
+                        [sys.executable, 'src/unified_shipstation_sync.py', '--once'],
+                        stdout=_log_fh,
+                        stderr=_log_fh,
+                    )
                 logger.info("Webhook: triggered unified-shipstation-sync --once")
             except Exception as _trigger_err:
                 logger.error(f"Webhook: failed to trigger sync subprocess — {_trigger_err}")
@@ -10152,6 +10227,112 @@ def shipstation_backfill_sync():
         
     except Exception as e:
         logger.error(f'Error in ShipStation backfill sync: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/resync-shipped-deductions', methods=['POST'])
+@login_required
+@admin_required
+def api_resync_shipped_deductions():
+    """
+    Re-run inventory deductions for shipped orders that have no inventory_transactions row.
+    Useful for recovering orders missed while the webhook pipeline was broken.
+
+    Optional JSON body:
+        ship_date_start: 'YYYY-MM-DD'
+        ship_date_end:   'YYYY-MM-DD'
+    """
+    from src.services.inventory.lot_deduction import deduct_lot_inventory
+    from src.services.database.pg_utils import transaction_with_retry
+    import datetime as _dt
+
+    try:
+        data = request.get_json(silent=True) or {}
+        ship_date_start = data.get('ship_date_start')
+        ship_date_end = data.get('ship_date_end')
+
+        date_filter = ""
+        date_params = []
+        if ship_date_start:
+            date_filter += " AND so.ship_date >= %s"
+            date_params.append(ship_date_start)
+        if ship_date_end:
+            date_filter += " AND so.ship_date <= %s"
+            date_params.append(ship_date_end)
+
+        with transaction_with_retry() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute(f"""
+                SELECT
+                    oi.order_number,
+                    oi.shipstation_order_id,
+                    oi.lot_stamp,
+                    oii.sku        AS base_sku,
+                    oii.quantity,
+                    COALESCE(so.ship_date::text, CURRENT_DATE::text) AS ship_date
+                FROM orders_inbox oi
+                JOIN order_items_inbox oii ON oii.order_inbox_id = oi.id
+                LEFT JOIN shipped_orders so ON so.order_number = oi.order_number
+                LEFT JOIN inventory_transactions it2
+                       ON it2.shipstation_order_id = oi.shipstation_order_id
+                      AND it2.transaction_type = 'Ship'
+                WHERE oi.status = 'shipped'
+                  AND oi.lot_stamp IS NOT NULL
+                  AND oi.shipstation_order_id IS NOT NULL
+                  AND oii.sku = ANY(%s)
+                  AND it2.id IS NULL
+                  {date_filter}
+                ORDER BY oi.order_number
+            """, [['17612', '17904', '17914', '18675', '18795']] + date_params)
+
+            rows = cursor.fetchall()
+
+        if not rows:
+            return jsonify({'success': True, 'message': 'No missing deductions found', 'processed': 0})
+
+        deducted = 0
+        skipped = 0
+        errors = []
+
+        with transaction_with_retry() as conn:
+            for order_number, ss_order_id, lot_stamp, base_sku, quantity, ship_date in rows:
+                try:
+                    ship_date_obj = _dt.date.fromisoformat(str(ship_date)[:10])
+                    result = deduct_lot_inventory(
+                        order_number=order_number,
+                        shipstation_order_id=str(ss_order_id),
+                        base_sku=base_sku,
+                        customField1_value=lot_stamp or '',
+                        ship_date=ship_date_obj,
+                        quantity=quantity,
+                        conn=conn,
+                    )
+                    if result:
+                        deducted += 1
+                        logger.info(f"Resync: deducted {quantity} units of {base_sku} for order {order_number}")
+                    else:
+                        skipped += 1
+                except Exception as _row_err:
+                    errors.append(f"{order_number}/{base_sku}: {_row_err}")
+                    logger.error(f"Resync error for {order_number}/{base_sku}: {_row_err}", exc_info=True)
+
+        user_email = current_user.email if current_user.is_authenticated else 'unknown'
+        server_logger.info(
+            f"Resync shipped deductions: deducted={deducted}, skipped={skipped}, errors={len(errors)}",
+            source='admin', user=user_email
+        )
+
+        return jsonify({
+            'success': True,
+            'deducted': deducted,
+            'skipped': skipped,
+            'errors': errors,
+            'total_rows_found': len(rows),
+        })
+
+    except Exception as e:
+        logger.error(f'Error in resync-shipped-deductions: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
