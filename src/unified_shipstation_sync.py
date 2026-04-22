@@ -1034,47 +1034,40 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
             local_order_id
         ))
         
-        # EDGE CASE FIX: Update/add order items if they exist in ShipStation
-        # This handles the case where orders are created before items are added
+        # Always upsert order items from ShipStation so local quantities stay current.
+        # The ON CONFLICT clause handles both new items and quantity updates in one pass.
+        # DB unique index: order_items_inbox_order_sku_unique (order_inbox_id, sku)
         if items:
-            # Check if order already has items
-            cursor.execute("""
-                SELECT COUNT(*) FROM order_items_inbox WHERE order_inbox_id = %s
-            """, (local_order_id,))
-            existing_items_count = cursor.fetchone()[0]
-            
-            if existing_items_count == 0:
-                logger.info(f"📦 Adding {len(items)} items to order {order_number} (was empty)")
-                
-                # Insert items into order_items_inbox
-                for item in items:
-                    sku_raw = str(item.get('sku', '')).strip()
-                    quantity = item.get('quantity', 0)
-                    unit_price = item.get('unitPrice', 0)
-                    unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
-                    
-                    if sku_raw and quantity > 0:
-                        # Parse SKU - LOT format (e.g., "17612 - 250237")
-                        if ' - ' in sku_raw:
-                            sku_parts = sku_raw.split(' - ')
-                            base_sku = sku_parts[0].strip()
-                            sku_lot = sku_raw  # Store full "17612 - 250237" format
-                        else:
-                            base_sku = sku_raw
-                            sku_lot = None
-                        
-                        cursor.execute("""
-                            INSERT INTO order_items_inbox (
-                                order_inbox_id, sku, sku_lot, quantity, unit_price_cents
-                            )
-                            VALUES (%s, %s, %s, %s, %s)
-                            ON CONFLICT (order_inbox_id, sku) DO UPDATE
-                            SET quantity = EXCLUDED.quantity,
-                                sku_lot = EXCLUDED.sku_lot,
-                                unit_price_cents = EXCLUDED.unit_price_cents
-                        """, (local_order_id, base_sku, sku_lot, quantity, unit_price_cents))
-                        
-                        logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
+            logger.info(f"📦 Upserting {len(items)} items for order {order_number}")
+
+            for item in items:
+                sku_raw = str(item.get('sku', '')).strip()
+                quantity = item.get('quantity', 0)
+                unit_price = item.get('unitPrice', 0)
+                unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
+
+                if sku_raw and quantity > 0:
+                    # Parse SKU - LOT format (e.g., "17612 - 250237")
+                    if ' - ' in sku_raw:
+                        sku_parts = sku_raw.split(' - ')
+                        base_sku = sku_parts[0].strip()
+                        sku_lot = sku_raw  # Store full "17612 - 250237" format
+                    else:
+                        base_sku = sku_raw
+                        sku_lot = None
+
+                    cursor.execute("""
+                        INSERT INTO order_items_inbox (
+                            order_inbox_id, sku, sku_lot, quantity, unit_price_cents
+                        )
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (order_inbox_id, sku) DO UPDATE
+                        SET quantity = EXCLUDED.quantity,
+                            sku_lot = EXCLUDED.sku_lot,
+                            unit_price_cents = EXCLUDED.unit_price_cents
+                    """, (local_order_id, base_sku, sku_lot, quantity, unit_price_cents))
+
+                    logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
         
         # INVENTORY DEDUCTION: When an existing order transitions to 'shipped',
         # record a lot deduction for each key-SKU line item.
