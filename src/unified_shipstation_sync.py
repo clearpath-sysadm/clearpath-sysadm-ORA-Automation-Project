@@ -1519,11 +1519,45 @@ def run_unified_sync():
                                     else:
                                         logger.debug(f"  Conflict alert already exists for order {order_number} (shipstation_id: {current_shipstation_id})")
                                 else:
-                                    # Non-manual order collision - log but don't create manual_order_conflicts alert
-                                    logger.warning(f"⚠️ NON-MANUAL order collision detected for {order_number}")
-                                    logger.warning(f"   This order number has multiple ShipStation IDs but is NOT a manual order (doesn't match 10xxxx pattern)")
-                                    logger.warning(f"   RECOMMENDATION: Investigate this order - possible data corruption or external system issue")
-                                
+                                    # BigCommerce split label — same order_number, different ShipStation ID.
+                                    # This is normal: one BigCommerce order can produce multiple labels
+                                    # (e.g., a sample label + a case label).  Deduct each label
+                                    # independently using its own shipstation_order_id as the key.
+                                    if order_number.isdigit() and int(order_number) >= 801000:
+                                        if order.get('orderStatus', '').lower() == 'shipped':
+                                            from src.services.inventory.lot_deduction import deduct_lot_inventory
+                                            split_cf1 = extract_cf1(order) or ''
+                                            split_order_id = str(order.get('orderId') or order.get('orderKey'))
+                                            split_ship_date_str = order.get('shipDate', '')
+                                            try:
+                                                split_ship_date = datetime.datetime.strptime(split_ship_date_str[:10], '%Y-%m-%d').date()
+                                            except Exception:
+                                                split_ship_date = datetime.date.today()
+                                            for item in order.get('items', []):
+                                                sku_raw = str(item.get('sku', '')).strip()
+                                                qty = item.get('quantity', 0)
+                                                if not sku_raw or qty <= 0:
+                                                    continue
+                                                base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                                                if base_sku not in KEY_PRODUCT_SKUS:
+                                                    continue
+                                                deduct_lot_inventory(
+                                                    order_number=order_number,
+                                                    shipstation_order_id=split_order_id,
+                                                    base_sku=base_sku,
+                                                    customField1_value=split_cf1,
+                                                    ship_date=split_ship_date,
+                                                    quantity=qty,
+                                                    conn=conn
+                                                )
+                                            logger.info(f"✅ Split label deducted for order {order_number} (ss_id={split_order_id})")
+                                        else:
+                                            logger.debug(f"Split label for order {order_number} not yet shipped — skipping deduction")
+                                    else:
+                                        logger.warning(f"⚠️ NON-MANUAL order collision detected for {order_number}")
+                                        logger.warning(f"   This order number has multiple ShipStation IDs but is NOT a manual order (doesn't match 10xxxx pattern)")
+                                        logger.warning(f"   RECOMMENDATION: Investigate this order - possible data corruption or external system issue")
+
                                 # Don't import or update this TRUE conflicting order
                                 cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                                 continue
