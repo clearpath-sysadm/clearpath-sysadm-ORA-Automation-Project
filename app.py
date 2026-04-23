@@ -2170,6 +2170,7 @@ def api_lots_by_sku(sku):
             JOIN skus s ON s.sku_id = l.sku_id
             LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
             WHERE s.sku_code = %s
+              AND NOT (l.status = 'inactive' AND COALESCE(lb.balance, 0) = 0)
             ORDER BY l.received_date ASC NULLS LAST, l.lot_id ASC
         """, (sku,))
         rows = cursor.fetchall()
