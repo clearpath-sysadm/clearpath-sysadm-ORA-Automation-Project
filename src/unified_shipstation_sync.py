@@ -3,7 +3,7 @@
 Unified ShipStation Sync Service
 
 Consolidates manual order sync and status sync into a single watermark-based workflow.
-Runs at three fixed times per day (6:00 AM, 12:00 PM, 12:30 PM CDT) and is also
+Runs at four fixed times per day (6:00 AM, 12:00 PM, 12:30 PM, 3:00 PM CDT) and is also
 triggered on every ShipStation webhook (success or failure) via --once mode.
 
 Key Features:
@@ -70,7 +70,7 @@ _DAILY_RUN_TIMES = [(6, 0), (12, 0), (12, 30), (15, 0)]  # (hour, minute)
 def _next_scheduled_run() -> datetime.datetime:
     """
     Return the next scheduled run as a timezone-aware CDT/CST datetime.
-    Slots: 6:00 AM, 12:00 PM, 12:30 PM America/Chicago.
+    Slots: 6:00 AM, 12:00 PM, 12:30 PM, 3:00 PM America/Chicago.
     If all today's slots have passed, returns the first slot tomorrow.
     """
     now = datetime.datetime.now(tz=_SCHEDULE_TZ)
@@ -1779,8 +1779,8 @@ def main():
     Sleeps between scheduled times in 5-minute chunks so KeyboardInterrupt
     and enabled/dev-silent checks remain responsive during long overnight gaps.
     """
-    logger.info("🚀 Starting Unified ShipStation Sync — scheduled 3x daily")
-    logger.info("⏰ Schedule: 6:00 AM | 12:00 PM | 12:30 PM  (America/Chicago, DST-aware)")
+    logger.info("🚀 Starting Unified ShipStation Sync — scheduled 4x daily")
+    logger.info("⏰ Schedule: 6:00 AM | 12:00 PM | 12:30 PM | 3:00 PM  (America/Chicago, DST-aware)")
 
     while True:
         try:

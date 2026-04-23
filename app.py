@@ -6401,6 +6401,213 @@ def webhook_shipstation_order(token):
     return jsonify({'success': True, 'message': 'Accepted'}), 200
 
 
+@app.route('/webhooks/shipstation/ship/<token>', methods=['POST'])
+def webhook_shipstation_ship(token):
+    """
+    ShipStation SHIP_NOTIFY webhook receiver.
+
+    Fires the moment a label is created in ShipStation — the correct trigger for
+    real-time inventory deduction.  ORDER_NOTIFY only fires when orders enter
+    awaiting_shipment; it does NOT fire again when orders ship.
+
+    Flow:
+      1. Validate token + SSRF guard, return 200 immediately.
+      2. Background thread fetches the shipment list from resource_url (paginated).
+      3. For each non-voided shipment, fetch the full order to get customField1
+         (lot stamp) and items, then call update_existing_order_status which
+         creates the inventory transaction via deduct_lot_inventory.
+      4. No --once subprocess is spawned — deductions are performed directly,
+         which also prevents the subprocess storm on bulk label batches (Task #74).
+
+    Security: URL token validates the caller (same mechanism as ORDER_NOTIFY).
+    """
+    expected_token = os.environ.get('SHIPSTATION_WEBHOOK_TOKEN', '')
+    if not expected_token or token != expected_token:
+        logger.warning("SHIP_NOTIFY webhook called with invalid token")
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+
+    payload = request.get_json(silent=True) or {}
+    resource_url = (payload.get('resource_url') or payload.get('resourceUrl', '') or '').strip()
+
+    if not resource_url:
+        logger.warning("SHIP_NOTIFY webhook received with no resource_url — rejecting")
+        return jsonify({'success': False, 'error': 'Missing resource_url'}), 400
+
+    if not resource_url.startswith('https://ssapi.shipstation.com/'):
+        logger.warning(f"SHIP_NOTIFY: unexpected resource_url host — {resource_url[:100]}")
+        return jsonify({'success': False, 'error': 'Invalid resource_url'}), 400
+
+    logger.info(f"SHIP_NOTIFY webhook received — resource_url: {resource_url[:100]}")
+
+    def _process():
+        try:
+            from utils.api_utils import make_api_request
+            from src.services.shipstation.api_client import (
+                get_shipstation_credentials, get_shipstation_headers,
+            )
+            from src.services.database.pg_utils import transaction_with_retry
+            from src.unified_shipstation_sync import (
+                update_existing_order_status, order_exists_locally,
+            )
+
+            api_key, api_secret = get_shipstation_credentials()
+            ss_headers = get_shipstation_headers(api_key, api_secret)
+
+            # ── Step 1: Fetch all shipments from resource_url (paginated) ────
+            # ShipStation /shipments returns {"shipments": [...], "pages": N}
+            # NOT a bare list — must extract via .get('shipments', []).
+            # resource_url always contains at least one query param (batchId or
+            # shipmentId), so appending &page=N is safe for pages > 1.
+            all_shipments = []
+            page = 1
+            while True:
+                paged_url = f"{resource_url}&page={page}" if page > 1 else resource_url
+                resp = make_api_request(url=paged_url, method='GET', headers=ss_headers, timeout=15)
+                if not resp or resp.status_code != 200:
+                    logger.warning(
+                        f"SHIP_NOTIFY: could not fetch shipments page {page} "
+                        f"(status {resp.status_code if resp else 'no response'})"
+                    )
+                    break
+                data = resp.json()
+                shipments = data.get('shipments', [])
+                if not shipments:
+                    break
+                all_shipments.extend(shipments)
+                if page >= data.get('pages', 1):
+                    break
+                page += 1
+
+            logger.info(f"SHIP_NOTIFY: {len(all_shipments)} shipment(s) to process")
+
+            # ── Step 2: For each shipment, fetch full order and deduct ────────
+            # API calls happen inside the transaction context — accepted pattern
+            # in this codebase (mirrors ORDER_NOTIFY Step 4, lines 6328-6336).
+            with transaction_with_retry() as conn:
+                for shipment in all_shipments:
+                    # Skip voided labels early. Field is `voided` (bool) —
+                    # confirmed in daily_shipment_processor.py:616.
+                    if shipment.get('voided', False):
+                        logger.info(
+                            f"SHIP_NOTIFY: skipping voided shipment {shipment.get('shipmentId')}"
+                        )
+                        continue
+
+                    order_id = shipment.get('orderId')
+                    order_number = shipment.get('orderNumber', 'unknown')
+
+                    if not order_id:
+                        logger.warning("SHIP_NOTIFY: shipment missing orderId — skipping")
+                        continue
+
+                    try:
+                        # Fetch the full order — shipment objects do not carry
+                        # customField1 (lot stamp) or the full items list.
+                        order_resp = make_api_request(
+                            url=f'https://ssapi.shipstation.com/orders/{order_id}',
+                            method='GET',
+                            headers=ss_headers,
+                            timeout=15,
+                        )
+                        if not order_resp or order_resp.status_code != 200:
+                            logger.warning(
+                                f"SHIP_NOTIFY: could not fetch order {order_id} "
+                                f"(status {order_resp.status_code if order_resp else 'no response'}) — skipping"
+                            )
+                            continue
+
+                        order = order_resp.json()
+                        order_status = order.get('orderStatus', '').lower()
+
+                        # Guard against labels that were voided before we fetched
+                        # the order — the status reverts to awaiting_shipment.
+                        if order_status != 'shipped':
+                            logger.info(
+                                f"SHIP_NOTIFY: order {order_number} is '{order_status}' "
+                                f"(not shipped) — skipping deduction"
+                            )
+                            continue
+
+                        exists, local_order_id, _ = order_exists_locally(order_number, conn)
+                        if not exists:
+                            # Order not in local DB yet — the next scheduled sync
+                            # (3 PM, 6 AM, etc.) will handle it. Return 200 so
+                            # ShipStation does not retry this event.
+                            logger.warning(
+                                f"SHIP_NOTIFY: order {order_number} not in local DB — "
+                                f"skipping (scheduled sync will handle it)"
+                            )
+                            continue
+
+                        success = update_existing_order_status(order, local_order_id, conn)
+                        if success:
+                            logger.info(
+                                f"SHIP_NOTIFY: inventory deduction complete for order {order_number}"
+                            )
+                        else:
+                            logger.warning(
+                                f"SHIP_NOTIFY: update_existing_order_status returned False "
+                                f"for order {order_number}"
+                            )
+
+                    except Exception as inner_err:
+                        logger.error(
+                            f"SHIP_NOTIFY: error processing shipment for order {order_number}: {inner_err}",
+                            exc_info=True,
+                        )
+
+        except Exception as exc:
+            logger.error(f"SHIP_NOTIFY: async processing error: {exc}", exc_info=True)
+
+        # NOTE: No --once subprocess spawned here. Deductions are performed
+        # directly above, eliminating the subprocess storm that occurs when
+        # bulk label batches fire many SHIP_NOTIFY events simultaneously.
+
+    t = threading.Thread(target=_process, daemon=True)
+    t.start()
+
+    return jsonify({'success': True, 'message': 'Accepted'}), 200
+
+
+@app.route('/api/admin/ship-notify-url', methods=['GET'])
+@login_required
+def api_admin_ship_notify_url():
+    """
+    Return the ShipStation webhook registration URLs for both ORDER_NOTIFY and
+    SHIP_NOTIFY.  Use the production_url when registering in ShipStation —
+    REPLIT_DEV_DOMAIN is the dev tunnel and is not reachable by ShipStation.
+
+    Requires PRODUCTION_HOST secret to be set (the published .replit.app domain,
+    e.g. 'oracare.replit.app').
+    """
+    token = os.environ.get('SHIPSTATION_WEBHOOK_TOKEN', '')
+    if not token:
+        return jsonify({'error': 'SHIPSTATION_WEBHOOK_TOKEN secret is not set'}), 500
+
+    prod_host = os.environ.get('PRODUCTION_HOST', '').strip()
+    dev_host = os.environ.get('REPLIT_DEV_DOMAIN', 'localhost').strip()
+
+    ship_path = f'/webhooks/shipstation/ship/{token}'
+    order_path = f'/webhooks/shipstation/order/{token}'
+
+    return jsonify({
+        'ship_notify': {
+            'path': ship_path,
+            'production_url': f'https://{prod_host}{ship_path}' if prod_host else 'Set PRODUCTION_HOST secret first',
+            'dev_url': f'https://{dev_host}{ship_path}',
+        },
+        'order_notify': {
+            'path': order_path,
+            'production_url': f'https://{prod_host}{order_path}' if prod_host else 'Set PRODUCTION_HOST secret first',
+            'dev_url': f'https://{dev_host}{order_path}',
+        },
+        'instructions': (
+            'Register ship_notify.production_url in ShipStation: '
+            'Settings → Account → Integrations → Webhooks → Add Webhook → Event: Ship Notify'
+        ),
+    })
+
+
 @app.route('/api/lot_tagging_failures', methods=['GET'])
 def api_get_lot_tagging_failures():
     """Return unresolved lot tagging failures."""
