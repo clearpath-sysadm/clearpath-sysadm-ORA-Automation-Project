@@ -6574,35 +6574,36 @@ def webhook_shipstation_ship(token):
 def api_admin_ship_notify_url():
     """
     Return the ShipStation webhook registration URLs for both ORDER_NOTIFY and
-    SHIP_NOTIFY.  Use the production_url when registering in ShipStation —
-    REPLIT_DEV_DOMAIN is the dev tunnel and is not reachable by ShipStation.
+    SHIP_NOTIFY.
 
-    Requires PRODUCTION_HOST secret to be set (the published .replit.app domain,
-    e.g. 'oracare.replit.app').
+    Uses REPLIT_DOMAINS (set automatically by Replit) — in production this
+    contains the deployed domain; in dev it contains the dev tunnel domain.
+    No custom secrets required.
     """
     token = os.environ.get('SHIPSTATION_WEBHOOK_TOKEN', '')
     if not token:
         return jsonify({'error': 'SHIPSTATION_WEBHOOK_TOKEN secret is not set'}), 500
 
-    prod_host = os.environ.get('PRODUCTION_HOST', '').strip()
-    dev_host = os.environ.get('REPLIT_DEV_DOMAIN', 'localhost').strip()
+    # REPLIT_DOMAINS is comma-separated; take the first (primary) domain.
+    # In production this is the deployed domain (e.g. oracare.replit.app).
+    # In dev this is the dev tunnel — useful for local testing via ngrok/etc.
+    replit_domains = os.environ.get('REPLIT_DOMAINS', '')
+    host = replit_domains.split(',')[0].strip() if replit_domains else os.environ.get('REPLIT_DEV_DOMAIN', 'localhost')
 
     ship_path = f'/webhooks/shipstation/ship/{token}'
     order_path = f'/webhooks/shipstation/order/{token}'
 
     return jsonify({
         'ship_notify': {
-            'path': ship_path,
-            'production_url': f'https://{prod_host}{ship_path}' if prod_host else 'Set PRODUCTION_HOST secret first',
-            'dev_url': f'https://{dev_host}{ship_path}',
+            'url': f'https://{host}{ship_path}',
+            'event_type': 'Ship Notify',
         },
         'order_notify': {
-            'path': order_path,
-            'production_url': f'https://{prod_host}{order_path}' if prod_host else 'Set PRODUCTION_HOST secret first',
-            'dev_url': f'https://{dev_host}{order_path}',
+            'url': f'https://{host}{order_path}',
+            'event_type': 'Order Notify',
         },
         'instructions': (
-            'Register ship_notify.production_url in ShipStation: '
+            'Register ship_notify.url in ShipStation: '
             'Settings → Account → Integrations → Webhooks → Add Webhook → Event: Ship Notify'
         ),
     })
