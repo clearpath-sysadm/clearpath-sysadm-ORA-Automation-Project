@@ -1,0 +1,479 @@
+[
+  {
+    "ship_date": "2026-04-02",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "61",
+    "null_ss_qty": null,
+    "new_resync_qty": "189"
+  },
+  {
+    "ship_date": "2026-04-02",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "5",
+    "null_ss_qty": null,
+    "new_resync_qty": "7"
+  },
+  {
+    "ship_date": "2026-04-02",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "5",
+    "null_ss_qty": null,
+    "new_resync_qty": "10"
+  },
+  {
+    "ship_date": "2026-04-02",
+    "sku": "18675",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-02",
+    "sku": "18795",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "3",
+    "null_ss_qty": null,
+    "new_resync_qty": "9"
+  },
+  {
+    "ship_date": "2026-04-03",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "18",
+    "null_ss_qty": null,
+    "new_resync_qty": "56"
+  },
+  {
+    "ship_date": "2026-04-03",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "2",
+    "null_ss_qty": null,
+    "new_resync_qty": "2"
+  },
+  {
+    "ship_date": "2026-04-03",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "2",
+    "null_ss_qty": null,
+    "new_resync_qty": "2"
+  },
+  {
+    "ship_date": "2026-04-03",
+    "sku": "18795",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "2",
+    "null_ss_qty": null,
+    "new_resync_qty": "2"
+  },
+  {
+    "ship_date": "2026-04-06",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "27",
+    "null_ss_qty": null,
+    "new_resync_qty": "59"
+  },
+  {
+    "ship_date": "2026-04-06",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-06",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "2",
+    "null_ss_qty": null,
+    "new_resync_qty": "3"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "40",
+    "null_ss_qty": null,
+    "new_resync_qty": "86"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "3",
+    "null_ss_qty": null,
+    "new_resync_qty": "4"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "18675",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "3"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "18795",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-08",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "34",
+    "null_ss_qty": null,
+    "new_resync_qty": "88"
+  },
+  {
+    "ship_date": "2026-04-08",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "3",
+    "null_ss_qty": null,
+    "new_resync_qty": "4"
+  },
+  {
+    "ship_date": "2026-04-08",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "6",
+    "null_ss_qty": null,
+    "new_resync_qty": "13"
+  },
+  {
+    "ship_date": "2026-04-08",
+    "sku": "18795",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "21",
+    "null_ss_qty": null,
+    "new_resync_qty": "112"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "5",
+    "null_ss_qty": null,
+    "new_resync_qty": "11"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "18675",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "13"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "18795",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "4",
+    "null_ss_qty": null,
+    "new_resync_qty": "5"
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "8",
+    "new_resync_txns": "10",
+    "null_ss_qty": null,
+    "new_resync_qty": "52"
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "1",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "4",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "18675",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "3",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "5"
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "18795",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-13",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "13",
+    "new_resync_txns": "6",
+    "null_ss_qty": null,
+    "new_resync_qty": "51"
+  },
+  {
+    "ship_date": "2026-04-13",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "2",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-13",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "6"
+  },
+  {
+    "ship_date": "2026-04-14",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "18",
+    "new_resync_txns": "7",
+    "null_ss_qty": null,
+    "new_resync_qty": "38"
+  },
+  {
+    "ship_date": "2026-04-14",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "1",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-14",
+    "sku": "18675",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "1",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "44",
+    "new_resync_txns": "23",
+    "null_ss_qty": null,
+    "new_resync_qty": "67"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "5",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "2",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "18675",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "3",
+    "new_resync_txns": "4",
+    "null_ss_qty": null,
+    "new_resync_qty": "5"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "18795",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "0",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "2"
+  },
+  {
+    "ship_date": "2026-04-16",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "32",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-16",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "4",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "1"
+  },
+  {
+    "ship_date": "2026-04-16",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "4",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-16",
+    "sku": "18675",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "1",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-17",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "21",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "5"
+  },
+  {
+    "ship_date": "2026-04-17",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "2",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-17",
+    "sku": "17914",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "4",
+    "new_resync_txns": "1",
+    "null_ss_qty": null,
+    "new_resync_qty": "5"
+  },
+  {
+    "ship_date": "2026-04-17",
+    "sku": "18675",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "6",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-17",
+    "sku": "18795",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "2",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-20",
+    "sku": "17612",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "12",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  },
+  {
+    "ship_date": "2026-04-20",
+    "sku": "17904",
+    "old_null_ss_id_txns": "0",
+    "old_real_ss_id_txns": "2",
+    "new_resync_txns": "0",
+    "null_ss_qty": null,
+    "new_resync_qty": null
+  }
+]

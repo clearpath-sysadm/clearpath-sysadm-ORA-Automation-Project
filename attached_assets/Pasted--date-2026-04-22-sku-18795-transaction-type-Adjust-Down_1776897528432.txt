@@ -1,0 +1,402 @@
+[
+  {
+    "date": "2026-04-22",
+    "sku": "18795",
+    "transaction_type": "Adjust Down",
+    "quantity": 3,
+    "notes": "These were shipped 7/9/2025 and 7/10/2025 for orders 669075, 669165, 669215",
+    "created_date": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "18795",
+    "transaction_type": "Adjust Down",
+    "quantity": 330,
+    "notes": "Reconciliation adjustment based off of 4/17/2026 physical count of 151",
+    "created_date": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "18675",
+    "transaction_type": "Adjust Down",
+    "quantity": 2,
+    "notes": "Physical count to check lot tracking is working properly",
+    "created_date": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-20",
+    "sku": "18675",
+    "transaction_type": "Adjust Down",
+    "quantity": 2,
+    "notes": "Shawn stopped by and grabbed 2 cases of the Ortho Protect 240231 for testing.",
+    "created_date": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "18675",
+    "transaction_type": "Adjust Up",
+    "quantity": 414,
+    "notes": "Reconcile lot inventory",
+    "created_date": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17914",
+    "transaction_type": "Adjust Down",
+    "quantity": 821,
+    "notes": "Lot balance correction",
+    "created_date": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "transaction_type": "Adjust Up",
+    "quantity": 253,
+    "notes": "Lot balance correction — reconciling duplicate ship entries Apr 16-17 and unlinked adjustments for lot 260047",
+    "created_date": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17904",
+    "transaction_type": "Adjust Up",
+    "quantity": 86,
+    "notes": "Baseline receive backfill — lot 240231",
+    "created_date": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "260082",
+    "created_date": "2026-04-16T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-01",
+    "sku": "17914",
+    "transaction_type": "Adjust Up",
+    "quantity": 4,
+    "notes": "Physical count adjustment: EOM physical count | Adjusted by: Nathan Neely | Time: 2026-04-01 09:24 AM CDT | System: 770 → Physical: 774 (Δ+4)",
+    "created_date": "2026-04-01T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-01",
+    "sku": "17904",
+    "transaction_type": "Adjust Down",
+    "quantity": 4,
+    "notes": "Physical count adjustment: EOM Physical count | Adjusted by: Nathan Neely | Time: 2026-04-01 09:23 AM CDT | System: 116 → Physical: 112 (Δ-4)",
+    "created_date": "2026-04-01T00:00:00.000Z"
+  },
+  {
+    "date": "2026-04-01",
+    "sku": "17612",
+    "transaction_type": "Adjust Down",
+    "quantity": 18,
+    "notes": "Physical count adjustment: Physical Count adjustment | Adjusted by: Nathan Neely | Time: 2026-04-01 09:23 AM CDT | System: 2331 → Physical: 2313 (Δ-18)",
+    "created_date": "2026-04-01T00:00:00.000Z"
+  },
+  {
+    "date": "2026-03-27",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "260047",
+    "created_date": "2026-04-01T00:00:00.000Z"
+  },
+  {
+    "date": "2026-03-24",
+    "sku": "17914",
+    "transaction_type": "Repack",
+    "quantity": 14,
+    "notes": "250297",
+    "created_date": "2026-03-24T00:00:00.000Z"
+  },
+  {
+    "date": "2026-03-24",
+    "sku": "17612",
+    "transaction_type": "Adjust Up",
+    "quantity": 4,
+    "notes": "Physical count ",
+    "created_date": "2026-03-24T00:00:00.000Z"
+  },
+  {
+    "date": "2026-03-24",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "260047",
+    "created_date": "2026-03-24T00:00:00.000Z"
+  },
+  {
+    "date": "2026-03-18",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "260047",
+    "created_date": "2026-03-20T00:00:00.000Z"
+  },
+  {
+    "date": "2026-03-12",
+    "sku": "18675",
+    "transaction_type": "Receive",
+    "quantity": 240,
+    "notes": "260052",
+    "created_date": "2026-03-12T00:00:00.000Z"
+  },
+  {
+    "date": "2026-03-05",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 375,
+    "notes": "260017",
+    "created_date": "2026-03-10T00:00:00.000Z"
+  },
+  {
+    "date": "2026-03-02",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "260017",
+    "created_date": "2026-03-10T00:00:00.000Z"
+  },
+  {
+    "date": "2026-02-27",
+    "sku": "17914",
+    "transaction_type": "Repack",
+    "quantity": 32,
+    "notes": "250297",
+    "created_date": "2026-03-02T00:00:00.000Z"
+  },
+  {
+    "date": "2026-02-27",
+    "sku": "17612",
+    "transaction_type": "Repack",
+    "quantity": 4,
+    "notes": "250377",
+    "created_date": "2026-03-02T00:00:00.000Z"
+  },
+  {
+    "date": "2026-02-27",
+    "sku": "17612",
+    "transaction_type": "Repack",
+    "quantity": 14,
+    "notes": "250372",
+    "created_date": "2026-03-02T00:00:00.000Z"
+  },
+  {
+    "date": "2026-02-27",
+    "sku": "17612",
+    "transaction_type": "Repack",
+    "quantity": 8,
+    "notes": "250362",
+    "created_date": "2026-03-02T00:00:00.000Z"
+  },
+  {
+    "date": "2026-02-17",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "260017",
+    "created_date": "2026-02-23T00:00:00.000Z"
+  },
+  {
+    "date": "2026-01-30",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "260017",
+    "created_date": "2026-01-30T00:00:00.000Z"
+  },
+  {
+    "date": "2026-01-14",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 423,
+    "notes": "250377",
+    "created_date": "2026-01-14T00:00:00.000Z"
+  },
+  {
+    "date": "2026-01-09",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250377",
+    "created_date": "2026-01-09T00:00:00.000Z"
+  },
+  {
+    "date": "2026-01-07",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250377",
+    "created_date": "2026-01-07T00:00:00.000Z"
+  },
+  {
+    "date": "2026-01-05",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250377",
+    "created_date": "2026-01-05T00:00:00.000Z"
+  },
+  {
+    "date": "2025-12-26",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 475,
+    "notes": "250372",
+    "created_date": "2026-01-05T00:00:00.000Z"
+  },
+  {
+    "date": "2025-12-22",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250372",
+    "created_date": "2026-01-05T00:00:00.000Z"
+  },
+  {
+    "date": "2025-12-31",
+    "sku": "18795",
+    "transaction_type": "Adjust Up",
+    "quantity": 10,
+    "notes": "Physical count adjustment: This count has been off for some time.  Nathan to investigate root cause. | Adjusted by: None None | Time: 2025-12-31 04:32 PM CST | System: 7591 → Physical: 7601 (Δ+10)",
+    "created_date": "2025-12-31T00:00:00.000Z"
+  },
+  {
+    "date": "2025-12-05",
+    "sku": "18795",
+    "transaction_type": "Adjust Down",
+    "quantity": 12,
+    "notes": "Physical count adjustment: physical count / 12-05-2025 G | Adjusted by: None None | Time: 2025-12-05 01:48 PM CST | System: 7623 → Physical: 7611 (Δ-12)",
+    "created_date": "2025-12-05T00:00:00.000Z"
+  },
+  {
+    "date": "2025-12-05",
+    "sku": "17914",
+    "transaction_type": "Adjust Down",
+    "quantity": 2,
+    "notes": "Physical count adjustment: physical count /12-05-2025 G | Adjusted by: None None | Time: 2025-12-05 01:44 PM CST | System: 1108 → Physical: 1106 (Δ-2)",
+    "created_date": "2025-12-05T00:00:00.000Z"
+  },
+  {
+    "date": "2025-12-05",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250372 G",
+    "created_date": "2025-12-05T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-26",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "received /11-26-2025 G\nLOT - 17612-250372",
+    "created_date": "2025-11-26T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-20",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 475,
+    "notes": "250362",
+    "created_date": "2025-11-21T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-17",
+    "sku": "17914",
+    "transaction_type": "Adjust Up",
+    "quantity": 1,
+    "notes": "Physical count adjustment: Physical | Adjusted by: Nathan Neely | Time: 2025-11-17 03:12 PM CST | System: 1192 → Physical: 1193 (Δ+1)",
+    "created_date": "2025-11-17T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-17",
+    "sku": "17612",
+    "transaction_type": "Adjust Up",
+    "quantity": 2,
+    "notes": "Physical count adjustment: Physical count | Adjusted by: Nathan Neely | Time: 2025-11-17 03:11 PM CST | System: 2554 → Physical: 2556 (Δ+2)",
+    "created_date": "2025-11-17T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-17",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250362",
+    "created_date": "2025-11-17T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-13",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250362",
+    "created_date": "2025-11-14T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-11",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250362",
+    "created_date": "2025-11-11T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-05",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 425,
+    "notes": "250340",
+    "created_date": "2025-11-07T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-04",
+    "sku": "18795",
+    "transaction_type": "Adjust Up",
+    "quantity": 1,
+    "notes": "Physical count adjustment: Physical Count | Adjusted by: Nathan Neely | Time: 2025-11-04 04:35 PM CST | System: 7670 → Physical: 7671 (Δ+1)",
+    "created_date": "2025-11-04T00:00:00.000Z"
+  },
+  {
+    "date": "2025-11-03",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250340",
+    "created_date": "2025-11-04T00:00:00.000Z"
+  },
+  {
+    "date": "2025-10-31",
+    "sku": "18795",
+    "transaction_type": "Adjust Up",
+    "quantity": 3,
+    "notes": "Physical count adjustment: Physical count | Adjusted by: Nathan Neely | Time: 2025-10-31 03:00 PM CDT | System: 7668 → Physical: 7671 (Δ+3)",
+    "created_date": "2025-10-31T00:00:00.000Z"
+  },
+  {
+    "date": "2025-10-31",
+    "sku": "18675",
+    "transaction_type": "Adjust Down",
+    "quantity": 1,
+    "notes": "Physical count adjustment: Physical count | Adjusted by: Nathan Neely | Time: 2025-10-31 03:00 PM CDT | System: 712 → Physical: 711 (Δ-1)",
+    "created_date": "2025-10-31T00:00:00.000Z"
+  },
+  {
+    "date": "2025-10-31",
+    "sku": "17612",
+    "transaction_type": "Adjust Down",
+    "quantity": 2,
+    "notes": "Physical count adjustment: Physical Count | Adjusted by: Nathan Neely | Time: 2025-10-31 02:58 PM CDT | System: 1239 → Physical: 1237 (Δ-2)",
+    "created_date": "2025-10-31T00:00:00.000Z"
+  },
+  {
+    "date": "2025-10-30",
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "notes": "250340",
+    "created_date": "2025-10-31T00:00:00.000Z"
+  }
+]

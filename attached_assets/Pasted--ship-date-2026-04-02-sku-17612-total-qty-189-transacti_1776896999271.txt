@@ -1,0 +1,402 @@
+[
+  {
+    "ship_date": "2026-04-02",
+    "sku": "17612",
+    "total_qty": "189",
+    "transaction_count": "61",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-02",
+    "sku": "17904",
+    "total_qty": "7",
+    "transaction_count": "5",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-02",
+    "sku": "17914",
+    "total_qty": "10",
+    "transaction_count": "5",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-02",
+    "sku": "18675",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-02",
+    "sku": "18795",
+    "total_qty": "9",
+    "transaction_count": "3",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-03",
+    "sku": "17612",
+    "total_qty": "56",
+    "transaction_count": "18",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-03",
+    "sku": "17904",
+    "total_qty": "2",
+    "transaction_count": "2",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-03",
+    "sku": "17914",
+    "total_qty": "2",
+    "transaction_count": "2",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-03",
+    "sku": "18795",
+    "total_qty": "2",
+    "transaction_count": "2",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-06",
+    "sku": "17612",
+    "total_qty": "59",
+    "transaction_count": "27",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-06",
+    "sku": "17904",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-06",
+    "sku": "17914",
+    "total_qty": "3",
+    "transaction_count": "2",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "17612",
+    "total_qty": "86",
+    "transaction_count": "40",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "17904",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "17914",
+    "total_qty": "4",
+    "transaction_count": "3",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "18675",
+    "total_qty": "3",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-07",
+    "sku": "18795",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-08",
+    "sku": "17612",
+    "total_qty": "88",
+    "transaction_count": "34",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-08",
+    "sku": "17904",
+    "total_qty": "4",
+    "transaction_count": "3",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-08",
+    "sku": "17914",
+    "total_qty": "13",
+    "transaction_count": "6",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-08",
+    "sku": "18795",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "17612",
+    "total_qty": "112",
+    "transaction_count": "21",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "17904",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "17914",
+    "total_qty": "11",
+    "transaction_count": "5",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "18675",
+    "total_qty": "13",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-09",
+    "sku": "18795",
+    "total_qty": "5",
+    "transaction_count": "4",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "17612",
+    "total_qty": "52",
+    "transaction_count": "10",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "17904",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "18675",
+    "total_qty": "5",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-10",
+    "sku": "18795",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-13",
+    "sku": "17612",
+    "total_qty": "51",
+    "transaction_count": "6",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-13",
+    "sku": "17904",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-13",
+    "sku": "17914",
+    "total_qty": "6",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-14",
+    "sku": "17612",
+    "total_qty": "38",
+    "transaction_count": "7",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "17612",
+    "total_qty": "67",
+    "transaction_count": "23",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "17904",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "17914",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "18675",
+    "total_qty": "5",
+    "transaction_count": "4",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-15",
+    "sku": "18795",
+    "total_qty": "2",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-16",
+    "sku": "17904",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-17",
+    "sku": "17612",
+    "total_qty": "5",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-17",
+    "sku": "17914",
+    "total_qty": "5",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-21",
+    "sku": "17612",
+    "total_qty": "76",
+    "transaction_count": "10",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-21",
+    "sku": "17914",
+    "total_qty": "3",
+    "transaction_count": "2",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-21",
+    "sku": "18675",
+    "total_qty": "1",
+    "transaction_count": "1",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-22",
+    "sku": "17612",
+    "total_qty": "87",
+    "transaction_count": "29",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-22",
+    "sku": "17904",
+    "total_qty": "2",
+    "transaction_count": "2",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-22",
+    "sku": "17914",
+    "total_qty": "11",
+    "transaction_count": "9",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-22",
+    "sku": "18675",
+    "total_qty": "7",
+    "transaction_count": "3",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  },
+  {
+    "ship_date": "2026-04-22",
+    "sku": "18795",
+    "total_qty": "8",
+    "transaction_count": "4",
+    "earliest_created": "2026-04-22T00:00:00.000Z",
+    "latest_created": "2026-04-22T00:00:00.000Z"
+  }
+]

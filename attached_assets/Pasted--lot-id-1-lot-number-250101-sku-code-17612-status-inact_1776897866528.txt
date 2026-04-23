@@ -1,0 +1,198 @@
+[
+  {
+    "lot_id": 1,
+    "lot_number": "250101",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 5,
+    "lot_number": "250172",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 6,
+    "lot_number": "250195",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 9,
+    "lot_number": "250216",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 10,
+    "lot_number": "250237",
+    "sku_code": "17612",
+    "status": "depleted",
+    "balance": "0"
+  },
+  {
+    "lot_id": 13,
+    "lot_number": "250300",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 14,
+    "lot_number": "250340",
+    "sku_code": "17612",
+    "status": "depleted",
+    "balance": "0"
+  },
+  {
+    "lot_id": 15,
+    "lot_number": "250362",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 16,
+    "lot_number": "250372",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 17,
+    "lot_number": "250377",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 18,
+    "lot_number": "260017",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "-578"
+  },
+  {
+    "lot_id": 19,
+    "lot_number": "260047",
+    "sku_code": "17612",
+    "status": "active",
+    "balance": "1182"
+  },
+  {
+    "lot_id": 20,
+    "lot_number": "260082",
+    "sku_code": "17612",
+    "status": "inactive",
+    "balance": "576"
+  },
+  {
+    "lot_id": 2,
+    "lot_number": "240276",
+    "sku_code": "17904",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 12,
+    "lot_number": "250240",
+    "sku_code": "17904",
+    "status": "active",
+    "balance": "34"
+  },
+  {
+    "lot_id": 3,
+    "lot_number": "240286",
+    "sku_code": "17914",
+    "status": "inactive",
+    "balance": "0"
+  },
+  {
+    "lot_id": 11,
+    "lot_number": "250297",
+    "sku_code": "17914",
+    "status": "active",
+    "balance": "617"
+  },
+  {
+    "lot_id": 4,
+    "lot_number": "240231",
+    "sku_code": "18675",
+    "status": "active",
+    "balance": "303"
+  },
+  {
+    "lot_id": 28,
+    "lot_number": "260052",
+    "sku_code": "18675",
+    "status": "inactive",
+    "balance": "229"
+  },
+  {
+    "lot_id": 7,
+    "lot_number": "11001",
+    "sku_code": "18795",
+    "status": "active",
+    "balance": "122"
+  },
+  {
+    "lot_id": 8,
+    "lot_number": "11002",
+    "sku_code": "18795",
+    "status": "inactive",
+    "balance": "713"
+  },
+  {
+    "lot_id": 21,
+    "lot_number": "11003",
+    "sku_code": "18795",
+    "status": "inactive",
+    "balance": "1018"
+  },
+  {
+    "lot_id": 22,
+    "lot_number": "11004",
+    "sku_code": "18795",
+    "status": "inactive",
+    "balance": "1034"
+  },
+  {
+    "lot_id": 23,
+    "lot_number": "11005",
+    "sku_code": "18795",
+    "status": "inactive",
+    "balance": "553"
+  },
+  {
+    "lot_id": 24,
+    "lot_number": "11006",
+    "sku_code": "18795",
+    "status": "inactive",
+    "balance": "996"
+  },
+  {
+    "lot_id": 25,
+    "lot_number": "11007",
+    "sku_code": "18795",
+    "status": "inactive",
+    "balance": "766"
+  },
+  {
+    "lot_id": 26,
+    "lot_number": "11008",
+    "sku_code": "18795",
+    "status": "inactive",
+    "balance": "996"
+  },
+  {
+    "lot_id": 27,
+    "lot_number": "11009",
+    "sku_code": "18795",
+    "status": "inactive",
+    "balance": "594"
+  }
+]
