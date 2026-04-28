@@ -618,9 +618,11 @@ def get_admin_alert():
 
         cursor.execute("""
             SELECT COUNT(*)
-            FROM lot_tagging_failures
-            WHERE sku LIKE '%%[PROMO:%%'
-              AND resolved_at IS NULL
+            FROM lot_tagging_failures ltf
+            LEFT JOIN orders_inbox oi ON oi.order_number = ltf.order_number
+            WHERE ltf.sku LIKE '%%[PROMO:%%'
+              AND ltf.resolved_at IS NULL
+              AND COALESCE(oi.status, 'unknown') != 'cancelled'
         """)
         promo_count = (cursor.fetchone() or [0])[0]
         conn.close()
@@ -6737,8 +6739,10 @@ def api_get_promo_sku_issues():
                 ORDER BY processed_at DESC
                 LIMIT 1
             ) prl ON TRUE
+            LEFT JOIN orders_inbox oi ON oi.order_number = ltf.order_number
             WHERE ltf.sku LIKE '%%[PROMO:%%'
               AND ltf.resolved_at IS NULL
+              AND COALESCE(oi.status, 'unknown') != 'cancelled'
             ORDER BY ltf.detected_at DESC
         """)
         rows = cursor.fetchall()
