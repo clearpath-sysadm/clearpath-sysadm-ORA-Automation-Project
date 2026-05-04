@@ -1,0 +1,122 @@
+[
+  {
+    "date": "2026-04-02",
+    "lot_number": "260017",
+    "qty_shipped": "189"
+  },
+  {
+    "date": "2026-04-03",
+    "lot_number": "260017",
+    "qty_shipped": "56"
+  },
+  {
+    "date": "2026-04-06",
+    "lot_number": "260017",
+    "qty_shipped": "59"
+  },
+  {
+    "date": "2026-04-07",
+    "lot_number": "260017",
+    "qty_shipped": "86"
+  },
+  {
+    "date": "2026-04-08",
+    "lot_number": "260017",
+    "qty_shipped": "88"
+  },
+  {
+    "date": "2026-04-09",
+    "lot_number": "260017",
+    "qty_shipped": "100"
+  },
+  {
+    "date": "2026-04-09",
+    "lot_number": "260047",
+    "qty_shipped": "12"
+  },
+  {
+    "date": "2026-04-10",
+    "lot_number": "260047",
+    "qty_shipped": "69"
+  },
+  {
+    "date": "2026-04-13",
+    "lot_number": "260047",
+    "qty_shipped": "77"
+  },
+  {
+    "date": "2026-04-14",
+    "lot_number": "260047",
+    "qty_shipped": "69"
+  },
+  {
+    "date": "2026-04-15",
+    "lot_number": "260047",
+    "qty_shipped": "174"
+  },
+  {
+    "date": "2026-04-16",
+    "lot_number": "260047",
+    "qty_shipped": "94"
+  },
+  {
+    "date": "2026-04-17",
+    "lot_number": "260047",
+    "qty_shipped": "53"
+  },
+  {
+    "date": "2026-04-20",
+    "lot_number": "260047",
+    "qty_shipped": "33"
+  },
+  {
+    "date": "2026-04-21",
+    "lot_number": "260047",
+    "qty_shipped": "131"
+  },
+  {
+    "date": "2026-04-22",
+    "lot_number": "260047",
+    "qty_shipped": "87"
+  },
+  {
+    "date": "2026-04-23",
+    "lot_number": "260047",
+    "qty_shipped": "110"
+  },
+  {
+    "date": "2026-04-24",
+    "lot_number": "260047",
+    "qty_shipped": "180"
+  },
+  {
+    "date": "2026-04-27",
+    "lot_number": "260047",
+    "qty_shipped": "56"
+  },
+  {
+    "date": "2026-04-28",
+    "lot_number": "260047",
+    "qty_shipped": "86"
+  },
+  {
+    "date": "2026-04-29",
+    "lot_number": "260047",
+    "qty_shipped": "92"
+  },
+  {
+    "date": "2026-04-30",
+    "lot_number": "260047",
+    "qty_shipped": "98"
+  },
+  {
+    "date": "2026-05-01",
+    "lot_number": "260047",
+    "qty_shipped": "78"
+  },
+  {
+    "date": "2026-05-04",
+    "lot_number": "260047",
+    "qty_shipped": "62"
+  }
+]
