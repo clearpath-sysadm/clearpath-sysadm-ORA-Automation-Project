@@ -121,4 +121,127 @@ Of the 30 tasks active during the reporting period:
 
 ---
 
+## Conservative Classification — Strictly Migration-Required Work
+
+A more conservative reading applies a tighter test: **would this task have been required even if BigCommerce had never replaced X-Cart?** Tasks that represent ShipStation operational improvements, general shipping accuracy fixes, or warehouse automation that would have been valuable regardless of the storefront change are excluded under this view.
+
+### Tasks Reclassified Out of BC Migration (Conservative)
+
+| Task | Title | Reclassified To | Reason |
+|---|---|---|---|
+| #4 | Fix dashboard data accuracy | General | Pre-existing cleanup routine bugs not introduced by BigCommerce |
+| #17 | Named custom package selection via V2 API | General | ShipStation V2 package API existed before BigCommerce; this is a ShipStation integration improvement |
+| #18 | V2 Named Package Sweep | General | Dependent on #17; same reasoning |
+| #20 | Multi-package V2 — quantity-driven package count | General | A physical shipping requirement that exists regardless of order source |
+| #21 | Fix XML lot stamps, stuck detector, timezone labels | General | Mixed maintenance and cleanup; no single element is strictly BC-required |
+| #22 | Fix V2 package PUT rejected for old orders | General | Bug fix on the V2 package feature (#17); follows its reclassification |
+| #25 | Automated noon batch label processor (Axiom) | General | Warehouse automation that would have been beneficial under any storefront |
+| #28 | Dev/prod environment isolation | General | General deployment discipline; not specific to BigCommerce architecture |
+| #30 | Run lot-tagger sweep and QA report | General | Operational observation run — no code delivered |
+| #31 | Seed production lots/skus — restore service | Inventory | Emergency restore of inventory reference data after a deployment incident |
+
+### Conservative Totals
+
+| Category | Tasks | Share |
+|---|---|---|
+| BigCommerce Migration / Order Processing (strict) | 12 | 40% |
+| Inventory Management | 7 | 23% |
+| General / Operational / Infrastructure | 11 | 37% |
+| **Total** | **30** | **100%** |
+
+The 12 tasks retained under the conservative view are those where the work **would not exist at all** under the prior X-Cart/XML architecture — specifically the lot-tagging system, the order import pipeline replacement, the migration cutover, and the live-fire reliability fixes made after the new system began processing real orders.
+
+### Conservative BC Migration — The 12 Tasks
+
+| Task | Title | Status |
+|---|---|---|
+| #9 | ShipStation lot-tagging worker | Delivered |
+| #10 | Update lot mismatch scanner for customField1 | Delivered |
+| #11 | Disable ShipStation order creation | Delivered |
+| #12 | Lot mismatch correction approval queue | Drafted |
+| #13 | Order shipping profile enrichment | Delivered |
+| #15 | Import BigCommerce orders into local dashboard | Delivered |
+| #16 | Tagger full-field idempotency and sweep | Delivered |
+| #19 | Lot-stamped SKU tagging (XML & manually-added orders) | Delivered |
+| #26 | Lot-tagger reliability fixes + timezone display | Delivered |
+| #27 | Fix Canadian order false violations | Delivered |
+| #29 | Lot-tagger post-run verification | Delivered |
+| #33 | Fix pulse cards to use ShipStation data | Delivered |
+
+---
+
+## Development Timeline — Conservative BC Migration Tasks
+
+All 12 strictly migration-required tasks were **conceived and delivered within a 12-day window**: April 1 through April 13, 2026. The work breaks into four distinct phases.
+
+**Active development span: April 1, 2026 – April 13, 2026**
+**Tasks delivered:** 11 of 12 (Task #12 drafted, pending scheduling)
+
+---
+
+### Phase 1 — Migration Kickoff: April 1
+
+The first day of active BigCommerce migration development. The core lot-tagging system and its audit companion were created on the same day, establishing the foundation of the new order processing architecture.
+
+| Task | Title | Planned | Delivered |
+|---|---|---|---|
+| #9 | ShipStation lot-tagging worker | Apr 1 | Apr 9 |
+| #10 | Update lot mismatch scanner for customField1 | Apr 1 | Apr 9 |
+
+---
+
+### Phase 2 — Core Pipeline Build: April 2
+
+The heaviest single day of migration development. Six tasks were created covering the full scope of the new order flow: migration cutover, pipeline replacement, order enrichment, and tagger coverage gaps.
+
+| Task | Title | Planned | Delivered |
+|---|---|---|---|
+| #11 | Disable ShipStation order creation | Apr 2 | Apr 9 |
+| #12 | Lot mismatch correction approval queue | Apr 2 | Pending |
+| #13 | Order shipping profile enrichment | Apr 2 | Apr 9 |
+| #15 | Import BigCommerce orders into local dashboard | Apr 2 | Apr 9 |
+| #16 | Tagger full-field idempotency and sweep | Apr 2 | Apr 9 |
+| #19 | Lot-stamped SKU tagging (XML & manually-added orders) | Apr 2 | Apr 9 |
+
+---
+
+### Phase 3 — Reliability Sprint: April 7–8
+
+Three tasks addressing gaps discovered after the new system began processing live orders. These were reactive fixes made necessary by real-world order volumes exposing edge cases in the initial build.
+
+| Task | Title | Planned | Delivered |
+|---|---|---|---|
+| #26 | Lot-tagger reliability fixes + timezone display | Apr 7 | Apr 9 |
+| #27 | Fix Canadian order false violations | Apr 8 | Apr 9 |
+| #29 | Lot-tagger post-run verification | Apr 8 | Apr 9 |
+
+---
+
+### Phase 4 — Batch Delivery and Final Polish: April 9–13
+
+All 10 tasks from Phases 1–3 were merged into production on April 9. One final task was completed on April 13, correcting the dashboard data source from the retired XML pipeline to ShipStation.
+
+| Task | Title | Planned | Delivered |
+|---|---|---|---|
+| #33 | Fix pulse cards to use ShipStation data | Apr 10 | Apr 13 |
+
+**April 9** was the primary delivery date — 10 tasks merged to production in a single batch.
+
+---
+
+### Timeline at a Glance
+
+```
+April 1   ──┬── #9  #10                          (Kickoff — lot-tagger + audit system)
+April 2   ──┼── #11 #12 #13 #15 #16 #19          (Core pipeline — 6 tasks)
+April 3–6 ──┤   (no new BC migration tasks)
+April 7   ──┼── #26                               (Reliability)
+April 8   ──┼── #27 #29                           (Reliability)
+April 9   ──┼── ████ BATCH DELIVERY (10 tasks merged to production)
+April 10  ──┼── #33                               (Post-merge polish)
+April 13  ──┴── ████ #33 delivered
+```
+
+---
+
 *Report prepared by development team. All task classifications are based on full task descriptions and implementation records in the project task log.*
