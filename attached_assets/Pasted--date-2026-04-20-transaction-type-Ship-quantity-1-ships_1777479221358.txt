@@ -1,0 +1,1786 @@
+[
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279108480",
+    "notes": "862438",
+    "running_balance": "1657"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279108485",
+    "notes": "862439",
+    "running_balance": "1656"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279135089",
+    "notes": "862440",
+    "running_balance": "1655"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279162690",
+    "notes": "862441",
+    "running_balance": "1654"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279685712",
+    "notes": "862442",
+    "running_balance": "1653"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "279727740",
+    "notes": "862447",
+    "running_balance": "1651"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279727745",
+    "notes": "862448",
+    "running_balance": "1650"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279757964",
+    "notes": "862449",
+    "running_balance": "1649"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "279757961",
+    "notes": "862450",
+    "running_balance": "1647"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "279075929",
+    "notes": "100633",
+    "running_balance": "1635"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "279135093",
+    "notes": "862440",
+    "running_balance": "1630"
+  },
+  {
+    "date": "2026-04-20",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "279108482",
+    "notes": "862438",
+    "running_balance": "1625"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Adjust Up",
+    "quantity": 253,
+    "shipstation_order_id": null,
+    "notes": "Lot balance correction — reconciling duplicate ship entries Apr 16-17 and unlinked adjustments for lot 260047",
+    "running_balance": "1878"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279800072",
+    "notes": "862451",
+    "running_balance": "1877"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "279800069",
+    "notes": "862452",
+    "running_balance": "1875"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 10,
+    "shipstation_order_id": "279800060",
+    "notes": "862454",
+    "running_balance": "1865"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "279800075",
+    "notes": "862456",
+    "running_balance": "1863"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279841464",
+    "notes": "862457",
+    "running_balance": "1862"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279841472",
+    "notes": "862458",
+    "running_balance": "1861"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279841467",
+    "notes": "862459",
+    "running_balance": "1860"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279841471",
+    "notes": "862460",
+    "running_balance": "1859"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279884738",
+    "notes": "862463",
+    "running_balance": "1858"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279884271",
+    "notes": "862464",
+    "running_balance": "1857"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279885036",
+    "notes": "862465",
+    "running_balance": "1856"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279885308",
+    "notes": "862466",
+    "running_balance": "1855"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "279884488",
+    "notes": "862467",
+    "running_balance": "1853"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279885336",
+    "notes": "862468",
+    "running_balance": "1852"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279943092",
+    "notes": "862469",
+    "running_balance": "1851"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279943089",
+    "notes": "862470",
+    "running_balance": "1850"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "shipstation_order_id": "279943093",
+    "notes": "862471",
+    "running_balance": "1846"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "shipstation_order_id": "279943094",
+    "notes": "862472",
+    "running_balance": "1842"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "279973639",
+    "notes": "862473",
+    "running_balance": "1841"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280025621",
+    "notes": "862474",
+    "running_balance": "1840"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "shipstation_order_id": "280050963",
+    "notes": "862480",
+    "running_balance": "1836"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "shipstation_order_id": "280050964",
+    "notes": "862481",
+    "running_balance": "1830"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280076176",
+    "notes": "862482",
+    "running_balance": "1827"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280126636",
+    "notes": "862489",
+    "running_balance": "1826"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280126653",
+    "notes": "862491",
+    "running_balance": "1825"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280126646",
+    "notes": "862492",
+    "running_balance": "1824"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280126650",
+    "notes": "862493",
+    "running_balance": "1823"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "279800073",
+    "notes": "862451",
+    "running_balance": "1818"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 30,
+    "shipstation_order_id": "279800063",
+    "notes": "862454",
+    "running_balance": "1788"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "279841465",
+    "notes": "862457",
+    "running_balance": "1783"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "279841469",
+    "notes": "862459",
+    "running_balance": "1778"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "279943090",
+    "notes": "862470",
+    "running_balance": "1773"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280109747",
+    "notes": "862481",
+    "running_balance": "1771"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280076422",
+    "notes": "862482",
+    "running_balance": "1759"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280077236",
+    "notes": "862483",
+    "running_balance": "1758"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "shipstation_order_id": "280085934",
+    "notes": "862487",
+    "running_balance": "1752"
+  },
+  {
+    "date": "2026-04-21",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280126641",
+    "notes": "862489",
+    "running_balance": "1747"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280158341",
+    "notes": "862495",
+    "running_balance": "1746"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280158342",
+    "notes": "862496",
+    "running_balance": "1745"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280183633",
+    "notes": "862501",
+    "running_balance": "1743"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280183629",
+    "notes": "862502",
+    "running_balance": "1742"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280209905",
+    "notes": "862504",
+    "running_balance": "1740"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280209897",
+    "notes": "862505",
+    "running_balance": "1739"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280209899",
+    "notes": "862506",
+    "running_balance": "1737"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280209902",
+    "notes": "862507",
+    "running_balance": "1736"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280227528",
+    "notes": "862508",
+    "running_balance": "1734"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280227526",
+    "notes": "862510",
+    "running_balance": "1731"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280289960",
+    "notes": "862512",
+    "running_balance": "1728"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280357296",
+    "notes": "862515",
+    "running_balance": "1727"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280357292",
+    "notes": "862516",
+    "running_balance": "1725"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280357293",
+    "notes": "862517",
+    "running_balance": "1724"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280378800",
+    "notes": "862525",
+    "running_balance": "1723"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280378798",
+    "notes": "862527",
+    "running_balance": "1721"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280402857",
+    "notes": "862528",
+    "running_balance": "1716"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280402873",
+    "notes": "862529",
+    "running_balance": "1715"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280402860",
+    "notes": "862531",
+    "running_balance": "1714"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280158344",
+    "notes": "862496",
+    "running_balance": "1709"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280158339",
+    "notes": "862497",
+    "running_balance": "1707"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280183631",
+    "notes": "862502",
+    "running_balance": "1702"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280209898",
+    "notes": "862505",
+    "running_balance": "1697"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280227527",
+    "notes": "862510",
+    "running_balance": "1685"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280289961",
+    "notes": "862512",
+    "running_balance": "1673"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280344765",
+    "notes": "862514",
+    "running_balance": "1671"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280357301",
+    "notes": "862515",
+    "running_balance": "1666"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280357295",
+    "notes": "862517",
+    "running_balance": "1661"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280402859",
+    "notes": "862530",
+    "running_balance": "1660"
+  },
+  {
+    "date": "2026-04-22",
+    "transaction_type": "Adjust Up",
+    "quantity": 223,
+    "shipstation_order_id": null,
+    "notes": "",
+    "running_balance": "1883"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280416366",
+    "notes": "862534",
+    "running_balance": "1881"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280416363",
+    "notes": "862535",
+    "running_balance": "1880"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 9,
+    "shipstation_order_id": "280416364",
+    "notes": "862535",
+    "running_balance": "1871"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280451291",
+    "notes": "862536",
+    "running_balance": "1870"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280451293",
+    "notes": "862536",
+    "running_balance": "1865"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280451288",
+    "notes": "862537",
+    "running_balance": "1863"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280451286",
+    "notes": "862538",
+    "running_balance": "1862"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280451287",
+    "notes": "862538",
+    "running_balance": "1857"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280451425",
+    "notes": "862539",
+    "running_balance": "1856"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280451299",
+    "notes": "862540",
+    "running_balance": "1855"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280451294",
+    "notes": "862541",
+    "running_balance": "1854"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280451296",
+    "notes": "862541",
+    "running_balance": "1849"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280451289",
+    "notes": "862542",
+    "running_balance": "1848"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280451465",
+    "notes": "862542",
+    "running_balance": "1847"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280481067",
+    "notes": "862543",
+    "running_balance": "1846"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280481069",
+    "notes": "862543",
+    "running_balance": "1841"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280481073",
+    "notes": "862544",
+    "running_balance": "1838"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280481081",
+    "notes": "862544",
+    "running_balance": "1826"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280508597",
+    "notes": "862546",
+    "running_balance": "1825"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280508608",
+    "notes": "862547",
+    "running_balance": "1824"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280654418",
+    "notes": "862548",
+    "running_balance": "1821"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280654419",
+    "notes": "862548",
+    "running_balance": "1809"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280674227",
+    "notes": "862549",
+    "running_balance": "1808"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280674223",
+    "notes": "862550",
+    "running_balance": "1805"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280674224",
+    "notes": "862550",
+    "running_balance": "1793"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280699116",
+    "notes": "862551",
+    "running_balance": "1791"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280699124",
+    "notes": "862552",
+    "running_balance": "1788"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280699129",
+    "notes": "862552",
+    "running_balance": "1776"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280699132",
+    "notes": "862553",
+    "running_balance": "1775"
+  },
+  {
+    "date": "2026-04-23",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280699121",
+    "notes": "862554",
+    "running_balance": "1773"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 15,
+    "shipstation_order_id": "280726851",
+    "notes": "862556",
+    "running_balance": "1758"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280726852",
+    "notes": "862557",
+    "running_balance": "1757"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280764723",
+    "notes": "862558",
+    "running_balance": "1756"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280764724",
+    "notes": "862558",
+    "running_balance": "1751"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280764731",
+    "notes": "862559",
+    "running_balance": "1750"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280764722",
+    "notes": "862560",
+    "running_balance": "1748"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280764716",
+    "notes": "862561",
+    "running_balance": "1745"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280764718",
+    "notes": "862561",
+    "running_balance": "1733"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280789961",
+    "notes": "862562",
+    "running_balance": "1732"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280789873",
+    "notes": "862563",
+    "running_balance": "1731"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "280789848",
+    "notes": "862564",
+    "running_balance": "1728"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "280789851",
+    "notes": "862564",
+    "running_balance": "1716"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280790040",
+    "notes": "862564",
+    "running_balance": "1715"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280789860",
+    "notes": "862565",
+    "running_balance": "1714"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280790376",
+    "notes": "862566",
+    "running_balance": "1713"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280798439",
+    "notes": "862567",
+    "running_balance": "1712"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280798441",
+    "notes": "862567",
+    "running_balance": "1707"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280798442",
+    "notes": "862568",
+    "running_balance": "1706"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280798443",
+    "notes": "862568",
+    "running_balance": "1701"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280819584",
+    "notes": "862569",
+    "running_balance": "1700"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280819579",
+    "notes": "862571",
+    "running_balance": "1699"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280819581",
+    "notes": "862571",
+    "running_balance": "1694"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280854005",
+    "notes": "862572",
+    "running_balance": "1692"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280854000",
+    "notes": "862573",
+    "running_balance": "1691"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280964211",
+    "notes": "862574",
+    "running_balance": "1689"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "shipstation_order_id": "280964212",
+    "notes": "862575",
+    "running_balance": "1685"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280973237",
+    "notes": "862575",
+    "running_balance": "1684"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 16,
+    "shipstation_order_id": "280964221",
+    "notes": "862576",
+    "running_balance": "1668"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "shipstation_order_id": "280974332",
+    "notes": "862576",
+    "running_balance": "1664"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "shipstation_order_id": "280964224",
+    "notes": "862577",
+    "running_balance": "1660"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280978476",
+    "notes": "862577",
+    "running_balance": "1659"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "shipstation_order_id": "280964233",
+    "notes": "862578",
+    "running_balance": "1655"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280977312",
+    "notes": "862578",
+    "running_balance": "1654"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280964244",
+    "notes": "862579",
+    "running_balance": "1653"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280978188",
+    "notes": "862579",
+    "running_balance": "1652"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280964236",
+    "notes": "862580",
+    "running_balance": "1647"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280979495",
+    "notes": "862580",
+    "running_balance": "1645"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280964238",
+    "notes": "862581",
+    "running_balance": "1643"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280979902",
+    "notes": "862581",
+    "running_balance": "1642"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280964226",
+    "notes": "862582",
+    "running_balance": "1637"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280981373",
+    "notes": "862582",
+    "running_balance": "1636"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280964214",
+    "notes": "862583",
+    "running_balance": "1634"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280964246",
+    "notes": "862584",
+    "running_balance": "1633"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280964251",
+    "notes": "862585",
+    "running_balance": "1632"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280964254",
+    "notes": "862586",
+    "running_balance": "1627"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280982360",
+    "notes": "862586",
+    "running_balance": "1626"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280964258",
+    "notes": "862587",
+    "running_balance": "1625"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280964216",
+    "notes": "862588",
+    "running_balance": "1623"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280964223",
+    "notes": "862589",
+    "running_balance": "1622"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280964240",
+    "notes": "862590",
+    "running_balance": "1620"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280984003",
+    "notes": "862590",
+    "running_balance": "1619"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 7,
+    "shipstation_order_id": "280964229",
+    "notes": "862591",
+    "running_balance": "1612"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "280984892",
+    "notes": "862591",
+    "running_balance": "1610"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "280964256",
+    "notes": "862592",
+    "running_balance": "1605"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280985164",
+    "notes": "862592",
+    "running_balance": "1604"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280964259",
+    "notes": "862593",
+    "running_balance": "1603"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280985451",
+    "notes": "862593",
+    "running_balance": "1602"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "shipstation_order_id": "280984028",
+    "notes": "862594",
+    "running_balance": "1598"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "280984567",
+    "notes": "862594",
+    "running_balance": "1597"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281013439",
+    "notes": "862595",
+    "running_balance": "1596"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281013438",
+    "notes": "862596",
+    "running_balance": "1595"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281013434",
+    "notes": "862597",
+    "running_balance": "1594"
+  },
+  {
+    "date": "2026-04-24",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281016664",
+    "notes": "862561",
+    "running_balance": "1593"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281039668",
+    "notes": "862598",
+    "running_balance": "1588"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281039727",
+    "notes": "862598",
+    "running_balance": "1587"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281039688",
+    "notes": "862599",
+    "running_balance": "1586"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281039691",
+    "notes": "862600",
+    "running_balance": "1585"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "shipstation_order_id": "281039684",
+    "notes": "862601",
+    "running_balance": "1579"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281039774",
+    "notes": "862601",
+    "running_balance": "1578"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "281094640",
+    "notes": "862606",
+    "running_balance": "1576"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281094635",
+    "notes": "862607",
+    "running_balance": "1571"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281094686",
+    "notes": "862607",
+    "running_balance": "1570"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281094645",
+    "notes": "862608",
+    "running_balance": "1569"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281351039",
+    "notes": "862609",
+    "running_balance": "1568"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281624360",
+    "notes": "862610",
+    "running_balance": "1567"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281646795",
+    "notes": "862611",
+    "running_balance": "1566"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281646802",
+    "notes": "862612",
+    "running_balance": "1565"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281673920",
+    "notes": "862613",
+    "running_balance": "1560"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281673949",
+    "notes": "862613",
+    "running_balance": "1559"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281673923",
+    "notes": "862614",
+    "running_balance": "1554"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281673966",
+    "notes": "862614",
+    "running_balance": "1553"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281673911",
+    "notes": "862615",
+    "running_balance": "1548"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281673997",
+    "notes": "862615",
+    "running_balance": "1547"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "281673926",
+    "notes": "862616",
+    "running_balance": "1545"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281673915",
+    "notes": "862617",
+    "running_balance": "1540"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281674300",
+    "notes": "862617",
+    "running_balance": "1539"
+  },
+  {
+    "date": "2026-04-27",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "281673907",
+    "notes": "862619",
+    "running_balance": "1537"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "281703181",
+    "notes": "862620",
+    "running_balance": "1535"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281703184",
+    "notes": "862621",
+    "running_balance": "1534"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281733028",
+    "notes": "862623",
+    "running_balance": "1533"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "281733033",
+    "notes": "862624",
+    "running_balance": "1530"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281733023",
+    "notes": "862625",
+    "running_balance": "1525"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281733078",
+    "notes": "862625",
+    "running_balance": "1524"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281733013",
+    "notes": "862626",
+    "running_balance": "1519"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281733105",
+    "notes": "862626",
+    "running_balance": "1518"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 13,
+    "shipstation_order_id": "281763304",
+    "notes": "862627",
+    "running_balance": "1505"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "281763336",
+    "notes": "862627",
+    "running_balance": "1502"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "shipstation_order_id": "281763301",
+    "notes": "862628",
+    "running_balance": "1490"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "shipstation_order_id": "281763357",
+    "notes": "862628",
+    "running_balance": "1487"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "shipstation_order_id": "281787794",
+    "notes": "862629",
+    "running_balance": "1481"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281787821",
+    "notes": "862629",
+    "running_balance": "1480"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281808143",
+    "notes": "862632",
+    "running_balance": "1475"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281808161",
+    "notes": "862632",
+    "running_balance": "1474"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "shipstation_order_id": "281838157",
+    "notes": "862634",
+    "running_balance": "1472"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281933087",
+    "notes": "862636",
+    "running_balance": "1467"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281933124",
+    "notes": "862636",
+    "running_balance": "1466"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281951056",
+    "notes": "862638",
+    "running_balance": "1465"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281951048",
+    "notes": "862639",
+    "running_balance": "1460"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281951078",
+    "notes": "862639",
+    "running_balance": "1459"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281956588",
+    "notes": "862640",
+    "running_balance": "1458"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "282003039",
+    "notes": "862643",
+    "running_balance": "1457"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "shipstation_order_id": "281787799",
+    "notes": "862631",
+    "running_balance": "1452"
+  },
+  {
+    "date": "2026-04-28",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "shipstation_order_id": "281787833",
+    "notes": "862631",
+    "running_balance": "1451"
+  }
+]
