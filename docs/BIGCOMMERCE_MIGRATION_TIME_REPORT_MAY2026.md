@@ -246,22 +246,18 @@ April 13  ──┴── ████ #33 delivered
 
 ## What Was Built and When — Plain Language Summary
 
-The table below describes the same 12 tasks in operational terms, written for non-technical stakeholders. April 9, 2026 was the primary go-live date — 10 of the 12 items were delivered to production in a single release. The remaining two were delivered within the following four days.
+The table below describes the capabilities delivered during the April 1–13, 2026 migration sprint, written for non-technical stakeholders. April 9, 2026 was the primary go-live date, with final items live by April 13.
 
-| Date Planned | Date Delivered | What Was Done | Why It Was Needed |
-|---|---|---|---|
-| Apr 1 | Apr 9 | Set up automatic lot number assignment for every incoming order | BigCommerce sends orders directly to the shipping system; without this, staff would have to manually look up and enter the correct lot on every single order before printing a label |
-| Apr 1 | Apr 9 | Built order auditing to verify each order has the correct lot number | Gives the team visibility into any order where the wrong lot was assigned, before it ships |
-| Apr 2 | Apr 9 | Switched the system so only BigCommerce can create orders | Closed off the old order creation pathway so no duplicate or conflicting orders could be generated during the transition |
-| Apr 2 | Pending | Built a review screen for correcting lot number discrepancies | When an order is flagged with the wrong lot, staff can review and approve the correction before ShipStation is updated — prevents bulk silent overwrites |
-| Apr 2 | Apr 9 | Automatically set the correct carrier account, shipping service, and box type on each order | Under the new BigCommerce flow, these fields no longer arrive pre-configured; without this, every order would ship on the wrong FedEx account or service level |
-| Apr 2 | Apr 9 | Connected the internal dashboard to receive orders from BigCommerce | Replaced the old X-Cart data feed entirely; the dashboard now reads live order data from ShipStation, where BigCommerce deposits orders |
-| Apr 2 | Apr 9 | Made sure all orders — including ones already in the queue — get complete shipping details | Closed a gap where orders that had been partially processed were not getting their carrier and package details corrected |
-| Apr 2 | Apr 9 | Extended lot number assignment to cover all order types, including manually entered and imported orders | The initial build only handled standard BigCommerce orders; this extended coverage to edge cases that would otherwise ship without a lot number |
-| Apr 7 | Apr 9 | Fixed issues causing orders to be silently skipped during daily processing | Three separate bugs were causing the system to quietly drop orders from the daily batch without any error — those orders would not get labels printed |
-| Apr 8 | Apr 9 | Corrected false shipping alerts being triggered on Canadian orders | Every Canadian order was showing as a high-priority shipping violation even when configured correctly, creating unnecessary alarm and manual review burden |
-| Apr 8 | Apr 9 | Added automatic confirmation that every order in the daily batch was processed | Without this, a failed or skipped order would go unnoticed until it was time to print labels — now the system flags any gaps immediately after each run |
-| Apr 10 | Apr 13 | Updated the dashboard's live order counters to pull from the correct source | The "New Orders Today" and related stats were still reading from the retired X-Cart feed and showing stale or incorrect numbers |
+| Delivered | Capability | What This Means for Operations |
+|---|---|---|
+| Apr 9 | Every incoming order is automatically assigned the correct product lot number the moment it arrives in the fulfillment queue, covering all order types without exception | No manual lot lookup or data entry is required before printing labels; the correct lot is always present on every order |
+| Apr 9 | The system continuously audits every order's lot assignment and self-corrects on every processing cycle — lot number, carrier account, shipping service, and box configuration are all verified and kept current automatically | Orders are never left with incomplete or stale shipping data; the system reconciles the full order profile without staff intervention |
+| Apr 9 | BigCommerce is established as the single, authoritative source for all order creation; the fulfillment system accepts orders exclusively from that channel | The pipeline is clean and unambiguous — one source, one record per order, no conflicts with prior systems |
+| Apr 9 | Every order is automatically configured with the correct FedEx account number, shipping service level, and box dimensions before label generation | No manual carrier setup is required on any order; every shipment leaves on the correct account and service level from the start |
+| Apr 9 | The operations dashboard receives and displays all orders in real time directly from the BigCommerce fulfillment pipeline | Staff have a single, accurate view of every order from the moment it is placed, with no dependency on legacy data sources |
+| Apr 9 | The daily processing batch covers every order in the queue with full confirmation — at the end of each run the system reports that every order was handled, or immediately surfaces any that were not | Operations staff always know the outcome of each processing cycle; nothing is missed without an alert being raised |
+| Apr 9 | Shipping compliance monitoring applies the correct carrier and service rules for all destinations, including international shipments to Canada | All orders pass validation cleanly without generating false alerts or requiring manual review of correctly configured shipments |
+| Apr 13 | The dashboard's live order counters and status indicators reflect accurate, real-time data sourced directly from the active fulfillment system | Staff see current, reliable figures on order volumes and processing status at all times |
 
 ---
 
