@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BigCommerce Migration — Plain Language Summary</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+
+  <div style="max-width: 760px; margin: 32px auto; background-color: #ffffff; padding: 40px; border-radius: 4px;">
+
+    <h2 style="margin: 0 0 8px 0; font-size: 20px; color: #1a1a1a; font-family: Arial, sans-serif;">What Was Built and When — Plain Language Summary</h2>
+    <p style="margin: 0 0 28px 0; font-size: 14px; color: #444444; line-height: 1.6; font-family: Arial, sans-serif;">
+      Everything listed below has been automated. April 9, 2026 was the primary go-live date for core fulfillment automation, with the promotional SKU translation capability completed April 14–16 and the X-Cart pipeline fully retired by April 17.
+    </p>
+
+    <!-- Section 1 -->
+    <h3 style="margin: 0 0 12px 0; font-size: 15px; color: #1a1a1a; font-family: Arial, sans-serif; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">
+      Background Automation — Runs on Every Order Without Staff Involvement
+    </h3>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin-bottom: 8px;">
+      <thead>
+        <tr style="background-color: #2c5f8a;">
+          <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #ffffff; font-family: Arial, sans-serif; white-space: nowrap;">Period</th>
+          <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #ffffff; font-family: Arial, sans-serif;">What Runs Automatically</th>
+          <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #ffffff; font-family: Arial, sans-serif;">Result</th>
+          <th style="padding: 10px 12px; text-align: center; font-size: 13px; color: #ffffff; font-family: Arial, sans-serif; white-space: nowrap;">Est. Hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background-color: #ffffff;">
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; white-space: nowrap; border-bottom: 1px solid #e8e8e8;">Apr 1, 2, 7</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">The correct product lot number is assigned to every incoming order the moment it arrives, covering all order types without exception</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">Every label ShipStation generates reflects the correct lot automatically</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; text-align: center; border-bottom: 1px solid #e8e8e8;">18</td>
+        </tr>
+        <tr style="background-color: #f9f9f9;">
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; white-space: nowrap; border-bottom: 1px solid #e8e8e8;">Apr 2, 7</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">Every order is automatically configured with the correct FedEx account number, shipping service level, and box dimensions and weight</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">Every order is processed automatically for label printing</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; text-align: center; border-bottom: 1px solid #e8e8e8;">7</td>
+        </tr>
+        <tr style="background-color: #ffffff;">
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; white-space: nowrap; border-bottom: 1px solid #e8e8e8;">Apr 7</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">The daily label batch for the Axiom warehouse is created automatically and all qualifying orders are added to it</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">The batch is created and orders are added automatically</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; text-align: center; border-bottom: 1px solid #e8e8e8;">5</td>
+        </tr>
+        <tr style="background-color: #f9f9f9;">
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; white-space: nowrap; border-bottom: 1px solid #e8e8e8;">Apr 8</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">At the end of each processing cycle, the system confirms that every order in the batch was handled correctly and raises an alert for any that were not</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">Nothing is missed silently; if an order requires attention it surfaces immediately rather than being discovered at label printing time</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; text-align: center; border-bottom: 1px solid #e8e8e8;">4</td>
+        </tr>
+        <tr style="background-color: #ffffff;">
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; white-space: nowrap; border-bottom: 1px solid #e8e8e8;">Apr 14, 15, 16</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">Following your adoption of a new promotional order strategy after the core migration was live, the fulfillment system was extended to automatically translate promotional SKUs to the correct base product SKU before each order is processed in ShipStation</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">Promotional orders are fulfilled against the correct inventory without manual intervention; this capability was built in direct response to the updated approach to promotional order handling and was outside the original migration scope</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; text-align: center; border-bottom: 1px solid #e8e8e8;">10</td>
+        </tr>
+        <tr style="background-color: #eaf0f6;">
+          <td colspan="3" style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; text-align: right; font-weight: bold;">Total</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; text-align: center; font-weight: bold;">44</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Note -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+      <tr>
+        <td style="padding: 12px 16px; background-color: #fff8e1; border-left: 4px solid #f0a500; font-size: 13px; color: #555555; font-family: Arial, sans-serif; line-height: 1.6;">
+          <strong>Note:</strong> The promotional SKU capability was not part of the original BigCommerce migration specification. It was introduced on April 14 in response to the decision to adopt a new strategy for processing promotional orders after the core migration went live. The work required modifying the fulfillment automation to recognize, translate, and verify promotional SKUs as a distinct order class before ShipStation processing.
+        </td>
+      </tr>
+    </table>
+
+    <!-- Section 2 -->
+    <h3 style="margin: 0 0 12px 0; font-size: 15px; color: #1a1a1a; font-family: Arial, sans-serif; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">
+      Migration Transition — X-Cart to BigCommerce
+    </h3>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+      <thead>
+        <tr style="background-color: #2c5f8a;">
+          <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #ffffff; font-family: Arial, sans-serif; white-space: nowrap;">Period</th>
+          <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #ffffff; font-family: Arial, sans-serif;">What Was Done</th>
+          <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #ffffff; font-family: Arial, sans-serif;">Result</th>
+          <th style="padding: 10px 12px; text-align: center; font-size: 13px; color: #ffffff; font-family: Arial, sans-serif; white-space: nowrap;">Est. Hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background-color: #ffffff;">
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; white-space: nowrap; border-bottom: 1px solid #e8e8e8;">Apr 2, 3</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">As BigCommerce came online, the remaining orders still arriving through the old X-Cart channel were monitored and processed through the transition period</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">No orders were lost or duplicated during the cutover; both channels were managed concurrently until we received approval to discontinue</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; text-align: center; border-bottom: 1px solid #e8e8e8;">4</td>
+        </tr>
+        <tr style="background-color: #f9f9f9;">
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; white-space: nowrap; border-bottom: 1px solid #e8e8e8;">Apr 17</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">The X-Cart order processing pipeline was formally discontinued once we received approval to discontinue</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; border-bottom: 1px solid #e8e8e8;">Your fulfillment pipeline now accepts orders from one source only — clean, unambiguous, and with no legacy dependencies remaining</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; vertical-align: top; text-align: center; border-bottom: 1px solid #e8e8e8;">2</td>
+        </tr>
+        <tr style="background-color: #eaf0f6;">
+          <td colspan="3" style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; text-align: right; font-weight: bold;">Total</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: #333333; font-family: Arial, sans-serif; text-align: center; font-weight: bold;">6</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Grand Total -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 16px;">
+      <tr style="background-color: #2c5f8a;">
+        <td style="padding: 12px 16px; font-size: 14px; color: #ffffff; font-family: Arial, sans-serif; text-align: right; font-weight: bold;">
+          Total Estimated Hours
+        </td>
+        <td style="padding: 12px 16px; font-size: 14px; color: #ffffff; font-family: Arial, sans-serif; text-align: center; font-weight: bold; width: 80px;">
+          50
+        </td>
+      </tr>
+    </table>
+
+  </div>
+
+</body>
+</html>
