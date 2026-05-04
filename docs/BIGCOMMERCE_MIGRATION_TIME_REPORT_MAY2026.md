@@ -248,24 +248,24 @@ April 13  ──┴── ████ #33 delivered
 
 All fulfillment-related functions of the custom application run as background automation — Axiom staff do not use the application to view or manage orders. Staff interact with ShipStation directly for order fulfillment. The application's active use by Axiom is limited to two purposes: monitoring current lot inventory levels, and reviewing alerts when a promotional SKU cannot be automatically translated.
 
-Everything listed below runs without staff involvement. April 9, 2026 was the primary go-live date, with final items live by April 13.
+Everything listed below runs without staff involvement. April 9, 2026 was the primary go-live date for core fulfillment automation, with the promotional SKU translation capability completed April 14–16 and the X-Cart pipeline fully retired by April 17.
 
 ### Background Automation — Runs on Every Order Without Staff Involvement
 
-| Delivered | What Runs Automatically | Result |
+| Period | What Runs Automatically | Result |
 |---|---|---|
-| Apr 9 | Promotional SKUs on incoming orders are automatically translated to the correct base product SKU before the order is processed in ShipStation | Orders containing promotional items are always fulfilled against the correct inventory; no manual SKU lookup or correction required |
-| Apr 9 | The correct product lot number is assigned to every incoming order the moment it arrives, covering all order types without exception | Every label ShipStation generates reflects the correct lot automatically — staff open ShipStation and the data is already correct |
-| Apr 9 | Every order is automatically configured with the correct FedEx account number, shipping service level, and box dimensions | Staff do not touch carrier or package settings in ShipStation; every order arrives there fully configured and ready for label printing |
-| Apr 9 | The daily label batch for the Axiom warehouse is created automatically and all qualifying orders are added to it | The batch is assembled and ready without any manual effort; staff print labels from a batch that the system has already built |
-| Apr 9 | At the end of each processing cycle, the system confirms that every order in the batch was handled correctly and raises an alert for any that were not | Nothing is missed silently; if an order requires attention it surfaces immediately rather than being discovered at label printing time |
+| Apr 1–9 | The correct product lot number is assigned to every incoming order the moment it arrives, covering all order types without exception | Every label ShipStation generates reflects the correct lot automatically — staff open ShipStation and the data is already correct |
+| Apr 2–9 | Every order is automatically configured with the correct FedEx account number, shipping service level, and box dimensions | Staff do not touch carrier or package settings in ShipStation; every order arrives there fully configured and ready for label printing |
+| Apr 7–9 | The daily label batch for the Axiom warehouse is created automatically and all qualifying orders are added to it | The batch is assembled and ready without any manual effort; staff print labels from a batch that the system has already built |
+| Apr 8–9 | At the end of each processing cycle, the system confirms that every order in the batch was handled correctly and raises an alert for any that were not | Nothing is missed silently; if an order requires attention it surfaces immediately rather than being discovered at label printing time |
+| Apr 14–16 | Promotional SKUs on incoming orders are automatically translated to the correct base product SKU before the order is processed in ShipStation | Orders containing promotional items are always fulfilled against the correct inventory; no manual SKU lookup or correction required |
 
 ### Migration Transition — X-Cart to BigCommerce
 
-| Delivered | What Was Done | Result |
+| Period | What Was Done | Result |
 |---|---|---|
-| Apr 9 | As BigCommerce came online, remaining orders still arriving through the old X-Cart channel were monitored and processed through the transition period | No orders were lost or duplicated during the cutover; both channels were managed concurrently until X-Cart volume reached zero |
-| Apr 9 | The X-Cart order processing pipeline was formally discontinued once the transition was complete; BigCommerce became the sole order source | The fulfillment pipeline now accepts orders from one source only — clean, unambiguous, and with no legacy dependencies remaining |
+| Apr 2–9 | As BigCommerce came online, remaining orders still arriving through the old X-Cart channel were monitored and processed through the transition period | No orders were lost or duplicated during the cutover; both channels were managed concurrently until X-Cart volume reached zero |
+| Apr 2–17 | The X-Cart order processing pipeline was formally discontinued once the transition was complete; BigCommerce became the sole order source | The fulfillment pipeline now accepts orders from one source only — clean, unambiguous, and with no legacy dependencies remaining |
 
 ### Active Staff Use of the Application
 
