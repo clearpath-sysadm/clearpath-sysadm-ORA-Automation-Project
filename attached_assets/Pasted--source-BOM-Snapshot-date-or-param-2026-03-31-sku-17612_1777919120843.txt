@@ -1,0 +1,114 @@
+[
+  {
+    "source": "BOM Snapshot",
+    "date_or_param": "2026-03-31",
+    "sku": "17612",
+    "value": "2314",
+    "notes": null
+  },
+  {
+    "source": "BOM Snapshot",
+    "date_or_param": "2026-03-31",
+    "sku": "17904",
+    "value": "115",
+    "notes": null
+  },
+  {
+    "source": "BOM Snapshot",
+    "date_or_param": "2026-03-31",
+    "sku": "17914",
+    "value": "771",
+    "notes": null
+  },
+  {
+    "source": "BOM Snapshot",
+    "date_or_param": "2026-03-31",
+    "sku": "18675",
+    "value": "967",
+    "notes": null
+  },
+  {
+    "source": "BOM Snapshot",
+    "date_or_param": "2026-03-31",
+    "sku": "18795",
+    "value": "8202",
+    "notes": null
+  },
+  {
+    "source": "PalletConfig",
+    "date_or_param": null,
+    "sku": "17612",
+    "value": "48",
+    "notes": null
+  },
+  {
+    "source": "PalletConfig",
+    "date_or_param": null,
+    "sku": "17904",
+    "value": "81",
+    "notes": null
+  },
+  {
+    "source": "PalletConfig",
+    "date_or_param": null,
+    "sku": "17914",
+    "value": "80",
+    "notes": null
+  },
+  {
+    "source": "PalletConfig",
+    "date_or_param": null,
+    "sku": "18675",
+    "value": "48",
+    "notes": null
+  },
+  {
+    "source": "PalletConfig",
+    "date_or_param": null,
+    "sku": "18795",
+    "value": "222",
+    "notes": null
+  },
+  {
+    "source": "Rates",
+    "date_or_param": null,
+    "sku": null,
+    "value": "68",
+    "notes": "pick_pack_rate_cents"
+  },
+  {
+    "source": "Rates",
+    "date_or_param": null,
+    "sku": null,
+    "value": "3",
+    "notes": "storage_rate_cents"
+  },
+  {
+    "source": "Rates",
+    "date_or_param": null,
+    "sku": null,
+    "value": "30000",
+    "notes": "monthly_space_rental_cents"
+  },
+  {
+    "source": "Rates",
+    "date_or_param": null,
+    "sku": null,
+    "value": "4.25",
+    "notes": "OrderCharge"
+  },
+  {
+    "source": "Rates",
+    "date_or_param": null,
+    "sku": null,
+    "value": "0.75",
+    "notes": "PackageCharge"
+  },
+  {
+    "source": "Rates",
+    "date_or_param": null,
+    "sku": null,
+    "value": "0.45",
+    "notes": "SpaceRentalRate"
+  }
+]
