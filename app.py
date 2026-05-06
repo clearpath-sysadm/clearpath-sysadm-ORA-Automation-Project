@@ -6819,6 +6819,85 @@ def api_retry_promo_sku_issue(order_number):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/promo-sku/process-by-ss-id/<int:ss_order_id>', methods=['POST'])
+@login_required
+def api_promo_sku_process_by_ss_id(ss_order_id):
+    """
+    Directly engage the promo SKU replacement mechanism for a specific ShipStation
+    order ID — no lot_tagging_failures row required.
+
+    Fetches the order from ShipStation by its numeric ID, confirms it contains a
+    promo SKU (17613 → 17612, etc.), then calls handle_promo_sku_order() which:
+      1. Creates a replacement order with the base SKU
+      2. Verifies the replacement against the original
+      3. Cancels the original promo-SKU order in ShipStation
+      4. Writes a row to promo_sku_replacement_log
+
+    Used when an order was never picked up by the webhook or the lot tagger
+    reconciliation loop and no lot_tagging_failures entry exists to drive the
+    standard /retry endpoint.
+
+    Returns JSON:
+      { "success": true, "replaced": true/false, "original_ss_id": ...,
+        "returned_ss_id": ..., "order_number": ..., "message": ... }
+    """
+    try:
+        from src.services.shipstation.api_client import fetch_order_by_id, get_shipstation_credentials
+        from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
+
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
+
+        result = fetch_order_by_id(ss_order_id, api_key, api_secret)
+        if not result.get('success'):
+            return jsonify({'success': False, 'error': f"Could not fetch order from ShipStation: {result.get('error')}"}), 502
+
+        order = result['order']
+        order_number = order.get('orderNumber', str(ss_order_id))
+        order_status = (order.get('orderStatus') or '').lower()
+
+        if order_status == 'cancelled':
+            return jsonify({
+                'success': False,
+                'error': f'Order {order_number} (SS ID {ss_order_id}) is already cancelled — nothing to do.'
+            }), 400
+
+        items = order.get('items', [])
+        item_skus = [str(item.get('sku') or '').strip() for item in items]
+
+        conn = get_connection()
+        returned_order = handle_promo_sku_order(order, conn)
+        conn.close()
+
+        returned_id = returned_order.get('orderId')
+        replaced = (returned_id != ss_order_id)
+
+        logger.info(
+            f"api_promo_sku_process_by_ss_id: SS ID {ss_order_id} (order {order_number}) "
+            f"processed. replaced={replaced}, returned_id={returned_id}"
+        )
+
+        return jsonify({
+            'success': True,
+            'replaced': replaced,
+            'original_ss_id': ss_order_id,
+            'returned_ss_id': returned_id,
+            'order_number': order_number,
+            'message': (
+                f'Order {order_number} (SS ID {ss_order_id}) replaced successfully. '
+                f'New SS ID: {returned_id}.'
+            ) if replaced else (
+                f'Order {order_number} (SS ID {ss_order_id}) processed — no promo SKU detected '
+                f'or replacement already complete. SKUs scanned: {item_skus}'
+            ),
+        })
+
+    except Exception as e:
+        logger.error(f'api_promo_sku_process_by_ss_id error for SS ID {ss_order_id}: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/promo-sku/issues/<order_number>/resolve', methods=['POST'])
 def api_resolve_promo_sku_issue(order_number):
     """
