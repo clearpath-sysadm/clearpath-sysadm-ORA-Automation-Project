@@ -29,6 +29,12 @@ ACTIVE_LOTS_QUERY = """
 
 KNOWN_SKUS_QUERY = "SELECT sku_code FROM skus"
 
+LOT_STATUS_QUERY = """
+    SELECT s.sku_code, l.lot_number, l.status
+    FROM lots l
+    JOIN skus s ON s.sku_id = l.sku_id
+"""
+
 HOME_OFFICE_SKUS = {'18751', '18760', '18565'}
 
 LOT_OVERRIDE_TAG_ID = 49832
@@ -47,10 +53,11 @@ SKU_SHIPPING_PROFILES = {
 
 def build_lot_maps(conn):
     """
-    Build active_lots dict and known_skus set from the database.
+    Build active_lots dict, known_skus set, and lot_statuses lookup from the database.
     Uses FIFO (oldest received_date first) to resolve multiple active lots per SKU.
 
-    Returns: (active_lots: dict[sku -> lot_number], known_skus: set[sku])
+    Returns: (active_lots: dict[sku -> lot_number], known_skus: set[sku],
+              lot_statuses: dict[(sku, lot_number) -> status])
     """
     cursor = conn.cursor()
 
@@ -60,7 +67,10 @@ def build_lot_maps(conn):
     cursor.execute(KNOWN_SKUS_QUERY)
     known_skus = {row[0] for row in cursor.fetchall()}
 
-    return active_lots, known_skus
+    cursor.execute(LOT_STATUS_QUERY)
+    lot_statuses = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
+
+    return active_lots, known_skus, lot_statuses
 
 
 def resolve_shipping_profile(order: dict, sku: str) -> dict:
@@ -317,7 +327,7 @@ def ensure_v2_package(order_id: int, order_number: str, profile: dict,
         return {'action': 'error', 'error': f'V2 PUT failed {status}: {body}'}
 
 
-def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], conn) -> None:
+def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], lot_statuses: Dict, conn) -> None:
     """
     Inspect a single ShipStation order and write the correct lot stamp and full
     shipping profile only when one or more fields need updating.
@@ -387,6 +397,42 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 return
 
             base_sku, exp_cf1, num_packages = stamped_items[0]
+
+            # Check whether the lot embedded in the compound SKU is still active.
+            # If it has been deactivated, fall through to the current active lot
+            # rather than blindly re-stamping with a lot the user retired.
+            embedded_lot = exp_cf1.split(' - ', 1)[1] if ' - ' in exp_cf1 else ''
+            embedded_status = lot_statuses.get((base_sku, embedded_lot), 'active')
+            if embedded_status in ('inactive', 'quarantine'):
+                if base_sku in active_lots:
+                    new_cf1 = f"{base_sku} - {active_lots[base_sku]}"
+                    server_logger.warning(
+                        f"[Lot Tagger] Lot-stamped order {order_number} (SS ID: {order_id}): "
+                        f"embedded lot {embedded_lot!r} is {embedded_status} — "
+                        f"using active lot {active_lots[base_sku]!r} instead.",
+                        source="Lot Tagger"
+                    )
+                    exp_cf1 = new_cf1
+                else:
+                    _cur = conn.cursor()
+                    _cur.execute("""
+                        INSERT INTO lot_tagging_failures
+                            (order_number, shipstation_order_id, sku, detected_at)
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                        ON CONFLICT (shipstation_order_id) DO UPDATE
+                            SET detected_at = CURRENT_TIMESTAMP,
+                                sku = EXCLUDED.sku
+                        WHERE lot_tagging_failures.resolved_at IS NULL
+                    """, (order_number, str(order_id), base_sku))
+                    conn.commit()
+                    server_logger.warning(
+                        f"[Lot Tagger] Lot-stamped order {order_number} (SS ID: {order_id}): "
+                        f"embedded lot {embedded_lot!r} is {embedded_status} and no active lot "
+                        f"found for SKU {base_sku}. Logged to lot_tagging_failures.",
+                        source="Lot Tagger"
+                    )
+                    return
+
             profile = resolve_shipping_profile(order, base_sku)
 
             mismatched = _get_mismatched_fields(order, exp_cf1, profile)

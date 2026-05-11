@@ -203,7 +203,7 @@ def run_reconciliation():
                 source="Lot Tagger"
             )
 
-        active_lots, known_skus = build_lot_maps(conn)
+        active_lots, known_skus, lot_statuses = build_lot_maps(conn)
         server_logger.info(f"Active lots loaded: {len(active_lots)} SKUs | Known SKUs: {len(known_skus)}", source="Lot Tagger")
 
         for order in all_orders:
@@ -223,7 +223,7 @@ def run_reconciliation():
 
             try:
                 order = handle_promo_sku_order(order, conn, ss_headers)
-                tag_order_lots(order, active_lots, known_skus, conn)
+                tag_order_lots(order, active_lots, known_skus, lot_statuses, conn)
                 processed += 1
 
                 # (e) Cache upsert — skip if replacement occurred or LTF unresolved

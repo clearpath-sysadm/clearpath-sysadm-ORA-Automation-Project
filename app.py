@@ -6276,11 +6276,11 @@ def webhook_shipstation_order(token):
                     ]
                     if triggering_orders:
                         with transaction_with_retry() as conn:
-                            active_lots, known_skus = build_lot_maps(conn)
+                            active_lots, known_skus, lot_statuses = build_lot_maps(conn)
                             for order in triggering_orders:
                                 try:
                                     order = handle_promo_sku_order(order, conn, ss_headers)
-                                    tag_order_lots(order, active_lots, known_skus, conn)
+                                    tag_order_lots(order, active_lots, known_skus, lot_statuses, conn)
                                     logger.info(f"Webhook: immediately processed order {order.get('orderNumber')}")
                                 except Exception as _order_err:
                                     logger.error(
@@ -6675,7 +6675,7 @@ def api_retry_lot_tagging_failures():
             conn.close()
             return jsonify({'success': True, 'message': 'No unresolved failures', 'retried': 0})
 
-        active_lots, known_skus = build_lot_maps(conn)
+        active_lots, known_skus, lot_statuses = build_lot_maps(conn)
         retried = 0
         errors = 0
 
@@ -6688,7 +6688,7 @@ def api_retry_lot_tagging_failures():
                     continue
 
                 order = result['order']
-                tag_order_lots(order, active_lots, known_skus, conn)
+                tag_order_lots(order, active_lots, known_skus, lot_statuses, conn)
                 retried += 1
             except Exception as exc:
                 logger.error(f"Retry error for order {order_number}: {exc}", exc_info=True)
