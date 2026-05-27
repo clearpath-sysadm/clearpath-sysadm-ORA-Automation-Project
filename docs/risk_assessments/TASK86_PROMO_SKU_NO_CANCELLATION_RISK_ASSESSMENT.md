@@ -20,6 +20,8 @@ The task plan as written contains **three critical gaps** that would cause the n
 
 **Clarified design intent (confirmed):** Promo SKUs do not exist as far as inventory is concerned. The system must silently remap a promo SKU to its base SKU at the entry point of every item loop — before any SKU-based logic runs. Everything downstream (tagging, `upsert_shipped_item()`, `deduct_lot_inventory()`) then sees and records only the base SKU. No promo SKU should ever reach an inventory table in any form.
 
+**Code reuse (confirmed):** `_load_promo_map(conn)` already exists in `src/services/shipstation/promo_sku_handler.py` (line 177) — it is the only implementation of the `sku_promotions` DB lookup in the codebase. Both the sync (Step 3) and the tagger (Step 4) must import from a shared public version of this function rather than duplicating the query independently. Task Plan Step 2 extracts it into `src/services/inventory/promo_sku_utils.py` before the handler is retired in Step 5.
+
 ---
 
 ## 🔴 CRITICAL — Will Break Core Functionality
