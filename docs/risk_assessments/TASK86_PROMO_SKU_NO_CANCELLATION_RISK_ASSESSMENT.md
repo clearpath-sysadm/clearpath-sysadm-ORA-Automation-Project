@@ -157,7 +157,7 @@ Before disabling `handle_promo_sku_order`, use the existing "Manual Resolve" das
 
 ## 🟡 MEDIUM — Edge Cases That Will Occur in Normal Operations
 
-### Risk 6: `sku_lot` assignment skips lot info for the promo item in `shipped_items`
+### Risk 6: `sku_lot` assignment skips lot info for the promo item in `shipped_items` ✅ ACCOUNTED FOR IN TASK PLAN
 
 **Location:** `src/unified_shipstation_sync.py`, lines 915–918
 
