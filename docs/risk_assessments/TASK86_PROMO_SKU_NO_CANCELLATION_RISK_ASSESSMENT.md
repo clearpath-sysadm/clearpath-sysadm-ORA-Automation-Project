@@ -201,12 +201,12 @@ After retirement, `promo_sku_replacement_log` receives no new rows. The dashboar
 
 | # | Risk | Severity | In Original Task Plan? | Resolution |
 |---|---|---|---|---|
-| 1 | Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped | 🔴 Critical | ✅ Accounted for in task plan (Step 3) | Remap promo→base SKU + deduplicate by SKU before `tracked_items` is built; multi-SKU guard passes cleanly |
-| 2 | `has_key_product_skus()` gate silently discards promo-only orders | 🔴 Critical | ✅ Accounted for in task plan (Step 2) | Remap order items in-place at top of per-order loop — gate sees base SKUs, no changes to the function itself |
-| 3 | Three deduction call sites — only one covered (split label + transition path missed) | 🔴 Critical | ✅ Accounted for in task plan (Step 2) | Auto-resolved by Risk 2's single early-loop remap — all three call sites downstream see base SKUs |
+| 1 | Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped | 🔴 Critical | ✅ Accounted for in task plan (Step 4) | Remap promo→base SKU + deduplicate by SKU before `tracked_items` is built; multi-SKU guard passes cleanly |
+| 2 | `has_key_product_skus()` gate silently discards promo-only orders | 🔴 Critical | ✅ Accounted for in task plan (Step 3) | Remap order items in-place at top of per-order loop — gate sees base SKUs, no changes to the function itself |
+| 3 | Three deduction call sites — only one covered (split label + transition path missed) | 🔴 Critical | ✅ Accounted for in task plan (Step 3) | Auto-resolved by Step 3's single early-loop remap — all three call sites downstream see base SKUs |
 | 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ✅ Accounted for in task plan (Step 3) | Auto-resolved by Step 3's single early-loop remap — `upsert_shipped_item()` receives base SKU at line 920 |
 | 5 | Live Promo Hold on order 862852 must be cleared before cutover | 🟠 High | ✅ Accounted for in task plan (Step 0) | Operator pre-cutover action — Manual Resolve on order 862852 |
-| 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ✅ Accounted for in task plan (Step 2) | Auto-resolved by Risk 2's single early-loop remap |
+| 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ✅ Accounted for in task plan (Step 3) | Auto-resolved by Step 3's single early-loop remap |
 | 7 | `verify_tagging_results()` QA false warnings after tagger fix | 🟡 Medium | ❌ Not mentioned | Add `sku_promotions` awareness to QA function, or exclude remapped orders |
 | 8 | Promo log silence misread as health signal — panel should be removed | 🔵 Low | Partially addressed | Remove dashboard panel; leave table as retired audit trail |
 
