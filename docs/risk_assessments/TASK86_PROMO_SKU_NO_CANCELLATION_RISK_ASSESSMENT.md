@@ -18,11 +18,13 @@
 
 The task plan as written contains **three critical gaps** that would cause the new workflow to fail silently — producing no errors but also no inventory deductions and corrupt data in `shipped_items`. Two additional high-severity issues require pre-cutover action. All risks are fixable with targeted additions to the implementation steps; none require redesigning the approach.
 
+**Clarified design intent (confirmed):** Promo SKUs do not exist as far as inventory is concerned. The system must silently remap a promo SKU to its base SKU at the entry point of every item loop — before any SKU-based logic runs. Everything downstream (tagging, `upsert_shipped_item()`, `deduct_lot_inventory()`) then sees and records only the base SKU. No promo SKU should ever reach an inventory table in any form.
+
 ---
 
 ## 🔴 CRITICAL — Will Break Core Functionality
 
-### Risk 1: Tagger's `known_skus` filter blocks promo SKUs entirely
+### Risk 1: Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped, deduction silently skipped
 
 **Location:** `src/lot_tagger/tagger.py` — `tag_order_lots()`, line 359
 
@@ -37,7 +39,15 @@ tracked_items = [item for item in items if str(item.get('sku', '')).strip() in k
 
 **Impact:** Every promo SKU order that ships under the new workflow receives zero inventory deduction.
 
-**Fix:** The tagger fix must intercept and remap the promo SKU to its base SKU **before** line 359 — not after it. The `sku_promotions` lookup must substitute the line item SKU before `tracked_items` is built, so the base SKU (17612) is what the tagger sees and processes.
+**Correct fix:** Promo SKUs have no inventory of their own — the remap makes them disappear in favour of the base SKU. At the very top of `tag_order_lots()`, before `tracked_items` is built, remap each line item SKU against `sku_promotions`:
+```python
+# Remap promo SKUs to base SKUs before any lot logic runs
+for item in items:
+    raw = str(item.get('sku', '')).strip()
+    mapped = promo_to_base.get(raw, raw)  # sku_promotions lookup
+    item['sku'] = mapped
+```
+After this remap, `tracked_items` sees `17612` (in `known_skus`), the tagger stamps `customField1` with `17612 - 260082`, and `deduct_lot_inventory()` deducts from the correct base SKU lot. The promo SKU is never written anywhere.
 
 ---
 
@@ -94,7 +104,7 @@ The shipping transition path (lines 900–937) is the most dangerous because it 
 **What happens:**
 `upsert_shipped_item()` is called using `base_sku` derived directly from the raw line item SKU — before any remapping. Under the new system, `shipped_items` would receive rows with `base_sku='17613'`. Confirmed: `shipped_items` currently contains zero promo SKU rows (clean baseline). That table feeds charge reports, shipping history, and lot reconciliation. Promo SKU data contaminating it would corrupt those reports.
 
-**Fix:** The promo→base SKU remapping must occur at the top of the item loop (around line 900), before `upsert_shipped_item()` is called — not only before the `KEY_PRODUCT_SKUS` gate at line 1098.
+**Fix:** Apply the promo→base SKU remap at the top of the item loop (around line 900), before `upsert_shipped_item()` is called — not only before the `KEY_PRODUCT_SKUS` gate at line 1098. This risk is **automatically resolved** if the early-loop remap pattern from Risk 3 is applied consistently at all three deduction call sites.
 
 ---
 
@@ -127,7 +137,9 @@ parsed = parse_cf1(cf1)
 if parsed and parsed[0] == base_sku:
     sku_lot = cf1
 ```
-If `customField1` is stamped `'17612 - 260082'` (by the tagger fix) and the loop is processing the promo item with `base_sku='17613'`, then `parsed[0]` (`'17612'`) does not equal `'17613'`. `sku_lot` stays as `'17613'` without lot information. The `shipped_items` row for the promo item would be written with `sku_lot='17613'` — missing the lot reference entirely. This is resolved by the same remapping fix described in Risks 3 and 4.
+If `customField1` is stamped `'17612 - 260082'` (by the tagger fix) and the loop is processing the promo item with `base_sku='17613'`, then `parsed[0]` (`'17612'`) does not equal `'17613'`. `sku_lot` stays as `'17613'` without lot information. The `shipped_items` row for the promo item would be written with `sku_lot='17613'` — missing the lot reference entirely.
+
+This risk is **automatically resolved** if the early-loop remap from Risk 3 is applied — after remapping, `base_sku` is `'17612'`, `parsed[0]` matches, and `sku_lot` is correctly set to `'17612 - 260082'`.
 
 ---
 
@@ -157,16 +169,16 @@ After retirement, `promo_sku_replacement_log` receives no new rows. The dashboar
 
 ## Summary Table
 
-| # | Risk | Severity | In Original Task Plan? |
-|---|---|---|---|
-| 1 | Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped | 🔴 Critical | Partially — wrong insertion point described |
-| 2 | `has_key_product_skus()` gate silently discards promo-only orders | 🔴 Critical | ❌ Not mentioned |
-| 3 | Three deduction call sites — only one covered (split label + transition path missed) | 🔴 Critical | ❌ Partially missed |
-| 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ❌ Not mentioned |
-| 5 | Live Promo Hold on order 862852 must be cleared before cutover | 🟠 High | ❌ Not mentioned |
-| 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ❌ Not mentioned |
-| 7 | `verify_tagging_results()` QA false warnings after tagger fix | 🟡 Medium | ❌ Not mentioned |
-| 8 | Promo log silence misread as health signal — panel should be removed | 🔵 Low | Partially addressed |
+| # | Risk | Severity | In Original Task Plan? | Resolution |
+|---|---|---|---|---|
+| 1 | Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped | 🔴 Critical | Partially — wrong insertion point | Remap at top of `tag_order_lots()` before `tracked_items` is built |
+| 2 | `has_key_product_skus()` gate silently discards promo-only orders | 🔴 Critical | ❌ Not mentioned | Extend gate to include promo SKUs via `sku_promotions` lookup |
+| 3 | Three deduction call sites — only one covered (split label + transition path missed) | 🔴 Critical | ❌ Partially missed | Apply early-loop remap at all three sites in `unified_shipstation_sync.py` |
+| 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ❌ Not mentioned | Auto-resolved by Risk 3's early-loop remap fix |
+| 5 | Live Promo Hold on order 862852 must be cleared before cutover | 🟠 High | ❌ Not mentioned | Operator pre-cutover action — Manual Resolve on order 862852 |
+| 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ❌ Not mentioned | Auto-resolved by Risk 3's early-loop remap fix |
+| 7 | `verify_tagging_results()` QA false warnings after tagger fix | 🟡 Medium | ❌ Not mentioned | Add `sku_promotions` awareness to QA function, or exclude remapped orders |
+| 8 | Promo log silence misread as health signal — panel should be removed | 🔵 Low | Partially addressed | Remove dashboard panel; leave table as retired audit trail |
 
 ---
 
