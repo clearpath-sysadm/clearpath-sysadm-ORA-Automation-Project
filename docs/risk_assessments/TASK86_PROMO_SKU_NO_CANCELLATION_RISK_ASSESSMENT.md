@@ -186,6 +186,37 @@ Add `promo_map: dict` as a parameter to `verify_tagging_results()` and apply the
 
 ---
 
+## 🟠 HIGH — Will Cause Incorrect Behavior in Real Orders
+
+### Risk 9: Step 5 retirement scope was incomplete — five additional `handle_promo_sku_order` call sites and one breaking import dependency not in task plan ✅ ACCOUNTED FOR IN TASK PLAN
+
+**Discovered in:** Final pre-implementation codebase verification (2026-05-27)
+
+**What was found:**
+A grep of the full codebase revealed that `handle_promo_sku_order` is called from **five locations** not mentioned in the original Step 5, and that the `/resolve` endpoint (needed for Step 0) imports **internal handler helpers** that would throw `ImportError` after the handler file is deleted.
+
+**Sub-finding A — CRITICAL: `/resolve` endpoint imports internal handler helpers**
+`app.py` line 6913 imports `_write_log`, `_resolve_tagging_failure`, and `_clear_promo_hold` from `promo_sku_handler.py`. These are not extracted to the shared utility in Step 2. Deleting the handler file without retiring this endpoint first causes `ImportError` at runtime. The endpoint is the "Manual Resolve" dashboard button used in Step 0.
+
+**Sub-finding B — HIGH: Force re-tag sweep endpoint not mentioned in Step 5**
+`app.py` ~line 3513: an admin endpoint that iterates all `awaiting_shipment` orders, calls `handle_promo_sku_order`, then runs its own custom tagging loop (not `tag_order_lots`). After retirement it crashes with `ImportError`. Unlike the webhook handler, this endpoint does not call `tag_order_lots()`, so the Step 4 remap does not propagate to it — it needs its own explicit in-place remap.
+
+**Sub-finding C — MEDIUM: Two admin cancel-and-recreate endpoints will crash after retirement**
+- `/api/promo-sku/issues/<order_number>/retry` (line 6812) — calls `handle_promo_sku_order`
+- `/api/promo-sku/process-by-ss-id/<int:ss_order_id>` (line 6822) — calls `handle_promo_sku_order`
+Both throw `ImportError` after handler deletion if not explicitly retired.
+
+**Sub-finding D — LOW: Skip cache dead-code branch in `scheduled_lot_tagger.py`**
+Lines 231–236: `if returned_order_id != original_order_id` only fires when cancel-and-recreate changes the order ID. After retirement this is dead code producing a misleading "Replacement detected" log message.
+
+**Sub-finding E — LOW: Dashboard promo alert references retired panel**
+`app.py` lines 635–645: a `promo_count` alert fires when `lot_tagging_failures` has unresolved PROMO rows. After retirement this will always be 0 and never display, but the underlying query is dead weight alongside the dashboard panel removal.
+
+**Resolution — Task Plan Step 5 (fully updated):**
+Step 5 now contains a complete numbered list of all seven call sites/endpoints requiring action, an explicit in-place remap for the force re-tag sweep, 410 Gone retirement instructions for all four obsolete admin endpoints, skip-cache dead-code removal, and the dashboard alert query cleanup. The ordering constraint is also strengthened: Step 0 must complete before Step 5 because the `/resolve` endpoint depends on handler internals that Step 5 removes.
+
+---
+
 ## 🔵 LOW — Minor Operational Concerns
 
 ### Risk 8: `promo_sku_replacement_log` going silent is misread as a health signal ✅ ACCOUNTED FOR IN TASK PLAN
@@ -212,6 +243,7 @@ Remove the Promo SKU Issues dashboard panel entirely — do not leave it showing
 | 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ✅ Accounted for in task plan (Step 3) | Auto-resolved by Step 3's single early-loop remap |
 | 7 | `verify_tagging_results()` QA blind spot on promo-only orders | 🟡 Medium | ✅ Accounted for in task plan (Step 4 Part C) | Add `promo_map` param to function + remap items before `tracked_items` filter; update call site in `scheduled_lot_tagger.py` |
 | 8 | Promo log silence misread as health signal — panel should be removed | 🔵 Low | ✅ Accounted for in task plan (Step 5) | Remove dashboard panel entirely; update any monitoring refs; leave tables as retired audit trail |
+| 9 | Step 5 retirement scope incomplete — 5 undocumented call sites + breaking `/resolve` import dependency | 🟠 High | ✅ Accounted for in task plan (Step 5, updated) | Step 5 now has complete numbered list of all 7 call sites; force re-tag sweep gets explicit remap; 4 admin endpoints retired with 410 Gone; skip cache branch removed; dashboard alert query removed |
 
 ---
 
