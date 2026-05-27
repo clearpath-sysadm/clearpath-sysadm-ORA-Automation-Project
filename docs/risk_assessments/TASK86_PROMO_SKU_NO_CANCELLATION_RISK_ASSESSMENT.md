@@ -188,14 +188,15 @@ Add `promo_map: dict` as a parameter to `verify_tagging_results()` and apply the
 
 ## 🔵 LOW — Minor Operational Concerns
 
-### Risk 8: `promo_sku_replacement_log` going silent is misread as a health signal
+### Risk 8: `promo_sku_replacement_log` going silent is misread as a health signal ✅ ACCOUNTED FOR IN TASK PLAN
 
 **Location:** Dashboard Promo SKU Issues panel, any admin monitoring queries
 
 **What happens:**
 After retirement, `promo_sku_replacement_log` receives no new rows. The dashboard Promo SKU Issues panel would show zero results — which is correct (no failures) but could be confused with "no promo orders are being processed." Any log monitoring that treats recent activity in this table as a health signal would trigger false alerts.
 
-**Fix:** Remove the Promo SKU Issues dashboard panel entirely rather than leaving it showing zero results. Add a comment to the table (or a note in the admin area) indicating it is a retired audit trail as of this task.
+**Resolution — Task Plan Step 5:**
+Remove the Promo SKU Issues dashboard panel entirely — do not leave it showing zero, as zero is indistinguishable from "handler is running but found nothing." Update any admin alerts or monitoring queries that reference `promo_sku_replacement_log` to note the process is retired. Leave the underlying tables and historical data intact as an audit trail; no data deletion is required.
 
 ---
 
@@ -210,7 +211,7 @@ After retirement, `promo_sku_replacement_log` receives no new rows. The dashboar
 | 5 | Live Promo Hold on order 862852 must be cleared before cutover | 🟠 High | ✅ Accounted for in task plan (Step 0) | Operator pre-cutover action — Manual Resolve on order 862852 |
 | 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ✅ Accounted for in task plan (Step 3) | Auto-resolved by Step 3's single early-loop remap |
 | 7 | `verify_tagging_results()` QA blind spot on promo-only orders | 🟡 Medium | ✅ Accounted for in task plan (Step 4 Part C) | Add `promo_map` param to function + remap items before `tracked_items` filter; update call site in `scheduled_lot_tagger.py` |
-| 8 | Promo log silence misread as health signal — panel should be removed | 🔵 Low | Partially addressed | Remove dashboard panel; leave table as retired audit trail |
+| 8 | Promo log silence misread as health signal — panel should be removed | 🔵 Low | ✅ Accounted for in task plan (Step 5) | Remove dashboard panel entirely; update any monitoring refs; leave tables as retired audit trail |
 
 ---
 
