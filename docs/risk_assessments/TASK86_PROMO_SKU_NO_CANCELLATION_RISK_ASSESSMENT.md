@@ -126,14 +126,15 @@ Because Python dict mutation is in-place, all three call sites automatically see
 
 ## 🟠 HIGH — Will Cause Incorrect Behavior in Real Orders
 
-### Risk 4: `upsert_shipped_item()` writes promo SKU into `shipped_items` table
+### Risk 4: `upsert_shipped_item()` writes promo SKU into `shipped_items` table ✅ ACCOUNTED FOR IN TASK PLAN
 
 **Location:** `src/unified_shipstation_sync.py`, lines 920–927
 
 **What happens:**
 `upsert_shipped_item()` is called using `base_sku` derived directly from the raw line item SKU — before any remapping. Under the new system, `shipped_items` would receive rows with `base_sku='17613'`. Confirmed: `shipped_items` currently contains zero promo SKU rows (clean baseline). That table feeds charge reports, shipping history, and lot reconciliation. Promo SKU data contaminating it would corrupt those reports.
 
-**Fix:** Apply the promo→base SKU remap at the top of the item loop (around line 900), before `upsert_shipped_item()` is called — not only before the `KEY_PRODUCT_SKUS` gate at line 1098. This risk is **automatically resolved** if the early-loop remap pattern from Risk 3 is applied consistently at all three deduction call sites.
+**Resolution — auto-resolved by Task Plan Step 3 (sync early-loop remap):**
+The remap at the top of the per-order loop (line 1395) mutates item dicts in-place before `import_new_bigcommerce_order(order, conn)` is called. Inside that function, `items = order.get('items', [])` at line 831 returns the already-remapped list. When the item loop reaches line 920, `base_sku` is derived from the remapped SKU (`'17612'`) — `upsert_shipped_item()` never sees a promo SKU. No changes to `upsert_shipped_item()` itself are required.
 
 ---
 
@@ -203,7 +204,7 @@ After retirement, `promo_sku_replacement_log` receives no new rows. The dashboar
 | 1 | Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped | 🔴 Critical | ✅ Accounted for in task plan (Step 3) | Remap promo→base SKU + deduplicate by SKU before `tracked_items` is built; multi-SKU guard passes cleanly |
 | 2 | `has_key_product_skus()` gate silently discards promo-only orders | 🔴 Critical | ✅ Accounted for in task plan (Step 2) | Remap order items in-place at top of per-order loop — gate sees base SKUs, no changes to the function itself |
 | 3 | Three deduction call sites — only one covered (split label + transition path missed) | 🔴 Critical | ✅ Accounted for in task plan (Step 2) | Auto-resolved by Risk 2's single early-loop remap — all three call sites downstream see base SKUs |
-| 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ✅ Accounted for in task plan (Step 2) | Auto-resolved by Risk 2's single early-loop remap |
+| 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ✅ Accounted for in task plan (Step 3) | Auto-resolved by Step 3's single early-loop remap — `upsert_shipped_item()` receives base SKU at line 920 |
 | 5 | Live Promo Hold on order 862852 must be cleared before cutover | 🟠 High | ✅ Accounted for in task plan (Step 0) | Operator pre-cutover action — Manual Resolve on order 862852 |
 | 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ✅ Accounted for in task plan (Step 2) | Auto-resolved by Risk 2's single early-loop remap |
 | 7 | `verify_tagging_results()` QA false warnings after tagger fix | 🟡 Medium | ❌ Not mentioned | Add `sku_promotions` awareness to QA function, or exclude remapped orders |
