@@ -598,13 +598,7 @@ def auth_status():
 # Admin Alert API Endpoints
 @app.route('/api/admin/alert')
 def get_admin_alert():
-    """Get current admin alert for all users.
-
-    In addition to the manually set admin_alerts row, always checks for
-    unresolved promo SKU replacement failures.  If any exist the response
-    forces is_active=True so the alert bar fires even when the failures
-    pre-date the current deployment.
-    """
+    """Get current admin alert for all users."""
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -615,42 +609,15 @@ def get_admin_alert():
             WHERE id = 1
         """)
         row = cursor.fetchone()
-
-        cursor.execute("""
-            SELECT COUNT(*)
-            FROM lot_tagging_failures ltf
-            LEFT JOIN orders_inbox oi ON oi.order_number = ltf.order_number
-            WHERE ltf.sku LIKE '%%[PROMO:%%'
-              AND ltf.resolved_at IS NULL
-              AND COALESCE(oi.status, 'unknown') != 'cancelled'
-        """)
-        promo_count = (cursor.fetchone() or [0])[0]
         conn.close()
-
-        manual_active  = bool(row and row[2])
-        manual_message = (row[1] or '') if row else ''
-        updated_at     = row[3].isoformat() if row and row[3] else None
-        updated_by     = row[4] if row else None
-
-        if promo_count > 0:
-            noun = 'issue' if promo_count == 1 else 'issues'
-            promo_msg = f'⚠️ {promo_count} promo SKU replacement {noun} require attention — see Promo SKU Issues panel.'
-            combined  = (f'{manual_message}  |  {promo_msg}' if manual_active and manual_message else promo_msg)
-            return jsonify({
-                'id': row[0] if row else 1,
-                'message': combined,
-                'is_active': True,
-                'updated_at': updated_at,
-                'updated_by': updated_by,
-            })
 
         if row:
             return jsonify({
                 'id': row[0],
-                'message': manual_message,
-                'is_active': manual_active,
-                'updated_at': updated_at,
-                'updated_by': updated_by,
+                'message': row[1] or '',
+                'is_active': bool(row[2]),
+                'updated_at': row[3].isoformat() if row[3] else None,
+                'updated_by': row[4],
             })
         return jsonify({'message': '', 'is_active': False})
     except Exception as e:
