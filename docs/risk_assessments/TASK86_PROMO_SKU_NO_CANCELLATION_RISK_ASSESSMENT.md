@@ -39,15 +39,25 @@ tracked_items = [item for item in items if str(item.get('sku', '')).strip() in k
 
 **Impact:** Every promo SKU order that ships under the new workflow receives zero inventory deduction.
 
-**Correct fix:** Promo SKUs have no inventory of their own — the remap makes them disappear in favour of the base SKU. At the very top of `tag_order_lots()`, before `tracked_items` is built, remap each line item SKU against `sku_promotions`:
+**Correct fix — two parts, both required:**
+
+**Part A — Remap before `tracked_items` is built.** At the very top of `tag_order_lots()`, before line 359, remap each line item SKU against `sku_promotions` so `17613` becomes `17612` before the filter runs.
+
+**Part B — Deduplicate by SKU after remapping.** A standard BXGY order has two line items: `{sku:'17612', qty:1}` (paid) and `{sku:'17613', qty:1}` (promo). After remapping, both become `{sku:'17612'}`. The `tracked_items` list then contains **two items with the same SKU**, which trips the multi-SKU guard at line 600:
 ```python
-# Remap promo SKUs to base SKUs before any lot logic runs
-for item in items:
-    raw = str(item.get('sku', '')).strip()
-    mapped = promo_to_base.get(raw, raw)  # sku_promotions lookup
-    item['sku'] = mapped
+if len(tracked_items) > 1:
+    # writes lot_tagging_failures and returns — customField1 never stamped
 ```
-After this remap, `tracked_items` sees `17612` (in `known_skus`), the tagger stamps `customField1` with `17612 - 260082`, and `deduct_lot_inventory()` deducts from the correct base SKU lot. The promo SKU is never written anywhere.
+After remapping, items with the same SKU must be merged (quantities summed) before `tracked_items` is built:
+```python
+# Merge same-SKU items so multi-SKU guard doesn't fire on remapped duplicates
+merged = {}
+for item in items:
+    sku = str(item.get('sku', '')).strip()
+    merged[sku] = merged.get(sku, 0) + int(item.get('quantity') or 1)
+items = [{'sku': s, 'quantity': q} for s, q in merged.items()]
+```
+After merging, `tracked_items` contains exactly one `{sku:'17612', qty:2}` entry. The multi-SKU guard passes, the tagger stamps `customField1` with `17612 - 260082`, and `deduct_lot_inventory()` deducts from the correct lot. The promo SKU is never written anywhere.
 
 ---
 
