@@ -174,14 +174,15 @@ This risk is **automatically resolved** if the early-loop remap from Risk 3 is a
 
 ---
 
-### Risk 7: `verify_tagging_results()` QA produces false warnings after tagger fix
+### Risk 7: `verify_tagging_results()` QA produces false warnings after tagger fix ✅ ACCOUNTED FOR IN TASK PLAN
 
-**Location:** `src/scheduled_lot_tagger.py` — `verify_tagging_results()` call post-reconciliation
+**Location:** `src/lot_tagger/tagger.py` — `verify_tagging_results()` function; `src/scheduled_lot_tagger.py` — call site
 
 **What happens:**
-The QA function checks all `awaiting_shipment` orders against `active_lots` and `known_skus`. After the tagger fix correctly stamps promo orders with the base SKU lot, the QA function still won't recognize promo SKU orders (they're not in `known_skus`). It may log false "untagged/wrong" warnings for promo orders, making QA output misleading in the logs.
+`verify_tagging_results()` is called with the original `orders` list. Because the deduplication in Step 4 Part B creates a new local `items` list inside `tag_order_lots()`, `verify_tagging_results()` sees pre-remap, pre-dedup items. Promo SKUs are not in `known_skus`, so promo-only orders (single promo SKU item, no base SKU item) fall silently through the `known_skus` filter and the `stamped_items` check — producing no QA coverage. This is a **blind spot**, not a false warning: promo orders are simply invisible to QA, meaning a genuine tagging failure on a promo order would go undetected.
 
-**Fix:** Either exclude promo-mapped orders from the QA check, or add awareness of the `sku_promotions` mapping to `verify_tagging_results()`.
+**Resolution — Task Plan Step 4 Part C:**
+Add `promo_map: dict` as a parameter to `verify_tagging_results()` and apply the same item-level remap before the `tracked_items` filter. After remapping, promo-only orders resolve to their base SKU, enter the `tracked_items` path, and the existing CF1 comparison against `'{base_sku} - {lot_number}'` validates correctly. Update the one call site in `scheduled_lot_tagger.py` to pass `promo_map` through. No new DB query required — `promo_map` is already loaded once per run in Step 4.
 
 ---
 
@@ -208,7 +209,7 @@ After retirement, `promo_sku_replacement_log` receives no new rows. The dashboar
 | 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ✅ Accounted for in task plan (Step 3) | Auto-resolved by Step 3's single early-loop remap — `upsert_shipped_item()` receives base SKU at line 920 |
 | 5 | Live Promo Hold on order 862852 must be cleared before cutover | 🟠 High | ✅ Accounted for in task plan (Step 0) | Operator pre-cutover action — Manual Resolve on order 862852 |
 | 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ✅ Accounted for in task plan (Step 3) | Auto-resolved by Step 3's single early-loop remap |
-| 7 | `verify_tagging_results()` QA false warnings after tagger fix | 🟡 Medium | ❌ Not mentioned | Add `sku_promotions` awareness to QA function, or exclude remapped orders |
+| 7 | `verify_tagging_results()` QA blind spot on promo-only orders | 🟡 Medium | ✅ Accounted for in task plan (Step 4 Part C) | Add `promo_map` param to function + remap items before `tracked_items` filter; update call site in `scheduled_lot_tagger.py` |
 | 8 | Promo log silence misread as health signal — panel should be removed | 🔵 Low | Partially addressed | Remove dashboard panel; leave table as retired audit trail |
 
 ---
