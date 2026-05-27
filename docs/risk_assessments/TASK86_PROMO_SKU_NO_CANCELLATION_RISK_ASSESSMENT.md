@@ -138,7 +138,7 @@ The remap at the top of the per-order loop (line 1395) mutates item dicts in-pla
 
 ---
 
-### Risk 5: One live Promo Hold tag in production needs manual clearance before cutover
+### Risk 5: One live Promo Hold tag in production needs manual clearance before cutover ✅ ACCOUNTED FOR IN TASK PLAN
 
 **Location:** ShipStation order 862852 / `lot_tagging_failures` table
 
@@ -150,7 +150,8 @@ resolved_at  | NULL
 ```
 Order 862852 has an active unresolved `lot_tagging_failures` row with a PROMO tag. It almost certainly also carries a `Promo Hold` ShipStation tag. When `handle_promo_sku_order` is retired, no code will ever clear that tag. The order would be frozen in ShipStation indefinitely under a Promo Hold.
 
-**Fix (pre-cutover, operator action):** Before disabling `handle_promo_sku_order`, use the existing "Manual Resolve" dashboard button for order 862852 to clear the Promo Hold tag and mark the `lot_tagging_failures` row as resolved.
+**Resolution — Task Plan Step 0 (MUST happen before any code is deployed):**
+Before disabling `handle_promo_sku_order`, use the existing "Manual Resolve" dashboard button for order 862852 to clear the Promo Hold tag and mark the `lot_tagging_failures` row as resolved. Step 0 is the only step in the task plan with a hard deployment blocker constraint.
 
 ---
 
