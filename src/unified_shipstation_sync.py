@@ -1086,6 +1086,14 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
 
             cf1 = (lot_stamp or '').strip()
 
+            # Remap promo SKUs to base SKUs so inventory deductions are never
+            # silently skipped when a promo-SKU order reaches shipped status.
+            try:
+                from src.services.inventory.promo_sku_utils import load_promo_map as _lpm_ueos
+                _ueos_promo_map = _lpm_ueos(conn)
+            except Exception:
+                _ueos_promo_map = {}
+
             for item in items:
                 sku_raw = str(item.get('sku', '')).strip()
                 quantity = item.get('quantity', 0)
@@ -1094,6 +1102,8 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                     continue
 
                 base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                # Remap promo SKU → base SKU before the KEY_PRODUCT_SKUS gate.
+                base_sku = _ueos_promo_map.get(base_sku, base_sku)
 
                 if base_sku not in KEY_PRODUCT_SKUS:
                     continue
@@ -1552,12 +1562,18 @@ def run_unified_sync():
                                                 split_ship_date = datetime.datetime.strptime(split_ship_date_str[:10], '%Y-%m-%d').date()
                                             except Exception:
                                                 split_ship_date = datetime.date.today()
+                                            try:
+                                                from src.services.inventory.promo_sku_utils import load_promo_map as _lpm_sl
+                                                _sl_promo_map = _lpm_sl(conn)
+                                            except Exception:
+                                                _sl_promo_map = {}
                                             for item in order.get('items', []):
                                                 sku_raw = str(item.get('sku', '')).strip()
                                                 qty = item.get('quantity', 0)
                                                 if not sku_raw or qty <= 0:
                                                     continue
                                                 base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                                                base_sku = _sl_promo_map.get(base_sku, base_sku)
                                                 if base_sku not in KEY_PRODUCT_SKUS:
                                                     continue
                                                 deduct_lot_inventory(
