@@ -1391,8 +1391,27 @@ def run_unified_sync():
         # Process all orders in a single transaction (per architect)
         with transaction_with_retry() as conn:
             cursor = conn.cursor()
-            
+
+            # Load promo map once so promo SKUs (17613, 17905, etc.) are
+            # transparently remapped to their base SKUs before any deduction
+            # or status-update logic runs.
+            try:
+                from src.services.inventory.promo_sku_utils import load_promo_map as _load_pm
+                _promo_map = _load_pm(conn)
+            except Exception as _pm_err:
+                logger.warning(f"Could not load promo map — skipping remap: {_pm_err}")
+                _promo_map = {}
+
             for idx, order in enumerate(orders):
+                # Promo SKU in-place remap — mutates the order dict so all
+                # downstream paths (import, status-update, split-label
+                # deduction) see the base SKU instead of the promo SKU.
+                if _promo_map:
+                    for _item in order.get('items', []):
+                        _raw = str(_item.get('sku') or '').strip()
+                        if _raw in _promo_map:
+                            _item['sku'] = _promo_map[_raw]
+
                 savepoint_name = f"sp_order_{idx}"
                 
                 try:

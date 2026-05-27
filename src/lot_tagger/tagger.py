@@ -356,6 +356,44 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             source="Lot Tagger"
         )
 
+    # Promo SKU remap — translate promo SKUs to base SKUs in-place so the lot
+    # tagger always looks up the base SKU (17613→17612, 17905→17904, etc.).
+    # Loaded once per call; sku_promotions is a tiny table (~4 rows).
+    try:
+        from src.services.inventory.promo_sku_utils import load_promo_map as _load_promo_map
+        _promo_map = _load_promo_map(conn)
+    except Exception as _pm_err:
+        logger.warning(f"[Lot Tagger] Could not load promo map — skipping remap: {_pm_err}")
+        _promo_map = {}
+
+    if _promo_map:
+        for _item in items:
+            _raw = str(_item.get('sku') or '').strip()
+            if _raw in _promo_map:
+                server_logger.debug(
+                    f"[Lot Tagger] Promo SKU remap on order {order_number}: "
+                    f"{_raw} → {_promo_map[_raw]}",
+                    source="Lot Tagger"
+                )
+                _item['sku'] = _promo_map[_raw]
+
+        # Deduplicate items that share the same SKU after remap.
+        # BXGY promo orders may produce two line items that both remap to the
+        # same base SKU (e.g., two 17613 items → two 17612 items).  Without
+        # dedup the multi-SKU guard at line ~600 would flag a false error.
+        _seen_skus: dict = {}
+        _deduped: list = []
+        for _item in items:
+            _s = str(_item.get('sku', '')).strip()
+            if _s in _seen_skus:
+                _seen_skus[_s]['quantity'] = (
+                    (_seen_skus[_s].get('quantity') or 0) + (_item.get('quantity') or 0)
+                )
+            else:
+                _seen_skus[_s] = _item
+                _deduped.append(_item)
+        items = _deduped
+
     tracked_items = [item for item in items if str(item.get('sku', '')).strip() in known_skus]
 
     if not tracked_items:
@@ -768,10 +806,20 @@ def verify_tagging_results(
     untagged_or_wrong = 0
     failures = []
 
+    # Load promo map once so promo SKUs are remapped before the known_skus
+    # filter.  Without this, promo-SKU orders (e.g., SKU 17613) would never
+    # match the known_skus set (which contains base SKUs only) and would be
+    # excluded from QA checks, masking any tagging failures.
+    try:
+        from src.services.inventory.promo_sku_utils import load_promo_map as _lpm
+        _qa_promo_map = _lpm(conn)
+    except Exception:
+        _qa_promo_map = {}
+
     for order in orders:
         order_number = order.get('orderNumber', '').strip()
         order_id     = order.get('orderId')
-        items        = order.get('items', [])
+        items        = list(order.get('items', []))
         current_cf1  = ((order.get('advancedOptions') or {}).get('customField1') or '').strip()
 
         if LOT_OVERRIDE_TAG_ID in (order.get('tagIds') or []):
@@ -780,6 +828,14 @@ def verify_tagging_results(
                 f"excluded from CF1 QA check."
             )
             continue
+
+        # Remap promo SKUs to base SKUs before the known_skus filter.
+        if _qa_promo_map:
+            items = [
+                dict(_i, sku=_qa_promo_map.get(str(_i.get('sku') or '').strip(),
+                                                str(_i.get('sku') or '').strip()))
+                for _i in items
+            ]
 
         tracked_items = [item for item in items if str(item.get('sku', '')).strip() in known_skus]
 

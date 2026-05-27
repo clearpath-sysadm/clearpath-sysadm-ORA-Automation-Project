@@ -3442,7 +3442,6 @@ def api_retag_all():
         update_order_custom_fields
     )
     from src.lot_tagger.tagger import ACTIVE_LOTS_QUERY, LOT_OVERRIDE_TAG_ID, resolve_shipping_profile
-    from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
     from src.utils.server_logger import get_logger
     from utils.api_utils import make_api_request
 
@@ -3486,7 +3485,16 @@ def api_retag_all():
 
         headers = get_shipstation_headers(api_key, api_secret)
         TRACKED_SKUS = set(active_lots.keys())
-        promo_conn = get_connection()
+
+        # Load promo map once for in-place SKU remapping inside the order loop.
+        promo_map = {}
+        try:
+            from src.services.inventory.promo_sku_utils import load_promo_map as _load_pm
+            _pm_conn = get_connection()
+            promo_map = _load_pm(_pm_conn)
+            _pm_conn.close()
+        except Exception as _pm_err:
+            logger.warning(f"Force re-tag: could not load promo map — skipping remap: {_pm_err}")
 
         updated = 0
         skipped = 0
@@ -3509,8 +3517,13 @@ def api_retag_all():
             orders = data.get('orders', [])
 
             for order in orders:
-                # Run promo SKU check first — replaces the order if a promo SKU is detected
-                order = handle_promo_sku_order(order, promo_conn, headers)
+                # Promo SKU in-place remap — translates promo SKUs to base SKUs
+                # so the TRACKED_SKUS lookup and lot-stamp logic work correctly.
+                if promo_map:
+                    for _item in order.get('items', []):
+                        _raw = str(_item.get('sku') or '').strip()
+                        if _raw in promo_map:
+                            _item['sku'] = promo_map[_raw]
 
                 order_id = order.get('orderId')
                 order_number = order.get('orderNumber', '')
@@ -3593,11 +3606,6 @@ def api_retag_all():
         if conn:
             try:
                 conn.close()
-            except Exception:
-                pass
-        if promo_conn:
-            try:
-                promo_conn.close()
             except Exception:
                 pass
         _report_locks['RETAG_ALL'] = False
@@ -6239,7 +6247,6 @@ def webhook_shipstation_order(token):
             from src.services.shipstation.api_client import (
                 get_shipstation_credentials, get_shipstation_headers,
             )
-            from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
             from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
             from src.services.database.pg_utils import transaction_with_retry
             from src.scheduled_lot_tagger import run_reconciliation
@@ -6279,7 +6286,6 @@ def webhook_shipstation_order(token):
                             active_lots, known_skus, lot_statuses = build_lot_maps(conn)
                             for order in triggering_orders:
                                 try:
-                                    order = handle_promo_sku_order(order, conn, ss_headers)
                                     tag_order_lots(order, active_lots, known_skus, lot_statuses, conn)
                                     logger.info(f"Webhook: immediately processed order {order.get('orderNumber')}")
                                 except Exception as _order_err:
@@ -6710,280 +6716,47 @@ def api_retry_lot_tagging_failures():
 @app.route('/api/promo-sku/issues', methods=['GET'])
 def api_get_promo_sku_issues():
     """
-    Return all unresolved promo SKU replacement failures.
-
-    Filters lot_tagging_failures where the sku column contains '[PROMO:'
-    (written by _write_tagging_failure in promo_sku_handler) and resolved_at
-    IS NULL.  Joins promo_sku_replacement_log to surface the latest error
-    reason for display in the dashboard panel.
+    Retired — the cancel-and-recreate promo SKU handler has been replaced by
+    an in-place annotation workflow (Task #86).  Promo orders are no longer
+    cancelled or recreated so this issues panel is no longer relevant.
+    Historical data in promo_sku_replacement_log is preserved for audit.
     """
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT
-                ltf.id,
-                ltf.order_number,
-                ltf.shipstation_order_id,
-                ltf.sku,
-                ltf.detected_at,
-                prl.error_reason,
-                prl.status,
-                prl.processed_at,
-                prl.base_sku
-            FROM lot_tagging_failures ltf
-            LEFT JOIN LATERAL (
-                SELECT error_reason, status, processed_at, base_sku
-                FROM promo_sku_replacement_log
-                WHERE order_number = ltf.order_number
-                ORDER BY processed_at DESC
-                LIMIT 1
-            ) prl ON TRUE
-            LEFT JOIN orders_inbox oi ON oi.order_number = ltf.order_number
-            WHERE ltf.sku LIKE '%%[PROMO:%%'
-              AND ltf.resolved_at IS NULL
-              AND COALESCE(oi.status, 'unknown') != 'cancelled'
-            ORDER BY ltf.detected_at DESC
-        """)
-        rows = cursor.fetchall()
-        conn.close()
-
-        issues = [
-            {
-                'id': row[0],
-                'order_number': row[1],
-                'shipstation_order_id': row[2],
-                'sku': row[3],
-                'detected_at': row[4].isoformat() if row[4] else None,
-                'error_reason': row[5],
-                'status': row[6],
-                'last_attempt_at': row[7].isoformat() if row[7] else None,
-                'base_sku': row[8],
-            }
-            for row in rows
-        ]
-        return jsonify({'success': True, 'data': issues, 'count': len(issues)})
-
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    return jsonify({
+        'success': False,
+        'error': 'This endpoint has been retired. The promo SKU cancel-and-recreate '
+                 'workflow is no longer active (Task #86 — no-cancellation workflow).'
+    }), 410
 
 
 @app.route('/api/promo-sku/issues/<order_number>/retry', methods=['POST'])
 def api_retry_promo_sku_issue(order_number):
-    """
-    Re-attempt promo SKU replacement for a single order.
-
-    Fetches the order from ShipStation and runs handle_promo_sku_order().
-    Analogous to /api/lot_tagging_failures/retry but targets the promo handler.
-    """
-    try:
-        from src.services.shipstation.api_client import fetch_order_by_id, get_shipstation_credentials
-        from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
-
-        api_key, api_secret = get_shipstation_credentials()
-        if not api_key or not api_secret:
-            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
-
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT shipstation_order_id
-            FROM lot_tagging_failures
-            WHERE order_number = %s
-              AND sku LIKE '%%[PROMO:%%'
-              AND resolved_at IS NULL
-            ORDER BY detected_at DESC
-            LIMIT 1
-        """, (order_number,))
-        row = cursor.fetchone()
-
-        if not row:
-            conn.close()
-            return jsonify({'success': False, 'error': f'No unresolved promo issue found for order {order_number}'}), 404
-
-        ss_order_id = int(row[0])
-
-        result = fetch_order_by_id(ss_order_id, api_key, api_secret)
-        if not result.get('success'):
-            conn.close()
-            return jsonify({'success': False, 'error': f"Could not fetch order from ShipStation: {result.get('error')}"}), 502
-
-        order = result['order']
-        handle_promo_sku_order(order, conn)
-        conn.close()
-
-        return jsonify({'success': True, 'message': f'Retry triggered for order {order_number}'})
-
-    except Exception as e:
-        logger.error(f'api_retry_promo_sku_issue error for {order_number}: {e}', exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Retired — see api_get_promo_sku_issues for details."""
+    return jsonify({
+        'success': False,
+        'error': 'This endpoint has been retired. The promo SKU cancel-and-recreate '
+                 'workflow is no longer active (Task #86 — no-cancellation workflow).'
+    }), 410
 
 
 @app.route('/api/promo-sku/process-by-ss-id/<int:ss_order_id>', methods=['POST'])
 @login_required
 def api_promo_sku_process_by_ss_id(ss_order_id):
-    """
-    Directly engage the promo SKU replacement mechanism for a specific ShipStation
-    order ID — no lot_tagging_failures row required.
-
-    Fetches the order from ShipStation by its numeric ID, confirms it contains a
-    promo SKU (17613 → 17612, etc.), then calls handle_promo_sku_order() which:
-      1. Creates a replacement order with the base SKU
-      2. Verifies the replacement against the original
-      3. Cancels the original promo-SKU order in ShipStation
-      4. Writes a row to promo_sku_replacement_log
-
-    Used when an order was never picked up by the webhook or the lot tagger
-    reconciliation loop and no lot_tagging_failures entry exists to drive the
-    standard /retry endpoint.
-
-    Returns JSON:
-      { "success": true, "replaced": true/false, "original_ss_id": ...,
-        "returned_ss_id": ..., "order_number": ..., "message": ... }
-    """
-    try:
-        from src.services.shipstation.api_client import fetch_order_by_id, get_shipstation_credentials
-        from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
-
-        api_key, api_secret = get_shipstation_credentials()
-        if not api_key or not api_secret:
-            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
-
-        result = fetch_order_by_id(ss_order_id, api_key, api_secret)
-        if not result.get('success'):
-            return jsonify({'success': False, 'error': f"Could not fetch order from ShipStation: {result.get('error')}"}), 502
-
-        order = result['order']
-        order_number = order.get('orderNumber', str(ss_order_id))
-        order_status = (order.get('orderStatus') or '').lower()
-
-        if order_status == 'cancelled':
-            return jsonify({
-                'success': False,
-                'error': f'Order {order_number} (SS ID {ss_order_id}) is already cancelled — nothing to do.'
-            }), 400
-
-        items = order.get('items', [])
-        item_skus = [str(item.get('sku') or '').strip() for item in items]
-
-        conn = get_connection()
-        returned_order = handle_promo_sku_order(order, conn)
-        conn.close()
-
-        returned_id = returned_order.get('orderId')
-        replaced = (returned_id != ss_order_id)
-
-        logger.info(
-            f"api_promo_sku_process_by_ss_id: SS ID {ss_order_id} (order {order_number}) "
-            f"processed. replaced={replaced}, returned_id={returned_id}"
-        )
-
-        return jsonify({
-            'success': True,
-            'replaced': replaced,
-            'original_ss_id': ss_order_id,
-            'returned_ss_id': returned_id,
-            'order_number': order_number,
-            'message': (
-                f'Order {order_number} (SS ID {ss_order_id}) replaced successfully. '
-                f'New SS ID: {returned_id}.'
-            ) if replaced else (
-                f'Order {order_number} (SS ID {ss_order_id}) processed — no promo SKU detected '
-                f'or replacement already complete. SKUs scanned: {item_skus}'
-            ),
-        })
-
-    except Exception as e:
-        logger.error(f'api_promo_sku_process_by_ss_id error for SS ID {ss_order_id}: {e}', exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Retired — see api_get_promo_sku_issues for details."""
+    return jsonify({
+        'success': False,
+        'error': 'This endpoint has been retired. The promo SKU cancel-and-recreate '
+                 'workflow is no longer active (Task #86 — no-cancellation workflow).'
+    }), 410
 
 
 @app.route('/api/promo-sku/issues/<order_number>/resolve', methods=['POST'])
 def api_resolve_promo_sku_issue(order_number):
-    """
-    Manually resolve a promo SKU replacement failure.
-
-    Looks up shipstation_order_id from lot_tagging_failures, removes the
-    PROMO HOLD tag, stamps CF3 with 'resolved:manual YYYY-MM-DD', writes a
-    'manually_resolved' row to promo_sku_replacement_log, and marks the
-    lot_tagging_failures row as resolved.
-    """
-    try:
-        from datetime import date as _date
-        from src.services.shipstation.promo_sku_handler import (
-            _write_log as _promo_write_log,
-            _resolve_tagging_failure,
-            _clear_promo_hold,
-        )
-        from src.services.shipstation.api_client import (
-            update_order_custom_fields,
-            get_shipstation_credentials,
-        )
-
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT shipstation_order_id, sku
-            FROM lot_tagging_failures
-            WHERE order_number = %s
-              AND sku LIKE '%%[PROMO:%%'
-              AND resolved_at IS NULL
-            ORDER BY detected_at DESC
-            LIMIT 1
-        """, (order_number,))
-        row = cursor.fetchone()
-
-        if not row:
-            conn.close()
-            return jsonify({'success': False, 'error': f'No unresolved promo issue found for order {order_number}'}), 404
-
-        ss_order_id = int(row[0])
-        raw_sku = row[1] or ''
-        promo_sku = raw_sku.split(' [PROMO:')[0].strip()
-
-        tag_removed = _clear_promo_hold(ss_order_id)
-        if not tag_removed:
-            conn.close()
-            return jsonify({
-                'success': False,
-                'error': f'Could not remove PROMO HOLD tag from ShipStation order {ss_order_id}. '
-                         f'Please remove the tag manually in ShipStation, then retry.'
-            }), 502
-
-        today = _date.today().isoformat()
-        cf3_stamp = f"resolved:manual {today}"
-        api_key, api_secret = get_shipstation_credentials()
-        if not api_key or not api_secret:
-            conn.close()
-            return jsonify({
-                'success': False,
-                'error': 'ShipStation credentials unavailable — cannot write CF3 audit stamp. '
-                         'Check SHIPSTATION_API_KEY / SHIPSTATION_API_SECRET secrets.'
-            }), 503
-        cf3_result = update_order_custom_fields(
-            ss_order_id,
-            field1_value='',
-            skip_cf1=True,
-            field3_value=cf3_stamp,
-        )
-        if not cf3_result.get('success'):
-            conn.close()
-            return jsonify({
-                'success': False,
-                'error': f'Tag removed but CF3 stamp failed for order {order_number}: '
-                         f'{cf3_result.get("error")}. Please stamp CF3 manually.'
-            }), 502
-
-        _promo_write_log(conn, order_number, promo_sku, '', 'manually_resolved',
-                         f'manually resolved via dashboard {today}')
-        _resolve_tagging_failure(conn, order_number, 'manual')
-        conn.close()
-
-        return jsonify({'success': True, 'message': f'Order {order_number} marked as resolved'})
-
-    except Exception as e:
-        logger.error(f'api_resolve_promo_sku_issue error for {order_number}: {e}', exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Retired — see api_get_promo_sku_issues for details."""
+    return jsonify({
+        'success': False,
+        'error': 'This endpoint has been retired. The promo SKU cancel-and-recreate '
+                 'workflow is no longer active (Task #86 — no-cancellation workflow).'
+    }), 410
 
 
 @app.route('/api/manual_order_conflicts', methods=['GET'])

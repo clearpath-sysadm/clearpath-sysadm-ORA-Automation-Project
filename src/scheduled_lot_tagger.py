@@ -30,7 +30,6 @@ from src.services.shipstation.api_client import (
     get_shipstation_credentials, get_shipstation_headers, register_order_notify_webhook
 )
 from src.lot_tagger.tagger import build_lot_maps, tag_order_lots, verify_tagging_results
-from src.services.shipstation.promo_sku_handler import handle_promo_sku_order
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.api_utils import make_api_request
@@ -222,32 +221,25 @@ def run_reconciliation():
                 continue
 
             try:
-                order = handle_promo_sku_order(order, conn, ss_headers)
                 tag_order_lots(order, active_lots, known_skus, lot_statuses, conn)
                 processed += 1
 
-                # (e) Cache upsert — skip if replacement occurred or LTF unresolved
-                returned_order_id = order.get('orderId')
-                if returned_order_id != original_order_id:
-                    server_logger.info(
-                        f"[Skip Cache] Replacement detected: original SS ID {original_order_id} "
-                        f"→ new SS ID {returned_order_id}. Not caching either order.",
-                        source="Lot Tagger"
-                    )
-                else:
-                    returned_id_int = int(returned_order_id) if returned_order_id is not None else None
-                    if returned_id_int is not None and returned_id_int not in unresolved_ltf_ids:
-                        cur = conn.cursor()
-                        cur.execute("""
-                            INSERT INTO reconciliation_skip_cache
-                                (shipstation_order_id, order_number, modify_date, confirmed_at)
-                            VALUES (%s, %s, %s, NOW())
-                            ON CONFLICT (shipstation_order_id) DO UPDATE
-                                SET modify_date  = EXCLUDED.modify_date,
-                                    confirmed_at = EXCLUDED.confirmed_at
-                        """, (returned_id_int, order.get('orderNumber'), modify_date))
-                        cur.close()
-                        conn.commit()
+                # (e) Cache upsert — order ID never changes under the new
+                # no-cancellation workflow so the replacement-detected branch
+                # has been removed.
+                returned_id_int = int(original_order_id) if original_order_id is not None else None
+                if returned_id_int is not None and returned_id_int not in unresolved_ltf_ids:
+                    cur = conn.cursor()
+                    cur.execute("""
+                        INSERT INTO reconciliation_skip_cache
+                            (shipstation_order_id, order_number, modify_date, confirmed_at)
+                        VALUES (%s, %s, %s, NOW())
+                        ON CONFLICT (shipstation_order_id) DO UPDATE
+                            SET modify_date  = EXCLUDED.modify_date,
+                                confirmed_at = EXCLUDED.confirmed_at
+                    """, (returned_id_int, order.get('orderNumber'), modify_date))
+                    cur.close()
+                    conn.commit()
 
             except Exception as e:
                 failed += 1
