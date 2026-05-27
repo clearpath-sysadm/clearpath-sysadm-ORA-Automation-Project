@@ -61,7 +61,7 @@ After merging, `tracked_items` contains exactly one `{sku:'17612', qty:2}` entry
 
 ---
 
-### Risk 2: `has_key_product_skus()` silently discards promo-only BigCommerce orders
+### Risk 2: `has_key_product_skus()` silently discards promo-only BigCommerce orders ✅ ACCOUNTED FOR IN TASK PLAN
 
 **Location:** `src/unified_shipstation_sync.py`, line 1571
 
@@ -82,7 +82,19 @@ Mixed-cart orders (promo item + paid base SKU item) are unaffected because the p
 
 **Impact:** Solo promo orders are invisible to the entire sync — no local record, no inventory deduction.
 
-**Fix:** Either add promo SKUs to the `has_key_product_skus()` check (with a `sku_promotions` lookup), or remap promo SKUs to base SKUs before this gate runs.
+**Correct fix — remap before the gate, not inside it:**
+Load `sku_promotions` into a dict once before the processing loop. At the very top of each per-order iteration (before the savepoint is created at line ~1396 and before any routing logic runs), remap all promo SKU line items to their base SKUs in-place:
+```python
+for item in order.get('items', []):
+    raw = str(item.get('sku', '')).strip()
+    if raw in promo_map:
+        item['sku'] = promo_map[raw]
+```
+After this remap, `has_key_product_skus()` sees `17612` and passes naturally — **no changes to `has_key_product_skus()` itself are needed.**
+
+**Cascading benefit:** Because the remap happens at the very top of the per-order loop, every line of downstream code in the same loop also sees base SKUs automatically. This means all three deduction call sites (lines 900–937, 1098–1109, 1541–1552) are fixed by this one remap — no separate per-site remaps are needed. Risks 3, 4, and 6 are all resolved as a side-effect.
+
+**Important:** This fix and the Risk 1 tagger fix are completely independent — confirmed by code inspection. `unified_shipstation_sync.py` and `scheduled_lot_tagger.py` share no code and each fetches its own independent copy of orders from the ShipStation API. Both fixes are still required.
 
 ---
 
@@ -182,11 +194,11 @@ After retirement, `promo_sku_replacement_log` receives no new rows. The dashboar
 | # | Risk | Severity | In Original Task Plan? | Resolution |
 |---|---|---|---|---|
 | 1 | Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped | 🔴 Critical | ✅ Accounted for in task plan (Step 3) | Remap promo→base SKU + deduplicate by SKU before `tracked_items` is built; multi-SKU guard passes cleanly |
-| 2 | `has_key_product_skus()` gate silently discards promo-only orders | 🔴 Critical | ❌ Not mentioned | Extend gate to include promo SKUs via `sku_promotions` lookup |
-| 3 | Three deduction call sites — only one covered (split label + transition path missed) | 🔴 Critical | ❌ Partially missed | Apply early-loop remap at all three sites in `unified_shipstation_sync.py` |
-| 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ❌ Not mentioned | Auto-resolved by Risk 3's early-loop remap fix |
-| 5 | Live Promo Hold on order 862852 must be cleared before cutover | 🟠 High | ❌ Not mentioned | Operator pre-cutover action — Manual Resolve on order 862852 |
-| 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ❌ Not mentioned | Auto-resolved by Risk 3's early-loop remap fix |
+| 2 | `has_key_product_skus()` gate silently discards promo-only orders | 🔴 Critical | ✅ Accounted for in task plan (Step 2) | Remap order items in-place at top of per-order loop — gate sees base SKUs, no changes to the function itself |
+| 3 | Three deduction call sites — only one covered (split label + transition path missed) | 🔴 Critical | ✅ Accounted for in task plan (Step 2) | Auto-resolved by Risk 2's single early-loop remap — all three call sites downstream see base SKUs |
+| 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ✅ Accounted for in task plan (Step 2) | Auto-resolved by Risk 2's single early-loop remap |
+| 5 | Live Promo Hold on order 862852 must be cleared before cutover | 🟠 High | ✅ Accounted for in task plan (Step 0) | Operator pre-cutover action — Manual Resolve on order 862852 |
+| 6 | `sku_lot` missing lot info for promo item in `shipped_items` upsert path | 🟡 Medium | ✅ Accounted for in task plan (Step 2) | Auto-resolved by Risk 2's single early-loop remap |
 | 7 | `verify_tagging_results()` QA false warnings after tagger fix | 🟡 Medium | ❌ Not mentioned | Add `sku_promotions` awareness to QA function, or exclude remapped orders |
 | 8 | Promo log silence misread as health signal — panel should be removed | 🔵 Low | Partially addressed | Remove dashboard panel; leave table as retired audit trail |
 
