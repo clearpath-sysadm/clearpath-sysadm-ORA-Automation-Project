@@ -863,6 +863,67 @@ def _create_inventory_architecture_objects(cursor):
     logger.info("startup_migrations: inventory_current COMMENT (deprecation marker) set")
 
 
+def _resolve_order_862852_db_state(cursor):
+    """
+    One-time Task #88 resolution: mark order 862852 as manually resolved in the DB.
+
+    Order 862852 was stranded in the promo SKU cancel-and-recreate flow and has
+    an active lot_tagging_failures row plus a verify_failed entry in
+    promo_sku_replacement_log.  The Manual Resolve button (Task #86 retire path)
+    is no longer available via the dashboard, so this migration closes the DB
+    side at deploy time.
+
+    The ShipStation Promo Hold tag is cleared by scripts/resolve_order_862852.py
+    which must be run in production before or during this deploy.
+
+    Actions (both idempotent):
+      1. Write a 'manually_resolved' row to promo_sku_replacement_log —
+         skipped if one already exists for this order.
+      2. Stamp resolved_at / resolved_by on the lot_tagging_failures row —
+         skipped if already resolved.
+
+    Runs in both dev and production.
+    """
+    cursor.execute("""
+        INSERT INTO promo_sku_replacement_log
+            (order_number, promo_sku, base_sku, status, error_reason, processed_at)
+        SELECT '862852', '17613', '17612', 'manually_resolved',
+               'Task #88 pre-deploy manual resolve', NOW()
+        WHERE NOT EXISTS (
+            SELECT 1 FROM promo_sku_replacement_log
+            WHERE order_number = '862852'
+              AND status = 'manually_resolved'
+        )
+    """)
+    log_inserted = cursor.rowcount
+    if log_inserted:
+        logger.info(
+            "startup_migrations: wrote manually_resolved log entry for order 862852"
+        )
+    else:
+        logger.info(
+            "startup_migrations: manually_resolved log entry for order 862852 already present — skipping"
+        )
+
+    cursor.execute("""
+        UPDATE lot_tagging_failures
+           SET resolved_at = NOW(),
+               resolved_by = 'task88_pre_deploy'
+         WHERE order_number = '862852'
+           AND resolved_at IS NULL
+    """)
+    ltf_updated = cursor.rowcount
+    if ltf_updated:
+        logger.info(
+            f"startup_migrations: marked {ltf_updated} lot_tagging_failures row(s) "
+            "resolved for order 862852"
+        )
+    else:
+        logger.info(
+            "startup_migrations: lot_tagging_failures for order 862852 already resolved — skipping"
+        )
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -887,6 +948,7 @@ def run_all(conn):
             _backfill_promo_lot_tagging_resolved_at(cur)
             _create_reconciliation_skip_cache(cur)
             _create_inventory_architecture_objects(cur)
+            _resolve_order_862852_db_state(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
