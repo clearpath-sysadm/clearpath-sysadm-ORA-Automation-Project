@@ -98,22 +98,27 @@ After this remap, `has_key_product_skus()` sees `17612` and passes naturally —
 
 ---
 
-### Risk 3: Three deduction call sites — task plan only covers one
+### Risk 3: Three deduction call sites — task plan only covers one ✅ ACCOUNTED FOR IN TASK PLAN
 
 **Location:** `src/unified_shipstation_sync.py`
 
 **What happens:**
-The task plan targets the `KEY_PRODUCT_SKUS` gate at line 1098. There are **two other deduction paths** in the same file that are not addressed:
+The original task plan targeted only the `KEY_PRODUCT_SKUS` gate at line 1098. There are two other deduction paths that were not addressed:
 
-| Path | Lines | Gate | Risk Under New System |
+| Path | Lines | Location | Risk Under New System (without fix) |
 |---|---|---|---|
-| **Shipping transition** | 900–937 | **None** | Promo SKU reaches `deduct_lot_inventory()` with `base_sku='17613'`. Since `cf1_sku='17612'` ≠ `base_sku='17613'`, it enters the multi-SKU path, finds no active lot for `'17613'`, and writes a **NULL-lot deduction record with sku='17613'** — bad data in `inventory_transactions` |
-| **Split labels** | 1541–1552 | `KEY_PRODUCT_SKUS` gate | Same fix as line 1098 required — not mentioned in task plan |
-| **Status transition** | 1098–1109 | `KEY_PRODUCT_SKUS` gate | Covered by task plan |
+| **Shipping transition** | 900–937 | Inside `import_new_bigcommerce_order()` | No gate — promo SKU reaches `deduct_lot_inventory()` as `base_sku='17613'`, multi-SKU path finds no lot, writes NULL-lot record to `inventory_transactions` |
+| **Split labels** | 1541–1552 | Inside main loop directly | `KEY_PRODUCT_SKUS` gate blocks promo SKU — deduction silently skipped |
+| **Status transition** | 1098–1109 | Inside `update_existing_order_status()` | `KEY_PRODUCT_SKUS` gate blocks promo SKU — deduction silently skipped |
 
-The shipping transition path (lines 900–937) is the most dangerous because it has **no gate at all** — it processes every item unconditionally and will write corrupt NULL-lot records for the promo SKU item on every promo order that ships.
+**Resolution — auto-resolved by Risk 2's single early-loop remap (Task Plan Step 2):**
+The remap is applied at the very top of the main processing loop (`for idx, order in enumerate(orders):` at line 1395), before the savepoint at line 1401 and before any routing logic runs. Code inspection confirmed:
 
-**Fix:** The promo→base SKU remapping must be applied at the **top of the item loop** in every deduction call site, before both `upsert_shipped_item()` and `deduct_lot_inventory()` are reached.
+- `import_new_bigcommerce_order(order, conn)` receives the `order` dict by reference and extracts `items = order.get('items', [])` at line 831 — **after** the remap has mutated the item dicts in-place ✓
+- `update_existing_order_status(order, local_order_id, conn)` receives the same `order` dict and extracts `items = order.get('items', [])` at line 986 — **after** the remap ✓
+- The split label path at lines 1541–1552 is inline in the main loop itself, downstream of the remap point ✓
+
+Because Python dict mutation is in-place, all three call sites automatically see base SKUs without any additional per-site changes. No modifications to `has_key_product_skus()` or any of the three item loops themselves are required.
 
 ---
 
