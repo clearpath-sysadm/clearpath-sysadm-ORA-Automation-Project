@@ -24,7 +24,7 @@ The task plan as written contains **three critical gaps** that would cause the n
 
 ## 🔴 CRITICAL — Will Break Core Functionality
 
-### Risk 1: Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped, deduction silently skipped
+### Risk 1: Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped, deduction silently skipped ✅ ACCOUNTED FOR IN TASK PLAN
 
 **Location:** `src/lot_tagger/tagger.py` — `tag_order_lots()`, line 359
 
@@ -181,7 +181,7 @@ After retirement, `promo_sku_replacement_log` receives no new rows. The dashboar
 
 | # | Risk | Severity | In Original Task Plan? | Resolution |
 |---|---|---|---|---|
-| 1 | Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped | 🔴 Critical | Partially — wrong insertion point | Remap at top of `tag_order_lots()` before `tracked_items` is built |
+| 1 | Tagger's `known_skus` filter blocks promo SKUs — `customField1` never stamped | 🔴 Critical | ✅ Accounted for in task plan (Step 3) | Remap promo→base SKU + deduplicate by SKU before `tracked_items` is built; multi-SKU guard passes cleanly |
 | 2 | `has_key_product_skus()` gate silently discards promo-only orders | 🔴 Critical | ❌ Not mentioned | Extend gate to include promo SKUs via `sku_promotions` lookup |
 | 3 | Three deduction call sites — only one covered (split label + transition path missed) | 🔴 Critical | ❌ Partially missed | Apply early-loop remap at all three sites in `unified_shipstation_sync.py` |
 | 4 | `upsert_shipped_item()` writes promo SKU into `shipped_items` | 🟠 High | ❌ Not mentioned | Auto-resolved by Risk 3's early-loop remap fix |
