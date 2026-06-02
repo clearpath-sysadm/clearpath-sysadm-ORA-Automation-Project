@@ -9527,6 +9527,26 @@ def _resync_shipped_items_for_order(order_number, ship_date, items, cursor):
                 ship_date = EXCLUDED.ship_date
         """, (ship_date, sku_lot, base_sku, total_qty, order_number))
         rows_written += 1
+
+    # After all rows are written, delete stale bare-SKU ghost rows for any SKU
+    # where ShipStation returned a lot-stamped row but NO bare-SKU row.
+    # This handles the voided-label ghost pattern without touching legitimate
+    # FREE CASE rows (which appear as bare-SKU items in the SS response).
+    skus_with_lot  = {b for (b, s) in agg if ' - ' in s}
+    skus_with_bare = {b for (b, s) in agg if ' - ' not in s}
+    for base_sku in skus_with_lot - skus_with_bare:
+        cursor.execute("""
+            DELETE FROM shipped_items
+            WHERE order_number = %s
+              AND base_sku = %s
+              AND sku_lot NOT LIKE '%% - %%'
+        """, (order_number, base_sku))
+        if cursor.rowcount > 0:
+            logger.debug(
+                f"Cleaned up {cursor.rowcount} stale bare-SKU ghost row(s) "
+                f"for order {order_number} / SKU {base_sku}"
+            )
+
     return rows_written
 
 
