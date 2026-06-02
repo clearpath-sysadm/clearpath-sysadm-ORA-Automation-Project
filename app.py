@@ -10524,6 +10524,12 @@ def api_bulk_resync_shipped_items():
                 continue
             ship_date = ship_date[:10]
 
+            # Guard: ShipStation's date filter is unreliable across stores —
+            # enforce the requested range in Python so out-of-window orders
+            # from any store are skipped before touching the database.
+            if not (start_date <= ship_date <= end_date):
+                continue
+
             orders_processed += 1
             conn = None
             try:
