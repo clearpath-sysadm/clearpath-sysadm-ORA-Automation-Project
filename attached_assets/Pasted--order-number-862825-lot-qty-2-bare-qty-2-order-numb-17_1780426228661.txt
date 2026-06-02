@@ -1,0 +1,317 @@
+[
+  {
+    "order_number": "862825",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862826",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862829",
+    "lot_qty": "2",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862830",
+    "lot_qty": "6",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862831",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862832",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862833",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862834",
+    "lot_qty": "0",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862835",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862836",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862837",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862838",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862839",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862840",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862845",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862846",
+    "lot_qty": "3",
+    "bare_qty": "3"
+  },
+  {
+    "order_number": "862847",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862848",
+    "lot_qty": "5",
+    "bare_qty": "0"
+  },
+  {
+    "order_number": "862851",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862853",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862854",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862855",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862856",
+    "lot_qty": "0",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862857",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862858",
+    "lot_qty": "4",
+    "bare_qty": "4"
+  },
+  {
+    "order_number": "862859",
+    "lot_qty": "4",
+    "bare_qty": "4"
+  },
+  {
+    "order_number": "862861",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862862",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862863",
+    "lot_qty": "6",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862864",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862867",
+    "lot_qty": "4",
+    "bare_qty": "4"
+  },
+  {
+    "order_number": "862868",
+    "lot_qty": "3",
+    "bare_qty": "3"
+  },
+  {
+    "order_number": "862869",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862870",
+    "lot_qty": "2",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862871",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862872",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862873",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862874",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862875",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862876",
+    "lot_qty": "6",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862877",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862878",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862879",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862880",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862881",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862882",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862883",
+    "lot_qty": "4",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862884",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862885",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862887",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862889",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862890",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862891",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862892",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862893",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862894",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862896",
+    "lot_qty": "6",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862897",
+    "lot_qty": "30",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862898",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862899",
+    "lot_qty": "12",
+    "bare_qty": "3"
+  },
+  {
+    "order_number": "862901",
+    "lot_qty": "5",
+    "bare_qty": "1"
+  },
+  {
+    "order_number": "862902",
+    "lot_qty": "2",
+    "bare_qty": "2"
+  },
+  {
+    "order_number": "862903",
+    "lot_qty": "1",
+    "bare_qty": "1"
+  }
+]
