@@ -303,38 +303,50 @@ def save_shipped_items_to_db(items_df, customField1_map=None):
     logger.info(f"Saving {len(items_df)} shipped items to database...")
     records_saved = 0
 
+    # Phase 1: resolve CF1 lot-stamp upgrades and pre-aggregate by conflict key
+    # (order_number, base_sku, sku_lot) so multiple line items with the same
+    # SKU+lot (e.g. regular case + FREE CASE promotion) are summed rather than
+    # the last row overwriting the first via ON CONFLICT.
+    # aggregated: {(order_number, base_sku, sku_lot, ship_date): (total_qty, tracking_number)}
+    aggregated = {}
+    for _, row in items_df.iterrows():
+        ship_date = row.get('Ship Date')
+        sku_lot = row.get('SKU - Lot', '')
+        base_sku = row.get('Base SKU')
+        quantity = row.get('Quantity Shipped')
+        order_number = row.get('OrderNumber')
+        tracking_number = row.get('TrackingNumber', '')
+
+        if not ship_date or not base_sku or not quantity:
+            logger.warning(f"Skipping row with missing required fields: {row}")
+            continue
+
+        sku_lot = str(sku_lot) if sku_lot and str(sku_lot) != 'nan' else ''
+        tracking_number = str(tracking_number) if tracking_number and str(tracking_number) != 'nan' else ''
+
+        cf1 = ''
+        if customField1_map and order_number:
+            cf1 = customField1_map.get(str(order_number), '')
+
+        parsed = parse_cf1(cf1)
+        if parsed and parsed[0] == str(base_sku):
+            sku_lot = cf1
+
+        key = (str(order_number), str(base_sku), sku_lot, ship_date)
+        if key in aggregated:
+            aggregated[key] = (aggregated[key][0] + int(quantity), aggregated[key][1])
+        else:
+            aggregated[key] = (int(quantity), tracking_number)
+
+    # Phase 2: upsert one row per aggregated key
     with transaction() as conn:
-        for _, row in items_df.iterrows():
-            ship_date = row.get('Ship Date')
-            sku_lot = row.get('SKU - Lot', '')
-            base_sku = row.get('Base SKU')
-            quantity = row.get('Quantity Shipped')
-            order_number = row.get('OrderNumber')
-            tracking_number = row.get('TrackingNumber', '')
-            shipstation_order_id = row.get('ShipStationOrderId', '')
-
-            if not ship_date or not base_sku or not quantity:
-                logger.warning(f"Skipping row with missing required fields: {row}")
-                continue
-
-            sku_lot = str(sku_lot) if sku_lot and str(sku_lot) != 'nan' else ''
-            tracking_number = str(tracking_number) if tracking_number and str(tracking_number) != 'nan' else ''
-            shipstation_order_id = str(shipstation_order_id) if shipstation_order_id and str(shipstation_order_id) != 'nan' else ''
-
-            cf1 = ''
-            if customField1_map and order_number:
-                cf1 = customField1_map.get(str(order_number), '')
-
-            parsed = parse_cf1(cf1)
-            if parsed and parsed[0] == str(base_sku):
-                sku_lot = cf1
-
+        for (order_number, base_sku, sku_lot, ship_date), (total_qty, tracking_number) in aggregated.items():
             upsert_shipped_item(
                 conn=conn,
                 ship_date=ship_date,
                 sku_lot=sku_lot,
-                base_sku=str(base_sku),
-                quantity=int(quantity),
+                base_sku=base_sku,
+                quantity=total_qty,
                 order_number=order_number,
                 tracking_number=tracking_number or None,
             )

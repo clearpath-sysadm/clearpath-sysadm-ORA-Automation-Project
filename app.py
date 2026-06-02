@@ -9643,22 +9643,24 @@ def api_admin_sync_order_from_shipstation():
                 """, (ship_date, order_number, str(shipstation_order_id)))
                 
                 # Update shipped_items for each item
+                # Pre-aggregate by (base_sku, sku_lot) so multiple line items with the
+                # same SKU+lot (e.g. regular case + FREE CASE promotion) are summed
+                # rather than the last row overwriting the first via ON CONFLICT.
+                _sync_agg = {}
                 for item in items:
                     sku_raw = str(item.get('sku', '')).strip()
                     quantity = item.get('quantity', 0)
-                    
                     if not sku_raw or quantity <= 0:
                         continue
-                    
-                    # Parse SKU - LOT format (e.g., "17612 - 250237")
                     if ' - ' in sku_raw:
-                        sku_parts = sku_raw.split(' - ')
-                        base_sku = sku_parts[0].strip()
-                        sku_lot = sku_raw  # Store full format
+                        b_sku = sku_raw.split(' - ')[0].strip()
+                        s_lot = sku_raw
                     else:
-                        base_sku = sku_raw
-                        sku_lot = sku_raw
-                    
+                        b_sku = sku_raw
+                        s_lot = sku_raw
+                    _sync_agg[(b_sku, s_lot)] = _sync_agg.get((b_sku, s_lot), 0) + quantity
+
+                for (base_sku, sku_lot), total_qty in _sync_agg.items():
                     cursor.execute("""
                         INSERT INTO shipped_items (
                             ship_date, sku_lot, base_sku, quantity_shipped, order_number
@@ -9667,7 +9669,7 @@ def api_admin_sync_order_from_shipstation():
                         ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
                         SET quantity_shipped = EXCLUDED.quantity_shipped,
                             ship_date = EXCLUDED.ship_date
-                    """, (ship_date, sku_lot, base_sku, quantity, order_number))
+                    """, (ship_date, sku_lot, base_sku, total_qty, order_number))
                 
                 logger.info(f"✅ Updated shipped_orders and shipped_items for Order #{order_number}")
             

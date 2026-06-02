@@ -238,25 +238,33 @@ def create_shipped_items(conn, shipment: Dict):
     tracking_number = shipment.get('trackingNumber', '')
     
     items = filter_key_items(shipment.get('shipmentItems', []))
-    
+
+    # Pre-aggregate by (base_sku, sku_lot) so multiple line items with the
+    # same SKU+lot (e.g. regular case + FREE CASE promotion) are summed.
+    # Previously used ON CONFLICT DO NOTHING which silently dropped duplicates.
+    agg = {}
     for item in items:
         raw_sku = item.get('sku', '')
         base_sku = extract_base_sku(raw_sku)
         quantity = item.get('quantity', 1)
         lot = get_active_sku_lot(base_sku)
         sku_lot = f"{base_sku}-{lot}" if lot else base_sku
-        
+        agg[(base_sku, sku_lot)] = agg.get((base_sku, sku_lot), 0) + quantity
+
+    for (base_sku, sku_lot), total_qty in agg.items():
         cursor.execute("""
             INSERT INTO shipped_items (
                 ship_date, sku_lot, base_sku, quantity_shipped,
                 order_number, tracking_number, created_at
             ) VALUES (%s, %s, %s, %s, %s, %s, NOW())
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
+            SET quantity_shipped = EXCLUDED.quantity_shipped,
+                ship_date = EXCLUDED.ship_date
         """, (
             ship_date,
             sku_lot,
             base_sku,
-            quantity,
+            total_qty,
             order_number,
             tracking_number
         ))

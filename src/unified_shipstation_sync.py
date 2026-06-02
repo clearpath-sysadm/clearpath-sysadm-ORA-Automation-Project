@@ -712,29 +712,32 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             """, (ship_date, order_number, str(order_id)))
             
             # Insert into shipped_items
+            # Pre-aggregate by (base_sku, sku_lot) so multiple line items with the
+            # same SKU+lot (e.g. regular case + FREE CASE promotion) are summed
+            # rather than the last row overwriting the first via ON CONFLICT.
+            _manual_agg = {}
             for item in items:
                 sku = str(item.get('sku', '')).strip()
                 quantity = item.get('quantity', 0)
-                
                 if sku and quantity > 0:
-                    # Parse SKU - LOT format
                     if ' - ' in sku:
-                        sku_parts = sku.split(' - ')
-                        base_sku = sku_parts[0].strip()
-                        sku_lot = sku  # Store full format
+                        b_sku = sku.split(' - ')[0].strip()
+                        s_lot = sku
                     else:
-                        base_sku = sku
-                        sku_lot = sku
-                    
-                    cursor.execute("""
-                        INSERT INTO shipped_items (
-                            ship_date, sku_lot, base_sku, quantity_shipped, order_number
-                        )
-                        VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
-                        SET quantity_shipped = EXCLUDED.quantity_shipped,
-                            ship_date = EXCLUDED.ship_date
-                    """, (ship_date, sku_lot, base_sku, quantity, order_number))
+                        b_sku = sku
+                        s_lot = sku
+                    _manual_agg[(b_sku, s_lot)] = _manual_agg.get((b_sku, s_lot), 0) + quantity
+
+            for (base_sku, sku_lot), total_qty in _manual_agg.items():
+                cursor.execute("""
+                    INSERT INTO shipped_items (
+                        ship_date, sku_lot, base_sku, quantity_shipped, order_number
+                    )
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
+                    SET quantity_shipped = EXCLUDED.quantity_shipped,
+                        ship_date = EXCLUDED.ship_date
+                """, (ship_date, sku_lot, base_sku, total_qty, order_number))
             
             logger.info(f"✅ Imported SHIPPED manual order: {order_number} (ship_date: {ship_date})")
             server_logger.info(f"Imported shipped manual order: {order_number} (ship_date: {ship_date})", source="ShipStation Sync")
@@ -897,44 +900,45 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
 
             from src.services.inventory.lot_deduction import deduct_lot_inventory
 
+            # Pre-aggregate by (base_sku, sku_lot) so multiple line items with the
+            # same SKU+lot (e.g. regular case + FREE CASE promotion) are summed
+            # rather than the last row overwriting the first via ON CONFLICT.
+            _bc_agg = {}
             for item in items:
                 sku = str(item.get('sku', '')).strip()
                 quantity = item.get('quantity', 0)
-
                 if sku and quantity > 0:
                     if ' - ' in sku:
-                        sku_parts = sku.split(' - ')
-                        base_sku = sku_parts[0].strip()
-                        sku_lot = sku
+                        b_sku = sku.split(' - ')[0].strip()
+                        s_lot = sku
                     else:
-                        base_sku = sku
-                        sku_lot = sku
-
-                    # If customField1 lot stamp is available and its base SKU matches
-                    # this item's base_sku, upgrade sku_lot to the full lot-tagged value.
+                        b_sku = sku
+                        s_lot = sku
                     cf1 = (lot_stamp or '').strip()
                     parsed = parse_cf1(cf1)
-                    if parsed and parsed[0] == base_sku:
-                        sku_lot = cf1
+                    if parsed and parsed[0] == b_sku:
+                        s_lot = cf1
+                    _bc_agg[(b_sku, s_lot)] = _bc_agg.get((b_sku, s_lot), 0) + quantity
 
-                    upsert_shipped_item(
-                        conn=conn,
-                        ship_date=ship_date,
-                        sku_lot=sku_lot,
-                        base_sku=base_sku,
-                        quantity=quantity,
-                        order_number=order_number,
-                    )
+            for (base_sku, sku_lot), total_qty in _bc_agg.items():
+                upsert_shipped_item(
+                    conn=conn,
+                    ship_date=ship_date,
+                    sku_lot=sku_lot,
+                    base_sku=base_sku,
+                    quantity=total_qty,
+                    order_number=order_number,
+                )
 
-                    deduct_lot_inventory(
-                        order_number=order_number,
-                        shipstation_order_id=str(order_id),
-                        base_sku=base_sku,
-                        customField1_value=lot_stamp or '',
-                        ship_date=ship_date,
-                        quantity=quantity,
-                        conn=conn
-                    )
+                deduct_lot_inventory(
+                    order_number=order_number,
+                    shipstation_order_id=str(order_id),
+                    base_sku=base_sku,
+                    customField1_value=lot_stamp or '',
+                    ship_date=ship_date,
+                    quantity=total_qty,
+                    conn=conn
+                )
 
             logger.info(f"✅ Imported SHIPPED BigCommerce order: {order_number} (ship_date: {ship_date})")
             server_logger.info(f"Imported shipped BigCommerce order: {order_number} (ship_date: {ship_date})", source="ShipStation Sync")
