@@ -9488,7 +9488,7 @@ def api_admin_delete_order():
         logger.error(f'Error in admin order deletion: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-def _resync_shipped_items_for_order(order_number, ship_date, items, cursor):
+def _resync_shipped_items_for_order(order_number, ship_date, items, cursor, customField1=None):
     """
     Aggregate ShipStation items by (base_sku, sku_lot) and UPSERT into shipped_items.
 
@@ -9499,8 +9499,17 @@ def _resync_shipped_items_for_order(order_number, ship_date, items, cursor):
     promo row) are summed before writing so the conflict UPDATE accumulates rather
     than overwrites.
 
+    customField1: order-level lot stamp (e.g. "17612 - 260047"). When provided,
+    bare-SKU items whose base_sku matches the cf1 prefix are upgraded to the
+    lot-stamped sku_lot rather than written as bare-SKU ghost rows. Mirrors the
+    logic in unified_shipstation_sync lines 917-920.
+
     Returns the number of distinct SKU+lot rows written (0 if no valid items).
     """
+    from src.services.data_processing.sku_lot_parser import parse_cf1 as _parse_cf1
+    cf1 = (customField1 or '').strip()
+    cf1_parsed = _parse_cf1(cf1)  # (base_sku, lot_number) or None
+
     agg = {}
     for item in items:
         sku_raw = str(item.get('sku', '')).strip()
@@ -9512,7 +9521,11 @@ def _resync_shipped_items_for_order(order_number, ship_date, items, cursor):
             s_lot = sku_raw
         else:
             b_sku = sku_raw
-            s_lot = sku_raw
+            # Upgrade bare SKU to lot-stamped when customField1 matches this SKU
+            if cf1_parsed and cf1_parsed[0] == b_sku:
+                s_lot = cf1
+            else:
+                s_lot = sku_raw
         agg[(b_sku, s_lot)] = agg.get((b_sku, s_lot), 0) + quantity
 
     rows_written = 0
@@ -10507,6 +10520,15 @@ def api_bulk_resync_shipped_items():
         unit_delta = 0
         errors = []
 
+        # Group all SS orders by Oracare order_number BEFORE processing.
+        # Some Oracare orders have two ShipStation orders (regular case + FREE CASE
+        # promo), both carrying the same orderNumber. Processing them one-by-one
+        # caused the second UPSERT to overwrite the first via ON CONFLICT, silently
+        # dropping whichever ran first. Pre-grouping collects all items and the best
+        # available customField1 across all SS orders for the same order_number, so
+        # _resync_shipped_items_for_order is called exactly once per Oracare order
+        # with the complete item list.
+        _order_groups = {}  # order_number -> {items, ship_date, cf1}
         for ss_order in all_ss_orders:
             order_number = str(ss_order.get('orderNumber', '')).strip()
             items = ss_order.get('items', [])
@@ -10530,6 +10552,22 @@ def api_bulk_resync_shipped_items():
             if not (start_date <= ship_date <= end_date):
                 continue
 
+            # Extract the order-level lot stamp (customField1)
+            cf1 = ((ss_order.get('advancedOptions') or {}).get('customField1') or '').strip()
+
+            if order_number not in _order_groups:
+                _order_groups[order_number] = {'items': [], 'ship_date': ship_date, 'cf1': ''}
+
+            _order_groups[order_number]['items'].extend(items)
+            # Keep the first non-empty cf1 found across all SS orders for this Oracare order
+            if cf1 and not _order_groups[order_number]['cf1']:
+                _order_groups[order_number]['cf1'] = cf1
+
+        for order_number, group in _order_groups.items():
+            ship_date = group['ship_date']
+            items = group['items']
+            cf1 = group['cf1']
+
             orders_processed += 1
             conn = None
             try:
@@ -10544,7 +10582,7 @@ def api_bulk_resync_shipped_items():
                 )
                 units_before = int(cursor.fetchone()[0])
 
-                _resync_shipped_items_for_order(order_number, ship_date, items, cursor)
+                _resync_shipped_items_for_order(order_number, ship_date, items, cursor, customField1=cf1)
 
                 # Capture units after to compute delta
                 cursor.execute(
@@ -10558,10 +10596,10 @@ def api_bulk_resync_shipped_items():
                 conn = None
 
                 delta = units_after - units_before
-                if delta > 0:
+                if delta != 0:
                     orders_corrected += 1
                     unit_delta += delta
-                    logger.info(f"Bulk resync: corrected {order_number} +{delta} units ({units_before}→{units_after})")
+                    logger.info(f"Bulk resync: corrected {order_number} {delta:+d} units ({units_before}→{units_after})")
 
             except Exception as order_err:
                 if conn:
