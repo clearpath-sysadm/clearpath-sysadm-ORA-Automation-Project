@@ -9488,6 +9488,48 @@ def api_admin_delete_order():
         logger.error(f'Error in admin order deletion: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+def _resync_shipped_items_for_order(order_number, ship_date, items, cursor):
+    """
+    Aggregate ShipStation items by (base_sku, sku_lot) and UPSERT into shipped_items.
+
+    Shared by both the single-order sync endpoint and the bulk re-sync endpoint.
+    Caller is responsible for committing/rolling back the surrounding transaction.
+
+    Multiple line items sharing the same SKU+lot (e.g. regular case + FREE CASE
+    promo row) are summed before writing so the conflict UPDATE accumulates rather
+    than overwrites.
+
+    Returns the number of distinct SKU+lot rows written (0 if no valid items).
+    """
+    agg = {}
+    for item in items:
+        sku_raw = str(item.get('sku', '')).strip()
+        quantity = item.get('quantity', 0)
+        if not sku_raw or quantity <= 0:
+            continue
+        if ' - ' in sku_raw:
+            b_sku = sku_raw.split(' - ')[0].strip()
+            s_lot = sku_raw
+        else:
+            b_sku = sku_raw
+            s_lot = sku_raw
+        agg[(b_sku, s_lot)] = agg.get((b_sku, s_lot), 0) + quantity
+
+    rows_written = 0
+    for (base_sku, sku_lot), total_qty in agg.items():
+        cursor.execute("""
+            INSERT INTO shipped_items (
+                ship_date, sku_lot, base_sku, quantity_shipped, order_number
+            )
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
+            SET quantity_shipped = EXCLUDED.quantity_shipped,
+                ship_date = EXCLUDED.ship_date
+        """, (ship_date, sku_lot, base_sku, total_qty, order_number))
+        rows_written += 1
+    return rows_written
+
+
 @app.route('/api/admin/sync_order_from_shipstation', methods=['POST'])
 @login_required
 @admin_required
@@ -9642,34 +9684,9 @@ def api_admin_sync_order_from_shipstation():
                         shipstation_order_id = EXCLUDED.shipstation_order_id
                 """, (ship_date, order_number, str(shipstation_order_id)))
                 
-                # Update shipped_items for each item
-                # Pre-aggregate by (base_sku, sku_lot) so multiple line items with the
-                # same SKU+lot (e.g. regular case + FREE CASE promotion) are summed
-                # rather than the last row overwriting the first via ON CONFLICT.
-                _sync_agg = {}
-                for item in items:
-                    sku_raw = str(item.get('sku', '')).strip()
-                    quantity = item.get('quantity', 0)
-                    if not sku_raw or quantity <= 0:
-                        continue
-                    if ' - ' in sku_raw:
-                        b_sku = sku_raw.split(' - ')[0].strip()
-                        s_lot = sku_raw
-                    else:
-                        b_sku = sku_raw
-                        s_lot = sku_raw
-                    _sync_agg[(b_sku, s_lot)] = _sync_agg.get((b_sku, s_lot), 0) + quantity
-
-                for (base_sku, sku_lot), total_qty in _sync_agg.items():
-                    cursor.execute("""
-                        INSERT INTO shipped_items (
-                            ship_date, sku_lot, base_sku, quantity_shipped, order_number
-                        )
-                        VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (order_number, base_sku, sku_lot) DO UPDATE
-                        SET quantity_shipped = EXCLUDED.quantity_shipped,
-                            ship_date = EXCLUDED.ship_date
-                    """, (ship_date, sku_lot, base_sku, total_qty, order_number))
+                # Update shipped_items — delegate to shared helper that pre-aggregates
+                # multiple line items with the same SKU+lot before upserting.
+                _resync_shipped_items_for_order(order_number, ship_date, items, cursor)
                 
                 logger.info(f"✅ Updated shipped_orders and shipped_items for Order #{order_number}")
             
@@ -10392,6 +10409,160 @@ def api_resync_shipped_deductions():
 
     except Exception as e:
         logger.error(f'Error in resync-shipped-deductions: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/bulk-resync-shipped-items', methods=['POST'])
+@login_required
+@admin_required
+def api_bulk_resync_shipped_items():
+    """
+    Correct shipped_items quantities for all shipped orders in a date range by
+    re-fetching live data from ShipStation.
+
+    Use this after deploying the FREE CASE aggregation fix (Task #93) to repair
+    historical records where promotional duplicate line items caused unit counts
+    to be under-reported in the charge report.
+
+    Body: { start_date: 'YYYY-MM-DD', end_date: 'YYYY-MM-DD' }
+    Returns: { success, orders_processed, orders_corrected, unit_delta, errors }
+    """
+    from src.services.shipstation.api_client import get_shipstation_credentials, get_shipstation_headers
+    from config.settings import SHIPSTATION_ORDERS_ENDPOINT
+    from utils.api_utils import make_api_request
+    from src.services.database.pg_utils import get_connection
+    import time as _time
+
+    try:
+        body = request.get_json(silent=True) or {}
+        start_date = body.get('start_date')
+        end_date = body.get('end_date')
+
+        if not start_date or not end_date:
+            return jsonify({'success': False, 'error': 'start_date and end_date required'}), 400
+
+        # Fetch all shipped orders from ShipStation for the date range (paginated).
+        # Reuses the same pattern as api_resync_shipped_deductions.
+        api_key, api_secret = get_shipstation_credentials()
+        ss_headers = get_shipstation_headers(api_key, api_secret)
+
+        ss_params = {
+            'orderStatus': 'shipped',
+            'pageSize': 500,
+            'page': 1,
+            'shipDateStart': start_date,
+            'shipDateEnd': end_date,
+        }
+
+        all_ss_orders = []
+        while True:
+            resp = make_api_request(
+                url=SHIPSTATION_ORDERS_ENDPOINT,
+                method='GET',
+                headers=ss_headers,
+                params=ss_params,
+                timeout=30,
+            )
+            if not resp or resp.status_code != 200:
+                raise Exception(f"ShipStation fetch failed (HTTP {resp.status_code if resp else 'no response'})")
+            page_data = resp.json()
+            all_ss_orders.extend(page_data.get('orders', []))
+            if ss_params['page'] >= page_data.get('pages', 1):
+                break
+            ss_params['page'] += 1
+            _time.sleep(0.3)
+
+        if not all_ss_orders:
+            return jsonify({
+                'success': True,
+                'message': 'No shipped orders found in ShipStation for that date range',
+                'orders_processed': 0,
+                'orders_corrected': 0,
+                'unit_delta': 0,
+                'errors': [],
+            })
+
+        orders_processed = 0
+        orders_corrected = 0
+        unit_delta = 0
+        errors = []
+
+        for ss_order in all_ss_orders:
+            order_number = str(ss_order.get('orderNumber', '')).strip()
+            items = ss_order.get('items', [])
+            if not order_number or not items:
+                continue
+
+            # Resolve ship date: prefer shipments[0].shipDate, fall back to order shipDate
+            ship_date = None
+            shipments = ss_order.get('shipments', [])
+            if shipments:
+                ship_date = shipments[0].get('shipDate')
+            if not ship_date:
+                ship_date = ss_order.get('shipDate') or ss_order.get('orderDate')
+            if not ship_date:
+                continue
+            ship_date = ship_date[:10]
+
+            orders_processed += 1
+            conn = None
+            try:
+                conn = get_connection()
+                conn.autocommit = False
+                cursor = conn.cursor()
+
+                # Capture total units currently in DB for this order
+                cursor.execute(
+                    "SELECT COALESCE(SUM(quantity_shipped), 0) FROM shipped_items WHERE order_number = %s",
+                    (order_number,)
+                )
+                units_before = int(cursor.fetchone()[0])
+
+                _resync_shipped_items_for_order(order_number, ship_date, items, cursor)
+
+                # Capture units after to compute delta
+                cursor.execute(
+                    "SELECT COALESCE(SUM(quantity_shipped), 0) FROM shipped_items WHERE order_number = %s",
+                    (order_number,)
+                )
+                units_after = int(cursor.fetchone()[0])
+
+                conn.commit()
+                conn.close()
+                conn = None
+
+                delta = units_after - units_before
+                if delta > 0:
+                    orders_corrected += 1
+                    unit_delta += delta
+                    logger.info(f"Bulk resync: corrected {order_number} +{delta} units ({units_before}→{units_after})")
+
+            except Exception as order_err:
+                if conn:
+                    try:
+                        conn.rollback()
+                        conn.close()
+                    except Exception:
+                        pass
+                errors.append(f"{order_number}: {order_err}")
+                logger.error(f"Bulk resync error for {order_number}: {order_err}", exc_info=True)
+
+        user_email = current_user.email if current_user.is_authenticated else 'unknown'
+        server_logger.info(
+            f"Bulk resync shipped items: processed={orders_processed}, corrected={orders_corrected}, unit_delta={unit_delta}, errors={len(errors)}",
+            source='admin', user=user_email
+        )
+
+        return jsonify({
+            'success': True,
+            'orders_processed': orders_processed,
+            'orders_corrected': orders_corrected,
+            'unit_delta': unit_delta,
+            'errors': errors,
+        })
+
+    except Exception as e:
+        logger.error(f'Error in bulk-resync-shipped-items: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

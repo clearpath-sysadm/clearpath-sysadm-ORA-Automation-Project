@@ -247,6 +247,39 @@
                 <div class="card" style="margin-top: 24px;">
                     <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
                         <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <span>🔢</span> Re-sync Shipped Item Quantities
+                        </h3>
+                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                            Correct <code>shipped_items</code> quantities for a date range by re-fetching live data from ShipStation. Use this to fix orders where FREE CASE promotional items caused unit counts to be under-reported in the charge report.
+                        </p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: end;">
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px;">Start Date</label>
+                                    <input type="date" id="resync-si-start-date"
+                                        style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; background: var(--bg-primary); color: var(--text-primary);">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px;">End Date</label>
+                                    <input type="date" id="resync-si-end-date"
+                                        style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; background: var(--bg-primary); color: var(--text-primary);">
+                                </div>
+                                <div>
+                                    <button onclick="runBulkResyncShippedItems()" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                                        <span>🔢</span> Re-sync Quantities
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="resync-si-results" style="display: none; padding: 16px; background: var(--bg-secondary); border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap; max-height: 400px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
                             <span>🔍</span> Unit Comparison Tool
                         </h3>
                         <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
@@ -1542,14 +1575,83 @@
             }
         }
         
-        // Set default date range (last 7 days)
+        async function runBulkResyncShippedItems() {
+            const startDate = document.getElementById('resync-si-start-date').value;
+            const endDate = document.getElementById('resync-si-end-date').value;
+            const resultsDiv = document.getElementById('resync-si-results');
+
+            if (!startDate || !endDate) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.textContent = 'Error: Please select both start and end dates.';
+                resultsDiv.style.color = '#dc3545';
+                return;
+            }
+
+            if (!confirm(`This will re-fetch all shipped orders from ShipStation (${startDate} to ${endDate}) and correct any under-counted quantities in the local database.\n\nThis is safe to re-run — already-correct orders are not changed.\n\nContinue?`)) {
+                return;
+            }
+
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = 'Running... This may take several minutes for large date ranges.';
+            resultsDiv.style.color = 'var(--text-primary)';
+
+            try {
+                const response = await fetch('/api/admin/bulk-resync-shipped-items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start_date: startDate, end_date: endDate })
+                });
+
+                if (response.status === 403) {
+                    resultsDiv.textContent = 'Error: Admin access required.';
+                    resultsDiv.style.color = '#dc3545';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let output = `RE-SYNC COMPLETE (${startDate} to ${endDate})\n`;
+                    output += '═'.repeat(50) + '\n\n';
+                    output += `📦 Orders Processed:    ${data.orders_processed}\n`;
+                    output += `✏️  Orders Corrected:    ${data.orders_corrected}\n`;
+                    output += `📊 Units Added:         +${data.unit_delta}\n`;
+                    output += `❌ Errors:              ${data.errors.length}\n`;
+                    if (data.errors.length > 0) {
+                        output += '\nErrors:\n';
+                        data.errors.forEach(e => { output += `  • ${e}\n`; });
+                    }
+                    output += '\n';
+                    if (data.errors.length === 0) {
+                        output += '✅ COMPLETED SUCCESSFULLY';
+                    } else {
+                        output += `⚠️ COMPLETED WITH ${data.errors.length} ERRORS — Check server logs`;
+                    }
+                    resultsDiv.textContent = output;
+                    resultsDiv.style.color = data.errors.length === 0 ? 'var(--text-primary)' : '#856404';
+                } else {
+                    resultsDiv.textContent = `Error: ${data.error}`;
+                    resultsDiv.style.color = '#dc3545';
+                }
+            } catch (error) {
+                console.error('Bulk resync error:', error);
+                resultsDiv.textContent = `Error: ${error.message}`;
+                resultsDiv.style.color = '#dc3545';
+            }
+        }
+
+        // Set default date range (last 7 days for backfill; current month for re-sync)
         (function setDefaultDates() {
             const today = new Date();
             const sevenDaysAgo = new Date(today);
             sevenDaysAgo.setDate(today.getDate() - 7);
-            
+
             document.getElementById('backfill-end-date').value = today.toISOString().split('T')[0];
             document.getElementById('backfill-start-date').value = sevenDaysAgo.toISOString().split('T')[0];
+
+            const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            document.getElementById('resync-si-start-date').value = firstOfMonth.toISOString().split('T')[0];
+            document.getElementById('resync-si-end-date').value = today.toISOString().split('T')[0];
         })();
 
         loadWorkflows();
