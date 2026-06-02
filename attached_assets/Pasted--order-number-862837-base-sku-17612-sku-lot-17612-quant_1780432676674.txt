@@ -1,0 +1,100 @@
+[
+  {
+    "order_number": "862837",
+    "base_sku": "17612",
+    "sku_lot": "17612",
+    "quantity_shipped": 2,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862837",
+    "base_sku": "17612",
+    "sku_lot": "17612 - 260047",
+    "quantity_shipped": 2,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862837",
+    "base_sku": "17914",
+    "sku_lot": "17914 - 250297",
+    "quantity_shipped": 1,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862868",
+    "base_sku": "17612",
+    "sku_lot": "17612 - 260047",
+    "quantity_shipped": 3,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862868",
+    "base_sku": "17612",
+    "sku_lot": "17612",
+    "quantity_shipped": 15,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862868",
+    "base_sku": "17914",
+    "sku_lot": "17914 - 250297",
+    "quantity_shipped": 2,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862878",
+    "base_sku": "17612",
+    "sku_lot": "17612",
+    "quantity_shipped": 6,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862878",
+    "base_sku": "17612",
+    "sku_lot": "17612 - 260047",
+    "quantity_shipped": 1,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862878",
+    "base_sku": "17904",
+    "sku_lot": "17904 - 250240",
+    "quantity_shipped": 1,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862897",
+    "base_sku": "17612",
+    "sku_lot": "17612 - 260047",
+    "quantity_shipped": 41,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862899",
+    "base_sku": "17612",
+    "sku_lot": "17612 - 260047",
+    "quantity_shipped": 15,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862904",
+    "base_sku": "17612",
+    "sku_lot": "17612",
+    "quantity_shipped": 6,
+    "ship_date": "2026-05-07"
+  },
+  {
+    "order_number": "862904",
+    "base_sku": "17612",
+    "sku_lot": "17612 - 260047",
+    "quantity_shipped": 1,
+    "ship_date": "2026-05-08"
+  },
+  {
+    "order_number": "862904",
+    "base_sku": "17904",
+    "sku_lot": "17904 - 250240",
+    "quantity_shipped": 1,
+    "ship_date": "2026-05-07"
+  }
+]

@@ -1,0 +1,417 @@
+[
+  {
+    "ship_date": "2026-05-01",
+    "base_sku": "17612",
+    "units": "78"
+  },
+  {
+    "ship_date": "2026-05-01",
+    "base_sku": "17904",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-01",
+    "base_sku": "17914",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "base_sku": "17612",
+    "units": "62"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "base_sku": "17904",
+    "units": "3"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "base_sku": "17914",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "base_sku": "18675",
+    "units": "3"
+  },
+  {
+    "ship_date": "2026-05-05",
+    "base_sku": "17612",
+    "units": "142"
+  },
+  {
+    "ship_date": "2026-05-05",
+    "base_sku": "17904",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-05",
+    "base_sku": "17914",
+    "units": "3"
+  },
+  {
+    "ship_date": "2026-05-06",
+    "base_sku": "17612",
+    "units": "40"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17612",
+    "units": "279"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17904",
+    "units": "17"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17914",
+    "units": "13"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "18675",
+    "units": "8"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "18795",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17612",
+    "units": "65"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17904",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17914",
+    "units": "33"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "18795",
+    "units": "9"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "17612",
+    "units": "13"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "17904",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "17914",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "units": "19"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18795",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "17612",
+    "units": "49"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "17904",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "17914",
+    "units": "4"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18565",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "units": "9"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18795",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "17612",
+    "units": "34"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "17904",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "17914",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "units": "25"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "17612",
+    "units": "90"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "17904",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "17914",
+    "units": "8"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "18675",
+    "units": "3"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17612",
+    "units": "134"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17904",
+    "units": "11"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17914",
+    "units": "5"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "17612",
+    "units": "22"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "17914",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "18675",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "18795",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "base_sku": "17612",
+    "units": "30"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "base_sku": "17904",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "base_sku": "17914",
+    "units": "6"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "base_sku": "18795",
+    "units": "4"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "17612",
+    "units": "17"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "17904",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "17914",
+    "units": "5"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "18675",
+    "units": "3"
+  },
+  {
+    "ship_date": "2026-05-21",
+    "base_sku": "17612",
+    "units": "131"
+  },
+  {
+    "ship_date": "2026-05-21",
+    "base_sku": "17904",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-21",
+    "base_sku": "18675",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "17612",
+    "units": "47"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "17904",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "17914",
+    "units": "8"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "18675",
+    "units": "23"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "18795",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17612",
+    "units": "141"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17904",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17914",
+    "units": "10"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17975",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "18675",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "18795",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "base_sku": "17612",
+    "units": "55"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "base_sku": "17904",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "base_sku": "17914",
+    "units": "9"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "base_sku": "18795",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17612",
+    "units": "164"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17613",
+    "units": "13"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17904",
+    "units": "7"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17914",
+    "units": "12"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17915",
+    "units": "1"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "18675",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "18795",
+    "units": "6"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17612",
+    "units": "79"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17613",
+    "units": "2"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17914",
+    "units": "4"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "18675",
+    "units": "24"
+  }
+]
