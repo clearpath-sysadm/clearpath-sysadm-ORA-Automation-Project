@@ -1,0 +1,90 @@
+ 04/13/2026 12:53 by:  ShipStation
+Order #862285 imported from marketplace as 'Paid'
+
+ 04/13/2026 12:53 by:  System
+Address Verification overrode address provided by marketplace
+Street 1 changed from 1550 S. Custer Rd. to 1550 S CUSTER RD STE 100
+Street 2 changed from Suite 100 to
+Postal Code changed from 75070 to 75072-6435
+
+ 04/13/2026 12:53 by:  Shipstation
+Product Mapping Applied Provider: None, Service: None, Package: None.
+
+ 04/13/2026 12:53 by:  ShipStation
+For Rule 'Default Confirmation' -
+Action 'Request Confirmation' matched and applied.
+
+ 04/13/2026 12:53 by:  ShipStation
+For Rule '17612' -
+Action 'Set Carrier/Service/Package' matched and applied.
+Action 'Set Package Dimensions' matched and applied.
+Action 'Set Ship From Location' matched and applied.
+Action 'Charge Shipping to My Account' matched and applied.
+Action 'Assign to a user' matched and applied.
+Action 'Adjust the Order Weight' matched and applied.
+
+ 04/13/2026 12:55 by:  OracareTeam
+Order #277881065 modified
+Ship Company changed from 'BESPOKE SLEEP AND COSMETIC DENTISTRY' to 'Ryan Thompson DDS'
+Ship Street 1 changed from '1550 S CUSTER RD STE 100' to '1361 East University Dr. '
+Ship Street 2 changed from '' to 'ste 10'
+Ship City changed from 'MCKINNEY' to 'Prosper '
+Ship Postal Code changed from '75072-6435' to '75078'
+
+ 04/14/2026 6:00 by:  System
+Address Verification overrode address provided by marketplace
+Street 1 changed from 1361 East University Dr. to 1361 E UNIVERSITY DR STE 10
+Street 2 changed from ste 10 to
+City changed from Prosper to PROSPER
+Postal Code changed from 75078 to 75078-7265
+
+ 04/14/2026 6:00 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 6:01 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 6:02 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 6:03 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 6:04 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 8:35 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 8:51 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 9:31 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 10:24 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 11:17 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 11:55 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 11:57 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 11:59 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 12:02 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 12:04 by:  LabelApi
+Order assigned to Axiom Team
+
+ 04/14/2026 12:13 by:  oracareadmin
+Order assigned to 'Axiom Team'
+
+ 04/14/2026 12:25 by:  ShipStation
+Shipment created: FedEx 380495426019
