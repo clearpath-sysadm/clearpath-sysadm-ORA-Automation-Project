@@ -9510,6 +9510,15 @@ def _resync_shipped_items_for_order(order_number, ship_date, items, cursor, cust
     cf1 = (customField1 or '').strip()
     cf1_parsed = _parse_cf1(cf1)  # (base_sku, lot_number) or None
 
+    # Load the shared promo map (17613→17612, 17905→17904, etc.) so resync
+    # writes the same base_sku as unified_shipstation_sync does for live orders.
+    _promo_map = {}
+    try:
+        from src.services.inventory.promo_sku_utils import load_promo_map as _load_pm
+        _promo_map = _load_pm(cursor.connection)
+    except Exception as _pm_err:
+        logger.warning(f"_resync_shipped_items: could not load promo map — skipping remap: {_pm_err}")
+
     agg = {}
     for item in items:
         sku_raw = str(item.get('sku', '')).strip()
@@ -9521,11 +9530,14 @@ def _resync_shipped_items_for_order(order_number, ship_date, items, cursor, cust
             s_lot = sku_raw
         else:
             b_sku = sku_raw
+            # Remap promo SKU to base SKU (e.g. 17613→17612) before lot-upgrade
+            # check so cf1_parsed comparison works on the canonical base SKU.
+            b_sku = _promo_map.get(b_sku, b_sku)
             # Upgrade bare SKU to lot-stamped when customField1 matches this SKU
             if cf1_parsed and cf1_parsed[0] == b_sku:
                 s_lot = cf1
             else:
-                s_lot = sku_raw
+                s_lot = b_sku
         agg[(b_sku, s_lot)] = agg.get((b_sku, s_lot), 0) + quantity
 
     rows_written = 0
