@@ -1,0 +1,142 @@
+[
+  {
+    "ship_date": "2026-05-01",
+    "cr_units": "78",
+    "orders": "22",
+    "bare_rows": "2",
+    "bare_units": "7"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "cr_units": "62",
+    "orders": "16",
+    "bare_rows": "2",
+    "bare_units": "2"
+  },
+  {
+    "ship_date": "2026-05-05",
+    "cr_units": "142",
+    "orders": "44",
+    "bare_rows": "1",
+    "bare_units": "3"
+  },
+  {
+    "ship_date": "2026-05-06",
+    "cr_units": "40",
+    "orders": "1",
+    "bare_rows": "0",
+    "bare_units": null
+  },
+  {
+    "ship_date": "2026-05-07",
+    "cr_units": "274",
+    "orders": "64",
+    "bare_rows": "2",
+    "bare_units": "11"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "cr_units": "57",
+    "orders": "15",
+    "bare_rows": "1",
+    "bare_units": "1"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "cr_units": "44",
+    "orders": "10",
+    "bare_rows": "0",
+    "bare_units": null
+  },
+  {
+    "ship_date": "2026-05-12",
+    "cr_units": "176",
+    "orders": "27",
+    "bare_rows": "3",
+    "bare_units": "14"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "cr_units": "118",
+    "orders": "20",
+    "bare_rows": "1",
+    "bare_units": "1"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "cr_units": "86",
+    "orders": "22",
+    "bare_rows": "0",
+    "bare_units": null
+  },
+  {
+    "ship_date": "2026-05-15",
+    "cr_units": "146",
+    "orders": "46",
+    "bare_rows": "1",
+    "bare_units": "3"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "cr_units": "76",
+    "orders": "18",
+    "bare_rows": "2",
+    "bare_units": "21"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "cr_units": "62",
+    "orders": "20",
+    "bare_rows": "0",
+    "bare_units": null
+  },
+  {
+    "ship_date": "2026-05-20",
+    "cr_units": "47",
+    "orders": "16",
+    "bare_rows": "0",
+    "bare_units": null
+  },
+  {
+    "ship_date": "2026-05-21",
+    "cr_units": "104",
+    "orders": "20",
+    "bare_rows": "0",
+    "bare_units": null
+  },
+  {
+    "ship_date": "2026-05-22",
+    "cr_units": "59",
+    "orders": "13",
+    "bare_rows": "1",
+    "bare_units": "6"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "cr_units": "163",
+    "orders": "41",
+    "bare_rows": "4",
+    "bare_units": "17"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "cr_units": "148",
+    "orders": "29",
+    "bare_rows": "2",
+    "bare_units": "7"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "cr_units": "99",
+    "orders": "20",
+    "bare_rows": "1",
+    "bare_units": "1"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "cr_units": "42",
+    "orders": "13",
+    "bare_rows": "0",
+    "bare_units": null
+  }
+]
