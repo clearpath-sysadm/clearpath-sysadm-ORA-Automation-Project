@@ -12,3 +12,9 @@ id = "E-huXY8NZ_0hzqpmORKMm"
 uri = "file://april_15_promo_overshipment_report.csv"
 type = "table"
 title = "April 15 Promo Shipment Report (Corrected)"
+
+[[outputs]]
+id = "WC2a3A-oE-KM4TRw9BpR6"
+uri = "file://attached_assets/may_discrepancy_report_2026.csv"
+type = "table"
+title = "May 2026 Discrepancy Report (Charge Report vs SS Pivot)"
