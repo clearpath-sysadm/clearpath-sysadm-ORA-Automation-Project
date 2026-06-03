@@ -8,13 +8,13 @@
 
 ## Overall Discrepancy Summary (CR − SS Pivot)
 
-| SKU | Charge Report | SS Pivot | Gap | Status |
-|-----|--------------|----------|-----|--------|
-| 17612 | 2,011 | 2,014 | **−3** | CR under SS — investigation pending |
-| 17904 | 59 | 58 | **+1** | CR over SS — investigation pending |
-| 17914 | 118 | 87 | **+31** | CR over SS — ghost fix pending |
-| 18675 | 127 | 113 | **+14** | CR over SS — partially addressed |
-| 18795 | 23 | 23 | **0** | ✅ RECONCILED (June 3, 2026) |
+| SKU | Charge Report (original) | Charge Report (current) | SS Pivot | Gap | Status |
+|-----|--------------------------|------------------------|----------|-----|--------|
+| 17612 | 2,011 | **2,023** | 2,014 | **+9** | CR over SS — further fixes pending |
+| 17904 | 59 | 59 | 58 | **+1** | CR over SS — investigation pending |
+| 17914 | 118 | **106** | 87 | **+19** | CR over SS — STANDARD ghosts fixed, residual pending |
+| 18675 | 127 | 127 | 113 | **+14** | CR over SS — partially addressed |
+| 18795 | 23 | 23 | 23 | **0** | ✅ RECONCILED (June 3, 2026) |
 
 ---
 
@@ -37,29 +37,29 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 | Date | SKU | Order | Delete (Ghost) | Keep | Units Removed | Type |
 |------|-----|-------|----------------|------|---------------|------|
 | May 1 | 17612 | 862728 | `17612 - 260047` (5) | `17612` (6) | 5 | REVIEW |
-| May 7 | 17914 | 862842 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
-| May 7 | 17914 | 862843 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
+| May 7 | 17914 | 862842 | `17914` (1) | `17914 - 250297` (1) | 1 | ✅ DONE |
+| May 7 | 17914 | 862843 | `17914` (1) | `17914 - 250297` (1) | 1 | ✅ DONE |
 | May 7 | 18795 | 862834 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
 | May 8 | 17612 | 862917 | `17612` (1) | `17612 - 260047` (1) | 1 | STANDARD |
-| May 8 | 17914 | 862915 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
+| May 8 | 17914 | 862915 | `17914` (1) | `17914 - 250297` (1) | 1 | ✅ DONE |
 | May 8 | 17914 | 862918 | `17914 - 250297` (12) | `17914` (15) | 12 | REVIEW |
 | May 8 | 18795 | 862906 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
 | May 8 | 18795 | 862912 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
-| May 14 | 17914 | 863055 | `17914` (2) | `17914 - 250297` (2) | 2 | STANDARD |
-| May 14 | 17914 | 863057 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
-| May 15 | 17612 | 863064 | `17612` (2) | `17612 - 260082` (2) | 2 | STANDARD |
-| May 15 | 17612 | 863109 | `17612 - 260082` (1) | `17612` (3) | 1 | REVIEW |
-| May 15 | 17914 | 863099 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
+| May 14 | 17914 | 863055 | `17914` (2) | `17914 - 250297` (2) | 2 | ✅ DONE |
+| May 14 | 17914 | 863057 | `17914` (1) | `17914 - 250297` (1) | 1 | ✅ DONE |
+| May 15 | 17612 | 863064 | `17612` (2) | `17612 - 260082` (2) | 2 | ✅ DONE |
+| May 15 | 17612 | 863109 | `17612 - 260082` (1) | `17612` (3) | 1 | ✅ DONE |
+| May 15 | 17914 | 863099 | `17914` (1) | `17914 - 250297` (1) | 1 | ✅ DONE |
 | May 22 | 18675 | 863246 | `18675` (1) | `18675 - 240231` (1) | 1 | STANDARD |
 | May 22 | 18795 | 863238 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
 | May 26 | 17612 | 863264 | `17612 - 260082` (1) | `17612` (5) | 1 | REVIEW |
 | May 26 | 17612 | 863265 | `17612 - 260082` (1) | `17612` (5) | 1 | REVIEW |
-| May 26 | 17914 | 863266 | `17914` (3) | `17914 - 250297` (3) | 3 | STANDARD |
+| May 26 | 17914 | 863266 | `17914` (3) | `17914 - 250297` (3) | 3 | ✅ DONE |
 | May 26 | 18795 | 863252 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
 | May 28 | 17612 | 863350 | `17612` (1) | `17612 - 260082` (1) | 1 | STANDARD |
-| May 28 | 17914 | 863336 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
+| May 28 | 17914 | 863336 | `17914` (1) | `17914 - 250297` (1) | 1 | ✅ DONE |
 | May 28 | 18675 | 863337 | `18675` (1) | `18675 - 240231` (1) | 1 | STANDARD |
-| May 29 | 17914 | 863359 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
+| May 29 | 17914 | 863359 | `17914` (1) | `17914 - 250297` (1) | 1 | ✅ DONE |
 
 **STANDARD** = delete the bare row (lot-stamped has equal or more units — clear ghost).  
 **REVIEW** = bare row has more units than lot-stamped — requires manual SS verification before deleting.  
@@ -87,23 +87,26 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 
 ---
 
-### SKU 17914 — ⚠️ Ghost fix partially reconciles (+7 remains)
+### SKU 17914 — ⚠️ STANDARD ghosts fixed (June 3, 2026) — +19 remains
 
-| Date | CR−SS Before | Removed | CR−SS After |
-|------|-------------|---------|-------------|
-| May 1 | +1 | 0 | **+1** |
-| May 7 | +2 | −2 | 0 |
-| May 8 | +13 | −13 | 0 |
-| May 14 | +3 | −3 | 0 |
-| May 15 | +1 | −1 | 0 |
-| May 26 | +4 | −3 | **+1** |
-| May 27 | +5 | 0 | **+5** |
-| May 28 | +1 | −1 | 0 |
-| May 29 | +1 | −1 | 0 |
-| **TOTAL** | **+31** | **−24** | **+7** |
+**9 STANDARD ghost rows deleted June 3, 2026 — 12 units removed. CR: 118 → 106.**
 
-**Remaining gaps require separate investigation:**
-- May 27 +5: No ghost rows found — different root cause unknown
+| Date | CR−SS Before | Removed | CR−SS After | Notes |
+|------|-------------|---------|-------------|-------|
+| May 1 | +1 | 0 | **+1** | No ghost found — root cause unknown |
+| May 7 | +2 | −2 | 0 | ✅ Fixed (862842, 862843) |
+| May 8 | +13 | −1 | **+12** | ✅ 862915 fixed; 862918 REVIEW pending SS verification |
+| May 14 | +3 | −3 | 0 | ✅ Fixed (863055, 863057) |
+| May 15 | +1 | −1 | 0 | ✅ Fixed (863099) |
+| May 26 | +4 | −3 | **+1** | ✅ 863266 fixed; 1 unit unexplained |
+| May 27 | +5 | 0 | **+5** | No ghost found — root cause unknown |
+| May 28 | +1 | −1 | 0 | ✅ Fixed (863336) |
+| May 29 | +1 | −1 | 0 | ✅ Fixed (863359) |
+| **TOTAL** | **+31** | **−12** | **+19** | |
+
+**Remaining +19 — next actions:**
+- May 8 +12: Order 862918 REVIEW — delete lot-stamped `17914 - 250297` (12 units), keep bare `17914` (15 units). Requires SS verification of SS order ID 284675320 to confirm 15 units.
+- May 27 +5: No ghost rows found — different root cause, requires order-level investigation
 - May 1 +1: No ghost rows found — different root cause unknown
 - May 26 +1: One extra unit beyond identified ghost rows
 
@@ -124,9 +127,9 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 
 ---
 
-### SKU 17612 — 🔍 Investigation in progress
+### SKU 17612 — ⚠️ Partial fixes applied (June 3, 2026) — +9 remains
 
-The overall gap is −3 (CR under SS). Multiple opposing forces are at play — the ghost row fix alone would make the balance worse. Root causes must be addressed by type.
+17613 remap (+15 units) and May 15 ghost fix (−3 units) applied June 3, 2026. CR: 2,011 → 2,023. Gap vs SS 2,014 = **+9**.
 
 #### Date-by-date breakdown
 
@@ -136,11 +139,11 @@ The overall gap is −3 (CR under SS). Multiple opposing forces are at play — 
 | May 8 | −4 (true −5) | Orders never synced into `shipped_orders` + ghost 862917 masks 1 unit | ✅ Diagnosed — SS verification needed |
 | May 11 | −6 | Orders never synced into `shipped_orders` — BigCommerce orphan theory ruled out | ✅ Diagnosed — SS verification needed |
 | May 12 | +6 | 3 bare-only rows (862946=6, 862947=6, 862954=2) — not ghost pairs, likely qty mismatch vs SS | 🔍 Pending SS verification |
-| May 15 | +3 | Ghost rows: 863064 (STANDARD, 2 units) + 863109 (REVIEW, 1 unit) | ✅ Identified — fix ready |
+| May 15 | +3 | Ghost rows: 863064 (STANDARD, 2 units) + 863109 (REVIEW, 1 unit) | ✅ **FIXED June 3, 2026** — CR 149→146 = SS 146 |
 | May 26 | +8 | Order 833686 BigCommerce migration noise (6 units) + ghost REVIEW 863264+863265 (2 units) | ⏳ Awaiting Oracare confirmation |
 | May 27 | +5 | 1 bare row + 1 malformed `17612-260082` sku_lot — order-level detail pending | 🔍 Pending |
-| May 28 | −12 | 13 units of `base_sku=17613` not remapped to 17612 (8 orders, all bare) | ✅ Identified — fix ready |
-| May 29 | −2 | 2 units of `base_sku=17613` not remapped to 17612 (2 orders, all bare) | ✅ Identified — fix ready |
+| May 28 | −12 → **+1** | 13 units remapped from 17613 (+15 to CR via merge); ghost 863350 STANDARD (1 unit) still pending | ✅ Remap FIXED June 3, 2026 — ghost pending |
+| May 29 | −2 → **0** | 2 units remapped from 17613 (+2 to CR); CR 40→42 = SS 42 | ✅ **FIXED June 3, 2026** |
 
 #### Under-count analysis
 
@@ -238,15 +241,16 @@ May 1 shows CR=2, SS=1. No ghost rows identified for 17904. Requires order-level
 | Status | SKU | Action |
 |--------|-----|--------|
 | ✅ Complete | **18795** | Ghost deletes + bare row lot-stamping — fully reconciled |
-| 🔜 Next | **17914** | Apply 9 STANDARD ghost deletes (862842, 862843, 862915, 863055, 863057, 863099, 863266, 863336, 863359) — removes 13 units |
-| 🔜 Next | **17914** | Verify order 862918 in SS, then apply REVIEW delete (removes 12 more units) |
-| 🔍 Investigate | **17914** | May 27 +5, May 1 +1 — no ghost rows found, root cause unknown |
-| 🔜 Next | **17612** | Remap May 28 `17613` rows → `17612` (13 units, 8 orders) + delete bare ghost 862917 → net +12 to CR |
-| 🔜 Next | **17612** | Remap May 29 `17613` rows → `17612` (2 units, 2 orders) → net +2 to CR |
-| ⏳ Awaiting | **17612** | May 26 order 833686 (6 bare units) — BigCommerce migration noise, awaiting Oracare confirmation |
-| 🔍 Investigate | **17612** | May 27 +5: order-level detail needed; `17612-260082` malformed sku_lot identified |
-| 🔍 Investigate | **17612** | May 5 −1, May 8 −4, May 11 −6, May 12 +6 — root causes unknown |
-| ⚠️ Hold | **17612** | Ghost deletes (May 15, May 26) — apply only after remap fixes land and balance is reassessed |
+| ✅ Complete | **17914** | 9 STANDARD ghost deletes (862842, 862843, 862915, 863055, 863057, 863099, 863266, 863336, 863359) — 12 units removed June 3, 2026 |
+| ✅ Complete | **17612** | Remap 15 units (10 orders) from base_sku 17613 → 17612 on May 28/29 — applied June 3, 2026 |
+| ✅ Complete | **17612** | May 15 ghost fix (863064 STANDARD + 863109 REVIEW) — 3 units removed June 3, 2026 |
+| 🔜 Next | **17914** | Verify order 862918 in SS (SS ID 284675320) — confirm 15 units, then delete lot-stamped row (−12 units) |
+| 🔜 Next | **17612** | Delete STANDARD ghost 863350 on May 28 (1 bare unit) — unblocked now that remap is done |
+| ⏳ Awaiting | **17612** | May 26 order 833686 (6 bare units) + REVIEW ghosts 863264/863265 (2 units) — awaiting Oracare confirmation |
+| 🔍 Investigate | **17914** | May 27 +5, May 1 +1, May 26 +1 — no ghost rows found, root cause unknown |
+| 🔍 Investigate | **17612** | May 27 +5: malformed `17612-260082` sku_lot + bare row — order-level detail needed |
+| 🔍 Investigate | **17612** | May 5 −1, May 8 −4, May 11 −6 — orders never synced to DB, SS API re-pull needed |
+| 🔍 Investigate | **17612** | May 12 +6 — bare-only rows (862946, 862947, 862954), SS verification needed |
 | 🔍 Investigate | **18675** | May 29 +12: double-write on lot-stamped row `18675 - 260052` |
 | 🔍 Investigate | **18675** | Ghost deletes 863246 + 863337 (2 units) — apply after May 29 is resolved |
 | 🔍 Investigate | **17904** | May 1 +1: identify the extra order in DB not in SS |
