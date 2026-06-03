@@ -1,0 +1,242 @@
+[
+  {
+    "ship_date": "2026-05-01",
+    "base_sku": "17612",
+    "order_number": "862728",
+    "delete_sku_lot": "17612 - 260047",
+    "units_removed": 5,
+    "keep_sku_lot": "17612",
+    "units_kept": 6,
+    "fix_type": "REVIEW"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17914",
+    "order_number": "862842",
+    "delete_sku_lot": "17914",
+    "units_removed": 1,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17914",
+    "order_number": "862843",
+    "delete_sku_lot": "17914",
+    "units_removed": 1,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "18795",
+    "order_number": "862834",
+    "delete_sku_lot": "18795",
+    "units_removed": 1,
+    "keep_sku_lot": "18795 - 11001",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17612",
+    "order_number": "862917",
+    "delete_sku_lot": "17612",
+    "units_removed": 1,
+    "keep_sku_lot": "17612 - 260047",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17914",
+    "order_number": "862915",
+    "delete_sku_lot": "17914",
+    "units_removed": 1,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17914",
+    "order_number": "862918",
+    "delete_sku_lot": "17914 - 250297",
+    "units_removed": 12,
+    "keep_sku_lot": "17914",
+    "units_kept": 15,
+    "fix_type": "REVIEW"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "18795",
+    "order_number": "862906",
+    "delete_sku_lot": "18795",
+    "units_removed": 1,
+    "keep_sku_lot": "18795 - 11001",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "18795",
+    "order_number": "862912",
+    "delete_sku_lot": "18795",
+    "units_removed": 1,
+    "keep_sku_lot": "18795 - 11001",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "17914",
+    "order_number": "863055",
+    "delete_sku_lot": "17914",
+    "units_removed": 2,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 2,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "17914",
+    "order_number": "863057",
+    "delete_sku_lot": "17914",
+    "units_removed": 1,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17612",
+    "order_number": "863064",
+    "delete_sku_lot": "17612",
+    "units_removed": 2,
+    "keep_sku_lot": "17612 - 260082",
+    "units_kept": 2,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17612",
+    "order_number": "863109",
+    "delete_sku_lot": "17612 - 260082",
+    "units_removed": 1,
+    "keep_sku_lot": "17612",
+    "units_kept": 3,
+    "fix_type": "REVIEW"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17914",
+    "order_number": "863099",
+    "delete_sku_lot": "17914",
+    "units_removed": 1,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "18675",
+    "order_number": "863246",
+    "delete_sku_lot": "18675",
+    "units_removed": 1,
+    "keep_sku_lot": "18675 - 240231",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "18795",
+    "order_number": "863238",
+    "delete_sku_lot": "18795",
+    "units_removed": 1,
+    "keep_sku_lot": "18795 - 11001",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17612",
+    "order_number": "863264",
+    "delete_sku_lot": "17612 - 260082",
+    "units_removed": 1,
+    "keep_sku_lot": "17612",
+    "units_kept": 5,
+    "fix_type": "REVIEW"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17612",
+    "order_number": "863265",
+    "delete_sku_lot": "17612 - 260082",
+    "units_removed": 1,
+    "keep_sku_lot": "17612",
+    "units_kept": 5,
+    "fix_type": "REVIEW"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17914",
+    "order_number": "863266",
+    "delete_sku_lot": "17914",
+    "units_removed": 3,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 3,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "18795",
+    "order_number": "863252",
+    "delete_sku_lot": "18795",
+    "units_removed": 1,
+    "keep_sku_lot": "18795 - 11001",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17612",
+    "order_number": "863350",
+    "delete_sku_lot": "17612",
+    "units_removed": 1,
+    "keep_sku_lot": "17612 - 260082",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17914",
+    "order_number": "863336",
+    "delete_sku_lot": "17914",
+    "units_removed": 1,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "18675",
+    "order_number": "863337",
+    "delete_sku_lot": "18675",
+    "units_removed": 1,
+    "keep_sku_lot": "18675 - 240231",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17914",
+    "order_number": "863359",
+    "delete_sku_lot": "17914",
+    "units_removed": 1,
+    "keep_sku_lot": "17914 - 250297",
+    "units_kept": 1,
+    "fix_type": "STANDARD"
+  }
+]
