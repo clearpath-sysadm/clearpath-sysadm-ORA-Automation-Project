@@ -13,7 +13,7 @@
 | 17612 | 2,011 | **2,014** | 2,014 | **0** | ✅ RECONCILED (June 3, 2026) |
 | 17904 | 59 | 59 | 58 | **+1** | CR over SS — investigation pending |
 | 17914 | 118 | **87** | 87 | **0** | ✅ RECONCILED (June 3, 2026) |
-| 18675 | 127 | 127 | 113 | **+14** | CR over SS — partially addressed |
+| 18675 | 127 | **113** | 113 | **0** | ✅ RECONCILED (June 3, 2026) |
 | 18795 | 23 | 23 | 23 | **0** | ✅ RECONCILED (June 3, 2026) |
 
 ---
@@ -125,18 +125,37 @@ Remaining bare rows (862918=15, 862965=2, 863162=1) are real single-row shipment
 
 ---
 
-### SKU 18675 — ⚠️ Ghost fix barely helps (+12 remains)
+### SKU 18675 — ✅ FULLY RECONCILED (June 3, 2026)
 
-| Date | CR−SS Before | Removed | CR−SS After |
-|------|-------------|---------|-------------|
-| May 22 | +1 | −1 | 0 |
-| May 28 | +1 | −1 | 0 |
-| May 29 | +12 | 0 | **+12** |
-| **TOTAL** | **+14** | **−2** | **+12** |
+All fixes applied June 3, 2026. CR: 127 → **113** = SS 113. **Gap = 0.**
 
-**May 29 +12:** DB shows 24 units vs SS 12 for lot `18675 - 260052`. Both rows are lot-stamped — this is a **double-write** issue, not a bare/lot ghost. Requires separate investigation.
+Fixes applied:
+1. **May 29 double-write** — orders 100690 and 100692 each had both `18675 - 240231` and `18675 - 260052` rows for the same shipment. CF1 field in ShipStation confirmed lot 240231 as the shipped lot → deleted `18675 - 260052` rows (−12 units). Note: lot 260052 has since been activated and 240231 deactivated in `sku_lot` table.
+2. **May 22 ghost 863246** — deleted bare `18675` (−1 unit); kept `18675 - 240231` (1 unit)
+3. **May 28 ghost 863337** — deleted bare `18675` (−1 unit); kept `18675 - 240231` (1 unit)
 
-**May 11 BigCommerce orphan discovery (cross-SKU finding):** During 17612 investigation, 16 BigCommerce orders (100635–100650, SS IDs 285310338–285315361) were found in `shipped_orders` with no `orders_inbox` entry. All 16 have `shipped_items` rows for `18675 - 240231` (1 unit each = 16 units). These are counted in both CR and SS so they do not create a discrepancy, but the absence of `orders_inbox` entries indicates these orders bypassed the normal import flow entirely (BigCommerce migration artifact). No action needed for charge report correctness, but flagged as data quality gap.
+#### Date-by-date breakdown (final)
+
+| Date | DB | SS | Gap | Status |
+|------|----|----|-----|--------|
+| May 4 | 3 | 3 | 0 | ✅ |
+| May 7 | 8 | 8 | 0 | ✅ |
+| May 11 | 24 | 24 | 0 | ✅ |
+| May 12 | 9 | 9 | 0 | ✅ |
+| May 13 | 25 | 25 | 0 | ✅ |
+| May 14 | 2 | 2 | 0 | ✅ |
+| May 18 | 1 | 1 | 0 | ✅ |
+| May 20 | 3 | 3 | 0 | ✅ |
+| May 21 | 1 | 1 | 0 | ✅ |
+| May 22 | 22 | 22 | 0 | ✅ Ghost 863246 deleted |
+| May 26 | 2 | 2 | 0 | ✅ |
+| May 28 | 1 | 1 | 0 | ✅ Ghost 863337 deleted |
+| May 29 | 12 | 12 | 0 | ✅ Double-write 260052 rows deleted |
+| **TOTAL** | **113** | **113** | **0** | ✅ **RECONCILED** |
+
+Remaining bare rows (862992 May 13 = 1, 863134 May 18 = 1) are real single-row shipments — SS counts them identically, no action needed.
+
+**May 11 BigCommerce orphan note (cross-SKU finding):** 16 BigCommerce orders (100635–100650) have `shipped_items` rows for `18675 - 240231` (1 unit each = 16 units) with no `orders_inbox` entry. Counted in both CR and SS — no discrepancy, but flagged as data quality gap (bypassed normal import flow).
 
 ---
 
@@ -202,8 +221,8 @@ May 1 shows CR=2, SS=1. No ghost rows identified for 17904. Requires order-level
 | ✅ Complete | **17612** | **FULLY RECONCILED** — 2,014 = SS 2,014. Date-level noise (May 5/8/11 −11, May 12/27 +11) cancels exactly. |
 | ✅ Complete | **17914** | 9 STANDARD ghost deletes + 862918 REVIEW ghost + 863334 malformed + 833686 BigCommerce + 862718 phantom — 31 units removed June 3, 2026 |
 | ✅ Complete | **17914** | **FULLY RECONCILED** — 87 = SS 87. Gap = 0. |
-| 🔍 Investigate | **18675** | May 29 +12: double-write on lot-stamped row `18675 - 260052` |
-| 🔍 Investigate | **18675** | Ghost deletes 863246 + 863337 (2 units) — apply after May 29 is resolved |
+| ✅ Complete | **18675** | May 29 double-write fixed (delete 260052 rows, CF1 confirmed 240231) + ghosts 863246/863337 deleted — 14 units removed June 3, 2026 |
+| ✅ Complete | **18675** | **FULLY RECONCILED** — 113 = SS 113. Gap = 0. |
 | 🔍 Investigate | **17904** | May 1 +1: identify the extra order in DB not in SS |
 
 ---
