@@ -10,11 +10,11 @@
 
 | SKU | Charge Report | SS Pivot | Gap | Status |
 |-----|--------------|----------|-----|--------|
-| 17612 | 2,011 | 2,014 | **−3** | CR under SS |
-| 17904 | 59 | 58 | **+1** | CR over SS |
-| 17914 | 118 | 87 | **+31** | CR over SS |
-| 18675 | 127 | 113 | **+14** | CR over SS |
-| 18795 | 28 | 23 | **+5** | CR over SS |
+| 17612 | 2,011 | 2,014 | **−3** | CR under SS — investigation pending |
+| 17904 | 59 | 58 | **+1** | CR over SS — investigation pending |
+| 17914 | 118 | 87 | **+31** | CR over SS — ghost fix pending |
+| 18675 | 127 | 113 | **+14** | CR over SS — partially addressed |
+| 18795 | 23 | 23 | **0** | ✅ RECONCILED (June 3, 2026) |
 
 ---
 
@@ -28,6 +28,8 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 
 **Origin:** The `_resync_shipped_items_for_order` function (before the Task #102 fix) could write a bare row from a first pass, then a lot-stamped row from a subsequent pass without deleting the original, leaving both rows in `shipped_items`.
 
+**Secondary issue:** Some orders have bare-only rows (no lot-stamped pair) where SS returned a unit without a lot number in the `cf1` field. These don't cause count discrepancies but lose lot traceability and must be corrected via lot lookup.
+
 ---
 
 ## Ghost Rows Identified (24 orders)
@@ -37,36 +39,41 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 | May 1 | 17612 | 862728 | `17612 - 260047` (5) | `17612` (6) | 5 | REVIEW |
 | May 7 | 17914 | 862842 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
 | May 7 | 17914 | 862843 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
-| May 7 | 18795 | 862834 | `18795` (1) | `18795 - 11001` (1) | 1 | STANDARD |
+| May 7 | 18795 | 862834 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
 | May 8 | 17612 | 862917 | `17612` (1) | `17612 - 260047` (1) | 1 | STANDARD |
 | May 8 | 17914 | 862915 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
 | May 8 | 17914 | 862918 | `17914 - 250297` (12) | `17914` (15) | 12 | REVIEW |
-| May 8 | 18795 | 862906 | `18795` (1) | `18795 - 11001` (1) | 1 | STANDARD |
-| May 8 | 18795 | 862912 | `18795` (1) | `18795 - 11001` (1) | 1 | STANDARD |
+| May 8 | 18795 | 862906 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
+| May 8 | 18795 | 862912 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
 | May 14 | 17914 | 863055 | `17914` (2) | `17914 - 250297` (2) | 2 | STANDARD |
 | May 14 | 17914 | 863057 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
 | May 15 | 17612 | 863064 | `17612` (2) | `17612 - 260082` (2) | 2 | STANDARD |
 | May 15 | 17612 | 863109 | `17612 - 260082` (1) | `17612` (3) | 1 | REVIEW |
 | May 15 | 17914 | 863099 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
 | May 22 | 18675 | 863246 | `18675` (1) | `18675 - 240231` (1) | 1 | STANDARD |
-| May 22 | 18795 | 863238 | `18795` (1) | `18795 - 11001` (1) | 1 | STANDARD |
+| May 22 | 18795 | 863238 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
 | May 26 | 17612 | 863264 | `17612 - 260082` (1) | `17612` (5) | 1 | REVIEW |
 | May 26 | 17612 | 863265 | `17612 - 260082` (1) | `17612` (5) | 1 | REVIEW |
 | May 26 | 17914 | 863266 | `17914` (3) | `17914 - 250297` (3) | 3 | STANDARD |
-| May 26 | 18795 | 863252 | `18795` (1) | `18795 - 11001` (1) | 1 | STANDARD |
+| May 26 | 18795 | 863252 | `18795` (1) | `18795 - 11001` (1) | 1 | ✅ DONE |
 | May 28 | 17612 | 863350 | `17612` (1) | `17612 - 260082` (1) | 1 | STANDARD |
 | May 28 | 17914 | 863336 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
 | May 28 | 18675 | 863337 | `18675` (1) | `18675 - 240231` (1) | 1 | STANDARD |
 | May 29 | 17914 | 863359 | `17914` (1) | `17914 - 250297` (1) | 1 | STANDARD |
 
 **STANDARD** = delete the bare row (lot-stamped has equal or more units — clear ghost).  
-**REVIEW** = bare row has more units than lot-stamped — requires manual SS verification before deleting.
+**REVIEW** = bare row has more units than lot-stamped — requires manual SS verification before deleting.  
+**✅ DONE** = completed June 3, 2026.
 
 ---
 
 ## Ghost Fix Impact vs. Reconciliation Target
 
-### SKU 18795 — ✅ Ghost fix fully reconciles
+### SKU 18795 — ✅ FULLY RECONCILED (June 3, 2026)
+
+**Actions taken:**
+1. Deleted 5 bare ghost rows (orders 862834, 862906, 862912, 863238, 863252) — removed 5 units
+2. Updated 7 bare-only rows to `18795 - 11001` (orders 862939, 862947, 862981, 863135, 863155, 862908 items, and others on May 11/12/18/19) — lot traceability restored, counts unchanged
 
 | Date | CR−SS Before | Removed | CR−SS After |
 |------|-------------|---------|-------------|
@@ -75,6 +82,8 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 | May 22 | +1 | −1 | 0 |
 | May 26 | +1 | −1 | 0 |
 | **TOTAL** | **+5** | **−5** | **0 ✓** |
+
+**Final state:** 23 units, all rows lot-stamped `18795 - 11001`, zero bare rows remaining, matches SS pivot exactly.
 
 ---
 
@@ -147,16 +156,17 @@ May 1 shows CR=2, SS=1. No ghost rows identified for 17904. Requires order-level
 
 ## Recommended Actions
 
-| Priority | SKU | Action |
-|----------|-----|--------|
-| ✅ Ready | **18795** | Apply all 5 ghost deletes (all STANDARD) |
-| ✅ Ready | **17914** | Apply 20 STANDARD ghost deletes (skip REVIEW 862918 until SS verified) |
-| 🔍 Investigate first | **17914** | May 27 +5, May 1 +1 — no ghost rows, unknown cause |
-| 🔍 Investigate first | **17914** | Order 862918 REVIEW: verify SS shows 15 bare or 12 lot-stamped |
-| 🔍 Investigate first | **18675** | May 29 +12: double-write on lot-stamped row `18675 - 260052` |
-| 🔍 Investigate first | **17612** | May 28 −12: rerun promo SKU remapping resync for May 28 |
-| ⚠️ Do not apply yet | **17612** | Ghost deletes worsen the overall balance; fix remapping gap first |
-| 🔍 Investigate first | **17904** | May 1 +1: identify the extra order in DB not in SS |
+| Status | SKU | Action |
+|--------|-----|--------|
+| ✅ Complete | **18795** | Ghost deletes + bare row lot-stamping — fully reconciled |
+| 🔜 Next | **17914** | Apply 9 STANDARD ghost deletes (862842, 862843, 862915, 863055, 863057, 863099, 863266, 863336, 863359) — removes 13 units, gap −13 |
+| 🔜 Next | **17914** | Apply REVIEW order 862918 after SS verification (removes 12 more units, gap −12) |
+| 🔍 Investigate | **17914** | May 27 +5, May 1 +1 — no ghost rows, unknown cause |
+| 🔍 Investigate | **18675** | May 29 +12: double-write on lot-stamped row `18675 - 260052` |
+| 🔍 Investigate | **18675** | Apply 2 STANDARD ghost deletes (863246, 863337) after May 29 is resolved |
+| 🔍 Investigate | **17612** | May 28 −12: rerun promo SKU remapping resync for May 28 before touching ghost rows |
+| ⚠️ Hold | **17612** | Ghost deletes worsen overall balance — must fix remapping gap first |
+| 🔍 Investigate | **17904** | May 1 +1: identify the extra order in DB not in SS |
 
 ---
 
@@ -182,7 +192,7 @@ ORDER BY ship_date, base_sku, order_number;
 
 ---
 
-## SKU 18795 Fix — Execution Queries
+## SKU 18795 Fix — Execution Queries (Completed June 3, 2026)
 
 ### Step 1: Verify rows before deleting
 
@@ -200,9 +210,9 @@ WHERE base_sku = '18795'
 ORDER BY ship_date, order_number, sku_lot;
 ```
 
-Expected: 2 rows per order (bare + lot-stamped), 10 rows total, 10 units.
+Result: 10 rows (2 per order — 1 bare + 1 lot-stamped), 10 units total. ✅ Confirmed.
 
-### Step 2: Execute the delete
+### Step 2: Execute the ghost delete
 
 ```sql
 DELETE FROM shipped_items
@@ -211,34 +221,29 @@ WHERE base_sku = '18795'
   AND order_number IN ('862834', '862906', '862912', '863238', '863252');
 ```
 
-Expected: 5 rows deleted (1 bare ghost per order).
+Result: 5 rows deleted. ✅ Confirmed.
 
-### Step 3: Confirm ghost rows are gone
+### Step 3: Stamp lot on remaining bare rows
 
 ```sql
-SELECT
-    'AFTER'                             AS timing,
-    ship_date,
-    order_number,
-    sku_lot,
-    quantity_shipped
-FROM shipped_items
+UPDATE shipped_items
+SET sku_lot = '18795 - 11001'
 WHERE base_sku = '18795'
-  AND ship_date BETWEEN '2026-05-01' AND '2026-05-31'
-  AND order_number IN ('862834', '862906', '862912', '863238', '863252')
-ORDER BY ship_date, order_number, sku_lot;
+  AND sku_lot = '18795'
+  AND ship_date BETWEEN '2026-05-01' AND '2026-05-31';
 ```
 
-Expected: 1 row per order (lot-stamped only), 5 rows total, 5 units.
+Result: 7 rows updated (May 11, 12, 18, 19). ✅ Confirmed.  
+Basis: Lot `11001` is the only active lot for SKU 18795 (received 2025-09-19, all other lots inactive).
 
-### Step 4: Confirm month total matches SS pivot (target: 23)
+### Step 4: Final validation
 
 ```sql
 SELECT
     ship_date,
-    SUM(quantity_shipped)               AS total_units,
-    STRING_AGG(sku_lot || ' (' || quantity_shipped::text || ')', ', '
-               ORDER BY sku_lot)        AS sku_lots
+    SUM(quantity_shipped)                                                           AS total_units,
+    COUNT(*) FILTER (WHERE sku_lot NOT LIKE '% - %')                               AS bare_rows_remaining,
+    STRING_AGG(DISTINCT sku_lot, ', ' ORDER BY sku_lot)                            AS lots_used
 FROM shipped_items
 WHERE base_sku = '18795'
   AND ship_date BETWEEN '2026-05-01' AND '2026-05-31'
@@ -246,4 +251,4 @@ GROUP BY ship_date
 ORDER BY ship_date;
 ```
 
-Expected month total: **23 units** (down from 28). SS pivot target by date: May 7=1, May 8=5, May 22=1, May 26=1.
+Result: 15 rows, all `✅ lot-stamped`, 23 total units, 0 bare rows, all `18795 - 11001`. ✅ Confirmed.

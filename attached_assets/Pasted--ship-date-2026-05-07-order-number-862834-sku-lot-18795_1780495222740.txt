@@ -1,0 +1,107 @@
+[
+  {
+    "ship_date": "2026-05-07",
+    "order_number": "862834",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "order_number": "862906",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "order_number": "862908",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 5,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "order_number": "862912",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "order_number": "862939",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "order_number": "862947",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "order_number": "862981",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "order_number": "863134",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "order_number": "863135",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "order_number": "863155",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 4,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "order_number": "863238",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "order_number": "863252",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "order_number": "863324",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "order_number": "863338",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 2,
+    "row_status": "✅ lot-stamped"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "order_number": "863349",
+    "sku_lot": "18795 - 11001",
+    "quantity_shipped": 1,
+    "row_status": "✅ lot-stamped"
+  }
+]
