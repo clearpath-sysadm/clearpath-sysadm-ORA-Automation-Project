@@ -1,0 +1,4482 @@
+[
+  {
+    "date": "2026-06-03",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "291877956",
+    "order_number_from_notes": "863469"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291836118",
+    "order_number_from_notes": "863464"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "291857070",
+    "order_number_from_notes": "863467"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291398873",
+    "order_number_from_notes": "863439"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "291836105",
+    "order_number_from_notes": "863461"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291816793",
+    "order_number_from_notes": "863460"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "291398844",
+    "order_number_from_notes": "863432"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "291857069",
+    "order_number_from_notes": "863467"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "291609161",
+    "order_number_from_notes": "863457"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291509618",
+    "order_number_from_notes": "863451"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291460019",
+    "order_number_from_notes": "863445"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 10,
+    "shipstation_order_id": "291398847",
+    "order_number_from_notes": "863437"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "291816795",
+    "order_number_from_notes": "863460"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "291857075",
+    "order_number_from_notes": "863465"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "291460022",
+    "order_number_from_notes": "863448"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291509621",
+    "order_number_from_notes": "863453"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "291398863",
+    "order_number_from_notes": "863435"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17904",
+    "quantity": 3,
+    "shipstation_order_id": "291460007",
+    "order_number_from_notes": "863443"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291877957",
+    "order_number_from_notes": "863469"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "291609167",
+    "order_number_from_notes": "863456"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "291460014",
+    "order_number_from_notes": "863446"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "291460009",
+    "order_number_from_notes": "863444"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "291398869",
+    "order_number_from_notes": "863442"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "18795",
+    "quantity": 4,
+    "shipstation_order_id": "291816802",
+    "order_number_from_notes": "863458"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291836106",
+    "order_number_from_notes": "863461"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291398872",
+    "order_number_from_notes": "863440"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "291398845",
+    "order_number_from_notes": "863434"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "291509613",
+    "order_number_from_notes": "863454"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "291836111",
+    "order_number_from_notes": "863461"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291877959",
+    "order_number_from_notes": "863470"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "291836119",
+    "order_number_from_notes": "863464"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291398866",
+    "order_number_from_notes": "863438"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "291460017",
+    "order_number_from_notes": "863447"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "291857078",
+    "order_number_from_notes": "863466"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "291509612",
+    "order_number_from_notes": "863454"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "291816805",
+    "order_number_from_notes": "863459"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "291877953",
+    "order_number_from_notes": "863468"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "291460020",
+    "order_number_from_notes": "863445"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291398867",
+    "order_number_from_notes": "863442"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291460012",
+    "order_number_from_notes": "863446"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "291509614",
+    "order_number_from_notes": "863450"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291816798",
+    "order_number_from_notes": "863458"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291398842",
+    "order_number_from_notes": "863433"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "291509616",
+    "order_number_from_notes": "863451"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291398870",
+    "order_number_from_notes": "863441"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291836115",
+    "order_number_from_notes": "863463"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "291398871",
+    "order_number_from_notes": "863441"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "291398868",
+    "order_number_from_notes": "863442"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 30,
+    "shipstation_order_id": "291398850",
+    "order_number_from_notes": "863437"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "291398851",
+    "order_number_from_notes": "863436"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "291877954",
+    "order_number_from_notes": "863468"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "291877960",
+    "order_number_from_notes": "863470"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291559439",
+    "order_number_from_notes": "863455"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "291816800",
+    "order_number_from_notes": "863458"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291836121",
+    "order_number_from_notes": "863462"
+  },
+  {
+    "date": "2026-06-03",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "291398853",
+    "order_number_from_notes": "863436"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291137105",
+    "order_number_from_notes": "863418"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290934225",
+    "order_number_from_notes": "863406"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290957651",
+    "order_number_from_notes": "863407"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291272102",
+    "order_number_from_notes": "863421"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291241975",
+    "order_number_from_notes": "863419"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291029578",
+    "order_number_from_notes": "863414"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291300910",
+    "order_number_from_notes": "863423"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "291342867",
+    "order_number_from_notes": "863431"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "291029559",
+    "order_number_from_notes": "863411"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290957632",
+    "order_number_from_notes": "863409"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "291300916",
+    "order_number_from_notes": "863422"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "291241978",
+    "order_number_from_notes": "863419"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 10,
+    "shipstation_order_id": "291029554",
+    "order_number_from_notes": "863411"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "290957648",
+    "order_number_from_notes": "863408"
+  },
+  {
+    "date": "2026-06-02",
+    "sku": "18795",
+    "quantity": 2,
+    "shipstation_order_id": "290957657",
+    "order_number_from_notes": "863410"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "290166996",
+    "order_number_from_notes": "863379"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290805758",
+    "order_number_from_notes": "863389"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "290877885",
+    "order_number_from_notes": "863395"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "290237484",
+    "order_number_from_notes": "863385"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290877892",
+    "order_number_from_notes": "863401"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290198110",
+    "order_number_from_notes": "863380"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "290831410",
+    "order_number_from_notes": "863391"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290166988",
+    "order_number_from_notes": "863378"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290237487",
+    "order_number_from_notes": "863384"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290166983",
+    "order_number_from_notes": "863376"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290831401",
+    "order_number_from_notes": "863393"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "290805759",
+    "order_number_from_notes": "863389"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 10,
+    "shipstation_order_id": "290877879",
+    "order_number_from_notes": "863402"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "290831416",
+    "order_number_from_notes": "863390"
+  },
+  {
+    "date": "2026-06-01",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "290831417",
+    "order_number_from_notes": "863390"
+  },
+  {
+    "date": "2026-05-29",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289938473",
+    "order_number_from_notes": "863359"
+  },
+  {
+    "date": "2026-05-29",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289972981",
+    "order_number_from_notes": "863369"
+  },
+  {
+    "date": "2026-05-29",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289972987",
+    "order_number_from_notes": "863371"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289839398",
+    "order_number_from_notes": "863342"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289874893",
+    "order_number_from_notes": "863347"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "289874882",
+    "order_number_from_notes": "863348"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "289874885",
+    "order_number_from_notes": "863352"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "289734651",
+    "order_number_from_notes": "863337"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289653179",
+    "order_number_from_notes": "863327"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289711327",
+    "order_number_from_notes": "863336"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "289839399",
+    "order_number_from_notes": "863340"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289653176",
+    "order_number_from_notes": "863328"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "289874889",
+    "order_number_from_notes": "863350"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289734649",
+    "order_number_from_notes": "863337"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17904",
+    "quantity": 2,
+    "shipstation_order_id": "289653175",
+    "order_number_from_notes": "863328"
+  },
+  {
+    "date": "2026-05-28",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "289839403",
+    "order_number_from_notes": "863344"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "289588189",
+    "order_number_from_notes": "863320"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "289682714",
+    "order_number_from_notes": "863333"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289520941",
+    "order_number_from_notes": "863311"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289588171",
+    "order_number_from_notes": "863322"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17914",
+    "quantity": 5,
+    "shipstation_order_id": "289682717",
+    "order_number_from_notes": "863333"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "289682718",
+    "order_number_from_notes": "863333"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "289349460",
+    "order_number_from_notes": "863299"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "289682720",
+    "order_number_from_notes": "863334"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 30,
+    "shipstation_order_id": "289544994",
+    "order_number_from_notes": "863314"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289682730",
+    "order_number_from_notes": "863332"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289350421",
+    "order_number_from_notes": "863302"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289308129",
+    "order_number_from_notes": "863296"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289588169",
+    "order_number_from_notes": "863318"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289350694",
+    "order_number_from_notes": "863303"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "289682725",
+    "order_number_from_notes": "863334"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289588167",
+    "order_number_from_notes": "863317"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289350915",
+    "order_number_from_notes": "863307"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289349473",
+    "order_number_from_notes": "863300"
+  },
+  {
+    "date": "2026-05-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289396630",
+    "order_number_from_notes": "863310"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "289240682",
+    "order_number_from_notes": "863269"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 16,
+    "shipstation_order_id": "289239568",
+    "order_number_from_notes": "863263"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289239529",
+    "order_number_from_notes": "863275"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "288371310",
+    "order_number_from_notes": "863247"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289246685",
+    "order_number_from_notes": "863287"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "289240276",
+    "order_number_from_notes": "863265"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289239597",
+    "order_number_from_notes": "863274"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289239593",
+    "order_number_from_notes": "863288"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289239889",
+    "order_number_from_notes": "863264"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "289239515",
+    "order_number_from_notes": "863264"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "288459850",
+    "order_number_from_notes": "863252"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289240648",
+    "order_number_from_notes": "863267"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289241141",
+    "order_number_from_notes": "863270"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "289242459",
+    "order_number_from_notes": "863279"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "289239591",
+    "order_number_from_notes": "863285"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289241652",
+    "order_number_from_notes": "863271"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289245134",
+    "order_number_from_notes": "863284"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289244157",
+    "order_number_from_notes": "863281"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "289269805",
+    "order_number_from_notes": "863290"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "289239502",
+    "order_number_from_notes": "863265"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289239540",
+    "order_number_from_notes": "863272"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289244344",
+    "order_number_from_notes": "863283"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289242426",
+    "order_number_from_notes": "863276"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "289239510",
+    "order_number_from_notes": "863262"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "289239533",
+    "order_number_from_notes": "863261"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "288459853",
+    "order_number_from_notes": "863252"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289242580",
+    "order_number_from_notes": "863280"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289240307",
+    "order_number_from_notes": "863265"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "288402626",
+    "order_number_from_notes": "863248"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "289239520",
+    "order_number_from_notes": "863266"
+  },
+  {
+    "date": "2026-05-26",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "289239605",
+    "order_number_from_notes": "863273"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "288336245",
+    "order_number_from_notes": "863246"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "288119867",
+    "order_number_from_notes": "863238"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "288150273",
+    "order_number_from_notes": "863239"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "288150252",
+    "order_number_from_notes": "863240"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "288336215",
+    "order_number_from_notes": "863246"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17904",
+    "quantity": 5,
+    "shipstation_order_id": "288336171",
+    "order_number_from_notes": "863246"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "288084647",
+    "order_number_from_notes": "863234"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "288084617",
+    "order_number_from_notes": "863232"
+  },
+  {
+    "date": "2026-05-22",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "288336175",
+    "order_number_from_notes": "863246"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287764285",
+    "order_number_from_notes": "863200"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "287970632",
+    "order_number_from_notes": "863219"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "287970636",
+    "order_number_from_notes": "863220"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "287764192",
+    "order_number_from_notes": "863199"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287970983",
+    "order_number_from_notes": "863222"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287971139",
+    "order_number_from_notes": "863224"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "287793713",
+    "order_number_from_notes": "863212"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "287764161",
+    "order_number_from_notes": "863198"
+  },
+  {
+    "date": "2026-05-21",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "287846578",
+    "order_number_from_notes": "863218"
+  },
+  {
+    "date": "2026-05-20",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287495880",
+    "order_number_from_notes": "863185"
+  },
+  {
+    "date": "2026-05-20",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287463914",
+    "order_number_from_notes": "863176"
+  },
+  {
+    "date": "2026-05-20",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287678125",
+    "order_number_from_notes": "863193"
+  },
+  {
+    "date": "2026-05-20",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287495855",
+    "order_number_from_notes": "863182"
+  },
+  {
+    "date": "2026-05-20",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287463925",
+    "order_number_from_notes": "863177"
+  },
+  {
+    "date": "2026-05-20",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287678208",
+    "order_number_from_notes": "863194"
+  },
+  {
+    "date": "2026-05-20",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "287550657",
+    "order_number_from_notes": "863190"
+  },
+  {
+    "date": "2026-05-19",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "287189854",
+    "order_number_from_notes": "863147"
+  },
+  {
+    "date": "2026-05-19",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287410095",
+    "order_number_from_notes": "863162"
+  },
+  {
+    "date": "2026-05-19",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "287357820",
+    "order_number_from_notes": "863156"
+  },
+  {
+    "date": "2026-05-19",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "287357830",
+    "order_number_from_notes": "863155"
+  },
+  {
+    "date": "2026-05-19",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287165351",
+    "order_number_from_notes": "863146"
+  },
+  {
+    "date": "2026-05-19",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "287243215",
+    "order_number_from_notes": "863150"
+  },
+  {
+    "date": "2026-05-19",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "287434602",
+    "order_number_from_notes": "863174"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "287059221",
+    "order_number_from_notes": "863134"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "287059244",
+    "order_number_from_notes": "863134"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "286435201",
+    "order_number_from_notes": "863121"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287108545",
+    "order_number_from_notes": "863139"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "287108518",
+    "order_number_from_notes": "863140"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "286435189",
+    "order_number_from_notes": "863122"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "286489422",
+    "order_number_from_notes": "863128"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286463443",
+    "order_number_from_notes": "863123"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "286489418",
+    "order_number_from_notes": "863128"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "287059229",
+    "order_number_from_notes": "863135"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "287126413",
+    "order_number_from_notes": "863134"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "287059282",
+    "order_number_from_notes": "863135"
+  },
+  {
+    "date": "2026-05-18",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "286463140",
+    "order_number_from_notes": "863127"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286361840",
+    "order_number_from_notes": "863099"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "286361886",
+    "order_number_from_notes": "863087"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286363512",
+    "order_number_from_notes": "863092"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286368936",
+    "order_number_from_notes": "863114"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286363820",
+    "order_number_from_notes": "863093"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "286361889",
+    "order_number_from_notes": "863088"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286366238",
+    "order_number_from_notes": "863103"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17904",
+    "quantity": 2,
+    "shipstation_order_id": "286183877",
+    "order_number_from_notes": "863064"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "286365157",
+    "order_number_from_notes": "863100"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "286361900",
+    "order_number_from_notes": "863109"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286363421",
+    "order_number_from_notes": "863091"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286364269",
+    "order_number_from_notes": "863095"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286362034",
+    "order_number_from_notes": "863083"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "286368416",
+    "order_number_from_notes": "863109"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "286361899",
+    "order_number_from_notes": "863109"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286361948",
+    "order_number_from_notes": "863082"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "286183883",
+    "order_number_from_notes": "863067"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286366892",
+    "order_number_from_notes": "863105"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286362199",
+    "order_number_from_notes": "863084"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "286183896",
+    "order_number_from_notes": "863068"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "286401797",
+    "order_number_from_notes": "863119"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286362425",
+    "order_number_from_notes": "863085"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286361937",
+    "order_number_from_notes": "863079"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286208040",
+    "order_number_from_notes": "863074"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286371054",
+    "order_number_from_notes": "863115"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "286364259",
+    "order_number_from_notes": "863094"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286362464",
+    "order_number_from_notes": "863086"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286366015",
+    "order_number_from_notes": "863102"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286368436",
+    "order_number_from_notes": "863109"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286362868",
+    "order_number_from_notes": "863089"
+  },
+  {
+    "date": "2026-05-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "286367564",
+    "order_number_from_notes": "863108"
+  },
+  {
+    "date": "2026-05-14",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "285955225",
+    "order_number_from_notes": "863042"
+  },
+  {
+    "date": "2026-05-14",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "286100676",
+    "order_number_from_notes": "863056"
+  },
+  {
+    "date": "2026-05-14",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "285937284",
+    "order_number_from_notes": "863036"
+  },
+  {
+    "date": "2026-05-14",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "286126403",
+    "order_number_from_notes": "863059"
+  },
+  {
+    "date": "2026-05-14",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285970239",
+    "order_number_from_notes": "863048"
+  },
+  {
+    "date": "2026-05-14",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "286100678",
+    "order_number_from_notes": "863057"
+  },
+  {
+    "date": "2026-05-14",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "286078132",
+    "order_number_from_notes": "863055"
+  },
+  {
+    "date": "2026-05-14",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "285937312",
+    "order_number_from_notes": "863037"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 30,
+    "shipstation_order_id": "285684140",
+    "order_number_from_notes": "862990"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285684347",
+    "order_number_from_notes": "862992"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "285868687",
+    "order_number_from_notes": "863026"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285868676",
+    "order_number_from_notes": "863026"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "285719418",
+    "order_number_from_notes": "862995"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285684132",
+    "order_number_from_notes": "862992"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285684119",
+    "order_number_from_notes": "862987"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "285868630",
+    "order_number_from_notes": "863028"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285703823",
+    "order_number_from_notes": "862994"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285661924",
+    "order_number_from_notes": "862986"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "285703828",
+    "order_number_from_notes": "862993"
+  },
+  {
+    "date": "2026-05-13",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285661900",
+    "order_number_from_notes": "862985"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "285615940",
+    "order_number_from_notes": "862978"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285370616",
+    "order_number_from_notes": "862947"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285592030",
+    "order_number_from_notes": "862976"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 30,
+    "shipstation_order_id": "285454862",
+    "order_number_from_notes": "862962"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 7,
+    "shipstation_order_id": "285564646",
+    "order_number_from_notes": "862964"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "285591972",
+    "order_number_from_notes": "862975"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "285570149",
+    "order_number_from_notes": "862965"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "285406081",
+    "order_number_from_notes": "862954"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285370591",
+    "order_number_from_notes": "862947"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285433086",
+    "order_number_from_notes": "862959"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285637735",
+    "order_number_from_notes": "862983"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "285591975",
+    "order_number_from_notes": "862974"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "285370592",
+    "order_number_from_notes": "862947"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285637725",
+    "order_number_from_notes": "862982"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285406101",
+    "order_number_from_notes": "862952"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 8,
+    "shipstation_order_id": "285406079",
+    "order_number_from_notes": "862953"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285570158",
+    "order_number_from_notes": "862965"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285615941",
+    "order_number_from_notes": "862981"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "285503446",
+    "order_number_from_notes": "862963"
+  },
+  {
+    "date": "2026-05-12",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285406088",
+    "order_number_from_notes": "862951"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "284767957",
+    "order_number_from_notes": "862929"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "18675",
+    "quantity": 5,
+    "shipstation_order_id": "284785043",
+    "order_number_from_notes": "862935"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285333863",
+    "order_number_from_notes": "862945"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "285333857",
+    "order_number_from_notes": "862946"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285301148",
+    "order_number_from_notes": "862941"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "285070329",
+    "order_number_from_notes": "862939"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285333897",
+    "order_number_from_notes": "862944"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284741139",
+    "order_number_from_notes": "862926"
+  },
+  {
+    "date": "2026-05-11",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "285301114",
+    "order_number_from_notes": "862940"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284524665",
+    "order_number_from_notes": "862913"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "284674971",
+    "order_number_from_notes": "862918"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17914",
+    "quantity": 12,
+    "shipstation_order_id": "284674973",
+    "order_number_from_notes": "862918"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284675356",
+    "order_number_from_notes": "862919"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "284674975",
+    "order_number_from_notes": "862917"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284717745",
+    "order_number_from_notes": "862925"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284503740",
+    "order_number_from_notes": "862909"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284542252",
+    "order_number_from_notes": "862914"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "284542253",
+    "order_number_from_notes": "862915"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "284542257",
+    "order_number_from_notes": "862916"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284524658",
+    "order_number_from_notes": "862912"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284460004",
+    "order_number_from_notes": "862904"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284489134",
+    "order_number_from_notes": "862906"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284083398",
+    "order_number_from_notes": "862856"
+  },
+  {
+    "date": "2026-05-08",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284503744",
+    "order_number_from_notes": "862907"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "284198889",
+    "order_number_from_notes": "862883"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284400420",
+    "order_number_from_notes": "862891"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "284127086",
+    "order_number_from_notes": "862868"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "18675",
+    "quantity": 4,
+    "shipstation_order_id": "283921262",
+    "order_number_from_notes": "862842"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284068707",
+    "order_number_from_notes": "862854"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "18675",
+    "quantity": 4,
+    "shipstation_order_id": "283921258",
+    "order_number_from_notes": "862843"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284400407",
+    "order_number_from_notes": "862893"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284377694",
+    "order_number_from_notes": "862889"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "283898698",
+    "order_number_from_notes": "862834"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284172655",
+    "order_number_from_notes": "862878"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284457742",
+    "order_number_from_notes": "862901"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "284121907",
+    "order_number_from_notes": "862863"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17904",
+    "quantity": 5,
+    "shipstation_order_id": "284429348",
+    "order_number_from_notes": "862895"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "284171786",
+    "order_number_from_notes": "862876"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "284151280",
+    "order_number_from_notes": "862834"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "283898702",
+    "order_number_from_notes": "862834"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284198883",
+    "order_number_from_notes": "862881"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284198896",
+    "order_number_from_notes": "862882"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 30,
+    "shipstation_order_id": "284457728",
+    "order_number_from_notes": "862897"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284148327",
+    "order_number_from_notes": "862874"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 10,
+    "shipstation_order_id": "284457792",
+    "order_number_from_notes": "862897"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284179237",
+    "order_number_from_notes": "862856"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "284457718",
+    "order_number_from_notes": "862904"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "284148335",
+    "order_number_from_notes": "862870"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "284148329",
+    "order_number_from_notes": "862872"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "283921250",
+    "order_number_from_notes": "862836"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "284457733",
+    "order_number_from_notes": "862896"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284123231",
+    "order_number_from_notes": "862864"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "284179759",
+    "order_number_from_notes": "862856"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283921390",
+    "order_number_from_notes": "862835"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17904",
+    "quantity": 5,
+    "shipstation_order_id": "284121919",
+    "order_number_from_notes": "862860"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "284457713",
+    "order_number_from_notes": "862899"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "283898696",
+    "order_number_from_notes": "862834"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "283921240",
+    "order_number_from_notes": "862837"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "284121931",
+    "order_number_from_notes": "862868"
+  },
+  {
+    "date": "2026-05-07",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "284171778",
+    "order_number_from_notes": "862878"
+  },
+  {
+    "date": "2026-05-06",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "284176904",
+    "order_number_from_notes": "862852"
+  },
+  {
+    "date": "2026-05-06",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "283898689",
+    "order_number_from_notes": "862829"
+  },
+  {
+    "date": "2026-05-06",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "283898715",
+    "order_number_from_notes": "862830"
+  },
+  {
+    "date": "2026-05-06",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "283898712",
+    "order_number_from_notes": "862831"
+  },
+  {
+    "date": "2026-05-06",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "283948251",
+    "order_number_from_notes": "862851"
+  },
+  {
+    "date": "2026-05-06",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "284175888",
+    "order_number_from_notes": "862852"
+  },
+  {
+    "date": "2026-05-06",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "283965744",
+    "order_number_from_notes": "862853"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "283841089",
+    "order_number_from_notes": "862797"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "283848383",
+    "order_number_from_notes": "862803"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "283657074",
+    "order_number_from_notes": "862779"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "283874026",
+    "order_number_from_notes": "862819"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "283841093",
+    "order_number_from_notes": "862786"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283819873",
+    "order_number_from_notes": "862781"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283848570",
+    "order_number_from_notes": "862802"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "283841051",
+    "order_number_from_notes": "862787"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283848406",
+    "order_number_from_notes": "862798"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "283841060",
+    "order_number_from_notes": "862784"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "283874034",
+    "order_number_from_notes": "862820"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283843990",
+    "order_number_from_notes": "862796"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283842140",
+    "order_number_from_notes": "862789"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283952521",
+    "order_number_from_notes": "862848"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "283874021",
+    "order_number_from_notes": "862821"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283841085",
+    "order_number_from_notes": "862788"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "283848558",
+    "order_number_from_notes": "862801"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283843259",
+    "order_number_from_notes": "862793"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "283874015",
+    "order_number_from_notes": "862811"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "283841056",
+    "order_number_from_notes": "862784"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "283873988",
+    "order_number_from_notes": "862810"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283874220",
+    "order_number_from_notes": "862815"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "283849718",
+    "order_number_from_notes": "862804"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283842218",
+    "order_number_from_notes": "862792"
+  },
+  {
+    "date": "2026-05-05",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "283848429",
+    "order_number_from_notes": "862800"
+  },
+  {
+    "date": "2026-05-04",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282894887",
+    "order_number_from_notes": "862747"
+  },
+  {
+    "date": "2026-05-04",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283546322",
+    "order_number_from_notes": "862763"
+  },
+  {
+    "date": "2026-05-04",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282921759",
+    "order_number_from_notes": "862749"
+  },
+  {
+    "date": "2026-05-04",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "283576312",
+    "order_number_from_notes": "862768"
+  },
+  {
+    "date": "2026-05-04",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283546351",
+    "order_number_from_notes": "862766"
+  },
+  {
+    "date": "2026-05-04",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282928297",
+    "order_number_from_notes": "862752"
+  },
+  {
+    "date": "2026-05-04",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "282928289",
+    "order_number_from_notes": "862751"
+  },
+  {
+    "date": "2026-05-04",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "283515103",
+    "order_number_from_notes": "862759"
+  },
+  {
+    "date": "2026-05-01",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282596689",
+    "order_number_from_notes": "862719"
+  },
+  {
+    "date": "2026-05-01",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282675508",
+    "order_number_from_notes": "862733"
+  },
+  {
+    "date": "2026-05-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282640739",
+    "order_number_from_notes": "862732"
+  },
+  {
+    "date": "2026-05-01",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282640689",
+    "order_number_from_notes": "862728"
+  },
+  {
+    "date": "2026-05-01",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "282640688",
+    "order_number_from_notes": "862728"
+  },
+  {
+    "date": "2026-05-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282840803",
+    "order_number_from_notes": "862744"
+  },
+  {
+    "date": "2026-05-01",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282618733",
+    "order_number_from_notes": "862727"
+  },
+  {
+    "date": "2026-05-01",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282865988",
+    "order_number_from_notes": "862745"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282493527",
+    "order_number_from_notes": "862702"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282389041",
+    "order_number_from_notes": "862700"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282512557",
+    "order_number_from_notes": "862707"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282388816",
+    "order_number_from_notes": "862699"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "282565081",
+    "order_number_from_notes": "862711"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282512549",
+    "order_number_from_notes": "862705"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282353109",
+    "order_number_from_notes": "862693"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "282480304",
+    "order_number_from_notes": "862701"
+  },
+  {
+    "date": "2026-04-30",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282565076",
+    "order_number_from_notes": "862713"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282024748",
+    "order_number_from_notes": "862648"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282024693",
+    "order_number_from_notes": "862648"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "282132016",
+    "order_number_from_notes": "862664"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282273920",
+    "order_number_from_notes": "862675"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "282294812",
+    "order_number_from_notes": "862680"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282294821",
+    "order_number_from_notes": "862678"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "18675",
+    "quantity": 2,
+    "shipstation_order_id": "282092369",
+    "order_number_from_notes": "862661"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "282248173",
+    "order_number_from_notes": "862659"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "282092364",
+    "order_number_from_notes": "862662"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "282228922",
+    "order_number_from_notes": "862665"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "282294471",
+    "order_number_from_notes": "862659"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282294813",
+    "order_number_from_notes": "862680"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282248188",
+    "order_number_from_notes": "862673"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282290612",
+    "order_number_from_notes": "862659"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282294830",
+    "order_number_from_notes": "862677"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "282092356",
+    "order_number_from_notes": "862659"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "282051251",
+    "order_number_from_notes": "862652"
+  },
+  {
+    "date": "2026-04-29",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "282248189",
+    "order_number_from_notes": "862673"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "281763336",
+    "order_number_from_notes": "862627"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281933124",
+    "order_number_from_notes": "862636"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281951078",
+    "order_number_from_notes": "862639"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281733078",
+    "order_number_from_notes": "862625"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281733105",
+    "order_number_from_notes": "862626"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "281763357",
+    "order_number_from_notes": "862628"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17904",
+    "quantity": 2,
+    "shipstation_order_id": "281733014",
+    "order_number_from_notes": "862626"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "281787794",
+    "order_number_from_notes": "862629"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281808161",
+    "order_number_from_notes": "862632"
+  },
+  {
+    "date": "2026-04-28",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281787833",
+    "order_number_from_notes": "862631"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281674300",
+    "order_number_from_notes": "862617"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281094686",
+    "order_number_from_notes": "862607"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "281039668",
+    "order_number_from_notes": "862598"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281673997",
+    "order_number_from_notes": "862615"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "281039683",
+    "order_number_from_notes": "862601"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281673949",
+    "order_number_from_notes": "862613"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281039727",
+    "order_number_from_notes": "862598"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281039774",
+    "order_number_from_notes": "862601"
+  },
+  {
+    "date": "2026-04-27",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281673966",
+    "order_number_from_notes": "862614"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280982360",
+    "order_number_from_notes": "862586"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281013434",
+    "order_number_from_notes": "862597"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280854000",
+    "order_number_from_notes": "862573"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "280764716",
+    "order_number_from_notes": "862561"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280981373",
+    "order_number_from_notes": "862582"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "280964233",
+    "order_number_from_notes": "862578"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280979902",
+    "order_number_from_notes": "862581"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280985451",
+    "order_number_from_notes": "862593"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "280854002",
+    "order_number_from_notes": "862573"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "281016664",
+    "order_number_from_notes": "862561"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "280764729",
+    "order_number_from_notes": "862559"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "280798441",
+    "order_number_from_notes": "862567"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280819579",
+    "order_number_from_notes": "862571"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "280964224",
+    "order_number_from_notes": "862577"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280789961",
+    "order_number_from_notes": "862562"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280798442",
+    "order_number_from_notes": "862568"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280984003",
+    "order_number_from_notes": "862590"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280764723",
+    "order_number_from_notes": "862558"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280985164",
+    "order_number_from_notes": "862592"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "280789851",
+    "order_number_from_notes": "862564"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "280964232",
+    "order_number_from_notes": "862578"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 16,
+    "shipstation_order_id": "280964221",
+    "order_number_from_notes": "862576"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280964244",
+    "order_number_from_notes": "862579"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280790040",
+    "order_number_from_notes": "862564"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "280984892",
+    "order_number_from_notes": "862591"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "280964220",
+    "order_number_from_notes": "862576"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "280964236",
+    "order_number_from_notes": "862580"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280973237",
+    "order_number_from_notes": "862575"
+  },
+  {
+    "date": "2026-04-24",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "280984028",
+    "order_number_from_notes": "862594"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280451294",
+    "order_number_from_notes": "862541"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280481067",
+    "order_number_from_notes": "862543"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280451291",
+    "order_number_from_notes": "862536"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280451289",
+    "order_number_from_notes": "862542"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "280699124",
+    "order_number_from_notes": "862552"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "280654418",
+    "order_number_from_notes": "862548"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17904",
+    "quantity": 2,
+    "shipstation_order_id": "280699119",
+    "order_number_from_notes": "862554"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280451286",
+    "order_number_from_notes": "862538"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "280699128",
+    "order_number_from_notes": "862552"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "280674223",
+    "order_number_from_notes": "862550"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "280481077",
+    "order_number_from_notes": "862544"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 9,
+    "shipstation_order_id": "280416364",
+    "order_number_from_notes": "862535"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "280699131",
+    "order_number_from_notes": "862553"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "280481073",
+    "order_number_from_notes": "862544"
+  },
+  {
+    "date": "2026-04-23",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280416363",
+    "order_number_from_notes": "862535"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "280402865",
+    "order_number_from_notes": "862531"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "280158337",
+    "order_number_from_notes": "862497"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "280209901",
+    "order_number_from_notes": "862506"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "280158352",
+    "order_number_from_notes": "862498"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "280344764",
+    "order_number_from_notes": "862514"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280158342",
+    "order_number_from_notes": "862496"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280357293",
+    "order_number_from_notes": "862517"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280357296",
+    "order_number_from_notes": "862515"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "280289960",
+    "order_number_from_notes": "862512"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "280357298",
+    "order_number_from_notes": "862515"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "280158339",
+    "order_number_from_notes": "862497"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280183629",
+    "order_number_from_notes": "862502"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "280402858",
+    "order_number_from_notes": "862530"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "280227526",
+    "order_number_from_notes": "862510"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "280209903",
+    "order_number_from_notes": "862507"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280209897",
+    "order_number_from_notes": "862505"
+  },
+  {
+    "date": "2026-04-22",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "280344759",
+    "order_number_from_notes": "862513"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "280085933",
+    "order_number_from_notes": "862487"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "280109747",
+    "order_number_from_notes": "862481"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "280076176",
+    "order_number_from_notes": "862482"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 10,
+    "shipstation_order_id": "279800060",
+    "order_number_from_notes": "862454"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "280126641",
+    "order_number_from_notes": "862489"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "280076973",
+    "order_number_from_notes": "862483"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17914",
+    "quantity": 2,
+    "shipstation_order_id": "280076690",
+    "order_number_from_notes": "862482"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "279943089",
+    "order_number_from_notes": "862470"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "279841465",
+    "order_number_from_notes": "862457"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "279841467",
+    "order_number_from_notes": "862459"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "280126636",
+    "order_number_from_notes": "862489"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "279800072",
+    "order_number_from_notes": "862451"
+  },
+  {
+    "date": "2026-04-21",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "280126638",
+    "order_number_from_notes": "862489"
+  },
+  {
+    "date": "2026-04-20",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "279727740",
+    "order_number_from_notes": "862447"
+  },
+  {
+    "date": "2026-04-20",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "279108482",
+    "order_number_from_notes": "862438"
+  },
+  {
+    "date": "2026-04-20",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "279757961",
+    "order_number_from_notes": "862450"
+  },
+  {
+    "date": "2026-04-20",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "279135089",
+    "order_number_from_notes": "862440"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278852095",
+    "order_number_from_notes": "862428"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "18675",
+    "quantity": 2,
+    "shipstation_order_id": "278802726",
+    "order_number_from_notes": "862410"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278488057",
+    "order_number_from_notes": "862369"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278827994",
+    "order_number_from_notes": "862420"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "279068121",
+    "order_number_from_notes": "862437"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "279043929",
+    "order_number_from_notes": "862433"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17914",
+    "quantity": 5,
+    "shipstation_order_id": "278802615",
+    "order_number_from_notes": "862409"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278852108",
+    "order_number_from_notes": "862424"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278802618",
+    "order_number_from_notes": "862410"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "278802628",
+    "order_number_from_notes": "862414"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "278827993",
+    "order_number_from_notes": "862419"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "278852104",
+    "order_number_from_notes": "862426"
+  },
+  {
+    "date": "2026-04-17",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "278802613",
+    "order_number_from_notes": "862409"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "278765076",
+    "order_number_from_notes": "862403"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278742958",
+    "order_number_from_notes": "862399"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17904",
+    "quantity": 5,
+    "shipstation_order_id": "278508128",
+    "order_number_from_notes": "862375"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "278508127",
+    "order_number_from_notes": "862375"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278702324",
+    "order_number_from_notes": "862389"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "278514579",
+    "order_number_from_notes": "862378"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "278702524",
+    "order_number_from_notes": "862389"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278750842",
+    "order_number_from_notes": "862402"
+  },
+  {
+    "date": "2026-04-16",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "278772913",
+    "order_number_from_notes": "862406"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "278249342",
+    "order_number_from_notes": "862318"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278478039",
+    "order_number_from_notes": "862361"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278451733",
+    "order_number_from_notes": "862340"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "278477325",
+    "order_number_from_notes": "862351"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "278477731",
+    "order_number_from_notes": "862359"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "278344159",
+    "order_number_from_notes": "862332"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278425841",
+    "order_number_from_notes": "862338"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "278223500",
+    "order_number_from_notes": "862314"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "278482405",
+    "order_number_from_notes": "862373"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "278285058",
+    "order_number_from_notes": "862315"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278479216",
+    "order_number_from_notes": "862366"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278404176",
+    "order_number_from_notes": "862335"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "278286012",
+    "order_number_from_notes": "862313"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278478009",
+    "order_number_from_notes": "862360"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "278477718",
+    "order_number_from_notes": "862358"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "278456882",
+    "order_number_from_notes": "862344"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "278480495",
+    "order_number_from_notes": "862370"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278282031",
+    "order_number_from_notes": "862321"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17904",
+    "quantity": 4,
+    "shipstation_order_id": "278344158",
+    "order_number_from_notes": "862332"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278278775",
+    "order_number_from_notes": "862325"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "278477298",
+    "order_number_from_notes": "862362"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278489085",
+    "order_number_from_notes": "862371"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "278477322",
+    "order_number_from_notes": "862349"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278488042",
+    "order_number_from_notes": "862371"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278425839",
+    "order_number_from_notes": "862337"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "278458455",
+    "order_number_from_notes": "862345"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "278477392",
+    "order_number_from_notes": "862347"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "278284981",
+    "order_number_from_notes": "862313"
+  },
+  {
+    "date": "2026-04-15",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278344172",
+    "order_number_from_notes": "862333"
+  },
+  {
+    "date": "2026-04-14",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "277881062",
+    "order_number_from_notes": "862284"
+  },
+  {
+    "date": "2026-04-14",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "278139546",
+    "order_number_from_notes": "862305"
+  },
+  {
+    "date": "2026-04-14",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "278139543",
+    "order_number_from_notes": "862302"
+  },
+  {
+    "date": "2026-04-14",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "278139539",
+    "order_number_from_notes": "862301"
+  },
+  {
+    "date": "2026-04-14",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278139558",
+    "order_number_from_notes": "862306"
+  },
+  {
+    "date": "2026-04-14",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278139562",
+    "order_number_from_notes": "862304"
+  },
+  {
+    "date": "2026-04-14",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "278176451",
+    "order_number_from_notes": "862308"
+  },
+  {
+    "date": "2026-04-13",
+    "sku": "17612",
+    "quantity": 10,
+    "shipstation_order_id": "277810936",
+    "order_number_from_notes": "862274"
+  },
+  {
+    "date": "2026-04-13",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "277162244",
+    "order_number_from_notes": "862257"
+  },
+  {
+    "date": "2026-04-13",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "277810939",
+    "order_number_from_notes": "862274"
+  },
+  {
+    "date": "2026-04-13",
+    "sku": "17914",
+    "quantity": 6,
+    "shipstation_order_id": "277810942",
+    "order_number_from_notes": "862274"
+  },
+  {
+    "date": "2026-04-13",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "277601216",
+    "order_number_from_notes": "862272"
+  },
+  {
+    "date": "2026-04-13",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "277457471",
+    "order_number_from_notes": "862271"
+  },
+  {
+    "date": "2026-04-13",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "277189669",
+    "order_number_from_notes": "862260"
+  },
+  {
+    "date": "2026-04-13",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "277785349",
+    "order_number_from_notes": "862273"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276954164",
+    "order_number_from_notes": "862246"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276935225",
+    "order_number_from_notes": "862244"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "277138018",
+    "order_number_from_notes": "862256"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276909313",
+    "order_number_from_notes": "862238"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 4,
+    "shipstation_order_id": "276954151",
+    "order_number_from_notes": "862249"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "18675",
+    "quantity": 1,
+    "shipstation_order_id": "276935217",
+    "order_number_from_notes": "862241"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 12,
+    "shipstation_order_id": "276954155",
+    "order_number_from_notes": "862249"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17904",
+    "quantity": 2,
+    "shipstation_order_id": "276954160",
+    "order_number_from_notes": "862247"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17914",
+    "quantity": 4,
+    "shipstation_order_id": "277115985",
+    "order_number_from_notes": "862253"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "277102405",
+    "order_number_from_notes": "862252"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "276909312",
+    "order_number_from_notes": "862233"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "276954153",
+    "order_number_from_notes": "862249"
+  },
+  {
+    "date": "2026-04-10",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "277138022",
+    "order_number_from_notes": "862255"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "276672465",
+    "order_number_from_notes": "862212"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17612",
+    "quantity": 10,
+    "shipstation_order_id": "276884502",
+    "order_number_from_notes": "862232"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276642069",
+    "order_number_from_notes": "862208"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "276705246",
+    "order_number_from_notes": "862214"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "276672464",
+    "order_number_from_notes": "862212"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276884761",
+    "order_number_from_notes": "862231"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "18795",
+    "quantity": 2,
+    "shipstation_order_id": "276705252",
+    "order_number_from_notes": "862214"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "276705249",
+    "order_number_from_notes": "862214"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "276705248",
+    "order_number_from_notes": "862214"
+  },
+  {
+    "date": "2026-04-09",
+    "sku": "17914",
+    "quantity": 5,
+    "shipstation_order_id": "276884503",
+    "order_number_from_notes": "862232"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276408281",
+    "order_number_from_notes": "862187"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "276538013",
+    "order_number_from_notes": "862191"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276425691",
+    "order_number_from_notes": "862188"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276596837",
+    "order_number_from_notes": "862205"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "276538009",
+    "order_number_from_notes": "862190"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "276331225",
+    "order_number_from_notes": "862181"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276357080",
+    "order_number_from_notes": "862182"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "276549625",
+    "order_number_from_notes": "862192"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17914",
+    "quantity": 5,
+    "shipstation_order_id": "276571622",
+    "order_number_from_notes": "862202"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "276357081",
+    "order_number_from_notes": "862182"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "276524651",
+    "order_number_from_notes": "723145"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276331222",
+    "order_number_from_notes": "862179"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17914",
+    "quantity": 3,
+    "shipstation_order_id": "276642064",
+    "order_number_from_notes": "862207"
+  },
+  {
+    "date": "2026-04-08",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276357084",
+    "order_number_from_notes": "862183"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276281841",
+    "order_number_from_notes": "862171"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276079656",
+    "order_number_from_notes": "862161"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17612",
+    "quantity": 2,
+    "shipstation_order_id": "276281832",
+    "order_number_from_notes": "862174"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276018666",
+    "order_number_from_notes": "862148"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "275984044",
+    "order_number_from_notes": "862146"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276018698",
+    "order_number_from_notes": "862158"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "276281838",
+    "order_number_from_notes": "862172"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276018683",
+    "order_number_from_notes": "862155"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "276018679",
+    "order_number_from_notes": "862149"
+  },
+  {
+    "date": "2026-04-07",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "276018685",
+    "order_number_from_notes": "862155"
+  },
+  {
+    "date": "2026-04-06",
+    "sku": "17612",
+    "quantity": 6,
+    "shipstation_order_id": "275917967",
+    "order_number_from_notes": "862132"
+  },
+  {
+    "date": "2026-04-06",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "275883131",
+    "order_number_from_notes": "862124"
+  },
+  {
+    "date": "2026-04-06",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "275917958",
+    "order_number_from_notes": "862134"
+  },
+  {
+    "date": "2026-04-06",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "275883132",
+    "order_number_from_notes": "862122"
+  },
+  {
+    "date": "2026-04-06",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "275457409",
+    "order_number_from_notes": "862116"
+  },
+  {
+    "date": "2026-04-03",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "274830915",
+    "order_number_from_notes": "723085"
+  },
+  {
+    "date": "2026-04-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274863805",
+    "order_number_from_notes": "862111"
+  },
+  {
+    "date": "2026-04-03",
+    "sku": "18795",
+    "quantity": 1,
+    "shipstation_order_id": "274863799",
+    "order_number_from_notes": "862112"
+  },
+  {
+    "date": "2026-04-03",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274818359",
+    "order_number_from_notes": "862104"
+  },
+  {
+    "date": "2026-04-03",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "274830910",
+    "order_number_from_notes": "723085"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274801754",
+    "order_number_from_notes": "862102"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 13,
+    "shipstation_order_id": "274592527",
+    "order_number_from_notes": "862089"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 10,
+    "shipstation_order_id": "274434773",
+    "order_number_from_notes": "862061"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17904",
+    "quantity": 2,
+    "shipstation_order_id": "274592524",
+    "order_number_from_notes": "862089"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274409378",
+    "order_number_from_notes": "862054"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274521902",
+    "order_number_from_notes": "862074"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "18795",
+    "quantity": 5,
+    "shipstation_order_id": "274592530",
+    "order_number_from_notes": "862089"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274736976",
+    "order_number_from_notes": "862091"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17914",
+    "quantity": 6,
+    "shipstation_order_id": "274592526",
+    "order_number_from_notes": "862089"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17904",
+    "quantity": 1,
+    "shipstation_order_id": "274434765",
+    "order_number_from_notes": "862059"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274541730",
+    "order_number_from_notes": "862083"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 5,
+    "shipstation_order_id": "274453955",
+    "order_number_from_notes": "862062"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274479359",
+    "order_number_from_notes": "862066"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274555079",
+    "order_number_from_notes": "862085"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 1,
+    "shipstation_order_id": "274541727",
+    "order_number_from_notes": "862084"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17914",
+    "quantity": 1,
+    "shipstation_order_id": "274434767",
+    "order_number_from_notes": "862059"
+  },
+  {
+    "date": "2026-04-02",
+    "sku": "17612",
+    "quantity": 3,
+    "shipstation_order_id": "274592520",
+    "order_number_from_notes": "862089"
+  }
+]
