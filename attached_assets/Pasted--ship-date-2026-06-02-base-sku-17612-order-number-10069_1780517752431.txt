@@ -1,0 +1,1154 @@
+[
+  {
+    "ship_date": "2026-06-02",
+    "base_sku": "17612",
+    "order_number": "100695",
+    "shipstation_order_id": "291251808",
+    "quantity_shipped": 2,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-06-02",
+    "base_sku": "17612",
+    "order_number": "863406",
+    "shipstation_order_id": "290934226",
+    "quantity_shipped": 1,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-06-02",
+    "base_sku": "17914",
+    "order_number": "100694",
+    "shipstation_order_id": "290967303",
+    "quantity_shipped": 6,
+    "sku_lot": "17914 - 250297"
+  },
+  {
+    "ship_date": "2026-06-02",
+    "base_sku": "18675",
+    "order_number": "100696",
+    "shipstation_order_id": "291350781",
+    "quantity_shipped": 2,
+    "sku_lot": "18675 - 260052"
+  },
+  {
+    "ship_date": "2026-06-02",
+    "base_sku": "18675",
+    "order_number": "100688",
+    "shipstation_order_id": "289906093",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-06-02",
+    "base_sku": "18795",
+    "order_number": "863411",
+    "shipstation_order_id": "291029556",
+    "quantity_shipped": 1,
+    "sku_lot": "18795"
+  },
+  {
+    "ship_date": "2026-06-01",
+    "base_sku": "17612",
+    "order_number": "100693",
+    "shipstation_order_id": "290894156",
+    "quantity_shipped": 6,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-06-01",
+    "base_sku": "17612",
+    "order_number": "863390",
+    "shipstation_order_id": "290831419",
+    "quantity_shipped": 5,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-06-01",
+    "base_sku": "17904",
+    "order_number": "863389",
+    "shipstation_order_id": "290805760",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17612",
+    "order_number": "100691",
+    "shipstation_order_id": "289937834",
+    "quantity_shipped": 6,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17612",
+    "order_number": "100689",
+    "shipstation_order_id": "289924974",
+    "quantity_shipped": 15,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17612",
+    "order_number": "863359",
+    "shipstation_order_id": "289938475",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "18675",
+    "order_number": "100692",
+    "shipstation_order_id": "290161156",
+    "quantity_shipped": 2,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "18675",
+    "order_number": "100690",
+    "shipstation_order_id": "289930786",
+    "quantity_shipped": 10,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17612",
+    "order_number": "863336",
+    "shipstation_order_id": "289711329",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17612",
+    "order_number": "100687",
+    "shipstation_order_id": "289813538",
+    "quantity_shipped": 15,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17904",
+    "order_number": "863328",
+    "shipstation_order_id": "289653173",
+    "quantity_shipped": 2,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17904",
+    "order_number": "863350",
+    "shipstation_order_id": "289874891",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 260125"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "18675",
+    "order_number": "863337",
+    "shipstation_order_id": "289734646",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "base_sku": "17612",
+    "order_number": "100686",
+    "shipstation_order_id": "289371021",
+    "quantity_shipped": 2,
+    "sku_lot": "17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "base_sku": "17904",
+    "order_number": "863299",
+    "shipstation_order_id": "289349463",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 260125"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17612",
+    "order_number": "863252",
+    "shipstation_order_id": "288459856",
+    "quantity_shipped": 1,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17612",
+    "order_number": "863266",
+    "shipstation_order_id": "289239521",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17904",
+    "order_number": "863264",
+    "shipstation_order_id": "289239518",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 260125"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17904",
+    "order_number": "863252",
+    "shipstation_order_id": "288459856",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 260125"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17914",
+    "order_number": "863265",
+    "shipstation_order_id": "289239506",
+    "quantity_shipped": 2,
+    "sku_lot": "17914 - 250297"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "18675",
+    "order_number": "100685",
+    "shipstation_order_id": "289234303",
+    "quantity_shipped": 2,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "17612",
+    "order_number": "863246",
+    "shipstation_order_id": "288336299",
+    "quantity_shipped": 6,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "17612",
+    "order_number": "863238",
+    "shipstation_order_id": "288119868",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "17904",
+    "order_number": "863246",
+    "shipstation_order_id": "288336299",
+    "quantity_shipped": 6,
+    "sku_lot": "17904 - 260125"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "18675",
+    "order_number": "100683",
+    "shipstation_order_id": "288094705",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "18675",
+    "order_number": "100684",
+    "shipstation_order_id": "288306713",
+    "quantity_shipped": 20,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-21",
+    "base_sku": "17904",
+    "order_number": "863208",
+    "shipstation_order_id": "287764173",
+    "quantity_shipped": 2,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "17612",
+    "order_number": "863193",
+    "shipstation_order_id": "287678127",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "17904",
+    "order_number": "863193",
+    "shipstation_order_id": "287678127",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "18675",
+    "order_number": "100681",
+    "shipstation_order_id": "287693254",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "18675",
+    "order_number": "100682",
+    "shipstation_order_id": "287693560",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "base_sku": "17612",
+    "order_number": "863162",
+    "shipstation_order_id": "287410097",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "base_sku": "17612",
+    "order_number": "863155",
+    "shipstation_order_id": "287357832",
+    "quantity_shipped": 4,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "base_sku": "17904",
+    "order_number": "863173",
+    "shipstation_order_id": "287434612",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "17612",
+    "order_number": "863134",
+    "shipstation_order_id": "287059219",
+    "quantity_shipped": 15,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "17914",
+    "order_number": "863128",
+    "shipstation_order_id": "286489770",
+    "quantity_shipped": 2,
+    "sku_lot": "17914 - 250297"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "18675",
+    "order_number": "863134",
+    "shipstation_order_id": "287059219",
+    "quantity_shipped": 1,
+    "sku_lot": "18675"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "18795",
+    "order_number": "863135",
+    "shipstation_order_id": "287059227",
+    "quantity_shipped": 1,
+    "sku_lot": "18795 - 11001"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17612",
+    "order_number": "863099",
+    "shipstation_order_id": "286361842",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17904",
+    "order_number": "863064",
+    "shipstation_order_id": "286183880",
+    "quantity_shipped": 2,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17904",
+    "order_number": "863109",
+    "shipstation_order_id": "286361901",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17914",
+    "order_number": "863109",
+    "shipstation_order_id": "286361901",
+    "quantity_shipped": 2,
+    "sku_lot": "17914 - 250297"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "17904",
+    "order_number": "863057",
+    "shipstation_order_id": "286100679",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "18675",
+    "order_number": "863055",
+    "shipstation_order_id": "286078137",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "17612",
+    "order_number": "862992",
+    "shipstation_order_id": "285684457",
+    "quantity_shipped": 6,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "17904",
+    "order_number": "863026",
+    "shipstation_order_id": "285868623",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "17914",
+    "order_number": "862995",
+    "shipstation_order_id": "285719420",
+    "quantity_shipped": 1,
+    "sku_lot": "17914 - 250297"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100668",
+    "shipstation_order_id": "285826200",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100662",
+    "shipstation_order_id": "285819348",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100661",
+    "shipstation_order_id": "285811876",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100675",
+    "shipstation_order_id": "285859204",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100673",
+    "shipstation_order_id": "285858262",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100666",
+    "shipstation_order_id": "285824998",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100672",
+    "shipstation_order_id": "285858045",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100665",
+    "shipstation_order_id": "285824107",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100671",
+    "shipstation_order_id": "285857227",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100664",
+    "shipstation_order_id": "285821872",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100663",
+    "shipstation_order_id": "285820975",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100679",
+    "shipstation_order_id": "285860996",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100670",
+    "shipstation_order_id": "285828497",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100677",
+    "shipstation_order_id": "285860336",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100669",
+    "shipstation_order_id": "285826536",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100678",
+    "shipstation_order_id": "285860649",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100674",
+    "shipstation_order_id": "285858529",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100676",
+    "shipstation_order_id": "285859596",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "18675",
+    "order_number": "100667",
+    "shipstation_order_id": "285825342",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "17612",
+    "order_number": "862947",
+    "shipstation_order_id": "285370590",
+    "quantity_shipped": 6,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "17612",
+    "order_number": "862981",
+    "shipstation_order_id": "285615942",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "17904",
+    "order_number": "862954",
+    "shipstation_order_id": "285406082",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "17914",
+    "order_number": "862965",
+    "shipstation_order_id": "285570146",
+    "quantity_shipped": 2,
+    "sku_lot": "17914"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100658",
+    "shipstation_order_id": "285379687",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100651",
+    "shipstation_order_id": "285372955",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100652",
+    "shipstation_order_id": "285374789",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100660",
+    "shipstation_order_id": "285380405",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100654",
+    "shipstation_order_id": "285375568",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100659",
+    "shipstation_order_id": "285380049",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100653",
+    "shipstation_order_id": "285375194",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100656",
+    "shipstation_order_id": "285376431",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18675",
+    "order_number": "100657",
+    "shipstation_order_id": "285379263",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "18795",
+    "order_number": "862947",
+    "shipstation_order_id": "285370590",
+    "quantity_shipped": 1,
+    "sku_lot": "18795 - 11001"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "17612",
+    "order_number": "862940",
+    "shipstation_order_id": "285301116",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100637",
+    "shipstation_order_id": "285310990",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100639",
+    "shipstation_order_id": "285311348",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100641",
+    "shipstation_order_id": "285311741",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100636",
+    "shipstation_order_id": "285310684",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100635",
+    "shipstation_order_id": "285310338",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100647",
+    "shipstation_order_id": "285314073",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100648",
+    "shipstation_order_id": "285314272",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100645",
+    "shipstation_order_id": "285313100",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100646",
+    "shipstation_order_id": "285313598",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100649",
+    "shipstation_order_id": "285314688",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100643",
+    "shipstation_order_id": "285312337",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100650",
+    "shipstation_order_id": "285315361",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100638",
+    "shipstation_order_id": "285311150",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100642",
+    "shipstation_order_id": "285312031",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100644",
+    "shipstation_order_id": "285312706",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18675",
+    "order_number": "100640",
+    "shipstation_order_id": "285311595",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "18795",
+    "order_number": "862939",
+    "shipstation_order_id": "285070327",
+    "quantity_shipped": 1,
+    "sku_lot": "18795 - 11001"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17612",
+    "order_number": "862912",
+    "shipstation_order_id": "284524659",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17612",
+    "order_number": "862906",
+    "shipstation_order_id": "284489135",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17612",
+    "order_number": "862915",
+    "shipstation_order_id": "284542254",
+    "quantity_shipped": 2,
+    "sku_lot": "17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17904",
+    "order_number": "862918",
+    "shipstation_order_id": "284675320",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17904",
+    "order_number": "862917",
+    "shipstation_order_id": "284674978",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17904",
+    "order_number": "862904",
+    "shipstation_order_id": "284457719",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17904",
+    "order_number": "862834",
+    "shipstation_order_id": "284018140",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17904",
+    "order_number": "862878",
+    "shipstation_order_id": "284171781",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17914",
+    "order_number": "862834",
+    "shipstation_order_id": "284018140",
+    "quantity_shipped": 1,
+    "sku_lot": "17914 - 250297"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17914",
+    "order_number": "862868",
+    "shipstation_order_id": "284121933",
+    "quantity_shipped": 2,
+    "sku_lot": "17914 - 250297"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17914",
+    "order_number": "862837",
+    "shipstation_order_id": "283921242",
+    "quantity_shipped": 1,
+    "sku_lot": "17914 - 250297"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "18675",
+    "order_number": "862843",
+    "shipstation_order_id": "283923088",
+    "quantity_shipped": 4,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "18675",
+    "order_number": "862842",
+    "shipstation_order_id": "283922500",
+    "quantity_shipped": 4,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "18795",
+    "order_number": "862834",
+    "shipstation_order_id": "284018140",
+    "quantity_shipped": 1,
+    "sku_lot": "18795 - 11001"
+  },
+  {
+    "ship_date": "2026-05-05",
+    "base_sku": "17904",
+    "order_number": "862784",
+    "shipstation_order_id": "283841127",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-05-05",
+    "base_sku": "17904",
+    "order_number": "862821",
+    "shipstation_order_id": "283874023",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "base_sku": "17612",
+    "order_number": "862752",
+    "shipstation_order_id": "282928296",
+    "quantity_shipped": 1,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "base_sku": "18675",
+    "order_number": "862751",
+    "shipstation_order_id": "282928291",
+    "quantity_shipped": 1,
+    "sku_lot": "18675 - 240231"
+  },
+  {
+    "ship_date": "2026-05-01",
+    "base_sku": "17904",
+    "order_number": "862728",
+    "shipstation_order_id": "282640719",
+    "quantity_shipped": 1,
+    "sku_lot": "17904 - 250240"
+  },
+  {
+    "ship_date": "2026-04-29",
+    "base_sku": "17612",
+    "order_number": "862673",
+    "shipstation_order_id": "282248190",
+    "quantity_shipped": 1,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-04-29",
+    "base_sku": "17612",
+    "order_number": "862648",
+    "shipstation_order_id": "282024690",
+    "quantity_shipped": 1,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-04-29",
+    "base_sku": "17904",
+    "order_number": "862673",
+    "shipstation_order_id": "282248190",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-04-29",
+    "base_sku": "18675",
+    "order_number": "862680",
+    "shipstation_order_id": "282299693",
+    "quantity_shipped": 1,
+    "sku_lot": "18675"
+  },
+  {
+    "ship_date": "2026-04-29",
+    "base_sku": "18675",
+    "order_number": "862659",
+    "shipstation_order_id": "282315505",
+    "quantity_shipped": 1,
+    "sku_lot": "18675"
+  },
+  {
+    "ship_date": "2026-04-29",
+    "base_sku": "18795",
+    "order_number": "862659",
+    "shipstation_order_id": "282315505",
+    "quantity_shipped": 1,
+    "sku_lot": "18795"
+  },
+  {
+    "ship_date": "2026-04-28",
+    "base_sku": "17904",
+    "order_number": "862626",
+    "shipstation_order_id": "281733013",
+    "quantity_shipped": 2,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-04-27",
+    "base_sku": "18675",
+    "order_number": "862601",
+    "shipstation_order_id": "281039684",
+    "quantity_shipped": 1,
+    "sku_lot": "18675"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "base_sku": "17612",
+    "order_number": "862573",
+    "shipstation_order_id": "281017684",
+    "quantity_shipped": 1,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "base_sku": "17612",
+    "order_number": "862597",
+    "shipstation_order_id": "281013435",
+    "quantity_shipped": 1,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "base_sku": "17612",
+    "order_number": "862562",
+    "shipstation_order_id": "280789839",
+    "quantity_shipped": 1,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "base_sku": "17612",
+    "order_number": "862562",
+    "shipstation_order_id": "280789839",
+    "quantity_shipped": 1,
+    "sku_lot": "17612 - 260047"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "base_sku": "17904",
+    "order_number": "862576",
+    "shipstation_order_id": "280974332",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "base_sku": "17914",
+    "order_number": "862573",
+    "shipstation_order_id": "281017684",
+    "quantity_shipped": 1,
+    "sku_lot": "17914"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "base_sku": "17914",
+    "order_number": "862578",
+    "shipstation_order_id": "280977312",
+    "quantity_shipped": 1,
+    "sku_lot": "17914"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "base_sku": "18675",
+    "order_number": "862559",
+    "shipstation_order_id": "280764731",
+    "quantity_shipped": 1,
+    "sku_lot": "18675"
+  },
+  {
+    "ship_date": "2026-04-23",
+    "base_sku": "17612",
+    "order_number": "862535",
+    "shipstation_order_id": "280416365",
+    "quantity_shipped": 9,
+    "sku_lot": "17612"
+  },
+  {
+    "ship_date": "2026-04-23",
+    "base_sku": "17904",
+    "order_number": "862544",
+    "shipstation_order_id": "280481081",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-04-23",
+    "base_sku": "17904",
+    "order_number": "862553",
+    "shipstation_order_id": "280699132",
+    "quantity_shipped": 1,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-04-23",
+    "base_sku": "17904",
+    "order_number": "862554",
+    "shipstation_order_id": "280699121",
+    "quantity_shipped": 2,
+    "sku_lot": "17904"
+  },
+  {
+    "ship_date": "2026-04-23",
+    "base_sku": "17914",
+    "order_number": "862552",
+    "shipstation_order_id": "280699129",
+    "quantity_shipped": 2,
+    "sku_lot": "17914"
+  }
+]
