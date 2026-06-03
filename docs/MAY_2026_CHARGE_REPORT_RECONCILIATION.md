@@ -179,3 +179,71 @@ HAVING COUNT(*) FILTER (WHERE sku_lot NOT LIKE '% - %') > 0
    AND COUNT(*) FILTER (WHERE sku_lot LIKE '% - %')     > 0
 ORDER BY ship_date, base_sku, order_number;
 ```
+
+---
+
+## SKU 18795 Fix — Execution Queries
+
+### Step 1: Verify rows before deleting
+
+```sql
+SELECT
+    'BEFORE'                            AS timing,
+    ship_date,
+    order_number,
+    sku_lot,
+    quantity_shipped
+FROM shipped_items
+WHERE base_sku = '18795'
+  AND ship_date BETWEEN '2026-05-01' AND '2026-05-31'
+  AND order_number IN ('862834', '862906', '862912', '863238', '863252')
+ORDER BY ship_date, order_number, sku_lot;
+```
+
+Expected: 2 rows per order (bare + lot-stamped), 10 rows total, 10 units.
+
+### Step 2: Execute the delete
+
+```sql
+DELETE FROM shipped_items
+WHERE base_sku = '18795'
+  AND sku_lot = '18795'
+  AND order_number IN ('862834', '862906', '862912', '863238', '863252');
+```
+
+Expected: 5 rows deleted (1 bare ghost per order).
+
+### Step 3: Confirm ghost rows are gone
+
+```sql
+SELECT
+    'AFTER'                             AS timing,
+    ship_date,
+    order_number,
+    sku_lot,
+    quantity_shipped
+FROM shipped_items
+WHERE base_sku = '18795'
+  AND ship_date BETWEEN '2026-05-01' AND '2026-05-31'
+  AND order_number IN ('862834', '862906', '862912', '863238', '863252')
+ORDER BY ship_date, order_number, sku_lot;
+```
+
+Expected: 1 row per order (lot-stamped only), 5 rows total, 5 units.
+
+### Step 4: Confirm month total matches SS pivot (target: 23)
+
+```sql
+SELECT
+    ship_date,
+    SUM(quantity_shipped)               AS total_units,
+    STRING_AGG(sku_lot || ' (' || quantity_shipped::text || ')', ', '
+               ORDER BY sku_lot)        AS sku_lots
+FROM shipped_items
+WHERE base_sku = '18795'
+  AND ship_date BETWEEN '2026-05-01' AND '2026-05-31'
+GROUP BY ship_date
+ORDER BY ship_date;
+```
+
+Expected month total: **23 units** (down from 28). SS pivot target by date: May 7=1, May 8=5, May 22=1, May 26=1.
