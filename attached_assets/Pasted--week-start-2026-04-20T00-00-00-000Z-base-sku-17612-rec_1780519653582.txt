@@ -1,0 +1,258 @@
+[
+  {
+    "week_start": "2026-04-20T00:00:00.000Z",
+    "base_sku": "17612",
+    "records_not_deducted": "5",
+    "units_not_deducted": "13",
+    "no_lot_stamp": "12",
+    "has_lot_failed_deduction": "1"
+  },
+  {
+    "week_start": "2026-04-20T00:00:00.000Z",
+    "base_sku": "17904",
+    "records_not_deducted": "4",
+    "units_not_deducted": "5",
+    "no_lot_stamp": "5",
+    "has_lot_failed_deduction": "0"
+  },
+  {
+    "week_start": "2026-04-20T00:00:00.000Z",
+    "base_sku": "17914",
+    "records_not_deducted": "3",
+    "units_not_deducted": "4",
+    "no_lot_stamp": "4",
+    "has_lot_failed_deduction": "0"
+  },
+  {
+    "week_start": "2026-04-20T00:00:00.000Z",
+    "base_sku": "18675",
+    "records_not_deducted": "1",
+    "units_not_deducted": "1",
+    "no_lot_stamp": "1",
+    "has_lot_failed_deduction": "0"
+  },
+  {
+    "week_start": "2026-04-27T00:00:00.000Z",
+    "base_sku": "17612",
+    "records_not_deducted": "2",
+    "units_not_deducted": "2",
+    "no_lot_stamp": "2",
+    "has_lot_failed_deduction": "0"
+  },
+  {
+    "week_start": "2026-04-27T00:00:00.000Z",
+    "base_sku": "17904",
+    "records_not_deducted": "3",
+    "units_not_deducted": "4",
+    "no_lot_stamp": "3",
+    "has_lot_failed_deduction": "1"
+  },
+  {
+    "week_start": "2026-04-27T00:00:00.000Z",
+    "base_sku": "18675",
+    "records_not_deducted": "3",
+    "units_not_deducted": "3",
+    "no_lot_stamp": "3",
+    "has_lot_failed_deduction": "0"
+  },
+  {
+    "week_start": "2026-04-27T00:00:00.000Z",
+    "base_sku": "18795",
+    "records_not_deducted": "1",
+    "units_not_deducted": "1",
+    "no_lot_stamp": "1",
+    "has_lot_failed_deduction": "0"
+  },
+  {
+    "week_start": "2026-05-04T00:00:00.000Z",
+    "base_sku": "17612",
+    "records_not_deducted": "4",
+    "units_not_deducted": "5",
+    "no_lot_stamp": "1",
+    "has_lot_failed_deduction": "4"
+  },
+  {
+    "week_start": "2026-05-04T00:00:00.000Z",
+    "base_sku": "17904",
+    "records_not_deducted": "7",
+    "units_not_deducted": "7",
+    "no_lot_stamp": "2",
+    "has_lot_failed_deduction": "5"
+  },
+  {
+    "week_start": "2026-05-04T00:00:00.000Z",
+    "base_sku": "17914",
+    "records_not_deducted": "3",
+    "units_not_deducted": "4",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "4"
+  },
+  {
+    "week_start": "2026-05-04T00:00:00.000Z",
+    "base_sku": "18675",
+    "records_not_deducted": "3",
+    "units_not_deducted": "9",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "9"
+  },
+  {
+    "week_start": "2026-05-04T00:00:00.000Z",
+    "base_sku": "18795",
+    "records_not_deducted": "1",
+    "units_not_deducted": "1",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "1"
+  },
+  {
+    "week_start": "2026-05-11T00:00:00.000Z",
+    "base_sku": "17612",
+    "records_not_deducted": "5",
+    "units_not_deducted": "15",
+    "no_lot_stamp": "6",
+    "has_lot_failed_deduction": "9"
+  },
+  {
+    "week_start": "2026-05-11T00:00:00.000Z",
+    "base_sku": "17904",
+    "records_not_deducted": "5",
+    "units_not_deducted": "6",
+    "no_lot_stamp": "2",
+    "has_lot_failed_deduction": "4"
+  },
+  {
+    "week_start": "2026-05-11T00:00:00.000Z",
+    "base_sku": "17914",
+    "records_not_deducted": "3",
+    "units_not_deducted": "5",
+    "no_lot_stamp": "2",
+    "has_lot_failed_deduction": "3"
+  },
+  {
+    "week_start": "2026-05-11T00:00:00.000Z",
+    "base_sku": "18675",
+    "records_not_deducted": "45",
+    "units_not_deducted": "45",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "45"
+  },
+  {
+    "week_start": "2026-05-11T00:00:00.000Z",
+    "base_sku": "18795",
+    "records_not_deducted": "2",
+    "units_not_deducted": "2",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "2"
+  },
+  {
+    "week_start": "2026-05-18T00:00:00.000Z",
+    "base_sku": "17612",
+    "records_not_deducted": "6",
+    "units_not_deducted": "28",
+    "no_lot_stamp": "21",
+    "has_lot_failed_deduction": "7"
+  },
+  {
+    "week_start": "2026-05-18T00:00:00.000Z",
+    "base_sku": "17904",
+    "records_not_deducted": "4",
+    "units_not_deducted": "10",
+    "no_lot_stamp": "4",
+    "has_lot_failed_deduction": "6"
+  },
+  {
+    "week_start": "2026-05-18T00:00:00.000Z",
+    "base_sku": "17914",
+    "records_not_deducted": "1",
+    "units_not_deducted": "2",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "2"
+  },
+  {
+    "week_start": "2026-05-18T00:00:00.000Z",
+    "base_sku": "18675",
+    "records_not_deducted": "5",
+    "units_not_deducted": "24",
+    "no_lot_stamp": "1",
+    "has_lot_failed_deduction": "23"
+  },
+  {
+    "week_start": "2026-05-18T00:00:00.000Z",
+    "base_sku": "18795",
+    "records_not_deducted": "1",
+    "units_not_deducted": "1",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "1"
+  },
+  {
+    "week_start": "2026-05-25T00:00:00.000Z",
+    "base_sku": "17612",
+    "records_not_deducted": "8",
+    "units_not_deducted": "42",
+    "no_lot_stamp": "1",
+    "has_lot_failed_deduction": "41"
+  },
+  {
+    "week_start": "2026-05-25T00:00:00.000Z",
+    "base_sku": "17904",
+    "records_not_deducted": "5",
+    "units_not_deducted": "6",
+    "no_lot_stamp": "2",
+    "has_lot_failed_deduction": "4"
+  },
+  {
+    "week_start": "2026-05-25T00:00:00.000Z",
+    "base_sku": "17914",
+    "records_not_deducted": "1",
+    "units_not_deducted": "2",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "2"
+  },
+  {
+    "week_start": "2026-05-25T00:00:00.000Z",
+    "base_sku": "18675",
+    "records_not_deducted": "4",
+    "units_not_deducted": "15",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "15"
+  },
+  {
+    "week_start": "2026-06-01T00:00:00.000Z",
+    "base_sku": "17612",
+    "records_not_deducted": "6",
+    "units_not_deducted": "16",
+    "no_lot_stamp": "7",
+    "has_lot_failed_deduction": "9"
+  },
+  {
+    "week_start": "2026-06-01T00:00:00.000Z",
+    "base_sku": "17904",
+    "records_not_deducted": "3",
+    "units_not_deducted": "3",
+    "no_lot_stamp": "3",
+    "has_lot_failed_deduction": "0"
+  },
+  {
+    "week_start": "2026-06-01T00:00:00.000Z",
+    "base_sku": "17914",
+    "records_not_deducted": "5",
+    "units_not_deducted": "12",
+    "no_lot_stamp": "6",
+    "has_lot_failed_deduction": "6"
+  },
+  {
+    "week_start": "2026-06-01T00:00:00.000Z",
+    "base_sku": "18675",
+    "records_not_deducted": "2",
+    "units_not_deducted": "3",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "3"
+  },
+  {
+    "week_start": "2026-06-01T00:00:00.000Z",
+    "base_sku": "18795",
+    "records_not_deducted": "2",
+    "units_not_deducted": "5",
+    "no_lot_stamp": "0",
+    "has_lot_failed_deduction": "5"
+  }
+]

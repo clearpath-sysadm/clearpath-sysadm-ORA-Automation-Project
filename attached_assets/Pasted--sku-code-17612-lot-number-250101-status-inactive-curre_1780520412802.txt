@@ -1,0 +1,242 @@
+[
+  {
+    "sku_code": "17612",
+    "lot_number": "250101",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250172",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250195",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250216",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250237",
+    "status": "depleted",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250300",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250340",
+    "status": "depleted",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250362",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250372",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "250377",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260017",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "status": "inactive",
+    "current_balance": "-22",
+    "deductions_to_apply": "337",
+    "expected_balance_after_fix": "-359"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260082",
+    "status": "active",
+    "current_balance": "554",
+    "deductions_to_apply": "524",
+    "expected_balance_after_fix": "30"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260122",
+    "status": "inactive",
+    "current_balance": "1152",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "1152"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "240276",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "250240",
+    "status": "depleted",
+    "current_balance": "0",
+    "deductions_to_apply": "21",
+    "expected_balance_after_fix": "-21"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "260125",
+    "status": "active",
+    "current_balance": "82",
+    "deductions_to_apply": "10",
+    "expected_balance_after_fix": "72"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "240286",
+    "status": "inactive",
+    "current_balance": "0",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "0"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "status": "active",
+    "current_balance": "544",
+    "deductions_to_apply": "18",
+    "expected_balance_after_fix": "526"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "240231",
+    "status": "inactive",
+    "current_balance": "291",
+    "deductions_to_apply": "93",
+    "expected_balance_after_fix": "198"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "260052",
+    "status": "active",
+    "current_balance": "225",
+    "deductions_to_apply": "7",
+    "expected_balance_after_fix": "218"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11001",
+    "status": "active",
+    "current_balance": "99",
+    "deductions_to_apply": "9",
+    "expected_balance_after_fix": "90"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11002",
+    "status": "inactive",
+    "current_balance": "713",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "713"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11003",
+    "status": "inactive",
+    "current_balance": "1018",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "1018"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11004",
+    "status": "inactive",
+    "current_balance": "1034",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "1034"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11005",
+    "status": "inactive",
+    "current_balance": "553",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "553"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11006",
+    "status": "inactive",
+    "current_balance": "996",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "996"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11007",
+    "status": "inactive",
+    "current_balance": "766",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "766"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11008",
+    "status": "inactive",
+    "current_balance": "996",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "996"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11009",
+    "status": "inactive",
+    "current_balance": "594",
+    "deductions_to_apply": "0",
+    "expected_balance_after_fix": "594"
+  }
+]

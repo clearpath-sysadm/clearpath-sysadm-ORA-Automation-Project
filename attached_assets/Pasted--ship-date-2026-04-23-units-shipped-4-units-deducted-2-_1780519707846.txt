@@ -1,0 +1,200 @@
+[
+  {
+    "ship_date": "2026-04-23",
+    "units_shipped": "4",
+    "units_deducted": "2",
+    "daily_gap": "2",
+    "cumulative_shipped": "4",
+    "cumulative_deducted": "2",
+    "cumulative_gap": "2"
+  },
+  {
+    "ship_date": "2026-04-24",
+    "units_shipped": "2",
+    "units_deducted": "2",
+    "daily_gap": "0",
+    "cumulative_shipped": "6",
+    "cumulative_deducted": "4",
+    "cumulative_gap": "2"
+  },
+  {
+    "ship_date": "2026-04-27",
+    "units_shipped": "3",
+    "units_deducted": "3",
+    "daily_gap": "0",
+    "cumulative_shipped": "9",
+    "cumulative_deducted": "7",
+    "cumulative_gap": "2"
+  },
+  {
+    "ship_date": "2026-04-28",
+    "units_shipped": "1",
+    "units_deducted": "1",
+    "daily_gap": "0",
+    "cumulative_shipped": "10",
+    "cumulative_deducted": "8",
+    "cumulative_gap": "2"
+  },
+  {
+    "ship_date": "2026-04-29",
+    "units_shipped": "5",
+    "units_deducted": "7",
+    "daily_gap": "-2",
+    "cumulative_shipped": "15",
+    "cumulative_deducted": "15",
+    "cumulative_gap": "0"
+  },
+  {
+    "ship_date": "2026-04-30",
+    "units_shipped": "2",
+    "units_deducted": "1",
+    "daily_gap": "1",
+    "cumulative_shipped": "17",
+    "cumulative_deducted": "16",
+    "cumulative_gap": "1"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "units_shipped": "3",
+    "units_deducted": "3",
+    "daily_gap": "0",
+    "cumulative_shipped": "20",
+    "cumulative_deducted": "19",
+    "cumulative_gap": "1"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "units_shipped": "8",
+    "units_deducted": "8",
+    "daily_gap": "0",
+    "cumulative_shipped": "28",
+    "cumulative_deducted": "27",
+    "cumulative_gap": "1"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "units_shipped": "24",
+    "units_deducted": "8",
+    "daily_gap": "16",
+    "cumulative_shipped": "52",
+    "cumulative_deducted": "35",
+    "cumulative_gap": "17"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "units_shipped": "9",
+    "units_deducted": "0",
+    "daily_gap": "9",
+    "cumulative_shipped": "61",
+    "cumulative_deducted": "35",
+    "cumulative_gap": "26"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "units_shipped": "25",
+    "units_deducted": "6",
+    "daily_gap": "19",
+    "cumulative_shipped": "86",
+    "cumulative_deducted": "41",
+    "cumulative_gap": "45"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "units_shipped": "2",
+    "units_deducted": "2",
+    "daily_gap": "0",
+    "cumulative_shipped": "88",
+    "cumulative_deducted": "43",
+    "cumulative_gap": "45"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "units_shipped": "1",
+    "units_deducted": "1",
+    "daily_gap": "0",
+    "cumulative_shipped": "89",
+    "cumulative_deducted": "44",
+    "cumulative_gap": "45"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "units_shipped": "3",
+    "units_deducted": "1",
+    "daily_gap": "2",
+    "cumulative_shipped": "92",
+    "cumulative_deducted": "45",
+    "cumulative_gap": "47"
+  },
+  {
+    "ship_date": "2026-05-21",
+    "units_shipped": "1",
+    "units_deducted": "1",
+    "daily_gap": "0",
+    "cumulative_shipped": "93",
+    "cumulative_deducted": "46",
+    "cumulative_gap": "47"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "units_shipped": "22",
+    "units_deducted": "1",
+    "daily_gap": "21",
+    "cumulative_shipped": "115",
+    "cumulative_deducted": "47",
+    "cumulative_gap": "68"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "units_shipped": "2",
+    "units_deducted": "0",
+    "daily_gap": "2",
+    "cumulative_shipped": "117",
+    "cumulative_deducted": "47",
+    "cumulative_gap": "70"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "units_shipped": "1",
+    "units_deducted": "1",
+    "daily_gap": "0",
+    "cumulative_shipped": "118",
+    "cumulative_deducted": "48",
+    "cumulative_gap": "70"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "units_shipped": "12",
+    "units_deducted": "0",
+    "daily_gap": "12",
+    "cumulative_shipped": "130",
+    "cumulative_deducted": "48",
+    "cumulative_gap": "82"
+  },
+  {
+    "ship_date": "2026-06-01",
+    "units_shipped": "1",
+    "units_deducted": "1",
+    "daily_gap": "0",
+    "cumulative_shipped": "131",
+    "cumulative_deducted": "49",
+    "cumulative_gap": "82"
+  },
+  {
+    "ship_date": "2026-06-02",
+    "units_shipped": "3",
+    "units_deducted": "0",
+    "daily_gap": "3",
+    "cumulative_shipped": "134",
+    "cumulative_deducted": "49",
+    "cumulative_gap": "85"
+  },
+  {
+    "ship_date": "2026-06-03",
+    "units_shipped": "1",
+    "units_deducted": "1",
+    "daily_gap": "0",
+    "cumulative_shipped": "135",
+    "cumulative_deducted": "50",
+    "cumulative_gap": "85"
+  }
+]
