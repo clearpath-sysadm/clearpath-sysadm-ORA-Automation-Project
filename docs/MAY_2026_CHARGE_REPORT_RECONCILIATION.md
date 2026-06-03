@@ -120,6 +120,8 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 
 **May 29 +12:** DB shows 24 units vs SS 12 for lot `18675 - 260052`. Both rows are lot-stamped — this is a **double-write** issue, not a bare/lot ghost. Requires separate investigation.
 
+**May 11 BigCommerce orphan discovery (cross-SKU finding):** During 17612 investigation, 16 BigCommerce orders (100635–100650, SS IDs 285310338–285315361) were found in `shipped_orders` with no `orders_inbox` entry. All 16 have `shipped_items` rows for `18675 - 240231` (1 unit each = 16 units). These are counted in both CR and SS so they do not create a discrepancy, but the absence of `orders_inbox` entries indicates these orders bypassed the normal import flow entirely (BigCommerce migration artifact). No action needed for charge report correctness, but flagged as data quality gap.
+
 ---
 
 ### SKU 17612 — 🔍 Investigation in progress
@@ -130,32 +132,37 @@ The overall gap is −3 (CR under SS). Multiple opposing forces are at play — 
 
 | Date | CR−SS | Root Cause | Status |
 |------|-------|------------|--------|
-| May 5 | −1 | 1 unit missing from DB entirely — SS has a shipment DB doesn't | 🔍 Missing record |
-| May 8 | −4 (true −5) | Ghost row 862917 masks a larger gap — ~5 units missing from DB | 🔍 Missing records |
-| May 11 | −6 | 6 units missing from DB entirely — all DB rows are clean | 🔍 Missing records |
-| May 12 | +6 | 3 bare-only rows (862946=6, 862947=6, 862954=2) — not ghost pairs, source unclear | 🔍 Pending |
-| May 15 | +3 | Ghost rows: 863064 (STANDARD, 2 units) + 863109 (REVIEW, 1 unit) | ✅ Identified |
-| May 26 | +8 | Order 833686 BigCommerce migration noise (6 units) + ghost REVIEW 863264+863265 (2 units) | ⏳ Awaiting Oracare |
+| May 5 | −1 | Orders never synced into `shipped_orders` — not visible to DB at all | ✅ Diagnosed — SS verification needed |
+| May 8 | −4 (true −5) | Orders never synced into `shipped_orders` + ghost 862917 masks 1 unit | ✅ Diagnosed — SS verification needed |
+| May 11 | −6 | Orders never synced into `shipped_orders` — BigCommerce orphan theory ruled out | ✅ Diagnosed — SS verification needed |
+| May 12 | +6 | 3 bare-only rows (862946=6, 862947=6, 862954=2) — not ghost pairs, likely qty mismatch vs SS | 🔍 Pending SS verification |
+| May 15 | +3 | Ghost rows: 863064 (STANDARD, 2 units) + 863109 (REVIEW, 1 unit) | ✅ Identified — fix ready |
+| May 26 | +8 | Order 833686 BigCommerce migration noise (6 units) + ghost REVIEW 863264+863265 (2 units) | ⏳ Awaiting Oracare confirmation |
 | May 27 | +5 | 1 bare row + 1 malformed `17612-260082` sku_lot — order-level detail pending | 🔍 Pending |
 | May 28 | −12 | 13 units of `base_sku=17613` not remapped to 17612 (8 orders, all bare) | ✅ Identified — fix ready |
 | May 29 | −2 | 2 units of `base_sku=17613` not remapped to 17612 (2 orders, all bare) | ✅ Identified — fix ready |
 
 #### Under-count analysis
 
-**May 5 −1, May 8 −4, May 11 −6 — missing records**
+**May 5 −1, May 8 −4, May 11 −6 — orders never synced to DB**
 
-DB data is completely clean on these dates (no unremapped 17613, no malformed sku_lots, no ghost pairs). The gap is caused by **SS having shipments that were never written to `shipped_items` at all** — not data quality but missing records entirely.
+Investigation confirmed these are NOT caused by:
+- Unremapped 17613 rows (none exist on these dates)
+- Missing `orders_inbox` entries (all orders in `shipped_orders` for May 5/8 have `orders_inbox` records)
+- BigCommerce orphan orders (the 16 May 11 BigCommerce orders 100635–100650 all contain 18675, not 17612)
+- Non-17612 orders being misidentified (May 5 non-17612 orders are 862769/862808 with 17914 only; May 8 non-17612 orders are 862905/862908/862918/862920 with 17914/18795/17904)
 
-Most likely cause: 17613 orders that were shipped on these dates were never imported/resynced into DB. They don't appear even as 17613 rows — they're simply absent. The next step is querying `shipped_orders` × `order_items_inbox` to find orders with sku 17612/17613 that exist in order history but have no corresponding `shipped_items` row.
+**Root cause:** SS has 17612 shipments on these dates that were never synced into `shipped_orders` at all — invisible to all DB queries. These units cannot be recovered without a targeted SS API pull for those dates.
 
-**May 8 note:** The ghost row 862917 (bare `17612` = 1 unit) is *masking* the true gap. Deleting it would reveal a −5 discrepancy, not −4. The ghost fix for May 8 should not be applied until the missing units are identified and restored first.
+**May 8 note:** Ghost row 862917 (bare `17612` = 1 unit) masks the true gap. True gap = −5, not −4. Do not delete this ghost until the missing units are recovered — it would expose the full −5.
+
+**Impact on remap fix sequencing:** May 28/29 remap adds +15 units to CR (2011→2026). Combined with the unfixable May 5/8/11 under-counts (−11 total), the effective net after remap = +12 over SS. Ghost fixes and the 833686 removal will be needed to bring the balance back down.
 
 **May 28 and May 29 — 17613 not remapped**
 
-DB has units stored as `base_sku = 17613` that SS counts as 17612. These were processed before the end-of-month promo SKU change landed. No 17613 rows exist on May 5/8/11, confirming the earlier dates have a different problem (full record absence rather than wrong base_sku).
-
-- May 28: 13 units across 8 orders (all bare `17613`) → remap + delete ghost 862917 → CR goes 86 → 98 ✓
-- May 29: 2 units across 2 orders (all bare `17613`) → remap → CR goes 40 → 42 ✓
+DB has 15 units stored as `base_sku = 17613` that SS counts as 17612:
+- May 28: 13 units, 8 orders (all bare `17613`) → remap + delete ghost 862917 → DB 86 → 98 = SS ✓
+- May 29: 2 units, 2 orders (all bare `17613`) → remap → DB 40 → 42 = SS ✓
 
 #### Over-count analysis
 
