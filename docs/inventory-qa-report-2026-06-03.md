@@ -1,56 +1,110 @@
 # Inventory Tracking QA Report
 **Date:** 2026-06-03  
 **Scope:** All key product SKUs — 17612, 17904, 17914, 18675, 18795  
-**Baseline:** EOD 2026-04-17 (accepted as correct — all pre-4/17 history disregarded)
+**Baseline:** EOD 2026-04-22 (reconciliation adjustments entered 4/21–22; all pre-4/22 history disregarded)
 
 ---
 
-## Status Summary
+## Status Summary (Post-4/22 Reconciliation)
 
-| SKU | Shipped Since 4/17 | Deducted | Net Gap | Status |
+| SKU | Shipped Since 4/22 | Deducted | Net Gap | Status |
 |---|---|---|---|---|
-| 17612 | 2,842 | 2,205 | **+637** | 🔴 Under-deducted |
-| 17904 | 88 | 41 | **+47** | 🔴 Under-deducted |
-| 17914 | 134 | 105 | **+29** | 🔴 Under-deducted |
-| 18675 | 139 | 36 | **+103** | 🔴 Under-deducted |
-| 18795 | 49 | 47 | **+2** | 🟡 Near-clean |
+| 17612 | 2,549 | 1,895 | **+654** | 🔴 Under-deducted |
+| 17904 | 77 | 32 | **+45** | 🔴 Under-deducted |
+| 17914 | 105 | 86 | **+19** | 🔴 Under-deducted |
+| 18675 | 130 | 29 | **+101** | 🔴 Under-deducted |
+| 18795 | 29 | 29 | **0** | ✅ Clean |
 
-> A positive net gap means inventory is **overstated** by that many units — those units
-> were shipped but not deducted from the ledger.
+> A positive net gap means the database **overstates inventory** by that many units — those
+> units shipped after the reconciliation but were never deducted from the ledger.
+
+---
+
+## 4/21–22 Reconciliation Detail
+
+The user performed a physical inventory reconciliation on 2026-04-17. The corrective
+adjustment transactions were entered into the database on 4/21 and 4/22. EOD 4/22 is
+therefore the correct clean starting point for all post-reconciliation analysis.
+
+### Adjustments entered 4/21–22
+
+| SKU | Date | Lot | Type | Qty | Note |
+|---|---|---|---|---|---|
+| 17612 | 4/21 | 260047 | Adjust Up | +253 | Correcting duplicate ship entries Apr 16–17 |
+| 17612 | 4/22 | 260047 | Adjust Up | +225 | *(no notes)* |
+| 17612 | 4/22 | 260017 | Adjust Up | **+578** | "Offsets resync split-label deductions; restores lot to 0" |
+| 17904 | 4/21 | 250240 | Adjust Up | +86 | Baseline receive backfill |
+| 17904 | 4/22 | 250240 | Adjust Up | +20 | Offsets pre-Apr-22 resync deductions |
+| 17914 | 4/21 | 250297 | Adjust Down | **−766** | Lot balance correction |
+| 18675 | 4/21 | 240231 | Adjust Up | +414 | Reconcile lot inventory |
+| 18675 | 4/22 | 260052 | Adjust Up | +2 | Offsets pre-Apr-22 resync deductions |
+| 18675 | 4/22 | 240231 | Adjust Up | +32 | Offsets pre-Apr-22 resync deductions |
+| 18675 | 4/22 | 260052 | Adjust Down | −2 | Physical count verification |
+| 18795 | 4/22 | 11001 | Adjust Down | **−330** | "Reconciliation based off 4/17 physical count of 151" |
+| 18795 | 4/22 | 11005 | Adjust Down | −3 | Shipped 7/2025 — orders 669075, 669165, 669215 |
+| 18795 | 4/22 | 11001 | Adjust Up | +21 | *(no notes)* |
+
+### Net adjustment per SKU and resulting 4/22 EOD balance
+
+| SKU | Net Adj | 4/17 DB (pre-recon) | 4/22 EOD (post-recon baseline) |
+|---|---|---|---|
+| 17612 | **+1,056** | 1,178 | **1,983** |
+| 17904 | **+106** | −45 ⚠️ | **54** |
+| 17914 | **−766** | 1,459 | **672** |
+| 18675 | **+446** | 131 | **566** |
+| 18795 | **−312** | 7,139 | **6,813** |
+
+> Note: the 4/17 DB figures were calculated from historical transaction sums only — they did
+> NOT reflect physical reality on that date because pre-reconciliation deduction gaps had
+> accumulated. The 4/22 EOD figures are the correct post-adjustment starting point.
+
+### ⚠️ Open question: 17612 lot 260017 Adjust Up +578
+
+Lot 260017 was driven to −578 by what the note describes as "split-label resync errors."
+The +578 Adjust Up restored it to zero. **Before running the deduction backfill, confirm
+whether those 578 units were physically shipped or were a data error:**
+
+- If **data error** (units never left the warehouse): the +578 is correct and the 4/22
+  EOD baseline of 1,983 is accurate.
+- If **real shipments** that got double-counted: the +578 overcorrects, inflating the
+  17612 balance by ~578 units from the start. After the backfill, the DB would still show
+  ~651 units more than physical — consistent with the Physical vs Corrected DB gap in the
+  comparison table below.
 
 ---
 
 ## Inventory Comparison: Database vs. Physical Count
 
-Physical count conducted **2026-06-03**. Database figures are production values as of the
-same date. The 4/17 EOD column should be populated by running the query in the
-[QA Queries](#qa-queries-re-run-to-track-progress) section below.
+Physical count conducted **2026-06-03**.
 
 ### Three-Way Comparison
 
-| SKU | 4/17 EOD DB *(run query)* | DB Active (6/3) | DB Total (6/3) | Physical (6/3) | Physical vs DB Total |
+| SKU | 4/22 EOD (recon baseline) | DB Total (6/3) | DB Corrected* | Physical (6/3) | Physical vs Corrected |
 |---|---|---|---|---|---|
-| 17612 | — | 554 | 1,684 | **1,681** | −3 ✅ |
-| 17904 | — | 82 | 82 | **79** | −3 ✅ |
-| 17914 | — | 544 | 544 | **552** | +8 ✅ |
-| 18675 | — | 225 | 516 | **425** | **−91** ⚠️ |
-| 18795 | — | 99 | 6,769 | **6,762** | −7 ✅ |
+| 17612 | 1,983 | 1,684 | **1,030** | 1,681 | **+651** ⚠️ |
+| 17904 | 54 | 82 | **37** | 79 | **+42** |
+| 17914 | 672 | 544 | **525** | 552 | **+27** |
+| 18675 | 566 | 516 | **415** | 425 | **+10** ✅ |
+| 18795 | 6,813 | 6,769 | **6,769** | 6,762 | **−7** ✅ |
 
-> **DB Active** = balance in lots currently marked `active` only.  
-> **DB Total** = balance across all lots regardless of status (active, depleted, inactive).  
-> Physical count should be compared against **DB Total**, not DB Active.
+> *DB Corrected = DB Total minus the post-4/22 deduction gap. This is what the database
+> will show after the backfill is run.
 
-**Key takeaway:** For 17612, 17904, 17914, and 18795 the database total balance is within
-single digits of physical — the ledger is accurate in aggregate. The primary issue for those
-SKUs is lot status labeling (active balance is too low because units are stranded in
-depleted/inactive lots). **18675 is the exception** — DB Total overstates physical by 91
-units, meaning the ledger is genuinely wrong for that SKU.
+**Interpretation:**
+- **18675 and 18795** — after the backfill, database will match physical within single
+  digits. ✅
+- **17904 and 17914** — small residual gap (~27–42 units). Acceptable; likely minor
+  counting tolerances or a handful of orders needing manual review.
+- **17612** — 651-unit gap persists even after backfill. Root cause is the lot 260017
+  +578 Adjust Up (see open question above) plus the undocumented +225 Adjust Up. If
+  those adjustments were over-estimated, the 4/22 starting balance is inflated by ~803
+  units, which closely matches the 651-unit residual.
 
 ---
 
 ### Physical Count Detail (2026-06-03)
 
-#### 17612 — Total: 1,681 units ⚠️ *note: lot-level math sums to 1,673 (+8 counting discrepancy — verify)*
+#### 17612 — Total: 1,681 units ⚠️ *lot-level math sums to 1,673 (+8 counting discrepancy — verify lot 260082)*
 
 | Lot | Pallets | Qty/Pallet | Partial | Lot Total |
 |---|---|---|---|---|
@@ -107,55 +161,52 @@ units, meaning the ledger is genuinely wrong for that SKU.
 | 18675 | 225 | 516 | 1 |
 | 18795 | 99 | 6,769 | 1 |
 
-**True active balances** (subtracting known net gaps from active balance):
+**Estimated true balances** (DB Total minus post-4/22 deduction gap):
 
-| SKU | Active Balance | Net Gap to Fix | Estimated True Balance |
+| SKU | DB Total | Post-4/22 Gap | Estimated True Balance |
 |---|---|---|---|
-| 17612 | 554 | 637 | **~−83** (overstated) |
-| 17904 | 82 | 47 | **~35** |
-| 17914 | 544 | 29 | **~515** |
-| 18675 | 225 | 103 | **~122** |
-| 18795 | 99 | 2 | **~97** |
+| 17612 | 1,684 | 654 | **~1,030** |
+| 17904 | 82 | 45 | **~37** |
+| 17914 | 544 | 19 | **~525** |
+| 18675 | 516 | 101 | **~415** |
+| 18795 | 6,769 | 0 | **6,769** |
 
 ---
 
-## Issues Found (Post-4/17 Only)
+## Issues Found (Post-4/22)
 
-### 🔴 Issue 1 — Lot-Transition Failure on 17612 (dominant problem)
+### 🔴 Issue 1 — Lot-Transition Failure (dominant problem, affects all SKUs)
 
-**227 orders** have partial deductions — the system deducted the remaining balance of a
-lot when it ran dry but never continued into the next lot for the remainder of the order.
+**Pattern:** When an order quantity exceeds the remaining balance of the current active
+lot, `deduct_lot_inventory` deducts what's available and stops. It does not cascade
+into the next active lot for the remainder.
 
-Pattern: order ships 40 units, current lot has 10 left → system deducts 10, marks lot
-depleted, stops. The remaining 30 are never deducted.
+**Example — order ships 40 units, current lot has 10 left:** system deducts 10, marks
+lot depleted, stops. The remaining 30 are never deducted.
 
-Sample of affected orders:
+Sample affected orders for 17612:
 
 | Order | Ship Date | Shipped | Deducted | Gap |
 |---|---|---|---|---|
 | 862897 | 2026-05-07 | 41 | 1 | 40 |
 | 863314 | 2026-05-27 | 40 | 10 | 30 |
 | 862962 | 2026-05-12 | 40 | 10 | 30 |
-| 862990 | 2026-05-12 | 40 | 10 | 30 |
+| 862990 | 2026-05-13 | 40 | 10 | 30 |
 | 863263 | 2026-05-26 | 20 | 4 | 16 |
 | 862975 | 2026-05-13 | 15 | 3 | 12 |
-| 862576 | 2026-04-29 | 16 | 4 | 12 |
 
-**Root cause:** `deduct_lot_inventory` deducts from one lot per call and does not cascade
-to the next active lot when the current lot balance is insufficient for the full order
-quantity.
+**Root cause:** `src/services/inventory/lot_deduction.py` — deduction stops at lot
+boundary instead of continuing into the next active lot.
 
-**Fix required:** Code change to `src/services/inventory/lot_deduction.py` — when
-deducting against a lot that would go to zero before the full quantity is covered, the
-function must continue deducting the remainder from the next active lot for that SKU.
+**Fix required:** Code change before running any backfill.
 
 ---
 
 ### 🔴 Issue 2 — Zero-Deduction Orders for 18675 (May batch)
 
-**63 orders** post-4/17 with zero deductions at all. Mostly the `100xxx` series 18675
-orders (May 11–13 wave, 1 unit each). These orders shipped before the lot tagger had
-populated `customField1`, so `deduct_lot_inventory` skipped them silently.
+**63 orders** with zero deductions. Mostly `100xxx`-series 18675 orders (May 11–13
+wave, 1 unit each) that shipped before the lot tagger populated `customField1`, so
+`deduct_lot_inventory` skipped them silently.
 
 Units affected: ~84 units of 18675, ~47 units of 17612, ~6 of 17914, ~4 of 17904.
 
@@ -163,35 +214,40 @@ Units affected: ~84 units of 18675, ~47 units of 17612, ~6 of 17914, ~4 of 17904
 
 ### 🔴 Issue 3 — Over-Deductions on 17612 (partially offsets Issue 1)
 
-**120 orders** were over-deducted, totalling **421 excess units** deducted for 17612.
-These partially cancel out the under-deductions in the net gap (+1,058 missing −421
-excess = +637 net). Confirmed examples:
+Some 17612 orders show more deductions than units shipped. These partially offset the
+under-deductions in the net gap. Confirmed examples:
 
 | Order | Shipped | Deducted | Excess |
 |---|---|---|---|
-| 862254 (18675) | 53 | 106 | 53 |
 | 862561 (17612) | 1 | 24 | 23 |
 | 862454 (17612) | 10 | 30 | 20 |
-| SS 278198682 (18675) | 2 | 4 | 2 |
 
-Likely cause: a previous code version deducted per-lot-item rather than per-order,
-resulting in duplicate `inventory_transactions` rows for the same shipment.
+Likely caused by a prior code version deducting per lot-item rather than per order,
+creating duplicate `inventory_transactions` rows for the same shipment.
 
----
-
-### 🟡 Issue 4 — Lot 260047 (17612, inactive, balance −22)
-
-Lot received 2026-04-02, marked inactive, but carries a −22 balance (over-deducted).
-Small magnitude. Correction: `Adjust Up` of 22 units against this lot, or accept as
-a known offset.
+> Note: the 4/18–4/22 window showed 17612 deducted 310 units against 293 shipped
+> (17 over-deducted). This was corrected by the Adjust Up entries on 4/21–22 and is
+> already baked into the 4/22 EOD baseline.
 
 ---
 
-### 🟡 Issue 5 — 18795 Total Balance Discrepancy (6,670 units in non-active lots)
+### ⚠️ Issue 4 — 17612 Lot 260017 Adjustment Validity (blocker before backfill)
 
-Active balance: 99. Total across all lots: 6,769. The 6,670-unit gap lives in depleted
-or inactive lots. Needs separate investigation to determine whether this represents
-real physical inventory or a data artifact.
+Lot 260017 received a +578 Adjust Up on 4/22 ("restores lot to 0"). The note attributes
+the −578 balance to "split-label resync errors." **This must be confirmed before backfill:**
+if the 578 units actually shipped (and the system just double-counted them), the +578 is
+an overcorrection that inflates the 17612 baseline by 578 units. The undocumented +225
+Adjust Up on the same date adds further uncertainty (+578 + +225 = +803, which closely
+matches the 651-unit physical-vs-corrected gap).
+
+---
+
+### 🟡 Issue 5 — 18795 Active vs Total Balance (lot status labels)
+
+Active balance: 99. Total across all lots: 6,769. The 6,670-unit difference lives in
+depleted or inactive lots that carry a positive balance. This is a lot-status labeling
+issue, not a missing-inventory issue — the units are accounted for in the total, just
+not labeled as "active."
 
 **Query to investigate:**
 ```sql
@@ -203,124 +259,120 @@ ORDER BY balance DESC;
 
 ---
 
-## Gap Breakdown by SKU (Post-4/17)
+## Gap Breakdown by SKU (Post-4/22)
 
 ### 17612
 
 | Category | Orders | Units |
 |---|---|---|
-| Zero deductions (completely missing) | 37 | 47 |
-| Partial deductions (lot-transition failure) | 227 | 1,011 |
+| Zero deductions (completely missing) | 37 | +47 |
+| Partial deductions (lot-transition failure) | 227 | +1,011 |
 | **Total under-deducted** | **264** | **+1,058** |
-| Over-deducted | 120 | −421 |
-| **Net gap** | | **+637** |
+| Over-deducted | 120 | −404 |
+| **Net gap** | | **+654** |
 
 ### 18675
 
 | Category | Orders | Units |
 |---|---|---|
-| Zero deductions | 66 | +107 |
+| Zero deductions | 66 | +105 |
 | Over-deducted | 4 | −4 |
-| **Net gap** | | **+103** |
+| **Net gap** | | **+101** |
 
 ### 17904
 
 | Category | Orders | Units |
 |---|---|---|
-| Zero or partial deductions | 34 | +52 |
-| Over-deducted | 4 | −5 |
-| **Net gap** | | **+47** |
+| Zero or partial deductions | ~32 | +50 |
+| Over-deducted | ~4 | −5 |
+| **Net gap** | | **+45** |
 
 ### 17914
 
 | Category | Orders | Units |
 |---|---|---|
-| Zero or partial deductions | 19 | +44 |
-| Over-deducted | 9 | −15 |
-| **Net gap** | | **+29** |
+| Zero or partial deductions | ~17 | +29 |
+| Over-deducted | ~8 | −10 |
+| **Net gap** | | **+19** |
 
 ### 18795
 
 | Category | Orders | Units |
 |---|---|---|
-| Zero deductions | 8 | +8 |
-| Over-deducted | 1 | −6 |
-| **Net gap** | | **+2** |
+| Net gap | | **0** |
 
 ---
 
 ## Remediation Plan
 
-### Step 1 — Fix the lot-transition bug (code fix, do first)
+### Step 1 — Confirm lot 260017 (+578) validity for 17612 (do first)
 
-Before running any backfill, the root cause must be patched. Otherwise the backfill
-will reproduce the same partial deductions for any order that spans a lot boundary.
-
-**File:** `src/services/inventory/lot_deduction.py`  
-**Change:** When `quantity` exceeds the current lot's remaining balance, deduct what's
-available from the current lot, then recurse/loop into the next active lot for the
-remainder until the full quantity is satisfied.
-
----
-
-### Step 2 — Fix over-deductions (surgical deletes/adjustments)
-
-For orders confirmed as over-deducted, either:
-- Delete the duplicate `inventory_transactions` rows, or
-- Insert offsetting `Adjust Up` transactions
-
-Prioritize the large-magnitude cases first (862254, 862561, 862454).
+Before anything else, determine whether the 578-unit Adjust Up on lot 260017 (4/22)
+represents real inventory on shelf or an overcorrection. Check:
+- Were there orders in April 2026 whose ShipStation `customField1` referenced lot 260017?
+- Does ShipStation show those orders as shipped?
+- If shipped, the +578 inflated the balance; a correcting Adjust Down is needed before
+  running the backfill.
 
 ---
 
-### Step 3 — Run the backfill (post-4/17 scope only)
+### Step 2 — Fix the lot-transition bug in code
+
+Patch `src/services/inventory/lot_deduction.py` before running any backfill. When
+`quantity` exceeds the current lot's remaining balance, deduct what's available, then
+continue into the next active lot for the remainder until the full quantity is satisfied.
+
+---
+
+### Step 3 — Fix remaining over-deductions (surgical adjustments)
+
+For orders confirmed as over-deducted, insert offsetting `Adjust Up` transactions.
+Prioritize large-magnitude cases (862561, 862454).
+
+---
+
+### Step 4 — Run the deduction backfill (post-4/22 scope)
 
 ```bash
 python3 src/backfill_inventory_deductions.py --dry-run
 ```
 
-After verifying dry-run output, run without `--dry-run`. The idempotency guard will
-skip already-correct deductions and only fill actual gaps. Limit to post-4/17 orders
-if the script supports a date filter — otherwise the pre-4/17 history will be skipped
-naturally because those orders have no lot stamps in ShipStation.
-
----
-
-### Step 4 — Investigate 18795 lot balance
-
-Run the lot breakdown query above and determine whether the 6,670-unit gap is real
-inventory or a data artifact before trusting the 18795 balance.
+After verifying dry-run output, run without `--dry-run`. Use `ship_date > '2026-04-22'`
+as the date filter if supported. The idempotency guard will skip orders that already have
+correct deductions.
 
 ---
 
 ### Step 5 — Re-run QA queries to confirm clean state
 
-Target state after remediation:
+Target after remediation:
 
-| SKU | Net Gap Target |
-|---|---|
-| 17612 | 0 |
-| 17904 | 0 |
-| 17914 | 0 |
-| 18675 | 0 |
-| 18795 | 0 |
+| SKU | Net Gap Target | Physical vs DB Target |
+|---|---|---|
+| 17612 | 0 | resolve lot 260017 first |
+| 17904 | 0 | ≤ ±10 |
+| 17914 | 0 | ≤ ±10 |
+| 18675 | 0 | ≤ ±10 |
+| 18795 | 0 | ≤ ±10 |
 
 ---
 
 ## QA Queries (Re-run to Track Progress)
 
-### Net gap per SKU since 4/17 (main scorecard)
+All queries use **`ship_date > '2026-04-22'`** as the post-reconciliation cutoff.
+
+### Net gap per SKU since 4/22 (main scorecard)
 ```sql
 SELECT
     sub.base_sku,
-    SUM(sub.shipped_qty)   AS total_shipped_post_recon,
-    SUM(sub.deducted_qty)  AS total_deducted_post_recon,
-    SUM(sub.shipped_qty) - SUM(sub.deducted_qty) AS net_gap
+    SUM(sub.shipped_qty)                              AS total_shipped_post_recon,
+    SUM(sub.deducted_qty)                             AS total_deducted_post_recon,
+    SUM(sub.shipped_qty) - SUM(sub.deducted_qty)      AS net_gap
 FROM (
     SELECT
         si.base_sku,
-        si.quantity_shipped                    AS shipped_qty,
-        COALESCE(SUM(it.quantity), 0)          AS deducted_qty
+        si.quantity_shipped                           AS shipped_qty,
+        COALESCE(SUM(it.quantity), 0)                 AS deducted_qty
     FROM shipped_items si
     JOIN shipped_orders so ON so.order_number = si.order_number
     LEFT JOIN inventory_transactions it
@@ -329,14 +381,14 @@ FROM (
         AND it.sku                  = si.base_sku
     WHERE si.base_sku = ANY(ARRAY['17612','17904','17914','18675','18795'])
       AND so.shipstation_order_id IS NOT NULL
-      AND so.ship_date > '2026-04-17'
+      AND so.ship_date > '2026-04-22'
     GROUP BY si.order_number, si.base_sku, so.shipstation_order_id, si.quantity_shipped
 ) sub
 GROUP BY sub.base_sku
 ORDER BY sub.base_sku;
 ```
 
-### Orders still missing deductions post-4/17
+### Orders still missing deductions post-4/22
 ```sql
 SELECT
     so.order_number,
@@ -345,7 +397,7 @@ SELECT
     STRING_AGG(si.base_sku || ' x' || si.quantity_shipped::text, ', ' ORDER BY si.base_sku) AS items
 FROM shipped_orders so
 JOIN shipped_items si ON si.order_number = so.order_number
-WHERE so.ship_date > '2026-04-17'
+WHERE so.ship_date > '2026-04-22'
   AND so.shipstation_order_id IS NOT NULL
   AND si.base_sku = ANY(ARRAY['17612','17904','17914','18675','18795'])
   AND NOT EXISTS (
@@ -357,7 +409,7 @@ GROUP BY so.order_number, so.ship_date, so.shipstation_order_id
 ORDER BY so.ship_date DESC;
 ```
 
-### Remaining quantity mismatches post-4/17
+### Quantity mismatches post-4/22
 ```sql
 SELECT
     si.order_number,
@@ -374,13 +426,13 @@ LEFT JOIN inventory_transactions it
     AND it.sku                  = si.base_sku
 WHERE si.base_sku = ANY(ARRAY['17612','17904','17914','18675','18795'])
   AND so.shipstation_order_id IS NOT NULL
-  AND so.ship_date > '2026-04-17'
+  AND so.ship_date > '2026-04-22'
 GROUP BY si.order_number, so.ship_date, si.base_sku, so.shipstation_order_id, si.quantity_shipped
 HAVING si.quantity_shipped <> COALESCE(SUM(it.quantity), 0)
 ORDER BY ABS(si.quantity_shipped - COALESCE(SUM(it.quantity), 0)) DESC;
 ```
 
-### Double deductions post-4/17
+### Double deductions post-4/22
 ```sql
 SELECT
     it.shipstation_order_id,
@@ -392,47 +444,13 @@ FROM inventory_transactions it
 JOIN shipped_orders so ON so.shipstation_order_id = it.shipstation_order_id
 WHERE it.transaction_type = 'Ship'
   AND it.shipstation_order_id IS NOT NULL
-  AND so.ship_date > '2026-04-17'
+  AND so.ship_date > '2026-04-22'
 GROUP BY it.shipstation_order_id, it.sku, so.ship_date
 HAVING COUNT(*) > 1
 ORDER BY so.ship_date DESC;
 ```
 
-### 4/17 EOD database snapshot (populate the Three-Way Comparison table)
-Run this to retrieve what the database recorded as the inventory position at end of day
-4/17/2026. Fill the "4/17 EOD DB" column in the comparison table above with the results.
-
-```sql
--- Inventory balance per SKU as of EOD 2026-04-17
--- (sum of all inventory_transactions up to and including that date)
-SELECT
-    s.sku_code,
-    SUM(
-        CASE
-            WHEN it.transaction_type IN ('Receive', 'Adjust Up', 'Repack') THEN  it.quantity
-            WHEN it.transaction_type IN ('Ship', 'Adjust Down')            THEN -it.quantity
-            ELSE 0
-        END
-    ) AS balance_eod_4_17
-FROM lots l
-JOIN skus s ON s.sku_id = l.sku_id
-LEFT JOIN inventory_transactions it
-    ON  it.lot_id = l.lot_id
-    AND it.date  <= '2026-04-17'
-WHERE s.sku_code = ANY(ARRAY['17612','17904','17914','18675','18795'])
-GROUP BY s.sku_code
-ORDER BY s.sku_code;
-```
-
-> **Note:** This query sums only transactions stored in `inventory_transactions`. If the
-> 4/17 reconciliation was done as a physical adjustment that wasn't entered as database
-> transactions (e.g. via a manual Adjust Up/Down on that date), those entries must exist
-> in `inventory_transactions` for this query to reflect them. Run Query 1 (all transactions
-> on 4/17) to verify what was recorded: only 37 `Ship` entries were found — no adjustment
-> entries. This means the 4/17 EOD figure from this query reflects lot-deduction history
-> only, not a manually entered reconciliation balance.
-
-### Current lot balances (DB Total — for physical comparison)
+### Current lot balances (DB Total vs Active)
 ```sql
 SELECT
     sku_code,
@@ -445,19 +463,40 @@ GROUP BY sku_code
 ORDER BY sku_code;
 ```
 
+### Lot 260017 investigation (17612 blocker)
+```sql
+SELECT
+    it.transaction_type,
+    it.quantity,
+    it.date,
+    it.notes,
+    so.order_number,
+    so.ship_date
+FROM inventory_transactions it
+JOIN lots l ON l.lot_id = it.lot_id
+JOIN skus s ON s.sku_id = l.sku_id
+LEFT JOIN shipped_orders so ON so.shipstation_order_id = it.shipstation_order_id
+WHERE s.sku_code = '17612'
+  AND l.lot_number = '260017'
+ORDER BY it.date, it.transaction_type;
+```
+
 ---
 
 ## Progress Log
 
 | Date | Action | Result |
 |---|---|---|
-| 2026-06-03 | Initial QA audit run | Gaps identified — see Status Summary above |
-| 2026-06-03 | Confirmed 4/17 EOD as baseline | Pre-4/17 history disregarded |
-| 2026-06-03 | Physical inventory count conducted | See Physical Count Detail above |
-| 2026-06-03 | Physical vs DB Total comparison | 17612 ✅ −3 · 17904 ✅ −3 · 17914 ✅ +8 · 18675 ⚠️ −91 · 18795 ✅ −7 |
-| — | Populate 4/17 EOD DB column | Run 4/17 EOD snapshot query above |
-| — | Investigate 17612 counting discrepancy | Lot math sums to 1,673 vs stated 1,681 — verify lot 260082 count |
-| — | Fix lot-transition bug in code | Pending |
-| — | Fix over-deductions (surgical) | Pending |
-| — | Run backfill (post-4/17) | Pending |
+| 2026-06-03 | Initial QA audit run | Gaps identified — see Status Summary |
+| 2026-06-03 | Discovered reconciliation was entered 4/21–22, not 4/17 | Baseline corrected to EOD 4/22 |
+| 2026-06-03 | Pulled all 4/21–22 adjustment transactions | Fully documented — see Reconciliation Detail |
+| 2026-06-03 | Confirmed no double deductions post-4/22 | ✅ Clean |
+| 2026-06-03 | 18795 post-4/22 gap | ✅ 0 — clean |
+| 2026-06-03 | Physical inventory count conducted | See Physical Count Detail |
+| 2026-06-03 | Physical vs DB Corrected comparison | 17612 ⚠️ +651 · 17904 +42 · 17914 +27 · 18675 ✅ +10 · 18795 ✅ −7 |
+| — | Confirm lot 260017 +578 validity | ⏳ Pending — blocker for 17612 backfill |
+| — | Fix lot-transition bug in `lot_deduction.py` | Pending |
+| — | Fix over-deductions (surgical Adjust Up) | Pending |
+| — | Run deduction backfill (post-4/22) | Pending |
 | — | Re-run QA scorecard | Pending |
+| — | Investigate 17612 lot 260082 counting discrepancy | 8-unit gap (lot math 1,673 vs stated 1,681) |

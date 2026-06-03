@@ -1,0 +1,874 @@
+[
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862493"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-21",
+    "notes": "862452"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862451"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 10,
+    "date": "2026-04-21",
+    "notes": "862454"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-21",
+    "notes": "862456"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862457"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862458"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862459"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862460"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-21",
+    "notes": "862489"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862463"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862464"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862465"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862466"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-21",
+    "notes": "862467"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "date": "2026-04-21",
+    "notes": "862487"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Adjust Up",
+    "quantity": 253,
+    "date": "2026-04-21",
+    "notes": "Lot balance correction — reconciling duplicate ship entries Apr 16-17 and unlinked adjustments for lot 260047"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862483"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862468"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862469"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862470"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "date": "2026-04-21",
+    "notes": "862471"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "date": "2026-04-21",
+    "notes": "862472"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862473"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862474"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "date": "2026-04-21",
+    "notes": "862482"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-21",
+    "notes": "862481"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "date": "2026-04-21",
+    "notes": "862480"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "date": "2026-04-21",
+    "notes": "862481"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "date": "2026-04-21",
+    "notes": "862482"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-21",
+    "notes": "862470"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-21",
+    "notes": "862459"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-21",
+    "notes": "862457"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 30,
+    "date": "2026-04-21",
+    "notes": "862454"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862489"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-21",
+    "notes": "862451"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862491"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862492"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Adjust Up",
+    "quantity": 225,
+    "date": "2026-04-22",
+    "notes": ""
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862495"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862496"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862501"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862502"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862504"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862505"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862506"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862507"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862508"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "date": "2026-04-22",
+    "notes": "862510"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "date": "2026-04-22",
+    "notes": "862512"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862515"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862516"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862517"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862525"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862527"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-22",
+    "notes": "862528"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862529"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862531"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-22",
+    "notes": "862496"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862497"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-22",
+    "notes": "862502"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-22",
+    "notes": "862505"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "date": "2026-04-22",
+    "notes": "862510"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "date": "2026-04-22",
+    "notes": "862512"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862514"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-22",
+    "notes": "862515"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-22",
+    "notes": "862517"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260047",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862530"
+  },
+  {
+    "sku_code": "17612",
+    "lot_number": "260017",
+    "transaction_type": "Adjust Up",
+    "quantity": 578,
+    "date": "2026-04-22",
+    "notes": "Offsets resync split-label deductions; restores lot to 0"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "250240",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862487"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "250240",
+    "transaction_type": "Adjust Up",
+    "quantity": 86,
+    "date": "2026-04-21",
+    "notes": "Baseline receive backfill — lot 240231"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "250240",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862479"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "250240",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862532"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "250240",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862497"
+  },
+  {
+    "sku_code": "17904",
+    "lot_number": "250240",
+    "transaction_type": "Adjust Up",
+    "quantity": 20,
+    "date": "2026-04-22",
+    "notes": "Offsets pre-Apr-22 resync deductions"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862489"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862490"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862488"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862484"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "date": "2026-04-21",
+    "notes": "862475"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-21",
+    "notes": "862482"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862461"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Adjust Down",
+    "quantity": 766,
+    "date": "2026-04-21",
+    "notes": "Lot balance correction"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862503"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862515"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862511"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862518"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862507"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862497"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862498"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862500"
+  },
+  {
+    "sku_code": "17914",
+    "lot_number": "250297",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "862514"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "260052",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862483"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "240231",
+    "transaction_type": "Adjust Up",
+    "quantity": 414,
+    "date": "2026-04-21",
+    "notes": "Reconcile lot inventory"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "240231",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-21",
+    "notes": "862489"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "260052",
+    "transaction_type": "Adjust Up",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "Offsets pre-Apr-22 resync deductions"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "260052",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862513"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "240231",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862530"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "240231",
+    "transaction_type": "Adjust Up",
+    "quantity": 32,
+    "date": "2026-04-22",
+    "notes": "Offsets pre-Apr-22 resync deductions"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "260052",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-22",
+    "notes": "862513"
+  },
+  {
+    "sku_code": "18675",
+    "lot_number": "260052",
+    "transaction_type": "Adjust Down",
+    "quantity": 2,
+    "date": "2026-04-22",
+    "notes": "Physical count to check lot tracking is working properly"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11001",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "date": "2026-04-21",
+    "notes": "862453"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11001",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862499"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11001",
+    "transaction_type": "Adjust Down",
+    "quantity": 330,
+    "date": "2026-04-22",
+    "notes": "Reconciliation adjustment based off of 4/17/2026 physical count of 151"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11005",
+    "transaction_type": "Adjust Down",
+    "quantity": 3,
+    "date": "2026-04-22",
+    "notes": "These were shipped 7/9/2025 and 7/10/2025 for orders 669075, 669165, 669215"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11001",
+    "transaction_type": "Adjust Up",
+    "quantity": 21,
+    "date": "2026-04-22",
+    "notes": ""
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11001",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862506"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11001",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "date": "2026-04-22",
+    "notes": "862531"
+  },
+  {
+    "sku_code": "18795",
+    "lot_number": "11001",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "date": "2026-04-22",
+    "notes": "862509"
+  }
+]
