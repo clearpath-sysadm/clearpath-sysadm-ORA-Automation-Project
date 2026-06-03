@@ -12,7 +12,7 @@
 |-----|--------------------------|------------------------|----------|-----|--------|
 | 17612 | 2,011 | **2,014** | 2,014 | **0** | ✅ RECONCILED (June 3, 2026) |
 | 17904 | 59 | 59 | 58 | **+1** | CR over SS — investigation pending |
-| 17914 | 118 | **106** | 87 | **+19** | CR over SS — STANDARD ghosts fixed, residual pending |
+| 17914 | 118 | **87** | 87 | **0** | ✅ RECONCILED (June 3, 2026) |
 | 18675 | 127 | 127 | 113 | **+14** | CR over SS — partially addressed |
 | 18795 | 23 | 23 | 23 | **0** | ✅ RECONCILED (June 3, 2026) |
 
@@ -87,28 +87,41 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 
 ---
 
-### SKU 17914 — ⚠️ STANDARD ghosts fixed (June 3, 2026) — +19 remains
+### SKU 17914 — ✅ FULLY RECONCILED (June 3, 2026)
 
-**9 STANDARD ghost rows deleted June 3, 2026 — 12 units removed. CR: 118 → 106.**
+All fixes applied June 3, 2026. CR: 118 → **87** = SS 87. **Gap = 0.**
 
-| Date | CR−SS Before | Removed | CR−SS After | Notes |
-|------|-------------|---------|-------------|-------|
-| May 1 | +1 | 0 | **+1** | No ghost found — root cause unknown |
-| May 7 | +2 | −2 | 0 | ✅ Fixed (862842, 862843) |
-| May 8 | +13 | −1 | **+12** | ✅ 862915 fixed; 862918 REVIEW pending SS verification |
-| May 14 | +3 | −3 | 0 | ✅ Fixed (863055, 863057) |
-| May 15 | +1 | −1 | 0 | ✅ Fixed (863099) |
-| May 26 | +4 | −3 | **+1** | ✅ 863266 fixed; 1 unit unexplained |
-| May 27 | +5 | 0 | **+5** | No ghost found — root cause unknown |
-| May 28 | +1 | −1 | 0 | ✅ Fixed (863336) |
-| May 29 | +1 | −1 | 0 | ✅ Fixed (863359) |
-| **TOTAL** | **+31** | **−12** | **+19** | |
+Fixes applied (in order):
+1. **9 STANDARD ghost deletes** — 862842, 862843, 862915, 863055, 863057, 863099, 863266, 863336, 863359 (−12 units, CR 118→106)
+2. **862918 REVIEW ghost** — delete lot-stamped `17914 - 250297` (−12 units, CR 106→94); SS ID 284675320 confirmed 15 units
+3. **863334 malformed row** — delete `17914-250297` May 27 (−5 units, CR 94→89)
+4. **833686 BigCommerce bare row** — delete bare `17914` May 26 (−1 unit, CR 89→88)
+5. **862718 phantom May 1** — delete lot-stamped `17914 - 250297` (−1 unit, CR 88→87)
 
-**Remaining +19 — next actions:**
-- May 8 +12: Order 862918 REVIEW — delete lot-stamped `17914 - 250297` (12 units), keep bare `17914` (15 units). Requires SS verification of SS order ID 284675320 to confirm 15 units.
-- May 27 +5: No ghost rows found — different root cause, requires order-level investigation
-- May 1 +1: No ghost rows found — different root cause unknown
-- May 26 +1: One extra unit beyond identified ghost rows
+#### Date-by-date breakdown (final)
+
+| Date | DB | SS | Gap | Status |
+|------|----|----|-----|--------|
+| May 4 | 1 | 1 | 0 | ✅ |
+| May 5 | 3 | 3 | 0 | ✅ |
+| May 7 | 11 | 11 | 0 | ✅ |
+| May 8 | 20 | 20 | 0 | ✅ Ghost 862918 lot row deleted |
+| May 11 | 2 | 2 | 0 | ✅ |
+| May 12 | 5 | 5 | 0 | ✅ |
+| May 13 | 2 | 2 | 0 | ✅ |
+| May 14 | 4 | 4 | 0 | ✅ |
+| May 15 | 4 | 4 | 0 | ✅ |
+| May 18 | 2 | 2 | 0 | ✅ |
+| May 19 | 6 | 6 | 0 | ✅ |
+| May 20 | 5 | 5 | 0 | ✅ |
+| May 22 | 4 | 4 | 0 | ✅ |
+| May 26 | 6 | 6 | 0 | ✅ 833686 bare row deleted |
+| May 27 | 4 | 4 | 0 | ✅ 863334 malformed row deleted |
+| May 28 | 6 | 6 | 0 | ✅ |
+| May 29 | 2 | 2 | 0 | ✅ |
+| **TOTAL** | **87** | **87** | **0** | ✅ **RECONCILED** |
+
+Remaining bare rows (862918=15, 862965=2, 863162=1) are real single-row shipments with no lot-stamped counterpart — SS counts them identically, no action needed.
 
 ---
 
@@ -187,9 +200,8 @@ May 1 shows CR=2, SS=1. No ghost rows identified for 17904. Requires order-level
 | ✅ Complete | **17612** | May 15 ghost fix (863064 STANDARD + 863109 REVIEW) — 3 units removed June 3, 2026 |
 | ✅ Complete | **17612** | Delete STANDARD ghost 863350 on May 28 (1 bare unit) — applied June 3, 2026 |
 | ✅ Complete | **17612** | **FULLY RECONCILED** — 2,014 = SS 2,014. Date-level noise (May 5/8/11 −11, May 12/27 +11) cancels exactly. |
-| ✅ Complete | **17914** | 9 STANDARD ghost deletes (862842, 862843, 862915, 863055, 863057, 863099, 863266, 863336, 863359) — 12 units removed June 3, 2026 |
-| 🔜 Next | **17914** | Verify order 862918 in SS (SS ID 284675320) — confirm 15 units, then delete lot-stamped row (−12 units) |
-| 🔍 Investigate | **17914** | May 27 +5, May 1 +1, May 26 +1 — no ghost rows found, root cause unknown |
+| ✅ Complete | **17914** | 9 STANDARD ghost deletes + 862918 REVIEW ghost + 863334 malformed + 833686 BigCommerce + 862718 phantom — 31 units removed June 3, 2026 |
+| ✅ Complete | **17914** | **FULLY RECONCILED** — 87 = SS 87. Gap = 0. |
 | 🔍 Investigate | **18675** | May 29 +12: double-write on lot-stamped row `18675 - 260052` |
 | 🔍 Investigate | **18675** | Ghost deletes 863246 + 863337 (2 units) — apply after May 29 is resolved |
 | 🔍 Investigate | **17904** | May 1 +1: identify the extra order in DB not in SS |
