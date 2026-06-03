@@ -1,0 +1,200 @@
+[
+  {
+    "ship_date": "2026-05-01",
+    "base_sku": "17612",
+    "db_units": "78",
+    "order_count": "22",
+    "bare_rows": "2",
+    "lot_rows": "21",
+    "distinct_sku_lots": "17612, 17612 - 260047, 17612-260082"
+  },
+  {
+    "ship_date": "2026-05-04",
+    "base_sku": "17612",
+    "db_units": "62",
+    "order_count": "16",
+    "bare_rows": "2",
+    "lot_rows": "14",
+    "distinct_sku_lots": "17612, 17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-05",
+    "base_sku": "17612",
+    "db_units": "142",
+    "order_count": "44",
+    "bare_rows": "1",
+    "lot_rows": "43",
+    "distinct_sku_lots": "17612, 17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-06",
+    "base_sku": "17612",
+    "db_units": "40",
+    "order_count": "1",
+    "bare_rows": "0",
+    "lot_rows": "1",
+    "distinct_sku_lots": "17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-07",
+    "base_sku": "17612",
+    "db_units": "274",
+    "order_count": "64",
+    "bare_rows": "2",
+    "lot_rows": "62",
+    "distinct_sku_lots": "17612, 17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-08",
+    "base_sku": "17612",
+    "db_units": "57",
+    "order_count": "15",
+    "bare_rows": "1",
+    "lot_rows": "15",
+    "distinct_sku_lots": "17612, 17612 - 260047"
+  },
+  {
+    "ship_date": "2026-05-11",
+    "base_sku": "17612",
+    "db_units": "44",
+    "order_count": "10",
+    "bare_rows": "0",
+    "lot_rows": "10",
+    "distinct_sku_lots": "17612 - 260047, 17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-12",
+    "base_sku": "17612",
+    "db_units": "176",
+    "order_count": "27",
+    "bare_rows": "3",
+    "lot_rows": "24",
+    "distinct_sku_lots": "17612, 17612 - 260047, 17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-13",
+    "base_sku": "17612",
+    "db_units": "118",
+    "order_count": "20",
+    "bare_rows": "1",
+    "lot_rows": "19",
+    "distinct_sku_lots": "17612, 17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-14",
+    "base_sku": "17612",
+    "db_units": "86",
+    "order_count": "22",
+    "bare_rows": "0",
+    "lot_rows": "22",
+    "distinct_sku_lots": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-15",
+    "base_sku": "17612",
+    "db_units": "149",
+    "order_count": "46",
+    "bare_rows": "2",
+    "lot_rows": "46",
+    "distinct_sku_lots": "17612, 17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-18",
+    "base_sku": "17612",
+    "db_units": "76",
+    "order_count": "18",
+    "bare_rows": "2",
+    "lot_rows": "16",
+    "distinct_sku_lots": "17612, 17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-19",
+    "base_sku": "17612",
+    "db_units": "62",
+    "order_count": "20",
+    "bare_rows": "0",
+    "lot_rows": "20",
+    "distinct_sku_lots": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-20",
+    "base_sku": "17612",
+    "db_units": "47",
+    "order_count": "16",
+    "bare_rows": "0",
+    "lot_rows": "16",
+    "distinct_sku_lots": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-21",
+    "base_sku": "17612",
+    "db_units": "104",
+    "order_count": "20",
+    "bare_rows": "0",
+    "lot_rows": "20",
+    "distinct_sku_lots": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-22",
+    "base_sku": "17612",
+    "db_units": "59",
+    "order_count": "13",
+    "bare_rows": "1",
+    "lot_rows": "12",
+    "distinct_sku_lots": "17612, 17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-26",
+    "base_sku": "17612",
+    "db_units": "163",
+    "order_count": "41",
+    "bare_rows": "4",
+    "lot_rows": "39",
+    "distinct_sku_lots": "17612, 17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-27",
+    "base_sku": "17612",
+    "db_units": "148",
+    "order_count": "29",
+    "bare_rows": "2",
+    "lot_rows": "27",
+    "distinct_sku_lots": "17612, 17612 - 260047, 17612 - 260082, 17612-260082"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17612",
+    "db_units": "86",
+    "order_count": "20",
+    "bare_rows": "1",
+    "lot_rows": "20",
+    "distinct_sku_lots": "17612, 17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-28",
+    "base_sku": "17613",
+    "db_units": "13",
+    "order_count": "8",
+    "bare_rows": "8",
+    "lot_rows": "0",
+    "distinct_sku_lots": "17613"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17612",
+    "db_units": "40",
+    "order_count": "13",
+    "bare_rows": "0",
+    "lot_rows": "13",
+    "distinct_sku_lots": "17612 - 260082"
+  },
+  {
+    "ship_date": "2026-05-29",
+    "base_sku": "17613",
+    "db_units": "2",
+    "order_count": "2",
+    "bare_rows": "2",
+    "lot_rows": "0",
+    "distinct_sku_lots": "17613"
+  }
+]
