@@ -122,29 +122,43 @@ for the **same `order_number` + `base_sku`**. This causes double-counting in the
 
 ---
 
-### SKU 17612 — ❌ Ghost fix moves in wrong direction
+### SKU 17612 — 🔍 Investigation in progress
 
-The overall gap is already −3 (CR under SS). Removing ghost rows reduces CR further.
+The overall gap is −3 (CR under SS). Multiple opposing forces are at play — the ghost row fix alone would make the balance worse. Root causes must be addressed by type.
 
-| Date | CR−SS Before | Ghost Action | CR−SS After |
-|------|-------------|--------------|-------------|
-| May 1 | 0 (match) | −5 (862728 REVIEW) | **−5** ← NEW problem |
-| May 5 | −1 | 0 | −1 |
-| May 8 | −4 | −1 (862917) | **−5** ← gets worse |
-| May 11 | −6 | 0 | −6 |
-| May 12 | +6 | 0 | +6 |
-| May 15 | +3 | −3 (863064+863109) | 0 ✓ |
-| May 26 | +8 | −2 (863264+863265) | +6 |
-| May 27 | +5 | 0 | +5 |
-| May 28 | −12 | −1 (863350) | **−13** ← gets worse |
-| May 29 | −2 | 0 | −2 |
-| **TOTAL** | **−3** | **−12** | **−15** |
+#### Date-by-date breakdown
 
-**Root causes for 17612 under-count:**
-- May 28 −12: `17613 → 17612` promo SKU remapping not applied for 13 units in the resync
-- May 11 −6, May 8 −4, May 5 −1, May 29 −2: Under-counted dates not explained by ghost rows
+| Date | CR−SS | Root Cause | Status |
+|------|-------|------------|--------|
+| May 5 | −1 | Unknown | 🔍 Pending |
+| May 8 | −4 | Unknown — ghost fix for 862917 would worsen | 🔍 Pending |
+| May 11 | −6 | Unknown | 🔍 Pending |
+| May 12 | +6 | 3 bare rows (14 units, orders 862946/862947/862954) — source unclear | 🔍 Pending |
+| May 15 | +3 | Ghost rows: 863064 (STANDARD, 2 units) + 863109 (REVIEW, 1 unit) | ✅ Identified |
+| May 26 | +8 | Order 833686 BigCommerce migration noise (6 units) + ghost REVIEW 863264+863265 (2 units) | ⏳ Awaiting Oracare |
+| May 27 | +5 | Malformed `17612-260082` sku_lot (missing spaces) — order-level detail pending | 🔍 Pending |
+| May 28 | −12 | 13 units of `base_sku=17613` not remapped to 17612 (8 orders, all bare) | ✅ Identified — fix ready |
+| May 29 | −2 | 2 units of `base_sku=17613` not remapped to 17612 (2 orders, all bare) | ✅ Identified — fix ready |
 
-The 17612 REVIEW cases (863109, 863264, 863265, 862728) keep bare rows with no lot number — these should be verified against SS before any action.
+#### Under-count fixes (17613 → 17612 remap)
+
+**May 28** — DB has 13 units still stored as `base_sku = 17613` (bare sku_lot `17613`, 8 orders). SS pivot counts these as 17612. Remapping + deleting the 1 ghost row (862917) brings DB from 86 → 98 to match SS.
+
+**May 29** — DB has 2 units still stored as `base_sku = 17613` (2 orders). Remapping brings DB from 40 → 42, matching SS exactly.
+
+These 17613 rows are orders processed just before the end-of-month promo SKU processing change was deployed. The new resync correctly maps 17613→17612 going forward but the May 28/29 orders were written before that fix landed.
+
+#### Over-count investigation
+
+**May 26 — order 833686:** Order number in the `833xxx` range, all other May 26 orders are `863xxx`. Identified as a BigCommerce migration import ("imported as Shipped"). Contains 6 bare `17612` units. If SS has no corresponding shipment for this order, these 6 units are pure noise. **Pending Oracare team confirmation.**
+
+**May 27 — malformed sku_lot:** `17612-260082` (no spaces around dash) found in distinct sku_lots — indicates some orders were written by a different code path during the end-of-month transition. Does not affect base_sku count but indicates a data quality issue. Order-level detail needed to find the +5 source.
+
+**May 12 +6:** 3 bare-only rows (no lot-stamped pair) with 14 total bare units. These are NOT ghost rows (no lot-stamped counterpart). Source of the +6 over-count is not yet explained — may be orders SS does not show as 17612.
+
+#### What NOT to do yet
+
+Do not apply ghost deletes for 17612 until the under-count causes (May 5/8/11) are understood. The ghost fixes reduce CR further and would push the net gap from −3 to −15 without the remap fixes in place first.
 
 ---
 
@@ -159,13 +173,17 @@ May 1 shows CR=2, SS=1. No ghost rows identified for 17904. Requires order-level
 | Status | SKU | Action |
 |--------|-----|--------|
 | ✅ Complete | **18795** | Ghost deletes + bare row lot-stamping — fully reconciled |
-| 🔜 Next | **17914** | Apply 9 STANDARD ghost deletes (862842, 862843, 862915, 863055, 863057, 863099, 863266, 863336, 863359) — removes 13 units, gap −13 |
-| 🔜 Next | **17914** | Apply REVIEW order 862918 after SS verification (removes 12 more units, gap −12) |
-| 🔍 Investigate | **17914** | May 27 +5, May 1 +1 — no ghost rows, unknown cause |
+| 🔜 Next | **17914** | Apply 9 STANDARD ghost deletes (862842, 862843, 862915, 863055, 863057, 863099, 863266, 863336, 863359) — removes 13 units |
+| 🔜 Next | **17914** | Verify order 862918 in SS, then apply REVIEW delete (removes 12 more units) |
+| 🔍 Investigate | **17914** | May 27 +5, May 1 +1 — no ghost rows found, root cause unknown |
+| 🔜 Next | **17612** | Remap May 28 `17613` rows → `17612` (13 units, 8 orders) + delete bare ghost 862917 → net +12 to CR |
+| 🔜 Next | **17612** | Remap May 29 `17613` rows → `17612` (2 units, 2 orders) → net +2 to CR |
+| ⏳ Awaiting | **17612** | May 26 order 833686 (6 bare units) — BigCommerce migration noise, awaiting Oracare confirmation |
+| 🔍 Investigate | **17612** | May 27 +5: order-level detail needed; `17612-260082` malformed sku_lot identified |
+| 🔍 Investigate | **17612** | May 5 −1, May 8 −4, May 11 −6, May 12 +6 — root causes unknown |
+| ⚠️ Hold | **17612** | Ghost deletes (May 15, May 26) — apply only after remap fixes land and balance is reassessed |
 | 🔍 Investigate | **18675** | May 29 +12: double-write on lot-stamped row `18675 - 260052` |
-| 🔍 Investigate | **18675** | Apply 2 STANDARD ghost deletes (863246, 863337) after May 29 is resolved |
-| 🔍 Investigate | **17612** | May 28 −12: rerun promo SKU remapping resync for May 28 before touching ghost rows |
-| ⚠️ Hold | **17612** | Ghost deletes worsen overall balance — must fix remapping gap first |
+| 🔍 Investigate | **18675** | Ghost deletes 863246 + 863337 (2 units) — apply after May 29 is resolved |
 | 🔍 Investigate | **17904** | May 1 +1: identify the extra order in DB not in SS |
 
 ---
