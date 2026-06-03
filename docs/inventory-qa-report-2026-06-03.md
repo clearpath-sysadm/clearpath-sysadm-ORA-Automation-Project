@@ -20,6 +20,83 @@
 
 ---
 
+## Inventory Comparison: Database vs. Physical Count
+
+Physical count conducted **2026-06-03**. Database figures are production values as of the
+same date. The 4/17 EOD column should be populated by running the query in the
+[QA Queries](#qa-queries-re-run-to-track-progress) section below.
+
+### Three-Way Comparison
+
+| SKU | 4/17 EOD DB *(run query)* | DB Active (6/3) | DB Total (6/3) | Physical (6/3) | Physical vs DB Total |
+|---|---|---|---|---|---|
+| 17612 | — | 554 | 1,684 | **1,681** | −3 ✅ |
+| 17904 | — | 82 | 82 | **79** | −3 ✅ |
+| 17914 | — | 544 | 544 | **552** | +8 ✅ |
+| 18675 | — | 225 | 516 | **425** | **−91** ⚠️ |
+| 18795 | — | 99 | 6,769 | **6,762** | −7 ✅ |
+
+> **DB Active** = balance in lots currently marked `active` only.  
+> **DB Total** = balance across all lots regardless of status (active, depleted, inactive).  
+> Physical count should be compared against **DB Total**, not DB Active.
+
+**Key takeaway:** For 17612, 17904, 17914, and 18795 the database total balance is within
+single digits of physical — the ledger is accurate in aggregate. The primary issue for those
+SKUs is lot status labeling (active balance is too low because units are stranded in
+depleted/inactive lots). **18675 is the exception** — DB Total overstates physical by 91
+units, meaning the ledger is genuinely wrong for that SKU.
+
+---
+
+### Physical Count Detail (2026-06-03)
+
+#### 17612 — Total: 1,681 units ⚠️ *note: lot-level math sums to 1,673 (+8 counting discrepancy — verify)*
+
+| Lot | Pallets | Qty/Pallet | Partial | Lot Total |
+|---|---|---|---|---|
+| 260122 | 24 | 48 | 0 | 1,152 |
+| 260082 | 10 | 48 | 35 | 521 |
+| **Total** | | | | **1,681** |
+
+#### 17904 — Total: 79 units
+
+| Lot | Pallets | Qty/Pallet | Partial | Lot Total |
+|---|---|---|---|---|
+| 260125 | 0 | 81 | 79 | 79 |
+| **Total** | | | | **79** |
+
+#### 17914 — Total: 552 units
+
+| Lot | Pallets | Qty/Pallet | Partial | Lot Total |
+|---|---|---|---|---|
+| 250297 | 6 | 80 | 72 | 552 |
+| **Total** | | | | **552** |
+
+#### 18675 — Total: 425 units
+
+| Lot | Pallets | Qty/Pallet | Partial | Lot Total |
+|---|---|---|---|---|
+| 240231 | 4 | 48 | 10 | 202 |
+| 260052 | 4 | 48 | 31 | 223 |
+| **Total** | | | | **425** |
+
+#### 18795 — Total: 6,762 units
+
+| Lot | Boxes | Pallets | Quantity |
+|---|---|---|---|
+| 11001 | 92 | 0 | 92 |
+| 11002 | 47 | 3 | 713 |
+| 11003 | 130 | 4 | 1,018 |
+| 1104 | 146 | 4 | 1,034 |
+| 11005 | 109 | 2 | 553 |
+| 11006 | 108 | 4 | 996 |
+| 11007 | 100 | 3 | 766 |
+| 11008 | 108 | 4 | 996 |
+| 11009 | 150 | 2 | 594 |
+| **Total** | | **26** | **6,762** |
+
+---
+
 ## Current Lot Balances (as of 2026-06-03)
 
 | SKU | Active Balance | Total Balance | Active Lot Count |
@@ -321,6 +398,53 @@ HAVING COUNT(*) > 1
 ORDER BY so.ship_date DESC;
 ```
 
+### 4/17 EOD database snapshot (populate the Three-Way Comparison table)
+Run this to retrieve what the database recorded as the inventory position at end of day
+4/17/2026. Fill the "4/17 EOD DB" column in the comparison table above with the results.
+
+```sql
+-- Inventory balance per SKU as of EOD 2026-04-17
+-- (sum of all inventory_transactions up to and including that date)
+SELECT
+    s.sku_code,
+    SUM(
+        CASE
+            WHEN it.transaction_type IN ('Receive', 'Adjust Up', 'Repack') THEN  it.quantity
+            WHEN it.transaction_type IN ('Ship', 'Adjust Down')            THEN -it.quantity
+            ELSE 0
+        END
+    ) AS balance_eod_4_17
+FROM lots l
+JOIN skus s ON s.sku_id = l.sku_id
+LEFT JOIN inventory_transactions it
+    ON  it.lot_id = l.lot_id
+    AND it.date  <= '2026-04-17'
+WHERE s.sku_code = ANY(ARRAY['17612','17904','17914','18675','18795'])
+GROUP BY s.sku_code
+ORDER BY s.sku_code;
+```
+
+> **Note:** This query sums only transactions stored in `inventory_transactions`. If the
+> 4/17 reconciliation was done as a physical adjustment that wasn't entered as database
+> transactions (e.g. via a manual Adjust Up/Down on that date), those entries must exist
+> in `inventory_transactions` for this query to reflect them. Run Query 1 (all transactions
+> on 4/17) to verify what was recorded: only 37 `Ship` entries were found — no adjustment
+> entries. This means the 4/17 EOD figure from this query reflects lot-deduction history
+> only, not a manually entered reconciliation balance.
+
+### Current lot balances (DB Total — for physical comparison)
+```sql
+SELECT
+    sku_code,
+    SUM(CASE WHEN status = 'active'   THEN balance ELSE 0 END) AS active_balance,
+    SUM(balance)                                               AS total_balance,
+    COUNT(CASE WHEN status = 'active' THEN 1 END)             AS active_lot_count
+FROM lot_balances
+WHERE sku_code = ANY(ARRAY['17612','17904','17914','18675','18795'])
+GROUP BY sku_code
+ORDER BY sku_code;
+```
+
 ---
 
 ## Progress Log
@@ -329,7 +453,11 @@ ORDER BY so.ship_date DESC;
 |---|---|---|
 | 2026-06-03 | Initial QA audit run | Gaps identified — see Status Summary above |
 | 2026-06-03 | Confirmed 4/17 EOD as baseline | Pre-4/17 history disregarded |
-| — | Fix lot-transition bug | Pending |
-| — | Fix over-deductions | Pending |
+| 2026-06-03 | Physical inventory count conducted | See Physical Count Detail above |
+| 2026-06-03 | Physical vs DB Total comparison | 17612 ✅ −3 · 17904 ✅ −3 · 17914 ✅ +8 · 18675 ⚠️ −91 · 18795 ✅ −7 |
+| — | Populate 4/17 EOD DB column | Run 4/17 EOD snapshot query above |
+| — | Investigate 17612 counting discrepancy | Lot math sums to 1,673 vs stated 1,681 — verify lot 260082 count |
+| — | Fix lot-transition bug in code | Pending |
+| — | Fix over-deductions (surgical) | Pending |
 | — | Run backfill (post-4/17) | Pending |
 | — | Re-run QA scorecard | Pending |
