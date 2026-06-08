@@ -1,0 +1,482 @@
+[
+  {
+    "snapshot_date": "2026-06-05T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1453,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "148"
+  },
+  {
+    "snapshot_date": "2026-06-03T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1684,
+    "source": "eod_report",
+    "transactions_received": "22",
+    "transactions_shipped": "184"
+  },
+  {
+    "snapshot_date": "2026-06-02T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1835,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "116"
+  },
+  {
+    "snapshot_date": "2026-05-29T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2085,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "21"
+  },
+  {
+    "snapshot_date": "2026-05-27T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1762,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "149"
+  },
+  {
+    "snapshot_date": "2026-05-26T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1762,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "155"
+  },
+  {
+    "snapshot_date": "2026-05-22T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1917,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "59"
+  },
+  {
+    "snapshot_date": "2026-05-19T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2127,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "62"
+  },
+  {
+    "snapshot_date": "2026-05-15T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1689,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "146"
+  },
+  {
+    "snapshot_date": "2026-05-12T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2039,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "170"
+  },
+  {
+    "snapshot_date": "2026-05-08T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2259,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "61"
+  },
+  {
+    "snapshot_date": "2026-05-05T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2231,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "143"
+  },
+  {
+    "snapshot_date": "2026-05-01T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1859,
+    "source": "eod_report",
+    "transactions_received": "576",
+    "transactions_shipped": "78"
+  },
+  {
+    "snapshot_date": "2026-04-28T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2125,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "86"
+  },
+  {
+    "snapshot_date": "2026-04-24T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2267,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "180"
+  },
+  {
+    "snapshot_date": "2026-04-21T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2475,
+    "source": "eod_report",
+    "transactions_received": "253",
+    "transactions_shipped": "131"
+  },
+  {
+    "snapshot_date": "2026-04-20T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1802,
+    "source": "eod_report",
+    "transactions_received": "0",
+    "transactions_shipped": "33"
+  },
+  {
+    "snapshot_date": "2026-04-19T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 4263,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-04-18T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 4263,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-04-17T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 4263,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "53"
+  },
+  {
+    "snapshot_date": "2026-04-16T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 4264,
+    "source": "backfill",
+    "transactions_received": "576",
+    "transactions_shipped": "94"
+  },
+  {
+    "snapshot_date": "2026-04-15T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 3691,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "174"
+  },
+  {
+    "snapshot_date": "2026-04-14T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 3671,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "69"
+  },
+  {
+    "snapshot_date": "2026-04-13T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 3676,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "77"
+  },
+  {
+    "snapshot_date": "2026-04-12T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 3681,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-04-11T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 3681,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-04-10T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 3681,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "69"
+  },
+  {
+    "snapshot_date": "2026-04-09T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1977,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "112"
+  },
+  {
+    "snapshot_date": "2026-04-08T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2024,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "88"
+  },
+  {
+    "snapshot_date": "2026-04-07T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2069,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "86"
+  },
+  {
+    "snapshot_date": "2026-04-06T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2123,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "59"
+  },
+  {
+    "snapshot_date": "2026-04-05T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2166,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-04-04T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2166,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-04-03T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2166,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "56"
+  },
+  {
+    "snapshot_date": "2026-04-02T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2212,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "189"
+  },
+  {
+    "snapshot_date": "2026-04-01T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2326,
+    "source": "backfill",
+    "transactions_received": "0",
+    "transactions_shipped": "18"
+  },
+  {
+    "snapshot_date": "2026-03-31T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2314,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-30T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2391,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-29T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2434,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-28T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2434,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-27T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2434,
+    "source": "backfill",
+    "transactions_received": "576",
+    "transactions_shipped": "0"
+  },
+  {
+    "snapshot_date": "2026-03-26T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1894,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-25T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2003,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-24T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 2176,
+    "source": "backfill",
+    "transactions_received": "580",
+    "transactions_shipped": "0"
+  },
+  {
+    "snapshot_date": "2026-03-23T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1679,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-22T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1738,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-21T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1738,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-20T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1738,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-19T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1774,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-18T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1838,
+    "source": "backfill",
+    "transactions_received": "576",
+    "transactions_shipped": "0"
+  },
+  {
+    "snapshot_date": "2026-03-17T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1482,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-16T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1535,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-15T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1687,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-14T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1687,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-13T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1687,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-12T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1728,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-11T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1751,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-10T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1840,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-09T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1892,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  },
+  {
+    "snapshot_date": "2026-03-08T00:00:00.000Z",
+    "sku": "17612",
+    "snapshot_eod": 1953,
+    "source": "backfill",
+    "transactions_received": null,
+    "transactions_shipped": null
+  }
+]

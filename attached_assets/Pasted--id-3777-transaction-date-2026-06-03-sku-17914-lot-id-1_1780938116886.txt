@@ -1,0 +1,112 @@
+[
+  {
+    "id": 3777,
+    "transaction_date": "2026-06-03",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 8,
+    "transaction_type": "Adjust Down",
+    "shipstation_order_id": null,
+    "notes": "",
+    "created_at": "2026-06-03 22:09:59.122976+00"
+  },
+  {
+    "id": 3786,
+    "transaction_date": "2026-06-04",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "291946377",
+    "notes": "863479",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3809,
+    "transaction_date": "2026-06-04",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 2,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "292180371",
+    "notes": "863492",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3815,
+    "transaction_date": "2026-06-05",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "292311526",
+    "notes": "863501",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3824,
+    "transaction_date": "2026-06-05",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "292311508",
+    "notes": "863504",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3830,
+    "transaction_date": "2026-06-05",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "292423637",
+    "notes": "863511",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3842,
+    "transaction_date": "2026-06-05",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "292504605",
+    "notes": "863521",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3860,
+    "transaction_date": "2026-06-05",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "292504667",
+    "notes": "863546",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3878,
+    "transaction_date": "2026-06-05",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "292504687",
+    "notes": "863535",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3879,
+    "transaction_date": "2026-06-05",
+    "sku": "17914",
+    "lot_id": 11,
+    "quantity": 1,
+    "transaction_type": "Ship",
+    "shipstation_order_id": "292504684",
+    "notes": "863535",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  }
+]

@@ -1,0 +1,98 @@
+[
+  {
+    "promo_sku": "17613",
+    "base_sku": "",
+    "status": "manually_resolved",
+    "order_count": "1",
+    "first_seen": "2026-04-16T00:00:00.000Z",
+    "last_seen": "2026-04-16T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "17613",
+    "base_sku": "17612",
+    "status": "manually_resolved",
+    "order_count": "1",
+    "first_seen": "2026-05-27T00:00:00.000Z",
+    "last_seen": "2026-05-27T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "17613",
+    "base_sku": "17612",
+    "status": "replaced",
+    "order_count": "289",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-27T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "17613",
+    "base_sku": "17612",
+    "status": "skipped",
+    "order_count": "870",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-27T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "17613",
+    "base_sku": "17612",
+    "status": "verify_failed",
+    "order_count": "435",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-15T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "17905",
+    "base_sku": "17904",
+    "status": "replaced",
+    "order_count": "9",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-22T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "17905",
+    "base_sku": "17904",
+    "status": "skipped",
+    "order_count": "12",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-15T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "17915",
+    "base_sku": "17914",
+    "status": "replaced",
+    "order_count": "10",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-26T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "17915",
+    "base_sku": "17914",
+    "status": "skipped",
+    "order_count": "38",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-26T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "18676",
+    "base_sku": "18675",
+    "status": "replaced",
+    "order_count": "53",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-22T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "18676",
+    "base_sku": "18675",
+    "status": "skipped",
+    "order_count": "62",
+    "first_seen": "2026-04-15T00:00:00.000Z",
+    "last_seen": "2026-05-18T00:00:00.000Z"
+  },
+  {
+    "promo_sku": "18676",
+    "base_sku": "18675",
+    "status": "verify_failed",
+    "order_count": "176",
+    "first_seen": "2026-04-24T00:00:00.000Z",
+    "last_seen": "2026-05-18T00:00:00.000Z"
+  }
+]

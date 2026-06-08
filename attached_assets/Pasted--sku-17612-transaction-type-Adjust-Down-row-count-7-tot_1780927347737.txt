@@ -1,0 +1,134 @@
+[
+  {
+    "sku": "17612",
+    "transaction_type": "Adjust Down",
+    "row_count": "7",
+    "total_units": "65"
+  },
+  {
+    "sku": "17612",
+    "transaction_type": "Adjust Up",
+    "row_count": "6",
+    "total_units": "1084"
+  },
+  {
+    "sku": "17612",
+    "transaction_type": "Receive",
+    "row_count": "51",
+    "total_units": "27185"
+  },
+  {
+    "sku": "17612",
+    "transaction_type": "Repack",
+    "row_count": "7",
+    "total_units": "46"
+  },
+  {
+    "sku": "17612",
+    "transaction_type": "Ship",
+    "row_count": "1568",
+    "total_units": "4620"
+  },
+  {
+    "sku": "17904",
+    "transaction_type": "Adjust Down",
+    "row_count": "2",
+    "total_units": "7"
+  },
+  {
+    "sku": "17904",
+    "transaction_type": "Adjust Up",
+    "row_count": "2",
+    "total_units": "106"
+  },
+  {
+    "sku": "17904",
+    "transaction_type": "Receive",
+    "row_count": "1",
+    "total_units": "113"
+  },
+  {
+    "sku": "17904",
+    "transaction_type": "Ship",
+    "row_count": "100",
+    "total_units": "140"
+  },
+  {
+    "sku": "17914",
+    "transaction_type": "Adjust Down",
+    "row_count": "3",
+    "total_units": "776"
+  },
+  {
+    "sku": "17914",
+    "transaction_type": "Adjust Up",
+    "row_count": "2",
+    "total_units": "5"
+  },
+  {
+    "sku": "17914",
+    "transaction_type": "Receive",
+    "row_count": "2",
+    "total_units": "1540"
+  },
+  {
+    "sku": "17914",
+    "transaction_type": "Repack",
+    "row_count": "4",
+    "total_units": "66"
+  },
+  {
+    "sku": "17914",
+    "transaction_type": "Ship",
+    "row_count": "144",
+    "total_units": "241"
+  },
+  {
+    "sku": "18675",
+    "transaction_type": "Adjust Down",
+    "row_count": "4",
+    "total_units": "296"
+  },
+  {
+    "sku": "18675",
+    "transaction_type": "Adjust Up",
+    "row_count": "3",
+    "total_units": "448"
+  },
+  {
+    "sku": "18675",
+    "transaction_type": "Receive",
+    "row_count": "1",
+    "total_units": "240"
+  },
+  {
+    "sku": "18675",
+    "transaction_type": "Ship",
+    "row_count": "62",
+    "total_units": "312"
+  },
+  {
+    "sku": "18795",
+    "transaction_type": "Adjust Down",
+    "row_count": "5",
+    "total_units": "353"
+  },
+  {
+    "sku": "18795",
+    "transaction_type": "Adjust Up",
+    "row_count": "4",
+    "total_units": "35"
+  },
+  {
+    "sku": "18795",
+    "transaction_type": "Receive",
+    "row_count": "9",
+    "total_units": "7828"
+  },
+  {
+    "sku": "18795",
+    "transaction_type": "Ship",
+    "row_count": "52",
+    "total_units": "752"
+  }
+]
