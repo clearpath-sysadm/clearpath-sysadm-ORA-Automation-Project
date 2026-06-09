@@ -27,6 +27,7 @@ from src.services.database.pg_utils import is_workflow_enabled, update_workflow_
 from src.services.shipstation.api_client import (
     v2_get_pending_axiom_shipments,
     v2_create_batch,
+    v2_get_batch,
 )
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
@@ -119,6 +120,66 @@ def _record_batch_run(today_str: str, batch_id: str) -> bool:
         return False
 
 
+def _clear_batch_record(today_str: str) -> None:
+    """Clear today's batch guard from configuration_params so a retry can proceed.
+    Used only when verification confirms the batch definitively does not exist (404)."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE configuration_params SET value = '', notes = 'cleared_for_retry', last_updated = NOW()::text "
+            "WHERE category = 'BatchProcessor' AND parameter_name = 'last_batch_date' AND sku = '' AND value = %s",
+            (today_str,),
+        )
+        conn.commit()
+        conn.close()
+        logger.info(f"Cleared last_batch_date guard for {today_str} — retry is now unblocked")
+    except Exception as e:
+        logger.error(f"Could not clear last_batch_date guard: {e}")
+
+
+VERIFY_WAIT_SECONDS = 3
+
+
+def _verify_batch(batch_id: str, requested_count: int) -> str:
+    """
+    GET the batch from ShipStation and check its shipment count.
+
+    Returns one of:
+        'ok'           — batch exists and count matches
+        'not_found'    — 404; batch definitively does not exist — safe to retry
+        'mismatch'     — batch exists but count differs — do NOT retry
+        'api_error'    — uncertain state (network/5xx) — do NOT retry
+    """
+    logger.info(f"Verifying batch {batch_id} on ShipStation (waiting {VERIFY_WAIT_SECONDS}s for propagation)...")
+    time.sleep(VERIFY_WAIT_SECONDS)
+
+    result = v2_get_batch(batch_id)
+
+    if result.get('success'):
+        verified_count = result.get('shipment_count', 0)
+        if verified_count == requested_count:
+            logger.info(
+                f"Batch {batch_id} verified ✓ — {verified_count}/{requested_count} shipments confirmed on ShipStation"
+            )
+            return 'ok'
+        else:
+            logger.error(
+                f"Batch {batch_id} count MISMATCH — requested {requested_count}, "
+                f"ShipStation confirms {verified_count}"
+            )
+            return 'mismatch'
+
+    error_type = result.get('error_type', 'api_error')
+    error_msg = result.get('error', 'unknown')
+    if error_type == 'not_found':
+        logger.warning(f"Batch {batch_id} NOT FOUND on ShipStation after creation — will retry once")
+        return 'not_found'
+    else:
+        logger.error(f"Batch {batch_id} verification failed with uncertain state: {error_msg}")
+        return 'api_error'
+
+
 def run_batch_job() -> str:
     """
     Fetch all pending Axiom shipments, create a V2 batch, and trigger label processing.
@@ -191,17 +252,6 @@ def run_batch_job() -> str:
         return 'error'
 
     batch_id = batch_result['batch_id']
-    confirmed_count = batch_result.get('shipment_count', len(shipment_ids))
-    if confirmed_count == 0:
-        logger.warning(
-            f"Batch {batch_id} created but API reports 0 shipments — "
-            f"payload may have been rejected silently. Requested: {len(shipment_ids)}."
-        )
-        server_logger.warning(
-            f"Batch {batch_id} created with 0 shipments (requested {len(shipment_ids)}) — "
-            f"investigate API payload or ShipStation configuration.",
-            source="Batch Processor"
-        )
 
     if not _record_batch_run(ship_date, batch_id):
         server_logger.error(
@@ -211,16 +261,100 @@ def run_batch_job() -> str:
         )
         return 'error'
 
-    update_workflow_last_run(WORKFLOW_NAME)
-    summary = (
-        f"Batch processor complete: batch {batch_id} created with "
-        f"{len(shipment_ids)} shipment(s). Labels not created — print from ShipStation."
-    )
-    logger.info("=" * 70)
-    logger.info(f"BATCH PROCESSOR COMPLETE — {len(shipment_ids)} shipments, batch {batch_id}")
-    logger.info("=" * 70)
-    server_logger.info(summary, source="Batch Processor")
-    return 'completed'
+    verify_status = _verify_batch(batch_id, len(shipment_ids))
+
+    if verify_status == 'ok':
+        update_workflow_last_run(WORKFLOW_NAME)
+        summary = (
+            f"Batch processor complete: batch {batch_id} created and verified with "
+            f"{len(shipment_ids)} shipment(s). Labels not created — print from ShipStation."
+        )
+        logger.info("=" * 70)
+        logger.info(f"BATCH PROCESSOR COMPLETE — {len(shipment_ids)} shipments, batch {batch_id} ✓ verified")
+        logger.info("=" * 70)
+        server_logger.info(summary, source="Batch Processor")
+        return 'completed'
+
+    elif verify_status == 'not_found':
+        logger.warning(
+            f"Batch {batch_id} not found on ShipStation — clearing guard and retrying once from scratch"
+        )
+        server_logger.warning(
+            f"Batch {batch_id} not found after creation (404). Clearing guard and retrying once.",
+            source="Batch Processor"
+        )
+        _clear_batch_record(ship_date)
+
+        retry_result = v2_get_pending_axiom_shipments()
+        if not retry_result.get('success'):
+            server_logger.error(
+                f"Batch retry failed: could not re-fetch pending shipments — {retry_result.get('error')}",
+                source="Batch Processor"
+            )
+            return 'error'
+
+        retry_ids = retry_result['shipment_ids']
+        if not retry_ids:
+            server_logger.warning(
+                "Batch retry: no pending shipments found on re-fetch — nothing to batch.",
+                source="Batch Processor"
+            )
+            update_workflow_last_run(WORKFLOW_NAME)
+            return 'skipped'
+
+        logger.info(f"Retry: creating batch with {len(retry_ids)} shipment(s)...")
+        retry_batch_result = v2_create_batch(retry_ids)
+        if not retry_batch_result.get('success'):
+            server_logger.error(
+                f"Batch retry failed to create batch: {retry_batch_result.get('error')}",
+                source="Batch Processor"
+            )
+            return 'error'
+
+        retry_batch_id = retry_batch_result['batch_id']
+
+        if not _record_batch_run(ship_date, retry_batch_id):
+            server_logger.error(
+                f"Retry batch {retry_batch_id} created but could not persist run date to DB.",
+                source="Batch Processor"
+            )
+            return 'error'
+
+        retry_verify = _verify_batch(retry_batch_id, len(retry_ids))
+        if retry_verify == 'ok':
+            update_workflow_last_run(WORKFLOW_NAME)
+            summary = (
+                f"Batch processor complete (after retry): batch {retry_batch_id} created and verified with "
+                f"{len(retry_ids)} shipment(s). Labels not created — print from ShipStation."
+            )
+            logger.info("=" * 70)
+            logger.info(f"BATCH PROCESSOR COMPLETE (RETRY) — {len(retry_ids)} shipments, batch {retry_batch_id} ✓ verified")
+            logger.info("=" * 70)
+            server_logger.info(summary, source="Batch Processor")
+            return 'completed'
+        else:
+            server_logger.error(
+                f"Batch retry also failed verification (status={retry_verify}) for batch {retry_batch_id}. "
+                f"Manual intervention required.",
+                source="Batch Processor"
+            )
+            return 'error'
+
+    elif verify_status == 'mismatch':
+        server_logger.error(
+            f"Batch {batch_id} exists on ShipStation but shipment count does not match "
+            f"(requested {len(shipment_ids)}). Do NOT retry — manual review required in ShipStation.",
+            source="Batch Processor"
+        )
+        return 'error'
+
+    else:
+        server_logger.error(
+            f"Batch {batch_id} verification returned uncertain state — cannot confirm existence. "
+            f"Do NOT retry automatically. Check ShipStation and logs manually.",
+            source="Batch Processor"
+        )
+        return 'error'
 
 
 def main():

@@ -1237,6 +1237,66 @@ def v2_create_batch(shipment_ids: list) -> dict:
         return {'success': False, 'error': str(e)}
 
 
+def v2_get_batch(batch_id: str) -> dict:
+    """
+    Fetch a ShipStation V2 batch by ID to verify it exists and is populated.
+
+    GET /v2/batches/{batch_id}
+    Auth: PRODUCTION_KEY as 'API-Key' header.
+
+    Returns dict with:
+        'success'        — True if batch was found
+        'batch_id'       — str
+        'shipment_count' — int
+        'status'         — str (e.g. 'queued', 'completed')
+        'error'          — str on failure
+        'error_type'     — 'not_found' (HTTP 404) or 'api_error' (anything else)
+    """
+    try:
+        api_key = os.getenv('PRODUCTION_KEY')
+        if not api_key:
+            return {'success': False, 'error_type': 'api_error', 'error': 'PRODUCTION_KEY environment variable not set'}
+
+        headers = {
+            'API-Key': api_key,
+            'Content-Type': 'application/json',
+        }
+
+        response = make_api_request(
+            url=f'https://api.shipstation.com/v2/batches/{batch_id}',
+            method='GET',
+            headers=headers,
+            timeout=30,
+        )
+
+        if response and response.status_code == 404:
+            logger.warning(f"V2 GET /batches/{batch_id} returned 404 — batch not found")
+            return {'success': False, 'error_type': 'not_found', 'error': f'Batch {batch_id} not found (404)'}
+
+        if response and response.status_code in (200, 201):
+            data = response.json()
+            fetched_id = data.get('batch_id') or data.get('id') or batch_id
+            shipment_count = data.get('count', data.get('shipment_count', 0))
+            status = data.get('batch_status') or data.get('status', 'unknown')
+            logger.info(f"V2 GET /batches/{batch_id}: status={status}, shipment_count={shipment_count}")
+            return {
+                'success': True,
+                'batch_id': fetched_id,
+                'shipment_count': shipment_count,
+                'status': status,
+            }
+        else:
+            status_code = response.status_code if response else 'no response'
+            body = response.text[:300] if response else ''
+            error_msg = f"V2 GET /batches/{batch_id} failed {status_code}: {body}"
+            logger.error(error_msg)
+            return {'success': False, 'error_type': 'api_error', 'error': error_msg}
+
+    except Exception as e:
+        logger.error(f"Error fetching V2 batch {batch_id}: {e}", exc_info=True)
+        return {'success': False, 'error_type': 'api_error', 'error': str(e)}
+
+
 def v2_process_batch_labels(batch_id: str, ship_date: str) -> dict:
     """
     Trigger label processing for a ShipStation V2 batch.
