@@ -1,0 +1,33 @@
+~/workspace$ python src/scheduled_batch_processor.py --once
+2026-06-09 12:20:55,773 - root - DEBUG - Logging system initialized with level: DEBUG
+2026-06-09 12:20:55,773 - root - INFO - Logging environment: CLOUD
+2026-06-09 12:20:55,774 - root - INFO - Logging environment: CLOUD
+2026-06-09 12:20:55,774 - root - DEBUG - Log file output to: /home/runner/workspace/logs/app.log
+2026-06-09 12:20:55,781 - shipstation_api_client - INFO - ShipStation API Client started. Environment: CLOUD
+2026-06-09 12:20:55,792 - __main__ - INFO - Running one-time batch job (manual trigger)
+2026-06-09 12:20:55,792 - __main__ - INFO - ======================================================================
+2026-06-09 12:20:55,792 - __main__ - INFO - BATCH PROCESSOR STARTED
+2026-06-09 12:20:55,792 - __main__ - INFO - Ship date: 2026-06-09
+2026-06-09 12:20:55,792 - __main__ - INFO - ======================================================================
+2026-06-09 12:20:55,808 - src.services.database.pg_utils - INFO - PostgreSQL connection pool initialised (min=2, max=20, connect_timeout=10s)
+2026-06-09 12:20:55,810 - utils.api_utils - INFO - Attempting GET request to: https://api.shipstation.com/v2/shipments
+2026-06-09 12:20:55,830 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.shipstation.com:443
+2026-06-09 12:20:56,494 - urllib3.connectionpool - DEBUG - https://api.shipstation.com:443 "GET /v2/shipments?shipment_status=pending&page_size=500&page=1 HTTP/1.1" 200 366796
+2026-06-09 12:20:56,596 - utils.api_utils - INFO - Successfully received response from https://api.shipstation.com/v2/shipments with status code: 200
+2026-06-09 12:20:56,599 - shipstation_api_client - DEBUG - Skipping shipment se-293562950 — warehouse se-566121 is not Axiom
+2026-06-09 12:20:56,599 - shipstation_api_client - INFO - V2 shipments page 1/1: 43 Axiom, 1 non-Axiom (skipped)
+2026-06-09 12:20:56,599 - shipstation_api_client - INFO - V2 pending Axiom shipments: 43 included, 1 non-Axiom skipped
+2026-06-09 12:20:56,601 - __main__ - INFO - Found 43 pending Axiom shipment(s) — creating batch...
+2026-06-09 12:20:56,601 - utils.api_utils - INFO - Attempting POST request to: https://api.shipstation.com/v2/batches
+2026-06-09 12:20:56,601 - utils.api_utils - DEBUG - Request data: {'shipment_ids': ['se-293305073', 'se-293305107', 'se-293305088', 'se-293342415', 'se-293342409', 'se-293342420', 'se-293342426', 'se-293342432', 'se-293342430', 'se-293342423', 'se-293372827', 'se-293405633', 'se-293528800', 'se-293528796', 'se-293528793', 'se-293529440', 'se-293562945', 'se-293562952', 'se-293526780', 'se-293549262', 'se-293593943', 'se-293593939', 'se-293593946', 'se-293593958', 'se-293593961', 'se-293305074', 'se-293305119', 'se-293342412', 'se-293342418', 'se-293342427', 'se-293342425', 'se-293372831', 'se-293372828', 'se-293515608', 'se-293515610', 'se-293528797', 'se-293562946', 'se-293526633', 'se-293562948', 'se-293562949', 'se-293593944', 'se-293593940', 'se-293593955']}
+2026-06-09 12:20:56,602 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.shipstation.com:443
+2026-06-09 12:20:56,895 - urllib3.connectionpool - DEBUG - https://api.shipstation.com:443 "POST /v2/batches HTTP/1.1" 200 1148
+2026-06-09 12:20:56,896 - utils.api_utils - INFO - Successfully received response from https://api.shipstation.com/v2/batches with status code: 200
+2026-06-09 12:20:56,896 - shipstation_api_client - INFO - V2 batch created: se-81996837 (43 shipments confirmed by API, 43 requested)
+2026-06-09 12:20:57,195 - __main__ - INFO - Recorded batch run: date=2026-06-09, batch_id=se-81996837
+2026-06-09 12:20:57,469 - src.services.database.pg_utils - INFO - ✅ Updated last_run_at for batch-processor (workflows: 1, controls: 1)
+2026-06-09 12:20:57,470 - __main__ - INFO - ======================================================================
+2026-06-09 12:20:57,470 - __main__ - INFO - BATCH PROCESSOR COMPLETE — 43 shipments, batch se-81996837
+2026-06-09 12:20:57,470 - __main__ - INFO - ======================================================================
+2026-06-09T12:20:57 - INFO - [Batch Processor] <system> Batch processor complete: batch se-81996837 created with 43 shipment(s). Labels not created — print from ShipStation.
+2026-06-09 12:20:57,470 - oracare - INFO - [Batch Processor] <system> Batch processor complete: batch se-81996837 created with 43 shipment(s). Labels not created — print from ShipStation.
