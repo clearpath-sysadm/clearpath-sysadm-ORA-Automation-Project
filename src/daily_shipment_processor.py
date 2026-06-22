@@ -279,7 +279,7 @@ def save_shipped_orders_to_db(orders_df):
     return records_saved
 
 
-def save_shipped_items_to_db(items_df, customField1_map=None):
+def save_shipped_items_to_db(items_df, customField1_map=None, promo_map=None):
     """Save shipped items to the shipped_items table via UPSERT.
 
     Schema: shipped_items(ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number)
@@ -290,6 +290,8 @@ def save_shipped_items_to_db(items_df, customField1_map=None):
     When customField1_map is provided (dict keyed by order_number → customField1 string):
       - If the customField1 SKU matches this row's base_sku, sku_lot is upgraded to the
         full lot-stamped value (e.g. '17612' → '17612 - 260047') before the UPSERT.
+      - For promo SKU orders, promo_map is used to resolve the promo SKU to its base SKU
+        so the CF1 match succeeds (e.g. '17612' matches '17613' via promo_map['17613']='17612').
       - Any stale bare-SKU row for the same (order_number, base_sku) is deleted first.
 
     Inventory deduction (inventory_transactions Ship rows) is NOT performed here.
@@ -329,8 +331,10 @@ def save_shipped_items_to_db(items_df, customField1_map=None):
             cf1 = customField1_map.get(str(order_number), '')
 
         parsed = parse_cf1(cf1)
-        if parsed and parsed[0] == str(base_sku):
-            sku_lot = cf1
+        if parsed:
+            promo_base = (promo_map or {}).get(str(base_sku))
+            if parsed[0] == str(base_sku) or (promo_base and parsed[0] == promo_base):
+                sku_lot = cf1
 
         key = (str(order_number), str(base_sku), sku_lot, ship_date)
         if key in aggregated:
@@ -645,12 +649,26 @@ def run_daily_shipment_pull(request=None, end_date=None):
         # sleeps that blow past any viable timeout. Lot tags for gap-period orders will
         # be null in shipped_items.sku_lot — acceptable since the lot-tagger already
         # stamped them in ShipStation. Normal daily EOD (end_date=None) fetches as usual.
+
+        # Load promo map once — used both to expand the CF1 fetch filter (so promo SKU
+        # orders are included) and to fix the CF1 upgrade guard in save_shipped_items_to_db.
+        try:
+            _pm_rows = execute_query(
+                "SELECT promo_sku, base_sku FROM sku_promotions WHERE active = TRUE"
+            )
+            promo_map = {row[0]: row[1] for row in _pm_rows} if _pm_rows else {}
+        except Exception as _pm_err:
+            logger.warning(f"Could not load promo map — promo SKU orders may miss lot stamps: {_pm_err}")
+            promo_map = {}
+
         customField1_map = {}
         if end_date is not None:
             logger.info(f"Catch-up mode (end_date={end_date}): skipping per-order lot-tag API calls to avoid rate-limit timeouts. sku_lot will be null for this window.")
         elif not items_df.empty:
+            # Include promo SKUs in the filter so their orders also get CF1 fetched.
+            cf1_target_skus = set(KEY_PRODUCT_SKUS) | set(promo_map.keys())
             key_order_numbers = items_df[
-                items_df['Base SKU'].isin(KEY_PRODUCT_SKUS)
+                items_df['Base SKU'].isin(cf1_target_skus)
             ]['OrderNumber'].dropna().unique().tolist()
             if key_order_numbers:
                 try:
@@ -664,14 +682,14 @@ def run_daily_shipment_pull(request=None, end_date=None):
                         cf1 = (adv.get('customField1') or '').strip()
                         if on and cf1:
                             customField1_map[on] = cf1
-                    logger.info(f"Built customField1_map: {len(customField1_map)} order(s) with lot stamps out of {len(key_order_numbers)} key-SKU orders")
+                    logger.info(f"Built customField1_map: {len(customField1_map)} order(s) with lot stamps out of {len(key_order_numbers)} key-SKU orders (including promo SKUs)")
                 except Exception as _cf1_err:
                     logger.error(f"Failed to build customField1_map, proceeding without lot stamps: {_cf1_err}", exc_info=True)
 
         # --- 6. Save to Database Tables ---
         # Save orders first, then items (respects foreign key constraint)
         orders_saved = save_shipped_orders_to_db(orders_df)
-        items_saved = save_shipped_items_to_db(items_df, customField1_map=customField1_map)
+        items_saved = save_shipped_items_to_db(items_df, customField1_map=customField1_map, promo_map=promo_map)
 
         # --- 6. Incrementally Update the Weekly Shipped History ---
         logger.info("Fetching existing 52-week history from database...")

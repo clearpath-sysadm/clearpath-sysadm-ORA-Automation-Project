@@ -11643,6 +11643,153 @@ def system_pulse():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/backfill-promo-deductions', methods=['POST'])
+@login_required
+@admin_required
+def api_backfill_promo_deductions():
+    """
+    One-time backfill: fix shipped_items.sku_lot and insert missing inventory deductions
+    for promo SKU orders (17613→17612, 17905→17904, 17915→17914, 18676→18675).
+
+    Root cause: daily_shipment_processor excluded promo SKUs from the CF1 fetch filter
+    so sku_lot was written as the bare promo SKU instead of the real lot stamp.
+    This endpoint corrects existing rows and inserts the missing Ship transactions.
+
+    Idempotent — safe to call multiple times.
+    """
+    _log = logging.getLogger(__name__)
+    try:
+        from src.services.database.pg_utils import execute_query, transaction
+        from src.services.inventory.lot_deduction import deduct_lot_inventory
+        from src.services.data_processing.sku_lot_parser import parse_cf1
+
+        # Phase A: identify affected rows
+        affected = execute_query("""
+            SELECT
+                si.order_number,
+                si.base_sku           AS promo_sku,
+                si.quantity_shipped,
+                si.ship_date,
+                oi.lot_stamp,
+                oi.shipstation_order_id,
+                sp.base_sku           AS expected_base_sku
+            FROM shipped_items si
+            JOIN orders_inbox oi  ON oi.order_number = si.order_number
+            JOIN sku_promotions sp ON sp.promo_sku = si.base_sku AND sp.active = TRUE
+            WHERE si.sku_lot = si.base_sku
+            ORDER BY si.base_sku, si.ship_date, si.order_number
+        """)
+
+        _log.info(f"Promo backfill: {len(affected) if affected else 0} affected rows found")
+
+        if not affected:
+            return jsonify({
+                'success': True,
+                'message': 'Nothing to do — no bare-SKU promo rows remain.',
+                'rows_identified': 0,
+            }), 200
+
+        # Pre-load lot lookup for validation
+        lot_rows = execute_query("""
+            SELECT s.sku_code, l.lot_number, l.lot_id
+            FROM lots l
+            JOIN skus s ON l.sku_id = s.sku_id
+        """)
+        lot_lookup = {(r[0], r[1]): r[2] for r in lot_rows} if lot_rows else {}
+
+        # Phase B: validate
+        validated = []
+        skipped = []
+        for row in affected:
+            order_number, promo_sku, quantity, ship_date, lot_stamp, ss_order_id, expected_base = row
+            if not lot_stamp or not lot_stamp.strip():
+                skipped.append({'order': order_number, 'reason': 'lot_stamp blank'})
+                continue
+            lot_stamp = lot_stamp.strip()
+            parsed = parse_cf1(lot_stamp)
+            if not parsed:
+                skipped.append({'order': order_number, 'reason': f"unparseable lot_stamp '{lot_stamp}'"})
+                continue
+            cf1_sku, cf1_lot = parsed
+            if cf1_sku != expected_base:
+                skipped.append({'order': order_number, 'reason': f"CF1 SKU '{cf1_sku}' != expected '{expected_base}'"})
+                continue
+            lot_id = lot_lookup.get((cf1_sku, cf1_lot))
+            if lot_id is None:
+                skipped.append({'order': order_number, 'reason': f"lot '{cf1_lot}' not in lots table for SKU '{cf1_sku}'"})
+                continue
+            if not ss_order_id:
+                skipped.append({'order': order_number, 'reason': 'shipstation_order_id null'})
+                continue
+            validated.append({
+                'order_number': order_number,
+                'promo_sku': promo_sku,
+                'base_sku': cf1_sku,
+                'lot_stamp': lot_stamp,
+                'quantity': quantity,
+                'ship_date': ship_date,
+                'shipstation_order_id': str(ss_order_id),
+            })
+
+        _log.info(f"Promo backfill: {len(validated)} validated, {len(skipped)} skipped")
+
+        # Phase C + D: update shipped_items then insert deductions
+        si_updated = 0
+        tx_inserted = 0
+        tx_skipped = 0
+        with transaction() as conn:
+            cursor = conn.cursor()
+            for item in validated:
+                cursor.execute("""
+                    UPDATE shipped_items
+                    SET sku_lot = %s
+                    WHERE order_number = %s
+                      AND base_sku = %s
+                      AND sku_lot = %s
+                """, (item['lot_stamp'], item['order_number'],
+                      item['promo_sku'], item['promo_sku']))
+                si_updated += cursor.rowcount
+                inserted = deduct_lot_inventory(
+                    order_number=item['order_number'],
+                    shipstation_order_id=item['shipstation_order_id'],
+                    base_sku=item['base_sku'],
+                    customField1_value=item['lot_stamp'],
+                    ship_date=item['ship_date'],
+                    quantity=item['quantity'],
+                    conn=conn,
+                )
+                if inserted:
+                    tx_inserted += 1
+                else:
+                    tx_skipped += 1
+
+        # Verification
+        remaining = execute_query("""
+            SELECT COUNT(*) FROM shipped_items si
+            JOIN sku_promotions sp ON sp.promo_sku = si.base_sku AND sp.active = TRUE
+            WHERE si.sku_lot = si.base_sku
+        """)
+        remaining_count = remaining[0][0] if remaining else '?'
+
+        result = {
+            'success': True,
+            'rows_identified': len(affected),
+            'rows_validated': len(validated),
+            'rows_skipped': len(skipped),
+            'shipped_items_updated': si_updated,
+            'deductions_inserted': tx_inserted,
+            'deductions_already_existed': tx_skipped,
+            'bare_sku_rows_remaining': remaining_count,
+            'skipped_detail': skipped,
+        }
+        _log.info(f"Promo backfill complete: {result}")
+        return jsonify(result), 200
+
+    except Exception as e:
+        _log.error(f"Promo deduction backfill failed: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Initialize file logging
     from src.utils.server_logger import get_logger
