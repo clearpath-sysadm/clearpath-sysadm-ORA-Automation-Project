@@ -924,6 +924,185 @@ def _resolve_order_862852_db_state(cursor):
         )
 
 
+def _backfill_promo_sku_deductions(cursor):
+    """
+    One-time backfill: fix shipped_items.sku_lot and insert missing inventory
+    deductions for promo SKU orders (17613→17612, 17905→17904, 17915→17914,
+    18676→18675).
+
+    Root cause: daily_shipment_processor.py excluded promo SKUs from the
+    KEY_PRODUCT_SKUS filter when building customField1_map, so sku_lot was
+    written as the bare promo SKU ('17613') instead of the real lot stamp
+    ('17612 - 260082').
+
+    Source of truth: orders_inbox.lot_stamp (CF1 stored at import time).
+    Pure database operation — no ShipStation API calls needed.
+
+    Idempotent: guarded by a configuration_params completion marker.
+    Phase C UPDATE only fires where sku_lot = base_sku (already-fixed rows
+    are untouched).  deduct_lot_inventory guards against double-insertion via
+    (lot_id, shipstation_order_id, 'Ship') uniqueness check.
+
+    Runs in both dev and production.
+    """
+    # Idempotency guard — skip if already completed
+    cursor.execute("""
+        SELECT 1 FROM configuration_params
+        WHERE category = 'System'
+          AND parameter_name = 'backfill_promo_deductions_v1'
+          AND sku = ''
+        LIMIT 1
+    """)
+    if cursor.fetchone():
+        logger.info("startup_migrations: promo deduction backfill already applied — skipping")
+        return
+
+    # Phase A: identify affected rows
+    cursor.execute("""
+        SELECT
+            si.order_number,
+            si.base_sku           AS promo_sku,
+            si.quantity_shipped,
+            si.ship_date,
+            oi.lot_stamp,
+            oi.shipstation_order_id,
+            sp.base_sku           AS expected_base_sku
+        FROM shipped_items si
+        JOIN orders_inbox oi  ON oi.order_number = si.order_number
+        JOIN sku_promotions sp ON sp.promo_sku = si.base_sku AND sp.active = TRUE
+        WHERE si.sku_lot = si.base_sku
+        ORDER BY si.base_sku, si.ship_date, si.order_number
+    """)
+    affected = cursor.fetchall()
+    logger.info(f"startup_migrations: promo backfill — {len(affected)} bare-SKU rows found")
+
+    if not affected:
+        # Nothing to fix; still record the marker so we never check again
+        logger.info("startup_migrations: promo backfill — no rows to fix, recording completion marker")
+        cursor.execute("""
+            INSERT INTO configuration_params
+                (category, parameter_name, sku, value, notes, last_updated)
+            VALUES ('System', 'backfill_promo_deductions_v1', '', 'completed',
+                    'Promo SKU deduction backfill: no rows needed correction', CURRENT_TIMESTAMP)
+            ON CONFLICT (category, parameter_name, sku) DO NOTHING
+        """)
+        return
+
+    # Pre-load lot lookup: {(sku_code, lot_number): lot_id}
+    cursor.execute("""
+        SELECT s.sku_code, l.lot_number, l.lot_id
+        FROM lots l
+        JOIN skus s ON l.sku_id = s.sku_id
+    """)
+    lot_lookup = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
+
+    # Phase B: validate each row before modifying anything
+    validated = []
+    skipped = []
+    for row in affected:
+        order_number, promo_sku, quantity, ship_date, lot_stamp, ss_order_id, expected_base = row
+        if not lot_stamp or not lot_stamp.strip():
+            skipped.append((order_number, promo_sku, "lot_stamp blank"))
+            continue
+        lot_stamp = lot_stamp.strip()
+        if ' - ' not in lot_stamp:
+            skipped.append((order_number, promo_sku, f"unparseable lot_stamp '{lot_stamp}'"))
+            continue
+        parts = lot_stamp.split(' - ', 1)
+        cf1_sku = parts[0].strip()
+        cf1_lot = parts[1].strip()
+        if cf1_sku != expected_base:
+            skipped.append((order_number, promo_sku,
+                            f"CF1 SKU '{cf1_sku}' != expected '{expected_base}'"))
+            continue
+        lot_id = lot_lookup.get((cf1_sku, cf1_lot))
+        if lot_id is None:
+            skipped.append((order_number, promo_sku,
+                            f"lot '{cf1_lot}' not in lots table for SKU '{cf1_sku}'"))
+            continue
+        if not ss_order_id:
+            skipped.append((order_number, promo_sku, "shipstation_order_id null"))
+            continue
+        validated.append({
+            'order_number':        order_number,
+            'promo_sku':           promo_sku,
+            'base_sku':            cf1_sku,       # resolved base SKU (e.g. '17612')
+            'lot_stamp':           lot_stamp,
+            'quantity':            quantity,
+            'ship_date':           ship_date,
+            'shipstation_order_id': str(ss_order_id),
+        })
+
+    logger.info(
+        f"startup_migrations: promo backfill — "
+        f"{len(validated)} validated, {len(skipped)} skipped"
+    )
+    for order_number, promo_sku, reason in skipped:
+        logger.warning(
+            f"startup_migrations: promo backfill SKIP {order_number}/{promo_sku}: {reason}"
+        )
+
+    # Phase C + D: update shipped_items then insert inventory deductions.
+    # deduct_lot_inventory needs a conn object — all startup migrations share
+    # one connection/transaction, so cursor.connection is safe to reuse here.
+    from src.services.inventory.lot_deduction import deduct_lot_inventory
+    conn = cursor.connection
+    si_updated = 0
+    tx_inserted = 0
+    tx_skipped = 0
+
+    for item in validated:
+        # Phase C: update sku_lot from bare promo SKU to real lot stamp
+        cursor.execute("""
+            UPDATE shipped_items
+            SET sku_lot = %s
+            WHERE order_number = %s
+              AND base_sku = %s
+              AND sku_lot = %s
+        """, (item['lot_stamp'], item['order_number'],
+              item['promo_sku'], item['promo_sku']))
+        si_updated += cursor.rowcount
+
+        # Phase D: insert deduction using the resolved BASE SKU (not promo SKU).
+        # deduct_lot_inventory opens its own cursor on the same connection and
+        # shares the running transaction — the deduction is committed atomically
+        # with everything else in run_all.
+        inserted = deduct_lot_inventory(
+            order_number=item['order_number'],
+            shipstation_order_id=item['shipstation_order_id'],
+            base_sku=item['base_sku'],
+            customField1_value=item['lot_stamp'],
+            ship_date=item['ship_date'],
+            quantity=item['quantity'],
+            conn=conn,
+        )
+        if inserted:
+            tx_inserted += 1
+        else:
+            tx_skipped += 1
+
+    logger.info(
+        f"startup_migrations: promo backfill complete — "
+        f"shipped_items updated: {si_updated}, "
+        f"deductions inserted: {tx_inserted}, "
+        f"deductions already existed: {tx_skipped}"
+    )
+
+    # Record completion marker so this never runs again
+    cursor.execute("""
+        INSERT INTO configuration_params
+            (category, parameter_name, sku, value, notes, last_updated)
+        VALUES ('System', 'backfill_promo_deductions_v1', '', 'completed',
+                'Promo SKU deduction backfill: fixed rows at startup', CURRENT_TIMESTAMP)
+        ON CONFLICT (category, parameter_name, sku) DO UPDATE SET
+            value = 'completed',
+            last_updated = CURRENT_TIMESTAMP
+    """)
+    logger.info(
+        "startup_migrations: promo backfill completion marker recorded in configuration_params"
+    )
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -949,6 +1128,7 @@ def run_all(conn):
             _create_reconciliation_skip_cache(cur)
             _create_inventory_architecture_objects(cur)
             _resolve_order_862852_db_state(cur)
+            _backfill_promo_sku_deductions(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
