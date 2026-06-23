@@ -1038,6 +1038,25 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
             local_order_id
         ))
         
+        # INVENTORY REVERSAL: When an existing order transitions from 'shipped' → 'cancelled',
+        # reverse all lot inventory deductions previously recorded for this order.
+        # Uses current_ss_id (the DB-stored ShipStation ID) as the lookup key because
+        # that is the key used when Ship rows were originally inserted.
+        if current_status == 'shipped' and db_status == 'cancelled':
+            from src.services.inventory.lot_cancellation import reverse_lot_inventory
+            reversal_ss_id = current_ss_id or str(order.get('orderId') or order.get('orderKey') or '')
+            if reversal_ss_id:
+                reversal_count = reverse_lot_inventory(
+                    order_number=order_number,
+                    shipstation_order_id=reversal_ss_id,
+                    cancel_date=datetime.date.today(),
+                    conn=conn,
+                )
+                if reversal_count > 0:
+                    logger.info(f"↩️ Reversed {reversal_count} inventory deduction(s) for cancelled order {order_number}")
+            else:
+                logger.warning(f"⚠️ Cannot reverse inventory for order {order_number}: no shipstation_order_id available")
+
         # Always upsert order items from ShipStation so local quantities stay current.
         # The ON CONFLICT clause handles both new items and quantity updates in one pass.
         # DB unique index: order_items_inbox_order_sku_unique (order_inbox_id, sku)

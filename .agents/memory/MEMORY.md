@@ -1,0 +1,1 @@
+- [Cancellation reversal pattern](cancel-reversal-pattern.md) — 'Cancel' txn type added in migration 017; lot_balances VIEW credits it as +quantity; two sync paths (unified + status) both call reverse_lot_inventory.

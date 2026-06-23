@@ -398,23 +398,42 @@ def batch_update_orders_status(status_buckets: Dict[str, List[tuple]], conn) -> 
         counts['shipped'] = len(status_buckets['shipped'])
         logger.info(f"✅ Batch updated {counts['shipped']} shipped orders")
     
-    # Batch update for 'cancelled' status
+    # Per-order update for 'cancelled' status.
+    # Processed individually (not executemany) so inventory can be reversed
+    # for orders that were previously 'shipped'.
+    # Cancelled bucket tuple: (order_id, carrier_code, carrier_id, service_code,
+    #                          service_name, tracking_number, local_status,
+    #                          shipstation_order_id, order_number)
     if 'cancelled' in status_buckets and status_buckets['cancelled']:
+        from src.services.inventory.lot_cancellation import reverse_lot_inventory
         cursor = conn.cursor()
+        reversal_count_total = 0
+        for (order_id, carrier_code, carrier_id, service_code, service_name,
+             tracking_number, local_status, ss_order_id, order_number) in status_buckets['cancelled']:
+            cursor.execute("""
+                UPDATE orders_inbox
+                SET status = 'cancelled',
+                    shipping_carrier_code = %s,
+                    shipping_carrier_id = %s,
+                    shipping_service_code = %s,
+                    shipping_service_name = %s,
+                    tracking_number = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """, (carrier_code, carrier_id, service_code, service_name, tracking_number, order_id))
 
-        cursor.executemany("""
-            UPDATE orders_inbox
-            SET status = 'cancelled',
-                shipping_carrier_code = %s,
-                shipping_carrier_id = %s,
-                shipping_service_code = %s,
-                shipping_service_name = %s,
-                tracking_number = %s,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = %s
-        """, [(carrier_code, carrier_id, service_code, service_name, tracking_number, order_id)
-              for order_id, carrier_code, carrier_id, service_code, service_name, tracking_number in status_buckets['cancelled']])
+            if local_status == 'shipped' and ss_order_id:
+                reversal_count = reverse_lot_inventory(
+                    order_number=order_number,
+                    shipstation_order_id=str(ss_order_id),
+                    cancel_date=datetime.date.today(),
+                    conn=conn,
+                )
+                reversal_count_total += reversal_count
+
         counts['cancelled'] = len(status_buckets['cancelled'])
+        if reversal_count_total > 0:
+            logger.info(f"↩️ Reversed inventory for {reversal_count_total} deduction(s) across cancelled orders")
         logger.info(f"✅ Batch updated {counts['cancelled']} cancelled orders")
     
     # Batch update for 'awaiting_shipment' status
@@ -556,9 +575,20 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
             # Extract tracking number from order (at top level, not in shipmentItems)
             tracking_number = ss_order.get('trackingNumber')
             
-            # Add to appropriate status bucket
+            # Add to appropriate status bucket.
+            # Cancelled bucket carries extra fields for inventory reversal;
+            # all other buckets use the standard 6-element tuple.
             if ss_status in status_buckets:
-                status_buckets[ss_status].append((order_id, carrier_code, carrier_id, service_code, service_name, tracking_number))
+                if ss_status == 'cancelled':
+                    status_buckets['cancelled'].append((
+                        order_id,
+                        carrier_code, carrier_id, service_code, service_name, tracking_number,
+                        local_order['local_status'],
+                        local_order['shipstation_order_id'],
+                        local_order['order_number'],
+                    ))
+                else:
+                    status_buckets[ss_status].append((order_id, carrier_code, carrier_id, service_code, service_name, tracking_number))
         
         # Execute batched updates in single transaction
         logger.info(f"Batching updates: {sum(len(v) for v in status_buckets.values())} orders, {skipped_count} skipped")

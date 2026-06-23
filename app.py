@@ -2197,7 +2197,7 @@ def api_create_inventory_transaction():
                 'error': 'Quantity cannot be zero'
             }), 400
         
-        valid_types = ['Receive', 'Ship', 'Adjust Up', 'Adjust Down', 'Repack']
+        valid_types = ['Receive', 'Ship', 'Adjust Up', 'Adjust Down', 'Repack', 'Cancel']
         if transaction_type not in valid_types:
             return jsonify({
                 'success': False,
@@ -2316,7 +2316,7 @@ def api_update_inventory_transaction(transaction_id):
                 'error': 'Quantity cannot be zero'
             }), 400
         
-        valid_types = ['Receive', 'Ship', 'Adjust Up', 'Adjust Down', 'Repack']
+        valid_types = ['Receive', 'Ship', 'Adjust Up', 'Adjust Down', 'Repack', 'Cancel']
         if transaction_type not in valid_types:
             return jsonify({
                 'success': False,
