@@ -1,0 +1,4655 @@
+[
+  {
+    "id": 3638,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863379",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3639,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863378",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3640,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863391",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3641,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863388",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3642,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863385",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3643,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863393",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3644,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863387",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3645,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863392",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3646,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863382",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3648,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863380",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3649,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863386",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3650,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863390",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3651,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863378",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3652,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863384",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3653,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863376",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3654,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863393",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3655,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260082",
+    "notes": "863389",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3656,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863380",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3657,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863390",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3658,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863381",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3659,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863384",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3660,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863394",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3661,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863379",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3662,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863376",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3663,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863385",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3664,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863391",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3666,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863389",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3667,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863400",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3668,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863401",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3669,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863401",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3671,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260082",
+    "notes": "863395",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3672,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863395",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3673,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 30,
+    "lot_number": "260082",
+    "notes": "863402",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3674,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 10,
+    "lot_number": "260082",
+    "notes": "863402",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3675,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863396",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3677,
+    "date": "2026-06-01",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863397",
+    "created_at": "2026-06-01 17:49:04.449726+00"
+  },
+  {
+    "id": 3678,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863415",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3679,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863414",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3681,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 30,
+    "lot_number": "260082",
+    "notes": "863411",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3684,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 10,
+    "lot_number": "260082",
+    "notes": "863411",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3685,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863421",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3686,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863419",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3687,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863408",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3688,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260082",
+    "notes": "863419",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3689,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 7,
+    "lot_number": "260082",
+    "notes": "863409",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3690,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863430",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3691,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863407",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3692,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863428",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3693,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863429",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3694,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863423",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3695,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863431",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3696,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863418",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3697,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863424",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3698,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863409",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3699,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863407",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3700,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863423",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3702,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863408",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3703,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863422",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3705,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863422",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3706,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863431",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3707,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863421",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3708,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863417",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3709,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863427",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3710,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863419",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3712,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863406",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3713,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863418",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3714,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863426",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3715,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863414",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3716,
+    "date": "2026-06-02",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863425",
+    "created_at": "2026-06-02 18:01:15.602711+00"
+  },
+  {
+    "id": 3718,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863438",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3720,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260082",
+    "notes": "863436",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3721,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863436",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3722,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 30,
+    "lot_number": "260082",
+    "notes": "863437",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3723,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863470",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3724,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863470",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3725,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863469",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3727,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863464",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3728,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260082",
+    "notes": "863468",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3729,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863444",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3732,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863464",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3734,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863463",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3736,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863439",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3738,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863448",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3739,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863440",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3740,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863461",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3741,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863458",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3742,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 10,
+    "lot_number": "260082",
+    "notes": "863437",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3743,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863441",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3745,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863460",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3746,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863445",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3747,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260082",
+    "notes": "863459",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3748,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863468",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3749,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863441",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3750,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863460",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3751,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863445",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3752,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863466",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3753,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863442",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3755,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863456",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3756,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863447",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3758,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863467",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3759,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863446",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3760,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863434",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3762,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863458",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3763,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863455",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3765,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863453",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3767,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863432",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3768,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863451",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3769,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863433",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3770,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863462",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3771,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863446",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3773,
+    "date": "2026-06-03",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863442",
+    "created_at": "2026-06-03 17:21:48.655029+00"
+  },
+  {
+    "id": 3774,
+    "date": "2026-06-03",
+    "transaction_type": "Adjust Up",
+    "quantity": 22,
+    "lot_number": "260047",
+    "notes": "Adjust to reconcile negative balance",
+    "created_at": "2026-06-03 21:55:17.2554+00"
+  },
+  {
+    "id": 3775,
+    "date": "2026-06-03",
+    "transaction_type": "Adjust Down",
+    "quantity": 33,
+    "lot_number": "260082",
+    "notes": "",
+    "created_at": "2026-06-03 21:58:43.347111+00"
+  },
+  {
+    "id": 3780,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863471",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3781,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260082",
+    "notes": "863486",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3782,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863486",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3783,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260082",
+    "notes": "863484",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3784,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863474",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3785,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863473",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3787,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863491",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3788,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863485",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3791,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863479",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3792,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863481",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3793,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863490",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3795,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863471",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3797,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863493",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3798,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863479",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3799,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863490",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3800,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863484",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3802,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863488",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3803,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863489",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3804,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863481",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3805,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863494",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3806,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863487",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3807,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863472",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3808,
+    "date": "2026-06-04",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863493",
+    "created_at": "2026-06-04 17:18:19.727553+00"
+  },
+  {
+    "id": 3810,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863519",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3811,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260082",
+    "notes": "863518",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3812,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863514",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3813,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863508",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3814,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 8,
+    "lot_number": "260082",
+    "notes": "863534",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3816,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863501",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3817,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863503",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3818,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863518",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3819,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863517",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3820,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863500",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3821,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863517",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3822,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863504",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3823,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863515",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3825,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863516",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3826,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863534",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3827,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863502",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3828,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863516",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3829,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863526",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3831,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863499",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3832,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863510",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3833,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863525",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3835,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863495",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3836,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863496",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3837,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863508",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3838,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863525",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3839,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863523",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3840,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863523",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3841,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863496",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3843,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260082",
+    "notes": "863521",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3844,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863551",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3845,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863530",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3846,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 8,
+    "lot_number": "260082",
+    "notes": "863550",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3847,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863521",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3848,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260082",
+    "notes": "863514",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3849,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863551",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3850,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863552",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3851,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863530",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3852,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863548",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3853,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863529",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3854,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863542",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3855,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863547",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3856,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863539",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3857,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260082",
+    "notes": "863541",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3858,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863550",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3859,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260082",
+    "notes": "863536",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3861,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863544",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3862,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863541",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3863,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863540",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3864,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863536",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3865,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863544",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3866,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863540",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3867,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260082",
+    "notes": "863543",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3868,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260082",
+    "notes": "863531",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3869,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863533",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3870,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863549",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3871,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863537",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3872,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863543",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3873,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863538",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3874,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863531",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3875,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863537",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3876,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260082",
+    "notes": "863528",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3877,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863527",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3880,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863532",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3881,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863528",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3882,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863524",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3883,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863522",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3884,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863527",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3885,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863545",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3886,
+    "date": "2026-06-05",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863520",
+    "created_at": "2026-06-05 17:17:59.229452+00"
+  },
+  {
+    "id": 3887,
+    "date": "2026-06-05",
+    "transaction_type": "Receive",
+    "quantity": 576,
+    "lot_number": "260122",
+    "notes": "260122",
+    "created_at": "2026-06-08 16:31:03.564082+00"
+  },
+  {
+    "id": 3888,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 7,
+    "lot_number": "260082",
+    "notes": "863569",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3889,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863568",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3890,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863567",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3891,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260082",
+    "notes": "863554",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3892,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863566",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3893,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863562",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3894,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863560",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3895,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863561",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3896,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863556",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3897,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863554",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3898,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863565",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3899,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863561",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3903,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863566",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3905,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863569",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3906,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863557",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3907,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863563",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3908,
+    "date": "2026-06-08",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863555",
+    "created_at": "2026-06-08 17:21:34.323401+00"
+  },
+  {
+    "id": 3909,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863570",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3910,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863608",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3912,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863604",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3913,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863602",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3914,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863590",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3915,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863577",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3916,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863580",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3918,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863588",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3919,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863577",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3920,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863580",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3921,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863571",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3922,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863583",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3925,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863586",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3926,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863574",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3927,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863604",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3928,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863591",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3929,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863575",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3930,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863602",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3931,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863590",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3932,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863583",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3933,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863570",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3934,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863589",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3935,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863598",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3936,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863587",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3937,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863579",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3938,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863584",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3939,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863586",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3940,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863599",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3942,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863598",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3943,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863582",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3944,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863607",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3945,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863593",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3946,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863581",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3947,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863576",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3948,
+    "date": "2026-06-09",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863605",
+    "created_at": "2026-06-09 17:32:18.916654+00"
+  },
+  {
+    "id": 3949,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260082",
+    "notes": "863611",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3950,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863629",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3951,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863632",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3952,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863611",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3953,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863633",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3954,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260082",
+    "notes": "863610",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3955,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863631",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3956,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863619",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3957,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863627",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3958,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863633",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3959,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863615",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3960,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863621",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3961,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863628",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3962,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863614",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3963,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863618",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3964,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863624",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3965,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863616",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3966,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863623",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3968,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863627",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3969,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863614",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3970,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863622",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3971,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863625",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3973,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260082",
+    "notes": "863613",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3974,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863617",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3975,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863620",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3976,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863628",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3977,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260082",
+    "notes": "863610",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3978,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863631",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3979,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863621",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3980,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863625",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3981,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863617",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3982,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863609",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3983,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863617",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3984,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863613",
+    "created_at": "2026-06-10 17:23:51.946557+00"
+  },
+  {
+    "id": 3985,
+    "date": "2026-06-10",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863626",
+    "created_at": "2026-06-10 21:50:34.483437+00"
+  },
+  {
+    "id": 3986,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863645",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3988,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863645",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3990,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863635",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3991,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863651",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3992,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260082",
+    "notes": "863634",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3993,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863649",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3995,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260082",
+    "notes": "863648",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3996,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863648",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3997,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863639",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3998,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863656",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 3999,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863646",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 4001,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863654",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 4002,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863642",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 4003,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863653",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 4004,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863657",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 4005,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863638",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 4006,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863644",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 4007,
+    "date": "2026-06-11",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863652",
+    "created_at": "2026-06-11 17:22:04.701908+00"
+  },
+  {
+    "id": 4008,
+    "date": "2026-06-12",
+    "transaction_type": "Adjust Down",
+    "quantity": 43,
+    "lot_number": "260082",
+    "notes": "Promo SKU not being deducted properly",
+    "created_at": "2026-06-12 17:15:13.59531+00"
+  },
+  {
+    "id": 4009,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863659",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4010,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260122",
+    "notes": "863669",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4011,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863662",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4012,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863669",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4014,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863669",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4015,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863663",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4019,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863660",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4020,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863668",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4021,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863672",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4022,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863672",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4024,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260082",
+    "notes": "863674",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4025,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260082",
+    "notes": "863675",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4026,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863676",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4027,
+    "date": "2026-06-12",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863673",
+    "created_at": "2026-06-12 17:28:03.716015+00"
+  },
+  {
+    "id": 4245,
+    "date": "2026-06-14",
+    "transaction_type": "Receive",
+    "quantity": 191,
+    "lot_number": "260122",
+    "notes": "260122",
+    "created_at": "2026-06-22 16:08:14.379646+00"
+  },
+  {
+    "id": 4028,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863723",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4029,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863723",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4030,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863722",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4033,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260122",
+    "notes": "863707",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4034,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863722",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4035,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260122",
+    "notes": "863693",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4036,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863717",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4037,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863712",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4038,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863706",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4039,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863707",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4040,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863685",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4041,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260122",
+    "notes": "863714",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4042,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863704",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4043,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863686",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4044,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863706",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4045,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863692",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4046,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863693",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4047,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863683",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4048,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863715",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4049,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863691",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4050,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863682",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4051,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863704",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4052,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863703",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4053,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863714",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4054,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863709",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4055,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863697",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4056,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863703",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4057,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863710",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4058,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260122",
+    "notes": "863689",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4059,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260122",
+    "notes": "863711",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4061,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863719",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4062,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863696",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4063,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863682",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4064,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863696",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4065,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863689",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4066,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863678",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4068,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863711",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4069,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863705",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4070,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863699",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4072,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863684",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4073,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260122",
+    "notes": "863713",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4074,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260122",
+    "notes": "863716",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4075,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863690",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4076,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260122",
+    "notes": "863692",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4078,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863702",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4079,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863695",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4080,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863679",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4082,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863713",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4083,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863716",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4084,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863698",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4085,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863708",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4086,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863687",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4087,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863712",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4088,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863688",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4089,
+    "date": "2026-06-15",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863698",
+    "created_at": "2026-06-15 17:41:54.691653+00"
+  },
+  {
+    "id": 4091,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863729",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4093,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863732",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4094,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863732",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4095,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863733",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4096,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863734",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4097,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863735",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4098,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863736",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4099,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863739",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4100,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863741",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4101,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863742",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4102,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863744",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4103,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863746",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4104,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863748",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4106,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863749",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4107,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863750",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4108,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863751",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4109,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863753",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4110,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863753",
+    "created_at": "2026-06-16 17:30:00.870323+00"
+  },
+  {
+    "id": 4111,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863724",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4112,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863757",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4113,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260122",
+    "notes": "863756",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4114,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863725",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4115,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863725",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4116,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 8,
+    "lot_number": "260122",
+    "notes": "863728",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4117,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863752",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4118,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863756",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4119,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863752",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4120,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260122",
+    "notes": "863745",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4121,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863728",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4123,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863740",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4124,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863727",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4125,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260122",
+    "notes": "863754",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4126,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863747",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4127,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260122",
+    "notes": "863736",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4129,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863727",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4130,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863748",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4131,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863731",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4132,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863745",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4134,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863751",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4135,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863731",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4136,
+    "date": "2026-06-16",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863754",
+    "created_at": "2026-06-16 17:31:05.198722+00"
+  },
+  {
+    "id": 4137,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863720",
+    "created_at": "2026-06-17 17:30:00.931459+00"
+  },
+  {
+    "id": 4138,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863759",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4139,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863791",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4140,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863787",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4141,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863786",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4142,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 30,
+    "lot_number": "260122",
+    "notes": "863788",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4144,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863771",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4145,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863771",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4146,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863768",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4147,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863768",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4148,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863769",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4149,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863796",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4150,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863769",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4151,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863797",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4152,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 30,
+    "lot_number": "260122",
+    "notes": "863766",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4153,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863795",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4154,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863792",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4155,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260122",
+    "notes": "863765",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4156,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 10,
+    "lot_number": "260122",
+    "notes": "863766",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4157,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863792",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4158,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 10,
+    "lot_number": "260122",
+    "notes": "863788",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4159,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863798",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4160,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863798",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4161,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863794",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4162,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863765",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4164,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863764",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4167,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863782",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4169,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 6,
+    "lot_number": "260122",
+    "notes": "863785",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4170,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863763",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4171,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863765",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4172,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863784",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4173,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863780",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4174,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863758",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4175,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863777",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4176,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863782",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4177,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863759",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4178,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863776",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4179,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863763",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4180,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863791",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4181,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863784",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4182,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863761",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4184,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863772",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4185,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863773",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4186,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863761",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4187,
+    "date": "2026-06-17",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863767",
+    "created_at": "2026-06-17 17:54:07.947532+00"
+  },
+  {
+    "id": 4189,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863801",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4191,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863809",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4192,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863813",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4193,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863815",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4194,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863809",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4196,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863807",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4197,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863800",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4198,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863803",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4199,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863806",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4201,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863802",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4202,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863815",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4203,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 4,
+    "lot_number": "260122",
+    "notes": "863805",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4204,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863799",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4205,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863812",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4206,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863801",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4208,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863800",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4209,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863812",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4210,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863816",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4211,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863810",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4212,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863808",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4213,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863821",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4215,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260122",
+    "notes": "863816",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4216,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863824",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4217,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863822",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4218,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863816",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4219,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863822",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4220,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863829",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4221,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863827",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4222,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863825",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4223,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863825",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4224,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863826",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4225,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863820",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4226,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863826",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4227,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863817",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4228,
+    "date": "2026-06-18",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863823",
+    "created_at": "2026-06-18 17:26:31.815458+00"
+  },
+  {
+    "id": 4229,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863831",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4230,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 12,
+    "lot_number": "260122",
+    "notes": "863845",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4231,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863845",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4233,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863842",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4234,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863831",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4235,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 5,
+    "lot_number": "260122",
+    "notes": "863840",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4236,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 3,
+    "lot_number": "260122",
+    "notes": "863837",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4237,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 2,
+    "lot_number": "260122",
+    "notes": "863835",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4238,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863836",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4239,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863839",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4240,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863833",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4242,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863841",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4243,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863840",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  },
+  {
+    "id": 4244,
+    "date": "2026-06-19",
+    "transaction_type": "Ship",
+    "quantity": 1,
+    "lot_number": "260122",
+    "notes": "863830",
+    "created_at": "2026-06-19 17:14:04.912726+00"
+  }
+]

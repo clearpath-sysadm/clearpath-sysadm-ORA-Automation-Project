@@ -1,0 +1,122 @@
+[
+  {
+    "lot_number": "250101",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250172",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250195",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250216",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250237",
+    "status": "depleted",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250300",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250340",
+    "status": "depleted",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250362",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250372",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "250377",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "260017",
+    "status": "inactive",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "578",
+    "net_adjustments": "578"
+  },
+  {
+    "lot_number": "260047",
+    "status": "active",
+    "running_balance": "0",
+    "total_received": "1728",
+    "total_shipped": "2228",
+    "net_adjustments": "500"
+  },
+  {
+    "lot_number": "260082",
+    "status": "depleted",
+    "running_balance": "76",
+    "total_received": "2148",
+    "total_shipped": "2072",
+    "net_adjustments": "152"
+  },
+  {
+    "lot_number": "260122",
+    "status": "active",
+    "running_balance": "1324",
+    "total_received": "1919",
+    "total_shipped": "595",
+    "net_adjustments": "0"
+  },
+  {
+    "lot_number": "260125",
+    "status": "active",
+    "running_balance": "0",
+    "total_received": "0",
+    "total_shipped": "0",
+    "net_adjustments": "0"
+  }
+]
