@@ -738,7 +738,44 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
                     SET quantity_shipped = EXCLUDED.quantity_shipped,
                         ship_date = EXCLUDED.ship_date
                 """, (ship_date, sku_lot, base_sku, total_qty, order_number))
-            
+
+            # INVENTORY DEDUCTION: Record lot deductions for key-SKU items.
+            # Uses a separate aggregation dict (_deduction_agg, distinct from _manual_agg above)
+            # so promo SKU variants (e.g. 17613 → 17612) are summed into one deduct_lot_inventory
+            # call per (base_sku, cf1) pair, preventing the idempotency guard from blocking
+            # the second item when two line items map to the same base SKU.
+            from src.services.inventory.lot_deduction import deduct_lot_inventory
+            from src.services.inventory.promo_sku_utils import load_promo_map
+
+            cf1 = (extract_cf1(order) or '').strip()
+            try:
+                _deduction_promo_map = load_promo_map(conn)
+            except Exception:
+                _deduction_promo_map = {}
+
+            _deduction_agg = {}
+            for item in items:
+                sku_raw = str(item.get('sku', '')).strip()
+                qty = item.get('quantity', 0)
+                if not sku_raw or qty <= 0:
+                    continue
+                raw_base = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                mapped_sku = _deduction_promo_map.get(raw_base, raw_base)
+                if mapped_sku not in KEY_PRODUCT_SKUS:
+                    continue
+                _deduction_agg[(mapped_sku, cf1)] = _deduction_agg.get((mapped_sku, cf1), 0) + qty
+
+            for (mapped_sku, cf1_val), total_qty in _deduction_agg.items():
+                deduct_lot_inventory(
+                    order_number=order_number,
+                    shipstation_order_id=str(order_id),
+                    base_sku=mapped_sku,
+                    customField1_value=cf1_val,
+                    ship_date=ship_date,
+                    quantity=total_qty,
+                    conn=conn
+                )
+
             logger.info(f"✅ Imported SHIPPED manual order: {order_number} (ship_date: {ship_date})")
             server_logger.info(f"Imported shipped manual order: {order_number} (ship_date: {ship_date})", source="ShipStation Sync")
         else:
@@ -1640,12 +1677,17 @@ def run_unified_sync():
                                 error_details.append(f"Order {order_number}: Failed to import BigCommerce order")
                             # Falls through to RELEASE SAVEPOINT below
 
-                        elif order_number.startswith('10'):
-                            # Old XML pipeline orders (10xxxx) → Skip; pipeline retired
-                            logger.debug(f"⏭️ Skipping {order_number} - XML pipeline order (retired)")
-                            stats['skipped_not_manual'] += 1
-                            cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
-                            continue
+                        elif order_number.startswith('10') and order_number.isdigit() and int(order_number) < 801000:
+                            # XCart manual orders (10xxxx, below BigCommerce floor of 801000)
+                            # No key-SKU gate — every manual order is intentional; deduction only fires for key SKUs
+                            import_result = import_new_manual_order(order, conn, api_key, api_secret)
+                            if import_result is True:
+                                stats['new_manual_imported'] = stats.get('new_manual_imported', 0) + 1
+                            elif import_result is False:
+                                stats['errors'] += 1
+                                error_details.append(f"Order {order_number}: Failed to import XCart manual order")
+                            # import_result is None → conflict detected, handled gracefully (not an error)
+                            # Falls through to RELEASE SAVEPOINT below
 
                         else:
                             # Unrecognized order number format → Skip with orphan warning if awaiting
