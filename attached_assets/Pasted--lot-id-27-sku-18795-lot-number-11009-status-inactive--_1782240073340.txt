@@ -1,0 +1,152 @@
+[
+  {
+    "lot_id": 27,
+    "sku": "18795",
+    "lot_number": "11009",
+    "status": "inactive",
+    "current_balance": "594",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "594",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 20,
+    "sku": "18675",
+    "lot_number": "260052",
+    "status": "inactive",
+    "current_balance": "240",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "240",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 11,
+    "sku": "17914",
+    "lot_number": "250297",
+    "status": "active",
+    "current_balance": "774",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "774",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 21,
+    "sku": "18795",
+    "lot_number": "11003",
+    "status": "inactive",
+    "current_balance": "1018",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "1018",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 12,
+    "sku": "17904",
+    "lot_number": "250240",
+    "status": "active",
+    "current_balance": "112",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "112",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 24,
+    "sku": "18795",
+    "lot_number": "11006",
+    "status": "inactive",
+    "current_balance": "996",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "996",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 8,
+    "sku": "18795",
+    "lot_number": "11002",
+    "status": "inactive",
+    "current_balance": "713",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "713",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 7,
+    "sku": "18795",
+    "lot_number": "11001",
+    "status": "active",
+    "current_balance": "174",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "174",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 22,
+    "sku": "18795",
+    "lot_number": "11004",
+    "status": "inactive",
+    "current_balance": "1034",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "1034",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 4,
+    "sku": "18675",
+    "lot_number": "240231",
+    "status": "active",
+    "current_balance": "437",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "437",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 25,
+    "sku": "18795",
+    "lot_number": "11007",
+    "status": "inactive",
+    "current_balance": "766",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "766",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 23,
+    "sku": "18795",
+    "lot_number": "11005",
+    "status": "inactive",
+    "current_balance": "553",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "553",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 26,
+    "sku": "18795",
+    "lot_number": "11008",
+    "status": "inactive",
+    "current_balance": "996",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "996",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 18,
+    "sku": "17612",
+    "lot_number": "260017",
+    "status": "inactive",
+    "current_balance": "585",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "585",
+    "orders_deducted_today": "0"
+  },
+  {
+    "lot_id": 19,
+    "sku": "17612",
+    "lot_number": "260047",
+    "status": "active",
+    "current_balance": "1728",
+    "units_shipped_today": "0",
+    "balance_before_todays_shipments": "1728",
+    "orders_deducted_today": "0"
+  }
+]

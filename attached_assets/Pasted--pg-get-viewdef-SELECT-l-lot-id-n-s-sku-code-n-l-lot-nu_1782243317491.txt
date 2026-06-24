@@ -1,0 +1,133 @@
+[
+  {
+    "pg_get_viewdef": " SELECT l.lot_id,\n    s.sku_code,\n    l.lot_number,\n    l.status,\n    l.received_date,\n    l.notes,\n    l.created_at,\n    l.updated_at,\n    COALESCE(sum(\n        CASE\n            WHEN it.transaction_type = ANY (ARRAY['Receive'::text, 'Adjust Up'::text, 'Repack'::text]) THEN it.quantity\n            WHEN it.transaction_type = ANY (ARRAY['Ship'::text, 'Adjust Down'::text]) THEN - it.quantity\n            ELSE 0\n        END), 0::bigint) AS balance\n   FROM lots l\n     JOIN skus s ON s.sku_id = l.sku_id\n     LEFT JOIN inventory_transactions it ON it.lot_id = l.lot_id\n  GROUP BY l.lot_id, s.sku_code, l.lot_number, l.status, l.received_date, l.notes, l.created_at, l.updated_at;"
+  }
+]
+
+
+
+Playground
+
+Prettify
+Shift + Alt + F
+
+Run
+Ctrl+Enter
+
+
+Database schema
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+-- Part 2: Raw math vs. what the VIEW reports for the active lots
+SELECT
+    lb.lot_id,
+    lb.lot_number,
+    lb.sku_code,
+    lb.balance                                                             AS view_balance,
+    SUM(it.quantity) FILTER (WHERE it.transaction_type IN ('Receive','Adjust Up','Repack'))  AS total_added,
+    SUM(it.quantity) FILTER (WHERE it.transaction_type IN ('Ship','Adjust Down'))            AS total_deducted,
+    SUM(it.quantity) FILTER (WHERE it.transaction_type IN ('Receive','Adjust Up','Repack'))
+      - COALESCE(SUM(it.quantity) FILTER (WHERE it.transaction_type IN ('Ship','Adjust Down')), 0)
+                                                                           AS calculated_balance
+FROM lot_balances lb
+LEFT JOIN inventory_transactions it ON it.lot_id = lb.lot_id
+WHERE lb.lot_id IN (30, 11, 29, 7)
+GROUP BY lb.lot_id, lb.lot_number, lb.sku_code, lb.balance
+ORDER BY lb.lot_id;
+
+
+
+4 rows • 3s
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+[
+  {
+    "lot_id": 7,
+    "lot_number": "11001",
+    "sku_code": "18795",
+    "view_balance": "60",
+    "total_added": "954",
+    "total_deducted": "894",
+    "calculated_balance": "60"
+  },
+  {
+    "lot_id": 11,
+    "lot_number": "250297",
+    "sku_code": "17914",
+    "view_balance": "472",
+    "total_added": "1553",
+    "total_deducted": "1081",
+    "calculated_balance": "472"
+  },
+  {
+    "lot_id": 29,
+    "lot_number": "260125",
+    "sku_code": "17904",
+    "view_balance": "542",
+    "total_added": "613",
+    "total_deducted": "71",
+    "calculated_balance": "542"
+  },
+  {
+    "lot_id": 30,
+    "lot_number": "260122",
+    "sku_code": "17612",
+    "view_balance": "1076",
+    "total_added": "1919",
+    "total_deducted": "843",
+    "calculated_balance": "1076"
+  }
+]
+
+

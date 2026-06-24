@@ -1,0 +1,112 @@
+Query 1 no results
+
+[
+  {
+    "date": "2026-06-24",
+    "sku": "17612",
+    "orders_deducted": "21",
+    "units_deducted": "169"
+  },
+  {
+    "date": "2026-06-24",
+    "sku": "17904",
+    "orders_deducted": "2",
+    "units_deducted": "2"
+  },
+  {
+    "date": "2026-06-24",
+    "sku": "17914",
+    "orders_deducted": "2",
+    "units_deducted": "4"
+  },
+  {
+    "date": "2026-06-24",
+    "sku": "18795",
+    "orders_deducted": "1",
+    "units_deducted": "1"
+  },
+  {
+    "date": "2026-06-23",
+    "sku": "17612",
+    "orders_deducted": "21",
+    "units_deducted": "88"
+  },
+  {
+    "date": "2026-06-23",
+    "sku": "17904",
+    "orders_deducted": "3",
+    "units_deducted": "5"
+  },
+  {
+    "date": "2026-06-23",
+    "sku": "17914",
+    "orders_deducted": "2",
+    "units_deducted": "8"
+  },
+  {
+    "date": "2026-06-23",
+    "sku": "18795",
+    "orders_deducted": "1",
+    "units_deducted": "1"
+  },
+  {
+    "date": "2026-06-22",
+    "sku": "17612",
+    "orders_deducted": "11",
+    "units_deducted": "109"
+  },
+  {
+    "date": "2026-06-22",
+    "sku": "17904",
+    "orders_deducted": "4",
+    "units_deducted": "12"
+  },
+  {
+    "date": "2026-06-22",
+    "sku": "17914",
+    "orders_deducted": "2",
+    "units_deducted": "2"
+  },
+  {
+    "date": "2026-06-22",
+    "sku": "18795",
+    "orders_deducted": "1",
+    "units_deducted": "4"
+  }
+]
+
+[
+  {
+    "sku": "17612",
+    "dashboard_current_qty": "907",
+    "total_ever_added": "6873",
+    "total_ever_deducted": "5966"
+  },
+  {
+    "sku": "17904",
+    "dashboard_current_qty": "540",
+    "total_ever_added": "719",
+    "total_ever_deducted": "179"
+  },
+  {
+    "sku": "17914",
+    "dashboard_current_qty": "468",
+    "total_ever_added": "1553",
+    "total_ever_deducted": "1085"
+  },
+  {
+    "sku": "18675",
+    "dashboard_current_qty": "223",
+    "total_ever_added": "688",
+    "total_ever_deducted": "465"
+  },
+  {
+    "sku": "18795",
+    "dashboard_current_qty": "6729",
+    "total_ever_added": "7849",
+    "total_ever_deducted": "1120"
+  }
+]
+
+
+
