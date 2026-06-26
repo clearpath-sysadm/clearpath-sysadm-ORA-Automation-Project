@@ -44,6 +44,9 @@ WORKFLOW_NAME = 'batch-processor'
 CST = pytz.timezone('US/Central')
 BATCH_TIME = datetime.time(12, 0)
 BATCH_WINDOW_MINUTES = 5
+RECOVERY_START_TIME = datetime.time(12, 10)
+RECOVERY_END_TIME = datetime.time(12, 30)
+RECOVERY_LOOKBACK_MINUTES = 15
 
 
 def _is_batch_time() -> bool:
@@ -58,22 +61,68 @@ def _is_batch_time() -> bool:
 
 def _is_dev_blocked() -> bool:
     """Return True if running in a dev workspace and neither DEV_WORKERS_ACTIVE
-    nor ALLOW_DEV_UPLOAD is set to 'true'."""
-    repl_slug = os.getenv('REPL_SLUG', '').lower()
-    environment = os.getenv('ENVIRONMENT', '').lower()
+    nor ALLOW_DEV_UPLOAD is set to 'true'.
+
+    REPLIT_DEPLOYMENT is set by Replit only in deployed production VMs — it is
+    the authoritative production signal. Without it the process is treated as
+    dev and blocked unless explicitly opted in."""
+    if os.getenv('REPLIT_DEPLOYMENT'):
+        return False  # definitively in a production deployment
+
     allow_dev = (
         os.getenv('DEV_WORKERS_ACTIVE', '').lower() == 'true'
         or os.getenv('ALLOW_DEV_UPLOAD', '').lower() == 'true'
     )
+    return not allow_dev
 
-    if 'workspace' in repl_slug:
-        is_dev = True
-    elif environment == 'production':
-        is_dev = False
-    else:
-        is_dev = True
 
-    return is_dev and not allow_dev
+def _had_started_heartbeat_within(minutes: int) -> bool:
+    """Return True if a STARTED heartbeat was recorded for this workflow within
+    the last `minutes` minutes. Fails closed (returns True) on DB errors to
+    avoid triggering a spurious recovery run."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT 1 FROM workflow_heartbeats
+            WHERE workflow_name = %s
+              AND execution_phase = 'started'
+              AND heartbeat_at >= NOW() - (%s * INTERVAL '1 minute')
+            LIMIT 1
+            """,
+            (WORKFLOW_NAME, minutes),
+        )
+        row = cursor.fetchone()
+        conn.close()
+        return row is not None
+    except Exception as e:
+        logger.warning(f"Could not check recent heartbeats (failing closed): {e}")
+        return True  # fail closed — don't trigger recovery if we can't verify
+
+
+def _run_with_heartbeat(label: str = '') -> None:
+    """Run run_batch_job() wrapped with STARTED/terminal heartbeats.
+    label is an optional log prefix (e.g. 'recovery')."""
+    heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
+    try:
+        status = run_batch_job()
+        if status == 'skipped':
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_pending_shipments'})
+        elif status == 'skipped_duplicate':
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'already_ran_today'})
+        elif status == 'error':
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'reason': 'api_call_failed'})
+        else:
+            heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
+    except Exception as e:
+        heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
+        prefix = f"{label} " if label else ""
+        logger.error(f"Batch {prefix}job error: {e}", exc_info=True)
+        server_logger.error(
+            f"Batch processor {prefix}encountered an unexpected error: {e}",
+            source="Batch Processor"
+        )
 
 
 def _already_batched_today(today_str: str) -> bool:
@@ -386,27 +435,28 @@ def main():
                 time.sleep(60)
                 continue
 
-            now_minute = datetime.datetime.now(CST).strftime('%H:%M')
+            now_ct = datetime.datetime.now(CST)
+            now_minute = now_ct.strftime('%H:%M')
+            now_time = now_ct.time().replace(second=0, microsecond=0)
+
             if _is_batch_time() and now_minute != last_batch_minute:
                 last_batch_minute = now_minute
-                heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
-                try:
-                    status = run_batch_job()
-                    if status == 'skipped':
-                        heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'no_pending_shipments'})
-                    elif status == 'skipped_duplicate':
-                        heartbeat(WORKFLOW_NAME, HeartbeatPhase.SKIPPED, details={'reason': 'already_ran_today'})
-                    elif status == 'error':
-                        heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'reason': 'api_call_failed'})
-                    else:
-                        heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
-                except Exception as e:
-                    heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
-                    logger.error(f"Batch job error: {e}", exc_info=True)
-                    server_logger.error(
-                        f"Batch processor encountered an unexpected error: {e}",
+                _run_with_heartbeat()
+            elif RECOVERY_START_TIME <= now_time <= RECOVERY_END_TIME:
+                today_str = now_ct.strftime('%Y-%m-%d')
+                if (not _already_batched_today(today_str)
+                        and not _had_started_heartbeat_within(RECOVERY_LOOKBACK_MINUTES)):
+                    logger.warning(
+                        f"RECOVERY: No batch created today ({today_str}) and no STARTED "
+                        f"heartbeat in the last {RECOVERY_LOOKBACK_MINUTES} min — "
+                        f"triggering recovery batch at {now_minute} CT"
+                    )
+                    server_logger.warning(
+                        f"Batch processor recovery: primary noon window was missed — "
+                        f"triggering recovery batch at {now_minute} CT.",
                         source="Batch Processor"
                     )
+                    _run_with_heartbeat(label='recovery')
             else:
                 logger.debug(f"Not batch time ({now_minute} CT) — sleeping 60s")
 

@@ -46,6 +46,10 @@ echo "Starting lot tagger (6:00 AM and 12:00 PM CDT, with startup catch-up)..."
 python src/scheduled_lot_tagger.py 2>&1 &
 LOT_TAGGER_PID=$!
 
+echo "Starting batch processor (12:00 PM CT on business days)..."
+python src/scheduled_batch_processor.py 2>&1 &
+BATCH_PID=$!
+
 # Give background processes a moment to start
 sleep 1
 
@@ -57,6 +61,7 @@ echo "   - Unified ShipStation Sync: PID $UNIFIED_PID"
 echo "   - Cleanup: PID $CLEANUP_PID"
 echo "   - Units Refresh: PID $UNITS_PID"
 echo "   - Lot Tagger: PID $LOT_TAGGER_PID"
+echo "   - Batch Processor: PID $BATCH_PID"
 echo "   - Weekly Reporter: MANUAL (EOW button)"
 echo "================================================"
 echo ""

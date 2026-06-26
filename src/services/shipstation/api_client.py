@@ -1130,6 +1130,7 @@ def v2_get_pending_axiom_shipments() -> dict:
         shipment_ids = []
         skipped = 0
         page = 1
+        first_included_logged = False
 
         while True:
             response = make_api_request(
@@ -1164,6 +1165,13 @@ def v2_get_pending_axiom_shipments() -> dict:
                     logger.debug(f"Skipping shipment {sid} — warehouse {wh} is not Axiom")
                     continue
                 shipment_ids.append(sid)
+                if not first_included_logged:
+                    logger.info(
+                        f"V2 warehouse filter check: first included shipment {sid} "
+                        f"has warehouse_id={wh!r} "
+                        f"(configured AXIOM_WAREHOUSE_ID={settings.AXIOM_WAREHOUSE_ID!r})"
+                    )
+                    first_included_logged = True
                 page_axiom += 1
 
             total_pages = data.get('pages', 1)
@@ -1219,18 +1227,18 @@ def v2_create_batch(shipment_ids: list) -> dict:
             timeout=30,
         )
 
-        if response and response.status_code in (200, 201):
-            data = response.json()
-            batch_id = data.get('batch_id') or data.get('id')
-            shipment_count = data.get('count', len(shipment_ids))
-            logger.info(f"V2 batch created: {batch_id} ({shipment_count} shipments confirmed by API, {len(shipment_ids)} requested)")
-            return {'success': True, 'batch_id': batch_id, 'shipment_count': shipment_count, 'response': data}
-        else:
-            status = response.status_code if response else 'no response'
-            body = response.text[:300] if response else ''
-            error_msg = f"V2 POST /batches failed {status}: {body}"
-            logger.error(error_msg)
-            return {'success': False, 'error': error_msg}
+        data = response.json()
+        batch_id = data.get('batch_id') or data.get('id')
+        shipment_count = data.get('count', 0)
+        logger.info(f"V2 batch created: {batch_id} ({shipment_count} shipments confirmed by API, {len(shipment_ids)} requested)")
+        return {'success': True, 'batch_id': batch_id, 'shipment_count': shipment_count, 'response': data}
+
+    except requests.exceptions.HTTPError as e:
+        status_code = e.response.status_code
+        body = e.response.text[:300]
+        error_msg = f"V2 POST /batches failed {status_code}: {body}"
+        logger.error(error_msg)
+        return {'success': False, 'error': error_msg}
 
     except Exception as e:
         logger.error(f"Error creating V2 batch: {e}", exc_info=True)
@@ -1269,28 +1277,27 @@ def v2_get_batch(batch_id: str) -> dict:
             timeout=30,
         )
 
-        if response and response.status_code == 404:
+        data = response.json()
+        fetched_id = data.get('batch_id') or data.get('id') or batch_id
+        shipment_count = data.get('count', data.get('shipment_count', 0))
+        status = data.get('batch_status') or data.get('status', 'unknown')
+        logger.info(f"V2 GET /batches/{batch_id}: status={status}, shipment_count={shipment_count}")
+        return {
+            'success': True,
+            'batch_id': fetched_id,
+            'shipment_count': shipment_count,
+            'status': status,
+        }
+
+    except requests.exceptions.HTTPError as e:
+        status_code = e.response.status_code
+        body = e.response.text[:300]
+        if status_code == 404:
             logger.warning(f"V2 GET /batches/{batch_id} returned 404 — batch not found")
             return {'success': False, 'error_type': 'not_found', 'error': f'Batch {batch_id} not found (404)'}
-
-        if response and response.status_code in (200, 201):
-            data = response.json()
-            fetched_id = data.get('batch_id') or data.get('id') or batch_id
-            shipment_count = data.get('count', data.get('shipment_count', 0))
-            status = data.get('batch_status') or data.get('status', 'unknown')
-            logger.info(f"V2 GET /batches/{batch_id}: status={status}, shipment_count={shipment_count}")
-            return {
-                'success': True,
-                'batch_id': fetched_id,
-                'shipment_count': shipment_count,
-                'status': status,
-            }
-        else:
-            status_code = response.status_code if response else 'no response'
-            body = response.text[:300] if response else ''
-            error_msg = f"V2 GET /batches/{batch_id} failed {status_code}: {body}"
-            logger.error(error_msg)
-            return {'success': False, 'error_type': 'api_error', 'error': error_msg}
+        error_msg = f"V2 GET /batches/{batch_id} failed {status_code}: {body}"
+        logger.error(error_msg)
+        return {'success': False, 'error_type': 'api_error', 'error': error_msg}
 
     except Exception as e:
         logger.error(f"Error fetching V2 batch {batch_id}: {e}", exc_info=True)
