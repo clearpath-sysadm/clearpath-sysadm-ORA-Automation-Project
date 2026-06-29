@@ -1,7 +1,8 @@
 # SKU Variant System — Impact Analysis
 
 **Date:** June 29, 2026  
-**Subject:** Proposed BigCommerce SKU Variant mapping for bulk discounts
+**Subject:** Proposed BigCommerce SKU Variant mapping for bulk discounts  
+**Status:** Revised after code review of `tagger.py`, `lot_deduction.py`, `sku_lot_parser.py`, and `promo_sku_utils.py`
 
 ---
 
@@ -26,17 +27,35 @@ The new format (`17612-40`) encodes two pieces of information in the SKU itself:
 
 ---
 
-## 🚨 Biggest Risk: SKU Format Collision
+## 🚨 Risk 1 (Highest): SKU Format Collision
 
-The current SKU parser (`sku_lot_parser.py`) uses this regex to split lot stamps:
+The SKU parser (`sku_lot_parser.py`) handles **both spaced and unspaced** dash formats:
 
 ```
-^(\d+)\s*-\s*(\d+)$   →   "17612 - 250300"
+"17612 - 260017"  →  base_sku=17612, lot=260017   ✅ correct
+"17612-260017"    →  base_sku=17612, lot=260017   ✅ correct
+"17612-40"        →  base_sku=17612, lot=40        ❌ WRONG — lot 40 does not exist
 ```
 
-A variant SKU like `17612-40` **matches this same pattern** — the parser would mistake `40` for a lot number. This is the most dangerous ambiguity and has to be resolved first before anything else.
+A variant SKU like `17612-40` silently misparsed as a lot stamp today with no error — it just fails to find lot `40` downstream. This must be resolved before any variant SKUs go live.
 
-**Resolution strategy:** A variant SKU lookup table (in the database) would be the authoritative way to distinguish them. Before parsing as a lot stamp, the system checks: *is this SKU a known variant?*
+**Resolution:** A `sku_variants` database table acts as the authoritative lookup. Before the parser applies its regex, it checks: *is this a known variant SKU?* If yes, return `(base_sku, units_per_case)` and skip lot parsing entirely.
+
+---
+
+## 🚨 Risk 2 (High): Shipping Profiles Are Hardcoded by SKU
+
+The lot tagger (`tagger.py`) resolves box dimensions and weight from a hardcoded `SKU_SHIPPING_PROFILES` map keyed by **base SKU**. A `17612-40` bundle (40 units) ships in a completely different box than `17612-1` (1 unit). If the tagger only resolves to the base SKU profile, every variant bundle would be assigned the wrong package dimensions — causing FedEx rate errors or mislabeled shipments.
+
+**Resolution:** The `sku_variants` table must include shipping profile data per variant (weight, dimensions, package preset). The tagger's profile resolution must check the variant lookup first, before falling back to base SKU defaults.
+
+---
+
+## 🚨 Risk 3 (High): Multi-SKU Guard in the Tagger
+
+The tagger has an explicit guard: if an order contains **more than one tracked SKU**, it logs the order to `lot_tagging_failures` and skips it entirely. Under the variant system, an order containing `17612-40` and `17904-6` would — after variant resolution — be two different base SKUs. This triggers the multi-SKU guard and the order is skipped with no lot stamp.
+
+**Resolution:** A deliberate decision is needed: either extend the tagger to support multi-product variant orders, or document that mixed-product variant orders are unsupported and must be placed as separate orders.
 
 ---
 
@@ -44,58 +63,66 @@ A variant SKU like `17612-40` **matches this same pattern** — the parser would
 
 | Change | Details |
 |--------|---------|
-| **New table: `sku_variants`** | Maps `17612-40` → base SKU `17612`, `units_per_case = 40`, display name, active flag |
-| **`skus` table** | Likely stays as-is (only base SKUs live here); variants reference base SKUs |
-| **`sku_promotions` table** | May be partially or fully superseded — the variant system is doing what promo SKU remapping currently does, more cleanly |
-| **`shipped_items` table** | The `base_sku` and `sku_lot` columns are fine; the quantity recorded there needs to reflect **expanded units**, not the raw ShipStation line quantity |
+| **New table: `sku_variants`** | Maps `17612-40` → base SKU `17612`, `units_per_case = 40`, display name, shipping profile (weight/dimensions/package preset), active flag |
+| **`skus` table** | Stays as-is — only base SKUs live here; variants reference base SKUs |
+| **`sku_promotions` table** | Likely superseded — variants do what promo SKU remapping does, more cleanly. Parallel-run during transition, then deprecate. |
+| **`shipped_items` table** | `base_sku` and `sku_lot` columns are fine; quantities recorded must reflect **expanded units** (not raw ShipStation line qty) |
 
 ---
 
 ## Code Changes
 
 ### `src/services/data_processing/sku_lot_parser.py`
-Needs a pre-check against the `sku_variants` table before attempting lot-stamp parsing. If a SKU is a known variant, return `(base_sku, None)` — no lot portion, just a base SKU expansion.
+Add a variant pre-check against the `sku_variants` table before the regex runs. If the SKU is a known variant, return `(base_sku, None)` — skip lot parsing. This is the fix for Risk 1.
 
 ### `src/lot_tagger/tagger.py`
-When tagging lots, a variant SKU like `17612-40` must be resolved to base SKU `17612` before the FIFO lot lookup. The lot stamp written back to ShipStation's `customField1` would still reference the base SKU and lot number — this part probably stays the same.
+Two changes required:
+1. **Variant resolution:** Resolve `17612-40` → `17612` before the FIFO lot lookup. The lot stamp written to ShipStation's `customField1` uses the base SKU (`17612 - {lot_number}`) — this part is unchanged.
+2. **Shipping profile lookup:** Check `sku_variants` for per-variant box dimensions/weight before falling back to the base SKU profile. This is the fix for Risk 2.
 
-### `src/services/inventory/lot_deduction.py` *(highest impact)*
-The deduction multiplier is the critical change. Currently: `deduct quantity × 1`. New logic: `deduct quantity × units_per_case`. An order of `17612-40` with qty 1 must create a Ship transaction for **40 units**, not 1. Getting this wrong silently corrupts inventory.
+### `src/services/inventory/lot_deduction.py` *(highest inventory impact)*
+The unit expansion multiplier must be applied at the **aggregation step** — before quantities are summed by `(base_sku, lot)`. Currently: `deduct quantity × 1`. New logic: `deduct quantity × units_per_case`. An order of `17612-40` qty 1 must produce a Ship transaction for **40 units**, not 1. Applying this after aggregation would collapse the multiplication incorrectly.
+
+The existing idempotency guard (checks for duplicate `Ship` transactions by `lot_id + shipstation_order_id`) continues to work correctly as long as variant resolution happens before lot assignment.
 
 ### `src/services/inventory/promo_sku_utils.py`
-The promo SKU remapping layer either gets extended to handle variants, or more likely, variants become a cleaner replacement for the promo SKU concept entirely. This would need a deliberate decision — run both in parallel during a transition, then deprecate promo SKUs.
+Variants serve the same purpose as promo SKU remapping. Decision needed: extend this utility to handle variants in parallel, or route variants through the new `sku_variants` table exclusively and begin deprecating promo SKU logic.
 
 ### `KEY_PRODUCT_SKUS` list
-Currently hardcoded as `['17612', '17904', '17914', '18675', '18795']`. Any logic that gates on this list (inventory deduction, lot validation) needs to also recognize variant SKUs whose base maps to one of these — either by expanding the list dynamically from the `sku_variants` table, or by resolving to base before the check.
+Currently hardcoded as `['17612', '17904', '17914', '18675', '18795']`. All logic gated on this list must resolve variant SKUs to their base before the check, or dynamically expand the list from `sku_variants` at startup.
 
 ### Charge Report
-Currently aggregates shipped units by SKU. With variants, a `17612-40` line item qty 1 must count as 40 units in the charge report, not 1. Without this fix, charge reports would dramatically undercount.
+Currently sums raw `Ship` transaction quantities. With variants, a `17612-40` line item qty 1 must count as 40 units. The expansion happens upstream (in deduction), so the charge report itself is correct as long as the deduction multiplier is applied properly.
 
 ### ShipStation Reconciliation / Inventory Comparison Tools
-Any place that compares ShipStation order quantities to inventory counts needs the same expansion logic applied.
+Any tool that compares ShipStation order quantities directly to inventory counts (without going through the deduction pipeline) needs the same expansion logic applied at read time.
 
 ---
 
-## Migration Sequence
+## Revised Migration Sequence
 
-1. **Build `sku_variants` table** and seed it with all known variants (starting with the 4 OraCare Health Rinse variants, then expand to other products)
-2. **Update the SKU parser** with variant pre-check (prevents the lot-stamp collision)
-3. **Update lot tagger** to expand variants before lot lookup
-4. **Update inventory deduction** with the `units_per_case` multiplier
-5. **Update reporting** (charge report, shipped units summaries)
-6. **Decide on promo SKU fate** — parallel-run or deprecate
-7. **Backfill check** — any historical variant orders would have been deducted at qty 1 instead of the correct unit count; a backfill script may be needed
+| Step | Change | Risk if Skipped |
+|------|--------|-----------------|
+| 1 | Build `sku_variants` table with shipping profiles; seed all known variants | Nothing else can proceed safely |
+| 2 | Update SKU parser with variant pre-check | Variants silently misparse as lot numbers |
+| 3 | Update lot tagger: variant → base resolution + per-variant shipping profile | Lot assignment fails; wrong box dimensions sent to FedEx |
+| 4 | Decide multi-SKU guard behavior for multi-product variant orders | Mixed-product orders silently skipped |
+| 5 | Apply `units_per_case` multiplier at aggregation step in deduction pipeline | Inventory silently undercounts by large margins |
+| 6 | Update ShipStation reconciliation and comparison tools | Reconciliation reports show false discrepancies |
+| 7 | Decide on promo SKU deprecation — parallel-run or remove | Redundant remapping logic |
+| 8 | Backfill audit — identify any historical variant orders deducted at qty 1 | Past inventory records may be inaccurate |
 
 ---
 
 ## What This Doesn't Touch
 
-- The lot system itself (FIFO, lot stamps, `lot_balances` view) — structurally unchanged
-- Auth, user roles, the dashboard display layer (mostly)
-- ShipStation API communication — the system reads what ShipStation sends; no changes to how orders are fetched
+- The FIFO lot assignment logic and `lot_balances` view — structurally unchanged
+- The lot stamp format written to ShipStation (`{base_sku} - {lot_number}`) — unchanged
+- Auth, user roles, dashboard display layer
+- ShipStation API communication — the system reads what ShipStation sends; no fetch-layer changes needed
 
 ---
 
 ## Summary
 
-The database change is small (one new table). The code surface is moderate but concentrated in the inventory pipeline. The biggest risk is the SKU parser collision and the silent multiplication error in inventory deduction if the multiplier isn't applied consistently everywhere units are counted.
+The database change is small (one new table, but it must include shipping profiles per variant — not just unit counts). The code surface is moderate and concentrated in the inventory pipeline and lot tagger. Three risks were identified beyond the original analysis: the **shipping profile mismatch** (variants represent physically different package sizes), the **multi-SKU tagger guard** (mixed-product variant orders will be silently skipped), and the **aggregation step timing** for the unit multiplier. All three must be explicitly addressed in any implementation plan.
