@@ -1163,6 +1163,7 @@ def api_charge_report():
                     'bom': bom_inventory.get(sku, 0),
                     'receives': 0,
                     'adjustments': 0,  # net adjustments (up - down)
+                    'cancellations': 0,
                     'shipped': 0
                 }
             current_date += timedelta(days=1)
@@ -1192,6 +1193,11 @@ def api_charge_report():
                         if date_str >= trans_date_str:
                             daily_inventory[date_str][sku_str] -= qty
                             daily_sku_breakdown[date_str][sku_str]['adjustments'] -= qty
+                elif trans_type == 'Cancel':
+                    for date_str in daily_inventory:
+                        if date_str >= trans_date_str:
+                            daily_inventory[date_str][sku_str] += qty
+                            daily_sku_breakdown[date_str][sku_str]['cancellations'] += qty
         
         # Apply shipments (at EOD) and track breakdown
         for ship_date, sku, qty in shipments:
@@ -1237,6 +1243,7 @@ def api_charge_report():
                             'bom': breakdown.get('bom', 0),
                             'receives': breakdown.get('receives', 0),
                             'adjustments': breakdown.get('adjustments', 0),
+                            'cancellations': breakdown.get('cancellations', 0),
                             'shipped': breakdown.get('shipped', 0)
                         })
             
