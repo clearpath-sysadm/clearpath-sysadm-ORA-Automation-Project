@@ -1094,6 +1094,27 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
             else:
                 logger.warning(f"⚠️ Cannot reverse inventory for order {order_number}: no shipstation_order_id available")
 
+        # RESERVATION RELEASE (Task #131): whenever an order lands in
+        # 'cancelled' — whether or not it had already shipped — release any
+        # OPEN lot_staging_reservations held for it so the reserved units
+        # become available to other orders instead of sitting locked forever.
+        if db_status == 'cancelled':
+            try:
+                from src.services.inventory.lot_reservation import release_reservation
+                cancel_ss_id = current_ss_id or str(order.get('orderId') or order.get('orderKey') or '')
+                if cancel_ss_id:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "SELECT DISTINCT sku FROM lot_staging_reservations "
+                        "WHERE shipstation_order_id = %s AND state = 'reserved'",
+                        (str(cancel_ss_id),)
+                    )
+                    for (res_sku,) in cur.fetchall():
+                        release_reservation(conn, cancel_ss_id, res_sku, reason='order cancelled')
+                    cur.close()
+            except Exception as _release_err:
+                logger.warning(f"⚠️ Could not release lot reservations for cancelled order {order_number}: {_release_err}")
+
         # Always upsert order items from ShipStation so local quantities stay current.
         # The ON CONFLICT clause handles both new items and quantity updates in one pass.
         # DB unique index: order_items_inbox_order_sku_unique (order_inbox_id, sku)

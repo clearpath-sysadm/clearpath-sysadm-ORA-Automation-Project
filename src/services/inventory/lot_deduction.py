@@ -15,10 +15,29 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.services.data_processing.sku_lot_parser import parse_cf1
+from src.services.inventory import lot_reservation
 
 logger = logging.getLogger(__name__)
 
 KEY_PRODUCT_SKUS = ['17612', '17904', '17914', '18675', '18795']
+
+
+def _check_negative_balance(conn, lot_id, sku, lot_number, order_number):
+    """
+    Task #131: alert (instead of silently allowing) when a lot's computed
+    balance goes negative after a deduction. This is what happened in the
+    2026-07-06 incident — inventory went to -108 units with no alert.
+    """
+    if lot_id is None:
+        return
+    cursor = conn.cursor()
+    cursor.execute("SELECT balance FROM lot_balances WHERE lot_id = %s", (lot_id,))
+    row = cursor.fetchone()
+    if row is not None and row[0] < 0:
+        lot_reservation.record_negative_balance_alert(
+            conn, lot_id, sku, lot_number, row[0],
+            context=f"After deduction for order {order_number}"
+        )
 
 
 def deduct_lot_inventory(
@@ -83,15 +102,36 @@ def deduct_lot_inventory(
         try:
             cursor = conn.cursor()
 
-            cursor.execute("""
-                SELECT l.lot_id
-                FROM lots l
-                JOIN skus s ON l.sku_id = s.sku_id
-                WHERE s.sku_code = %s AND l.status = 'active'
-                LIMIT 1
-            """, (base_sku,))
-            secondary_lot_row = cursor.fetchone()
-            secondary_lot_id = secondary_lot_row[0] if secondary_lot_row else None
+            # Task #131: consume the reservation made at tagging time instead of
+            # independently re-picking "the active lot" here — the tagger already
+            # made the balance-aware decision; deduction must honor it.
+            consumed = lot_reservation.consume_reservation(conn, shipstation_order_id, base_sku)
+            secondary_lot_number = None
+            if consumed:
+                secondary_lot_id = consumed['lot_id']
+                secondary_lot_number = consumed['lot_number']
+                if consumed['reserved_qty'] != abs(int(quantity)):
+                    logger.warning(
+                        f"Reservation/ship qty mismatch for order {order_number} / {base_sku}: "
+                        f"reserved={consumed['reserved_qty']} shipped={abs(int(quantity))}"
+                    )
+            else:
+                cursor.execute("""
+                    SELECT l.lot_id, l.lot_number
+                    FROM lots l
+                    JOIN skus s ON l.sku_id = s.sku_id
+                    WHERE s.sku_code = %s AND l.status = 'active'
+                    LIMIT 1
+                """, (base_sku,))
+                secondary_lot_row = cursor.fetchone()
+                secondary_lot_id = secondary_lot_row[0] if secondary_lot_row else None
+                secondary_lot_number = secondary_lot_row[1] if secondary_lot_row else None
+                if secondary_lot_id is not None:
+                    logger.warning(
+                        f"No reservation found for order {order_number} / secondary sku {base_sku} "
+                        f"(order tagged before reservation system existed?) — falling back to "
+                        f"independent active-lot lookup (lot_id={secondary_lot_id})."
+                    )
 
             if secondary_lot_id is None:
                 logger.warning(
@@ -160,6 +200,7 @@ def deduct_lot_inventory(
                             f"Lot (lot_id={secondary_lot_id}, sku='{base_sku}') marked as depleted "
                             f"(balance={balance_row[0]})"
                         )
+                _check_negative_balance(conn, secondary_lot_id, base_sku, secondary_lot_number, order_number)
 
             return True
 
@@ -194,6 +235,34 @@ def deduct_lot_inventory(
             return False
 
         lot_id = row[0]
+
+        # Task #131: cross-check against the reservation made at tagging time.
+        # The lot_id here is derived from CF1 (which the tagger wrote from its
+        # reservation), so under normal operation they always agree — this
+        # consumes the reservation and alerts loudly if they ever disagree
+        # (e.g. CF1 was hand-edited in ShipStation after tagging) instead of
+        # silently deducting against a lot the reservation system never approved.
+        consumed = lot_reservation.consume_reservation(conn, shipstation_order_id, cf1_sku)
+        if consumed and consumed['lot_id'] != lot_id:
+            logger.error(
+                f"Reservation/CF1 lot mismatch for order {order_number} / {cf1_sku}: "
+                f"reservation pointed to lot_id={consumed['lot_id']} ('{consumed['lot_number']}') "
+                f"but CF1 says lot_number='{lot_number}' (lot_id={lot_id}). Deducting against the "
+                f"CF1 lot (what ShipStation will actually ship) and flagging for review."
+            )
+            lot_reservation.record_negative_balance_alert(
+                conn, lot_id, cf1_sku, lot_number, 0,
+                context=(
+                    f"Reservation/CF1 mismatch on order {order_number}: reserved lot_id="
+                    f"{consumed['lot_id']} ('{consumed['lot_number']}') vs CF1 lot_id={lot_id} "
+                    f"('{lot_number}')"
+                ),
+            )
+        elif not consumed:
+            logger.debug(
+                f"No open reservation found for order {order_number} / {cf1_sku} at ship time "
+                f"(order tagged before reservation system existed?) — deducting from CF1 lot directly."
+            )
 
         cursor.execute("""
             SELECT id FROM inventory_transactions
@@ -247,6 +316,8 @@ def deduct_lot_inventory(
             """, (lot_id,))
             if cursor.rowcount > 0:
                 logger.info(f"Lot '{lot_number}' ({cf1_sku}, lot_id={lot_id}) marked as depleted (balance={balance_row[0]})")
+
+        _check_negative_balance(conn, lot_id, cf1_sku, lot_number, order_number)
 
         return True
 

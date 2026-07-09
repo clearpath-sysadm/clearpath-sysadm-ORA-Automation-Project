@@ -202,7 +202,7 @@ def run_reconciliation():
                 source="Lot Tagger"
             )
 
-        active_lots, known_skus, lot_statuses = build_lot_maps(conn)
+        active_lots, known_skus, lot_statuses, lot_candidates = build_lot_maps(conn)
         server_logger.info(f"Active lots loaded: {len(active_lots)} SKUs | Known SKUs: {len(known_skus)}", source="Lot Tagger")
 
         for order in all_orders:
@@ -221,7 +221,7 @@ def run_reconciliation():
                 continue
 
             try:
-                tag_order_lots(order, active_lots, known_skus, lot_statuses, conn)
+                tag_order_lots(order, active_lots, known_skus, lot_statuses, conn, lot_candidates)
                 processed += 1
 
                 # (e) Cache upsert — order ID never changes under the new

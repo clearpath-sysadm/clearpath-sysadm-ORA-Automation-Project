@@ -11,20 +11,31 @@ from datetime import datetime, timezone
 from typing import Dict, Set
 
 from src.services.shipstation.api_client import update_order_custom_fields, update_order_package_v2
+from src.services.inventory import lot_reservation
 from src.utils.server_logger import get_logger
 from utils.api_utils import make_api_request
 
 logger = logging.getLogger(__name__)
 server_logger = get_logger()
 
-ACTIVE_LOTS_QUERY = """
-    SELECT DISTINCT ON (s.sku_code) s.sku_code, l.lot_id, l.lot_number
+# CRITICAL (Task #131 fix): status must be strictly 'active'. The previous
+# `NOT IN ('quarantine', 'inactive')` filter silently included 'depleted'
+# lots, so any positive-balance repack (even 1 unit) on a depleted lot made
+# it eligible again with no explicit reactivation. Reactivating a depleted
+# lot now requires an explicit status change back to 'active' — there is no
+# balance-threshold auto-reactivation.
+#
+# Ordered by lot_number (not received_date/lot_id) per Task #131 — lot_number
+# is the human-meaningful FIFO identity; internal DB ids/received_date can
+# be inconsistent with lot issuance order.
+CANDIDATE_LOTS_QUERY = """
+    SELECT s.sku_code, l.lot_id, l.lot_number, lb.balance
     FROM lots l
     JOIN skus s ON s.sku_id = l.sku_id
     JOIN lot_balances lb ON lb.lot_id = l.lot_id
     WHERE lb.balance > 0
-      AND l.status NOT IN ('quarantine', 'inactive')
-    ORDER BY s.sku_code, l.received_date ASC NULLS LAST, l.lot_id ASC
+      AND l.status = 'active'
+    ORDER BY s.sku_code, l.lot_number ASC
 """
 
 KNOWN_SKUS_QUERY = "SELECT sku_code FROM skus"
@@ -53,16 +64,31 @@ SKU_SHIPPING_PROFILES = {
 
 def build_lot_maps(conn):
     """
-    Build active_lots dict, known_skus set, and lot_statuses lookup from the database.
-    Uses FIFO (oldest received_date first) to resolve multiple active lots per SKU.
+    Build active_lots dict, known_skus set, lot_statuses lookup, and
+    lot_candidates (per-SKU list of active lots with capacity) from the DB.
+
+    lot_candidates is the balance-aware replacement for the old single-lot
+    active_lots value: tag_order_lots() reserves against the first candidate
+    (by lot_number ascending) that has enough *available* balance (real
+    balance minus other orders' open reservations), never re-activating a
+    depleted lot without an explicit status change.
+
+    active_lots is retained (first candidate per SKU) for QA / display /
+    the legacy lot-stamped-SKU fallback path — it is NOT used to drive the
+    primary tagging decision anymore.
 
     Returns: (active_lots: dict[sku -> lot_number], known_skus: set[sku],
-              lot_statuses: dict[(sku, lot_number) -> status])
+              lot_statuses: dict[(sku, lot_number) -> status],
+              lot_candidates: dict[sku -> list[(lot_id, lot_number, balance)]])
     """
     cursor = conn.cursor()
 
-    cursor.execute(ACTIVE_LOTS_QUERY)
-    active_lots = {row[0]: row[2] for row in cursor.fetchall()}
+    cursor.execute(CANDIDATE_LOTS_QUERY)
+    lot_candidates: Dict[str, list] = {}
+    for sku_code, lot_id, lot_number, balance in cursor.fetchall():
+        lot_candidates.setdefault(sku_code, []).append((lot_id, lot_number, balance))
+
+    active_lots = {sku: candidates[0][1] for sku, candidates in lot_candidates.items()}
 
     cursor.execute(KNOWN_SKUS_QUERY)
     known_skus = {row[0] for row in cursor.fetchall()}
@@ -70,7 +96,7 @@ def build_lot_maps(conn):
     cursor.execute(LOT_STATUS_QUERY)
     lot_statuses = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
 
-    return active_lots, known_skus, lot_statuses
+    return active_lots, known_skus, lot_statuses, lot_candidates
 
 
 def resolve_shipping_profile(order: dict, sku: str) -> dict:
@@ -327,7 +353,8 @@ def ensure_v2_package(order_id: int, order_number: str, profile: dict,
         return {'action': 'error', 'error': f'V2 PUT failed {status}: {body}'}
 
 
-def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], lot_statuses: Dict, conn) -> None:
+def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], lot_statuses: Dict,
+                    conn, lot_candidates: Dict[str, list] = None) -> None:
     """
     Inspect a single ShipStation order and write the correct lot stamp and full
     shipping profile only when one or more fields need updating.
@@ -346,6 +373,7 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     order_number = order.get('orderNumber', '').strip()
     order_id     = order.get('orderId')
     items        = order.get('items', [])
+    lot_candidates = lot_candidates if lot_candidates is not None else {}
 
     tag_ids      = order.get('tagIds') or []
     lot_override = LOT_OVERRIDE_TAG_ID in tag_ids
@@ -657,23 +685,68 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     sku          = str(item.get('sku', '')).strip()
     num_packages = max(1, int(item.get('quantity') or 1))
 
-    if sku not in active_lots:
-        cursor.execute("""
-            INSERT INTO lot_tagging_failures (order_number, shipstation_order_id, sku, detected_at)
-            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-            ON CONFLICT (shipstation_order_id) DO UPDATE
-                SET detected_at = CURRENT_TIMESTAMP,
-                    sku = EXCLUDED.sku
-            WHERE lot_tagging_failures.resolved_at IS NULL
-        """, (order_number, str(order_id), sku))
-        conn.commit()
-        server_logger.warning(
-            f"No active lot for SKU {sku} on order {order_number} (SS ID: {order_id}). Logged to lot_tagging_failures.",
-            source="Lot Tagger"
-        )
-        return
+    # --- Balance-aware, reservation-backed lot selection (Task #131 fix) ---
+    # Reuse an existing OPEN reservation for this order/sku when it is still
+    # valid (lot still truly 'active' and quantity unchanged) instead of
+    # burning a fresh reservation on every reconciliation pass. Otherwise
+    # release any stale reservation and reserve against the first candidate
+    # lot (sorted by lot_number) with enough *available* balance.
+    existing_reservation = lot_reservation.get_reservation(conn, order_id, sku)
+    lot_number = None
+    if existing_reservation:
+        res_status = lot_statuses.get((sku, existing_reservation['lot_number']))
+        if res_status == 'active' and existing_reservation['reserved_qty'] == num_packages:
+            lot_number = existing_reservation['lot_number']
+        else:
+            lot_reservation.release_reservation(
+                conn, order_id, sku,
+                reason=f"stale reservation (status={res_status}, qty {existing_reservation['reserved_qty']}→{num_packages})"
+            )
+            conn.commit()
 
-    expected_value = f"{sku} - {active_lots[sku]}"
+    newly_reserved = False
+    if lot_number is None:
+        candidates = lot_candidates.get(sku, [])
+        if not candidates:
+            cursor.execute("""
+                INSERT INTO lot_tagging_failures (order_number, shipstation_order_id, sku, detected_at)
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (shipstation_order_id) DO UPDATE
+                    SET detected_at = CURRENT_TIMESTAMP,
+                        sku = EXCLUDED.sku
+                WHERE lot_tagging_failures.resolved_at IS NULL
+            """, (order_number, str(order_id), sku))
+            conn.commit()
+            server_logger.warning(
+                f"No active lot for SKU {sku} on order {order_number} (SS ID: {order_id}). Logged to lot_tagging_failures.",
+                source="Lot Tagger"
+            )
+            return
+
+        reservation = lot_reservation.reserve_lot_for_order(
+            conn, order_number, order_id, sku, num_packages, candidates, source='tagger'
+        )
+        conn.commit()
+        if not reservation:
+            cursor.execute("""
+                INSERT INTO lot_tagging_failures (order_number, shipstation_order_id, sku, detected_at)
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (shipstation_order_id) DO UPDATE
+                    SET detected_at = CURRENT_TIMESTAMP,
+                        sku = EXCLUDED.sku
+                WHERE lot_tagging_failures.resolved_at IS NULL
+            """, (order_number, str(order_id), sku))
+            conn.commit()
+            server_logger.warning(
+                f"No active lot with enough available balance for {num_packages} unit(s) of "
+                f"SKU {sku} on order {order_number} (SS ID: {order_id}). Logged to lot_tagging_failures.",
+                source="Lot Tagger"
+            )
+            return
+        lot_number = reservation['lot_number']
+        newly_reserved = True
+
+    expected_value = f"{sku} - {lot_number}"
     profile        = resolve_shipping_profile(order, sku)
 
     mismatched = _get_mismatched_fields(order, expected_value, profile)
@@ -722,6 +795,11 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     )
 
     if not result.get('success'):
+        if newly_reserved:
+            lot_reservation.release_reservation(
+                conn, order_id, sku, reason=f"ShipStation CF1 write failed: {result.get('error')}"
+            )
+            conn.commit()
         server_logger.error(
             f"Failed to tag order {order_number} (SS ID: {order_id}): {result.get('error')}",
             source="Lot Tagger"
