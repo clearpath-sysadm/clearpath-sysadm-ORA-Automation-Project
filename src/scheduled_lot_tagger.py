@@ -30,6 +30,7 @@ from src.services.shipstation.api_client import (
     get_shipstation_credentials, get_shipstation_headers, register_order_notify_webhook
 )
 from src.lot_tagger.tagger import build_lot_maps, tag_order_lots, verify_tagging_results
+from src.services.inventory.lot_reservation import release_stale_reservations
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
 from utils.api_utils import make_api_request
@@ -204,6 +205,22 @@ def run_reconciliation():
 
         active_lots, known_skus, lot_statuses, lot_candidates = build_lot_maps(conn)
         server_logger.info(f"Active lots loaded: {len(active_lots)} SKUs | Known SKUs: {len(known_skus)}", source="Lot Tagger")
+
+        # Task #136: release any reservation stranded by a crash/interruption
+        # between "reserve" and "confirm CF1 write" (or any other path that let
+        # an order leave awaiting_shipment without a clean consume/release),
+        # using the order list we already fetched — no extra API calls.
+        try:
+            current_order_id_strs = {str(oid) for oid in current_order_ids}
+            stale_released = release_stale_reservations(conn, current_order_id_strs)
+            if stale_released:
+                conn.commit()
+                server_logger.warning(
+                    f"Released {stale_released} stranded lot reservation(s) during reconciliation sweep.",
+                    source="Lot Tagger"
+                )
+        except Exception as e:
+            logger.error(f"Stale reservation cleanup failed: {e}", exc_info=True)
 
         for order in all_orders:
             original_order_id = order.get('orderId')

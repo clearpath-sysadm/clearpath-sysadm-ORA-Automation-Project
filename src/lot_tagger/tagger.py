@@ -28,6 +28,14 @@ server_logger = get_logger()
 # Ordered by lot_number (not received_date/lot_id) per Task #131 — lot_number
 # is the human-meaningful FIFO identity; internal DB ids/received_date can
 # be inconsistent with lot issuance order.
+#
+# Task #136: lot_number is a text column, so a plain `ORDER BY l.lot_number`
+# is a lexical string sort — "9" sorts after "10" ("1" < "9" as characters),
+# which would silently scramble FIFO order for any SKU whose lot numbers
+# differ in digit length. All observed lot numbers are purely numeric, so
+# sort numerically when possible and fall back to the literal text order
+# for any lot number that isn't (so a malformed value doesn't error out —
+# it just sorts last, deterministically, rather than crashing the tagger).
 CANDIDATE_LOTS_QUERY = """
     SELECT s.sku_code, l.lot_id, l.lot_number, lb.balance
     FROM lots l
@@ -35,7 +43,11 @@ CANDIDATE_LOTS_QUERY = """
     JOIN lot_balances lb ON lb.lot_id = l.lot_id
     WHERE lb.balance > 0
       AND l.status = 'active'
-    ORDER BY s.sku_code, l.lot_number ASC
+    ORDER BY
+        s.sku_code,
+        (l.lot_number ~ '^[0-9]+$') DESC,
+        CASE WHEN l.lot_number ~ '^[0-9]+$' THEN l.lot_number::numeric END ASC,
+        l.lot_number ASC
 """
 
 KNOWN_SKUS_QUERY = "SELECT sku_code FROM skus"

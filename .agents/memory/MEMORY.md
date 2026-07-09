@@ -1,1 +1,2 @@
 - [Cancellation reversal pattern](cancel-reversal-pattern.md) — 'Cancel' txn type added in migration 017; lot_balances VIEW credits it as +quantity; two sync paths (unified + status) both call reverse_lot_inventory.
+- [Advisory lock keys must be deterministic](advisory-lock-key-hashing.md) — never derive pg_advisory_lock keys from Python's built-in hash(); it's randomized per-process (PYTHONHASHSEED) and silently breaks cross-process locking.

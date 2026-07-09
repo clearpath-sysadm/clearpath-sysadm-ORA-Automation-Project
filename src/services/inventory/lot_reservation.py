@@ -23,6 +23,7 @@ SKU so two concurrent tagger runs (webhook + reconciliation sweep) can't both
 reserve against the same lot's last remaining units.
 """
 
+import hashlib
 import logging
 from typing import List, Optional, Tuple
 
@@ -30,8 +31,18 @@ logger = logging.getLogger(__name__)
 
 
 def _sku_lock_key(sku: str) -> int:
-    """Deterministic 32-bit-ish lock key derived from the SKU string."""
-    return hash(('lot_reservation', sku)) & 0x7FFFFFFF
+    """
+    Deterministic 32-bit-ish lock key derived from the SKU string.
+
+    Task #136: must NOT use Python's built-in hash() — it is salted with a
+    random seed (PYTHONHASHSEED) that differs per process, so the webhook
+    process and the scheduler process would compute different lock keys for
+    the same SKU and the advisory lock would silently fail to serialize
+    them. Use a stable hash (sha256) instead so every process agrees on the
+    same key for the same SKU.
+    """
+    digest = hashlib.sha256(f'lot_reservation:{sku}'.encode('utf-8')).digest()
+    return int.from_bytes(digest[:4], 'big') & 0x7FFFFFFF
 
 
 def get_open_reserved_qty(conn, lot_id: int) -> int:
@@ -192,6 +203,80 @@ def consume_reservation(conn, shipstation_order_id: str, sku: str) -> Optional[d
         f"qty={row[3]}) for order {shipstation_order_id} / sku {sku}"
     )
     return {'id': row[0], 'lot_id': row[1], 'lot_number': row[2], 'reserved_qty': row[3]}
+
+
+def release_stale_reservations(conn, current_order_ids: set, max_age_hours: int = 24) -> int:
+    """
+    Task #136: clean up reservations that were never consumed or explicitly
+    released.
+
+    A reservation is created (committed) at tag time BEFORE the ShipStation
+    CF1 write is confirmed successful (tagger.py reserves, then writes, then
+    releases on write failure) — a crash or process kill between those two
+    steps, or any other path that lets an order silently leave
+    awaiting_shipment without a clean consume/release, would otherwise leave
+    the reservation open forever, permanently reducing that lot's available
+    balance for no real unit of inventory.
+
+    Called from the reconciliation sweep (which already fetches the full,
+    current awaiting_shipment order list), so it can piggyback on that data
+    instead of making extra ShipStation API calls.
+
+    Releases any OPEN ('reserved') reservation if either:
+      - its shipstation_order_id is no longer in `current_order_ids` (the
+        order has left awaiting_shipment — shipped, cancelled elsewhere,
+        etc. — without going through the normal consume/release path), OR
+      - it has been open longer than `max_age_hours` regardless of order
+        status (defensive backstop against any other stranding path).
+
+    Returns the number of reservations released.
+    """
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, shipstation_order_id, sku, lot_id, lot_number, reserved_qty, created_at
+        FROM lot_staging_reservations
+        WHERE state = 'reserved'
+    """)
+    open_reservations = cursor.fetchall()
+    now = _utcnow(cursor)
+
+    released = 0
+    for res_id, ss_order_id, sku, lot_id, lot_number, reserved_qty, created_at in open_reservations:
+        is_orphaned = str(ss_order_id) not in current_order_ids
+        is_too_old = False
+        if created_at is not None:
+            age_hours = (now - created_at).total_seconds() / 3600
+            is_too_old = age_hours > max_age_hours
+
+        if not (is_orphaned or is_too_old):
+            continue
+
+        reason = (
+            f"stale reservation cleanup: order no longer awaiting_shipment"
+            if is_orphaned else
+            f"stale reservation cleanup: open longer than {max_age_hours}h"
+        )
+        cursor.execute("""
+            UPDATE lot_staging_reservations
+            SET state = 'released', release_reason = %s, released_at = NOW(), updated_at = NOW()
+            WHERE id = %s AND state = 'reserved'
+        """, (reason, res_id))
+        if cursor.rowcount:
+            released += 1
+            logger.warning(
+                f"Released stranded reservation id={res_id} (order={ss_order_id}, sku={sku}, "
+                f"lot='{lot_number}', qty={reserved_qty}): {reason}"
+            )
+
+    if released:
+        logger.warning(f"Stale reservation cleanup released {released} stranded reservation(s).")
+    return released
+
+
+def _utcnow(cursor):
+    """Fetch DB-side current UTC time so age comparisons use the same clock as created_at."""
+    cursor.execute("SELECT NOW()")
+    return cursor.fetchone()[0]
 
 
 def record_negative_balance_alert(conn, lot_id: int, sku: str, lot_number: str,
