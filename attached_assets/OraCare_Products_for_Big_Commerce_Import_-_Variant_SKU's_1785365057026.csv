@@ -1,0 +1,34 @@
+Variants,SKU,Price,Visibile,Fulfillment,Built?,Dimensions,Weight
+OraCare Health Rinse,17612-test,$254,yes,Axiom,TRUE,12x12x12,22
+Variant #1- Buy 30 Get 10 ,17612-40,,,,TRUE,,
+Variant #2- Buy 12 Get 3,17612-15,,,,TRUE,,
+Variant #3- Buy 5 Get 1,17612-6,,,,TRUE,,
+Variant #4- Single Case ,17612-1,,,,TRUE,,
+OraCare PPR,17914-test,$134,yes,Axiom,TRUE,11x8x11,11
+Variant #1- Buy 30 Get 10 ,17914-40,,,,TRUE,,
+Variant #2- Buy 12 Get 3,17914-15,,,,TRUE,,
+Variant #3- Buy 5 Get 1,17914-6,,,,TRUE,,
+Variant #4- Single Case ,17914-1,,,,TRUE,,
+OraCare Travel,17904-test,$189,yes,Axiom,TRUE,10x10x10,14
+Variant #1- Buy 30 Get 10 ,17904-40,,,,TRUE,,
+Variant #2- Buy 12 Get 3,17904-15,,,,TRUE,,
+Variant #3- Buy 5 Get 1,17904-6,,,,TRUE,,
+Variant #4- Single Case ,17904-1,,,,TRUE,,
+Ortho Protect,18675-test,$254,yes,Axiom,TRUE,12x12x12,22
+Variant #1- Buy 30 Get 10 ,18675-40,"$7,620",,,TRUE,,
+Variant #2- Buy 12 Get 3,18675-15,,,,TRUE,,
+Variant #3- Buy 5 Get 1,18675-6,,,,TRUE,,
+Variant #4- Single Case ,18675-1,,,,TRUE,,
+Tongue Razor,18565-test,,yes,Home Office,TRUE,9x6x4,3
+,18565-25,$49,,,TRUE,,
+,18565-50,$89,,,TRUE,,
+,18565-100,$169,,,TRUE,,
+Variant SKU's,SKU,Price,Visibile,Fulfillment,Built?,Dimensions,Weight
+Free Sample,18680,$0,no,Home Office,TRUE,11x6x4,4
+OraCare & OraPro Paste,18680-OC-TP,$0,no,Home Office,TRUE,11x6x4,4
+OraCare only,18680-OC,$0,no,Home Office,TRUE,11x6x4,3
+Ortho Protect & OraPro Paste,18680-ORTH-TP,$0,no,Home Office,TRUE,11x6x4,4
+Ortho Protect only,18680-ORTH,$0,no,Home Office,TRUE,11x6x4,3
+OraPro Paste Only,18680-TP,$0,no,Home Office,TRUE,11x6x4,2
+Poster,18682,$10,yes,Home Office,TRUE,18x24x1,1
+"Posters, Value Pack of 6",18682-6,$50,yes,Home Office,TRUE,18x24x1,2
