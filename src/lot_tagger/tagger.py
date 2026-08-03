@@ -14,6 +14,7 @@ from src.services.shipstation.api_client import update_order_custom_fields, upda
 from src.services.inventory import lot_reservation
 from src.utils.server_logger import get_logger
 from utils.api_utils import make_api_request
+from src.services.shipstation.promo_sku_handler import _write_admin_alert
 
 logger = logging.getLogger(__name__)
 server_logger = get_logger()
@@ -488,6 +489,26 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 _seen_variant[_s] = _item
                 _deduped_variant.append(_item)
         items = _deduped_variant
+
+    # Alert on items that look like unrecognized variant SKUs (e.g. '17612-1-1')
+    # that were not resolved by the variant map and are not in known_skus.
+    # Runs unconditionally (outside the variant_map guard) so that a missing or
+    # empty variant map does not silence the alert.  The startswith pattern
+    # mirrors has_key_product_skus() in unified_shipstation_sync.py.
+    for _item in items:
+        _raw_sku = str(_item.get('sku', '')).strip()
+        if _raw_sku not in known_skus:
+            for _base_sku in known_skus:
+                if _raw_sku.startswith(_base_sku + '-'):
+                    _alert_msg = (
+                        f"Unrecognized variant SKU '{_raw_sku}' on order "
+                        f"{order_number} (SS ID: {order_id}) looks like a variant "
+                        f"of '{_base_sku}' but is not in sku_variants — "
+                        f"item was dropped. Add it to sku_variants to enable tagging."
+                    )
+                    server_logger.warning(_alert_msg, source="Lot Tagger")
+                    _write_admin_alert(conn, _alert_msg)
+                    break
 
     tracked_items = [item for item in items if str(item.get('sku', '')).strip() in known_skus]
 
