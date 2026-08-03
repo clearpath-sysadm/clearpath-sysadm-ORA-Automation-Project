@@ -1224,6 +1224,13 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
             except Exception:
                 _ueos_variant_map = {}
 
+            # Pre-aggregate by base_sku before deducting. If two line items
+            # resolve to the same base SKU (e.g. '17612-6' + '17612-15' both
+            # → '17612'), a per-item loop would call deduct_lot_inventory twice
+            # with the same (lot_id, shipstation_order_id) pair — the second
+            # call hits the idempotency guard and is silently dropped. Summing
+            # first ensures one call with the correct total quantity.
+            _ueos_agg: dict = {}  # {base_sku: effective_qty}
             for item in items:
                 sku_raw = str(item.get('sku', '')).strip()
                 quantity = item.get('quantity', 0)
@@ -1243,13 +1250,16 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                 if base_sku not in KEY_PRODUCT_SKUS:
                     continue
 
+                _ueos_agg[base_sku] = _ueos_agg.get(base_sku, 0) + effective_qty
+
+            for base_sku, total_qty in _ueos_agg.items():
                 deduct_lot_inventory(
                     order_number=order_number,
                     shipstation_order_id=str(order_id),
                     base_sku=base_sku,
                     customField1_value=cf1,
                     ship_date=ship_date,
-                    quantity=effective_qty,
+                    quantity=total_qty,
                     conn=conn
                 )
 
@@ -1710,6 +1720,12 @@ def run_unified_sync():
                                                 _sl_variant_map = _lvm_sl(conn)
                                             except Exception:
                                                 _sl_variant_map = {}
+                                            # Pre-aggregate by base_sku for the same reason as
+                                            # update_existing_order_status: two variant items
+                                            # resolving to the same base SKU must be summed
+                                            # before calling deduct_lot_inventory so the
+                                            # idempotency guard doesn't silently drop the second.
+                                            _sl_agg: dict = {}  # {base_sku: effective_qty}
                                             for item in order.get('items', []):
                                                 sku_raw = str(item.get('sku', '')).strip()
                                                 qty = item.get('quantity', 0)
@@ -1721,13 +1737,15 @@ def run_unified_sync():
                                                 )
                                                 if base_sku not in KEY_PRODUCT_SKUS:
                                                     continue
+                                                _sl_agg[base_sku] = _sl_agg.get(base_sku, 0) + effective_qty
+                                            for base_sku, total_qty in _sl_agg.items():
                                                 deduct_lot_inventory(
                                                     order_number=order_number,
                                                     shipstation_order_id=split_order_id,
                                                     base_sku=base_sku,
                                                     customField1_value=split_cf1,
                                                     ship_date=split_ship_date,
-                                                    quantity=effective_qty,
+                                                    quantity=total_qty,
                                                     conn=conn
                                                 )
                                             logger.info(f"✅ Split label deducted for order {order_number} (ss_id={split_order_id})")
