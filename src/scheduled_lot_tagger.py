@@ -206,6 +206,21 @@ def run_reconciliation():
         active_lots, known_skus, lot_statuses, lot_candidates = build_lot_maps(conn)
         server_logger.info(f"Active lots loaded: {len(active_lots)} SKUs | Known SKUs: {len(known_skus)}", source="Lot Tagger")
 
+        # Load promo and variant maps once before the per-order loop.
+        # No try/except — a failure here aborts the entire batch immediately,
+        # which is the correct behaviour: if the DB is unhealthy enough to fail
+        # these tiny table reads, every per-order iteration will fail for the
+        # same reason and continuing is just noise.  Both maps are passed into
+        # tag_order_lots and verify_tagging_results so no per-order DB round-trip
+        # is needed (also addresses the performance concern in Task #142).
+        from src.services.inventory.promo_sku_utils import load_promo_map, load_variant_map
+        promo_map = load_promo_map(conn)
+        variant_map = load_variant_map(conn)
+        server_logger.info(
+            f"Remap maps loaded: {len(promo_map)} promo SKU(s), {len(variant_map)} variant SKU(s) — remapping active.",
+            source="Lot Tagger"
+        )
+
         # Task #136: release any reservation stranded by a crash/interruption
         # between "reserve" and "confirm CF1 write" (or any other path that let
         # an order leave awaiting_shipment without a clean consume/release),
@@ -238,7 +253,8 @@ def run_reconciliation():
                 continue
 
             try:
-                tag_order_lots(order, active_lots, known_skus, lot_statuses, conn, lot_candidates)
+                tag_order_lots(order, active_lots, known_skus, lot_statuses, conn, lot_candidates,
+                               promo_map=promo_map, variant_map=variant_map)
                 processed += 1
 
                 # (e) Cache upsert — order ID never changes under the new
@@ -264,7 +280,7 @@ def run_reconciliation():
                 logger.error(f"Error processing order {order.get('orderNumber')}: {e}", exc_info=True)
 
         try:
-            qa = verify_tagging_results(all_orders, active_lots, known_skus, conn)
+            qa = verify_tagging_results(all_orders, active_lots, known_skus, conn, promo_map=promo_map)
             server_logger.info(
                 f"QA: {qa['tagged_correctly']}/{qa['total_tracked']} tracked orders correct, "
                 f"{qa['untagged_or_wrong']} untagged/wrong.",

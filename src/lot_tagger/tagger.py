@@ -366,7 +366,8 @@ def ensure_v2_package(order_id: int, order_number: str, profile: dict,
 
 
 def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], lot_statuses: Dict,
-                    conn, lot_candidates: Dict[str, list] = None) -> None:
+                    conn, lot_candidates: Dict[str, list] = None,
+                    promo_map: dict = None, variant_map: dict = None) -> None:
     """
     Inspect a single ShipStation order and write the correct lot stamp and full
     shipping profile only when one or more fields need updating.
@@ -381,6 +382,12 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                billToParty, billToMyOtherAccount.
     6. Write lot stamp + full shipping profile in one API call.
     7. Resolve any existing failure record on success.
+
+    Args:
+        promo_map:    Pre-loaded {promo_sku: base_sku} from the scheduler. If
+                      None (legacy / direct call), loaded internally as before.
+        variant_map:  Pre-loaded {variant_sku: {...}} from the scheduler. If
+                      None (legacy / direct call), loaded internally as before.
     """
     order_number = order.get('orderNumber', '').strip()
     order_id     = order.get('orderId')
@@ -398,13 +405,14 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
     # Promo SKU remap — translate promo SKUs to base SKUs in-place so the lot
     # tagger always looks up the base SKU (17613→17612, 17905→17904, etc.).
-    # Loaded once per call; sku_promotions is a tiny table (~4 rows).
-    try:
+    # When called from the scheduler, promo_map is pre-loaded before the loop
+    # (a failure there aborts the batch). The None fallback supports direct /
+    # test calls that don't pass the parameter.
+    if promo_map is not None:
+        _promo_map = promo_map
+    else:
         from src.services.inventory.promo_sku_utils import load_promo_map as _load_promo_map
         _promo_map = _load_promo_map(conn)
-    except Exception as _pm_err:
-        logger.warning(f"[Lot Tagger] Could not load promo map — skipping remap: {_pm_err}")
-        _promo_map = {}
 
     if _promo_map:
         for _item in items:
@@ -439,12 +447,14 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     # _effective_quantity = item_quantity × unit_multiplier.
     # Must run AFTER the promo dedup so that a promo alias of a variant SKU
     # is correctly resolved first by the promo map, then by the variant map.
-    try:
+    # When called from the scheduler, variant_map is pre-loaded before the loop
+    # (a failure there aborts the batch). The None fallback supports direct /
+    # test calls that don't pass the parameter.
+    if variant_map is not None:
+        _variant_map = variant_map
+    else:
         from src.services.inventory.promo_sku_utils import load_variant_map as _load_variant_map
         _variant_map = _load_variant_map(conn)
-    except Exception as _vm_err:
-        logger.warning(f"[Lot Tagger] Could not load variant map — skipping variant remap: {_vm_err}")
-        _variant_map = {}
 
     if _variant_map:
         for _item in items:
@@ -920,6 +930,7 @@ def verify_tagging_results(
     active_lots: Dict[str, str],
     known_skus: Set[str],
     conn,
+    promo_map: dict = None,
 ) -> dict:
     """
     QA verification pass over the orders processed by the reconciliation run.
@@ -944,15 +955,16 @@ def verify_tagging_results(
     untagged_or_wrong = 0
     failures = []
 
-    # Load promo map once so promo SKUs are remapped before the known_skus
-    # filter.  Without this, promo-SKU orders (e.g., SKU 17613) would never
-    # match the known_skus set (which contains base SKUs only) and would be
-    # excluded from QA checks, masking any tagging failures.
-    try:
+    # Remap promo SKUs before the known_skus filter so promo-SKU orders
+    # (e.g., SKU 17613) are not excluded from QA checks, masking failures.
+    # When called from the scheduler, promo_map is pre-loaded before the loop
+    # (a failure there aborts the batch). The None fallback supports direct /
+    # test calls that don't pass the parameter.
+    if promo_map is not None:
+        _qa_promo_map = promo_map
+    else:
         from src.services.inventory.promo_sku_utils import load_promo_map as _lpm
         _qa_promo_map = _lpm(conn)
-    except Exception:
-        _qa_promo_map = {}
 
     for order in orders:
         order_number = order.get('orderNumber', '').strip()
