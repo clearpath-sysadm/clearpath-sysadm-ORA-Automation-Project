@@ -702,7 +702,23 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
                 ship_date = datetime.datetime.strptime(ship_date_str[:10], '%Y-%m-%d').date()
             except:
                 ship_date = order_date
-            
+
+            # Load promo/variant maps once, shared by both the shipped_items write
+            # and the inventory deduction below — keeps the two paths in sync so
+            # shipped_items.base_sku always matches the deduction's base_sku.
+            from src.services.inventory.lot_deduction import deduct_lot_inventory
+            from src.services.inventory.promo_sku_utils import (
+                load_promo_map, load_variant_map, resolve_sku_and_quantity
+            )
+            try:
+                _ship_promo_map = load_promo_map(conn)
+            except Exception:
+                _ship_promo_map = {}
+            try:
+                _ship_variant_map = load_variant_map(conn)
+            except Exception:
+                _ship_variant_map = {}
+
             cursor.execute("""
                 INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
                 VALUES (%s, %s, %s)
@@ -710,23 +726,31 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
                 SET ship_date = EXCLUDED.ship_date,
                     shipstation_order_id = EXCLUDED.shipstation_order_id
             """, (ship_date, order_number, str(order_id)))
-            
-            # Insert into shipped_items
-            # Pre-aggregate by (base_sku, sku_lot) so multiple line items with the
-            # same SKU+lot (e.g. regular case + FREE CASE promotion) are summed
-            # rather than the last row overwriting the first via ON CONFLICT.
+
+            # Insert into shipped_items, applying variant/promo remap so that
+            # e.g. '17612-6' at qty=1 records base_sku='17612', quantity=6.
+            # Pre-aggregate by (base_sku, sku_lot) so multiple line items mapping
+            # to the same base SKU are summed into a single row.
             _manual_agg = {}
             for item in items:
                 sku = str(item.get('sku', '')).strip()
                 quantity = item.get('quantity', 0)
                 if sku and quantity > 0:
                     if ' - ' in sku:
-                        b_sku = sku.split(' - ')[0].strip()
+                        # Lot-stamped SKU: keep the full 'base - lot' as sku_lot
+                        raw_base = sku.split(' - ')[0].strip()
                         s_lot = sku
                     else:
-                        b_sku = sku
+                        raw_base = sku
                         s_lot = sku
-                    _manual_agg[(b_sku, s_lot)] = _manual_agg.get((b_sku, s_lot), 0) + quantity
+                    b_sku, eff_qty = resolve_sku_and_quantity(
+                        raw_base, quantity, _ship_promo_map, _ship_variant_map
+                    )
+                    # After variant remap, reset sku_lot to base if it was the
+                    # raw variant SKU (not a real lot stamp).
+                    if s_lot == raw_base and b_sku != raw_base:
+                        s_lot = b_sku
+                    _manual_agg[(b_sku, s_lot)] = _manual_agg.get((b_sku, s_lot), 0) + eff_qty
 
             for (base_sku, sku_lot), total_qty in _manual_agg.items():
                 cursor.execute("""
@@ -740,18 +764,16 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
                 """, (ship_date, sku_lot, base_sku, total_qty, order_number))
 
             # INVENTORY DEDUCTION: Record lot deductions for key-SKU items.
-            # Uses a separate aggregation dict (_deduction_agg, distinct from _manual_agg above)
-            # so promo SKU variants (e.g. 17613 → 17612) are summed into one deduct_lot_inventory
-            # call per (base_sku, cf1) pair, preventing the idempotency guard from blocking
-            # the second item when two line items map to the same base SKU.
-            from src.services.inventory.lot_deduction import deduct_lot_inventory
-            from src.services.inventory.promo_sku_utils import load_promo_map
+            # Uses a separate aggregation dict (_deduction_agg, keyed by (base_sku, cf1))
+            # so promo SKU variants (e.g. 17613 → 17612) are summed into one
+            # deduct_lot_inventory call per pair, preventing the idempotency guard from
+            # blocking the second item when two line items map to the same base SKU.
+            # Both maps already loaded above — no extra DB queries needed here.
 
             cf1 = (extract_cf1(order) or '').strip()
-            try:
-                _deduction_promo_map = load_promo_map(conn)
-            except Exception:
-                _deduction_promo_map = {}
+            # alias for clarity below
+            _deduction_promo_map = _ship_promo_map
+            _deduction_variant_map = _ship_variant_map
 
             _deduction_agg = {}
             for item in items:
@@ -760,10 +782,12 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
                 if not sku_raw or qty <= 0:
                     continue
                 raw_base = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
-                mapped_sku = _deduction_promo_map.get(raw_base, raw_base)
+                mapped_sku, effective_qty = resolve_sku_and_quantity(
+                    raw_base, qty, _deduction_promo_map, _deduction_variant_map
+                )
                 if mapped_sku not in KEY_PRODUCT_SKUS:
                     continue
-                _deduction_agg[(mapped_sku, cf1)] = _deduction_agg.get((mapped_sku, cf1), 0) + qty
+                _deduction_agg[(mapped_sku, cf1)] = _deduction_agg.get((mapped_sku, cf1), 0) + effective_qty
 
             for (mapped_sku, cf1_val), total_qty in _deduction_agg.items():
                 deduct_lot_inventory(
@@ -936,6 +960,14 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
             """, (ship_date, order_number, str(order_id)))
 
             from src.services.inventory.lot_deduction import deduct_lot_inventory
+            from src.services.inventory.promo_sku_utils import load_variant_map as _load_bc_variant_map
+
+            # Apply variant SKU multiplier so that e.g. '17612-6' at qty=1
+            # records and deducts 6 units rather than 1.
+            try:
+                _bc_variant_map = _load_bc_variant_map(conn)
+            except Exception:
+                _bc_variant_map = {}
 
             # Pre-aggregate by (base_sku, sku_lot) so multiple line items with the
             # same SKU+lot (e.g. regular case + FREE CASE promotion) are summed
@@ -951,6 +983,12 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
                     else:
                         b_sku = sku
                         s_lot = sku
+                    # Apply variant remap: e.g. '17612-6' → base '17612', qty ×6
+                    _variant_entry = _bc_variant_map.get(b_sku)
+                    if _variant_entry:
+                        quantity = quantity * _variant_entry['unit_multiplier']
+                        b_sku = _variant_entry['base_sku']
+                        s_lot = b_sku  # reset sku_lot to base before CF1 check below
                     cf1 = (lot_stamp or '').strip()
                     parsed = parse_cf1(cf1)
                     if parsed and parsed[0] == b_sku:
@@ -1167,13 +1205,24 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
 
             cf1 = (lot_stamp or '').strip()
 
-            # Remap promo SKUs to base SKUs so inventory deductions are never
-            # silently skipped when a promo-SKU order reaches shipped status.
+            # Remap promo and variant SKUs to base SKUs so inventory deductions
+            # are never silently skipped when an order reaches shipped status.
+            # Variant remap also applies the unit_multiplier so e.g. '17612-6'
+            # at qty=1 deducts 6 units.
             try:
-                from src.services.inventory.promo_sku_utils import load_promo_map as _lpm_ueos
+                from src.services.inventory.promo_sku_utils import (
+                    load_promo_map as _lpm_ueos, load_variant_map as _lvm_ueos,
+                    resolve_sku_and_quantity as _rsq_ueos,
+                )
                 _ueos_promo_map = _lpm_ueos(conn)
             except Exception:
                 _ueos_promo_map = {}
+                _lvm_ueos = None
+                _rsq_ueos = None
+            try:
+                _ueos_variant_map = _lvm_ueos(conn) if _lvm_ueos else {}
+            except Exception:
+                _ueos_variant_map = {}
 
             for item in items:
                 sku_raw = str(item.get('sku', '')).strip()
@@ -1182,9 +1231,14 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                 if not sku_raw or quantity <= 0:
                     continue
 
-                base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
-                # Remap promo SKU → base SKU before the KEY_PRODUCT_SKUS gate.
-                base_sku = _ueos_promo_map.get(base_sku, base_sku)
+                raw_base = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                if _rsq_ueos:
+                    base_sku, effective_qty = _rsq_ueos(
+                        raw_base, quantity, _ueos_promo_map, _ueos_variant_map
+                    )
+                else:
+                    base_sku = _ueos_promo_map.get(raw_base, raw_base)
+                    effective_qty = quantity
 
                 if base_sku not in KEY_PRODUCT_SKUS:
                     continue
@@ -1195,7 +1249,7 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                     base_sku=base_sku,
                     customField1_value=cf1,
                     ship_date=ship_date,
-                    quantity=quantity,
+                    quantity=effective_qty,
                     conn=conn
                 )
 
@@ -1636,6 +1690,11 @@ def run_unified_sync():
                                     if order_number.isdigit() and int(order_number) >= 801000:
                                         if order.get('orderStatus', '').lower() == 'shipped':
                                             from src.services.inventory.lot_deduction import deduct_lot_inventory
+                                            from src.services.inventory.promo_sku_utils import (
+                                                load_promo_map as _lpm_sl,
+                                                load_variant_map as _lvm_sl,
+                                                resolve_sku_and_quantity as _rsq_sl,
+                                            )
                                             split_cf1 = extract_cf1(order) or ''
                                             split_order_id = str(order.get('orderId') or order.get('orderKey'))
                                             split_ship_date_str = order.get('shipDate', '')
@@ -1644,17 +1703,22 @@ def run_unified_sync():
                                             except Exception:
                                                 split_ship_date = datetime.date.today()
                                             try:
-                                                from src.services.inventory.promo_sku_utils import load_promo_map as _lpm_sl
                                                 _sl_promo_map = _lpm_sl(conn)
                                             except Exception:
                                                 _sl_promo_map = {}
+                                            try:
+                                                _sl_variant_map = _lvm_sl(conn)
+                                            except Exception:
+                                                _sl_variant_map = {}
                                             for item in order.get('items', []):
                                                 sku_raw = str(item.get('sku', '')).strip()
                                                 qty = item.get('quantity', 0)
                                                 if not sku_raw or qty <= 0:
                                                     continue
-                                                base_sku = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
-                                                base_sku = _sl_promo_map.get(base_sku, base_sku)
+                                                raw_base = sku_raw.split(' - ')[0].strip() if ' - ' in sku_raw else sku_raw
+                                                base_sku, effective_qty = _rsq_sl(
+                                                    raw_base, qty, _sl_promo_map, _sl_variant_map
+                                                )
                                                 if base_sku not in KEY_PRODUCT_SKUS:
                                                     continue
                                                 deduct_lot_inventory(
@@ -1663,7 +1727,7 @@ def run_unified_sync():
                                                     base_sku=base_sku,
                                                     customField1_value=split_cf1,
                                                     ship_date=split_ship_date,
-                                                    quantity=qty,
+                                                    quantity=effective_qty,
                                                     conn=conn
                                                 )
                                             logger.info(f"✅ Split label deducted for order {order_number} (ss_id={split_order_id})")

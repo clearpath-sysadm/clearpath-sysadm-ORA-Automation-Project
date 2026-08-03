@@ -434,6 +434,51 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 _deduped.append(_item)
         items = _deduped
 
+    # Variant SKU remap — translate multi-unit variant SKUs to base SKUs
+    # (e.g. '17612-6' → '17612') and store the effective package count in
+    # _effective_quantity = item_quantity × unit_multiplier.
+    # Must run AFTER the promo dedup so that a promo alias of a variant SKU
+    # is correctly resolved first by the promo map, then by the variant map.
+    try:
+        from src.services.inventory.promo_sku_utils import load_variant_map as _load_variant_map
+        _variant_map = _load_variant_map(conn)
+    except Exception as _vm_err:
+        logger.warning(f"[Lot Tagger] Could not load variant map — skipping variant remap: {_vm_err}")
+        _variant_map = {}
+
+    if _variant_map:
+        for _item in items:
+            _raw_sku = str(_item.get('sku') or '').strip()
+            _entry = _variant_map.get(_raw_sku)
+            if _entry:
+                _item_qty = max(1, int(_item.get('quantity') or 1))
+                _eff_qty = _item_qty * _entry['unit_multiplier']
+                _item['_effective_quantity'] = _eff_qty
+                _item['sku'] = _entry['base_sku']
+                server_logger.debug(
+                    f"[Lot Tagger] Variant SKU remap on order {order_number}: "
+                    f"{_raw_sku} (qty={_item_qty}) → {_entry['base_sku']} ×{_eff_qty} packages",
+                    source="Lot Tagger"
+                )
+
+        # Deduplicate items sharing the same base SKU after variant remap.
+        # Handles edge case where two different variant packs of the same base
+        # SKU appear in one order (e.g. one 17612-6 + one 17612-15).
+        _seen_variant: dict = {}
+        _deduped_variant: list = []
+        for _item in items:
+            _s = str(_item.get('sku', '')).strip()
+            if _s in _seen_variant:
+                _prev = _seen_variant[_s]
+                _prev['_effective_quantity'] = (
+                    (_prev.get('_effective_quantity') or _prev.get('quantity') or 0)
+                    + (_item.get('_effective_quantity') or _item.get('quantity') or 0)
+                )
+            else:
+                _seen_variant[_s] = _item
+                _deduped_variant.append(_item)
+        items = _deduped_variant
+
     tracked_items = [item for item in items if str(item.get('sku', '')).strip() in known_skus]
 
     if not tracked_items:
@@ -695,7 +740,10 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
 
     item         = tracked_items[0]
     sku          = str(item.get('sku', '')).strip()
-    num_packages = max(1, int(item.get('quantity') or 1))
+    # Use _effective_quantity when a variant SKU remap multiplied the package
+    # count (e.g. 17612-6 at qty=1 → _effective_quantity=6); otherwise fall
+    # back to the raw quantity for normal single-unit orders.
+    num_packages = max(1, int(item.get('_effective_quantity') or item.get('quantity') or 1))
 
     # --- Balance-aware, reservation-backed lot selection (Task #131 fix) ---
     # Reuse an existing OPEN reservation for this order/sku when it is still

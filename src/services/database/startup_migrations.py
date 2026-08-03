@@ -1103,6 +1103,57 @@ def _backfill_promo_sku_deductions(cursor):
     )
 
 
+def _ensure_sku_variants_table(cursor):
+    """
+    Idempotently create the sku_variants table and seed 16 variant rows
+    (Task #138 — multi-unit variant SKU support).
+
+    Maps a BigCommerce variant SKU (e.g. '17612-6') to its base SKU ('17612')
+    and a unit_multiplier (6) so the lot tagger and sync worker generate the
+    correct package count and inventory deduction quantity.
+
+    Safe to re-run: CREATE TABLE IF NOT EXISTS + ON CONFLICT DO UPDATE.
+    """
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sku_variants (
+            id              SERIAL PRIMARY KEY,
+            variant_sku     TEXT NOT NULL UNIQUE,
+            base_sku        TEXT NOT NULL,
+            unit_multiplier INT  NOT NULL CHECK (unit_multiplier > 0),
+            active          BOOL NOT NULL DEFAULT TRUE,
+            created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS sku_variants_base_sku_idx
+        ON sku_variants (base_sku)
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS sku_variants_active_idx
+        ON sku_variants (active) WHERE active = TRUE
+    """)
+
+    seed_rows = [
+        ('17612-1',  '17612', 1),  ('17612-6',  '17612', 6),
+        ('17612-15', '17612', 15), ('17612-40', '17612', 40),
+        ('17914-1',  '17914', 1),  ('17914-6',  '17914', 6),
+        ('17914-15', '17914', 15), ('17914-40', '17914', 40),
+        ('17904-1',  '17904', 1),  ('17904-6',  '17904', 6),
+        ('17904-15', '17904', 15), ('17904-40', '17904', 40),
+        ('18675-1',  '18675', 1),  ('18675-6',  '18675', 6),
+        ('18675-15', '18675', 15), ('18675-40', '18675', 40),
+    ]
+    cursor.executemany("""
+        INSERT INTO sku_variants (variant_sku, base_sku, unit_multiplier)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (variant_sku) DO UPDATE
+            SET base_sku        = EXCLUDED.base_sku,
+                unit_multiplier = EXCLUDED.unit_multiplier,
+                active          = TRUE
+    """, seed_rows)
+    logger.info("startup_migrations: sku_variants table ensured (%d seed rows)", len(seed_rows))
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -1129,6 +1180,7 @@ def run_all(conn):
             _create_inventory_architecture_objects(cur)
             _resolve_order_862852_db_state(cur)
             _backfill_promo_sku_deductions(cur)
+            _ensure_sku_variants_table(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
