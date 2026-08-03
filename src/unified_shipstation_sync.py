@@ -639,8 +639,53 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
 
         # Get order items
         items = order.get('items', [])
-        total_items = sum(item.get('quantity', 0) for item in items)
-        
+
+        # Load promo/variant maps to resolve SKUs before computing total_items.
+        # Doing this here (rather than only in the shipped block below) ensures
+        # order_items_inbox and orders_inbox.total_items always reflect base SKUs
+        # and effective unit counts regardless of order status.
+        from src.services.inventory.promo_sku_utils import (
+            load_promo_map, load_variant_map, resolve_sku_and_quantity
+        )
+        try:
+            _manual_promo_map = load_promo_map(conn)
+        except Exception:
+            _manual_promo_map = {}
+        try:
+            _manual_variant_map = load_variant_map(conn)
+        except Exception:
+            _manual_variant_map = {}
+
+        # Pre-aggregate by resolved base_sku so variant SKUs (e.g. '17612-6')
+        # are stored with their base SKU and effective quantity (×multiplier).
+        # Two line items that resolve to the same base SKU are summed.
+        _manual_item_agg: dict = {}  # {base_sku: {'quantity', 'sku_lot', 'unit_price_cents'}}
+        for _agg_item in items:
+            _sku_raw = str(_agg_item.get('sku', '')).strip()
+            _qty = _agg_item.get('quantity', 0)
+            _up = _agg_item.get('unitPrice', 0)
+            _up_cents = int(float(_up) * 100) if _up else 0
+            if _sku_raw and _qty > 0:
+                if ' - ' in _sku_raw:
+                    _raw_base = _sku_raw.split(' - ')[0].strip()
+                    _sku_lot = _sku_raw
+                else:
+                    _raw_base = _sku_raw
+                    _sku_lot = None
+                _base_sku, _eff_qty = resolve_sku_and_quantity(
+                    _raw_base, _qty, _manual_promo_map, _manual_variant_map
+                )
+                if _base_sku in _manual_item_agg:
+                    _manual_item_agg[_base_sku]['quantity'] += _eff_qty
+                else:
+                    _manual_item_agg[_base_sku] = {
+                        'quantity': _eff_qty,
+                        'sku_lot': _sku_lot,
+                        'unit_price_cents': _up_cents,
+                    }
+
+        total_items = sum(v['quantity'] for v in _manual_item_agg.values())
+
         # Calculate total amount (in cents)
         total_amount = order.get('orderTotal', 0)
         total_amount_cents = int(float(total_amount) * 100) if total_amount else 0
@@ -669,32 +714,17 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
         ))
         order_inbox_id = cursor.fetchone()[0]
         
-        # Insert items into order_items_inbox
-        for item in items:
-            sku_raw = str(item.get('sku', '')).strip()
-            quantity = item.get('quantity', 0)
-            unit_price = item.get('unitPrice', 0)
-            unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
-            
-            if sku_raw and quantity > 0:
-                # Parse SKU - LOT format (e.g., "17612 - 250237")
-                if ' - ' in sku_raw:
-                    sku_parts = sku_raw.split(' - ')
-                    base_sku = sku_parts[0].strip()
-                    sku_lot = sku_raw  # Store full "17612 - 250237" format
-                else:
-                    base_sku = sku_raw
-                    sku_lot = None
-                
-                cursor.execute("""
-                    INSERT INTO order_items_inbox (
-                        order_inbox_id, sku, sku_lot, quantity, unit_price_cents
-                    )
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (order_inbox_id, base_sku, sku_lot, quantity, unit_price_cents))
-                
-                logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
-        
+        # Insert items into order_items_inbox (resolved base SKUs + effective quantities)
+        for _base_sku, _agg in _manual_item_agg.items():
+            cursor.execute("""
+                INSERT INTO order_items_inbox (
+                    order_inbox_id, sku, sku_lot, quantity, unit_price_cents
+                )
+                VALUES (%s, %s, %s, %s, %s)
+            """, (order_inbox_id, _base_sku, _agg['sku_lot'],
+                  _agg['quantity'], _agg['unit_price_cents']))
+            logger.debug(f"  ➕ Item: {_base_sku} x{_agg['quantity']}")
+
         # If order is shipped, also create entries in shipped_orders and shipped_items
         if order_status == 'shipped':
             ship_date_str = order.get('shipDate', order_date_str)
@@ -703,21 +733,11 @@ def import_new_manual_order(order: Dict[Any, Any], conn, api_key: str, api_secre
             except:
                 ship_date = order_date
 
-            # Load promo/variant maps once, shared by both the shipped_items write
-            # and the inventory deduction below — keeps the two paths in sync so
+            # Maps already loaded above (before item insert); reuse them here so
             # shipped_items.base_sku always matches the deduction's base_sku.
             from src.services.inventory.lot_deduction import deduct_lot_inventory
-            from src.services.inventory.promo_sku_utils import (
-                load_promo_map, load_variant_map, resolve_sku_and_quantity
-            )
-            try:
-                _ship_promo_map = load_promo_map(conn)
-            except Exception:
-                _ship_promo_map = {}
-            try:
-                _ship_variant_map = load_variant_map(conn)
-            except Exception:
-                _ship_variant_map = {}
+            _ship_promo_map = _manual_promo_map
+            _ship_variant_map = _manual_variant_map
 
             cursor.execute("""
                 INSERT INTO shipped_orders (ship_date, order_number, shipstation_order_id)
@@ -893,7 +913,49 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
             order_datetime = None
 
         items = order.get('items', [])
-        total_items = sum(item.get('quantity', 0) for item in items)
+
+        # Load promo/variant maps to resolve SKUs before computing total_items.
+        from src.services.inventory.promo_sku_utils import (
+            load_promo_map as _load_bc_promo_map,
+            load_variant_map as _load_bc_variant_map_top,
+            resolve_sku_and_quantity as _rsq_bc,
+        )
+        try:
+            _bc_promo_map_top = _load_bc_promo_map(conn)
+        except Exception:
+            _bc_promo_map_top = {}
+        try:
+            _bc_variant_map_top = _load_bc_variant_map_top(conn)
+        except Exception:
+            _bc_variant_map_top = {}
+
+        # Pre-aggregate by resolved base_sku.
+        _bc_item_agg: dict = {}  # {base_sku: {'quantity', 'sku_lot', 'unit_price_cents'}}
+        for _agg_item in items:
+            _sku_raw = str(_agg_item.get('sku', '')).strip()
+            _qty = _agg_item.get('quantity', 0)
+            _up = _agg_item.get('unitPrice', 0)
+            _up_cents = int(float(_up) * 100) if _up else 0
+            if _sku_raw and _qty > 0:
+                if ' - ' in _sku_raw:
+                    _raw_base = _sku_raw.split(' - ')[0].strip()
+                    _sku_lot = _sku_raw
+                else:
+                    _raw_base = _sku_raw
+                    _sku_lot = None
+                _base_sku, _eff_qty = _rsq_bc(
+                    _raw_base, _qty, _bc_promo_map_top, _bc_variant_map_top
+                )
+                if _base_sku in _bc_item_agg:
+                    _bc_item_agg[_base_sku]['quantity'] += _eff_qty
+                else:
+                    _bc_item_agg[_base_sku] = {
+                        'quantity': _eff_qty,
+                        'sku_lot': _sku_lot,
+                        'unit_price_cents': _up_cents,
+                    }
+
+        total_items = sum(v['quantity'] for v in _bc_item_agg.values())
         total_amount = order.get('orderTotal', 0)
         total_amount_cents = int(float(total_amount) * 100) if total_amount else 0
 
@@ -921,28 +983,16 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
         ))
         order_inbox_id = cursor.fetchone()[0]
 
-        for item in items:
-            sku_raw = str(item.get('sku', '')).strip()
-            quantity = item.get('quantity', 0)
-            unit_price = item.get('unitPrice', 0)
-            unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
-
-            if sku_raw and quantity > 0:
-                if ' - ' in sku_raw:
-                    sku_parts = sku_raw.split(' - ')
-                    base_sku = sku_parts[0].strip()
-                    sku_lot = sku_raw
-                else:
-                    base_sku = sku_raw
-                    sku_lot = None
-
-                cursor.execute("""
-                    INSERT INTO order_items_inbox (
-                        order_inbox_id, sku, sku_lot, quantity, unit_price_cents
-                    )
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (order_inbox_id, base_sku, sku_lot, quantity, unit_price_cents))
-                logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
+        # Insert items into order_items_inbox (resolved base SKUs + effective quantities)
+        for _base_sku, _agg in _bc_item_agg.items():
+            cursor.execute("""
+                INSERT INTO order_items_inbox (
+                    order_inbox_id, sku, sku_lot, quantity, unit_price_cents
+                )
+                VALUES (%s, %s, %s, %s, %s)
+            """, (order_inbox_id, _base_sku, _agg['sku_lot'],
+                  _agg['quantity'], _agg['unit_price_cents']))
+            logger.debug(f"  ➕ Item: {_base_sku} x{_agg['quantity']}")
 
         if order_status == 'shipped':
             ship_date_str = order.get('shipDate', order_date_str)
@@ -960,14 +1010,8 @@ def import_new_bigcommerce_order(order: Dict[Any, Any], conn) -> bool:
             """, (ship_date, order_number, str(order_id)))
 
             from src.services.inventory.lot_deduction import deduct_lot_inventory
-            from src.services.inventory.promo_sku_utils import load_variant_map as _load_bc_variant_map
-
-            # Apply variant SKU multiplier so that e.g. '17612-6' at qty=1
-            # records and deducts 6 units rather than 1.
-            try:
-                _bc_variant_map = _load_bc_variant_map(conn)
-            except Exception:
-                _bc_variant_map = {}
+            # Variant map already loaded above (before item insert); reuse it.
+            _bc_variant_map = _bc_variant_map_top
 
             # Pre-aggregate by (base_sku, sku_lot) so multiple line items with the
             # same SKU+lot (e.g. regular case + FREE CASE promotion) are summed
@@ -1063,7 +1107,58 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         
         # Get order items from ShipStation
         items = order.get('items', [])
-        total_items = sum(item.get('quantity', 0) for item in items)
+
+        # Load promo/variant maps to resolve SKUs before computing total_items.
+        # These maps are shared by both the item upsert below and the deduction
+        # block (if the order transitions to shipped), eliminating duplicate loads.
+        try:
+            from src.services.inventory.promo_sku_utils import (
+                load_promo_map as _lpm_ueos, load_variant_map as _lvm_ueos,
+                resolve_sku_and_quantity as _rsq_ueos,
+            )
+            _ueos_promo_map = _lpm_ueos(conn)
+        except Exception:
+            _ueos_promo_map = {}
+            _lvm_ueos = None
+            _rsq_ueos = None
+        try:
+            _ueos_variant_map = _lvm_ueos(conn) if _lvm_ueos else {}
+        except Exception:
+            _ueos_variant_map = {}
+
+        # Pre-aggregate items by resolved base_sku for both the upsert and
+        # total_items recomputation. Variant SKUs (e.g. '17612-6') resolve to
+        # their base SKU with effective quantity (×multiplier).
+        _ueos_item_agg: dict = {}  # {base_sku: {'quantity', 'sku_lot', 'unit_price_cents'}}
+        for _agg_item in items:
+            _sku_raw = str(_agg_item.get('sku', '')).strip()
+            _qty = _agg_item.get('quantity', 0)
+            _up = _agg_item.get('unitPrice', 0)
+            _up_cents = int(float(_up) * 100) if _up else 0
+            if _sku_raw and _qty > 0:
+                if ' - ' in _sku_raw:
+                    _raw_base = _sku_raw.split(' - ')[0].strip()
+                    _sku_lot_val = _sku_raw
+                else:
+                    _raw_base = _sku_raw
+                    _sku_lot_val = None
+                if _rsq_ueos:
+                    _base_sku, _eff_qty = _rsq_ueos(
+                        _raw_base, _qty, _ueos_promo_map, _ueos_variant_map
+                    )
+                else:
+                    _base_sku = _ueos_promo_map.get(_raw_base, _raw_base)
+                    _eff_qty = _qty
+                if _base_sku in _ueos_item_agg:
+                    _ueos_item_agg[_base_sku]['quantity'] += _eff_qty
+                else:
+                    _ueos_item_agg[_base_sku] = {
+                        'quantity': _eff_qty,
+                        'sku_lot': _sku_lot_val,
+                        'unit_price_cents': _up_cents,
+                    }
+
+        total_items = sum(v['quantity'] for v in _ueos_item_agg.values()) if _ueos_item_agg else sum(item.get('quantity', 0) for item in items)
         
         # CRITICAL FIX: Check if order was already uploaded by our system
         # Prevent STATUS DOWNGRADES that would re-queue orders for upload
@@ -1154,39 +1249,25 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                 logger.warning(f"⚠️ Could not release lot reservations for cancelled order {order_number}: {_release_err}")
 
         # Always upsert order items from ShipStation so local quantities stay current.
+        # Uses resolved base SKUs + effective quantities (maps loaded above).
         # The ON CONFLICT clause handles both new items and quantity updates in one pass.
         # DB unique index: order_items_inbox_order_sku_unique (order_inbox_id, sku)
-        if items:
-            logger.info(f"📦 Upserting {len(items)} items for order {order_number}")
+        if _ueos_item_agg:
+            logger.info(f"📦 Upserting {len(_ueos_item_agg)} items for order {order_number}")
 
-            for item in items:
-                sku_raw = str(item.get('sku', '')).strip()
-                quantity = item.get('quantity', 0)
-                unit_price = item.get('unitPrice', 0)
-                unit_price_cents = int(float(unit_price) * 100) if unit_price else 0
-
-                if sku_raw and quantity > 0:
-                    # Parse SKU - LOT format (e.g., "17612 - 250237")
-                    if ' - ' in sku_raw:
-                        sku_parts = sku_raw.split(' - ')
-                        base_sku = sku_parts[0].strip()
-                        sku_lot = sku_raw  # Store full "17612 - 250237" format
-                    else:
-                        base_sku = sku_raw
-                        sku_lot = None
-
-                    cursor.execute("""
-                        INSERT INTO order_items_inbox (
-                            order_inbox_id, sku, sku_lot, quantity, unit_price_cents
-                        )
-                        VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (order_inbox_id, sku) DO UPDATE
-                        SET quantity = EXCLUDED.quantity,
-                            sku_lot = EXCLUDED.sku_lot,
-                            unit_price_cents = EXCLUDED.unit_price_cents
-                    """, (local_order_id, base_sku, sku_lot, quantity, unit_price_cents))
-
-                    logger.debug(f"  ➕ Item: {sku_raw} x{quantity}")
+            for _base_sku, _agg in _ueos_item_agg.items():
+                cursor.execute("""
+                    INSERT INTO order_items_inbox (
+                        order_inbox_id, sku, sku_lot, quantity, unit_price_cents
+                    )
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (order_inbox_id, sku) DO UPDATE
+                    SET quantity = EXCLUDED.quantity,
+                        sku_lot = EXCLUDED.sku_lot,
+                        unit_price_cents = EXCLUDED.unit_price_cents
+                """, (local_order_id, _base_sku, _agg['sku_lot'],
+                      _agg['quantity'], _agg['unit_price_cents']))
+                logger.debug(f"  ➕ Item: {_base_sku} x{_agg['quantity']}")
         
         # INVENTORY DEDUCTION: When an existing order transitions to 'shipped',
         # record a lot deduction for each key-SKU line item.
@@ -1205,24 +1286,8 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
 
             cf1 = (lot_stamp or '').strip()
 
-            # Remap promo and variant SKUs to base SKUs so inventory deductions
-            # are never silently skipped when an order reaches shipped status.
-            # Variant remap also applies the unit_multiplier so e.g. '17612-6'
-            # at qty=1 deducts 6 units.
-            try:
-                from src.services.inventory.promo_sku_utils import (
-                    load_promo_map as _lpm_ueos, load_variant_map as _lvm_ueos,
-                    resolve_sku_and_quantity as _rsq_ueos,
-                )
-                _ueos_promo_map = _lpm_ueos(conn)
-            except Exception:
-                _ueos_promo_map = {}
-                _lvm_ueos = None
-                _rsq_ueos = None
-            try:
-                _ueos_variant_map = _lvm_ueos(conn) if _lvm_ueos else {}
-            except Exception:
-                _ueos_variant_map = {}
+            # Maps (_ueos_promo_map, _ueos_variant_map, _rsq_ueos) already loaded
+            # above the item upsert block — reuse them directly here.
 
             # Pre-aggregate by base_sku before deducting. If two line items
             # resolve to the same base SKU (e.g. '17612-6' + '17612-15' both

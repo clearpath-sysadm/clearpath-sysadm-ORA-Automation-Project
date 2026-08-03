@@ -1154,6 +1154,144 @@ def _ensure_sku_variants_table(cursor):
     logger.info("startup_migrations: sku_variants table ensured (%d seed rows)", len(seed_rows))
 
 
+def _correct_stale_variant_rows_in_order_items_inbox(cursor):
+    """
+    Correct stale order_items_inbox rows that were stored with a raw variant SKU
+    (e.g. '17612-6') and raw quantity (e.g. 1) instead of the resolved base SKU
+    ('17612') and effective quantity (6).
+
+    Only touches active orders (awaiting_shipment / pending).
+
+    Safe strategy that avoids unique-constraint violations
+    -------------------------------------------------------
+    The table has UNIQUE(order_inbox_id, sku).  A naive per-variant UPDATE can
+    collide:  if an order has both '17612-6' and '17612-15', updating row 1 to
+    sku='17612' succeeds, then updating row 2 to sku='17612' raises a constraint
+    error before the duplicate-merge pass ever runs.
+
+    Instead we use a three-phase approach inside one transaction:
+      Phase 1 — PRE-AGGREGATE: SELECT all variant rows for active orders and
+                compute the desired target state (base_sku → sum of effective
+                quantities) for each order, also noting the ids of rows to delete.
+      Phase 2 — DELETE:  Remove all variant rows identified in Phase 1.  Because
+                this is the same transaction, no client ever sees a gap.
+      Phase 3 — UPSERT:  INSERT the aggregated base-sku rows.  ON CONFLICT adds
+                effective quantity to any existing base-sku row so a mixed order
+                (has '17612' + '17612-6') is handled correctly.
+      Phase 4 — FIX TOTALS:  UPDATE orders_inbox.total_items for every affected
+                order to reflect the now-correct per-item quantities.
+
+    Safe to re-run: guarded by a configuration_params completion marker.
+    """
+    # Idempotency guard — skip if already applied.
+    cursor.execute("""
+        SELECT 1 FROM configuration_params
+        WHERE category = 'System'
+          AND parameter_name = 'correct_variant_rows_order_items_inbox_v1'
+          AND value = 'completed'
+    """)
+    if cursor.fetchone():
+        logger.info("startup_migrations: stale variant row correction already applied — skipping")
+        return
+
+    # ------------------------------------------------------------------
+    # Phase 1: pre-aggregate.  One query collects every variant row that
+    # needs correction, grouping by (order_inbox_id, base_sku) so that
+    # two variants resolving to the same base are already summed.
+    # ------------------------------------------------------------------
+    cursor.execute("""
+        SELECT
+            oii.order_inbox_id,
+            sv.base_sku,
+            SUM(oii.quantity * sv.unit_multiplier) AS effective_qty,
+            MIN(oii.sku_lot)                        AS sample_sku_lot,
+            MIN(oii.unit_price_cents)               AS sample_unit_price_cents,
+            ARRAY_AGG(oii.id)                       AS variant_row_ids
+        FROM order_items_inbox oii
+        JOIN sku_variants sv
+             ON sv.variant_sku = oii.sku AND sv.active = TRUE
+        JOIN orders_inbox oi
+             ON oi.id = oii.order_inbox_id
+            AND oi.status IN ('awaiting_shipment', 'pending')
+        GROUP BY oii.order_inbox_id, sv.base_sku
+    """)
+    rows = cursor.fetchall()
+
+    if not rows:
+        logger.info("startup_migrations: no stale variant rows found in active orders — skipping")
+    else:
+        # Flatten the set of row ids to delete (all variant rows across every group).
+        all_variant_ids = []
+        for row in rows:
+            all_variant_ids.extend(row[5])  # ARRAY_AGG of ids
+
+        affected_order_ids = list({row[0] for row in rows})
+
+        logger.info(
+            f"startup_migrations: stale variant row correction — "
+            f"{len(rows)} (order, base_sku) group(s) across "
+            f"{len(affected_order_ids)} order(s); "
+            f"{len(all_variant_ids)} variant row(s) to replace"
+        )
+
+        # ------------------------------------------------------------------
+        # Phase 2: DELETE all variant rows in one pass.  The transaction
+        # ensures no external reader ever observes an order with zero items.
+        # ------------------------------------------------------------------
+        cursor.execute("""
+            DELETE FROM order_items_inbox
+            WHERE id = ANY(%s)
+        """, (all_variant_ids,))
+        deleted = cursor.rowcount
+        logger.info(f"startup_migrations: deleted {deleted} stale variant row(s)")
+
+        # ------------------------------------------------------------------
+        # Phase 3: UPSERT the aggregated base-sku rows.
+        # ON CONFLICT adds to an existing base row so a mixed order that
+        # already had a base-sku row (e.g. plain '17612') plus a variant
+        # (e.g. '17612-6') ends up with the correct combined quantity.
+        # ------------------------------------------------------------------
+        upserted = 0
+        for order_inbox_id, base_sku, effective_qty, sku_lot, unit_price_cents, _ in rows:
+            cursor.execute("""
+                INSERT INTO order_items_inbox
+                    (order_inbox_id, sku, sku_lot, quantity, unit_price_cents)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (order_inbox_id, sku) DO UPDATE
+                    SET quantity = order_items_inbox.quantity + EXCLUDED.quantity,
+                        sku_lot  = COALESCE(order_items_inbox.sku_lot, EXCLUDED.sku_lot)
+            """, (order_inbox_id, base_sku, sku_lot, effective_qty, unit_price_cents or 0))
+            upserted += cursor.rowcount
+        logger.info(f"startup_migrations: upserted {upserted} corrected base-sku row(s)")
+
+        # ------------------------------------------------------------------
+        # Phase 4: recompute orders_inbox.total_items for affected orders.
+        # ------------------------------------------------------------------
+        cursor.execute("""
+            UPDATE orders_inbox oi
+            SET total_items = (
+                SELECT COALESCE(SUM(oii.quantity), 0)
+                FROM order_items_inbox oii
+                WHERE oii.order_inbox_id = oi.id
+            )
+            WHERE oi.id = ANY(%s)
+        """, (affected_order_ids,))
+        totals_fixed = cursor.rowcount
+        logger.info(f"startup_migrations: recomputed total_items for {totals_fixed} order(s)")
+
+    # Record completion marker.
+    cursor.execute("""
+        INSERT INTO configuration_params
+            (category, parameter_name, sku, value, notes, last_updated)
+        VALUES ('System', 'correct_variant_rows_order_items_inbox_v1', '', 'completed',
+                'In-place correction of stale variant SKU rows in order_items_inbox', CURRENT_TIMESTAMP)
+        ON CONFLICT (category, parameter_name, sku) DO UPDATE SET
+            value = 'completed',
+            last_updated = CURRENT_TIMESTAMP
+    """)
+    logger.info("startup_migrations: stale variant row correction marker recorded")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -1181,6 +1319,7 @@ def run_all(conn):
             _resolve_order_862852_db_state(cur)
             _backfill_promo_sku_deductions(cur)
             _ensure_sku_variants_table(cur)
+            _correct_stale_variant_rows_in_order_items_inbox(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:
