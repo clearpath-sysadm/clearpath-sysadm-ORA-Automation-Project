@@ -18,3 +18,10 @@ id = "WC2a3A-oE-KM4TRw9BpR6"
 uri = "file://attached_assets/may_discrepancy_report_2026.csv"
 type = "table"
 title = "May 2026 Discrepancies Only (Charge Report vs SS Pivot)"
+
+[[outputs]]
+id = "IRK6igs0AuMhEqBs6cnsn"
+uri = "file://docs/VARIANT_SKU_TEST_SCENARIOS.docx"
+type = "word_document"
+title = "Variant SKU Test Scenarios"
+description = "Oracare test order checklist covering all variant SKU combinations — single items, multi-line, promo SKU pairings, and expected failure cases."
