@@ -1,0 +1,39 @@
+Here is a detailed, topic-by-topic summary of the entire conversation between Nathan ("Me") and Mikkah:
+
+1. Testing BigCommerce Order Cancellation & Syncing with ShipStation
+Order Cancellation Test: Mikkah canceled BigCommerce order 1864767 to test how cancellations sync with ShipStation.
+System Refresh Nuances Learned:
+Performing a standard browser refresh alone does not fetch new data if ShipStation hasn't synced with BigCommerce in the background.
+Nathan must run the Store Status Refresh ("Update All") function inside ShipStation first, followed by a manual browser refresh, to properly render the "Canceled" status on-screen.
+Mikkah confirmed this dual-refresh step worked on her end as well.
+Backend Follow-Up: Nathan noted he will separately verify if the order cancellation updates properly in their backend application at a later time.
+2. Bug Fixes & Clearing Queue Test Orders
+Status on Bug Fixes: Nathan reported fixing recent software bugs and expects the system to work properly on the next run.
+Clearing Pending Orders: Mikkah canceled all test orders placed yesterday from the BigCommerce side.
+Order 1864768 Delay: Order 1864768 took slightly longer to clear in ShipStation because Nathan refreshed before BigCommerce finished mapping the status update. After a re-sync and browser refresh, it successfully cleared from "Awaiting Shipments".
+Documentation Strategy: Nathan mentioned he values recording and walking through new integration processes so system behaviors and nuances are properly documented.
+3. Product Variant SKUs & ShipStation Auto-Split Feature
+ShipStation Product Creation: When new SKUs arrive from BigCommerce, ShipStation automatically creates new product entries if they do not already exist.
+Auto-Split Feature:
+Each product variant SKU in ShipStation has an Auto-Split toggle setting.
+When an order contains multiple line items that each have Auto-Split enabled, ShipStation splits them into individual orders with distinct internal order numbers and separate shipments.
+Nathan explained that auto-splitting is required to process these orders correctly.
+4. SKU Naming & Variant Order Requirements
+SKU Naming conventions (17612 vs 17612-1):
+Nathan asked if orders will come through as 17612-1 or remain 17612.
+Mikkah explained that -1 (and -6, -15, -40) extensions were used during bulk testing to avoid duplicate recognition issues in the system.
+Mikkah noted that the plan is to disable old base SKUs (17612) and map to the new ones. Nathan confirmed the -1 extension makes no practical difference to his system logic.
+SKU Breakdown Needed for Testing:
+No bulk/variants needed: Toothpaste products and Home Office items (18565 tongue raisers) do not have bulk variants.
+Variants required: Nathan needs single test orders created for missing pack-size variants (-6, -15, -40) across the following product series:
+17612 series
+17904 series (needs test orders for 15 and 40)
+17914 series (needs 6, 15, 40)
+18675 series (needs 6, 15, 40)
+5. Multi-Quantity Variant Orders & Next Steps
+Handling Order Quantities: Nathan asked if a customer could order a quantity greater than 1 for a variant bundle SKU (e.g., ordering two 6-packs of 17612-6). Mikkah confirmed this is rare but does happen (e.g., "buy 5, get 1" promos). Nathan confirmed his code already accounts for multi-quantity orders.
+Action Plan:
+Mikkah will enter single test orders for all remaining variant SKUs in BigCommerce and notify Nathan via email.
+The orders will generate the new product profiles in ShipStation.
+Nathan will manually turn on the Auto-Split setting for each new SKU in ShipStation.
+Both will reconnect to run the next round of test scenarios.
