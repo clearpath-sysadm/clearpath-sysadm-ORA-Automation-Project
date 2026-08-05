@@ -117,7 +117,7 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
     Derive the correct shipping profile for an order + SKU combination.
 
     Carrier / billing rules:
-      - Company name contains 'BENCO' → UPS Ground, third-party billing
+      - Company name contains 'BENCO' → UPS Ground (carrier=ups_walleted), third-party billing
             (BENCO_UPS_ACCOUNT_NUMBER, BENCO_UPS_POSTAL_CODE, BENCO_UPS_COUNTRY_CODE)
       - All others                    → FedEx, my_other_account billing
             Service code rules (non-Benco only, highest priority first):
@@ -155,7 +155,7 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
         if not ups_postal:
             raise ValueError("BENCO_UPS_POSTAL_CODE environment variable is not configured")
         ups_country = os.getenv('BENCO_UPS_COUNTRY_CODE', 'US')
-        carrier_code       = 'ups'
+        carrier_code       = 'ups_walleted'
         service_code       = 'ups_ground'
         bill_to_party      = 'third_party'
         bill_to_account    = str(ups_acct)

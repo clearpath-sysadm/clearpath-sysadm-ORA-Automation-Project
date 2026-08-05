@@ -40,8 +40,8 @@ setup_logging(log_file_path=log_file, log_level=logging.INFO, enable_console_log
 logger = logging.getLogger(__name__)
 
 
-# Benco ships via UPS third-party billing. Validation checks carrier_code == 'ups'.
-BENCO_EXPECTED_CARRIER = 'ups'
+# Benco ships via UPS third-party billing (ShipStation carrier code: ups_walleted).
+BENCO_EXPECTED_CARRIER = 'ups_walleted'
 BENCO_EXPECTED_SERVICE = 'ups_ground'
 
 
@@ -131,7 +131,7 @@ def validate_order_shipping(order: Dict[str, Any]) -> tuple[str, List[Dict[str, 
                 'ship_country': ship_country,
                 'ship_company': ship_company,
                 'severity': 'CRITICAL',
-                'message': f'Benco order must use UPS (third-party billing), currently using {carrier_code or "unknown carrier"}'
+                'message': f'Benco order must use UPS Ground (third-party billing, carrier=ups_walleted), currently using {carrier_code or "unknown carrier"}'
             })
         elif not carrier_code:
             logger.debug(f"Benco order {order_number} has no carrier_code yet — skipping carrier check")
