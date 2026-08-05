@@ -141,6 +141,8 @@ TZ = "America/Chicago"
 
 [userenv.shared]
 ORACARE_FEDEX_ACCOUNT_ID = "556346"
+BENCO_UPS_COUNTRY_CODE = "US"
+BENCO_UPS_POSTAL_CODE = "18640"
 
 [postMerge]
 path = "scripts/post-merge.sh"
