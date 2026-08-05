@@ -309,7 +309,9 @@ def update_order_custom_fields(
     dim_width: float = None,
     dim_height: float = None,
     bill_to_party: str = None,
-    bill_to_account: int = None,
+    bill_to_account = None,
+    bill_to_postal_code: str = None,
+    bill_to_country_code: str = None,
 ) -> dict:
     """
     Update customField1 (and optionally customField2/3) in ShipStation advancedOptions,
@@ -320,13 +322,21 @@ def update_order_custom_fields(
     field3_value when set writes customField3 (e.g. promo-hold audit stamps).
 
     Shipping profile kwargs (all optional):
-        carrier_code    — e.g. 'fedex'
-        service_code    — e.g. 'fedex_ground', 'fedex_2day'
-        package_code    — e.g. 'package'  (goes in advancedOptions)
-        weight_oz       — per-unit weight in ounces (top-level weight field)
+        carrier_code         — e.g. 'fedex' or 'ups'
+        service_code         — e.g. 'fedex_ground', 'ups_ground'
+        package_code         — e.g. 'package'  (goes in advancedOptions)
+        weight_oz            — per-unit weight in ounces (top-level weight field)
         dim_length/width/height — dimensions in inches (top-level dimensions field)
-        bill_to_party   — e.g. 'my_other_account' (goes in advancedOptions)
-        bill_to_account — ShipStation shippingProviderId as int (goes in advancedOptions)
+        bill_to_party        — 'my_other_account' or 'third_party'
+        bill_to_account      — shippingProviderId (int) for my_other_account,
+                               or carrier account number (str) for third_party
+        bill_to_postal_code  — required when bill_to_party='third_party'
+        bill_to_country_code — required when bill_to_party='third_party'
+
+    Billing behaviour:
+        my_other_account → writes billToMyOtherAccount (clears third-party fields)
+        third_party      → writes billToAccount + billToPostalCode + billToCountryCode
+                           (clears billToMyOtherAccount)
 
     When weight_oz or any dim_* is None, that top-level field is left untouched.
     When package_code is None, advancedOptions.packageCode is left untouched.
@@ -362,8 +372,22 @@ def update_order_custom_fields(
             order_data['packageCode'] = package_code
         if bill_to_party is not None:
             order_data['advancedOptions']['billToParty'] = bill_to_party
-        if bill_to_account is not None:
+
+        if bill_to_party == 'third_party':
+            # Third-party UPS billing: write account/postal/country, clear my_other_account
+            if bill_to_account is not None:
+                order_data['advancedOptions']['billToAccount'] = str(bill_to_account)
+            if bill_to_postal_code is not None:
+                order_data['advancedOptions']['billToPostalCode'] = str(bill_to_postal_code)
+            if bill_to_country_code is not None:
+                order_data['advancedOptions']['billToCountryCode'] = str(bill_to_country_code)
+            order_data['advancedOptions']['billToMyOtherAccount'] = None
+        elif bill_to_account is not None:
+            # my_other_account: write shippingProviderId, clear third-party fields
             order_data['advancedOptions']['billToMyOtherAccount'] = bill_to_account
+            order_data['advancedOptions']['billToAccount'] = None
+            order_data['advancedOptions']['billToPostalCode'] = None
+            order_data['advancedOptions']['billToCountryCode'] = None
 
         if weight_oz is not None:
             order_data['weight'] = {'value': weight_oz, 'units': 'ounces'}

@@ -40,9 +40,9 @@ setup_logging(log_file_path=log_file, log_level=logging.INFO, enable_console_log
 logger = logging.getLogger(__name__)
 
 
-# TODO: Get actual Benco carrier_id from ShipStation account
-# This will need to be configured based on the actual carrier_id values seen in production
-BENCO_CARRIER_IDS = []  # e.g., ['123456'] - update after observing actual values
+# Benco ships via UPS third-party billing. Validation checks carrier_code == 'ups'.
+BENCO_EXPECTED_CARRIER = 'ups'
+BENCO_EXPECTED_SERVICE = 'ups_ground'
 
 
 def validate_order_shipping(order: Dict[str, Any]) -> tuple[str, List[Dict[str, Any]]]:
@@ -114,30 +114,27 @@ def validate_order_shipping(order: Dict[str, Any]) -> tuple[str, List[Dict[str, 
                 'message': f'Canadian order should use FedEx International Ground, currently using {service_name or service_code or "unknown service"}'
             })
     
-    # Rule 3: Benco orders should use Benco FedEx carrier account
+    # Rule 3: Benco orders must ship via UPS (third-party billing)
     if 'BENCO' in ship_company:
-        # Check if carrier_id is populated and matches Benco account
-        if carrier_id and BENCO_CARRIER_IDS:
-            if carrier_id not in BENCO_CARRIER_IDS:
-                violations.append({
-                    'order_inbox_id': order_id,
-                    'order_number': order_number,
-                    'rule_type': 'benco_carrier_account',
-                    'expected_carrier': 'fedex',
-                    'expected_service': None,
-                    'expected_service_name': 'Benco FedEx Account',
-                    'actual_carrier': carrier_code,
-                    'actual_service': service_code,
-                    'actual_service_name': service_name,
-                    'ship_state': ship_state,
-                    'ship_country': ship_country,
-                    'ship_company': ship_company,
-                    'severity': 'CRITICAL',
-                    'message': f'Benco order should use Benco FedEx carrier account, currently using carrier_id: {carrier_id}'
-                })
-        elif not carrier_id and BENCO_CARRIER_IDS:
-            # carrier_id not yet captured - log info but skip Benco validation for now
-            logger.info(f"Benco order {order_number} missing carrier_id - will validate once captured")
+        if carrier_code and carrier_code != BENCO_EXPECTED_CARRIER:
+            violations.append({
+                'order_inbox_id': order_id,
+                'order_number': order_number,
+                'rule_type': 'benco_carrier_account',
+                'expected_carrier': BENCO_EXPECTED_CARRIER,
+                'expected_service': BENCO_EXPECTED_SERVICE,
+                'expected_service_name': 'UPS Ground',
+                'actual_carrier': carrier_code,
+                'actual_service': service_code,
+                'actual_service_name': service_name,
+                'ship_state': ship_state,
+                'ship_country': ship_country,
+                'ship_company': ship_company,
+                'severity': 'CRITICAL',
+                'message': f'Benco order must use UPS (third-party billing), currently using {carrier_code or "unknown carrier"}'
+            })
+        elif not carrier_code:
+            logger.debug(f"Benco order {order_number} has no carrier_code yet — skipping carrier check")
     
     if violations:
         return ('violations', violations)

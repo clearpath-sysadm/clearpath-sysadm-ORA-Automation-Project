@@ -553,7 +553,8 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
             carrier_id = None
             advanced_options = ss_order.get('advancedOptions', {})
             if advanced_options and isinstance(advanced_options, dict):
-                carrier_id = (advanced_options.get('billToMyOtherAccount') or 
+                carrier_id = (advanced_options.get('billToMyOtherAccount') or
+                             advanced_options.get('billToAccount') or
                              advanced_options.get('carrierId'))
             if not carrier_id:
                 carrier_id = ss_order.get('carrierId')
@@ -568,7 +569,10 @@ def run_status_sync() -> tuple[Dict[str, Any], int]:
                     'fedex_ground': 'FedEx Ground',
                     'fedex_home_delivery': 'FedEx Home Delivery',
                     'fedex_express_saver': 'FedEx Express Saver',
-                    'fedex_standard_overnight': 'FedEx Standard Overnight'
+                    'fedex_standard_overnight': 'FedEx Standard Overnight',
+                    'ups_ground': 'UPS Ground',
+                    'ups_2nd_day_air': 'UPS 2nd Day Air',
+                    'ups_standard': 'UPS Standard',
                 }
                 service_name = service_name_map.get(service_code, service_code.replace('_', ' ').title())
             

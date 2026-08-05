@@ -116,21 +116,23 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
     """
     Derive the correct shipping profile for an order + SKU combination.
 
-    Service code rules (highest priority first):
-      - Preserve existing fedex_2day (never downgrade)
-      - HI destination  → fedex_2day
-      - CA destination  → fedex_ground_international
-      - Default         → fedex_ground
-
-    Billing account:
-      - Company name contains 'BENCO' → BENCO_FEDEX_ACCOUNT_ID (ShipStation shippingProviderId)
-      - All others                    → ORACARE_FEDEX_ACCOUNT_ID
+    Carrier / billing rules:
+      - Company name contains 'BENCO' → UPS Ground, third-party billing
+            (BENCO_UPS_ACCOUNT_NUMBER, BENCO_UPS_POSTAL_CODE, BENCO_UPS_COUNTRY_CODE)
+      - All others                    → FedEx, my_other_account billing
+            Service code rules (non-Benco only, highest priority first):
+              - Preserve existing fedex_2day (never downgrade)
+              - HI destination  → fedex_2day
+              - CA destination  → fedex_ground_international
+              - Default         → fedex_ground
+            Account: ORACARE_FEDEX_ACCOUNT_ID (ShipStation shippingProviderId)
 
     Package / dimensions / weight come from SKU_SHIPPING_PROFILES.
     Unknown SKUs get None for those fields — callers must omit them from the payload.
 
     Returns a dict with keys:
         carrier_code, service_code, bill_to_party, bill_to_account,
+        bill_to_postal_code, bill_to_country_code,
         package_code, weight_oz, length, width, height
 
     NOTE: internationalOptions (customs declarations) are intentionally never
@@ -144,35 +146,51 @@ def resolve_shipping_profile(order: dict, sku: str) -> dict:
     company = (ship_to.get('company') or '').strip().upper()
     current_service = (order.get('serviceCode') or '').strip()
 
-    if current_service == 'fedex_2day':
-        service_code = 'fedex_2day'
-    elif state == 'HI':
-        service_code = 'fedex_2day'
-    elif country == 'CA':
-        service_code = 'fedex_ground_international'
-    else:
-        service_code = 'fedex_ground'
-
     if 'BENCO' in company:
-        benco_id = os.getenv('BENCO_FEDEX_ACCOUNT_ID')
-        if not benco_id:
-            raise ValueError("BENCO_FEDEX_ACCOUNT_ID environment variable is not configured")
-        bill_to_account = int(benco_id)
+        # UPS third-party billing — Benco ships US continental only
+        ups_acct = os.getenv('BENCO_UPS_ACCOUNT_NUMBER')
+        if not ups_acct:
+            raise ValueError("BENCO_UPS_ACCOUNT_NUMBER environment variable is not configured")
+        ups_postal = os.getenv('BENCO_UPS_POSTAL_CODE')
+        if not ups_postal:
+            raise ValueError("BENCO_UPS_POSTAL_CODE environment variable is not configured")
+        ups_country = os.getenv('BENCO_UPS_COUNTRY_CODE', 'US')
+        carrier_code       = 'ups'
+        service_code       = 'ups_ground'
+        bill_to_party      = 'third_party'
+        bill_to_account    = str(ups_acct)
+        bill_to_postal_code   = str(ups_postal)
+        bill_to_country_code  = str(ups_country)
     else:
+        # FedEx my-other-account billing (Oracare and all non-Benco)
+        if current_service == 'fedex_2day':
+            service_code = 'fedex_2day'
+        elif state == 'HI':
+            service_code = 'fedex_2day'
+        elif country == 'CA':
+            service_code = 'fedex_ground_international'
+        else:
+            service_code = 'fedex_ground'
         oracare_id = os.getenv('ORACARE_FEDEX_ACCOUNT_ID')
         if not oracare_id:
             raise ValueError("ORACARE_FEDEX_ACCOUNT_ID environment variable is not configured")
-        bill_to_account = int(oracare_id)
+        carrier_code       = 'fedex'
+        bill_to_party      = 'my_other_account'
+        bill_to_account    = int(oracare_id)
+        bill_to_postal_code   = None
+        bill_to_country_code  = None
 
     profile = SKU_SHIPPING_PROFILES.get(sku)
     if profile is None:
         logger.warning(f"SKU {sku!r} not in SKU_SHIPPING_PROFILES — package/dims/weight will not be set")
 
     return {
-        'carrier_code':   'fedex',
-        'service_code':   service_code,
-        'bill_to_party':  'my_other_account',
-        'bill_to_account': bill_to_account,
+        'carrier_code':          carrier_code,
+        'service_code':          service_code,
+        'bill_to_party':         bill_to_party,
+        'bill_to_account':       bill_to_account,
+        'bill_to_postal_code':   bill_to_postal_code,
+        'bill_to_country_code':  bill_to_country_code,
         'package_code':   profile['package_code'] if profile else None,
         'package_id':     profile['package_id']   if profile else None,
         'weight_oz':      profile['weight_oz']    if profile else None,
@@ -189,7 +207,11 @@ def _get_mismatched_fields(order: dict, expected_cf1: str, profile: dict) -> lis
 
     Fields checked:
         customField1, carrierCode, serviceCode, packageCode (when profile has one),
-        billToParty, billToMyOtherAccount, weight, dimensions.
+        billToParty, weight, dimensions.
+
+    Billing field checks are carrier-aware:
+        my_other_account → billToMyOtherAccount
+        third_party      → billToAccount, billToPostalCode, billToCountryCode
     """
     adv  = order.get('advancedOptions') or {}
     wt   = order.get('weight') or {}
@@ -208,8 +230,16 @@ def _get_mismatched_fields(order: dict, expected_cf1: str, profile: dict) -> lis
     if adv.get('billToParty') != profile['bill_to_party']:
         mismatched.append('billToParty')
 
-    if adv.get('billToMyOtherAccount') != profile['bill_to_account']:
-        mismatched.append('billToMyOtherAccount')
+    if profile.get('bill_to_party') == 'third_party':
+        if str(adv.get('billToAccount') or '') != str(profile['bill_to_account'] or ''):
+            mismatched.append('billToAccount')
+        if str(adv.get('billToPostalCode') or '') != str(profile.get('bill_to_postal_code') or ''):
+            mismatched.append('billToPostalCode')
+        if str(adv.get('billToCountryCode') or '') != str(profile.get('bill_to_country_code') or ''):
+            mismatched.append('billToCountryCode')
+    else:
+        if adv.get('billToMyOtherAccount') != profile['bill_to_account']:
+            mismatched.append('billToMyOtherAccount')
 
     if profile['package_code'] is not None:
         if (order.get('packageCode') or '') != profile['package_code']:
@@ -622,6 +652,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 dim_height=profile['height'],
                 bill_to_party=profile['bill_to_party'],
                 bill_to_account=profile['bill_to_account'],
+                bill_to_postal_code=profile.get('bill_to_postal_code'),
+                bill_to_country_code=profile.get('bill_to_country_code'),
             )
 
             if not result.get('success'):
@@ -709,6 +741,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
             dim_height=profile['height'],
             bill_to_party=profile['bill_to_party'],
             bill_to_account=profile['bill_to_account'],
+            bill_to_postal_code=profile.get('bill_to_postal_code'),
+            bill_to_country_code=profile.get('bill_to_country_code'),
         )
 
         if not result.get('success'):
@@ -883,6 +917,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         dim_height=profile['height'],
         bill_to_party=profile['bill_to_party'],
         bill_to_account=profile['bill_to_account'],
+        bill_to_postal_code=profile.get('bill_to_postal_code'),
+        bill_to_country_code=profile.get('bill_to_country_code'),
     )
 
     if not result.get('success'):
