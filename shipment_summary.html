@@ -111,6 +111,25 @@
             color: var(--text-tertiary);
             margin-right: 4px;
         }
+        .eol-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            color: #78716c;           /* muted warm-grey — low urgency */
+            background: #f5f5f4;
+            border: 1px solid #d6d3d1;
+            border-radius: 4px;
+            padding: 1px 5px;
+            margin-left: 6px;
+            vertical-align: middle;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .dark-mode .eol-badge {
+            color: #a8a29e;
+            background: #292524;
+            border-color: #44403c;
+        }
     </style>
 </head>
 <body>
@@ -434,8 +453,11 @@
                             lots.forEach((lot, idx) => {
                                 const isLast = idx === lots.length - 1;
                                 const prefix = isLast ? '└' : '├';
+                                const eolBadge = lot.is_end_of_lot
+                                    ? ' <span class="eol-badge">End of Lot</span>'
+                                    : '';
                                 const lotLabel = lot.lot_number
-                                    ? `Lot ${esc(lot.lot_number)}`
+                                    ? `Lot ${esc(lot.lot_number)}${eolBadge}`
                                     : '<span class="lot-dash">Untagged</span>';
                                 const units = (lot.units || 0).toLocaleString();
                                 html += `

@@ -3836,6 +3836,15 @@ def api_shipment_summary():
                 'units':      total_units,
             })
 
+        # Mark the first lot as end-of-lot when a SKU has more than one active lot.
+        # The SQL sorts lots ascending (lowest lot_number first), so lots[0] is always
+        # the oldest lot being drawn down.  The frontend uses this flag to render a
+        # muted "End of Lot" badge without having to re-derive the condition itself.
+        for entry in sku_data.values():
+            multi = len(entry['lots']) > 1
+            for i, lot in enumerate(entry['lots']):
+                lot['is_end_of_lot'] = (multi and i == 0)
+
         summary_rows = sorted(sku_data.values(), key=lambda x: x['base_sku'])
 
         return jsonify({
