@@ -354,7 +354,7 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
         }
 
 # List of allowed HTML files to serve (security: prevent directory traversal)
-ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html', 'order-management.html', 'inventory_snapshots.html', 'logs.html']
+ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_shipped_history.html', 'xml_import.html', 'settings.html', 'bundle_skus.html', 'sku_lot.html', 'lot_inventory.html', 'order_audit.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html', 'order-management.html', 'inventory_snapshots.html', 'logs.html', 'shipment_summary.html']
 
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
@@ -3713,6 +3713,131 @@ def api_reconciliation_log():
 
         return jsonify({'success': True, 'data': data, 'count': len(data)})
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/reports/shipment_summary', methods=['GET'])
+@login_required
+def api_shipment_summary():
+    """Return aggregated shipment summary grouped by base SKU and lot.
+
+    Queries order_items_inbox (which already stores resolved base SKUs and
+    effective quantities written by the sync worker) joined to orders_inbox,
+    filtered to awaiting_shipment/pending statuses.  Groups by (sku, sku_lot)
+    so callers can render per-lot sub-rows without re-fetching.
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # ── 1. Sync watermark timestamp ─────────────────────────────────────
+        cursor.execute("""
+            SELECT last_sync_timestamp
+            FROM sync_watermark
+            WHERE workflow_name = 'unified-shipstation-sync'
+        """)
+        wm_row = cursor.fetchone()
+        sync_ts = None
+        sync_ts_display = None
+        if wm_row and wm_row[0]:
+            wm_dt = wm_row[0]
+            if isinstance(wm_dt, str):
+                wm_dt = datetime.fromisoformat(wm_dt.replace('Z', '+00:00'))
+            if wm_dt.tzinfo is None:
+                wm_dt = pytz.UTC.localize(wm_dt)
+            central = pytz.timezone('US/Central')
+            wm_ct = wm_dt.astimezone(central)
+            sync_ts = wm_dt.isoformat()
+            sync_ts_display = wm_ct.strftime('%-I:%M %p CT')
+
+        # ── 2. Main aggregation: (sku, sku_lot) → units + product name ──────
+        # order_items_inbox.sku already stores the resolved base SKU (written
+        # by the sync worker via resolve_sku_and_quantity).  No variant join needed.
+        cursor.execute("""
+            SELECT
+                oi.sku,
+                oi.sku_lot,
+                cp.parameter_name  AS product_name,
+                SUM(oi.quantity)   AS total_units
+            FROM order_items_inbox oi
+            JOIN orders_inbox o ON oi.order_inbox_id = o.id
+            LEFT JOIN configuration_params cp
+                   ON cp.sku = oi.sku AND cp.category = 'Key Products'
+            WHERE o.status IN ('awaiting_shipment', 'pending')
+              AND oi.quantity > 0
+            GROUP BY oi.sku, oi.sku_lot, cp.parameter_name
+            ORDER BY oi.sku ASC, oi.sku_lot NULLS FIRST
+        """)
+        item_rows = cursor.fetchall()
+
+        # ── 3. Benco subtotal (overlapping subset — separate query) ─────────
+        cursor.execute("""
+            SELECT COALESCE(SUM(oi.quantity), 0)
+            FROM order_items_inbox oi
+            JOIN orders_inbox o ON oi.order_inbox_id = o.id
+            WHERE o.status IN ('awaiting_shipment', 'pending')
+              AND oi.quantity > 0
+              AND o.ship_company ILIKE '%%BENCO%%'
+        """)
+        benco_units = int(cursor.fetchone()[0] or 0)
+
+        # ── 4. Expedited subtotal (overlapping subset — separate query) ──────
+        cursor.execute("""
+            SELECT COALESCE(SUM(oi.quantity), 0)
+            FROM order_items_inbox oi
+            JOIN orders_inbox o ON oi.order_inbox_id = o.id
+            WHERE o.status IN ('awaiting_shipment', 'pending')
+              AND oi.quantity > 0
+              AND o.shipping_service_code IN (
+                  'fedex_2day', 'fedex_standard_overnight', 'ups_2nd_day_air'
+              )
+        """)
+        expedited_units = int(cursor.fetchone()[0] or 0)
+
+        cursor.close()
+        conn.close()
+
+        # ── 5. Build per-SKU structure with lot sub-rows ─────────────────────
+        sku_data = {}          # {sku: {base_sku, product_name, lots, total_units}}
+        grand_total  = 0
+        unresolved_skus = []   # SKUs with no product name in configuration_params
+
+        for sku, sku_lot, product_name, total_units in item_rows:
+            total_units = int(total_units or 0)
+            grand_total += total_units
+
+            if sku not in sku_data:
+                resolved_name = product_name or None
+                sku_data[sku] = {
+                    'base_sku':     sku,
+                    'product_name': resolved_name or sku,   # fall back to SKU string
+                    'lots':         [],
+                    'total_units':  0,
+                }
+                if resolved_name is None:
+                    unresolved_skus.append(sku)
+
+            sku_data[sku]['total_units'] += total_units
+            sku_data[sku]['lots'].append({
+                'sku_lot': sku_lot,   # None = lot tagger hasn't tagged yet
+                'units':   total_units,
+            })
+
+        summary_rows = sorted(sku_data.values(), key=lambda x: x['base_sku'])
+
+        return jsonify({
+            'success':              True,
+            'rows':                 summary_rows,
+            'grand_total':          grand_total,
+            'benco_units':          benco_units,
+            'expedited_units':      expedited_units,
+            'sync_timestamp':       sync_ts,
+            'sync_timestamp_display': sync_ts_display,
+            'unresolved_skus':      unresolved_skus,
+        })
+
+    except Exception as e:
+        logger.error(f"Error in api_shipment_summary: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

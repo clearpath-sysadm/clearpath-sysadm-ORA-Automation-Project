@@ -396,6 +396,19 @@
                         <div class="skeleton skeleton-card" id="stat-skeleton-11"></div>
 
                         <!-- Actual Stats -->
+                        <!-- Shipment Summary (Units to Pick) -->
+                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;" title="Click to view full shipment summary">
+                            <div class="stat-card hidden" data-stat-card id="units-to-pick-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value" id="units-to-pick-value">—</div>
+                                <div class="stat-label">
+                                    Units to Pick
+                                    <span class="help-icon">
+                                        <span class="help-tooltip">Total base-SKU units currently awaiting shipment. Click to view the full shipment summary with lot breakdown.</span>
+                                    </span>
+                                </div>
+                                <div class="stat-change" id="units-to-pick-sub" style="font-size: 11px; color: var(--text-tertiary);">View pick summary →</div>
+                            </div>
+                        </a>
                         <!-- ShipStation Count -->
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card id="shipstation-card" style="cursor: pointer; position: relative;">
@@ -438,8 +451,8 @@
                             </div>
                         </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div class="stat-value">0</div>
+                            <div class="stat-card hidden" data-stat-card id="benco-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value" id="benco-orders-value">0</div>
                                 <div class="stat-label">
                                     Benco Orders
                                     <span class="help-icon">
@@ -450,8 +463,8 @@
                             </div>
                         </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div class="stat-value">0</div>
+                            <div class="stat-card hidden" data-stat-card id="hawaiian-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value" id="hawaiian-orders-value">0</div>
                                 <div class="stat-label">
                                     Hawaiian Orders
                                     <span class="help-icon">
@@ -462,23 +475,23 @@
                             </div>
                         </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div class="stat-value">0</div>
+                            <div class="stat-card hidden" data-stat-card id="canadian-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value" id="canadian-orders-value">0</div>
                                 <div class="stat-label">Canadian Orders</div>
                                 <div class="stat-change">Awaiting Shipment</div>
                             </div>
                         </a>
                         <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div class="stat-value">0</div>
+                            <div class="stat-card hidden" data-stat-card id="intl-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="stat-value" id="intl-orders-value">0</div>
                                 <div class="stat-label">Other International</div>
                                 <div class="stat-change">Awaiting Shipment</div>
                             </div>
                         </a>
-                        <div class="stat-card hidden" data-stat-card>
-                            <div class="stat-value"><span class="status-indicator status-green"></span> Online</div>
+                        <div class="stat-card hidden" data-stat-card id="system-status-card">
+                            <div class="stat-value" id="system-status-value"><span class="status-indicator status-green"></span> Online</div>
                             <div class="stat-label">System Status</div>
-                            <div class="stat-change">All services operational</div>
+                            <div class="stat-change" id="system-status-change">All services operational</div>
                         </div>
                         <div class="stat-card hidden" data-stat-card id="production-health-card" style="cursor: pointer;" onclick="openHealthModal()">
                             <div class="stat-value" id="prod-health-status">
@@ -1131,13 +1144,14 @@
             if (isDashboardLoading) return;
             isDashboardLoading = true;
             try {
-                const [statsRes, alertsRes, automationRes, shipstationRes, localDbRes, onHoldRes] = await Promise.all([
+                const [statsRes, alertsRes, automationRes, shipstationRes, localDbRes, onHoldRes, pickSummaryRes] = await Promise.all([
                     fetch('/api/dashboard_stats'),
                     fetch('/api/inventory/alerts'),
                     fetch('/api/automation_status'),
                     fetch('/api/shipstation/units_to_ship'),
                     fetch('/api/local/awaiting_shipment_count'),
                     fetch('/api/local/on_hold_count'),
+                    fetch('/api/reports/shipment_summary'),
                 ]);
                 
                 const stats = await statsRes.json();
@@ -1146,6 +1160,21 @@
                 const shipstation = await shipstationRes.json();
                 const localDb = await localDbRes.json();
                 const onHold = await onHoldRes.json();
+                const pickSummary = await pickSummaryRes.json();
+
+                // Update Units to Pick card
+                if (pickSummary.success) {
+                    const total = pickSummary.grand_total || 0;
+                    document.getElementById('units-to-pick-value').textContent = total.toLocaleString();
+                    const sub = [];
+                    if (pickSummary.benco_units > 0) sub.push(`Benco: ${pickSummary.benco_units}`);
+                    if (pickSummary.expedited_units > 0) sub.push(`Exp: ${pickSummary.expedited_units}`);
+                    document.getElementById('units-to-pick-sub').textContent =
+                        sub.length > 0 ? sub.join(' · ') + ' · View summary →' : 'View pick summary →';
+                } else {
+                    document.getElementById('units-to-pick-value').textContent = '—';
+                    document.getElementById('units-to-pick-sub').textContent = 'View pick summary →';
+                }
                 
                 // Update ShipStation card independently
                 let ssUnits = 0;
@@ -1188,17 +1217,23 @@
                     }
                 }
                 
-                // Update stats cards (note: index 2 is now on-hold-card)
+                // Update stats cards using stable element IDs (never positional indices)
                 if (stats.success) {
-                    const statCards = document.querySelectorAll('[data-stat-card]');
-                    if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.data.benco_orders || 0;
-                    if (statCards[4]) statCards[4].querySelector('.stat-value').textContent = stats.data.hawaiian_orders || 0;
-                    if (statCards[5]) statCards[5].querySelector('.stat-value').textContent = stats.data.canadian_orders || 0;
-                    if (statCards[6]) statCards[6].querySelector('.stat-value').textContent = stats.data.other_international_orders || 0;
-                    if (statCards[7]) {
+                    const bencoEl   = document.getElementById('benco-orders-value');
+                    const hawaiiEl  = document.getElementById('hawaiian-orders-value');
+                    const canadaEl  = document.getElementById('canadian-orders-value');
+                    const intlEl    = document.getElementById('intl-orders-value');
+                    if (bencoEl)  bencoEl.textContent  = stats.data.benco_orders || 0;
+                    if (hawaiiEl) hawaiiEl.textContent = stats.data.hawaiian_orders || 0;
+                    if (canadaEl) canadaEl.textContent = stats.data.canadian_orders || 0;
+                    if (intlEl)   intlEl.textContent   = stats.data.other_international_orders || 0;
+
+                    const sysValueEl  = document.getElementById('system-status-value');
+                    const sysChangeEl = document.getElementById('system-status-change');
+                    if (sysValueEl && sysChangeEl) {
                         // Enhanced system status with real-time workflow health
                         let statusText, statusClass, statusMessage;
-                        
+
                         if (stats.data.system_status === 'operational') {
                             statusText = 'Online';
                             statusClass = 'status-green';
@@ -1212,9 +1247,9 @@
                             statusClass = 'status-yellow';
                             statusMessage = stats.data.system_message || 'No recent activity';
                         }
-                        
-                        statCards[7].querySelector('.stat-value').innerHTML = `<span class="status-indicator ${statusClass}"></span> ${statusText}`;
-                        statCards[7].querySelector('.stat-change').textContent = statusMessage;
+
+                        sysValueEl.innerHTML  = `<span class="status-indicator ${statusClass}"></span> ${statusText}`;
+                        sysChangeEl.textContent = statusMessage;
                     }
                     
                     const fedexAlert = document.getElementById('fedex-alert');

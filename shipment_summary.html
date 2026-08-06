@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipment Summary - Oracare Fulfillment</title>
+
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+
+    <!-- Global Premium Design System -->
+    <link rel="stylesheet" href="/static/css/global-styles.css">
+
+    <style>
+        .summary-hero {
+            text-align: center;
+            padding: 32px 24px 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .summary-total {
+            font-size: 52px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .summary-total-label {
+            font-size: 16px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+        .summary-callouts {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .summary-callout {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .summary-callout strong {
+            color: var(--text-primary);
+        }
+        .summary-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: flex-end;
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        .unresolved-alert {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #92400e;
+            display: none;
+        }
+        .unresolved-alert.visible {
+            display: block;
+        }
+        .lot-subrow td {
+            padding-top: 3px !important;
+            padding-bottom: 3px !important;
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+        }
+        .lot-subrow td:first-child {
+            padding-left: 32px !important;
+        }
+        .lot-indicator {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #d97706;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .lot-dash {
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+        .units-col {
+            text-align: right;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .units-col-sub {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-secondary);
+        }
+        .empty-hero {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-tertiary);
+            font-size: 16px;
+        }
+        .summary-table th:last-child,
+        .summary-table td:last-child {
+            text-align: right;
+        }
+        .tree-prefix {
+            font-family: monospace;
+            color: var(--text-tertiary);
+            margin-right: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><img src="/static/images/oracare-logo.png" alt="Oracare" style="width: 100%; height: 100%; object-fit: contain;"></div>
+                <div class="sidebar-title">Oracare Fulfillment</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/shipment_summary.html" class="nav-item active">
+                        <span class="nav-item-icon">📋</span>
+                        Shipment Summary
+                    </a>
+                    <a href="/xml_import.html" class="nav-item">
+                        <span class="nav-item-icon">📥</span>
+                        Orders Inbox
+                    </a>
+                    <a href="/inventory_transactions.html" class="nav-item">
+                        <span class="nav-item-icon">📦</span>
+                        Inventory Monitor
+                    </a>
+                    <a href="/lot_inventory.html" class="nav-item">
+                        <span class="nav-item-icon">🏭</span>
+                        Lot Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon">💰</span>
+                        Charge Report
+                    </a>
+                </div>
+
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin &amp; Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/order-management.html" class="nav-item">
+                            <span class="nav-item-icon">🗑️</span>
+                            Order Management
+                        </a>
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon">📈</span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon">📋</span>
+                            Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon">🔍</span>
+                            Order Audit
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon">📊</span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon">📦</span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/sku_lot.html" class="nav-item">
+                            <span class="nav-item-icon">🏷️</span>
+                            SKU Lot Management
+                        </a>
+                        <a href="/inventory_snapshots.html" class="nav-item">
+                            <span class="nav-item-icon">📸</span>
+                            Inventory Snapshots
+                        </a>
+                        <a href="/email_contacts.html" class="nav-item">
+                            <span class="nav-item-icon">📧</span>
+                            Email Contacts
+                        </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon">⚙️</span>
+                            Workflow Controls
+                        </a>
+                        <a href="/logs.html" class="nav-item">
+                            <span class="nav-item-icon">📜</span>
+                            Server Logs
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/help.html" class="nav-item">
+                        <span class="nav-item-icon">📚</span>
+                        Help &amp; Training
+                    </a>
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon">⚙️</span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">Shipment Summary</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="card">
+                    <!-- Card header: sync timestamp + refresh -->
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>📋</span> Units to Pick
+                        </div>
+                        <div class="summary-meta">
+                            <span id="syncTimestamp" style="color: var(--text-tertiary); font-size: 12px;">Loading...</span>
+                            <button class="btn" id="refreshBtn" onclick="refreshSummary()" style="font-size: 12px; padding: 4px 12px;">
+                                🔄 Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading state -->
+                    <div id="summaryLoading" style="padding: 40px; text-align: center; color: var(--text-tertiary);">
+                        Loading shipment summary...
+                    </div>
+
+                    <!-- Error state -->
+                    <div id="summaryError"></div>
+
+                    <!-- Content -->
+                    <div id="summaryContent" style="display: none;">
+                        <!-- Hero total -->
+                        <div class="summary-hero">
+                            <div class="summary-total" id="grandTotal">0</div>
+                            <div class="summary-total-label">units to pick</div>
+                            <div class="summary-callouts">
+                                <div class="summary-callout" id="bencoCallout" style="display: none;">
+                                    Benco: <strong id="bencoUnits">0</strong> units
+                                </div>
+                                <div class="summary-callout" id="expeditedCallout" style="display: none;">
+                                    Expedited: <strong id="expeditedUnits">0</strong> units
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Unresolved SKU alert -->
+                        <div id="unresolvedAlert" class="unresolved-alert"></div>
+
+                        <!-- Empty state -->
+                        <div id="summaryEmpty" class="empty-hero" style="display: none;">
+                            No orders awaiting shipment.
+                        </div>
+
+                        <!-- SKU table -->
+                        <div id="summaryTableWrap" style="overflow-x: auto; display: none;">
+                            <table class="summary-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product</th>
+                                        <th>Lot</th>
+                                        <th style="text-align: right;">Units</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="summaryTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // Admin toggle
+        function toggleAdmin() {
+            const items = document.getElementById('admin-items');
+            const icon = document.querySelector('.admin-toggle-icon');
+            items.classList.toggle('visible');
+            icon.textContent = items.classList.contains('visible') ? '▼' : '▶';
+        }
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        }
+
+        // Escape helper
+        function esc(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        async function loadSummary() {
+            const loading = document.getElementById('summaryLoading');
+            const error  = document.getElementById('summaryError');
+            const content = document.getElementById('summaryContent');
+
+            loading.style.display = 'block';
+            error.innerHTML = '';
+            content.style.display = 'none';
+
+            try {
+                const resp = await fetch('/api/reports/shipment_summary');
+                const data = await resp.json();
+                if (!data.success) throw new Error(data.error || 'Failed to load summary');
+
+                loading.style.display = 'none';
+                content.style.display = 'block';
+
+                // Sync timestamp
+                const tsEl = document.getElementById('syncTimestamp');
+                tsEl.textContent = data.sync_timestamp_display
+                    ? `Inbox refreshed: ${data.sync_timestamp_display}`
+                    : 'Inbox refresh time unknown';
+
+                // Grand total
+                document.getElementById('grandTotal').textContent = (data.grand_total || 0).toLocaleString();
+
+                // Benco callout
+                const bencoEl = document.getElementById('bencoCallout');
+                if (data.benco_units > 0) {
+                    document.getElementById('bencoUnits').textContent = data.benco_units.toLocaleString();
+                    bencoEl.style.display = '';
+                } else {
+                    bencoEl.style.display = 'none';
+                }
+
+                // Expedited callout
+                const expEl = document.getElementById('expeditedCallout');
+                if (data.expedited_units > 0) {
+                    document.getElementById('expeditedUnits').textContent = data.expedited_units.toLocaleString();
+                    expEl.style.display = '';
+                } else {
+                    expEl.style.display = 'none';
+                }
+
+                // Unresolved SKU alert
+                const alertEl = document.getElementById('unresolvedAlert');
+                if (data.unresolved_skus && data.unresolved_skus.length > 0) {
+                    const skuList = data.unresolved_skus.map(s => esc(s)).join(', ');
+                    const count = data.unresolved_skus.length;
+                    alertEl.textContent = `⚠ Check ${count} unrecognized SKU${count > 1 ? 's' : ''}: ${skuList}`;
+                    alertEl.classList.add('visible');
+                } else {
+                    alertEl.classList.remove('visible');
+                }
+
+                // Table
+                const rows = data.rows || [];
+                const empty = document.getElementById('summaryEmpty');
+                const tableWrap = document.getElementById('summaryTableWrap');
+                const tbody = document.getElementById('summaryTableBody');
+
+                if (rows.length === 0) {
+                    empty.style.display = 'block';
+                    tableWrap.style.display = 'none';
+                } else {
+                    empty.style.display = 'none';
+                    tableWrap.style.display = 'block';
+
+                    tbody.innerHTML = rows.map(row => {
+                        const lots = row.lots || [];
+                        const multiLot = lots.length > 1;
+                        const skuCell = esc(row.base_sku);
+                        const productCell = esc(row.product_name);
+                        const totalUnits = (row.total_units || 0).toLocaleString();
+
+                        if (!multiLot) {
+                            // Single lot (or no lot) — inline display
+                            const singleLot = lots[0];
+                            const lotDisplay = (singleLot && singleLot.sku_lot)
+                                ? esc(singleLot.sku_lot)
+                                : '<span class="lot-dash">—</span>';
+                            return `
+                                <tr>
+                                    <td><strong>${skuCell}</strong></td>
+                                    <td>${productCell}</td>
+                                    <td style="color: var(--text-secondary); font-size: 13px;">${lotDisplay}</td>
+                                    <td class="units-col">${totalUnits}</td>
+                                </tr>`;
+                        } else {
+                            // Multi-lot — parent row + sub-rows
+                            const indicator = `<span class="lot-indicator">⚡ ${lots.length} lots</span>`;
+                            let html = `
+                                <tr>
+                                    <td><strong>${skuCell}</strong></td>
+                                    <td>${productCell}${indicator}</td>
+                                    <td></td>
+                                    <td class="units-col">${totalUnits}</td>
+                                </tr>`;
+                            lots.forEach((lot, idx) => {
+                                const isLast = idx === lots.length - 1;
+                                const prefix = isLast ? '└' : '├';
+                                const lotLabel = lot.sku_lot
+                                    ? `Lot ${esc(lot.sku_lot)}`
+                                    : '<span class="lot-dash">Untagged</span>';
+                                const units = (lot.units || 0).toLocaleString();
+                                html += `
+                                <tr class="lot-subrow">
+                                    <td></td>
+                                    <td><span class="tree-prefix">${prefix}</span>${lotLabel}</td>
+                                    <td></td>
+                                    <td class="units-col-sub">${units}</td>
+                                </tr>`;
+                            });
+                            return html;
+                        }
+                    }).join('');
+                }
+
+            } catch (err) {
+                loading.style.display = 'none';
+                error.innerHTML = `<div style="padding: 20px; background: var(--bg-tertiary); color: var(--critical-red); border-radius: 8px; margin: 16px;">
+                    Failed to load shipment summary: ${esc(err.message)}
+                </div>`;
+            }
+        }
+
+        async function refreshSummary() {
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Refreshing...';
+            try {
+                await loadSummary();
+                btn.textContent = '✅ Refreshed!';
+                setTimeout(() => { btn.textContent = '🔄 Refresh'; btn.disabled = false; }, 2000);
+            } catch (e) {
+                btn.textContent = '❌ Failed';
+                setTimeout(() => { btn.textContent = '🔄 Refresh'; btn.disabled = false; }, 2000);
+            }
+        }
+
+        // Load on page ready
+        document.addEventListener('DOMContentLoaded', loadSummary);
+    </script>
+</body>
+</html>
