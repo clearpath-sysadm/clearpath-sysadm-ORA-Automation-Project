@@ -130,6 +130,85 @@
             background: #292524;
             border-color: #44403c;
         }
+
+        /* Print header — visible only when printing */
+        .print-header {
+            display: none;
+        }
+
+        /* ── Print stylesheet ──────────────────────────────────────────────── */
+        @media print {
+            /* ── Dark mode reset ───────────────────────────────────────────
+               body.dark-mode overrides CSS variables with near-white values
+               (e.g. --text-primary: #E3E9F5) that become invisible on white
+               paper.  Resetting them here ensures all var(--...) references
+               in both the page CSS and global-styles.css resolve to the
+               light palette regardless of which mode the user is in.      */
+            body, body.dark-mode {
+                --text-primary:       #1B2A4A;
+                --text-secondary:     #5A6B8C;
+                --text-tertiary:      #8A98B3;
+                --bg-primary:         #FFFFFF;
+                --bg-secondary:       #F5F6F8;
+                --bg-tertiary:        #E2E6EF;
+                --border-color:       #E2E6EF;
+                --border-translucent: rgba(35, 59, 96, 0.12);
+                --shadow-sm:          none;
+                --shadow-md:          none;
+                --shadow-lg:          none;
+                color:      #1B2A4A !important;
+                background: white    !important;
+            }
+            /* Belt-and-suspenders text overrides for elements that may carry
+               inline styles or specificity that beats the variable reset.  */
+            th, td               { color: #1B2A4A !important; background: white !important; }
+            .summary-total       { color: #1B2A4A !important; }
+            .summary-total-label { color: #5A6B8C !important; }
+            .summary-callout     { color: #5A6B8C !important; }
+            .print-header        { color: #1B2A4A !important; }
+
+            /* Show print header, hide everything else */
+            .print-header       { display: block; margin-bottom: 16px; }
+            .sidebar            { display: none !important; }
+            .top-bar            { display: none !important; }
+            .card-header        { display: none !important; }
+            #unresolvedAlert    { display: none !important; }
+            #summaryLoading     { display: none !important; }
+            #summaryError       { display: none !important; }
+
+            /* Fix layout — reset overflow/height chain that clips content
+               (.app-container has height:100vh + overflow:hidden in global-styles.css;
+                .main-content and .content-area also carry overflow:hidden / overflow-y:auto) */
+            .app-container  { display: block !important; height: auto !important; overflow: visible !important; }
+            .main-content   { display: block !important; overflow: visible !important; }
+            .content-area   { overflow: visible !important; padding: 0 !important; }
+
+            /* Strip card decoration */
+            .card { box-shadow: none !important; border-radius: 0 !important;
+                    padding: 0 !important; border: none !important; margin: 0 !important; }
+
+            /* Fix table clipping (#summaryTableWrap has inline overflow-x:auto) */
+            #summaryTableWrap { overflow: visible !important; }
+
+            /* Force white backgrounds on sub-rows regardless of browser "Background graphics" setting */
+            .lot-subrow td { background: white !important; }
+
+            /* Strip badge decoration so labels read cleanly in black-and-white */
+            .eol-badge {
+                background: none !important;
+                border: none !important;
+                color: #555 !important;
+                padding: 0 !important;
+                margin-left: 4px !important;
+            }
+            .lot-indicator { color: #555 !important; }
+
+            /* Prevent rows from splitting across page breaks */
+            tr { page-break-inside: avoid; }
+
+            /* Body background */
+            body { background: white !important; }
+        }
     </style>
 </head>
 <body>
@@ -264,6 +343,9 @@
                             <button class="btn" id="refreshBtn" onclick="refreshSummary()" style="font-size: 12px; padding: 4px 12px;">
                                 🔄 Refresh
                             </button>
+                            <button class="btn" id="printBtn" onclick="window.print()" disabled style="font-size: 12px; padding: 4px 12px;">
+                                🖨 Print
+                            </button>
                         </div>
                     </div>
 
@@ -277,6 +359,12 @@
 
                     <!-- Content -->
                     <div id="summaryContent" style="display: none;">
+                        <!-- Print-only header (hidden on screen) -->
+                        <div class="print-header">
+                            <strong style="font-size: 18px;">Pick List</strong>
+                            <span id="printDate" style="font-size: 14px; margin-left: 12px; color: #555;"></span>
+                        </div>
+
                         <!-- Hero total -->
                         <div class="summary-hero">
                             <div class="summary-total" id="grandTotal">0</div>
@@ -356,10 +444,12 @@
             const loading = document.getElementById('summaryLoading');
             const error  = document.getElementById('summaryError');
             const content = document.getElementById('summaryContent');
+            const printBtn = document.getElementById('printBtn');
 
             loading.style.display = 'block';
             error.innerHTML = '';
             content.style.display = 'none';
+            printBtn.disabled = true;
 
             try {
                 const resp = await fetch('/api/reports/shipment_summary');
@@ -368,6 +458,13 @@
 
                 loading.style.display = 'none';
                 content.style.display = 'block';
+                printBtn.disabled = false;
+
+                // Populate print header date
+                const now = new Date();
+                document.getElementById('printDate').textContent = now.toLocaleDateString('en-US', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
 
                 // Sync timestamp
                 const tsEl = document.getElementById('syncTimestamp');
@@ -475,6 +572,7 @@
 
             } catch (err) {
                 loading.style.display = 'none';
+                printBtn.disabled = true;
                 error.innerHTML = `<div style="padding: 20px; background: var(--bg-tertiary); color: var(--critical-red); border-radius: 8px; margin: 16px;">
                     Failed to load shipment summary: ${esc(err.message)}
                 </div>`;
