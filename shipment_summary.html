@@ -411,8 +411,8 @@
                         if (!multiLot) {
                             // Single lot (or no lot) — inline display
                             const singleLot = lots[0];
-                            const lotDisplay = (singleLot && singleLot.sku_lot)
-                                ? esc(singleLot.sku_lot)
+                            const lotDisplay = (singleLot && singleLot.lot_number)
+                                ? esc(singleLot.lot_number)
                                 : '<span class="lot-dash">—</span>';
                             return `
                                 <tr>
@@ -434,8 +434,8 @@
                             lots.forEach((lot, idx) => {
                                 const isLast = idx === lots.length - 1;
                                 const prefix = isLast ? '└' : '├';
-                                const lotLabel = lot.sku_lot
-                                    ? `Lot ${esc(lot.sku_lot)}`
+                                const lotLabel = lot.lot_number
+                                    ? `Lot ${esc(lot.lot_number)}`
                                     : '<span class="lot-dash">Untagged</span>';
                                 const units = (lot.units || 0).toLocaleString();
                                 html += `

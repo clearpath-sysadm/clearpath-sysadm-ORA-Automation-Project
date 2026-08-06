@@ -3753,10 +3753,14 @@ def api_shipment_summary():
         # ── 2. Main aggregation: (sku, sku_lot) → units + product name ──────
         # order_items_inbox.sku already stores the resolved base SKU (written
         # by the sync worker via resolve_sku_and_quantity).  No variant join needed.
+        # COALESCE(oi.sku_lot, o.lot_stamp) is the belt-and-suspenders fallback:
+        # the sync now populates sku_lot from CF1 for awaiting-shipment orders,
+        # but lot_stamp (from orders_inbox) covers any order already in the DB
+        # before that fix was deployed.
         cursor.execute("""
             SELECT
                 oi.sku,
-                oi.sku_lot,
+                COALESCE(oi.sku_lot, o.lot_stamp) AS sku_lot,
                 cp.parameter_name  AS product_name,
                 SUM(oi.quantity)   AS total_units
             FROM order_items_inbox oi
@@ -3765,8 +3769,8 @@ def api_shipment_summary():
                    ON cp.sku = oi.sku AND cp.category = 'Key Products'
             WHERE o.status IN ('awaiting_shipment', 'pending')
               AND oi.quantity > 0
-            GROUP BY oi.sku, oi.sku_lot, cp.parameter_name
-            ORDER BY oi.sku ASC, oi.sku_lot NULLS FIRST
+            GROUP BY oi.sku, COALESCE(oi.sku_lot, o.lot_stamp), cp.parameter_name
+            ORDER BY oi.sku ASC, COALESCE(oi.sku_lot, o.lot_stamp) NULLS FIRST
         """)
         item_rows = cursor.fetchall()
 
@@ -3818,9 +3822,18 @@ def api_shipment_summary():
                     unresolved_skus.append(sku)
 
             sku_data[sku]['total_units'] += total_units
+            # Extract just the lot number for display (e.g. "260169" from "17612 - 260169").
+            # sku_lot is the full compound string written by the lot tagger; the SKU
+            # portion is redundant in the table since it's already in the SKU column.
+            lot_number = None
+            if sku_lot and ' - ' in sku_lot:
+                lot_number = sku_lot.split(' - ', 1)[1].strip()
+            elif sku_lot:
+                lot_number = sku_lot  # unexpected format — show as-is
             sku_data[sku]['lots'].append({
-                'sku_lot': sku_lot,   # None = lot tagger hasn't tagged yet
-                'units':   total_units,
+                'sku_lot':    sku_lot,     # full compound string (kept for internal use)
+                'lot_number': lot_number,  # display value: "260169" or None
+                'units':      total_units,
             })
 
         summary_rows = sorted(sku_data.values(), key=lambda x: x['base_sku'])

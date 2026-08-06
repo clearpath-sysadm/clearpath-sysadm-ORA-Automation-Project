@@ -1134,6 +1134,13 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
         # total_items recomputation. Variant SKUs (e.g. '17612-6') resolve to
         # their base SKU with effective quantity (×multiplier).
         _ueos_item_agg: dict = {}  # {base_sku: {'quantity', 'sku_lot', 'unit_price_cents'}}
+        # Parse CF1 once before the loop — used as fallback lot source when the
+        # item SKU itself contains no lot.  Mirrors the BC shipped-order path
+        # (see the parse_cf1 block above).  BC orders in awaiting_shipment have
+        # variant SKUs like '17612-1', never a lot-stamped compound form; the lot
+        # lives only in customField1 after the lot tagger runs.
+        _ueos_cf1 = (extract_cf1(order) or '').strip()
+        _ueos_cf1_parsed = parse_cf1(_ueos_cf1)  # ('17612', '260169') or None
         for _agg_item in items:
             _sku_raw = str(_agg_item.get('sku', '')).strip()
             _qty = _agg_item.get('quantity', 0)
@@ -1153,6 +1160,11 @@ def update_existing_order_status(order: Dict[Any, Any], local_order_id: int, con
                 else:
                     _base_sku = _ueos_promo_map.get(_raw_base, _raw_base)
                     _eff_qty = _qty
+                # If the item SKU carries no lot, check CF1.  Compare against
+                # the resolved base SKU so variant SKUs (e.g. '17612-1' → '17612')
+                # correctly match a CF1 of '17612 - 260169'.
+                if _sku_lot_val is None and _ueos_cf1_parsed and _ueos_cf1_parsed[0] == _base_sku:
+                    _sku_lot_val = _ueos_cf1
                 if _base_sku in _ueos_item_agg:
                     _ueos_item_agg[_base_sku]['quantity'] += _eff_qty
                 else:
