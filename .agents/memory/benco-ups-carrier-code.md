@@ -1,23 +1,18 @@
 ---
 name: Benco UPS carrier code
-description: The correct ShipStation carrier code for UPS in this account, discovered during live testing of the Benco third-party billing switch.
+description: The correct ShipStation carrier code for Acxiom's directly-connected UPS account, and why ups_walleted must never be used for Benco third-party billing.
 ---
 
 # Benco UPS Carrier Code
 
-The ShipStation carrier code for UPS in this account is **`ups_walleted`** ("UPS by ShipStation"), NOT `ups`.
+Acxiom's directly-connected UPS account has carrier code **`ups`** (nickname "Axiom", account number `3R25Y3`, shippingProviderId `732888`).
 
-**Why:** Discovered during live test of order 864891 — sending `carrier_code='ups'` returned `{"Message":"Invalid serviceCode"}` (HTTP 400). Querying `/carriers` confirmed the only UPS entry is `code='ups_walleted'`, `shippingProviderId=556331`.
+**Why:** `ups_walleted` is ShipStation's own UPS account ("UPS by ShipStation"). Using it requires a ShipStation credit card on file and does NOT route billing to an external UPS account — it bills ShipStation's account. Third-party billing to Benco's UPS account (10642V) requires Acxiom's own directly-connected UPS account (`code='ups'`).
 
-**How to apply:** Any code that sets or compares the UPS carrier code must use `ups_walleted`. The service code `ups_ground` is correct and accepted. The tagger (`resolve_shipping_profile`), shipping validator (`BENCO_EXPECTED_CARRIER`), and any future carrier-code comparisons must all use `ups_walleted`.
+**How to apply:** Any code setting or comparing the UPS carrier code for Benco orders must use `ups`. Service code `ups_ground` is correct for both the walleted and direct accounts. The tagger (`resolve_shipping_profile`), shipping validator (`BENCO_EXPECTED_CARRIER`), and any future carrier-code comparisons must use `ups`.
 
-**Confirmed working (2026-08-05):** After the fix, ShipStation accepted the order update and returned:
-- `carrierCode: 'ups_walleted'`
-- `serviceCode: 'ups_ground'`
+**Third-party billing fields (Benco):**
 - `billToParty: 'third_party'`
-- `billToAccount: '10642V'`
-- `billToPostalCode: '18640'`
-- `billToCountryCode: 'US'`
-- `billToMyOtherAccount: 556331` — auto-populated by ShipStation with the ups_walleted shippingProviderId; not a concern, mismatch checker ignores it for third_party orders.
-
-Mismatch check returned `[]` after update — no re-write loop.
+- `billToAccount`: from `BENCO_UPS_ACCOUNT_NUMBER` env var (`10642V`)
+- `billToPostalCode`: from `BENCO_UPS_POSTAL_CODE` env var (`18640`)
+- `billToCountryCode`: from `BENCO_UPS_COUNTRY_CODE` env var (`US`)
