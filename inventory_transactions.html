@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Inventory Monitor - Oracare Fulfillment</title>
+    <title>Transaction Log - Oracare Fulfillment</title>
     
     <!-- Premium Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
@@ -63,8 +63,8 @@
                         Dashboard
                     </a>
                     <a href="/inventory_transactions.html" class="nav-item active">
-                        <span class="nav-item-icon">📦</span>
-                        Inventory Monitor
+                        <span class="nav-item-icon">📋</span>
+                        Transaction Log
                     </a>
                     <a href="/lot_inventory.html" class="nav-item">
                         <span class="nav-item-icon">🏭</span>
@@ -149,7 +149,7 @@
                             <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                     </button>
-                    <h1 class="page-title">Inventory Monitor</h1>
+                    <h1 class="page-title">Transaction Log</h1>
                 </div>
                 <div class="top-bar-actions">
                     <button class="btn btn-primary" onclick="window.location.href='/incidents.html#report'" style="margin-right: 8px;">
@@ -160,22 +160,6 @@
             </div>
 
             <div class="content-area">
-
-                <!-- Lot Balances Summary -->
-                <div class="card" style="margin-bottom: 16px;">
-                    <div class="card-header">
-                        <h2 class="card-title">📦 Current Lot Balances</h2>
-                        <div style="display:flex;gap:8px;">
-                            <button id="lotViewBtn" class="btn" onclick="cycleLotView()" style="font-size:13px;">Active Only</button>
-                            <button class="btn" onclick="loadLotBalances()" style="font-size:13px;">↻ Refresh</button>
-                        </div>
-                    </div>
-                    <div class="card-body" style="padding: 0;">
-                        <div id="lot-balances-container">
-                            <div style="padding:16px; color:var(--text-tertiary);">Loading lot balances...</div>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="controls">
                     <input type="date" id="startDate" placeholder="Start Date">
@@ -195,6 +179,7 @@
                     <button class="btn" onclick="clearFilters()">✖️ Clear</button>
                     <button class="btn" onclick="copyToClipboard(this)">📋 Copy to Clipboard</button>
                     <button class="btn" onclick="openAddModal()">➕ Add Transaction</button>
+                    <a href="/lot_inventory.html" class="btn" style="text-decoration:none;">🏭 View Lot Balances</a>
                 </div>
 
                 <div class="card">
@@ -323,122 +308,6 @@
         });
 
         let allTransactions = [];
-
-        // ── Lot Balances state ────────────────────────────────────────
-        // lotViewMode cycles: 'nonzero' → 'active' → 'all' → 'nonzero'
-        let lotViewMode = 'nonzero';
-        let lotSortCol  = null;
-        let lotSortDir  = 'asc';
-        let cachedLots  = null;
-
-        const LOT_VIEW_CYCLE = { nonzero: 'active', active: 'all', all: 'nonzero' };
-        const LOT_VIEW_LABEL = { nonzero: 'Active Only', active: 'Show All', all: 'Non-Zero' };
-
-        function cycleLotView() {
-            lotViewMode = LOT_VIEW_CYCLE[lotViewMode];
-            const btn = document.getElementById('lotViewBtn');
-            if (btn) btn.textContent = LOT_VIEW_LABEL[lotViewMode];
-            renderLotBalances();
-        }
-
-        function sortLots(col) {
-            if (lotSortCol === col) {
-                lotSortDir = lotSortDir === 'asc' ? 'desc' : 'asc';
-            } else {
-                lotSortCol = col;
-                lotSortDir = 'asc';
-            }
-            renderLotBalances();
-        }
-
-        async function loadLotBalances() {
-            const container = document.getElementById('lot-balances-container');
-            container.innerHTML = '<div style="padding:16px;color:var(--text-tertiary);">Loading...</div>';
-            try {
-                const res = await fetch('/api/lot_inventory');
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error);
-                cachedLots = data.lots;
-                renderLotBalances();
-            } catch (err) {
-                container.innerHTML = `<div style="padding:16px;color:#dc2626;">Failed to load lot balances: ${err.message}</div>`;
-            }
-        }
-
-        function renderLotBalances() {
-            const container = document.getElementById('lot-balances-container');
-            if (!cachedLots) return;
-
-            // Filter
-            let lots = cachedLots.slice();
-            if (lotViewMode === 'nonzero') {
-                lots = lots.filter(l => !(l.balance === 0 && (l.status === 'inactive' || l.status === 'depleted')));
-            } else if (lotViewMode === 'active') {
-                lots = lots.filter(l => l.status === 'active');
-            }
-
-            // Sort
-            if (lotSortCol) {
-                lots.sort((a, b) => {
-                    let av = a[lotSortCol], bv = b[lotSortCol];
-                    if (lotSortCol === 'balance') { av = Number(av); bv = Number(bv); }
-                    else { av = (av || '').toString().toLowerCase(); bv = (bv || '').toString().toLowerCase(); }
-                    if (av < bv) return lotSortDir === 'asc' ? -1 : 1;
-                    if (av > bv) return lotSortDir === 'asc' ? 1 : -1;
-                    return 0;
-                });
-            }
-
-            const hiddenCount = (lotViewMode !== 'all') ? (cachedLots.length - lots.length) : 0;
-
-            if (lots.length === 0) {
-                container.innerHTML = '<div style="padding:16px;color:var(--text-tertiary);">No lots match the current filter.</div>';
-                return;
-            }
-
-            const statusBadge = (s, balance) => {
-                if (s === 'active' && balance > 0) return `<span style="background:var(--success-green,#16a34a);color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Active</span>`;
-                if (s === 'active' && balance === 0) return `<span style="background:#d97706;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Empty</span>`;
-                if (s === 'depleted') return `<span style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Depleted</span>`;
-                if (s === 'quarantine') return `<span style="background:#7c3aed;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Quarantine</span>`;
-                return `<span style="background:var(--border-color);color:var(--text-secondary);padding:2px 8px;border-radius:12px;font-size:11px;">Inactive</span>`;
-            };
-
-            const thBase = 'padding:10px 16px;font-size:12px;text-transform:uppercase;color:var(--text-tertiary);cursor:pointer;user-select:none;white-space:nowrap;';
-            const thHover = 'transition:color 0.15s;';
-            const arrow = col => {
-                if (lotSortCol !== col) return '<span style="opacity:0.35;margin-left:4px;">⇅</span>';
-                return `<span style="margin-left:4px;">${lotSortDir === 'asc' ? '↑' : '↓'}</span>`;
-            };
-
-            const hiddenNote = hiddenCount > 0
-                ? `<tr><td colspan="5" style="padding:10px 16px;text-align:center;color:var(--text-tertiary);font-size:12px;">${hiddenCount} lot${hiddenCount !== 1 ? 's' : ''} hidden by filter</td></tr>`
-                : '';
-
-            container.innerHTML = `
-                <table style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr style="background:var(--bg-secondary);">
-                            <th onclick="sortLots('sku')" style="${thBase}${thHover}text-align:left;">SKU${arrow('sku')}</th>
-                            <th onclick="sortLots('lot')" style="${thBase}${thHover}text-align:left;">Lot${arrow('lot')}</th>
-                            <th onclick="sortLots('status')" style="${thBase}${thHover}text-align:left;">Status${arrow('status')}</th>
-                            <th onclick="sortLots('balance')" style="${thBase}${thHover}text-align:right;">Balance${arrow('balance')}</th>
-                            <th onclick="sortLots('received_date')" style="${thBase}${thHover}text-align:left;">Received${arrow('received_date')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${lots.map((l, i) => `
-                        <tr style="border-top:1px solid var(--border-color);${i % 2 === 1 ? 'background:var(--bg-secondary);' : ''}">
-                            <td style="padding:10px 16px;font-weight:600;">${l.sku}</td>
-                            <td style="padding:10px 16px;">${l.lot}</td>
-                            <td style="padding:10px 16px;">${statusBadge(l.status, l.balance)}</td>
-                            <td style="padding:10px 16px;text-align:right;font-weight:700;font-size:16px;">${l.balance.toLocaleString()}</td>
-                            <td style="padding:10px 16px;color:var(--text-secondary);font-size:13px;">${l.received_date || '—'}</td>
-                        </tr>`).join('')}
-                        ${hiddenNote}
-                    </tbody>
-                </table>`;
-        }
 
         // ── Lot dropdown for form ─────────────────────────────────────
         async function loadLotsForSku(sku) {
@@ -845,7 +714,6 @@
         
         fetchTransactions();
         fetchSkus();
-        loadLotBalances();
     </script>
     <script src="/static/shipping-violations-alert.js"></script>
     <!-- Interactive Training Tours -->
