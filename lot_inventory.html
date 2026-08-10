@@ -199,6 +199,21 @@
             }
         }
         
+        /* Status pills */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-active   { background: #16a34a; color: #fff; }
+        .status-empty    { background: #d97706; color: #fff; }
+        .status-depleted { background: #dc2626; color: #fff; }
+        .status-quarantine { background: #7c3aed; color: #fff; }
+        .status-inactive { background: var(--bg-tertiary); color: var(--text-secondary); }
+
         @media (max-width: 400px) {
             .lot-card-grid {
                 grid-template-columns: 1fr;
@@ -713,26 +728,11 @@
 
         // Get status badge
         function getStatusBadge(status, balance) {
-            let badgeClass = 'status-active';
-            let displayStatus = status;
-
-            if (status === 'depleted' || balance === 0) {
-                badgeClass = 'status-depleted';
-                displayStatus = 'Depleted';
-            } else if (status === 'quarantine') {
-                badgeClass = 'status-low';
-                displayStatus = 'Quarantine';
-            } else if (status === 'inactive') {
-                badgeClass = 'status-depleted';
-                displayStatus = 'Inactive';
-            } else if (status === 'active' && balance < 1000) {
-                badgeClass = 'status-low';
-                displayStatus = 'Low Stock';
-            } else if (status === 'active') {
-                displayStatus = 'Active';
-            }
-
-            return `<span class="status-badge ${badgeClass}">${displayStatus}</span>`;
+            if (status === 'active' && balance > 0)  return `<span class="status-badge status-active">Active</span>`;
+            if (status === 'active' && balance === 0) return `<span class="status-badge status-empty">Empty</span>`;
+            if (status === 'depleted')                return `<span class="status-badge status-depleted">Depleted</span>`;
+            if (status === 'quarantine')              return `<span class="status-badge status-quarantine">Quarantine</span>`;
+            return `<span class="status-badge status-inactive">Inactive</span>`;
         }
 
         // Open add modal
