@@ -203,12 +203,6 @@ const TOURS = {
             position: 'right'
         },
         {
-            element: '[href="/xml_import.html"]',
-            title: 'Orders Inbox',
-            content: 'View all pending orders. XML files are imported automatically every 5 minutes and uploaded to ShipStation.',
-            position: 'right'
-        },
-        {
             element: '.kpi-grid',
             title: 'Key Performance Indicators',
             content: 'These cards show real-time metrics: units in ShipStation, local database, and special order categories. Updates automatically every 30 seconds.',
@@ -236,39 +230,6 @@ const TOURS = {
             element: '.quick-action-btn:has([class*="EOW"])',
             title: 'Report Buttons',
             content: 'EOD (End of Day) syncs shipped items. EOW (End of Week) generates weekly inventory report. EOM (End of Month) generates chargeback report.',
-            position: 'top'
-        }
-    ],
-
-    'orders-inbox': [
-        {
-            element: '.card-header h2',
-            title: 'Orders Inbox',
-            content: 'All pending orders appear here. They automatically import from XML files and upload to ShipStation every 5 minutes.',
-            position: 'bottom'
-        },
-        {
-            element: '.action-btn:has([class*="Validate"])',
-            title: 'Validate Button',
-            content: 'Click to check orders for errors before they upload to ShipStation.',
-            position: 'bottom'
-        },
-        {
-            element: '.action-btn:has([class*="Manual"])',
-            title: 'Manual Import',
-            content: 'Use this if an order didn\'t auto-import from XML. You can manually enter order details.',
-            position: 'bottom'
-        },
-        {
-            element: '.action-btn:has([class*="Sync"])',
-            title: 'Sync Manual',
-            content: 'Force synchronization with ShipStation. Use this if orders seem stuck.',
-            position: 'bottom'
-        },
-        {
-            element: '.table-container',
-            title: 'Orders Table',
-            content: 'View order details: number, date, company, SKU, quantity, status, and tracking. Use search to find specific orders.',
             position: 'top'
         }
     ],
@@ -319,7 +280,7 @@ const TOURS = {
         {
             element: '.kpi-card:nth-child(2)',
             title: 'Local DB Units',
-            content: 'Units in local database ready to upload to ShipStation. Auto-uploads every 5 minutes.',
+            content: 'Units in local database synced from ShipStation and awaiting shipment.',
             position: 'bottom'
         },
         {

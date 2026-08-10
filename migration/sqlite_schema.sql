@@ -189,7 +189,7 @@ CREATE TABLE "orders_inbox" (
             shipstation_order_id TEXT,
             total_items INTEGER DEFAULT 0,
             total_amount_cents INTEGER,
-            source_system TEXT DEFAULT 'X-Cart',
+            source_system TEXT DEFAULT 'ShipStation',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             failure_reason TEXT,

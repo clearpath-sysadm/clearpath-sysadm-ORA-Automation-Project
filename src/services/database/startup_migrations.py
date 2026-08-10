@@ -1292,6 +1292,24 @@ def _correct_stale_variant_rows_in_order_items_inbox(cursor):
     logger.info("startup_migrations: stale variant row correction marker recorded")
 
 
+def _update_source_system_default(cursor):
+    """
+    Migration 020: Change orders_inbox.source_system column default from
+    'X-Cart' to 'ShipStation'.
+
+    The X-Cart / XML import pipeline has been retired (2026-08-10).
+    All new orders arrive via unified_shipstation_sync.py.  Any INSERT that
+    omits source_system should therefore default to 'ShipStation', not 'X-Cart'.
+
+    Idempotent: ALTER COLUMN SET DEFAULT is safe to run repeatedly.
+    """
+    cursor.execute("""
+        ALTER TABLE orders_inbox
+        ALTER COLUMN source_system SET DEFAULT 'ShipStation'
+    """)
+    logger.info("startup_migrations: orders_inbox.source_system default updated to 'ShipStation'")
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -1320,6 +1338,7 @@ def run_all(conn):
             _backfill_promo_sku_deductions(cur)
             _ensure_sku_variants_table(cur)
             _correct_stale_variant_rows_in_order_items_inbox(cur)
+            _update_source_system_default(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")
     except Exception as exc:

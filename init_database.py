@@ -99,8 +99,6 @@ def insert_workflow_controls(cursor):
     print("\n⚙️  Setting up workflow controls...")
     
     workflows = [
-        ('xml_import', True),
-        ('shipstation_upload', True),
         ('shipstation_sync', True),
         ('duplicate_scanner', True),
         ('lot_mismatch_scanner', True),

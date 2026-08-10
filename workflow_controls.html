@@ -29,10 +29,6 @@
                         <span class="nav-item-icon">📊</span>
                         Dashboard
                     </a>
-                    <a href="/xml_import.html" class="nav-item">
-                        <span class="nav-item-icon">📥</span>
-                        Orders Inbox
-                    </a>
                     <a href="/inventory_transactions.html" class="nav-item">
                         <span class="nav-item-icon">📦</span>
                         Inventory Monitor
@@ -397,14 +393,6 @@
 
     <script>
         const WORKFLOW_INFO = {
-            'xml-import': {
-                name: 'XML Import',
-                description: 'Imports orders from Google Drive XML files every 5 minutes'
-            },
-            'shipstation-upload': {
-                name: 'ShipStation Upload',
-                description: 'Uploads pending orders to ShipStation every 5 minutes'
-            },
             'unified-shipstation-sync': {
                 name: 'Unified ShipStation Sync',
                 description: 'Syncs manual orders and status updates from ShipStation every 5 minutes (replaces manual-order-sync and status-sync)'

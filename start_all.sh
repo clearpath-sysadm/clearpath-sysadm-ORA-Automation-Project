@@ -21,15 +21,6 @@ fi
 
 echo "Database connection configured: ${PGHOST:-via DATABASE_URL}"
 
-# Start background automation workflows with logging
-echo "Starting XML import scheduler (polling every 5 min)..."
-python src/scheduled_xml_import.py 2>&1 &
-XML_PID=$!
-
-echo "Starting ShipStation upload (polling every 5 min)..."
-python src/scheduled_shipstation_upload.py 2>&1 &
-UPLOAD_PID=$!
-
 echo "Starting unified ShipStation sync (every 5 min)..."
 python src/unified_shipstation_sync.py 2>&1 &
 UNIFIED_PID=$!
@@ -55,8 +46,6 @@ sleep 1
 
 echo "================================================"
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Background automation workflows started"
-echo "   - XML Import: PID $XML_PID"
-echo "   - ShipStation Upload: PID $UPLOAD_PID"
 echo "   - Unified ShipStation Sync: PID $UNIFIED_PID"
 echo "   - Cleanup: PID $CLEANUP_PID"
 echo "   - Units Refresh: PID $UNITS_PID"
@@ -75,4 +64,4 @@ exec python app.py
 
 # If Flask exits, kill background processes
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Dashboard stopped, shutting down background processes..."
-kill $XML_PID $UPLOAD_PID $UNIFIED_PID $CLEANUP_PID $UNITS_PID $LOT_TAGGER_PID 2>/dev/null
+kill $UNIFIED_PID $CLEANUP_PID $UNITS_PID $LOT_TAGGER_PID 2>/dev/null

@@ -68,8 +68,6 @@ def check_workflow_status():
                 # Different workflows have different expected intervals
                 expected_intervals = {
                     'unified-shipstation-sync': 5,  # 5 minutes
-                    'shipstation-upload': 5,        # 5 minutes
-                    'xml-import': 5,                # 5 minutes (fast polling)
                     'duplicate-scanner': 15,        # 15 minutes
                     'lot-mismatch-scanner': 15,     # 15 minutes
                     'orders-cleanup': 1440,         # 24 hours

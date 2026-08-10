@@ -534,8 +534,7 @@ def health_check():
         conn.close()
         
         # Check deployment configuration
-        expected_workflows = ['orders-cleanup', 'unified-shipstation-sync', 'shipstation-upload',
-                             'xml-import', 'lot-tagger', 'dashboard-server']
+        expected_workflows = ['orders-cleanup', 'unified-shipstation-sync', 'lot-tagger', 'dashboard-server']
         deployment_configured = True  # start_all.sh is configured in .replit [deployment] section
         
         # Overall system health
@@ -704,7 +703,6 @@ def api_dashboard_stats():
         five_days_ago = (datetime.now(timezone.utc) - timedelta(days=5)).strftime('%Y-%m-%d')
         cursor.execute("""
             SELECT
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN status = 'awaiting_shipment'
                          AND (ship_company LIKE '%%BENCO%%' OR ship_company LIKE '%%Benco%%')
                          THEN 1 ELSE 0 END),
@@ -723,11 +721,10 @@ def api_dashboard_stats():
             FROM orders_inbox
         """, (five_days_ago, five_days_ago, five_days_ago))
         inbox_counts = cursor.fetchone()
-        pending_uploads       = inbox_counts[0] or 0
-        benco_orders          = inbox_counts[1] or 0
-        hawaiian_orders       = inbox_counts[2] or 0
-        canadian_orders       = inbox_counts[3] or 0
-        other_international_orders = inbox_counts[4] or 0
+        benco_orders          = inbox_counts[0] or 0
+        hawaiian_orders       = inbox_counts[1] or 0
+        canadian_orders       = inbox_counts[2] or 0
+        other_international_orders = inbox_counts[3] or 0
         
         # System status (check recent workflow health)
         # Check if critical workflows ran recently (within last 2 hours)
@@ -769,7 +766,6 @@ def api_dashboard_stats():
                 'fedex_pickup_completed': fedex_pickup_completed,
                 'fedex_pickup_completed_at': fedex_pickup_completed_at.isoformat() if fedex_pickup_completed_at else None,
                 'fedex_phone': fedex_phone,
-                'pending_uploads': pending_uploads,
                 'recent_shipments': recent_shipments,
                 'benco_orders': benco_orders,
                 'hawaiian_orders': hawaiian_orders,
@@ -841,14 +837,12 @@ def api_automation_status():
                 enabled,
                 last_run_at
             FROM workflow_controls
-            WHERE workflow_name IN ('shipstation-upload', 'xml-import', 'unified-shipstation-sync', 'orders-cleanup', 'weekly-reporter', 'lot-tagger')
+            WHERE workflow_name IN ('unified-shipstation-sync', 'orders-cleanup', 'weekly-reporter', 'lot-tagger')
             ORDER BY last_run_at DESC NULLS LAST
         """
         results = execute_query(query)
         
         display_names = {
-            'shipstation-upload': 'ShipStation Upload',
-            'xml-import': 'XML Import',
             'unified-shipstation-sync': 'ShipStation Sync',
             'orders-cleanup': 'Orders Cleanup',
             'weekly-reporter': 'Weekly Reporter',
@@ -890,7 +884,7 @@ def api_workflow_timestamps():
                 workflow_name,
                 EXTRACT(EPOCH FROM last_run_at) as timestamp_epoch
             FROM workflow_controls
-            WHERE workflow_name IN ('shipstation-upload', 'xml-import', 'unified-shipstation-sync')
+            WHERE workflow_name IN ('unified-shipstation-sync',)
             AND last_run_at IS NOT NULL
         """
         results = execute_query(query)
@@ -3917,180 +3911,6 @@ def api_weekly_shipped_history():
             'error': str(e)
         }), 500
 
-@app.route('/api/xml_import', methods=['POST'])
-def api_xml_import():
-    """Process uploaded XML file and import orders into inbox"""
-    try:
-        from flask import request
-        import tempfile
-        import defusedxml.ElementTree as ET
-        
-        if 'xml_file' not in request.files:
-            return jsonify({
-                'success': False,
-                'error': 'No XML file provided'
-            }), 400
-        
-        file = request.files['xml_file']
-        
-        if not file.filename or file.filename == '':
-            return jsonify({
-                'success': False,
-                'error': 'No file selected'
-            }), 400
-        
-        if not file.filename.endswith('.xml'):
-            return jsonify({
-                'success': False,
-                'error': 'File must be an XML file'
-            }), 400
-        
-        # Save to temporary file and parse
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as temp_file:
-            file.save(temp_file.name)
-            temp_path = temp_file.name
-        
-        try:
-            # Parse XML
-            tree = ET.parse(temp_path)
-            root = tree.getroot()
-            
-            conn = get_connection()
-            cursor = conn.cursor()
-            
-            # Load bundle configurations for expansion
-            cursor.execute("""
-                SELECT bs.bundle_sku, bc.component_sku, bc.multiplier
-                FROM bundle_skus bs
-                JOIN bundle_components bc ON bs.id = bc.bundle_sku_id
-                WHERE bs.active = 1
-            """)
-            
-            bundle_config = {}
-            for row in cursor.fetchall():
-                bundle_sku, component_sku, multiplier = row
-                if bundle_sku not in bundle_config:
-                    bundle_config[bundle_sku] = []
-                bundle_config[bundle_sku].append({
-                    'component_sku': component_sku,
-                    'multiplier': multiplier
-                })
-            
-            # Load Key Products (SKUs we actually process for this client)
-            cursor.execute("""
-                SELECT sku FROM configuration_params
-                WHERE category = 'Key Products'
-            """)
-            key_products = {row[0] for row in cursor.fetchall()}
-            
-            orders_imported = 0
-            orders_skipped = 0
-            
-            # Process each order
-            for order_elem in root.findall('order'):
-                order_id = order_elem.find('orderid')
-                order_date = order_elem.find('date2')
-                email = order_elem.find('email')
-                
-                if order_id is not None and order_id.text:
-                    order_number = order_id.text.strip()
-                    order_date_str = order_date.text.strip() if order_date is not None and order_date.text else datetime.now().strftime('%Y-%m-%d')
-                    customer_email = email.text.strip() if email is not None and email.text else None
-                    
-                    # Parse line items from order_detail elements
-                    line_items = []
-                    for detail_elem in order_elem.findall('order_detail'):
-                        product_code = detail_elem.find('productid')
-                        quantity_elem = detail_elem.find('amount')
-                        
-                        if product_code is not None and product_code.text:
-                            sku = product_code.text.strip()
-                            qty = int(quantity_elem.text.strip()) if quantity_elem is not None and quantity_elem.text else 1
-                            line_items.append({'sku': sku, 'quantity': qty})
-                    
-                    # Expand bundles into component SKUs
-                    expanded_items = []
-                    for item in line_items:
-                        sku = item['sku']
-                        qty = item['quantity']
-                        
-                        if sku in bundle_config:
-                            # This is a bundle - expand it
-                            for component in bundle_config[sku]:
-                                expanded_items.append({
-                                    'sku': component['component_sku'],
-                                    'quantity': qty * component['multiplier']
-                                })
-                        else:
-                            # Regular SKU - pass through
-                            expanded_items.append(item)
-                    
-                    # CRITICAL: Filter expanded items to ONLY include Key Products
-                    filtered_items = [item for item in expanded_items if item['sku'] in key_products]
-                    
-                    # Skip order if no Key Products remain after filtering
-                    if not filtered_items:
-                        orders_skipped += 1
-                        continue
-                    
-                    # Calculate total quantity from filtered items (only Key Products)
-                    total_quantity = sum(item['quantity'] for item in filtered_items)
-                    
-                    # Check if order already exists
-                    cursor.execute("SELECT id FROM orders_inbox WHERE order_number = %s", (order_number,))
-                    existing = cursor.fetchone()
-                    
-                    if not existing:
-                        # Insert order into inbox
-                        cursor.execute("""
-                            INSERT INTO orders_inbox (order_number, order_date, customer_email, status, total_items, source_system)
-                            VALUES (%s, %s, %s, 'pending', %s, 'X-Cart')
-                        """, (order_number, order_date_str, customer_email, total_quantity))
-                        
-                        order_inbox_id = cursor.lastrowid
-                        
-                        # Insert filtered line items (only Key Products)
-                        for item in filtered_items:
-                            cursor.execute("""
-                                INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                                VALUES (%s, %s, %s)
-                            """, (order_inbox_id, item['sku'], item['quantity']))
-                        
-                        orders_imported += 1
-            
-            conn.commit()
-            conn.close()
-            
-            # Clean up temp file
-            os.unlink(temp_path)
-            
-            message = f'Successfully imported {orders_imported} orders'
-            if orders_skipped > 0:
-                message += f' ({orders_skipped} skipped - no Key Products)'
-            
-            return jsonify({
-                'success': True,
-                'message': message,
-                'orders_count': orders_imported,
-                'orders_skipped': orders_skipped
-            })
-            
-        except ET.ParseError as e:
-            os.unlink(temp_path)
-            return jsonify({
-                'success': False,
-                'error': f'XML parsing error: {str(e)}'
-            }), 400
-        except Exception as e:
-            os.unlink(temp_path)
-            raise e
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
 @app.route('/api/orders_inbox')
 def api_orders_inbox():
     """Get all orders from inbox - one row per SKU-Lot combination (consolidated quantities)"""
@@ -4144,7 +3964,7 @@ def api_orders_inbox():
             company_name = row[12] or ''
             ship_state = (row[13] or '').strip().upper()
             ship_country = (row[14] or 'US').strip().upper()
-            source_system = row[15] or 'X-Cart'
+            source_system = row[15] or 'ShipStation'
             shipping_service_name = row[16] or ''
             shipping_carrier_id = row[17]
             
@@ -4349,26 +4169,6 @@ def api_order_items(order_id):
             'error': str(e)
         }), 500
 
-@app.route('/api/google_drive/list_files')
-def api_google_drive_list_files():
-    """List XML files from Google Drive folder"""
-    try:
-        from src.services.google_drive.api_client import list_xml_files_from_folder
-        
-        folder_id = '1rNudeesa_c6q--KIKUAOLwXta_gyRqAE'
-        files = list_xml_files_from_folder(folder_id)
-        
-        return jsonify({
-            'success': True,
-            'data': files,
-            'count': len(files)
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
 def load_bundle_config_from_db(cursor):
     """Load bundle configurations from database"""
     cursor.execute("""
@@ -4413,149 +4213,6 @@ def expand_bundles(line_items, bundle_config):
             expanded_items.append(item)
     
     return expanded_items
-
-@app.route('/api/google_drive/import_file/<file_id>', methods=['POST'])
-def api_google_drive_import_file(file_id):
-    """Import XML file from Google Drive into orders inbox with bundle expansion"""
-    try:
-        from src.services.google_drive.api_client import fetch_xml_from_drive_by_file_id
-        import defusedxml.ElementTree as ET
-        from io import StringIO
-        
-        # Fetch XML content from Google Drive
-        xml_content = fetch_xml_from_drive_by_file_id(file_id)
-        
-        # Parse XML
-        root = ET.fromstring(xml_content)
-        
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        # Load bundle configurations
-        bundle_config = load_bundle_config_from_db(cursor)
-        
-        # Load Key Products (SKUs we actually process for this client)
-        cursor.execute("""
-            SELECT sku FROM configuration_params
-            WHERE category = 'Key Products'
-        """)
-        key_products = {row[0] for row in cursor.fetchall()}
-        
-        orders_imported = 0
-        orders_skipped = 0
-        
-        # Helper function to safely extract text
-        def get_text(elem, tag, default=''):
-            child = elem.find(tag)
-            return child.text.strip() if child is not None and child.text else default
-        
-        # Process each order
-        for order_elem in root.findall('order'):
-            order_id = order_elem.find('orderid')
-            order_date = order_elem.find('date2')
-            email = order_elem.find('email')
-            
-            if order_id is not None and order_id.text:
-                order_number = order_id.text.strip()
-                order_date_str = order_date.text.strip() if order_date is not None and order_date.text else datetime.now().strftime('%Y-%m-%d')
-                customer_email = email.text.strip() if email is not None and email.text else None
-                
-                # Parse shipping address (prefix 's_')
-                ship_firstname = get_text(order_elem, 's_firstname')
-                ship_lastname = get_text(order_elem, 's_lastname')
-                ship_name = f"{ship_firstname} {ship_lastname}".strip()
-                ship_company = get_text(order_elem, 's_company')
-                ship_street1 = get_text(order_elem, 's_address')
-                ship_city = get_text(order_elem, 's_city')
-                ship_state = get_text(order_elem, 's_state')
-                ship_postal_code = get_text(order_elem, 's_zipcode')
-                ship_country = get_text(order_elem, 's_country', 'US')
-                ship_phone = get_text(order_elem, 's_phone')
-                
-                # Parse billing address (prefix 'b_')
-                bill_firstname = get_text(order_elem, 'b_firstname')
-                bill_lastname = get_text(order_elem, 'b_lastname')
-                bill_name = f"{bill_firstname} {bill_lastname}".strip()
-                bill_company = get_text(order_elem, 'b_company')
-                bill_street1 = get_text(order_elem, 'b_address')
-                bill_city = get_text(order_elem, 'b_city')
-                bill_state = get_text(order_elem, 'b_state')
-                bill_postal_code = get_text(order_elem, 'b_zipcode')
-                bill_country = get_text(order_elem, 'b_country', 'US')
-                bill_phone = get_text(order_elem, 'b_phone')
-                
-                # Parse line items from order_detail elements
-                line_items = []
-                
-                for detail_elem in order_elem.findall('order_detail'):
-                    product_code = detail_elem.find('productid')
-                    quantity_elem = detail_elem.find('amount')
-                    
-                    if product_code is not None and product_code.text:
-                        sku = product_code.text.strip()
-                        qty = int(quantity_elem.text.strip()) if quantity_elem is not None and quantity_elem.text else 1
-                        line_items.append({'sku': sku, 'quantity': qty})
-                
-                # Expand bundles into component SKUs
-                expanded_items = expand_bundles(line_items, bundle_config)
-                
-                # CRITICAL: Filter by Key Products - skip if no Key Products in order
-                final_skus = {item['sku'] for item in expanded_items}
-                has_key_product = bool(final_skus & key_products)
-                
-                if not has_key_product:
-                    orders_skipped += 1
-                    print(f"SKIPPED Order {order_number}: No Key Products found. SKUs: {', '.join(final_skus)}")
-                    continue
-                
-                # Calculate total quantity from expanded items
-                total_quantity = sum(item['quantity'] for item in expanded_items)
-                
-                # Check if order already exists
-                cursor.execute("SELECT id FROM orders_inbox WHERE order_number = %s", (order_number,))
-                existing = cursor.fetchone()
-                
-                if not existing:
-                    # Insert order into inbox with address data
-                    cursor.execute("""
-                        INSERT INTO orders_inbox (
-                            order_number, order_date, customer_email, status, total_items, source_system,
-                            ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
-                            bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
-                        )
-                        VALUES (%s, %s, %s, 'pending', %s, 'X-Cart', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        order_number, order_date_str, customer_email, total_quantity,
-                        ship_name, ship_company, ship_street1, ship_city, ship_state, ship_postal_code, ship_country, ship_phone,
-                        bill_name, bill_company, bill_street1, bill_city, bill_state, bill_postal_code, bill_country, bill_phone
-                    ))
-                    
-                    order_inbox_id = cursor.lastrowid
-                    
-                    # Insert expanded line items
-                    for item in expanded_items:
-                        cursor.execute("""
-                            INSERT INTO order_items_inbox (order_inbox_id, sku, quantity)
-                            VALUES (%s, %s, %s)
-                        """, (order_inbox_id, item['sku'], item['quantity']))
-                    
-                    orders_imported += 1
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Successfully imported {orders_imported} orders from Google Drive ({orders_skipped} skipped - no Key Products)',
-            'orders_count': orders_imported,
-            'skipped_count': orders_skipped
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
 
 @app.route('/api/retry_failed_orders', methods=['POST'])
 def api_retry_failed_orders():
@@ -8858,8 +8515,6 @@ def run_workflow_manually(workflow_name):
     logger = logging.getLogger(__name__)
     
     WORKFLOW_SCRIPTS = {
-        'xml-import': ['src/scheduled_xml_import.py', '--once'],
-        'shipstation-upload': ['src/scheduled_shipstation_upload.py', '--once'],
         'unified-shipstation-sync': ['src/unified_shipstation_sync.py', '--once'],
         'orders-cleanup': ['src/scheduled_cleanup.py', '--once'],
     }
@@ -9915,12 +9570,6 @@ def api_admin_sync_order_from_shipstation():
         logger.error(f'Error syncing order from ShipStation: {e}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/admin/force_upload_to_shipstation', methods=['POST'])
-@login_required
-@admin_required
-def api_admin_force_upload_to_shipstation():
-    """Force upload to ShipStation is DISABLED. BigCommerce pushes orders directly."""
-    return jsonify({'success': False, 'error': 'Order upload is disabled. BigCommerce pushes orders directly to ShipStation.'}), 503
 
 @app.route('/api/admin/reset_order_to_pending', methods=['POST'])
 @login_required

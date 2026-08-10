@@ -476,10 +476,6 @@
                         <span class="nav-item-icon">📊</span>
                         Dashboard
                     </a>
-                    <a href="/xml_import.html" class="nav-item">
-                        <span class="nav-item-icon">📥</span>
-                        Orders Inbox
-                    </a>
                     <a href="/inventory_transactions.html" class="nav-item">
                         <span class="nav-item-icon">📦</span>
                         Inventory Monitor
@@ -830,41 +826,17 @@
                 
                 // Determine which action buttons to show
                 let actionButtons = '';
-                const hasShipStationId = match.shipstation_order_id && match.shipstation_order_id !== 'null';
                 
-                if (!hasShipStationId) {
-                    // Show Force Upload button for orders not in ShipStation
-                    actionButtons = `
-                        <button 
-                            class="btn-primary" 
-                            onclick="forceUploadToShipStation('${match.order_number}')"
-                            style="padding: 8px 12px; font-size: 0.8rem; width: 100%; margin-bottom: 4px;"
-                            title="Upload this order to ShipStation with current lot numbers"
-                        >
-                            📤 Upload to SS
-                        </button>
-                        <button 
-                            class="btn-secondary" 
-                            onclick="syncLocalOrderFromShipStation('${match.order_number}', ${match.shipstation_order_id || 'null'})"
-                            style="padding: 6px 12px; font-size: 0.75rem; width: 100%;"
-                            title="Check ShipStation for this order"
-                        >
-                            🔄 Sync from SS
-                        </button>
-                    `;
-                } else {
-                    // Show Sync button for orders that exist in ShipStation
-                    actionButtons = `
-                        <button 
-                            class="btn-secondary" 
-                            onclick="syncLocalOrderFromShipStation('${match.order_number}', ${match.shipstation_order_id || 'null'})"
-                            style="padding: 8px 16px; font-size: 0.85rem; width: 100%;"
-                            title="Update local database with ShipStation data"
-                        >
-                            🔄 Sync from SS
-                        </button>
-                    `;
-                }
+                actionButtons = `
+                    <button 
+                        class="btn-secondary" 
+                        onclick="syncLocalOrderFromShipStation('${match.order_number}', ${match.shipstation_order_id || 'null'})"
+                        style="padding: 8px 16px; font-size: 0.85rem; width: 100%;"
+                        title="Update local database with ShipStation data"
+                    >
+                        🔄 Sync from SS
+                    </button>
+                `;
                 
                 return `
                     <tr style="background: #f0fdf4;">
@@ -1100,69 +1072,6 @@
             }
         }
 
-        // Force upload order to ShipStation
-        async function forceUploadToShipStation(orderNumber) {
-            if (!confirm(`Upload Order #${orderNumber} to ShipStation?\n\nThis will:\n• Apply the current active lot numbers to all items\n• Create the order in ShipStation\n• Update the local database status to 'uploaded'\n\nMake sure lot numbers are correct before uploading.`)) {
-                return;
-            }
-            
-            // Find the button that was clicked and show loading state
-            const buttons = document.querySelectorAll(`button[onclick="forceUploadToShipStation('${orderNumber}')"]`);
-            const originalTexts = [];
-            buttons.forEach(btn => {
-                originalTexts.push(btn.innerHTML);
-                btn.disabled = true;
-                btn.innerHTML = '⏳ Uploading...';
-            });
-            
-            try {
-                const response = await fetch('/api/admin/force_upload_to_shipstation', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        order_number: orderNumber
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Build success message
-                    let message = `Order #${orderNumber} uploaded to ShipStation`;
-                    if (data.shipstation_order_id) {
-                        message += ` (ID: ${data.shipstation_order_id})`;
-                    }
-                    if (data.items_uploaded) {
-                        message += ` - ${data.items_uploaded} item(s), ${data.total_units} unit(s)`;
-                    }
-                    
-                    showToast(`✅ ${message}`, 'success');
-                    
-                    // Refresh the search to show updated status
-                    setTimeout(() => {
-                        document.getElementById('order-number-input').value = orderNumber;
-                        lookupOrder({ preventDefault: () => {} });
-                    }, 1000);
-                } else {
-                    showToast(data.error || 'Failed to upload order to ShipStation', 'error');
-                    
-                    // Reset button state
-                    buttons.forEach((btn, i) => {
-                        btn.disabled = false;
-                        btn.innerHTML = originalTexts[i];
-                    });
-                }
-            } catch (error) {
-                console.error('Upload error:', error);
-                showToast('Failed to upload order to ShipStation', 'error');
-                
-                // Reset button state
-                buttons.forEach((btn, i) => {
-                    btn.disabled = false;
-                    btn.innerHTML = originalTexts[i];
-                });
-            }
-        }
 
         // Toast notification
         function showToast(message, type = 'info') {

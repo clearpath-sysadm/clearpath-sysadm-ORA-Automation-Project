@@ -226,21 +226,6 @@ BUNDLE_CONFIG = {
 }
 
 
-# --- X-Cart XML Data Source Configuration ---
-# X_CART_XML_PATH: Local file path for X-Cart XML.
-# This variable is ONLY used during local development/testing of the uploader
-# when reading from a local XML file.
-# LOCAL DEVELOPMENT VERSION:
-X_CART_XML_PATH = os.path.join(PROJECT_ROOT, "src", "test_data", "x_cart_orders_uat_test.xml")
-# CLOUD DEPLOYMENT VERSION (This variable is not used in cloud, can be commented out or set to None):
-# X_CART_XML_PATH = None
-
-# X_CART_XML_FILE_ID: Google Drive File ID for the X-Cart XML.
-# This variable will be used when the script is deployed to Google Cloud Functions
-# to fetch the XML data directly from Google Drive.
-# You MUST replace 'your_google_drive_file_id_here' with the actual ID.
-# X_CART_XML_FILE_ID = "1rNudeesa_c6q--KIKUAOLwXta_gyRqAE" # Updated with provided File ID
-X_CART_XML_FILE_ID = "1mBbpzIp_tq3t5GeUzLKwoeFmoAQ_ViqY" # Updated with new File ID
 
 
 
@@ -296,8 +281,6 @@ class Settings:
         self.SHIPPED_ORDERS_DATA_TAB_NAME = SHIPPED_ORDERS_DATA_TAB_NAME
         self.SCOPES = SCOPES
         self.BUNDLE_CONFIG = BUNDLE_CONFIG
-        self.X_CART_XML_PATH = X_CART_XML_PATH
-        self.X_CART_XML_FILE_ID = X_CART_XML_FILE_ID
         self.DAILY_SUMMARY_RECIPIENTS = DAILY_SUMMARY_RECIPIENTS
         self.NOTIFICATION_RECIPIENTS = NOTIFICATION_RECIPIENTS
         self.EMAIL_SERVICE_API_KEY_SECRET_ID = EMAIL_SERVICE_API_KEY_SECRET_ID

@@ -287,7 +287,7 @@ CREATE TABLE public.orders_inbox (
     shipstation_order_id text,
     total_items integer DEFAULT 0,
     total_amount_cents integer,
-    source_system text DEFAULT 'X-Cart'::text,
+    source_system text DEFAULT 'ShipStation'::text,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     failure_reason text,

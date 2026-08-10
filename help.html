@@ -25,10 +25,6 @@
                         <span class="nav-item-icon">📊</span>
                         Dashboard
                     </a>
-                    <a href="/xml_import.html" class="nav-item">
-                        <span class="nav-item-icon">📥</span>
-                        Orders Inbox
-                    </a>
                     <a href="/inventory_transactions.html" class="nav-item">
                         <span class="nav-item-icon">📦</span>
                         Inventory Monitor
@@ -163,14 +159,14 @@
                         <div class="card-body">
                         <h3 style="margin-bottom: 12px; color: var(--text-primary);">What is Oracare Fulfillment?</h3>
                         <p style="margin-bottom: 16px;">
-                            Oracare Fulfillment is a fulfillment system that automatically processes orders from XML files, uploads them to ShipStation, tracks shipments, and manages inventory. The system runs 24/7 with minimal manual intervention.
+                            Oracare Fulfillment is a fulfillment system that syncs orders from ShipStation, tracks shipments, and manages inventory. The system runs 24/7 with minimal manual intervention.
                         </p>
 
                         <h3 style="margin-bottom: 12px; color: var(--text-primary);">How It Works</h3>
                         <ol style="margin-left: 20px; line-height: 1.8;">
-                            <li><strong>Order Import:</strong> XML files are automatically imported from Google Drive every 5 minutes</li>
-                            <li><strong>ShipStation Upload:</strong> Orders are uploaded to ShipStation with correct lot numbers</li>
-                            <li><strong>Status Tracking:</strong> System monitors order status (pending → awaiting shipment → shipped)</li>
+                            <li><strong>Order Sync:</strong> Orders are automatically synced from ShipStation every 5 minutes</li>
+                            <li><strong>Lot Tagging:</strong> Orders are tagged with the correct lot numbers for deduction</li>
+                            <li><strong>Status Tracking:</strong> System monitors order status (awaiting shipment → shipped)</li>
                             <li><strong>Inventory Update:</strong> When orders ship, inventory is automatically updated</li>
                         </ol>
 
@@ -214,16 +210,13 @@
                         </div>
 
                         <div class="help-task">
-                            <h3>📥 Process Orders in Orders Inbox</h3>
+                            <h3>🔍 Look Up or Reconcile an Order</h3>
                             <ol>
-                                <li>Click <strong>Orders Inbox</strong> in the sidebar</li>
-                                <li>Review pending orders (they auto-upload every 5 minutes)</li>
-                                <li>Use filters/search to find specific orders</li>
-                                <li><strong>Manual Import:</strong> Click if an order didn't auto-import</li>
-                                <li><strong>Validate:</strong> Check orders for errors</li>
-                                <li><strong>Sync Manual:</strong> Force sync with ShipStation</li>
+                                <li>Click <strong>Order Management</strong> in the sidebar</li>
+                                <li>Enter the order number and click Search</li>
+                                <li>Compare the ShipStation record with the local DB record</li>
+                                <li>Use <strong>Sync from SS</strong> to pull the latest ShipStation data into the local DB</li>
                             </ol>
-                            <button class="btn" onclick="startOrdersInboxTour()">▶️ Interactive Tour</button>
                         </div>
 
                         <div class="help-task">
@@ -281,13 +274,13 @@
                         </div>
                         <div class="card-body">
                         <div class="faq-item">
-                            <h3>How often do orders import automatically?</h3>
-                            <p>Every 5 minutes. The system polls Google Drive for new XML files continuously.</p>
+                            <h3>How often do orders sync automatically?</h3>
+                            <p>Every 5 minutes. The system polls ShipStation for new and updated orders continuously.</p>
                         </div>
 
                         <div class="faq-item">
                             <h3>What if an order doesn't appear?</h3>
-                            <p>Go to Orders Inbox and click "Manual Import". Make sure the XML file is in the correct Google Drive folder.</p>
+                            <p>Use Order Management to look up the order number. If it exists in ShipStation but not locally, use the "Sync from SS" button to pull it in.</p>
                         </div>
 
                         <div class="faq-item">
@@ -301,8 +294,8 @@
 
                         <div class="faq-item">
                             <h3>What's the difference between "ShipStation Units" and "Local DB Units"?</h3>
-                            <p><strong>Local DB Units:</strong> Orders in ORA database ready to upload.<br>
-                            <strong>ShipStation Units:</strong> Orders already uploaded to ShipStation awaiting shipment.</p>
+                            <p><strong>ShipStation Units:</strong> Orders in ShipStation currently awaiting shipment (live from the API).<br>
+                            <strong>Local DB Units:</strong> Orders synced into the local database — should match ShipStation closely after each 5-minute sync cycle.</p>
                         </div>
 
                         <div class="faq-item">
@@ -312,7 +305,7 @@
 
                         <div class="faq-item">
                             <h3>Can I manually add an order?</h3>
-                            <p>Yes! Go to Orders Inbox and click "Manual Import". Enter order details and it will upload to ShipStation.</p>
+                            <p>Orders come in through ShipStation automatically. If an order is missing locally, use Order Management → Search → "Sync from SS" to pull it in. To create a brand-new order, create it directly in ShipStation and it will sync within 5 minutes.</p>
                         </div>
 
                         <div class="faq-item">
@@ -335,29 +328,29 @@
                             <p><strong>Possible causes:</strong></p>
                             <ul>
                                 <li>Missing or invalid SKU-Lot mapping</li>
-                                <li>ShipStation API error</li>
-                                <li>Duplicate order already exists</li>
+                                <li>ShipStation API error during sync</li>
+                                <li>Duplicate order conflict</li>
                             </ul>
                             <p><strong>Solution:</strong></p>
                             <ol>
-                                <li>Check error message in Orders Inbox</li>
+                                <li>Go to <strong>Order Management</strong> and look up the order to see the failure reason</li>
                                 <li>Verify SKU-Lot mapping exists (go to SKU Lot Management)</li>
-                                <li>Try "Sync Manual" to retry upload</li>
+                                <li>Use "Sync from SS" to pull the latest data from ShipStation</li>
                             </ol>
                         </div>
 
                         <div class="troubleshooting-item">
-                            <h3>⏸️ Orders stuck at "pending"</h3>
+                            <h3>⏸️ Order not appearing locally after it's in ShipStation</h3>
                             <p><strong>Possible causes:</strong></p>
                             <ul>
-                                <li>Upload workflow paused</li>
-                                <li>ShipStation connection issue</li>
+                                <li>Sync hasn't run yet (runs every 5 minutes)</li>
+                                <li>ShipStation sync workflow paused</li>
                             </ul>
                             <p><strong>Solution:</strong></p>
                             <ol>
-                                <li>Check Workflow Controls - ensure "ShipStation Upload" is ON</li>
-                                <li>Wait 5 minutes (auto-upload cycle)</li>
-                                <li>Use "Sync Manual" to force upload</li>
+                                <li>Wait up to 5 minutes for the next automatic sync</li>
+                                <li>Check Workflow Controls — ensure "ShipStation Sync" is ON</li>
+                                <li>Use Order Management → "Sync from SS" to pull the order immediately</li>
                             </ol>
                         </div>
 
@@ -394,7 +387,6 @@
                         <p style="margin-bottom: 16px;">Step-by-step walkthroughs of key pages:</p>
                         <div style="display: grid; gap: 12px;">
                             <button class="btn" onclick="startWelcomeTour()">▶️ Welcome Tour (Dashboard overview)</button>
-                            <button class="btn" onclick="startOrdersInboxTour()">▶️ Orders Inbox Tour</button>
                             <button class="btn" onclick="startInventoryTour()">▶️ Inventory Management Tour</button>
                             <button class="btn" onclick="startReportsTour()">▶️ Reports Tour (EOW/EOM)</button>
                         </div>
@@ -533,12 +525,6 @@
             alert('Dashboard Tour will start when you return to the Dashboard');
             localStorage.setItem('startTour', 'dashboard');
             window.location.href = '/';
-        }
-
-        function startOrdersInboxTour() {
-            alert('Orders Inbox Tour will start');
-            localStorage.setItem('startTour', 'orders-inbox');
-            window.location.href = '/xml_import.html';
         }
 
         function startInventoryTour() {

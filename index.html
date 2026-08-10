@@ -192,10 +192,6 @@
                         <span class="nav-item-icon">📊</span>
                         Dashboard
                     </a>
-                    <a href="/xml_import.html" class="nav-item">
-                        <span class="nav-item-icon">📥</span>
-                        Orders Inbox
-                    </a>
                     <a href="/inventory_transactions.html" class="nav-item">
                         <span class="nav-item-icon">📦</span>
                         Inventory Monitor
@@ -331,9 +327,9 @@
             <div class="content-area">
                 <!-- Mobile Quick Actions Dock -->
                 <div class="mobile-quick-actions">
-                    <a href="/xml_import.html" class="quick-action-btn">
-                        <div class="quick-action-icon">📥</div>
-                        <div>Orders<br>Inbox</div>
+                    <a href="/shipment_summary.html" class="quick-action-btn">
+                        <div class="quick-action-icon">📦</div>
+                        <div>Shipment<br>Summary</div>
                     </a>
                     <a href="/shipped_orders.html" class="quick-action-btn">
                         <div class="quick-action-icon">📦</div>
@@ -399,7 +395,7 @@
                             </div>
                         </a>
                         <!-- On Hold Count -->
-                        <a href="/xml_import.html?filter=hold" style="text-decoration: none; color: inherit;" title="Click to view on-hold orders in Orders Inbox">
+                        <a href="/order-management.html" style="text-decoration: none; color: inherit;" title="Click to look up on-hold orders">
                             <div class="stat-card hidden" data-stat-card id="on-hold-card" style="cursor: pointer;">
                                 <div class="stat-value" id="on-hold-units">0</div>
                                 <div class="stat-label">
@@ -411,7 +407,7 @@
                                 <div class="stat-change" id="on-hold-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
                             </div>
                         </a>
-                        <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
+                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card id="benco-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 <div class="stat-value" id="benco-orders-value">0</div>
                                 <div class="stat-label">
@@ -423,7 +419,7 @@
                                 <div class="stat-change">Awaiting Shipment</div>
                             </div>
                         </a>
-                        <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
+                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card id="hawaiian-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 <div class="stat-value" id="hawaiian-orders-value">0</div>
                                 <div class="stat-label">
@@ -435,14 +431,14 @@
                                 <div class="stat-change">Awaiting Shipment</div>
                             </div>
                         </a>
-                        <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
+                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card id="canadian-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 <div class="stat-value" id="canadian-orders-value">0</div>
                                 <div class="stat-label">Canadian Orders</div>
                                 <div class="stat-change">Awaiting Shipment</div>
                             </div>
                         </a>
-                        <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
+                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;">
                             <div class="stat-card hidden" data-stat-card id="intl-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 <div class="stat-value" id="intl-orders-value">0</div>
                                 <div class="stat-label">Other International</div>
@@ -1314,8 +1310,8 @@
                     data.only_in_local.forEach(order => {
                         // Map status to user-friendly labels
                         let statusLabel = order.status;
-                        if (order.status === 'uploaded') statusLabel = 'Pending ShipStation Sync';
-                        else if (order.status === 'pending') statusLabel = 'Awaiting Upload';
+                        if (order.status === 'uploaded') statusLabel = 'Syncing';
+                        else if (order.status === 'pending') statusLabel = 'Pending';
                         else if (order.status === 'awaiting_shipment') statusLabel = 'In ShipStation Queue';
                         
                         html += `<div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
@@ -1335,8 +1331,8 @@
                     data.unit_mismatches.forEach((order, idx) => {
                         // Map status to user-friendly labels
                         let statusLabel = order.local_status;
-                        if (order.local_status === 'uploaded') statusLabel = 'Pending Sync';
-                        else if (order.local_status === 'pending') statusLabel = 'Awaiting Upload';
+                        if (order.local_status === 'uploaded') statusLabel = 'Syncing';
+                        else if (order.local_status === 'pending') statusLabel = 'Pending';
                         else if (order.local_status === 'awaiting_shipment') statusLabel = 'In Queue';
                         
                         html += `<details id="discrepancy-order-${order.order_number}" style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">`;
