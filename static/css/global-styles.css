@@ -28,12 +28,13 @@
     /* Accent Colors - Oracare Brand Blue */
     --accent-blue: #2B7DE9;
     --accent-blue-hover: #2369CC;
+    --accent-orange: #F2994A;
     --success-teal: #3CAEA3;
     --warning-gold: #F2C14E;
     --critical-red: #E15554;
-    
-    /* Legacy orange reference (for backwards compatibility) */
-    --accent-blue: #2B7DE9;
+
+    /* Interaction helpers */
+    --bg-hover: var(--bg-tertiary);
     
     /* Elevation Shadows */
     --shadow-sm: 0 1px 3px rgba(9, 23, 42, 0.08);
@@ -63,7 +64,9 @@ body.dark-mode {
     --text-tertiary: #6B7B96;
     --border-color: #2A3A52;
     --border-translucent: rgba(227, 233, 245, 0.08);
-    
+    --bg-hover: #1F2F47;
+    --accent-orange: #FBBF24;
+
     /* Adjust shadows for dark mode */
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -86,7 +89,7 @@ body {
     color: var(--text-primary);
     transition: background-color 0.2s, color 0.2s;
     font-size: 16px;
-    line-height: 1.45;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -228,7 +231,6 @@ h3, .text-title {
 .nav-item:hover {
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
-    transform: translateX(4px);
 }
 
 .nav-item.active {
@@ -244,6 +246,14 @@ h3, .text-title {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    opacity: 0.75;
+    transition: opacity 0.15s;
+}
+
+.nav-item:hover .nav-item-icon,
+.nav-item.active .nav-item-icon {
+    opacity: 1;
 }
 
 /* Admin Section */
@@ -324,7 +334,7 @@ body.dark-mode .nav-item:hover {
 }
 
 body.dark-mode .nav-item.active {
-    background-color: rgba(242, 153, 74, 0.2);
+    background-color: rgba(43, 125, 233, 0.2);
     color: white;
     border-left: 3px solid var(--accent-blue);
 }
@@ -533,13 +543,13 @@ body.dark-mode .admin-toggle:hover {
 
 .stat-card:hover {
     box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
 }
 
 .stat-value {
-    font-family: var(--font-display);
+    font-family: var(--font-body);
     font-size: 32px;
-    font-weight: 600;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
     margin-bottom: calc(var(--spacing-unit) * 1);
     color: var(--text-primary);
     animation: countUp 0.4s ease-out;
@@ -630,28 +640,28 @@ select {
 
 /* Prevent browser dark mode plugins from overriding form elements */
 /* Light mode: force light color scheme */
-:root:not([data-theme="dark"]) select,
-:root:not([data-theme="dark"]) select option,
-:root:not([data-theme="dark"]) input[type="text"],
-:root:not([data-theme="dark"]) input[type="email"],
-:root:not([data-theme="dark"]) input[type="password"],
-:root:not([data-theme="dark"]) input[type="number"],
-:root:not([data-theme="dark"]) input[type="date"],
-:root:not([data-theme="dark"]) input[type="search"],
-:root:not([data-theme="dark"]) textarea {
+body:not(.dark-mode) select,
+body:not(.dark-mode) select option,
+body:not(.dark-mode) input[type="text"],
+body:not(.dark-mode) input[type="email"],
+body:not(.dark-mode) input[type="password"],
+body:not(.dark-mode) input[type="number"],
+body:not(.dark-mode) input[type="date"],
+body:not(.dark-mode) input[type="search"],
+body:not(.dark-mode) textarea {
     color-scheme: light;
 }
 
-/* Dark mode: force dark color scheme */
-[data-theme="dark"] select,
-[data-theme="dark"] select option,
-[data-theme="dark"] input[type="text"],
-[data-theme="dark"] input[type="email"],
-[data-theme="dark"] input[type="password"],
-[data-theme="dark"] input[type="number"],
-[data-theme="dark"] input[type="date"],
-[data-theme="dark"] input[type="search"],
-[data-theme="dark"] textarea {
+/* Dark mode: force dark color scheme (aligns with body.dark-mode mechanism) */
+body.dark-mode select,
+body.dark-mode select option,
+body.dark-mode input[type="text"],
+body.dark-mode input[type="email"],
+body.dark-mode input[type="password"],
+body.dark-mode input[type="number"],
+body.dark-mode input[type="date"],
+body.dark-mode input[type="search"],
+body.dark-mode textarea {
     color-scheme: dark;
 }
 
@@ -826,6 +836,40 @@ textarea::placeholder {
     background-color: #F9FAFB;
     border-color: #9CA3AF;
     transform: none;
+}
+
+/* Focus-visible rings — keyboard accessibility */
+.btn:focus-visible,
+.btn-primary:focus-visible,
+.btn-success:focus-visible,
+.btn-warning:focus-visible,
+.btn-danger:focus-visible,
+.btn-upload:focus-visible,
+.btn-manual-import:focus-visible,
+.btn-secondary:focus-visible,
+.btn-view-violations:focus-visible,
+.btn-resolve-violation:focus-visible,
+.btn-dismiss-alert:focus-visible,
+.btn-close-modal:focus-visible,
+.btn-refresh-mismatch:focus-visible,
+.btn-dismiss-mismatch:focus-visible,
+.action-btn:focus-visible,
+.quick-action-btn:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+a.nav-item:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: -2px;
+    border-radius: var(--border-radius-sm);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 0;
 }
 
 .btn:active,
@@ -1155,10 +1199,8 @@ table thead {
 table th {
     padding: calc(var(--spacing-unit) * 2);
     text-align: left;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--text-secondary);
     border-bottom: 2px solid var(--border-color);
 }
@@ -1167,6 +1209,7 @@ table td {
     padding: calc(var(--spacing-unit) * 2);
     border-bottom: 1px solid var(--border-color);
     color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
 }
 
 table tbody tr:hover {
@@ -2284,6 +2327,84 @@ body.dark-mode .order-card-expand-btn:hover {
 
 .difference-neutral {
     color: var(--text-tertiary);
+}
+
+/* ========================================
+   STATUS BADGES — GLOBAL (used on Lot Inventory and elsewhere)
+   ======================================== */
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+.status-active   { background: rgba(60, 174, 163, 0.12); color: var(--success-teal); }
+.status-empty    { background: rgba(242, 197, 78, 0.15);  color: #B45309; }
+.status-depleted { background: rgba(225, 85, 84, 0.12);   color: var(--critical-red); }
+.status-quarantine { background: rgba(139, 92, 246, 0.12); color: #7C3AED; }
+.status-inactive { background: var(--bg-tertiary);         color: var(--text-tertiary); }
+
+body.dark-mode .status-active    { background: rgba(60, 174, 163, 0.2);  color: #5FDED7; }
+body.dark-mode .status-empty     { background: rgba(242, 197, 78, 0.2);  color: #FCD34D; }
+body.dark-mode .status-depleted  { background: rgba(225, 85, 84, 0.2);   color: #F87171; }
+body.dark-mode .status-quarantine{ background: rgba(139, 92, 246, 0.2);  color: #A78BFA; }
+body.dark-mode .status-inactive  { background: rgba(255, 255, 255, 0.06); color: var(--text-tertiary); }
+
+/* Transaction type badges */
+.badge-receive     { background: rgba(60, 174, 163, 0.12);  color: var(--success-teal); }
+.badge-ship        { background: rgba(43, 125, 233, 0.12);  color: var(--accent-blue); }
+.badge-adjust-up   { background: rgba(60, 174, 163, 0.12);  color: var(--success-teal); }
+.badge-adjust-down { background: rgba(225, 85, 84, 0.12);   color: var(--critical-red); }
+.badge-repack      { background: rgba(242, 197, 78, 0.15);  color: #B45309; }
+.badge-cancel      { background: rgba(139, 92, 246, 0.12);  color: #7C3AED; }
+
+body.dark-mode .badge-receive     { background: rgba(60, 174, 163, 0.2);  color: #5FDED7; }
+body.dark-mode .badge-ship        { background: rgba(43, 125, 233, 0.2);  color: #60A5FA; }
+body.dark-mode .badge-adjust-up   { background: rgba(60, 174, 163, 0.2);  color: #5FDED7; }
+body.dark-mode .badge-adjust-down { background: rgba(225, 85, 84, 0.2);   color: #F87171; }
+body.dark-mode .badge-repack      { background: rgba(242, 197, 78, 0.2);  color: #FCD34D; }
+body.dark-mode .badge-cancel      { background: rgba(139, 92, 246, 0.2);  color: #A78BFA; }
+
+/* ========================================
+   EMPTY STATE — GLOBAL PATTERN
+   ======================================== */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--spacing-unit) * 10) calc(var(--spacing-unit) * 4);
+    text-align: center;
+    gap: calc(var(--spacing-unit) * 2);
+}
+
+.empty-state-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--text-tertiary);
+    opacity: 0.5;
+}
+
+.empty-state-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.empty-state-body {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    max-width: 360px;
+    margin: 0;
+    line-height: 1.5;
 }
 
 /* ========================================
