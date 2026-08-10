@@ -52,7 +52,7 @@
         
         /* Self-Check Panel */
         .self-check-panel {
-            background: var(--card-background);
+            background: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             margin-bottom: 20px;
@@ -96,7 +96,7 @@
         .self-check-period {
             font-size: 0.85rem;
             color: var(--text-secondary);
-            background: var(--surface-secondary);
+            background: var(--bg-secondary);
             padding: 4px 10px;
             border-radius: 20px;
         }
@@ -114,7 +114,7 @@
         }
         
         .btn-close-panel:hover {
-            background: var(--surface-secondary);
+            background: var(--bg-secondary);
             color: var(--text-primary);
         }
         
@@ -198,7 +198,7 @@
             align-items: flex-start;
             gap: 12px;
             padding: 12px;
-            background: var(--surface-secondary);
+            background: var(--bg-secondary);
             border-radius: 8px;
             margin-bottom: 8px;
         }
@@ -245,10 +245,10 @@
         
         .troubleshooting-toggle {
             font-size: 0.8rem;
-            color: var(--primary-color, #2B7DE9);
+            color: var(--accent-blue);
             cursor: pointer;
             padding: 4px 8px;
-            background: rgba(43, 125, 233, 0.08);
+            background: rgba(43, 125, 233, 0.08); /* accent-blue tint */
             border-radius: 4px;
             display: inline-block;
             transition: background 0.2s;
@@ -261,7 +261,7 @@
         .troubleshooting-content {
             margin-top: 8px;
             padding: 12px;
-            background: var(--surface-secondary, #f5f7fa);
+            background: var(--bg-secondary, #f5f7fa);
             border-radius: 6px;
             font-family: 'IBM Plex Mono', monospace;
             font-size: 0.75rem;
@@ -269,7 +269,7 @@
             color: var(--text-primary);
             overflow-x: auto;
             white-space: pre-wrap;
-            border-left: 3px solid var(--primary-color, #2B7DE9);
+            border-left: 3px solid var(--accent-blue);
         }
         
         .dark-mode .troubleshooting-content {
@@ -347,7 +347,7 @@
         
         /* Dark Mode */
         .dark-mode .self-check-panel {
-            background: var(--card-background);
+            background: var(--bg-primary);
         }
         
         .dark-mode .summary-badge.passed {
@@ -769,16 +769,6 @@
 
 
     <script>
-        // Dark mode state
-        let darkMode = localStorage.getItem('darkMode') === 'true';
-
-        // Initialize dark mode
-        if (darkMode) {
-            document.body.classList.add('dark-mode');
-            document.querySelector('.dark-mode-toggle').textContent = '☀️';
-        }
-
-        // Toggle dark mode
         // Toggle admin section
         function toggleAdmin() {
             const toggle = document.querySelector('.admin-toggle');
@@ -1747,7 +1737,7 @@
             
             // Add total row
             const totalRow = `
-                <tr style="background: var(--surface-secondary); font-weight: 600; border-top: 2px solid var(--border-primary);">
+                <tr style="background: var(--bg-secondary); font-weight: 600; border-top: 2px solid var(--border-primary);">
                     <td colspan="4" style="text-align: right; padding-right: 1rem;">TOTAL:</td>
                     <td>${totalQuantity}</td>
                     <td colspan="2"></td>
