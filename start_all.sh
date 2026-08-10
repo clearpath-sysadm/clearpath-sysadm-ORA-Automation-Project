@@ -21,7 +21,7 @@ fi
 
 echo "Database connection configured: ${PGHOST:-via DATABASE_URL}"
 
-echo "Starting unified ShipStation sync (every 5 min)..."
+echo "Starting unified ShipStation sync (4x daily: 6:00 AM, 12:00 PM, 12:30 PM, 3:00 PM CT)..."
 python src/unified_shipstation_sync.py 2>&1 &
 UNIFIED_PID=$!
 

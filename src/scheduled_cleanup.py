@@ -61,17 +61,22 @@ def main():
                 continue
             
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
-            update_workflow_last_run('orders-cleanup')
-            logger.info("Running scheduled cleanup...")
-            result = cleanup_old_orders(days=60)
-            
-            if 'error' in result:
-                logger.error(f"Cleanup failed: {result['error']}")
-                heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': result['error'][:200]})
-            else:
-                logger.info(f"Cleanup complete: {result['deleted']} orders deleted")
-                heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED, records_processed=result.get('deleted', 0))
-            
+            _cleanup_ok = False
+            try:
+                update_workflow_last_run('orders-cleanup')
+                logger.info("Running scheduled cleanup...")
+                result = cleanup_old_orders(days=60)
+                if 'error' in result:
+                    logger.error(f"Cleanup failed: {result['error']}")
+                    heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': result['error'][:200]})
+                else:
+                    logger.info(f"Cleanup complete: {result['deleted']} orders deleted")
+                    heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED, records_processed=result.get('deleted', 0))
+                    _cleanup_ok = True
+            finally:
+                _status = "SUCCESS" if _cleanup_ok else "FAILED"
+                logger.info(f"[{WORKFLOW_NAME}] Cleanup run — {_status}")
+
             logger.info(f"Next cleanup in {CLEANUP_INTERVAL} seconds (24 hours)")
             time.sleep(CLEANUP_INTERVAL)
             

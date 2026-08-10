@@ -411,12 +411,17 @@ def main():
             if _is_scan_time() and now_minute != last_scan_minute:
                 last_scan_minute = now_minute
                 heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
+                _run_ok = False
                 try:
                     run_reconciliation()
                     heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
+                    _run_ok = True
                 except Exception as e:
                     heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
                     logger.error(f"Reconciliation error: {e}", exc_info=True)
+                finally:
+                    _status = "SUCCESS" if _run_ok else "FAILED"
+                    logger.info(f"[{WORKFLOW_NAME}] Scheduled run at {now_minute} CT — {_status}")
             else:
                 logger.debug(f"Not a scan time ({now_minute} CT) — sleeping 60s")
 

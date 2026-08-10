@@ -89,10 +89,49 @@ class _PooledConnection:
 
 
 def get_connection():
-    """Borrow a connection from the pool. Caller must call conn.close() when done."""
+    """Borrow a connection from the pool. Caller must call conn.close() when done.
+
+    Validates the borrowed connection with a lightweight ``SELECT 1`` probe
+    before returning it.  If the probe fails the dead connection is discarded
+    (``putconn(close=True)``) and a single retry is attempted with a fresh
+    connection so callers never receive a broken socket.
+    """
     pool = _get_pool()
-    conn = pool.getconn()
-    return _PooledConnection(conn, pool)
+
+    def _borrow_and_validate() -> _PooledConnection:
+        raw = pool.getconn()
+        try:
+            cur = raw.cursor()
+            cur.execute("SELECT 1")
+            cur.close()
+            # Restore autocommit-neutral state — health check must not leave an
+            # open transaction that would confuse the caller.
+            if not raw.autocommit:
+                raw.rollback()
+        except Exception as probe_err:
+            logger.warning(
+                f"Dead connection detected during pool checkout (discarding): {probe_err}"
+            )
+            try:
+                pool.putconn(raw, close=True)
+            except Exception:
+                pass
+            raise
+        return _PooledConnection(raw, pool)
+
+    try:
+        return _borrow_and_validate()
+    except Exception:
+        # One retry — the fresh borrow is also validated via the same path;
+        # if it too fails, the exception propagates to the caller.
+        logger.info("Retrying pool checkout with a fresh connection after dead-connection discard")
+        try:
+            return _borrow_and_validate()
+        except Exception as retry_err:
+            logger.error(
+                f"Retry connection also failed validation — giving up: {retry_err}"
+            )
+            raise
 
 @contextmanager
 def transaction():
@@ -196,7 +235,10 @@ def is_workflow_enabled(workflow_name: str, cache_seconds: int = 45) -> bool:
         cache_seconds: Cache TTL (30-60s recommended, default 45s with jitter)
     
     Returns:
-        bool: True if enabled, or if DB fails (fail-open)
+        bool: True if enabled. Falls back to the cached value when the DB is
+        unreachable. Returns False (fail-closed) when the DB is unreachable
+        and no cached state exists, so workers skip the run rather than
+        proceeding with an unknown control state.
     """
     now = time.time()
     
@@ -207,14 +249,16 @@ def is_workflow_enabled(workflow_name: str, cache_seconds: int = 45) -> bool:
     
     try:
         conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT enabled FROM workflow_controls WHERE workflow_name = %s",
-            (workflow_name,)
-        )
-        result = cursor.fetchone()
-        conn.close()
-        
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT enabled FROM workflow_controls WHERE workflow_name = %s",
+                (workflow_name,)
+            )
+            result = cursor.fetchone()
+        finally:
+            conn.close()
+
         enabled = bool(result[0]) if result else True
         
         # Cache with jitter
@@ -226,14 +270,23 @@ def is_workflow_enabled(workflow_name: str, cache_seconds: int = 45) -> bool:
         
     except Exception as e:
         logger.error(f"DB error checking workflow status for {workflow_name}: {e}")
-        logger.warning(f"Failing OPEN - {workflow_name} will continue")
-        
-        # Return cached value if available
+
+        # Return cached value if available (avoids a false-negative on transient hiccups)
         if workflow_name in _workflow_cache:
-            logger.info(f"Using cached state for {workflow_name}: {_workflow_cache[workflow_name]}")
-            return _workflow_cache[workflow_name]
-        
-        return True
+            cached_val = _workflow_cache[workflow_name]
+            logger.info(
+                f"Using cached state for {workflow_name}: {cached_val} "
+                f"(DB unreachable — falling back to cache)"
+            )
+            return cached_val
+
+        # No cache — fail CLOSED so the worker skips this run rather than
+        # proceeding with an unknown control state.
+        logger.warning(
+            f"Workflow control unreadable and no cached state — "
+            f"failing closed, skipping run for '{workflow_name}'"
+        )
+        return False
 
 def update_workflow_last_run(workflow_name: str):
     """

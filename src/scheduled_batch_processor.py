@@ -105,6 +105,8 @@ def _run_with_heartbeat(label: str = '') -> None:
     """Run run_batch_job() wrapped with STARTED/terminal heartbeats.
     label is an optional log prefix (e.g. 'recovery')."""
     heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
+    prefix = f"{label} " if label else ""
+    _run_ok = False
     try:
         status = run_batch_job()
         if status == 'skipped':
@@ -115,14 +117,17 @@ def _run_with_heartbeat(label: str = '') -> None:
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'reason': 'api_call_failed'})
         else:
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
+        _run_ok = status not in ('error',)
     except Exception as e:
         heartbeat(WORKFLOW_NAME, HeartbeatPhase.ERROR, details={'error': str(e)[:200]})
-        prefix = f"{label} " if label else ""
         logger.error(f"Batch {prefix}job error: {e}", exc_info=True)
         server_logger.error(
             f"Batch processor {prefix}encountered an unexpected error: {e}",
             source="Batch Processor"
         )
+    finally:
+        _terminal = "SUCCESS" if _run_ok else "FAILED"
+        logger.info(f"[{WORKFLOW_NAME}] {prefix}run complete — {_terminal}")
 
 
 def _already_batched_today(today_str: str) -> bool:

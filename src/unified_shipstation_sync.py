@@ -2093,8 +2093,14 @@ def main():
 
             # Run the scheduled sync
             heartbeat(WORKFLOW_NAME, HeartbeatPhase.STARTED)
-            run_unified_sync()
-            heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
+            _run_ok = False
+            try:
+                run_unified_sync()
+                heartbeat(WORKFLOW_NAME, HeartbeatPhase.COMPLETED)
+                _run_ok = True
+            finally:
+                _status = "SUCCESS" if _run_ok else "FAILED"
+                logger.info(f"[{WORKFLOW_NAME}] Scheduled run — {_status}")
 
         except KeyboardInterrupt:
             logger.info("⛔ Unified sync stopped by user")
