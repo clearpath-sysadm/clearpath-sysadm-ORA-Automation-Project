@@ -2095,7 +2095,7 @@ def api_get_inventory_transactions():
             query += " AND it.transaction_type = %s"
             params.append(transaction_type)
         
-        query += " ORDER BY it.date DESC, it.created_at DESC"
+        query += " ORDER BY it.date DESC, it.created_at DESC LIMIT 1000"
         
         conn = get_connection()
         cursor = conn.cursor()

@@ -312,6 +312,7 @@
         });
 
         let allTransactions = [];
+        let allSkus = []; // populated once from first unfiltered load; avoids a second API call
 
         // ── Lot dropdown for form ─────────────────────────────────────
         async function loadLotsForSku(sku) {
@@ -354,6 +355,14 @@
                 if (Array.isArray(data)) {
                     allTransactions = data;
                     renderTransactions(data);
+                    // Build SKU filter from loaded data on first unfiltered load
+                    // so we don't need a separate /api/inventory_transactions/skus call
+                    if (allSkus.length === 0) {
+                        allSkus = [...new Set(data.map(t => t.sku))].sort();
+                        const select = document.getElementById('skuFilter');
+                        select.innerHTML = '<option value="">All SKUs</option>' +
+                            allSkus.map(s => `<option value="${s}">${s}</option>`).join('');
+                    }
                 } else {
                     throw new Error(data.error || 'Failed to fetch transactions');
                 }
@@ -441,17 +450,6 @@
             cardsContainer.style.display = 'block';
         }
         
-        async function fetchSkus() {
-            try {
-                const response = await fetch('/api/inventory_transactions/skus');
-                const skus = await response.json();
-                const select = document.getElementById('skuFilter');
-                select.innerHTML = '<option value="">All SKUs</option>' + 
-                    skus.map(sku => `<option value="${sku}">${sku}</option>`).join('');
-            } catch (error) {
-                console.error('Failed to load SKUs:', error);
-            }
-        }
         
         function applyFilters() {
             document.getElementById('loading').style.display = 'block';
@@ -717,7 +715,6 @@
         }
         
         fetchTransactions();
-        fetchSkus();
     </script>
     <script src="/static/shipping-violations-alert.js"></script>
     <!-- Interactive Training Tours -->
