@@ -1896,6 +1896,7 @@ body.dark-mode .order-card-expand-btn:hover {
    ======================================== */
 
 .modal-overlay {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -1903,11 +1904,14 @@ body.dark-mode .order-card-expand-btn:hover {
     bottom: 0;
     background-color: rgba(9, 23, 42, 0.7);
     backdrop-filter: blur(4px);
-    display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10000;
     padding: calc(var(--spacing-unit) * 2);
+}
+
+.modal-overlay.active {
+    display: flex;
 }
 
 .modal-dialog {
