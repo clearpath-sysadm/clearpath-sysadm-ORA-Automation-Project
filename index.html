@@ -368,15 +368,6 @@
                     </div>
                 </div>
 
-                <!-- Manual Order Conflicts Alert -->
-                <div id="manual-order-conflict-alert" style="display: none;">
-                    <strong>🔄 Manual Order Conflicts Detected</strong><br>
-                    <span id="manual-order-conflict-count">0</span> manual order(s) use previously shipped order numbers.
-                    <a href="#" onclick="showManualOrderConflictDetails(); return false;" style="text-decoration: underline; margin-left: 10px;">View Details</a>
-                    <button onclick="bulkRecreateAllConflicts(this, true)" style="margin-left: 10px; padding: 6px 14px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;">🔍 Dry Run</button>
-                    <button onclick="bulkRecreateAllConflicts(this)" style="margin-left: 4px; padding: 6px 14px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;">⚡ Bulk Dedup All</button>
-                </div>
-
                 <!-- Operational Pulse Section -->
                 <section>
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Operational Pulse</h2>
@@ -392,8 +383,6 @@
                         <div class="skeleton skeleton-card" id="stat-skeleton-7"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-8"></div>
                         <div class="skeleton skeleton-card" id="stat-skeleton-9"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-10"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-11"></div>
 
                         <!-- Actual Stats -->
                         <!-- Shipment Summary (Units to Pick) -->
@@ -407,34 +396,6 @@
                                     </span>
                                 </div>
                                 <div class="stat-change" id="units-to-pick-sub" style="font-size: 11px; color: var(--text-tertiary);">View pick summary →</div>
-                            </div>
-                        </a>
-                        <!-- ShipStation Count -->
-                        <a href="/xml_import.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card id="shipstation-card" style="cursor: pointer; position: relative;">
-                                <span id="shipstation-badge" class="mismatch-badge" style="display: none; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); showDiscrepancyDetails();">Mismatch</span>
-                                <div class="stat-value" id="shipstation-units">0</div>
-                                <div class="stat-label">
-                                    ShipStation Units
-                                    <span class="help-icon">
-                                        <span class="help-tooltip">Units currently in ShipStation awaiting shipment. Updates from ShipStation API every 5 minutes.</span>
-                                    </span>
-                                </div>
-                                <div class="stat-change" id="shipstation-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
-                            </div>
-                        </a>
-                        <!-- Local DB Count -->
-                        <a href="/xml_import.html?filter=pending" style="text-decoration: none; color: inherit;" title="Click to view pending orders in Orders Inbox">
-                            <div class="stat-card hidden" data-stat-card id="local-db-card" style="cursor: pointer; position: relative;">
-                                <span id="local-db-badge" class="mismatch-badge" style="display: none; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); showDiscrepancyDetails();">Mismatch</span>
-                                <div class="stat-value" id="local-db-units">0</div>
-                                <div class="stat-label">
-                                    Local DB Units
-                                    <span class="help-icon">
-                                        <span class="help-tooltip">Units in local database ready to upload to ShipStation. Auto-uploads every 5 minutes.</span>
-                                    </span>
-                                </div>
-                                <div class="stat-change" id="local-db-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
                             </div>
                         </a>
                         <!-- On Hold Count -->
@@ -765,14 +726,14 @@
 
         // Show/hide skeletons
         function showSkeletons() {
-            for (let i = 1; i <= 11; i++) {
+            for (let i = 1; i <= 9; i++) {
                 document.getElementById(`stat-skeleton-${i}`).classList.remove('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.add('hidden'));
         }
 
         function hideSkeletons() {
-            for (let i = 1; i <= 11; i++) {
+            for (let i = 1; i <= 9; i++) {
                 document.getElementById(`stat-skeleton-${i}`).classList.add('hidden');
             }
             document.querySelectorAll('[data-stat-card]').forEach(el => el.classList.remove('hidden'));
@@ -1144,12 +1105,10 @@
             if (isDashboardLoading) return;
             isDashboardLoading = true;
             try {
-                const [statsRes, alertsRes, automationRes, shipstationRes, localDbRes, onHoldRes, pickSummaryRes] = await Promise.all([
+                const [statsRes, alertsRes, automationRes, onHoldRes, pickSummaryRes] = await Promise.all([
                     fetch('/api/dashboard_stats'),
                     fetch('/api/inventory/alerts'),
                     fetch('/api/automation_status'),
-                    fetch('/api/shipstation/units_to_ship'),
-                    fetch('/api/local/awaiting_shipment_count'),
                     fetch('/api/local/on_hold_count'),
                     fetch('/api/reports/shipment_summary'),
                 ]);
@@ -1157,8 +1116,6 @@
                 const stats = await statsRes.json();
                 const alerts = await alertsRes.json();
                 const automation = await automationRes.json();
-                const shipstation = await shipstationRes.json();
-                const localDb = await localDbRes.json();
                 const onHold = await onHoldRes.json();
                 const pickSummary = await pickSummaryRes.json();
 
@@ -1176,45 +1133,11 @@
                     document.getElementById('units-to-pick-sub').textContent = 'View pick summary →';
                 }
                 
-                // Update ShipStation card independently
-                let ssUnits = 0;
-                if (shipstation.success) {
-                    ssUnits = shipstation.units_to_ship || 0;
-                    document.getElementById('shipstation-units').textContent = ssUnits;
-                    const ssTimestamp = shipstation.metric_updated_at || shipstation.last_updated;
-                    document.getElementById('shipstation-timestamp').textContent = 
-                        'Updated: ' + formatRelativeTime(ssTimestamp);
-                }
-                
-                // Update Local DB card independently
-                let localUnits = 0;
-                if (localDb.success) {
-                    localUnits = localDb.total_units || 0;
-                    document.getElementById('local-db-units').textContent = localUnits;
-                    document.getElementById('local-db-timestamp').textContent = 
-                        'Updated: ' + formatRelativeTime(localDb.last_updated);
-                }
-                
                 // Update On Hold card independently
                 if (onHold.success) {
                     document.getElementById('on-hold-units').textContent = onHold.total_units || 0;
                     document.getElementById('on-hold-timestamp').textContent = 
                         'Updated: ' + formatRelativeTime(onHold.last_updated);
-                }
-                
-                // Mismatch detection only if BOTH APIs succeeded
-                if (shipstation.success && localDb.success) {
-                    const mismatch = ssUnits !== localUnits;
-                    const ssBadge = document.getElementById('shipstation-badge');
-                    const localBadge = document.getElementById('local-db-badge');
-                    
-                    if (mismatch) {
-                        ssBadge.style.display = 'block';
-                        localBadge.style.display = 'block';
-                    } else {
-                        ssBadge.style.display = 'none';
-                        localBadge.style.display = 'none';
-                    }
                 }
                 
                 // Update stats cards using stable element IDs (never positional indices)
@@ -1282,9 +1205,6 @@
                     }
                 }
                 
-                // Check for manual order conflicts
-                try { await checkManualOrderConflicts(); } catch (e) { console.error('checkManualOrderConflicts failed:', e); }
-                
                 // Re-check auto-ship day status (updates in real-time)
                 try { checkAutoShipDay(); } catch (e) { console.error('checkAutoShipDay failed:', e); }
                 
@@ -1310,10 +1230,6 @@
             showSkeletons();
             
             try {
-                // Refresh ShipStation metrics first (prevent stale cache)
-                await fetch('/api/shipstation/refresh_units_to_ship', { method: 'POST' });
-                
-                // Then load all dashboard data
                 await Promise.all([
                     loadDashboardData(),
                     loadWeeklyReport()
@@ -1643,387 +1559,7 @@
             return days[dayOfWeek];
         }
 
-        // Manual Order Conflicts Functions
-        let manualOrderConflictsData = [];
-        
-        async function checkManualOrderConflicts() {
-            try {
-                const response = await fetch('/api/manual_order_conflicts');
-                const data = await response.json();
-                
-                if (data.success && data.count > 0) {
-                    manualOrderConflictsData = data.conflicts;
-                    const conflictAlert = document.getElementById('manual-order-conflict-alert');
-                    const conflictCount = document.getElementById('manual-order-conflict-count');
-                    conflictCount.textContent = data.count;
-                    conflictAlert.style.display = 'block';
-                } else {
-                    document.getElementById('manual-order-conflict-alert').style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Error checking manual order conflicts:', error);
-            }
-        }
-        
-        function showManualOrderConflictDetails() {
-            if (manualOrderConflictsData.length === 0) {
-                alert('No manual order conflicts to display');
-                return;
-            }
-            
-            let html = '<div style="max-width: 800px; max-height: 70vh; overflow-y: auto;">';
-            html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
-            html += '<h3 style="margin-top: 0; margin-bottom: 0;">Manual Order Conflicts</h3>';
-            html += '<div style="display: flex; gap: 8px;">';
-            html += '<button onclick="recalculateManualOrderNumbers()" style="padding: 8px 16px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Recalculate Order Numbers</button>';
-            html += '<button onclick="bulkRecreateAllConflicts(this, true)" style="padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔍 Dry Run</button>';
-            html += '<button onclick="bulkRecreateAllConflicts(this)" style="padding: 8px 16px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚡ Bulk Dedup All</button>';
-            html += '</div>';
-            html += '</div>';
-            html += '<p style="color: var(--text-secondary); margin-bottom: 20px;">These manual orders use order numbers that were previously shipped. Recreate them with new order numbers.</p>';
-            
-            manualOrderConflictsData.forEach((conflict, index) => {
-                html += `<div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px;">`;
-                html += `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">`;
-                html += `<div><strong style="font-size: 16px;">Order #${conflict.conflicting_order_number}</strong>`;
-                if (conflict.proposed_new_order_number) {
-                    html += ` <span style="color: var(--accent-orange); font-size: 14px;">→ Will become #${conflict.proposed_new_order_number}</span>`;
-                }
-                html += `<br><span style="color: var(--text-tertiary); font-size: 13px;">Customer: ${conflict.customer_name || 'N/A'}</span></div>`;
-                html += `<button onclick="dismissConflict(${conflict.id}, '${conflict.conflicting_order_number}')" style="padding: 6px 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Dismiss</button>`;
-                html += `</div>`;
-                
-                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 13px;">';
-                html += '<tbody>';
-                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">Original Ship Date</td><td style="padding: 8px;">${conflict.original_ship_date || 'N/A'}</td></tr>`;
-                html += `<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 8px; font-weight: 600;">ShipStation Order ID</td><td style="padding: 8px; font-family: monospace; font-size: 11px;">${conflict.shipstation_order_id}</td></tr>`;
-                html += `<tr><td style="padding: 8px; font-weight: 600;">Detected</td><td style="padding: 8px;">${formatDateTime(conflict.detected_at)}</td></tr>`;
-                html += '</tbody></table>';
-                
-                // Side-by-side comparison of orders
-                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
-                
-                // Original Order - show actual status from ShipStation
-                const originalStatus = conflict.original_order_status || 'Shipped';
-                const statusColor = originalStatus.toLowerCase() === 'shipped' ? '#22c55e' : '#f97316';
-                const statusIcon = originalStatus.toLowerCase() === 'shipped' ? '✅' : '⏳';
-                html += '<div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border-left: 3px solid ' + statusColor + ';">';
-                html += '<strong style="color: ' + statusColor + ';">' + statusIcon + ' Original (' + originalStatus + ')</strong>';
-                html += `<div style="margin-top: 8px; font-size: 12px;"><strong>Company:</strong> ${conflict.original_company || 'None'}</div>`;
-                html += '<div style="margin-top: 8px;"><strong>Items:</strong></div>';
-                if (conflict.original_items && conflict.original_items.length > 0) {
-                    conflict.original_items.forEach(item => {
-                        html += `<div style="font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border-color);">`;
-                        html += `<span style="font-family: monospace;">${item.sku}</span> × ${item.quantity}`;
-                        html += `</div>`;
-                    });
-                } else {
-                    html += '<div style="font-size: 12px; color: var(--text-tertiary);">No items</div>';
-                }
-                html += '</div>';
-                
-                // Duplicate (Manual) Order
-                html += '<div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border-left: 3px solid #f97316;">';
-                html += '<strong style="color: #f97316;">⚠️ Duplicate (Manual)</strong>';
-                html += `<div style="margin-top: 8px; font-size: 12px;"><strong>Company:</strong> ${conflict.duplicate_company || 'None'}</div>`;
-                html += '<div style="margin-top: 8px;"><strong>Items:</strong></div>';
-                if (conflict.duplicate_items && conflict.duplicate_items.length > 0) {
-                    conflict.duplicate_items.forEach(item => {
-                        html += `<div style="font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border-color);">`;
-                        html += `<span style="font-family: monospace;">${item.sku}</span> × ${item.quantity}`;
-                        html += `</div>`;
-                    });
-                } else {
-                    html += '<div style="font-size: 12px; color: var(--text-tertiary);">No items</div>';
-                }
-                html += '</div>';
-                
-                html += '</div>';
-                
-                // Action buttons
-                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">';
-                html += `<button onclick="syncManualOrderFromShipStation(${conflict.id}, '${conflict.conflicting_order_number}')" style="padding: 10px; background: var(--accent-green); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄 Sync from ShipStation</button>`;
-                html += `<button onclick="recreateManualOrder(${conflict.id}, '${conflict.conflicting_order_number}')" style="padding: 10px; background: var(--accent-orange); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">➕ Recreate with New Order Number</button>`;
-                html += '</div>';
-                
-                html += '</div>';
-            });
-            
-            html += '</div>';
-            
-            // Create modal
-            const modal = document.createElement('div');
-            modal.id = 'manual-conflict-modal';
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
-            modal.innerHTML = `<div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 900px; width: 100%;">${html}<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 20px; padding: 12px 24px; background: var(--primary-navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button></div>`;
-            document.body.appendChild(modal);
-            
-            // Close on background click
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.remove();
-                }
-            });
-        }
-        
-        async function recalculateManualOrderNumbers() {
-            // Close existing modal
-            const existingModal = document.getElementById('manual-conflict-modal');
-            if (existingModal) existingModal.remove();
-            
-            // Refresh data from server (will recalculate proposed order numbers)
-            await checkManualOrderConflicts();
-            
-            // Reopen the modal with updated data
-            if (manualOrderConflictsData.length > 0) {
-                showManualOrderConflictDetails();
-            } else {
-                alert('All conflicts have been resolved!');
-            }
-        }
-        
-        async function bulkRecreateAllConflicts(btn, isDryRun = false) {
-            const count = manualOrderConflictsData.length;
-            if (count === 0) {
-                alert('No pending conflicts to process.');
-                return;
-            }
-
-            if (!isDryRun) {
-                if (!confirm(`This will process all ${count} pending conflict(s):\n\n- Actionable orders (awaiting_shipment/on_hold) will be recreated with new sequential order numbers and the old orders deleted from ShipStation.\n- Already shipped/cancelled orders will be auto-resolved.\n\nProceed?`)) {
-                    return;
-                }
-            }
-
-            const originalText = btn ? btn.textContent : '';
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = isDryRun ? '⏳ Running dry run...' : '⏳ Processing...';
-            }
-
-            try {
-                const url = isDryRun ? '/api/manual_order_conflicts/bulk_recreate?dry_run=true' : '/api/manual_order_conflicts/bulk_recreate';
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    let msg = isDryRun ? `DRY RUN PREVIEW (no changes made):\n\n` : `Bulk Dedup Complete:\n\n`;
-                    msg += `${isDryRun ? '📋' : '✅'} ${isDryRun ? 'Would recreate' : 'Recreated'}: ${data.recreated}\n`;
-                    msg += `🔄 ${isDryRun ? 'Would auto-resolve' : 'Auto-resolved'} (shipped/cancelled): ${data.auto_resolved}\n`;
-                    if (data.failed > 0) {
-                        msg += `❌ Failed: ${data.failed}\n`;
-                    }
-                    msg += `\nTotal: ${data.total}`;
-
-                    if (data.results && data.results.length > 0) {
-                        const toRecreate = data.results.filter(r => r.action === 'would_recreate' || r.action === 'recreated');
-                        if (toRecreate.length > 0) {
-                            msg += `\n\n${isDryRun ? 'Orders to recreate' : 'Recreated orders'}:`;
-                            toRecreate.forEach(r => {
-                                msg += `\n  ${r.old_order} → ${r.new_order}`;
-                                if (r.customer) msg += ` (${r.customer}${r.company ? ', ' + r.company : ''})`;
-                                if (r.items) msg += ` [${r.items.map(i => i.sku + ' ×' + i.qty).join(', ')}]`;
-                                if (r.sku_changes && r.sku_changes.length > 0) {
-                                    msg += `\n    Lot updates: ${r.sku_changes.map(c => c.from + ' → ' + c.to).join(', ')}`;
-                                }
-                            });
-                        }
-                        const toResolve = data.results.filter(r => r.action === 'would_auto_resolve' || r.action === 'auto_resolved');
-                        if (toResolve.length > 0) {
-                            msg += `\n\n${isDryRun ? 'Orders to auto-resolve' : 'Auto-resolved'}:`;
-                            toResolve.forEach(r => {
-                                msg += `\n  ${r.old_order} - ${r.reason}`;
-                                if (r.customer) msg += ` (${r.customer})`;
-                            });
-                        }
-                        const failures = data.results.filter(r => r.action === 'failed');
-                        if (failures.length > 0) {
-                            msg += '\n\nFailed orders:';
-                            failures.forEach(r => {
-                                msg += `\n  ${r.old_order} - ${r.reason || 'Unknown error'}`;
-                            });
-                        }
-                    }
-
-                    alert(msg);
-
-                    if (!isDryRun) {
-                        const existingModal = document.getElementById('manual-conflict-modal');
-                        if (existingModal) existingModal.remove();
-                        await checkManualOrderConflicts();
-                    }
-                } else {
-                    alert('Bulk dedup failed: ' + (data.error || 'Unknown error'));
-                }
-            } catch (error) {
-                alert('Error during bulk dedup: ' + error.message);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = originalText;
-                }
-            }
-        }
-
-        async function closeConfirmationAndShowUpdatedConflicts() {
-            // Close confirmation modal
-            const confirmModal = document.getElementById('confirmation-modal');
-            if (confirmModal) confirmModal.remove();
-            
-            // Reopen conflicts list with updated proposed order numbers
-            if (manualOrderConflictsData.length > 0) {
-                showManualOrderConflictDetails();
-            }
-        }
-        
-        async function recreateManualOrder(conflictId, oldOrderNumber) {
-            const btn = event.target;
-            btn.disabled = true;
-            btn.textContent = 'Creating new order...';
-            
-            try {
-                const response = await fetch(`/api/manual_order_conflicts/${conflictId}/recreate`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'}
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Close the details modal
-                    const modal = document.getElementById('manual-conflict-modal');
-                    if (modal) modal.remove();
-                    
-                    // Refresh conflicts data to recalculate remaining order numbers
-                    await checkManualOrderConflicts();
-                    
-                    // Show confirmation dialog
-                    showConfirmationDialog(conflictId, oldOrderNumber, result.new_order_number);
-                } else {
-                    throw new Error(result.error || 'Failed to recreate order');
-                }
-            } catch (error) {
-                console.error('Error recreating order:', error);
-                alert('Error recreating order: ' + error.message);
-                btn.disabled = false;
-                btn.textContent = '🔄 Recreate with New Order Number';
-            }
-        }
-        
-        function showConfirmationDialog(conflictId, oldOrderNumber, newOrderNumber) {
-            let html = '<div style="max-width: 600px;">';
-            html += '<h3 style="margin-top: 0; color: #22c55e;">✅ New Order Created Successfully</h3>';
-            html += '<div style="background: var(--bg-secondary); border-radius: 8px; padding: 20px; margin: 20px 0;">';
-            html += `<p style="font-size: 16px; margin-bottom: 12px;">Old Order: <strong style="text-decoration: line-through; color: var(--text-tertiary);">${oldOrderNumber}</strong></p>`;
-            html += `<p style="font-size: 18px; margin-bottom: 12px;">New Order: <strong style="color: var(--accent-orange); font-size: 22px;">${newOrderNumber}</strong></p>`;
-            html += '</div>';
-            html += '<p style="color: var(--text-secondary); margin: 20px 0;">Please verify the new order was created properly in ShipStation before proceeding.</p>';
-            html += '<div style="display: flex; gap: 12px; margin-top: 24px;">';
-            html += `<button onclick="confirmDeleteOldOrder(${conflictId}, '${oldOrderNumber}', '${newOrderNumber}')" style="flex: 1; padding: 12px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Confirm & Delete Old Order</button>`;
-            html += `<button onclick="closeConfirmationAndShowUpdatedConflicts()" style="flex: 1; padding: 12px; background: var(--text-tertiary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>`;
-            html += '</div>';
-            html += '</div>';
-            
-            const modal = document.createElement('div');
-            modal.id = 'confirmation-modal';
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
-            modal.innerHTML = `<div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">${html}</div>`;
-            document.body.appendChild(modal);
-        }
-        
-        async function confirmDeleteOldOrder(conflictId, oldOrderNumber, newOrderNumber) {
-            const modal = document.getElementById('confirmation-modal');
-            const btn = event.target;
-            btn.disabled = true;
-            btn.textContent = 'Deleting old order...';
-            
-            try {
-                const response = await fetch(`/api/manual_order_conflicts/${conflictId}/confirm_delete`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'}
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert(`✅ ${result.message}`);
-                    modal.remove();
-                    await checkManualOrderConflicts();
-                } else {
-                    throw new Error(result.error || 'Failed to delete old order');
-                }
-            } catch (error) {
-                console.error('Error deleting old order:', error);
-                alert('Error deleting old order: ' + error.message);
-                btn.disabled = false;
-                btn.textContent = 'Confirm & Delete Old Order';
-            }
-        }
-        
-        async function dismissConflict(conflictId, orderNumber) {
-            if (!confirm(`Dismiss conflict for order #${orderNumber}? This will not recreate the order.`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/manual_order_conflicts/${conflictId}/dismiss`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'}
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('✅ Conflict dismissed');
-                    await checkManualOrderConflicts();
-                    const modal = document.getElementById('manual-conflict-modal');
-                    if (modal) modal.remove();
-                } else {
-                    throw new Error(result.error || 'Failed to dismiss conflict');
-                }
-            } catch (error) {
-                console.error('Error dismissing conflict:', error);
-                alert('Error dismissing conflict: ' + error.message);
-            }
-        }
-        
-        async function syncManualOrderFromShipStation(conflictId, orderNumber) {
-            if (!confirm(`Sync Order #${orderNumber} from ShipStation?\n\nThis will update the local database with ShipStation's data (status, tracking, items, etc.). ShipStation is the source of truth.\n\nThis action cannot be undone.`)) {
-                return;
-            }
-            
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = 'Syncing from ShipStation...';
-            
-            try {
-                const response = await fetch(`/api/manual_order_conflicts/${conflictId}/sync`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'}
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert(`✅ ${result.message}\n\nStatus: ${result.order_status}\nItems: ${result.total_items}`);
-                    await checkManualOrderConflicts();
-                    const modal = document.getElementById('manual-conflict-modal');
-                    if (modal) modal.remove();
-                } else {
-                    throw new Error(result.error || 'Failed to sync order from ShipStation');
-                }
-            } catch (error) {
-                console.error('Error syncing order from ShipStation:', error);
-                alert('Error syncing order: ' + error.message);
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        }
+        // FedEx Pickup Completion Handler — conflict functions removed above
 
         // FedEx Pickup Completion Handler
         async function markFedExPickupComplete() {
