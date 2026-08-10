@@ -67,9 +67,8 @@ def check_workflow_status():
                 
                 # Different workflows have different expected intervals
                 expected_intervals = {
-                    'unified-shipstation-sync': 5,  # 5 minutes
-                    'duplicate-scanner': 15,        # 15 minutes
-                    'lot-mismatch-scanner': 15,     # 15 minutes
+                    # unified-shipstation-sync runs 3x/day + webhooks; omitted here
+                    # so it is never flagged as stale between scheduled runs
                     'orders-cleanup': 1440,         # 24 hours
                     'weekly-reporter': 10080,       # 7 days (on-demand)
                 }

@@ -884,7 +884,7 @@ def api_workflow_timestamps():
                 workflow_name,
                 EXTRACT(EPOCH FROM last_run_at) as timestamp_epoch
             FROM workflow_controls
-            WHERE workflow_name IN ('unified-shipstation-sync',)
+            WHERE workflow_name IN ('unified-shipstation-sync')
             AND last_run_at IS NOT NULL
         """
         results = execute_query(query)

@@ -100,8 +100,6 @@ def insert_workflow_controls(cursor):
     
     workflows = [
         ('shipstation_sync', True),
-        ('duplicate_scanner', True),
-        ('lot_mismatch_scanner', True),
         ('orders_cleanup', True),
         ('lot-tagger', True),
     ]
@@ -156,7 +154,7 @@ def verify_installation(cursor):
     checks = [
         ("Tables created", "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'", 33),
         ("Key Products", "SELECT COUNT(*) FROM configuration_params WHERE category = 'Key Products'", 5),
-        ("Workflow controls", "SELECT COUNT(*) FROM workflow_controls", 6),
+        ("Workflow controls", "SELECT COUNT(*) FROM workflow_controls", 3),
         ("Bundle SKUs", "SELECT COUNT(*) FROM bundle_skus", None),
     ]
     
@@ -234,8 +232,7 @@ def main():
         print("Next steps:")
         print("1. Set up active lot numbers in the sku_lot table")
         print("2. Configure ShipStation API credentials in Secrets")
-        print("3. Set up Google Drive integration for XML imports")
-        print("4. Start the application workflows")
+        print("3. Start the application workflows")
         print()
         
         cursor.close()
