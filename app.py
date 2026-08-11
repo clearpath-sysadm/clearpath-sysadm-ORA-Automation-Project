@@ -623,6 +623,67 @@ def get_admin_alert():
         server_logger.error(f"Error fetching admin alert: {str(e)}", source="Admin Alert")
         return jsonify({'message': '', 'is_active': False})
 
+@app.route('/api/admin/backfill-18795', methods=['GET', 'POST'])
+def backfill_18795():
+    """Temporary one-shot endpoint: backfill missing 18795 Ship transactions. Admin only."""
+    if not current_user.is_authenticated or current_user.role != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    write = request.method == 'POST' and (request.json or {}).get('write', False)
+    SKU = '18795'
+    BACKFILL_NOTE = 'Backfill: deduction missing because CF1 was not set when lot depleted'
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT l.lot_id, l.lot_number, l.status, lb.balance
+            FROM lots l JOIN skus s ON s.sku_id=l.sku_id
+            LEFT JOIN lot_balances lb ON lb.lot_id=l.lot_id
+            WHERE s.sku_code=%s ORDER BY l.lot_id
+        """, (SKU,))
+        all_lots = [{'lot_id':r[0],'lot_number':r[1],'status':r[2],'balance':r[3]} for r in cur.fetchall()]
+        target = next((r for r in all_lots if r['lot_number']=='11001'), None)
+        if not target:
+            conn.close()
+            return jsonify({'error':'Lot 11001 not found','all_lots':all_lots}), 404
+        lot_id, lot_number = target['lot_id'], target['lot_number']
+        cur.execute("""
+            SELECT si.order_number, si.ship_date::text, si.quantity_shipped, si.shipstation_order_id
+            FROM shipped_items si
+            WHERE si.base_sku=%s
+              AND si.shipstation_order_id IS NOT NULL AND si.shipstation_order_id!=''
+              AND NOT EXISTS (
+                  SELECT 1 FROM inventory_transactions it
+                  WHERE it.sku=%s AND it.shipstation_order_id=si.shipstation_order_id
+                    AND it.transaction_type='Ship'
+              )
+            ORDER BY si.ship_date, si.order_number
+        """, (SKU, SKU))
+        missing = cur.fetchall()
+        gaps = [{'order':r[0],'ship_date':r[1],'qty':r[2],'ss_id':r[3]} for r in missing]
+        if not write or not missing:
+            conn.close()
+            return jsonify({'dry_run': not write, 'lot_id':lot_id,'lot_number':lot_number,
+                            'all_lots':all_lots,'gaps':gaps,'total_units':sum(g['qty'] or 0 for g in gaps)})
+        inserted = 0
+        for row in missing:
+            order_number, ship_date, qty, ss_id = row
+            ship_date_str = str(ship_date)[:10]
+            cur.execute("""
+                INSERT INTO inventory_transactions
+                    (date, sku, quantity, transaction_type, lot_id, shipstation_order_id, notes)
+                VALUES (%s,%s,%s,'Ship',%s,%s,%s)
+            """, (ship_date_str, SKU, abs(int(qty or 0)), lot_id, str(ss_id),
+                  f"{order_number} | {BACKFILL_NOTE}"))
+            inserted += 1
+        conn.commit()
+        conn.close()
+        server_logger.info(f"18795 backfill applied by {current_user.email}: {inserted} transactions inserted", source="Admin")
+        return jsonify({'applied':True,'inserted':inserted,'lot_number':lot_number,
+                        'total_units':sum(g['qty'] or 0 for g in gaps),'gaps':gaps})
+    except Exception as e:
+        server_logger.error(f"18795 backfill error: {e}", source="Admin")
+        return jsonify({'error':str(e)}), 500
+
 @app.route('/api/admin/alert', methods=['POST'])
 def update_admin_alert():
     """Update admin alert (Admin only)"""
