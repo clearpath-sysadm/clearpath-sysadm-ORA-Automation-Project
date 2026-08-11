@@ -185,10 +185,72 @@
             #transactionsCards.mobile-view  { display: block !important; }
         }
 
-        /* Transaction Log filter bar lives inside the pane */
+        /* ── Transaction Log filter bar ─────────────────────────────────────── */
         #pane-transaction-log .controls {
             margin-bottom: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            align-items: center;
         }
+        /* Date inputs respect the active color scheme */
+        #pane-transaction-log .controls input[type="date"] {
+            color-scheme: light dark;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-size: 14px;
+            font-family: var(--font-body);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #pane-transaction-log .controls select {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        /* Filter + Clear buttons always share one row */
+        #pane-transaction-log .controls .txn-filter-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 8px;
+        }
+        #pane-transaction-log .controls .txn-filter-actions .btn { flex: 1; }
+
+        /* ── Transaction mobile cards ────────────────────────────────────────── */
+        .txn-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+        .txn-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+            gap: 8px;
+        }
+        .txn-card-sku   { font-size: 17px; font-weight: 700; color: var(--accent-blue); }
+        .txn-card-meta  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .txn-card-right { text-align: right; flex-shrink: 0; }
+        .txn-card-qty   { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .txn-card-qty.positive { color: var(--success-green, #4ade80); }
+        .txn-card-qty.negative { color: var(--critical-red); }
+        .txn-card-notes {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--bg-primary);
+            border-radius: 4px;
+            padding: 6px 8px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .txn-card-actions { display: flex; gap: 6px; }
+        .txn-card-actions .btn { flex: 1; font-size: 13px; padding: 7px 10px; text-align: center; }
 
         /* ── Page info tooltip ──────────────────────────────────────────────── */
         .info-tooltip-btn {
@@ -429,9 +491,6 @@
                         <div class="controls">
                             <input type="date" id="startDate" placeholder="Start Date">
                             <input type="date" id="endDate" placeholder="End Date">
-                            <select id="skuFilter">
-                                <option value="">All SKUs</option>
-                            </select>
                             <select id="typeFilter">
                                 <option value="">All Types</option>
                                 <option value="Receive">Receive</option>
@@ -440,8 +499,13 @@
                                 <option value="Adjust Down">Adjust Down</option>
                                 <option value="Repack">Repack</option>
                             </select>
-                            <button class="btn" onclick="applyFilters()">🔍 Filter</button>
-                            <button class="btn" onclick="clearFilters()">✖️ Clear</button>
+                            <select id="skuFilter">
+                                <option value="">All SKUs</option>
+                            </select>
+                            <div class="txn-filter-actions">
+                                <button class="btn" onclick="applyFilters()">🔍 Filter</button>
+                                <button class="btn" onclick="clearFilters()">✖️ Clear</button>
+                            </div>
                         </div>
 
                         <div class="table-container" style="overflow-x: auto;">
@@ -1363,20 +1427,26 @@
 
             cards.innerHTML = transactions.map(t => {
                 const badgeClass = `badge-${t.transaction_type.toLowerCase().replace(' ', '-')}`;
-                return `<div class="transaction-card" data-transaction-id="${t.id}">
-                    <div class="card-content">
-                        <div class="card-header">
-                            <span class="card-title"><strong>${t.sku}</strong></span>
+                const isDebit    = ['Ship','Adjust Down','Repack'].includes(t.transaction_type);
+                const qtyClass   = isDebit ? 'negative' : 'positive';
+                const qtySign    = isDebit ? '' : '+';
+                const lotMeta    = t.lot_number ? `<span style="font-family:monospace;">${t.lot_number}</span> · ` : '';
+                const notesHtml  = t.notes ? `<div class="txn-card-notes">${t.notes}</div>` : '';
+                return `<div class="txn-card" data-transaction-id="${t.id}">
+                    <div class="txn-card-header">
+                        <div>
+                            <div class="txn-card-sku">${t.sku}</div>
+                            <div class="txn-card-meta">${lotMeta}${t.date}</div>
+                        </div>
+                        <div class="txn-card-right">
+                            <div class="txn-card-qty ${qtyClass}">${qtySign}${t.quantity}</div>
                             <span class="badge ${badgeClass}">${t.transaction_type}</span>
                         </div>
-                        <div class="card-row"><span class="label">Date:</span><span>${t.date}</span></div>
-                        <div class="card-row"><span class="label">Lot:</span><span style="font-family:monospace;">${t.lot_number || '—'}</span></div>
-                        <div class="card-row"><span class="label">Quantity:</span><span><strong>${t.quantity}</strong></span></div>
-                        <div class="card-row"><span class="label">Notes:</span><span>${t.notes || '-'}</span></div>
-                        <div class="card-actions">
-                            <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
-                            <button class="btn btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
-                        </div>
+                    </div>
+                    ${notesHtml}
+                    <div class="txn-card-actions">
+                        <button class="btn btn-sm" onclick="editTransaction(${t.id})">✏️ Edit</button>
+                        <button class="btn btn-sm" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
                     </div>
                 </div>`;
             }).join('');
