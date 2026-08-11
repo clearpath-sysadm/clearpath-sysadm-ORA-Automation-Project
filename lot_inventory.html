@@ -223,6 +223,54 @@
                 flex: 1 1 100%;
             }
         }
+
+        /* ── Sticky Lot Inventory card header ─────────────────────────────── */
+        #lot-inventory-card {
+            padding-top: 0;
+        }
+        #lot-inventory-card > .card-header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: var(--bg-primary);
+            /* Bleed out to cover the card's side padding so the bar looks solid */
+            margin: 0 -24px;
+            padding: 18px 24px;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 1px solid var(--border-translucent);
+        }
+
+        /* ── Inline assignment add-row ─────────────────────────────────────── */
+        #inline-assignment-row td {
+            vertical-align: middle;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+        }
+        #inline-assignment-row .inline-input {
+            width: auto;
+            padding: 5px 8px;
+            font-size: 13px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            outline: none;
+        }
+        #inline-assignment-row .inline-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(43,125,233,0.18);
+        }
+        #inline-assignment-row .inline-input.inline-select {
+            min-width: 130px;
+        }
+        #inline-assignment-row .inline-input.inline-lot {
+            width: 120px;
+        }
+        #inline-assignment-row .inline-error {
+            color: var(--error-red);
+            font-size: 11px;
+            margin-top: 3px;
+        }
     </style>
 </head>
 <body>
@@ -358,7 +406,7 @@
                 </div>
 
                 <!-- Lot Inventory Card -->
-                <div class="card">
+                <div class="card" id="lot-inventory-card">
                     <div class="card-header">
                         <h2 class="card-title">Lot Inventory</h2>
                         <button class="btn" onclick="openAddModal()">
@@ -379,7 +427,7 @@
                         <h2 class="card-title">🏷️ Active Lot Assignments <span id="sku-lot-count" style="font-size:13px;color:var(--text-secondary);font-weight:400;"></span></h2>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <button class="btn btn-sm" id="sku-lot-filter-btn" onclick="toggleSkuLotFilter()" style="font-size:12px;">Show All</button>
-                            <button class="btn" onclick="openAddSkuLotModal()"><span>➕</span> Add Assignment</button>
+                            <button class="btn" onclick="showInlineAddRow()"><span>➕</span> Add Assignment</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -1016,6 +1064,110 @@
             html += '</div>';
 
             container.innerHTML = html;
+        }
+
+        // ── Inline add-row for Lot Assignments ────────────────────────────────
+        const SKU_OPTIONS = [
+            { value: '17612', label: '17612 – PT Kit' },
+            { value: '17904', label: '17904 – Travel Kit' },
+            { value: '17914', label: '17914 – PPR Kit' },
+            { value: '18675', label: '18675 – Ortho Protect' },
+            { value: '18795', label: '18795 – OraPro Paste Peppermint' },
+        ];
+
+        function showInlineAddRow() {
+            // On mobile, fall back to the modal (table isn't shown)
+            if (window.innerWidth <= 900) {
+                openAddSkuLotModal();
+                return;
+            }
+            // If row already open, just focus the first input
+            if (document.getElementById('inline-assignment-row')) {
+                document.getElementById('inline-sku').focus();
+                return;
+            }
+            // Find the assignments table tbody
+            const container = document.getElementById('sku-lot-table-container');
+            const tbody = container.querySelector('table tbody');
+            if (!tbody) {
+                // No table rendered yet — fall back to modal
+                openAddSkuLotModal();
+                return;
+            }
+
+            const skuOptions = SKU_OPTIONS.map(o =>
+                `<option value="${o.value}">${o.label}</option>`
+            ).join('');
+
+            const row = document.createElement('tr');
+            row.id = 'inline-assignment-row';
+            row.innerHTML = `
+                <td>
+                    <select id="inline-sku" class="inline-input inline-select">
+                        <option value="">Select SKU</option>
+                        ${skuOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" id="inline-lot" class="inline-input inline-lot"
+                           placeholder="e.g. 260047" autocomplete="off">
+                </td>
+                <td>—</td>
+                <td style="color:var(--text-secondary);font-size:13px;">Today</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm" onclick="saveInlineAssignment()">✓ Add</button>
+                        <button class="btn btn-sm" onclick="cancelInlineRow()">✗</button>
+                    </div>
+                </td>`;
+            tbody.appendChild(row);
+            document.getElementById('inline-sku').focus();
+
+            // Allow Enter key to save
+            row.addEventListener('keydown', e => {
+                if (e.key === 'Enter')  saveInlineAssignment();
+                if (e.key === 'Escape') cancelInlineRow();
+            });
+        }
+
+        function cancelInlineRow() {
+            const row = document.getElementById('inline-assignment-row');
+            if (row) row.remove();
+        }
+
+        async function saveInlineAssignment() {
+            const skuEl = document.getElementById('inline-sku');
+            const lotEl = document.getElementById('inline-lot');
+            if (!skuEl || !lotEl) return;
+
+            const sku = skuEl.value.trim();
+            const lot = lotEl.value.trim();
+
+            if (!sku) { skuEl.focus(); skuEl.style.borderColor = 'var(--error-red)'; return; }
+            if (!lot) { lotEl.focus(); lotEl.style.borderColor = 'var(--error-red)'; return; }
+
+            // Disable inputs while saving
+            skuEl.disabled = true; lotEl.disabled = true;
+
+            try {
+                const resp   = await fetch('/api/sku_lots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sku, lot, active: 1 })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    cancelInlineRow();
+                    loadSkuLots();          // re-renders table with new row
+                } else {
+                    skuEl.disabled = false; lotEl.disabled = false;
+                    lotEl.style.borderColor = 'var(--error-red)';
+                    alert(result.error || 'Failed to save assignment');
+                }
+            } catch (err) {
+                skuEl.disabled = false; lotEl.disabled = false;
+                alert('Network error — could not save assignment');
+            }
         }
 
         function openAddSkuLotModal() {
