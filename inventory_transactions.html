@@ -13,6 +13,19 @@
     
     <!-- Global Premium Design System -->
     <link rel="stylesheet" href="/static/css/global-styles.css">
+
+    <style>
+        /* Transaction Log: show one view at a time based on screen width */
+        /* Desktop (> 900px): table visible, cards hidden */
+        #transactionsTable.desktop-view { display: table; }
+        #transactionsCards.mobile-view  { display: none;  }
+
+        /* Mobile (≤ 900px): table hidden, cards visible */
+        @media (max-width: 900px) {
+            #transactionsTable.desktop-view { display: none  !important; }
+            #transactionsCards.mobile-view  { display: block !important; }
+        }
+    </style>
     
 </head>
 <body>
@@ -381,8 +394,8 @@
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-tertiary);">No transactions found</td></tr>';
                 cardsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-tertiary);">No transactions found</div>';
                 loading.style.display = 'none';
-                table.style.display = 'table';
-                cardsContainer.style.display = 'block';
+                table.style.display = '';
+                cardsContainer.style.display = '';
                 return;
             }
             
@@ -446,8 +459,8 @@
             }).join('');
             
             loading.style.display = 'none';
-            table.style.display = 'table';
-            cardsContainer.style.display = 'block';
+            table.style.display = '';
+            cardsContainer.style.display = '';
         }
         
         
