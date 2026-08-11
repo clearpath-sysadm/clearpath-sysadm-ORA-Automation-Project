@@ -82,6 +82,91 @@
             margin-left: 8px;
             vertical-align: middle;
         }
+
+        /* ── Mobile card view ─────────────────────────────────────────────── */
+        #summaryCardList {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .summary-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .summary-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .summary-card-sku {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .summary-card-product {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 3px;
+        }
+        .summary-card-units-block {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .summary-card-units {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        .summary-card-units-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .summary-card-lots {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .summary-card-lots-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .summary-card-lot-single {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .summary-card-lot-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 3px 0;
+            gap: 8px;
+        }
+        .summary-card-lot-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .summary-card-lot-units {
+            font-size: 13px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+            #summaryTableWrap { display: none !important; }
+            #summaryCardList  { display: flex !important; }
+        }
         .lot-dash {
             color: var(--text-tertiary);
             font-style: italic;
@@ -188,7 +273,10 @@
                     padding: 0 !important; border: none !important; margin: 0 !important; }
 
             /* Fix table clipping (#summaryTableWrap has inline overflow-x:auto) */
-            #summaryTableWrap { overflow: visible !important; }
+            #summaryTableWrap { overflow: visible !important; display: block !important; }
+
+            /* Hide mobile cards when printing */
+            #summaryCardList { display: none !important; }
 
             /* Force white backgrounds on sub-rows regardless of browser "Background graphics" setting */
             .lot-subrow td { background: white !important; }
@@ -379,7 +467,7 @@
                             No orders awaiting shipment.
                         </div>
 
-                        <!-- SKU table -->
+                        <!-- SKU table (desktop) -->
                         <div id="summaryTableWrap" style="overflow-x: auto; display: none;">
                             <table class="summary-table">
                                 <thead>
@@ -393,6 +481,9 @@
                                 <tbody id="summaryTableBody"></tbody>
                             </table>
                         </div>
+
+                        <!-- SKU cards (mobile) -->
+                        <div id="summaryCardList"></div>
                     </div>
                 </div>
             </div>
@@ -502,27 +593,33 @@
                 const tableWrap = document.getElementById('summaryTableWrap');
                 const tbody = document.getElementById('summaryTableBody');
 
+                const cardList = document.getElementById('summaryCardList');
+
                 if (rows.length === 0) {
                     empty.style.display = 'block';
                     tableWrap.style.display = 'none';
+                    cardList.innerHTML = '';
                 } else {
                     empty.style.display = 'none';
                     tableWrap.style.display = 'block';
 
-                    tbody.innerHTML = rows.map(row => {
+                    let tableHtml = '';
+                    let cardHtml = '';
+
+                    rows.forEach(row => {
                         const lots = row.lots || [];
                         const multiLot = lots.length > 1;
                         const skuCell = esc(row.base_sku);
                         const productCell = esc(row.product_name);
                         const totalUnits = (row.total_units || 0).toLocaleString();
 
+                        // ── Desktop table rows ──────────────────────────────
                         if (!multiLot) {
-                            // Single lot (or no lot) — inline display
                             const singleLot = lots[0];
                             const lotDisplay = (singleLot && singleLot.lot_number)
                                 ? esc(singleLot.lot_number)
                                 : '<span class="lot-dash">—</span>';
-                            return `
+                            tableHtml += `
                                 <tr>
                                     <td><strong>${skuCell}</strong></td>
                                     <td>${productCell}</td>
@@ -530,9 +627,8 @@
                                     <td class="units-col">${totalUnits}</td>
                                 </tr>`;
                         } else {
-                            // Multi-lot — parent row + sub-rows
                             const indicator = `<span class="lot-indicator">⚡ ${lots.length} lots</span>`;
-                            let html = `
+                            tableHtml += `
                                 <tr>
                                     <td><strong>${skuCell}</strong></td>
                                     <td>${productCell}${indicator}</td>
@@ -549,7 +645,7 @@
                                     ? `Lot ${esc(lot.lot_number)}${eolBadge}`
                                     : '<span class="lot-dash">Untagged</span>';
                                 const units = (lot.units || 0).toLocaleString();
-                                html += `
+                                tableHtml += `
                                 <tr class="lot-subrow">
                                     <td></td>
                                     <td><span class="tree-prefix">${prefix}</span>${lotLabel}</td>
@@ -557,9 +653,63 @@
                                     <td class="units-col-sub">${units}</td>
                                 </tr>`;
                             });
-                            return html;
                         }
-                    }).join('');
+
+                        // ── Mobile card ─────────────────────────────────────
+                        let lotSection = '';
+                        if (!multiLot) {
+                            const singleLot = lots[0];
+                            const lotName = (singleLot && singleLot.lot_number)
+                                ? esc(singleLot.lot_number)
+                                : '—';
+                            const eolBadge = (singleLot && singleLot.is_end_of_lot)
+                                ? ' <span class="eol-badge">End of Lot</span>'
+                                : '';
+                            lotSection = `
+                                <div class="summary-card-lots">
+                                    <div class="summary-card-lots-label">Lot</div>
+                                    <div class="summary-card-lot-single">${lotName}${eolBadge}</div>
+                                </div>`;
+                        } else {
+                            let lotRows = lots.map(lot => {
+                                const eolBadge = lot.is_end_of_lot
+                                    ? ' <span class="eol-badge">End of Lot</span>'
+                                    : '';
+                                const lotName = lot.lot_number
+                                    ? `Lot ${esc(lot.lot_number)}${eolBadge}`
+                                    : '<em>Untagged</em>';
+                                const units = (lot.units || 0).toLocaleString();
+                                return `
+                                    <div class="summary-card-lot-row">
+                                        <span class="summary-card-lot-name">${lotName}</span>
+                                        <span class="summary-card-lot-units">${units}</span>
+                                    </div>`;
+                            }).join('');
+                            lotSection = `
+                                <div class="summary-card-lots">
+                                    <div class="summary-card-lots-label">⚡ ${lots.length} Lots</div>
+                                    ${lotRows}
+                                </div>`;
+                        }
+
+                        cardHtml += `
+                            <div class="summary-card">
+                                <div class="summary-card-header">
+                                    <div>
+                                        <div class="summary-card-sku">${skuCell}</div>
+                                        <div class="summary-card-product">${productCell}</div>
+                                    </div>
+                                    <div class="summary-card-units-block">
+                                        <div class="summary-card-units">${totalUnits}</div>
+                                        <div class="summary-card-units-label">units</div>
+                                    </div>
+                                </div>
+                                ${lotSection}
+                            </div>`;
+                    });
+
+                    tbody.innerHTML = tableHtml;
+                    cardList.innerHTML = cardHtml;
                 }
 
             } catch (err) {
