@@ -842,10 +842,15 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 WHERE lot_tagging_failures.resolved_at IS NULL
             """, (order_number, str(order_id), sku))
             conn.commit()
+            _alert_msg = (
+                f"\u26a0\ufe0f No active lot for SKU {sku} \u2014 order {order_number} cannot be tagged. "
+                f"Add an active lot with positive balance in Lot Inventory to resume tagging."
+            )
             server_logger.warning(
                 f"No active lot for SKU {sku} on order {order_number} (SS ID: {order_id}). Logged to lot_tagging_failures.",
                 source="Lot Tagger"
             )
+            _write_admin_alert(conn, _alert_msg)
             return
 
         reservation = lot_reservation.reserve_lot_for_order(
@@ -862,11 +867,17 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 WHERE lot_tagging_failures.resolved_at IS NULL
             """, (order_number, str(order_id), sku))
             conn.commit()
+            _alert_msg = (
+                f"\u26a0\ufe0f Lot inventory exhausted for SKU {sku} \u2014 no lot has enough available "
+                f"balance for {num_packages} unit(s) on order {order_number}. "
+                f"Receive new stock or correct the lot balance in Lot Inventory."
+            )
             server_logger.warning(
                 f"No active lot with enough available balance for {num_packages} unit(s) of "
                 f"SKU {sku} on order {order_number} (SS ID: {order_id}). Logged to lot_tagging_failures.",
                 source="Lot Tagger"
             )
+            _write_admin_alert(conn, _alert_msg)
             return
         lot_number = reservation['lot_number']
         newly_reserved = True

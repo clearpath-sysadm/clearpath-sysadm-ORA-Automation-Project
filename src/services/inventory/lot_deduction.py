@@ -16,10 +16,56 @@ if project_root not in sys.path:
 
 from src.services.data_processing.sku_lot_parser import parse_cf1
 from src.services.inventory import lot_reservation
+from src.services.shipstation.promo_sku_handler import _write_admin_alert
 
 logger = logging.getLogger(__name__)
 
 KEY_PRODUCT_SKUS = ['17612', '17904', '17914', '18675', '18795']
+
+
+def _auto_promote_next_lot(conn, sku_code: str, depleted_lot_number: str) -> None:
+    """
+    When a lot is depleted, automatically activate the next inactive lot for
+    the same SKU (FIFO order: earliest received_date, then lowest lot_id as
+    tiebreaker). Only promotes 'inactive' lots — 'quarantine' is intentionally
+    held back. Fires an admin alert either way so the team is aware.
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT l.lot_id, l.lot_number
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE s.sku_code = %s
+              AND l.status = 'inactive'
+            ORDER BY
+                l.received_date ASC NULLS LAST,
+                l.lot_id ASC
+            LIMIT 1
+        """, (sku_code,))
+        row = cursor.fetchone()
+        if row:
+            next_lot_id, next_lot_number = row
+            cursor.execute("""
+                UPDATE lots SET status = 'active', updated_at = CURRENT_TIMESTAMP
+                WHERE lot_id = %s
+            """, (next_lot_id,))
+            msg = (
+                f"\u2705 Lot {depleted_lot_number} ({sku_code}) depleted \u2014 "
+                f"automatically activated next lot {next_lot_number}. "
+                f"Verify the new lot\u2019s opening balance is correct in Lot Inventory."
+            )
+            logger.info(msg)
+            _write_admin_alert(conn, msg)
+        else:
+            msg = (
+                f"\u26a0\ufe0f Lot {depleted_lot_number} ({sku_code}) depleted and no inactive lot "
+                f"is available to promote. Add a new lot in Lot Inventory to resume tagging."
+            )
+            logger.warning(msg)
+            _write_admin_alert(conn, msg)
+    except Exception as e:
+        logger.error(f"Error during auto-promotion for SKU {sku_code}: {e}", exc_info=True)
 
 
 def _check_negative_balance(conn, lot_id, sku, lot_number, order_number):
@@ -200,6 +246,7 @@ def deduct_lot_inventory(
                             f"Lot (lot_id={secondary_lot_id}, sku='{base_sku}') marked as depleted "
                             f"(balance={balance_row[0]})"
                         )
+                        _auto_promote_next_lot(conn, base_sku, secondary_lot_number or str(secondary_lot_id))
                 _check_negative_balance(conn, secondary_lot_id, base_sku, secondary_lot_number, order_number)
 
             return True
@@ -316,6 +363,7 @@ def deduct_lot_inventory(
             """, (lot_id,))
             if cursor.rowcount > 0:
                 logger.info(f"Lot '{lot_number}' ({cf1_sku}, lot_id={lot_id}) marked as depleted (balance={balance_row[0]})")
+                _auto_promote_next_lot(conn, cf1_sku, lot_number)
 
         _check_negative_balance(conn, lot_id, cf1_sku, lot_number, order_number)
 
