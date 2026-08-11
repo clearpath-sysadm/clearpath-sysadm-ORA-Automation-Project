@@ -604,6 +604,18 @@ textarea {
     transition: all 0.2s ease;
 }
 
+/* Date/time inputs: pin color-scheme to match the app's theme class, not the OS preference */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+    color-scheme: light;
+}
+body.dark-mode input[type="date"],
+body.dark-mode input[type="datetime-local"],
+body.dark-mode input[type="time"] {
+    color-scheme: dark;
+}
+
 input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus,
