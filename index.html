@@ -120,6 +120,30 @@
         .user-logout-btn:active {
             transform: scale(0.95);
         }
+
+        /* Weekly inventory — mobile card layout (display toggled by JS based on window width) */
+        #weeklyReportCards { padding: 12px; flex-direction: column; gap: 10px; }
+        .weekly-inv-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            background: var(--bg-primary);
+        }
+        .weekly-inv-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            gap: 8px;
+        }
+        .weekly-inv-card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        .weekly-inv-card-label { color: var(--text-secondary); font-size: 12px; margin-bottom: 2px; }
     </style>
     
 </head>
@@ -590,18 +614,6 @@
                                     💰 EOM
                                     <div class="btn-status" id="eom-status"></div>
                                 </button>
-                                <button class="btn" onclick="runLotRecon()" id="btn-lot-recon" title="Backfill lot_id on any order line items missing it">
-                                    🔄 Lot Recon
-                                    <div class="btn-status" id="lot-recon-status"></div>
-                                </button>
-                                <button class="btn" onclick="runRetagAll()" id="btn-retag-all" title="Force-push current active lot to CF1 on all awaiting-shipment orders in ShipStation">
-                                    🏷️ Re-tag All
-                                    <div class="btn-status" id="retag-all-status"></div>
-                                </button>
-                                <button class="btn" onclick="runInventoryResync()" id="btn-inv-resync" title="Re-create missing inventory deductions for shipped orders that have a lot stamp but no inventory_transactions row">
-                                    🔁 Resync Deductions
-                                    <div class="btn-status" id="inv-resync-status"></div>
-                                </button>
                             </div>
                         </div>
                         <div id="weeklyReportLoading" style="padding: 20px; text-align: center; color: var(--text-tertiary);">Loading weekly report...</div>
@@ -621,6 +633,7 @@
                                 <tbody id="weeklyReportBody"></tbody>
                             </table>
                         </div>
+                        <div id="weeklyReportCards" style="display: none;"></div>
                     </div>
                 </section>
 
@@ -748,12 +761,14 @@
             const loadingDiv = document.getElementById('weeklyReportLoading');
             const errorDiv = document.getElementById('weeklyReportError');
             const tableDiv = document.getElementById('weeklyReportTable');
+            const cardsDiv = document.getElementById('weeklyReportCards');
             const tbody = document.getElementById('weeklyReportBody');
             
             try {
                 loadingDiv.style.display = 'block';
                 errorDiv.innerHTML = '';
                 tableDiv.style.display = 'none';
+                cardsDiv.style.display = 'none';
                 
                 const response = await fetch('/api/weekly_inventory_report');
                 const result = await response.json();
@@ -803,6 +818,49 @@
                     `;
                 }).join('');
                 
+                // Mobile card view
+                cardsDiv.innerHTML = result.data.map(item => {
+                    const daysLeft = item.days_left || 0;
+                    const statusClass = daysLeft < 14 ? 'critical' : daysLeft < 30 ? 'warning' : 'success';
+                    const statusIndicator = daysLeft < 14 ? 'red' : daysLeft < 30 ? 'yellow' : 'green';
+                    const daysText = daysLeft >= 999 ? '∞' : daysLeft;
+                    const palletBreakdown = item.partial_units > 0
+                        ? `${item.full_pallets} full + ${item.partial_units} units`
+                        : `${item.full_pallets} full`;
+                    const productName = item.product_name || item.sku;
+                    return `
+                        <div class="weekly-inv-card">
+                            <div class="weekly-inv-card-header">
+                                <div>
+                                    <strong style="font-size: 15px;">${productName}</strong>
+                                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">SKU: ${item.sku}</div>
+                                </div>
+                                <span class="badge badge-${statusClass}">
+                                    <span class="status-indicator status-${statusIndicator}"></span>
+                                    ${daysText} days
+                                </span>
+                            </div>
+                            <div class="weekly-inv-card-grid">
+                                <div>
+                                    <div class="weekly-inv-card-label">Current Qty</div>
+                                    <strong>${item.current_quantity}</strong>
+                                </div>
+                                <div>
+                                    <div class="weekly-inv-card-label">52-Week Avg</div>
+                                    <strong>${Math.round(item.rolling_avg_52_weeks)}</strong>
+                                </div>
+                                <div style="grid-column: span 2;">
+                                    <div class="weekly-inv-card-label">Pallet Breakdown</div>
+                                    📦 ${palletBreakdown}
+                                </div>
+                            </div>
+                            <button class="btn-icon" onclick="openPhysicalCountModal('${item.sku}', ${item.current_quantity}, '${productName}')" title="Adjust inventory from physical count">
+                                ✏️ Adjust
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
                 // Display "As Of" date (use formatChargeReportDate to avoid timezone shift)
                 const asOfDateDiv = document.getElementById('inventoryAsOfDate');
                 if (result.as_of_date) {
@@ -816,7 +874,9 @@
                 }
                 
                 loadingDiv.style.display = 'none';
-                tableDiv.style.display = 'block';
+                const isMobile = window.innerWidth <= 640;
+                tableDiv.style.display = isMobile ? 'none' : 'block';
+                cardsDiv.style.display = isMobile ? 'flex' : 'none';
             } catch (error) {
                 loadingDiv.style.display = 'none';
                 errorDiv.innerHTML = `<div style="padding: 20px; background: var(--bg-tertiary); color: var(--critical-red); border-radius: 8px;">Failed to load weekly report: ${error.message}</div>`;
@@ -1696,114 +1756,6 @@
             }
         }
 
-        // Force Re-tag All Button Handler
-        async function runRetagAll() {
-            const btn = document.getElementById('btn-retag-all');
-            const statusDiv = document.getElementById('retag-all-status');
-            const originalStatus = statusDiv.textContent;
-
-            btn.disabled = true;
-            statusDiv.textContent = 'Running...';
-            btn.style.opacity = '0.6';
-
-            try {
-                const response = await fetch('/api/reports/retag_all', { method: 'POST' });
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('✅ ' + result.message);
-                    await loadReportStatus();
-                } else {
-                    throw new Error(result.error || 'Failed to run re-tag sweep');
-                }
-            } catch (error) {
-                console.error('Error running re-tag sweep:', error);
-                alert('Error running re-tag sweep: ' + error.message);
-                statusDiv.textContent = originalStatus;
-            } finally {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-            }
-        }
-
-        // Lot Reconciliation Button Handler
-        async function runLotRecon() {
-            const btn = document.getElementById('btn-lot-recon');
-            const statusDiv = document.getElementById('lot-recon-status');
-            const originalStatus = statusDiv.textContent;
-
-            btn.disabled = true;
-            statusDiv.textContent = 'Running...';
-            btn.style.opacity = '0.6';
-
-            try {
-                const response = await fetch('/api/reports/lot_recon', { method: 'POST' });
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('✅ ' + result.message);
-                    await loadReportStatus();
-                } else {
-                    throw new Error(result.error || 'Failed to run lot reconciliation');
-                }
-            } catch (error) {
-                console.error('Error running lot reconciliation:', error);
-                alert('Error running lot reconciliation: ' + error.message);
-                statusDiv.textContent = originalStatus;
-            } finally {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-            }
-        }
-
-
-        async function runInventoryResync() {
-            const today = new Date().toISOString().slice(0, 10);
-            const dateStart = prompt('Ship date start (YYYY-MM-DD):', today);
-            if (dateStart === null) return;
-            const dateEnd = prompt('Ship date end (YYYY-MM-DD):', today);
-            if (dateEnd === null) return;
-
-            const btn = document.getElementById('btn-inv-resync');
-            const statusDiv = document.getElementById('inv-resync-status');
-
-            btn.disabled = true;
-            btn.style.opacity = '0.6';
-            statusDiv.textContent = '⏳';
-
-            try {
-                const response = await fetch('/api/admin/resync-shipped-deductions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ship_date_start: dateStart, ship_date_end: dateEnd })
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    if (result.message) {
-                        statusDiv.textContent = '✅ Done';
-                        alert(result.message);
-                    } else {
-                        statusDiv.textContent = `✅ ${result.deducted} deducted`;
-                        const errCount = result.errors ? result.errors.length : 0;
-                        const msg = `Resync complete:\n• ${result.deducted} deductions created\n• ${result.skipped} already existed (skipped)\n• ${result.total_rows_found} total orders checked` +
-                            (errCount > 0 ? `\n\n⚠️ ${errCount} error(s):\n${result.errors.join('\n')}` : '');
-                        alert(msg);
-                    }
-                } else {
-                    statusDiv.textContent = '❌ Failed';
-                    alert('Resync failed: ' + (result.error || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error running inventory resync:', error);
-                statusDiv.textContent = '❌ Error';
-                alert('Error running resync: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                setTimeout(() => { statusDiv.textContent = ''; }, 8000);
-            }
-        }
 
 
         // ── Load button status indicators ─────────────────────────────────────
@@ -1821,12 +1773,6 @@
                     }
                     if (result.data.EOM) {
                         document.getElementById('eom-status').textContent = formatWorkflowTimestamp(result.data.EOM.run_date);
-                    }
-                    if (result.data.LOT_RECON) {
-                        document.getElementById('lot-recon-status').textContent = formatWorkflowTimestamp(result.data.LOT_RECON.run_date);
-                    }
-                    if (result.data.RETAG_ALL) {
-                        document.getElementById('retag-all-status').textContent = formatWorkflowTimestamp(result.data.RETAG_ALL.run_date);
                     }
                 }
             } catch (error) {

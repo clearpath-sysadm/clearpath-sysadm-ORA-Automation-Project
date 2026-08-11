@@ -297,6 +297,77 @@
                 </div>
 
                 <!-- Recreate Order Tool -->
+                <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin: 32px 0 16px; text-transform: uppercase; letter-spacing: 0.5px;">Recovery &amp; Reconciliation</h2>
+
+                <div class="card">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <span>🔄</span> Lot Reconciliation
+                        </h3>
+                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                            Backfill <code>lot_id</code> on any shipped order line items that are missing it. Safe to run at any time — skips rows that already have a lot assigned.
+                        </p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <button onclick="runLotRecon()" id="wc-btn-lot-recon" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                                <span>🔄</span> Run Lot Recon
+                            </button>
+                            <span id="wc-lot-recon-status" style="color: var(--text-secondary); font-size: 14px;"></span>
+                        </div>
+                        <div id="wc-lot-recon-result" style="display: none; margin-top: 12px; padding: 16px; background: var(--bg-secondary); border-radius: 8px; font-size: 13px;"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <span>🏷️</span> Re-tag All Orders
+                        </h3>
+                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                            Force-push the current active lot to CF1 on all awaiting-shipment orders in ShipStation. Use when lot assignments are out of sync after a lot change.
+                        </p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <button onclick="runRetagAll()" id="wc-btn-retag-all" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                                <span>🏷️</span> Re-tag All
+                            </button>
+                            <span id="wc-retag-all-status" style="color: var(--text-secondary); font-size: 14px;"></span>
+                        </div>
+                        <div id="wc-retag-all-result" style="display: none; margin-top: 12px; padding: 16px; background: var(--bg-secondary); border-radius: 8px; font-size: 13px;"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <span>🔁</span> Resync Inventory Deductions
+                        </h3>
+                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                            Re-create missing inventory deduction rows for shipped orders that have a lot stamp but no corresponding <code>inventory_transactions</code> entry. Select a ship date range to target specific days.
+                        </p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: end;">
+                            <div>
+                                <label style="display: block; font-weight: 500; margin-bottom: 8px;">Ship Date Start</label>
+                                <input type="date" id="deductions-resync-start"
+                                    style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; background: var(--bg-primary); color: var(--text-primary);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 500; margin-bottom: 8px;">Ship Date End</label>
+                                <input type="date" id="deductions-resync-end"
+                                    style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; background: var(--bg-primary); color: var(--text-primary);">
+                            </div>
+                            <button onclick="runDeductionsResync()" id="wc-btn-inv-resync" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                                <span>🔁</span> Resync Deductions
+                            </button>
+                        </div>
+                        <div id="wc-inv-resync-result" style="display: none; margin-top: 16px; padding: 16px; background: var(--bg-secondary); border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap;"></div>
+                    </div>
+                </div>
+
                 <div class="card" style="margin-top: 24px;">
                     <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
                         <h3 style="margin: 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
@@ -1628,7 +1699,110 @@
             }
         }
 
-        // Set default date range (last 7 days for backfill; current month for re-sync)
+        async function runLotRecon() {
+            const btn = document.getElementById('wc-btn-lot-recon');
+            const statusSpan = document.getElementById('wc-lot-recon-status');
+            const resultDiv = document.getElementById('wc-lot-recon-result');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            statusSpan.textContent = '⏳ Running...';
+            resultDiv.style.display = 'none';
+            try {
+                const response = await fetch('/api/reports/lot_recon', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    statusSpan.textContent = '✅ Done';
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.color = '';
+                    resultDiv.textContent = result.message || 'Lot reconciliation completed successfully.';
+                } else {
+                    throw new Error(result.error || 'Failed to run lot reconciliation');
+                }
+            } catch (error) {
+                statusSpan.textContent = '❌ Failed';
+                resultDiv.style.display = 'block';
+                resultDiv.style.color = '#dc3545';
+                resultDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        async function runRetagAll() {
+            const btn = document.getElementById('wc-btn-retag-all');
+            const statusSpan = document.getElementById('wc-retag-all-status');
+            const resultDiv = document.getElementById('wc-retag-all-result');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            statusSpan.textContent = '⏳ Running...';
+            resultDiv.style.display = 'none';
+            try {
+                const response = await fetch('/api/reports/retag_all', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    statusSpan.textContent = '✅ Done';
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.color = '';
+                    resultDiv.textContent = result.message || 'Re-tag completed successfully.';
+                } else {
+                    throw new Error(result.error || 'Failed to run re-tag sweep');
+                }
+            } catch (error) {
+                statusSpan.textContent = '❌ Failed';
+                resultDiv.style.display = 'block';
+                resultDiv.style.color = '#dc3545';
+                resultDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        async function runDeductionsResync() {
+            const startDate = document.getElementById('deductions-resync-start').value;
+            const endDate = document.getElementById('deductions-resync-end').value;
+            if (!startDate || !endDate) {
+                alert('Please select both a start and end date.');
+                return;
+            }
+            const btn = document.getElementById('wc-btn-inv-resync');
+            const resultDiv = document.getElementById('wc-inv-resync-result');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            resultDiv.style.display = 'none';
+            try {
+                const response = await fetch('/api/admin/resync-shipped-deductions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ship_date_start: startDate, ship_date_end: endDate })
+                });
+                const result = await response.json();
+                resultDiv.style.display = 'block';
+                if (result.success) {
+                    resultDiv.style.color = '';
+                    if (result.message) {
+                        resultDiv.textContent = result.message;
+                    } else {
+                        const errCount = result.errors ? result.errors.length : 0;
+                        resultDiv.textContent = `✅ Resync complete:\n• ${result.deducted} deductions created\n• ${result.skipped} already existed (skipped)\n• ${result.total_rows_found} total orders checked` +
+                            (errCount > 0 ? `\n\n⚠️ ${errCount} error(s):\n${result.errors.join('\n')}` : '');
+                    }
+                } else {
+                    resultDiv.style.color = '#dc3545';
+                    resultDiv.textContent = `❌ Resync failed: ${result.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.color = '#dc3545';
+                resultDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        // Set default date range (last 7 days for backfill; current month for re-sync; today for deductions)
         (function setDefaultDates() {
             const today = new Date();
             const sevenDaysAgo = new Date(today);
@@ -1640,6 +1814,9 @@
             const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             document.getElementById('resync-si-start-date').value = firstOfMonth.toISOString().split('T')[0];
             document.getElementById('resync-si-end-date').value = today.toISOString().split('T')[0];
+
+            document.getElementById('deductions-resync-start').value = today.toISOString().split('T')[0];
+            document.getElementById('deductions-resync-end').value = today.toISOString().split('T')[0];
         })();
 
         loadWorkflows();
