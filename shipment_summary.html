@@ -217,6 +217,19 @@
         }
 
         /* Print header — visible only when printing */
+        /* Compact header buttons — small on desktop, full-touch on mobile */
+        .btn-header-action {
+            font-size: 12px;
+            padding: 4px 12px;
+        }
+        @media (max-width: 768px) {
+            .btn-header-action {
+                font-size: 14px;
+                padding: 10px 16px;
+                min-height: 44px;
+            }
+        }
+
         .print-header {
             display: none;
         }
@@ -420,10 +433,10 @@
                         </div>
                         <div class="summary-meta">
                             <span id="syncTimestamp" style="color: var(--text-tertiary); font-size: 12px;">Loading...</span>
-                            <button class="btn" id="refreshBtn" onclick="refreshSummary()" style="font-size: 12px; padding: 4px 12px;">
+                            <button class="btn btn-header-action" id="refreshBtn" onclick="refreshSummary()">
                                 🔄 Refresh
                             </button>
-                            <button class="btn" id="printBtn" onclick="window.print()" disabled style="font-size: 12px; padding: 4px 12px;">
+                            <button class="btn btn-header-action" id="printBtn" onclick="window.print()" disabled>
                                 🖨 Print
                             </button>
                         </div>
