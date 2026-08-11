@@ -2330,6 +2330,62 @@ body.dark-mode .order-card-expand-btn:hover {
 }
 
 /* ========================================
+   CONTROLS / FILTER BAR
+   ======================================== */
+
+/* All filter+action toolbars become a compact flex row */
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: calc(var(--spacing-unit) * 2) 0;
+}
+
+/* Override the global width:100% so date pickers and selects are compact */
+.controls input[type="date"],
+.controls input[type="datetime-local"],
+.controls select {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.controls input[type="date"],
+.controls input[type="datetime-local"] {
+    width: 155px;          /* exactly fits mm/dd/yyyy + calendar icon */
+}
+
+/* Text / search inputs grow to fill leftover space, but stay capped */
+.controls input[type="text"],
+.controls input[type="search"],
+.controls input[type="number"] {
+    flex: 1 1 auto;
+    min-width: 180px;
+    max-width: 360px;
+    width: auto;
+}
+
+/* Inline label+select pair (e.g. "Month: [select]  Year: [select]") */
+.selector-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.selector-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.selector-group select {
+    width: auto;           /* sizes to longest option automatically */
+    min-width: 90px;
+}
+
+/* ========================================
    STATUS BADGES — GLOBAL (used on Lot Inventory and elsewhere)
    ======================================== */
 
