@@ -328,12 +328,16 @@
                         <div>Shipment<br>Summary</div>
                     </a>
                     <a href="/shipped_orders.html" class="quick-action-btn">
-                        <div class="quick-action-icon">📦</div>
+                        <div class="quick-action-icon">🚚</div>
                         <div>Shipments</div>
                     </a>
-                    <a href="/inventory_transactions.html" class="quick-action-btn">
-                        <div class="quick-action-icon">📊</div>
+                    <a href="/inventory.html" class="quick-action-btn">
+                        <div class="quick-action-icon">🏭</div>
                         <div>Inventory</div>
+                    </a>
+                    <a href="#inventory-risk-section" class="quick-action-btn" onclick="document.getElementById('inventory-risk-section').scrollIntoView({behavior:'smooth'}); return false;">
+                        <div class="quick-action-icon">📊</div>
+                        <div>Weekly<br>Report</div>
                     </a>
                     <a href="/" class="quick-action-btn" onclick="refreshDashboard(); return false;">
                         <div class="quick-action-icon">🔄</div>
@@ -556,7 +560,7 @@
                 </section>
 
                 <!-- Inventory Risk Section -->
-                <section>
+                <section id="inventory-risk-section">
                     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Inventory Risk</h2>
                     
                     <div class="card">

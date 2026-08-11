@@ -648,14 +648,16 @@ def backfill_18795():
             return f'<h2>Error: Lot 11001 not found</h2><ul>{lots_html}</ul>', 404
         lot_id, lot_number = target[0], target[1]
         cur.execute("""
-            SELECT si.order_number, si.ship_date::text, si.quantity_shipped, si.shipstation_order_id
+            SELECT si.order_number, si.ship_date::text, si.quantity_shipped
             FROM shipped_items si
             WHERE si.base_sku=%s
-              AND si.shipstation_order_id IS NOT NULL AND si.shipstation_order_id!=''
+              AND si.order_number IS NOT NULL AND si.order_number!=''
               AND NOT EXISTS (
                   SELECT 1 FROM inventory_transactions it
-                  WHERE it.sku=%s AND it.shipstation_order_id=si.shipstation_order_id
+                  WHERE it.sku=%s
                     AND it.transaction_type='Ship'
+                    AND (it.notes = si.order_number
+                         OR it.notes LIKE si.order_number || ' |%%')
               )
             ORDER BY si.ship_date, si.order_number
         """, (SKU, SKU))
@@ -665,18 +667,18 @@ def backfill_18795():
         if write:
             inserted = 0
             for row in missing:
-                order_number, ship_date, qty, ss_id = row
+                order_number, ship_date, qty = row
                 cur.execute("""
                     INSERT INTO inventory_transactions
-                        (date, sku, quantity, transaction_type, lot_id, shipstation_order_id, notes)
-                    VALUES (%s,%s,%s,'Ship',%s,%s,%s)
-                """, (str(ship_date)[:10], SKU, abs(int(qty or 0)), lot_id, str(ss_id),
+                        (date, sku, quantity, transaction_type, lot_id, notes)
+                    VALUES (%s,%s,%s,'Ship',%s,%s)
+                """, (str(ship_date)[:10], SKU, abs(int(qty or 0)), lot_id,
                       f"{order_number} | {BACKFILL_NOTE}"))
                 inserted += 1
             conn.commit()
             conn.close()
             server_logger.info(f"18795 backfill applied by {current_user.email}: {inserted} tx inserted", source="Admin")
-            rows_html = ''.join(f'<tr><td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td></tr>' for r in missing)
+            rows_html = ''.join(f'<tr><td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td></tr>' for r in missing)
             return f'''<!doctype html><html><head><style>
                 body{{font-family:sans-serif;padding:32px;max-width:900px;margin:0 auto;background:#111;color:#eee}}
                 h2{{color:#4ade80}}table{{width:100%;border-collapse:collapse;margin-top:16px}}
@@ -684,11 +686,11 @@ def backfill_18795():
             </style></head><body>
             <h2>✅ Backfill Complete</h2>
             <p>Inserted <strong>{inserted}</strong> Ship transaction(s) | <strong>{total_units}</strong> total units → lot {lot_number}</p>
-            <table><tr><th>Order</th><th>Ship Date</th><th>Qty</th><th>SS ID</th></tr>{rows_html}</table>
+            <table><tr><th>Order</th><th>Ship Date</th><th>Qty</th></tr>{rows_html}</table>
             </body></html>'''
 
         conn.close()
-        rows_html = ''.join(f'<tr><td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td></tr>' for r in missing)
+        rows_html = ''.join(f'<tr><td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td></tr>' for r in missing)
         lots_html = ''.join(f'<li>lot_id={r[0]} lot={r[1]} status={r[2]} balance={r[3]}</li>' for r in all_lots)
         apply_btn = f'''<form method="POST" style="margin-top:24px">
             <button type="submit" style="background:#ef4444;color:#fff;border:none;padding:12px 28px;
@@ -704,7 +706,7 @@ def backfill_18795():
         <p>Target lot: <strong>{lot_number}</strong> (lot_id={lot_id})</p>
         <p>All 18795 lots:</p><ul>{lots_html}</ul>
         <p>Found <strong>{len(missing)}</strong> shipped order(s) with no Ship transaction ({total_units} total units):</p>
-        <table><tr><th>Order</th><th>Ship Date</th><th>Qty</th><th>SS ID</th></tr>{rows_html}</table>
+        <table><tr><th>Order</th><th>Ship Date</th><th>Qty</th></tr>{rows_html}</table>
         {apply_btn}
         </body></html>'''
     except Exception as e:
