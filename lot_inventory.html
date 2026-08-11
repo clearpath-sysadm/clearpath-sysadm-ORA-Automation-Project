@@ -224,20 +224,79 @@
             }
         }
 
-        /* ── Sticky Lot Inventory card header ─────────────────────────────── */
-        #lot-inventory-card {
+        /* ── Tabbed card ───────────────────────────────────────────────────── */
+        #lot-main-card {
             padding-top: 0;
         }
-        #lot-inventory-card > .card-header {
+
+        .lot-tab-bar {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
             position: sticky;
             top: 0;
             z-index: 5;
             background: var(--bg-primary);
-            /* Bleed out to cover the card's side padding so the bar looks solid */
             margin: 0 -24px;
-            padding: 18px 24px;
+            padding: 0 24px;
+            border-bottom: 2px solid var(--border-color);
             border-radius: 8px 8px 0 0;
-            border-bottom: 1px solid var(--border-translucent);
+        }
+
+        .lot-tab-list {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        .lot-tab-btn {
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            padding: 14px 22px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+            font-family: var(--font-body);
+        }
+
+        .lot-tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .lot-tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .lot-tab-count {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 400;
+            margin-left: 5px;
+        }
+
+        .lot-tab-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0;
+        }
+
+        .lot-tab-pane {
+            padding-top: 20px;
+        }
+
+        .lot-tab-pane-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            line-height: 1.5;
         }
 
         /* ── Inline assignment add-row ─────────────────────────────────────── */
@@ -405,41 +464,55 @@
                     </div>
                 </div>
 
-                <!-- Lot Inventory Card -->
-                <div class="card" id="lot-inventory-card">
-                    <div class="card-header">
-                        <h2 class="card-title">Lot Inventory</h2>
-                        <button class="btn" onclick="openAddModal()">
-                            <span>➕</span>
-                            Add Lot
-                        </button>
+                <!-- Tabbed Lot Card -->
+                <div class="card" id="lot-main-card">
+
+                    <!-- Sticky tab bar -->
+                    <div class="lot-tab-bar">
+                        <div class="lot-tab-list">
+                            <button class="lot-tab-btn active" id="tab-btn-inventory"
+                                    onclick="switchTab('inventory')">Lot Inventory</button>
+                            <button class="lot-tab-btn" id="tab-btn-assignments"
+                                    onclick="switchTab('assignments')">
+                                Lot Assignments
+                                <span class="lot-tab-count" id="sku-lot-count"></span>
+                            </button>
+                        </div>
+                        <!-- Actions swap with active tab -->
+                        <div class="lot-tab-actions" id="tab-actions-inventory">
+                            <button class="btn" onclick="openAddModal()">
+                                <span>➕</span> Add Lot
+                            </button>
+                        </div>
+                        <div class="lot-tab-actions" id="tab-actions-assignments" style="display:none;">
+                            <button class="btn btn-sm" id="sku-lot-filter-btn"
+                                    onclick="toggleSkuLotFilter()">Show All</button>
+                            <button class="btn" onclick="showInlineAddRow()">
+                                <span>➕</span> Add Assignment
+                            </button>
+                        </div>
                     </div>
-                    <div class="card-body">
+
+                    <!-- Lot Inventory pane -->
+                    <div class="lot-tab-pane" id="pane-inventory">
                         <div id="lot-table-container">
                             <!-- Table will be rendered here -->
                         </div>
                     </div>
-                </div>
 
-                <!-- Active Lot Assignments Card -->
-                <div class="card" style="margin-top: 24px;">
-                    <div class="card-header">
-                        <h2 class="card-title">🏷️ Active Lot Assignments <span id="sku-lot-count" style="font-size:13px;color:var(--text-secondary);font-weight:400;"></span></h2>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <button class="btn btn-sm" id="sku-lot-filter-btn" onclick="toggleSkuLotFilter()" style="font-size:12px;">Show All</button>
-                            <button class="btn" onclick="showInlineAddRow()"><span>➕</span> Add Assignment</button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
-                            Lot assignments used by the lot tagger to determine which lot number to stamp on new orders per SKU.
-                            Only <strong>Active</strong> assignments are used by the tagger.
-                            To retire an assignment, <strong>Deactivate</strong> it — do not delete the underlying lot record.
+                    <!-- Lot Assignments pane -->
+                    <div class="lot-tab-pane" id="pane-assignments" style="display:none;">
+                        <p class="lot-tab-pane-desc">
+                            Lot assignments used by the lot tagger to determine which lot number to stamp
+                            on new orders per SKU. Only <strong>Active</strong> assignments are used by
+                            the tagger. To retire an assignment, <strong>Deactivate</strong> it — do not
+                            delete the underlying lot record.
                         </p>
                         <div id="sku-lot-table-container">
                             <div class="empty-state">Loading…</div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </main>
@@ -592,6 +665,27 @@
         let darkMode = localStorage.getItem('darkMode') === 'true';
         let lots = [];
         let editingLotId = null;
+        let currentTab = 'inventory';
+
+        function switchTab(tab) {
+            if (currentTab === tab) return;
+            currentTab = tab;
+
+            // Tab buttons
+            document.getElementById('tab-btn-inventory').classList.toggle('active', tab === 'inventory');
+            document.getElementById('tab-btn-assignments').classList.toggle('active', tab === 'assignments');
+
+            // Panes
+            document.getElementById('pane-inventory').style.display  = tab === 'inventory'  ? '' : 'none';
+            document.getElementById('pane-assignments').style.display = tab === 'assignments' ? '' : 'none';
+
+            // Action buttons
+            document.getElementById('tab-actions-inventory').style.display  = tab === 'inventory'  ? '' : 'none';
+            document.getElementById('tab-actions-assignments').style.display = tab === 'assignments' ? '' : 'none';
+
+            // Discard any open inline row when leaving the assignments tab
+            if (tab !== 'assignments') cancelInlineRow();
+        }
 
         // Initialize
         if (darkMode) {
