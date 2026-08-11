@@ -332,6 +332,8 @@
 
                         <!-- Lot Inventory actions -->
                         <div class="lot-tab-actions" id="tab-actions-lot-inventory">
+                            <button class="btn btn-sm" id="lot-zero-filter-btn"
+                                    onclick="toggleZeroFilter()">Hide Zeros</button>
                             <button class="btn" onclick="openAddModal()">
                                 <span>➕</span> Add Lot
                             </button>
@@ -709,6 +711,14 @@
         // ══════════════════════════════════════════════════════════════════
         let lots = [];
         let editingLotId = null;
+        let hideZeroBalances = false;
+
+        function toggleZeroFilter() {
+            hideZeroBalances = !hideZeroBalances;
+            document.getElementById('lot-zero-filter-btn').textContent =
+                hideZeroBalances ? 'Show All' : 'Hide Zeros';
+            renderLotTable();
+        }
 
         async function loadLots() {
             try {
@@ -741,12 +751,20 @@
                 return;
             }
 
-            // Group by SKU
+            // Group by SKU (apply zero filter before grouping)
+            const visibleLots = hideZeroBalances ? lots.filter(l => l.balance !== 0) : lots;
             const lotsBySKU = {};
+            // Always group from the full list so FIFO priority numbers reflect original order
             lots.forEach(lot => {
                 if (!lotsBySKU[lot.sku]) lotsBySKU[lot.sku] = [];
                 lotsBySKU[lot.sku].push(lot);
             });
+
+            const balanceCell = (balance) => {
+                const fmt = balance.toLocaleString();
+                if (balance < 0) return `<strong style="font-size:15px;color:var(--error-red);">${fmt}</strong>`;
+                return `<strong style="font-size:15px;">${fmt}</strong>`;
+            };
 
             // Desktop table
             let html = '<div class="table-container"><table><thead><tr>';
@@ -754,11 +772,12 @@
             html += '</tr></thead><tbody>';
             Object.keys(lotsBySKU).sort().forEach(sku => {
                 lotsBySKU[sku].forEach((lot, index) => {
+                    if (hideZeroBalances && lot.balance === 0) return;
                     const priority = index + 1;
                     html += `<tr>
                         <td><strong>${lot.sku}</strong></td>
                         <td>${lot.lot}</td>
-                        <td><strong style="font-size:15px;">${lot.balance.toLocaleString()}</strong></td>
+                        <td>${balanceCell(lot.balance)}</td>
                         <td>${formatReceiptCount(lot)}</td>
                         <td><span class="priority-indicator ${priority === 1 ? 'priority-1' : ''}">#${priority}</span></td>
                         <td>${getLotStatusBadge(lot.status, lot.balance)}</td>
@@ -776,7 +795,9 @@
             html += '<div class="lot-cards-container">';
             Object.keys(lotsBySKU).sort().forEach(sku => {
                 lotsBySKU[sku].forEach((lot, index) => {
+                    if (hideZeroBalances && lot.balance === 0) return;
                     const priority = index + 1;
+                    const qtyStyle = lot.balance < 0 ? 'color:var(--error-red);' : '';
                     html += `<div class="lot-card">
                         <div class="lot-card-header">
                             <div>
@@ -784,7 +805,7 @@
                                 <div class="lot-card-lot">Lot: ${lot.lot}</div>
                             </div>
                             <div>
-                                <div class="lot-card-qty">${lot.balance.toLocaleString()}</div>
+                                <div class="lot-card-qty" style="${qtyStyle}">${lot.balance.toLocaleString()}</div>
                                 <div class="lot-card-qty-label">Balance</div>
                             </div>
                         </div>
