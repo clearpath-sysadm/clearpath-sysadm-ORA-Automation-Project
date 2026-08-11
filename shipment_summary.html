@@ -32,7 +32,8 @@
         }
         .summary-callouts {
             display: flex;
-            gap: 32px;
+            flex-wrap: wrap;
+            gap: 12px 32px;
             justify-content: center;
             margin-top: 20px;
         }
@@ -166,6 +167,14 @@
         @media (max-width: 767px) {
             #summaryTableWrap { display: none !important; }
             #summaryCardList  { display: flex !important; }
+        }
+        @media (max-width: 400px) {
+            .summary-total {
+                font-size: 40px;
+            }
+            .summary-hero {
+                padding: 24px 16px 20px;
+            }
         }
         .lot-dash {
             color: var(--text-tertiary);
