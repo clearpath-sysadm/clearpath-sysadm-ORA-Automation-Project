@@ -814,9 +814,9 @@ textarea::placeholder {
     gap: calc(var(--spacing-unit) * 1.5);
     padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2.5);
     border-radius: 6px;
-    background-color: white;
-    color: #374151;
-    border: 1px solid #D1D5DB;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -845,8 +845,8 @@ textarea::placeholder {
 .btn-dismiss-mismatch:hover,
 .action-btn:hover,
 .quick-action-btn:hover {
-    background-color: #F9FAFB;
-    border-color: #9CA3AF;
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color);
     transform: none;
 }
 
@@ -938,47 +938,6 @@ textarea:focus-visible {
     flex-shrink: 0;
 }
 
-/* Dark mode button styles */
-body.dark-mode .btn,
-body.dark-mode .btn-primary,
-body.dark-mode .btn-success,
-body.dark-mode .btn-warning,
-body.dark-mode .btn-danger,
-body.dark-mode .btn-upload,
-body.dark-mode .btn-manual-import,
-body.dark-mode .btn-secondary,
-body.dark-mode .btn-view-violations,
-body.dark-mode .btn-resolve-violation,
-body.dark-mode .btn-dismiss-alert,
-body.dark-mode .btn-close-modal,
-body.dark-mode .btn-refresh-mismatch,
-body.dark-mode .btn-dismiss-mismatch,
-body.dark-mode .action-btn,
-body.dark-mode .quick-action-btn {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-body.dark-mode .btn:hover,
-body.dark-mode .btn-primary:hover,
-body.dark-mode .btn-success:hover,
-body.dark-mode .btn-warning:hover,
-body.dark-mode .btn-danger:hover,
-body.dark-mode .btn-upload:hover,
-body.dark-mode .btn-manual-import:hover,
-body.dark-mode .btn-secondary:hover,
-body.dark-mode .btn-view-violations:hover,
-body.dark-mode .btn-resolve-violation:hover,
-body.dark-mode .btn-dismiss-alert:hover,
-body.dark-mode .btn-close-modal:hover,
-body.dark-mode .btn-refresh-mismatch:hover,
-body.dark-mode .btn-dismiss-mismatch:hover,
-body.dark-mode .action-btn:hover,
-body.dark-mode .quick-action-btn:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-}
 
 /* Desktop Actions Container */
 .desktop-actions {
