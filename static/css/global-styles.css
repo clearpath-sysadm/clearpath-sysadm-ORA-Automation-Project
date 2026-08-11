@@ -92,6 +92,9 @@ body {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent iOS from resizing text on orientation change */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 /* Utility Classes */
@@ -405,6 +408,11 @@ body.dark-mode .admin-toggle:hover {
     padding: calc(var(--spacing-unit) * 1);
     line-height: 1;
     transition: all 0.2s ease;
+    /* Minimum tap target for iOS */
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-menu-btn:hover {
@@ -815,6 +823,10 @@ textarea::placeholder {
     transition: all 0.15s ease;
     text-decoration: none;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    /* iOS tap improvements */
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover,
@@ -2461,6 +2473,104 @@ body.dark-mode .badge-cancel      { background: rgba(139, 92, 246, 0.2);  color:
     max-width: 360px;
     margin: 0;
     line-height: 1.5;
+}
+
+/* ========================================
+   iOS / iPHONE POLISH
+   ======================================== */
+
+/*
+ * 1. ZOOM FIX — iOS Safari zooms the viewport when any input with font-size
+ *    < 16px is focused. Override globally on mobile so every input, select,
+ *    and textarea is at least 16px on-device. Desktop stays at 14px.
+ */
+@media (max-width: 768px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    input[type="datetime-local"],
+    input[type="time"],
+    input[type="url"],
+    input[type="search"],
+    select,
+    textarea,
+    /* Catch any inline input that sets its own small size */
+    .inline-input,
+    .form-input,
+    .form-select,
+    .form-textarea {
+        font-size: 16px !important;
+    }
+}
+
+/*
+ * 2. TAP HIGHLIGHT — remove the grey flash iOS shows on tap for links/buttons.
+ *    We already set this per-element on .btn; this catches nav items and links.
+ */
+a,
+a.nav-item,
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * 3. MOMENTUM SCROLLING — silky inertial scroll on iOS for all overflow containers.
+ */
+.content-area,
+.table-container,
+.modal-body,
+.sidebar-nav {
+    -webkit-overflow-scrolling: touch;
+}
+
+/*
+ * 4. SAFE AREA INSETS — respect iPhone X+ notch and home-indicator bar.
+ *    viewport-fit=cover (set in each page's <meta viewport>) lets content
+ *    extend under the notch; these rules pull it back into the safe zone.
+ */
+@supports (padding: env(safe-area-inset-bottom)) {
+    /* Home indicator bar — prevent content hiding under it */
+    .main-content {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Sidebar safe area on landscape (notch on the left) */
+    .sidebar {
+        padding-left: env(safe-area-inset-left);
+    }
+
+    /* Top bar: respect status bar on full-bleed layouts */
+    @media (max-width: 768px) {
+        .top-bar {
+            padding-left: calc(var(--spacing-unit) * 2 + env(safe-area-inset-left));
+            padding-right: calc(var(--spacing-unit) * 2 + env(safe-area-inset-right));
+        }
+    }
+}
+
+/*
+ * 5. DOUBLE-TAP ZOOM — `touch-action: manipulation` suppresses the 300ms
+ *    tap delay and the double-tap-to-zoom gesture on interactive elements.
+ *    Already on .btn; extend to nav items and links here.
+ */
+a,
+a.nav-item,
+label,
+.tab-btn,
+.lot-tab-btn {
+    touch-action: manipulation;
+}
+
+/*
+ * 6. BUTTON SMALL VARIANT — .btn-sm should keep touch-action but can be
+ *    visually smaller; we still enforce a minimum tap footprint.
+ */
+.btn-sm {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 36px; /* visually smaller but still reasonable on mobile */
 }
 
 /* ========================================
