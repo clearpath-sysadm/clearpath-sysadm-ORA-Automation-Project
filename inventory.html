@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Inventory - Oracare Fulfillment</title>
+
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+
+    <!-- Global Premium Design System -->
+    <link rel="stylesheet" href="/static/css/global-styles.css">
+
+    <style>
+        /* ── Lot Inventory: mobile card views ─────────────────────────────── */
+        .lot-card              { display: none; }
+        .assignment-cards-container { display: none; }
+
+        @media (max-width: 900px) {
+            .table-container table { display: none; }
+
+            .lot-cards-container {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .lot-card {
+                display: block;
+                background: var(--bg-secondary);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 16px;
+            }
+            .lot-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 12px;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .lot-card-sku       { font-size: 18px; font-weight: 700; color: var(--accent-blue); }
+            .lot-card-lot       { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
+            .lot-card-qty       { font-size: 24px; font-weight: 700; color: var(--text-primary); text-align: right; }
+            .lot-card-qty-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; }
+            .lot-card-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            .lot-card-item       { padding: 8px; background: var(--bg-primary); border-radius: 6px; }
+            .lot-card-item-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 2px; }
+            .lot-card-item-value { font-size: 14px; font-weight: 600; }
+            .lot-card-footer     { display: flex; gap: 8px; flex-wrap: wrap; }
+            .lot-card-footer .btn { flex: 1; min-width: 80px; text-align: center; padding: 10px 12px; }
+
+            .priority-badge { display: inline-block; padding: 2px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 11px; font-weight: 600; }
+            .priority-badge.priority-1 { background: var(--accent-blue); color: white; }
+
+            /* Assignment mobile cards */
+            .assignment-cards-container { display: flex; flex-direction: column; gap: 10px; }
+            .assignment-card {
+                background: var(--bg-secondary);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 14px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .assignment-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .assignment-card-footer     { display: flex; gap: 8px; flex-wrap: wrap; }
+            .assignment-card-footer .btn { flex: 1; min-width: 80px; text-align: center; padding: 10px 12px; }
+
+            .info-banner      { padding: 12px; }
+            .info-banner-text { font-size: 12px; line-height: 1.5; }
+
+            .modal     { width: 95%; max-width: 95%; max-height: 90vh; }
+            .modal-body { padding: 16px; }
+            .form-group { margin-bottom: 12px; }
+            .form-input, .form-select, .form-textarea { font-size: 16px; }
+        }
+
+        @media (max-width: 400px) {
+            .lot-card-grid        { grid-template-columns: 1fr; }
+            .lot-card-footer .btn { flex: 1 1 100%; }
+        }
+
+        /* ── Tabbed card ───────────────────────────────────────────────────── */
+        #inv-main-card { padding-top: 0; }
+
+        .lot-tab-bar {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: var(--bg-primary);
+            margin: 0 -24px;
+            padding: 0 24px;
+            border-bottom: 2px solid var(--border-color);
+            border-radius: 8px 8px 0 0;
+        }
+        .lot-tab-list {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            overflow-x: auto;           /* allows 3 tabs to scroll on very small screens */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .lot-tab-list::-webkit-scrollbar { display: none; }
+
+        .lot-tab-btn {
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+            font-family: var(--font-body);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media (max-width: 480px) {
+            .lot-tab-btn { padding: 12px 14px; font-size: 13px; }
+        }
+        .lot-tab-btn:hover { color: var(--text-primary); }
+        .lot-tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+            font-weight: 600;
+        }
+        .lot-tab-count {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 400;
+            margin-left: 5px;
+        }
+        .lot-tab-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0;
+            flex-shrink: 0;
+        }
+        .lot-tab-pane       { padding-top: 20px; }
+        .lot-tab-pane-desc  { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+
+        /* ── Inline assignment add-row ─────────────────────────────────────── */
+        #inline-assignment-row td { vertical-align: middle; padding: 8px 12px; background: var(--bg-secondary); }
+        #inline-assignment-row .inline-input {
+            width: auto;
+            padding: 5px 8px;
+            font-size: 13px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            outline: none;
+        }
+        #inline-assignment-row .inline-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(43,125,233,0.18); }
+        #inline-assignment-row .inline-input.inline-select { min-width: 130px; }
+        #inline-assignment-row .inline-input.inline-lot    { width: 120px; }
+
+        /* ── Transaction Log: one view at a time ──────────────────────────── */
+        #transactionsTable.desktop-view { display: table; }
+        #transactionsCards.mobile-view  { display: none; }
+        @media (max-width: 900px) {
+            #transactionsTable.desktop-view { display: none  !important; }
+            #transactionsCards.mobile-view  { display: block !important; }
+        }
+
+        /* Transaction Log filter bar lives inside the pane */
+        #pane-transaction-log .controls {
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="shipping-violations-alert"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><img src="/static/images/oracare-logo.png" alt="Oracare" style="width: 100%; height: 100%; object-fit: contain;"></div>
+                <div class="sidebar-title">Oracare Fulfillment</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a href="/" class="nav-item">
+                        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+                        Dashboard
+                    </a>
+                    <a href="/shipment_summary.html" class="nav-item">
+                        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16v-2"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+                        Shipment Summary
+                    </a>
+                    <a href="/inventory.html" class="nav-item active">
+                        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></span>
+                        Inventory
+                    </a>
+                    <a href="/charge_report.html" class="nav-item">
+                        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+                        Charge Report
+                    </a>
+                </div>
+
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" onclick="toggleAdmin()">
+                        <span>Admin &amp; Data</span>
+                        <span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/order-management.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span>
+                            Order Management
+                        </a>
+                        <a href="/weekly_shipped_history.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+                            Weekly Reports
+                        </a>
+                        <a href="/shipped_orders.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+                            Shipped Orders
+                        </a>
+                        <a href="/order_audit.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                            Order Audit
+                        </a>
+                        <a href="/shipped_items.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+                            Shipped Items
+                        </a>
+                        <a href="/bundle_skus.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
+                            Bundle SKUs
+                        </a>
+                        <a href="/inventory_snapshots.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+                            Inventory Snapshots
+                        </a>
+                        <a href="/email_contacts.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                            Email Contacts
+                        </a>
+                        <a href="/workflow_controls.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>
+                            Workflow Controls
+                        </a>
+                        <a href="/logs.html" class="nav-item">
+                            <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+                            Server Logs
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: calc(var(--spacing-unit) * 2);">
+                    <a href="/help.html" class="nav-item">
+                        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+                        Help &amp; Training
+                    </a>
+                    <a href="/settings.html" class="nav-item">
+                        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">🏭 Inventory</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="btn btn-primary" onclick="window.location.href='/incidents.html#report'" style="margin-right: 8px;">
+                        🚨 Report Issue
+                    </button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Info Banner -->
+                <div class="info-banner">
+                    <div class="info-banner-title">📦 Transaction-Based FIFO Inventory</div>
+                    <div class="info-banner-text">
+                        Balance is computed live from all inventory transactions (Receive, Ship, Adjust Up/Down, Repack) linked to each lot. Lots are sorted by received date (oldest first per SKU). Use <strong>Record Correction</strong> to post an adjustment for a specific lot.
+                    </div>
+                </div>
+
+                <!-- Unified Inventory Card -->
+                <div class="card" id="inv-main-card">
+
+                    <!-- Sticky three-tab bar -->
+                    <div class="lot-tab-bar">
+                        <div class="lot-tab-list">
+                            <button class="lot-tab-btn active" id="tab-btn-lot-inventory"
+                                    onclick="switchTab('lot-inventory')">Lot Inventory</button>
+                            <button class="lot-tab-btn" id="tab-btn-lot-assignments"
+                                    onclick="switchTab('lot-assignments')">
+                                Lot Assignments
+                                <span class="lot-tab-count" id="sku-lot-count"></span>
+                            </button>
+                            <button class="lot-tab-btn" id="tab-btn-transaction-log"
+                                    onclick="switchTab('transaction-log')">Transaction Log</button>
+                        </div>
+
+                        <!-- Lot Inventory actions -->
+                        <div class="lot-tab-actions" id="tab-actions-lot-inventory">
+                            <button class="btn" onclick="openAddModal()">
+                                <span>➕</span> Add Lot
+                            </button>
+                        </div>
+                        <!-- Lot Assignments actions -->
+                        <div class="lot-tab-actions" id="tab-actions-lot-assignments" style="display:none;">
+                            <button class="btn btn-sm" id="sku-lot-filter-btn"
+                                    onclick="toggleSkuLotFilter()">Show All</button>
+                            <button class="btn" onclick="showInlineAddRow()">
+                                <span>➕</span> Add Assignment
+                            </button>
+                        </div>
+                        <!-- Transaction Log actions -->
+                        <div class="lot-tab-actions" id="tab-actions-transaction-log" style="display:none;">
+                            <button class="btn btn-sm" onclick="copyToClipboard(this)">📋 Copy</button>
+                            <button class="btn" onclick="openAddTransactionModal()">➕ Add Transaction</button>
+                        </div>
+                    </div>
+
+                    <!-- ── Pane 1: Lot Inventory ─────────────────────────── -->
+                    <div class="lot-tab-pane" id="pane-lot-inventory">
+                        <div id="lot-table-container">
+                            <div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-tertiary);">Loading lots…</div>
+                        </div>
+                    </div>
+
+                    <!-- ── Pane 2: Lot Assignments ──────────────────────── -->
+                    <div class="lot-tab-pane" id="pane-lot-assignments" style="display:none;">
+                        <p class="lot-tab-pane-desc">
+                            Lot assignments used by the lot tagger to determine which lot number to stamp
+                            on new orders per SKU. Only <strong>Active</strong> assignments are used by
+                            the tagger. To retire an assignment, <strong>Deactivate</strong> it — do not
+                            delete the underlying lot record.
+                        </p>
+                        <div id="sku-lot-table-container">
+                            <div class="empty-state">Loading…</div>
+                        </div>
+                    </div>
+
+                    <!-- ── Pane 3: Transaction Log (lazy loaded) ────────── -->
+                    <div class="lot-tab-pane" id="pane-transaction-log" style="display:none;">
+                        <!-- Filter controls live inside the tab pane -->
+                        <div class="controls">
+                            <input type="date" id="startDate" placeholder="Start Date">
+                            <input type="date" id="endDate" placeholder="End Date">
+                            <select id="skuFilter">
+                                <option value="">All SKUs</option>
+                            </select>
+                            <select id="typeFilter">
+                                <option value="">All Types</option>
+                                <option value="Receive">Receive</option>
+                                <option value="Ship">Ship</option>
+                                <option value="Adjust Up">Adjust Up</option>
+                                <option value="Adjust Down">Adjust Down</option>
+                                <option value="Repack">Repack</option>
+                            </select>
+                            <button class="btn" onclick="applyFilters()">🔍 Filter</button>
+                            <button class="btn" onclick="clearFilters()">✖️ Clear</button>
+                        </div>
+
+                        <div class="table-container" style="overflow-x: auto;">
+                            <div id="txn-loading" class="loading" style="display:none;">
+                                <div class="spinner"></div>
+                                <p>Loading transactions…</p>
+                            </div>
+                            <div id="txn-error"></div>
+
+                            <!-- Desktop table -->
+                            <table id="transactionsTable" class="desktop-view" style="display: none;">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>SKU</th>
+                                        <th>Lot</th>
+                                        <th>Quantity</th>
+                                        <th>Type</th>
+                                        <th>Notes</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsBody"></tbody>
+                            </table>
+
+                            <!-- Mobile card view -->
+                            <div id="transactionsCards" class="mobile-view" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                </div><!-- /#inv-main-card -->
+            </div><!-- /.content-area -->
+        </main>
+    </div><!-- /.app-container -->
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+    <!-- ── Lot Assignment Modal (Add / Edit) ──────────────────────────────── -->
+    <div class="modal-overlay" id="sku-lot-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="sku-lot-modal-title">Add Lot Assignment</h3>
+            </div>
+            <div class="modal-body">
+                <div id="sku-lot-modal-error" style="display:none;color:var(--error-red);margin-bottom:12px;padding:8px;background:rgba(220,38,38,0.08);border-radius:6px;font-size:13px;"></div>
+                <div class="form-group">
+                    <label class="form-label" for="sku-lot-sku">SKU *</label>
+                    <select id="sku-lot-sku" class="form-select" required>
+                        <option value="">Select SKU</option>
+                        <option value="17612">17612 – PT Kit</option>
+                        <option value="17904">17904 – Travel Kit</option>
+                        <option value="17914">17914 – PPR Kit</option>
+                        <option value="18675">18675 – Ortho Protect</option>
+                        <option value="18795">18795 – OraPro Paste Peppermint</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="sku-lot-lot">Lot Number *</label>
+                    <input type="text" class="form-input" id="sku-lot-lot" placeholder="e.g., 260047" required>
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="sku-lot-active" checked>
+                    <label for="sku-lot-active" class="form-label" style="margin:0;">Active</label>
+                </div>
+                <input type="hidden" id="sku-lot-id">
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeSkuLotModal()">Cancel</button>
+                <button class="btn" onclick="saveSkuLot()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Add / Edit Lot Modal ───────────────────────────────────────────── -->
+    <div class="modal-overlay" id="lot-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="lot-modal-title">Add Lot</h3>
+            </div>
+            <div class="modal-body">
+                <form id="lot-form">
+                    <input type="hidden" id="lot-id">
+                    <div class="form-group">
+                        <label class="form-label" for="sku">SKU *</label>
+                        <input type="text" class="form-input" id="sku" placeholder="e.g., 17612" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="lot">Lot Number *</label>
+                        <input type="text" class="form-input" id="lot" placeholder="e.g., 250237" required>
+                    </div>
+                    <div class="form-group" id="initial-qty-group">
+                        <label class="form-label" for="initial-qty">Initial Quantity</label>
+                        <input type="number" class="form-input" id="initial-qty" min="0" value="0" placeholder="e.g., 5000">
+                        <small style="color: var(--text-tertiary); font-size: 12px;">Creates an opening Receive transaction. Use 0 if adding retroactively.</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="received-date">Received Date * (FIFO Order)</label>
+                        <input type="date" class="form-input" id="received-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="status">Status *</label>
+                        <select class="form-select" id="status" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="depleted">Depleted</option>
+                            <option value="quarantine">Quarantine</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="notes">Notes (Optional)</label>
+                        <textarea class="form-textarea" id="notes" placeholder="Add any notes about this lot…"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeLotModal()">Cancel</button>
+                <button class="btn" onclick="saveLot()">Save Lot</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Record Correction Modal ────────────────────────────────────────── -->
+    <div class="modal-overlay" id="correction-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Record Inventory Correction</h3>
+            </div>
+            <div class="modal-body">
+                <form id="correction-form">
+                    <input type="hidden" id="correction-lot-id">
+                    <p id="correction-lot-info" style="margin-bottom: 16px; color: var(--text-secondary); font-size: 14px;"></p>
+                    <div class="form-group">
+                        <label class="form-label" for="correction-type">Correction Type *</label>
+                        <select class="form-select" id="correction-type" required>
+                            <option value="Adjust Up">Adjust Up (increase balance)</option>
+                            <option value="Adjust Down">Adjust Down (decrease balance)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="correction-amount">Amount *</label>
+                        <input type="number" class="form-input" id="correction-amount" min="1" placeholder="e.g., 50" required>
+                        <small style="color: var(--text-tertiary); font-size: 12px;">Enter a positive number. Direction is set by correction type above.</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="correction-date">Date *</label>
+                        <input type="date" class="form-input" id="correction-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="correction-notes">Notes (Optional)</label>
+                        <textarea class="form-textarea" id="correction-notes" placeholder="Reason for adjustment, damage report, etc."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeCorrectionModal()">Cancel</button>
+                <button class="btn" onclick="saveCorrection()">Record Correction</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Add / Edit Transaction Modal ──────────────────────────────────── -->
+    <div id="transactionModal" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title" id="txn-modal-title">Add Transaction</h3>
+            </div>
+            <div class="modal-body">
+                <form id="transactionForm">
+                    <input type="hidden" id="transactionId">
+                    <div class="form-group">
+                        <label class="form-label" for="transactionDate">Date *</label>
+                        <input type="date" class="form-input" id="transactionDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="transactionSku">SKU *</label>
+                        <select class="form-select" id="transactionSku" required onchange="loadLotsForSku(this.value)">
+                            <option value="">Select SKU</option>
+                            <option value="17612">17612</option>
+                            <option value="17904">17904</option>
+                            <option value="17914">17914</option>
+                            <option value="18675">18675</option>
+                            <option value="18795">18795</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="transactionLot">Lot Number</label>
+                        <select class="form-select" id="transactionLot">
+                            <option value="">— Select SKU first —</option>
+                        </select>
+                        <small style="color: var(--text-tertiary); font-size: 12px;">Required for Receive and adjustment transactions so the lot balance updates correctly.</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="transactionQuantity">Quantity *</label>
+                        <input type="number" class="form-input" id="transactionQuantity" required placeholder="Must be non-zero">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="transactionType">Type *</label>
+                        <select class="form-select" id="transactionType" required>
+                            <option value="">Select Type</option>
+                            <option value="Receive">Receive</option>
+                            <option value="Ship">Ship</option>
+                            <option value="Adjust Up">Adjust Up</option>
+                            <option value="Adjust Down">Adjust Down</option>
+                            <option value="Repack">Repack</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="transactionNotes">Notes</label>
+                        <textarea class="form-textarea" id="transactionNotes" placeholder="Optional notes…"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="closeTxnModal()">Cancel</button>
+                <button type="button" class="btn" onclick="document.getElementById('transactionForm').requestSubmit()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/timezone-utils.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/alert-bar.js"></script>
+    <script src="/static/shipping-violations-alert.js"></script>
+    <script src="/static/dark-mode.js"></script>
+
+    <script>
+        // ── Tab state ──────────────────────────────────────────────────────
+        const TABS = ['lot-inventory', 'lot-assignments', 'transaction-log'];
+        let currentTab = 'lot-inventory';
+        let transactionLogLoaded = false;
+
+        function switchTab(tab) {
+            if (!TABS.includes(tab)) tab = 'lot-inventory';
+            if (currentTab === tab) return;
+            currentTab = tab;
+
+            TABS.forEach(t => {
+                document.getElementById(`tab-btn-${t}`).classList.toggle('active', t === tab);
+                document.getElementById(`pane-${t}`).style.display      = t === tab ? '' : 'none';
+                document.getElementById(`tab-actions-${t}`).style.display = t === tab ? '' : 'none';
+            });
+
+            // Discard open inline add-row if leaving assignments tab
+            if (tab !== 'lot-assignments') cancelInlineRow();
+
+            // Update URL hash for deep-linking
+            history.replaceState(null, '', '#' + tab);
+
+            // Lazy-load transaction log on first visit
+            if (tab === 'transaction-log' && !transactionLogLoaded) {
+                transactionLogLoaded = true;
+                document.getElementById('txn-loading').style.display = 'block';
+                fetchTransactions();
+            }
+        }
+
+        // ── Mobile menu ────────────────────────────────────────────────────
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+            document.getElementById('mobile-overlay').classList.toggle('active');
+        }
+        function closeMobileMenu() {
+            document.getElementById('sidebar').classList.remove('mobile-open');
+            document.getElementById('mobile-overlay').classList.remove('active');
+        }
+
+        // ── Admin section ──────────────────────────────────────────────────
+        function toggleAdmin() {
+            document.querySelector('.admin-toggle').classList.toggle('expanded');
+            document.getElementById('admin-items').classList.toggle('expanded');
+        }
+
+        // ── Init ───────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            // Deep-link: read hash and activate matching tab
+            const hash = location.hash.slice(1);
+            if (TABS.includes(hash)) {
+                currentTab = hash; // set silently before rendering
+                TABS.forEach(t => {
+                    document.getElementById(`tab-btn-${t}`).classList.toggle('active', t === hash);
+                    document.getElementById(`pane-${t}`).style.display       = t === hash ? '' : 'none';
+                    document.getElementById(`tab-actions-${t}`).style.display = t === hash ? '' : 'none';
+                });
+                if (hash === 'transaction-log') {
+                    transactionLogLoaded = true;
+                    document.getElementById('txn-loading').style.display = 'block';
+                    fetchTransactions();
+                }
+            }
+
+            // Always eagerly load the lot data (fast queries)
+            loadLots();
+            loadSkuLots();
+
+            // Close mobile menu on nav click
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth <= 1024) closeMobileMenu();
+                });
+            });
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                closeLotModal();
+                closeCorrectionModal();
+                closeSkuLotModal();
+                closeTxnModal();
+                closeMobileMenu();
+            }
+        });
+
+        // ══════════════════════════════════════════════════════════════════
+        // LOT INVENTORY
+        // ══════════════════════════════════════════════════════════════════
+        let lots = [];
+        let editingLotId = null;
+
+        async function loadLots() {
+            try {
+                const response = await fetch('/api/lot_inventory');
+                const data = await response.json();
+                if (data.success) {
+                    lots = data.lots;
+                    renderLotTable();
+                } else {
+                    document.getElementById('lot-table-container').innerHTML =
+                        `<div class="empty-state" style="color:var(--error-red);">Failed to load lot inventory</div>`;
+                }
+            } catch (err) {
+                console.error('Error loading lots:', err);
+                document.getElementById('lot-table-container').innerHTML =
+                    `<div class="empty-state" style="color:var(--error-red);">Failed to load lot inventory</div>`;
+            }
+        }
+
+        function renderLotTable() {
+            const container = document.getElementById('lot-table-container');
+
+            if (lots.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <div class="empty-state-title">No Lot Inventory</div>
+                        <div class="empty-state-text">Add your first lot to start tracking inventory by lot number</div>
+                    </div>`;
+                return;
+            }
+
+            // Group by SKU
+            const lotsBySKU = {};
+            lots.forEach(lot => {
+                if (!lotsBySKU[lot.sku]) lotsBySKU[lot.sku] = [];
+                lotsBySKU[lot.sku].push(lot);
+            });
+
+            // Desktop table
+            let html = '<div class="table-container"><table><thead><tr>';
+            html += '<th>SKU</th><th>Lot Number</th><th>Balance</th><th>Receipts</th><th>Priority (FIFO)</th><th>Status</th><th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            Object.keys(lotsBySKU).sort().forEach(sku => {
+                lotsBySKU[sku].forEach((lot, index) => {
+                    const priority = index + 1;
+                    html += `<tr>
+                        <td><strong>${lot.sku}</strong></td>
+                        <td>${lot.lot}</td>
+                        <td><strong style="font-size:15px;">${lot.balance.toLocaleString()}</strong></td>
+                        <td>${formatReceiptCount(lot)}</td>
+                        <td><span class="priority-indicator ${priority === 1 ? 'priority-1' : ''}">#${priority}</span></td>
+                        <td>${getLotStatusBadge(lot.status, lot.balance)}</td>
+                        <td><div class="action-buttons">
+                            <button class="btn btn-sm" onclick="openCorrectionModal(${lot.id},'${lot.sku}','${lot.lot}')">Correct</button>
+                            <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>
+                            <button class="btn btn-sm" onclick="deleteLot(${lot.id})">Delete</button>
+                        </div></td>
+                    </tr>`;
+                });
+            });
+            html += '</tbody></table></div>';
+
+            // Mobile card view
+            html += '<div class="lot-cards-container">';
+            Object.keys(lotsBySKU).sort().forEach(sku => {
+                lotsBySKU[sku].forEach((lot, index) => {
+                    const priority = index + 1;
+                    html += `<div class="lot-card">
+                        <div class="lot-card-header">
+                            <div>
+                                <div class="lot-card-sku">${lot.sku}</div>
+                                <div class="lot-card-lot">Lot: ${lot.lot}</div>
+                            </div>
+                            <div>
+                                <div class="lot-card-qty">${lot.balance.toLocaleString()}</div>
+                                <div class="lot-card-qty-label">Balance</div>
+                            </div>
+                        </div>
+                        <div class="lot-card-grid">
+                            <div class="lot-card-item">
+                                <div class="lot-card-item-label">Receipts</div>
+                                <div class="lot-card-item-value">${formatReceiptCount(lot)}</div>
+                            </div>
+                            <div class="lot-card-item">
+                                <div class="lot-card-item-label">FIFO Priority</div>
+                                <div class="lot-card-item-value">#${priority}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                            ${getLotStatusBadge(lot.status, lot.balance)}
+                        </div>
+                        <div class="lot-card-footer">
+                            <button class="btn btn-sm" onclick="openCorrectionModal(${lot.id},'${lot.sku}','${lot.lot}')">Correct</button>
+                            <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>
+                            <button class="btn btn-sm" onclick="deleteLot(${lot.id})">Delete</button>
+                        </div>
+                    </div>`;
+                });
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        function formatReceiptCount(lot) {
+            const count = lot.receive_count || 0;
+            if (count === 0) return '<span style="color:var(--text-secondary);">—</span>';
+            const dates = (lot.receive_dates || []).map(d =>
+                new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+            );
+            const tip   = dates.join('&#10;');
+            const label = count === 1 ? '1 receipt' : `${count} receipts`;
+            return `<span title="${tip}" style="cursor:default;border-bottom:1px dotted var(--text-secondary);">${label}</span>`;
+        }
+
+        function getLotStatusBadge(status, balance) {
+            if (status === 'active' && balance > 0)  return `<span class="status-badge status-active">Active</span>`;
+            if (status === 'active' && balance === 0) return `<span class="status-badge status-empty">Empty</span>`;
+            if (status === 'depleted')                return `<span class="status-badge status-depleted">Depleted</span>`;
+            if (status === 'quarantine')              return `<span class="status-badge status-quarantine">Quarantine</span>`;
+            return `<span class="status-badge status-inactive">Inactive</span>`;
+        }
+
+        // Lot add/edit modal
+        function openAddModal() {
+            editingLotId = null;
+            document.getElementById('lot-modal-title').textContent = 'Add Lot';
+            document.getElementById('lot-form').reset();
+            document.getElementById('lot-id').value = '';
+            document.getElementById('initial-qty-group').style.display = '';
+            document.getElementById('initial-qty').value = 0;
+            document.getElementById('received-date').valueAsDate = new Date();
+            document.getElementById('lot-modal').classList.add('active');
+        }
+
+        function editLot(id) {
+            const lot = lots.find(l => l.id === id);
+            if (!lot) return;
+            editingLotId = id;
+            document.getElementById('lot-modal-title').textContent = 'Edit Lot';
+            document.getElementById('lot-id').value           = lot.id;
+            document.getElementById('sku').value              = lot.sku;
+            document.getElementById('lot').value              = lot.lot;
+            document.getElementById('received-date').value    = lot.received_date || '';
+            document.getElementById('status').value           = lot.status;
+            document.getElementById('notes').value            = lot.notes || '';
+            document.getElementById('initial-qty-group').style.display = 'none';
+            document.getElementById('sku').disabled = true;
+            document.getElementById('lot').disabled = true;
+            document.getElementById('lot-modal').classList.add('active');
+        }
+
+        function closeLotModal() {
+            document.getElementById('lot-modal').classList.remove('active');
+            document.getElementById('lot-form').reset();
+            document.getElementById('sku').disabled = false;
+            document.getElementById('lot').disabled = false;
+            document.getElementById('initial-qty-group').style.display = '';
+            editingLotId = null;
+        }
+
+        async function saveLot() {
+            const sku          = document.getElementById('sku').value.trim();
+            const lot          = document.getElementById('lot').value.trim();
+            const receivedDate = document.getElementById('received-date').value;
+            const status       = document.getElementById('status').value;
+            const notes        = document.getElementById('notes').value.trim();
+
+            if (!sku || !lot || !receivedDate) {
+                alert('Please fill in SKU, Lot Number, and Received Date');
+                return;
+            }
+
+            const lotData = { sku, lot, received_date: receivedDate, status, notes };
+            if (!editingLotId) {
+                lotData.initial_qty = parseInt(document.getElementById('initial-qty').value || 0);
+            }
+
+            try {
+                const url    = editingLotId ? `/api/lot_inventory/${editingLotId}` : '/api/lot_inventory';
+                const method = editingLotId ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(lotData)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    closeLotModal();
+                    loadLots();
+                    alert('✅ ' + (editingLotId ? 'Lot updated' : 'Lot added'));
+                } else {
+                    alert('❌ ' + (data.error || 'Failed to save lot'));
+                }
+            } catch (err) {
+                alert('❌ Failed to save lot');
+            }
+        }
+
+        async function deleteLot(id) {
+            if (!confirm('Are you sure you want to delete this lot? This action cannot be undone.')) return;
+            try {
+                const response = await fetch(`/api/lot_inventory/${id}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (data.success) { loadLots(); alert('✅ Lot deleted'); }
+                else { alert('❌ ' + (data.error || 'Failed to delete lot')); }
+            } catch (err) {
+                alert('❌ Failed to delete lot');
+            }
+        }
+
+        // Correction modal
+        function openCorrectionModal(lotId, sku, lot) {
+            document.getElementById('correction-lot-id').value  = lotId;
+            document.getElementById('correction-lot-info').textContent = `SKU: ${sku}  |  Lot: ${lot}`;
+            document.getElementById('correction-form').reset();
+            document.getElementById('correction-date').valueAsDate = new Date();
+            document.getElementById('correction-modal').classList.add('active');
+        }
+        function closeCorrectionModal() {
+            document.getElementById('correction-modal').classList.remove('active');
+            document.getElementById('correction-form').reset();
+        }
+        async function saveCorrection() {
+            const lotId          = document.getElementById('correction-lot-id').value;
+            const correctionType = document.getElementById('correction-type').value;
+            const amount         = parseInt(document.getElementById('correction-amount').value || 0);
+            const correctionDate = document.getElementById('correction-date').value;
+            const notes          = document.getElementById('correction-notes').value.trim();
+            if (!amount || amount <= 0) { alert('Amount must be a positive number'); return; }
+            if (!correctionDate)        { alert('Date is required'); return; }
+            try {
+                const response = await fetch(`/api/lot_inventory/${lotId}/correct`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correction_type: correctionType, amount, date: correctionDate, notes })
+                });
+                const data = await response.json();
+                if (data.success) { closeCorrectionModal(); loadLots(); alert('✅ Correction recorded'); }
+                else { alert('❌ ' + (data.error || 'Failed to record correction')); }
+            } catch (err) {
+                alert('❌ Failed to record correction');
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // LOT ASSIGNMENTS
+        // ══════════════════════════════════════════════════════════════════
+        let skuLots = [];
+        let skuLotShowActiveOnly = true;
+
+        function toggleSkuLotFilter() {
+            skuLotShowActiveOnly = !skuLotShowActiveOnly;
+            document.getElementById('sku-lot-filter-btn').textContent =
+                skuLotShowActiveOnly ? 'Show All' : 'Active Only';
+            renderSkuLotsTable();
+        }
+
+        async function loadSkuLots() {
+            try {
+                const response = await fetch('/api/sku_lots');
+                const data = await response.json();
+                if (data.success) {
+                    skuLots = data.data;
+                    renderSkuLotsTable();
+                } else {
+                    document.getElementById('sku-lot-table-container').innerHTML =
+                        '<div class="empty-state" style="color:var(--error-red);">Failed to load lot assignments</div>';
+                }
+            } catch (err) {
+                console.error('Error loading SKU lots:', err);
+            }
+        }
+
+        function renderSkuLotsTable() {
+            const container = document.getElementById('sku-lot-table-container');
+            const countEl   = document.getElementById('sku-lot-count');
+            const filtered  = skuLotShowActiveOnly ? skuLots.filter(r => r.active) : skuLots;
+            countEl.textContent = `(${filtered.length})`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">No lot assignments found</div>';
+                return;
+            }
+
+            // Desktop table
+            let html = '<div class="table-container"><table><thead><tr>';
+            html += '<th>SKU</th><th>Lot</th><th>Status</th><th>Created</th><th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            filtered.forEach(item => {
+                const badge   = item.active
+                    ? '<span class="status-badge status-active">Active</span>'
+                    : '<span class="status-badge status-depleted">Inactive</span>';
+                const created = item.created_at ? new Date(item.created_at).toLocaleDateString() : '—';
+                html += `<tr>
+                    <td><strong>${item.sku}</strong></td>
+                    <td>${item.lot}</td>
+                    <td>${badge}</td>
+                    <td style="color:var(--text-secondary);font-size:13px;">${created}</td>
+                    <td><div class="action-buttons">
+                        <button class="btn btn-sm" onclick="toggleSkuLotActive(${item.id},${item.active ? 1 : 0})">${item.active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm" onclick="openEditSkuLotModal(${item.id})">Edit</button>
+                    </div></td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+
+            // Mobile card view
+            html += '<div class="assignment-cards-container">';
+            filtered.forEach(item => {
+                const badge   = item.active
+                    ? '<span class="status-badge status-active">Active</span>'
+                    : '<span class="status-badge status-depleted">Inactive</span>';
+                const created = item.created_at ? new Date(item.created_at).toLocaleDateString() : '—';
+                html += `<div class="assignment-card">
+                    <div class="assignment-card-header">
+                        <div>
+                            <strong style="font-size:16px;">${item.sku}</strong>
+                            <div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">Lot: ${item.lot}</div>
+                        </div>
+                        ${badge}
+                    </div>
+                    <div style="font-size:12px;color:var(--text-secondary);">Added ${created}</div>
+                    <div class="assignment-card-footer">
+                        <button class="btn btn-sm" onclick="toggleSkuLotActive(${item.id},${item.active ? 1 : 0})">${item.active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm" onclick="openEditSkuLotModal(${item.id})">Edit</button>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // Inline add-row for Lot Assignments
+        const SKU_OPTIONS = [
+            { value: '17612', label: '17612 – PT Kit' },
+            { value: '17904', label: '17904 – Travel Kit' },
+            { value: '17914', label: '17914 – PPR Kit' },
+            { value: '18675', label: '18675 – Ortho Protect' },
+            { value: '18795', label: '18795 – OraPro Paste Peppermint' },
+        ];
+
+        function showInlineAddRow() {
+            if (window.innerWidth <= 900) { openAddSkuLotModal(); return; }
+            if (document.getElementById('inline-assignment-row')) {
+                document.getElementById('inline-sku').focus(); return;
+            }
+            const tbody = document.querySelector('#sku-lot-table-container table tbody');
+            if (!tbody) { openAddSkuLotModal(); return; }
+
+            const skuOptions = SKU_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+            const row = document.createElement('tr');
+            row.id = 'inline-assignment-row';
+            row.innerHTML = `
+                <td><select id="inline-sku" class="inline-input inline-select"><option value="">Select SKU</option>${skuOptions}</select></td>
+                <td><input type="text" id="inline-lot" class="inline-input inline-lot" placeholder="e.g. 260047" autocomplete="off"></td>
+                <td>—</td>
+                <td style="color:var(--text-secondary);font-size:13px;">Today</td>
+                <td><div class="action-buttons">
+                    <button class="btn btn-sm" onclick="saveInlineAssignment()">✓ Add</button>
+                    <button class="btn btn-sm" onclick="cancelInlineRow()">✗</button>
+                </div></td>`;
+            tbody.appendChild(row);
+            document.getElementById('inline-sku').focus();
+            row.addEventListener('keydown', e => {
+                if (e.key === 'Enter')  saveInlineAssignment();
+                if (e.key === 'Escape') cancelInlineRow();
+            });
+        }
+
+        function cancelInlineRow() {
+            const row = document.getElementById('inline-assignment-row');
+            if (row) row.remove();
+        }
+
+        async function saveInlineAssignment() {
+            const skuEl = document.getElementById('inline-sku');
+            const lotEl = document.getElementById('inline-lot');
+            if (!skuEl || !lotEl) return;
+            const sku = skuEl.value.trim();
+            const lot = lotEl.value.trim();
+            if (!sku) { skuEl.focus(); skuEl.style.borderColor = 'var(--error-red)'; return; }
+            if (!lot) { lotEl.focus(); lotEl.style.borderColor = 'var(--error-red)'; return; }
+            skuEl.disabled = true; lotEl.disabled = true;
+            try {
+                const resp   = await fetch('/api/sku_lots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sku, lot, active: 1 })
+                });
+                const result = await resp.json();
+                if (result.success) { cancelInlineRow(); loadSkuLots(); }
+                else {
+                    skuEl.disabled = false; lotEl.disabled = false;
+                    lotEl.style.borderColor = 'var(--error-red)';
+                    alert(result.error || 'Failed to save assignment');
+                }
+            } catch (err) {
+                skuEl.disabled = false; lotEl.disabled = false;
+                alert('Network error — could not save assignment');
+            }
+        }
+
+        function openAddSkuLotModal() {
+            document.getElementById('sku-lot-modal-title').textContent = 'Add Lot Assignment';
+            document.getElementById('sku-lot-id').value   = '';
+            document.getElementById('sku-lot-sku').value  = '';
+            document.getElementById('sku-lot-lot').value  = '';
+            document.getElementById('sku-lot-active').checked = true;
+            document.getElementById('sku-lot-sku').disabled = false;
+            document.getElementById('sku-lot-modal-error').style.display = 'none';
+            document.getElementById('sku-lot-modal').classList.add('active');
+        }
+
+        function openEditSkuLotModal(id) {
+            const item = skuLots.find(r => r.id === id);
+            if (!item) return;
+            document.getElementById('sku-lot-modal-title').textContent = 'Edit Lot Assignment';
+            document.getElementById('sku-lot-id').value   = item.id;
+            document.getElementById('sku-lot-sku').value  = item.sku;
+            document.getElementById('sku-lot-lot').value  = item.lot;
+            document.getElementById('sku-lot-active').checked = item.active;
+            document.getElementById('sku-lot-modal-error').style.display = 'none';
+            document.getElementById('sku-lot-modal').classList.add('active');
+        }
+
+        function closeSkuLotModal() {
+            document.getElementById('sku-lot-modal').classList.remove('active');
+        }
+
+        async function saveSkuLot() {
+            const id     = document.getElementById('sku-lot-id').value;
+            const sku    = document.getElementById('sku-lot-sku').value;
+            const lot    = document.getElementById('sku-lot-lot').value.trim();
+            const active = document.getElementById('sku-lot-active').checked ? 1 : 0;
+            if (!sku || !lot) { showSkuLotError('SKU and Lot are required.'); return; }
+            try {
+                const url    = id ? `/api/sku_lots/${id}` : '/api/sku_lots';
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sku, lot, active })
+                });
+                const result = await response.json();
+                if (result.success) { closeSkuLotModal(); loadSkuLots(); }
+                else { showSkuLotError(result.error || 'Failed to save'); }
+            } catch (err) {
+                showSkuLotError('Error saving lot assignment');
+            }
+        }
+
+        async function toggleSkuLotActive(id, currentActive) {
+            const item = skuLots.find(r => r.id === id);
+            if (!item) return;
+            const newActive = currentActive === 1 ? 0 : 1;
+            try {
+                const response = await fetch(`/api/sku_lots/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sku: item.sku, lot: item.lot, active: newActive })
+                });
+                const result = await response.json();
+                if (result.success) loadSkuLots();
+                else alert('Failed to update: ' + result.error);
+            } catch (err) {
+                alert('Error updating lot assignment');
+            }
+        }
+
+        function showSkuLotError(msg) {
+            const el = document.getElementById('sku-lot-modal-error');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // TRANSACTION LOG
+        // ══════════════════════════════════════════════════════════════════
+        let allTransactions = [];
+        let allSkus = [];
+
+        async function loadLotsForSku(sku) {
+            const select = document.getElementById('transactionLot');
+            if (!sku) { select.innerHTML = '<option value="">— Select SKU first —</option>'; return; }
+            select.innerHTML = '<option value="">Loading…</option>';
+            try {
+                const res  = await fetch(`/api/lots_by_sku/${encodeURIComponent(sku)}`);
+                const lots = await res.json();
+                if (lots.error) throw new Error(lots.error);
+                select.innerHTML = '<option value="">— No lot (untracked) —</option>' +
+                    lots.map(l => {
+                        const label = `${l.lot_number} (${l.status}${l.received_date ? ', rcvd ' + l.received_date : ''})`;
+                        return `<option value="${l.lot_id}">${label}</option>`;
+                    }).join('');
+            } catch (err) {
+                select.innerHTML = '<option value="">Failed to load lots</option>';
+            }
+        }
+
+        async function fetchTransactions() {
+            const loading = document.getElementById('txn-loading');
+            const table   = document.getElementById('transactionsTable');
+            const cards   = document.getElementById('transactionsCards');
+            loading.style.display = 'block';
+            table.style.display   = 'none';
+            cards.style.display   = 'none';
+
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate   = document.getElementById('endDate').value;
+                const sku       = document.getElementById('skuFilter').value;
+                const type      = document.getElementById('typeFilter').value;
+
+                let url = '/api/inventory_transactions?';
+                if (startDate) url += `start_date=${startDate}&`;
+                if (endDate)   url += `end_date=${endDate}&`;
+                if (sku)       url += `sku=${sku}&`;
+                if (type)      url += `transaction_type=${type}&`;
+
+                const response = await fetch(url);
+                const data     = await response.json();
+
+                if (Array.isArray(data)) {
+                    allTransactions = data;
+                    renderTransactions(data);
+                    if (allSkus.length === 0) {
+                        allSkus = [...new Set(data.map(t => t.sku))].sort();
+                        const skuSelect = document.getElementById('skuFilter');
+                        skuSelect.innerHTML = '<option value="">All SKUs</option>' +
+                            allSkus.map(s => `<option value="${s}">${s}</option>`).join('');
+                    }
+                } else {
+                    throw new Error(data.error || 'Failed to fetch transactions');
+                }
+            } catch (err) {
+                document.getElementById('txn-error').innerHTML =
+                    `<div class="error">Failed to load transactions: ${err.message}</div>`;
+                document.getElementById('txn-loading').style.display = 'none';
+            }
+        }
+
+        function renderTransactions(transactions) {
+            const tbody   = document.getElementById('transactionsBody');
+            const cards   = document.getElementById('transactionsCards');
+            const loading = document.getElementById('txn-loading');
+            const table   = document.getElementById('transactionsTable');
+
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-tertiary);">No transactions found</td></tr>';
+                cards.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-tertiary);">No transactions found</div>';
+                loading.style.display = 'none';
+                table.style.display = '';
+                cards.style.display = '';
+                return;
+            }
+
+            tbody.innerHTML = transactions.map(t => {
+                const badgeClass = `badge-${t.transaction_type.toLowerCase().replace(' ', '-')}`;
+                const lotDisplay = t.lot_number
+                    ? `<span style="font-family:monospace;font-size:13px;">${t.lot_number}</span>`
+                    : `<span style="color:var(--text-tertiary);">—</span>`;
+                return `<tr data-transaction-id="${t.id}" style="white-space:nowrap;">
+                    <td>${t.date}</td>
+                    <td><strong>${t.sku}</strong></td>
+                    <td>${lotDisplay}</td>
+                    <td>${t.quantity}</td>
+                    <td><span class="badge ${badgeClass}">${t.transaction_type}</span></td>
+                    <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;" title="${(t.notes || '').replace(/"/g,'&quot;')}">${t.notes || '-'}</td>
+                    <td><div class="action-buttons">
+                        <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
+                        <button class="btn btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
+                    </div></td>
+                </tr>`;
+            }).join('');
+
+            cards.innerHTML = transactions.map(t => {
+                const badgeClass = `badge-${t.transaction_type.toLowerCase().replace(' ', '-')}`;
+                return `<div class="transaction-card" data-transaction-id="${t.id}">
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-title"><strong>${t.sku}</strong></span>
+                            <span class="badge ${badgeClass}">${t.transaction_type}</span>
+                        </div>
+                        <div class="card-row"><span class="label">Date:</span><span>${t.date}</span></div>
+                        <div class="card-row"><span class="label">Lot:</span><span style="font-family:monospace;">${t.lot_number || '—'}</span></div>
+                        <div class="card-row"><span class="label">Quantity:</span><span><strong>${t.quantity}</strong></span></div>
+                        <div class="card-row"><span class="label">Notes:</span><span>${t.notes || '-'}</span></div>
+                        <div class="card-actions">
+                            <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
+                            <button class="btn btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            loading.style.display = 'none';
+            table.style.display = '';
+            cards.style.display = '';
+        }
+
+        function applyFilters() {
+            fetchTransactions();
+        }
+        function clearFilters() {
+            document.getElementById('startDate').value  = '';
+            document.getElementById('endDate').value    = '';
+            document.getElementById('skuFilter').value  = '';
+            document.getElementById('typeFilter').value = '';
+            fetchTransactions();
+        }
+
+        async function copyToClipboard(buttonElement) {
+            if (allTransactions.length === 0) {
+                alert('No transactions loaded. Switch to the Transaction Log tab and wait for data to load.');
+                return;
+            }
+            try {
+                const escapeHtml = text => { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; };
+                const htmlRows   = allTransactions.map(t => {
+                    const notes = (t.notes || '-').substring(0, 50);
+                    return `<tr>
+                        <td style="padding:8px;border:1px solid #ddd;"><strong>${escapeHtml(String(t.date))}</strong><br><span style="font-size:.85em;color:#666;">SKU: ${escapeHtml(String(t.sku))}</span></td>
+                        <td style="padding:8px;border:1px solid #ddd;text-align:right;">${escapeHtml(String(t.quantity))}</td>
+                        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${escapeHtml(String(t.transaction_type))}</td>
+                        <td style="padding:8px;border:1px solid #ddd;">${escapeHtml(notes)}</td>
+                    </tr>`;
+                }).join('');
+                const htmlTable = `<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:14px;">
+                    <thead><tr style="background:#f3f4f6;">
+                        <th style="padding:8px;border:1px solid #ddd;text-align:left;">Date</th>
+                        <th style="padding:8px;border:1px solid #ddd;text-align:right;">Quantity</th>
+                        <th style="padding:8px;border:1px solid #ddd;text-align:center;">Type</th>
+                        <th style="padding:8px;border:1px solid #ddd;text-align:left;">Notes</th>
+                    </tr></thead><tbody>${htmlRows}</tbody></table>`;
+
+                const plainRows = allTransactions.map(t => {
+                    const date  = String(t.date).padEnd(10);
+                    const sku   = String(t.sku).padEnd(6);
+                    const qty   = String(t.quantity).padStart(8);
+                    const type  = String(t.transaction_type).padEnd(11);
+                    const notes = (t.notes || '-').substring(0, 30);
+                    return `${date} | ${sku} | ${qty} | ${type} | ${notes}`;
+                }).join('\n');
+                const receiveCount = allTransactions.filter(t => t.transaction_type === 'Receive').length;
+                const plainText = `Date       | SKU   | Quantity | Type        | Notes\n${'-'.repeat(80)}\n${plainRows}\n\nTotal: ${allTransactions.length} transactions${receiveCount > 0 ? ` (${receiveCount} Receive)` : ''}`;
+
+                try {
+                    await navigator.clipboard.write([new ClipboardItem({
+                        'text/html':  new Blob([htmlTable],  { type: 'text/html' }),
+                        'text/plain': new Blob([plainText], { type: 'text/plain' })
+                    })]);
+                } catch { await navigator.clipboard.writeText(plainText); }
+
+                const orig = buttonElement.textContent;
+                buttonElement.textContent = '✅ Copied!';
+                setTimeout(() => { buttonElement.textContent = orig; }, 2000);
+            } catch (err) {
+                alert('Failed to copy to clipboard. Please try again.');
+            }
+        }
+
+        // Transaction modal
+        function openAddTransactionModal() {
+            document.getElementById('txn-modal-title').textContent = 'Add Transaction';
+            document.getElementById('transactionForm').reset();
+            document.getElementById('transactionId').value = '';
+            document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('transactionLot').innerHTML = '<option value="">— Select SKU first —</option>';
+            document.getElementById('transactionModal').classList.add('active');
+        }
+
+        async function editTransaction(id) {
+            const t = allTransactions.find(t => t.id === id);
+            if (!t) return;
+            document.getElementById('txn-modal-title').textContent = 'Edit Transaction';
+            document.getElementById('transactionId').value       = t.id;
+            document.getElementById('transactionDate').value     = t.date;
+            document.getElementById('transactionSku').value      = t.sku;
+            document.getElementById('transactionQuantity').value = t.quantity;
+            document.getElementById('transactionType').value     = t.transaction_type;
+            document.getElementById('transactionNotes').value    = t.notes || '';
+            await loadLotsForSku(t.sku);
+            if (t.lot_id) document.getElementById('transactionLot').value = t.lot_id;
+            document.getElementById('transactionModal').classList.add('active');
+        }
+
+        function closeTxnModal() {
+            document.getElementById('transactionModal').classList.remove('active');
+            document.getElementById('transactionForm').reset();
+            document.getElementById('transactionLot').innerHTML = '<option value="">— Select SKU first —</option>';
+        }
+
+        async function deleteTransaction(id) {
+            if (!confirm('Are you sure you want to delete this transaction? This cannot be undone.')) return;
+            try {
+                const response = await fetch(`/api/inventory_transactions/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) { alert('Transaction deleted'); fetchTransactions(); }
+                else { alert('Failed to delete: ' + result.error); }
+            } catch (err) {
+                alert('Failed to delete transaction: ' + err.message);
+            }
+        }
+
+        document.getElementById('transactionForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('transactionId').value;
+            const selectedLotId = document.getElementById('transactionLot').value;
+            const data = {
+                date:             document.getElementById('transactionDate').value,
+                sku:              document.getElementById('transactionSku').value,
+                quantity:         parseInt(document.getElementById('transactionQuantity').value),
+                transaction_type: document.getElementById('transactionType').value,
+                notes:            document.getElementById('transactionNotes').value,
+                lot_id:           selectedLotId ? parseInt(selectedLotId) : null
+            };
+            try {
+                const url    = id ? `/api/inventory_transactions/${id}` : '/api/inventory_transactions';
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert(id ? 'Transaction updated!' : 'Transaction created!');
+                    closeTxnModal();
+                    fetchTransactions();
+                } else {
+                    alert('Failed to save: ' + result.error);
+                }
+            } catch (err) {
+                alert('Failed to save transaction: ' + err.message);
+            }
+        });
+    </script>
+    <script src="/static/tour.js"></script>
+</body>
+</html>
