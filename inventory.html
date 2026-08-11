@@ -437,7 +437,7 @@
                 <h3 class="modal-title" id="sku-lot-modal-title">Add Lot Assignment</h3>
             </div>
             <div class="modal-body">
-                <div id="sku-lot-modal-error" style="display:none;color:var(--error-red);margin-bottom:12px;padding:8px;background:rgba(220,38,38,0.08);border-radius:6px;font-size:13px;"></div>
+                <div id="sku-lot-modal-error" style="display:none;color:var(--critical-red);margin-bottom:12px;padding:8px;background:rgba(220,38,38,0.08);border-radius:6px;font-size:13px;"></div>
                 <div class="form-group">
                     <label class="form-label" for="sku-lot-sku">SKU *</label>
                     <select id="sku-lot-sku" class="form-select" required>
@@ -729,12 +729,12 @@
                     renderLotTable();
                 } else {
                     document.getElementById('lot-table-container').innerHTML =
-                        `<div class="empty-state" style="color:var(--error-red);">Failed to load lot inventory</div>`;
+                        `<div class="empty-state" style="color:var(--critical-red);">Failed to load lot inventory</div>`;
                 }
             } catch (err) {
                 console.error('Error loading lots:', err);
                 document.getElementById('lot-table-container').innerHTML =
-                    `<div class="empty-state" style="color:var(--error-red);">Failed to load lot inventory</div>`;
+                    `<div class="empty-state" style="color:var(--critical-red);">Failed to load lot inventory</div>`;
             }
         }
 
@@ -762,7 +762,7 @@
 
             const balanceCell = (balance) => {
                 const fmt = balance.toLocaleString();
-                if (balance < 0) return `<strong style="font-size:15px;color:var(--error-red);">${fmt}</strong>`;
+                if (balance < 0) return `<strong style="font-size:15px;color:var(--critical-red);">${fmt}</strong>`;
                 return `<strong style="font-size:15px;">${fmt}</strong>`;
             };
 
@@ -797,7 +797,7 @@
                 lotsBySKU[sku].forEach((lot, index) => {
                     if (hideZeroBalances && lot.balance === 0) return;
                     const priority = index + 1;
-                    const qtyStyle = lot.balance < 0 ? 'color:var(--error-red);' : '';
+                    const qtyStyle = lot.balance < 0 ? 'color:var(--critical-red);' : '';
                     html += `<div class="lot-card">
                         <div class="lot-card-header">
                             <div>
@@ -998,7 +998,7 @@
                     renderSkuLotsTable();
                 } else {
                     document.getElementById('sku-lot-table-container').innerHTML =
-                        '<div class="empty-state" style="color:var(--error-red);">Failed to load lot assignments</div>';
+                        '<div class="empty-state" style="color:var(--critical-red);">Failed to load lot assignments</div>';
                 }
             } catch (err) {
                 console.error('Error loading SKU lots:', err);
@@ -1113,8 +1113,8 @@
             if (!skuEl || !lotEl) return;
             const sku = skuEl.value.trim();
             const lot = lotEl.value.trim();
-            if (!sku) { skuEl.focus(); skuEl.style.borderColor = 'var(--error-red)'; return; }
-            if (!lot) { lotEl.focus(); lotEl.style.borderColor = 'var(--error-red)'; return; }
+            if (!sku) { skuEl.focus(); skuEl.style.borderColor = 'var(--critical-red)'; return; }
+            if (!lot) { lotEl.focus(); lotEl.style.borderColor = 'var(--critical-red)'; return; }
             skuEl.disabled = true; lotEl.disabled = true;
             try {
                 const resp   = await fetch('/api/sku_lots', {
@@ -1126,7 +1126,7 @@
                 if (result.success) { cancelInlineRow(); loadSkuLots(); }
                 else {
                     skuEl.disabled = false; lotEl.disabled = false;
-                    lotEl.style.borderColor = 'var(--error-red)';
+                    lotEl.style.borderColor = 'var(--critical-red)';
                     alert(result.error || 'Failed to save assignment');
                 }
             } catch (err) {
