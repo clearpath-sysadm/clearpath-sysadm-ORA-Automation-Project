@@ -121,29 +121,53 @@
             transform: scale(0.95);
         }
 
-        /* Weekly inventory — mobile card layout (display toggled by JS based on window width) */
-        #weeklyReportCards { padding: 12px; flex-direction: column; gap: 10px; }
+        /* ─── Weekly inventory — mobile cards ─── */
+        #weeklyReportCards { padding: 12px; flex-direction: column; gap: 8px; }
         .weekly-inv-card {
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 14px;
+            border-radius: 8px;
+            padding: 12px 14px;
             background: var(--bg-primary);
         }
         .weekly-inv-card-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            gap: 10px;
             margin-bottom: 10px;
-            gap: 8px;
         }
-        .weekly-inv-card-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            font-size: 13px;
-            margin-bottom: 12px;
+        .weekly-inv-product { font-weight: 600; font-size: 14px; line-height: 1.3; }
+        .weekly-inv-sku { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+        .weekly-inv-card-stats {
+            display: flex;
+            align-items: stretch;
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
         }
-        .weekly-inv-card-label { color: var(--text-secondary); font-size: 12px; margin-bottom: 2px; }
+        .wic-stat { flex: 1; padding: 0 10px; }
+        .wic-stat:first-child { padding-left: 0; }
+        .wic-stat:last-child { padding-right: 0; }
+        .wic-sep { width: 1px; background: var(--border-color); flex-shrink: 0; }
+        .wic-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); margin-bottom: 3px; }
+        .wic-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .wic-pallet .wic-val { font-size: 12px; font-weight: 500; }
+
+        /* ─── Operational Pulse — mobile collapsible + 2-per-row ─── */
+        .pulse-section-toggle { display: flex; align-items: center; justify-content: space-between; user-select: none; margin-bottom: 16px; }
+        .pulse-chevron { display: none; font-size: 14px; color: var(--text-tertiary); transition: transform 0.2s; line-height: 1; }
+
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .stat-card { padding: 10px 12px; }
+            .stat-value { font-size: 22px; margin-bottom: 2px; }
+            .stat-label { font-size: 12px; }
+            .stat-change { font-size: 10px; }
+            .pulse-section-toggle { cursor: pointer; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px; }
+            .pulse-chevron { display: inline-block; }
+            .pulse-chevron.collapsed { transform: rotate(-90deg); }
+            #pulse-body.collapsed { display: none; }
+            #inv-btn-row .btn { font-size: 11px; padding: 5px 8px; }
+        }
     </style>
     
 </head>
@@ -391,8 +415,11 @@
 
                 <!-- Operational Pulse Section -->
                 <section>
-                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Operational Pulse</h2>
-                    
+                    <div class="pulse-section-toggle" onclick="togglePulseSection()">
+                        <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Operational Pulse</h2>
+                        <span class="pulse-chevron" id="pulse-chevron">▾</span>
+                    </div>
+                    <div id="pulse-body">
                     <div class="stats-grid">
                         <!-- Skeleton Loaders -->
                         <div class="skeleton skeleton-card" id="stat-skeleton-1"></div>
@@ -501,6 +528,7 @@
                             <div class="stat-change" id="pulse-last-sync-sub" style="font-size: 11px; color: var(--text-tertiary);">ShipStation sync</div>
                         </div>
                     </div>
+                    </div><!-- /#pulse-body -->
                 </section>
 
                 <!-- Time Log Section (collapsible) -->
@@ -598,7 +626,7 @@
                                     <!-- As Of date will be injected here -->
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 8px;">
+                            <div id="inv-btn-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
                                     📧 Compose Email
                                 </button>
@@ -824,39 +852,38 @@
                     const statusClass = daysLeft < 14 ? 'critical' : daysLeft < 30 ? 'warning' : 'success';
                     const statusIndicator = daysLeft < 14 ? 'red' : daysLeft < 30 ? 'yellow' : 'green';
                     const daysText = daysLeft >= 999 ? '∞' : daysLeft;
-                    const palletBreakdown = item.partial_units > 0
-                        ? `${item.full_pallets} full + ${item.partial_units} units`
-                        : `${item.full_pallets} full`;
+                    const palletShort = item.partial_units > 0
+                        ? `${item.full_pallets} pal + ${item.partial_units}u`
+                        : `${item.full_pallets} pal`;
                     const productName = item.product_name || item.sku;
                     return `
                         <div class="weekly-inv-card">
                             <div class="weekly-inv-card-header">
                                 <div>
-                                    <strong style="font-size: 15px;">${productName}</strong>
-                                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">SKU: ${item.sku}</div>
+                                    <div class="weekly-inv-product">${productName}</div>
+                                    <div class="weekly-inv-sku">SKU ${item.sku}</div>
                                 </div>
-                                <span class="badge badge-${statusClass}">
+                                <span class="badge badge-${statusClass}" style="flex-shrink:0;white-space:nowrap;">
                                     <span class="status-indicator status-${statusIndicator}"></span>
-                                    ${daysText} days
+                                    ${daysText === '∞' ? '∞' : daysText + 'd'}
                                 </span>
                             </div>
-                            <div class="weekly-inv-card-grid">
-                                <div>
-                                    <div class="weekly-inv-card-label">Current Qty</div>
-                                    <strong>${item.current_quantity}</strong>
+                            <div class="weekly-inv-card-stats">
+                                <div class="wic-stat">
+                                    <div class="wic-label">Qty</div>
+                                    <div class="wic-val">${item.current_quantity}</div>
                                 </div>
-                                <div>
-                                    <div class="weekly-inv-card-label">52-Week Avg</div>
-                                    <strong>${Math.round(item.rolling_avg_52_weeks)}</strong>
+                                <div class="wic-sep"></div>
+                                <div class="wic-stat">
+                                    <div class="wic-label">52w Avg</div>
+                                    <div class="wic-val">${Math.round(item.rolling_avg_52_weeks)}</div>
                                 </div>
-                                <div style="grid-column: span 2;">
-                                    <div class="weekly-inv-card-label">Pallet Breakdown</div>
-                                    📦 ${palletBreakdown}
+                                <div class="wic-sep"></div>
+                                <div class="wic-stat wic-pallet">
+                                    <div class="wic-label">Pallets</div>
+                                    <div class="wic-val">${palletShort}</div>
                                 </div>
                             </div>
-                            <button class="btn-icon" onclick="openPhysicalCountModal('${item.sku}', ${item.current_quantity}, '${productName}')" title="Adjust inventory from physical count">
-                                ✏️ Adjust
-                            </button>
                         </div>
                     `;
                 }).join('');
@@ -1970,6 +1997,14 @@
         }
 
         // ─── Time Log ─────────────────────────────────────────────────────────────
+
+        function togglePulseSection() {
+            if (window.innerWidth > 640) return;
+            const body = document.getElementById('pulse-body');
+            const chevron = document.getElementById('pulse-chevron');
+            body.classList.toggle('collapsed');
+            chevron.classList.toggle('collapsed');
+        }
 
         function toggleTimeLog() {
             const body = document.getElementById('tl-body');
