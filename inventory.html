@@ -333,7 +333,7 @@
                         <!-- Lot Inventory actions -->
                         <div class="lot-tab-actions" id="tab-actions-lot-inventory">
                             <button class="btn btn-sm" id="lot-zero-filter-btn"
-                                    onclick="toggleZeroFilter()">Hide Zeros</button>
+                                    onclick="toggleZeroFilter()">Show All</button>
                             <button class="btn" onclick="openAddModal()">
                                 <span>➕</span> Add Lot
                             </button>
@@ -711,7 +711,7 @@
         // ══════════════════════════════════════════════════════════════════
         let lots = [];
         let editingLotId = null;
-        let hideZeroBalances = false;
+        let hideZeroBalances = true;
 
         function toggleZeroFilter() {
             hideZeroBalances = !hideZeroBalances;
