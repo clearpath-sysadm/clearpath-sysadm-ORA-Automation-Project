@@ -17,6 +17,21 @@
         .lot-card              { display: none; }
         .assignment-cards-container { display: none; }
 
+        .status-badge.status-actionable {
+            border: 1px solid currentColor;
+            cursor: pointer;
+            font-family: inherit;
+            transition: filter 0.15s ease, transform 0.15s ease;
+        }
+        .status-badge.status-actionable:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+        }
+        .status-badge.status-actionable:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
         @media (max-width: 900px) {
             .table-container table { display: none; }
 
@@ -902,7 +917,7 @@
                         <td>${balanceCell(lot.balance)}</td>
                         <td>${formatReceiptCount(lot)}</td>
                         <td><span class="priority-indicator ${priority === 1 ? 'priority-1' : ''}">#${priority}</span></td>
-                        <td>${getLotStatusBadge(lot.status, lot.balance)}</td>
+                        <td>${getLotStatusBadge(lot.status, lot.balance, lot.id)}</td>
                         <td><div class="action-buttons">
                             <button class="btn btn-sm" onclick="openCorrectionModal(${lot.id},'${lot.sku}','${lot.lot}')">Correct</button>
                             <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>
@@ -932,7 +947,7 @@
                             </div>
                         </div>
                         <div class="lot-card-meta">
-                            ${getLotStatusBadge(lot.status, lot.balance)}
+                            ${getLotStatusBadge(lot.status, lot.balance, lot.id)}
                             <span class="lot-card-meta-sep">·</span>
                             <span>${formatReceiptCount(lot)}</span>
                             <span class="lot-card-meta-sep">·</span>
@@ -962,12 +977,55 @@
             return `<span title="${tip}" style="cursor:default;border-bottom:1px dotted var(--text-secondary);">${label}</span>`;
         }
 
-        function getLotStatusBadge(status, balance) {
+        function getLotStatusBadge(status, balance, lotId) {
+            const canReactivate = status === 'depleted' && Number(balance) > 0;
+            if (canReactivate) {
+                return `<button type="button" class="status-badge status-depleted status-actionable"
+                    title="Reactivate this lot"
+                    onclick="reactivateLot(${Number(lotId)})">Depleted</button>`;
+            }
             if (status === 'active' && balance > 0)  return `<span class="status-badge status-active">Active</span>`;
             if (status === 'active' && balance === 0) return `<span class="status-badge status-empty">Empty</span>`;
             if (status === 'depleted')                return `<span class="status-badge status-depleted">Depleted</span>`;
             if (status === 'quarantine')              return `<span class="status-badge status-quarantine">Quarantine</span>`;
             return `<span class="status-badge status-inactive">Inactive</span>`;
+        }
+
+        async function reactivateLot(lotId) {
+            const lot = lots.find(item => item.id === lotId);
+            if (!lot || lot.status !== 'depleted') return;
+
+            const balance = Number(lot.balance);
+            if (!(balance > 0)) {
+                alert('❌ A depleted lot can only be reactivated when its balance is greater than zero.');
+                return;
+            }
+
+            if (!confirm(`Reactivate lot ${lot.lot} for SKU ${lot.sku}? Its current balance is ${balance.toLocaleString()} units.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/lot_inventory/${lotId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'active' })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    await loadLots();
+                    const retry = data.backorder_retry;
+                    const retryMessage = retry
+                        ? ` Backorder retry: ${retry.retagged || 0} retagged${retry.still_backordered ? `, ${retry.still_backordered} still waiting` : ''}.`
+                        : '';
+                    alert(`✅ Lot ${lot.lot} reactivated successfully.${retryMessage}`);
+                } else {
+                    alert('❌ ' + (data.error || 'Failed to reactivate lot'));
+                }
+            } catch (err) {
+                console.error('Error reactivating lot:', err);
+                alert('❌ Failed to reactivate lot');
+            }
         }
 
         // Lot add/edit modal
@@ -1015,12 +1073,15 @@
             const status       = document.getElementById('status').value;
             const notes        = document.getElementById('notes').value.trim();
 
-            if (!sku || !lot || !receivedDate) {
+            if (!sku || !lot || (!editingLotId && !receivedDate)) {
                 alert('Please fill in SKU, Lot Number, and Received Date');
                 return;
             }
 
-            const lotData = { sku, lot, received_date: receivedDate, status, notes };
+            const lotData = { sku, lot, status, notes };
+            if (receivedDate) {
+                lotData.received_date = receivedDate;
+            }
             if (!editingLotId) {
                 lotData.initial_qty = parseInt(document.getElementById('initial-qty').value || 0);
             }

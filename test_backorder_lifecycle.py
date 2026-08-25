@@ -178,6 +178,18 @@ class TestShippedBackorderSafeguard(unittest.TestCase):
 
 
 class TestLotActivationRetry(unittest.TestCase):
+    def test_primary_inventory_page_has_status_only_reactivation_control(self):
+        """The signed-in Inventory page, not the legacy page, exposes reactivation."""
+        with open(os.path.join(project_root, 'inventory.html'), encoding='utf-8') as inventory_page:
+            html = inventory_page.read()
+
+        self.assertIn('function reactivateLot(lotId)', html)
+        self.assertIn(
+            'getLotStatusBadge(lot.status, lot.balance, lot.id)',
+            html,
+        )
+        self.assertIn('(!editingLotId && !receivedDate)', html)
+
     def test_create_lot_still_requires_received_date(self):
         """New lots need a FIFO date even though existing lots do not."""
         import app as dashboard_app
@@ -201,7 +213,7 @@ class TestLotActivationRetry(unittest.TestCase):
 
         conn = MagicMock()
         cursor = MagicMock()
-        cursor.fetchone.return_value = ('depleted', 0, '17612')
+        cursor.fetchone.return_value = ('depleted', 8, '17612')
         cursor.rowcount = 1
         conn.cursor.return_value = cursor
 
