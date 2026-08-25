@@ -9,7 +9,8 @@ ShipStation retry exhaustion, etc.).
 
 Schedule: 6:00 AM and 12:00 PM CDT on business days.
 
-Also registers the ORDER_NOTIFY webhook with ShipStation on startup (idempotent).
+Also registers the ORDER_NOTIFY webhook with ShipStation on startup (idempotent)
+and runs one reconciliation after every enabled worker startup.
 """
 import os
 import sys
@@ -24,7 +25,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.services.database.pg_utils import (
-    get_connection, is_workflow_enabled, update_workflow_last_run, transaction_with_retry
+    is_workflow_enabled, update_workflow_last_run, transaction_with_retry
 )
 from src.services.shipstation.api_client import (
     get_shipstation_credentials, get_shipstation_headers, register_order_notify_webhook
@@ -53,37 +54,6 @@ SCAN_TIMES = [
     datetime.time(12, 0),
 ]
 SCAN_WINDOW_MINUTES = 5
-
-
-def _should_run_startup_catchup() -> bool:
-    """
-    Return True if the last successful reconciliation was more than 6 hours ago (or has
-    never run), indicating a catch-up scan is needed immediately on startup.
-
-    The threshold of 6 hours sits at the ~6-hour interval between the two
-    scheduled scans (6:00 AM and 12:00 PM CDT), so a normal restart that immediately
-    follows a completed scan will never trigger an unwanted duplicate run.
-    """
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT last_run_at FROM workflow_controls WHERE workflow_name = %s",
-            (WORKFLOW_NAME,)
-        )
-        row = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        if not row or not row[0]:
-            return True
-        last_run = row[0]
-        if last_run.tzinfo is None:
-            last_run = pytz.UTC.localize(last_run)
-        gap_hours = (datetime.datetime.now(pytz.UTC) - last_run).total_seconds() / 3600
-        return gap_hours > 6
-    except Exception as e:
-        logger.warning(f"Could not check startup catch-up condition: {e}")
-        return False
 
 
 def _is_scan_time() -> bool:
@@ -371,6 +341,45 @@ def register_webhook_on_startup():
         )
 
 
+def run_startup_reconciliation(is_production: bool) -> bool:
+    """
+    Run one reconciliation whenever this enabled worker process starts.
+
+    The reconciliation and its skip cache are already idempotent, so using the
+    last scheduled-run timestamp as a startup gate only creates a recovery gap:
+    a restart immediately after a scan can still happen while ShipStation has
+    new or unresolved work. Development remains opt-in through is_dev_silent().
+    """
+    if is_dev_silent():
+        logger.info(
+            "Development workers are disabled — skipping startup reconciliation."
+        )
+        return False
+
+    reason = (
+        "production server startup/redeploy"
+        if is_production
+        else "enabled development worker startup"
+    )
+    logger.info(f"Startup reconciliation triggered: {reason}.")
+    server_logger.info(
+        f"Startup reconciliation triggered: {reason}.",
+        source="Lot Tagger"
+    )
+    try:
+        run_reconciliation()
+        return True
+    except Exception as e:
+        # Do not terminate the worker. The regular schedule and manual retry
+        # endpoint remain available to recover after a transient outage.
+        logger.error(f"Startup reconciliation error: {e}", exc_info=True)
+        server_logger.error(
+            f"Startup reconciliation failed; scheduled/manual retry remains available: {e}",
+            source="Lot Tagger"
+        )
+        return False
+
+
 def main():
     logger.info("Lot Tagger scheduler starting...")
     logger.info("Schedule: 6:00 AM and 12:00 PM CDT on business days")
@@ -381,17 +390,7 @@ def main():
         logger.warning(f"Webhook registration failed on startup (will retry next run): {e}")
 
     is_production = os.getenv('REPLIT_DEPLOYMENT') == '1'
-    if not is_dev_silent() and (is_production or _should_run_startup_catchup()):
-        reason = "production redeploy" if is_production else "last run was over 6 hours ago"
-        logger.info(f"Startup reconciliation triggered: {reason}.")
-        server_logger.info(
-            f"Startup reconciliation triggered: {reason}.",
-            source="Lot Tagger"
-        )
-        try:
-            run_reconciliation()
-        except Exception as e:
-            logger.error(f"Startup catch-up reconciliation error: {e}", exc_info=True)
+    run_startup_reconciliation(is_production)
 
     last_scan_minute = None
 
