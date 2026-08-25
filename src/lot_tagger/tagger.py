@@ -62,6 +62,7 @@ LOT_STATUS_QUERY = """
 HOME_OFFICE_SKUS = {'18751', '18760', '18565'}
 
 LOT_OVERRIDE_TAG_ID = 49832
+BACKORDER_CF1 = 'backordered'
 
 SKU_SHIPPING_PROFILES = {
     '17612': {'package_code': 'package', 'package_id': 'se-122675', 'length': 12.0, 'width': 12.0, 'height': 10.0, 'weight_oz': 352},
@@ -396,6 +397,140 @@ def ensure_v2_package(order_id: int, order_number: str, profile: dict,
         return {'action': 'error', 'error': f'V2 PUT failed {status}: {body}'}
 
 
+def _apply_shipping_enrichment(order: dict, expected_cf1: str, profile: dict,
+                               num_packages: int, lot_override: bool) -> dict:
+    """
+    Apply the tagger-owned CF1 and shipping fields through the existing
+    ShipStation update paths.
+
+    Both normal lot tags and the `backordered` marker use this helper so their
+    carrier, service, billing, dimensions, weight, package, and V2 behavior
+    remains identical.
+    """
+    order_number = order.get('orderNumber', '').strip()
+    order_id = order.get('orderId')
+    mismatched = _get_mismatched_fields(order, expected_cf1, profile)
+    if lot_override:
+        mismatched = [field for field in mismatched if field != 'customField1']
+
+    if not mismatched:
+        v2_result = ensure_v2_package(
+            order_id, order_number, profile, num_packages=num_packages
+        )
+        if v2_result['action'] == 'error':
+            server_logger.error(
+                f"V2 package sweep failed for order {order_number} "
+                f"(SS ID: {order_id}): {v2_result.get('error')}",
+                source="Lot Tagger",
+            )
+        return {
+            'success': True,
+            'updated': False,
+            'mismatched': [],
+            'previous_cf1': (order.get('advancedOptions') or {}).get('customField1') or '',
+        }
+
+    adv = order.get('advancedOptions') or {}
+    current_cf1 = (adv.get('customField1') or '').strip()
+    # `backordered` is a state marker, not historical lot data. Do not copy it
+    # to CF2 when an available lot later replaces it.
+    field2_value = (
+        current_cf1
+        if not lot_override
+        and current_cf1
+        and current_cf1 != expected_cf1
+        and current_cf1 != BACKORDER_CF1
+        else None
+    )
+    result = update_order_custom_fields(
+        order_id, expected_cf1, field2_value,
+        skip_cf1=lot_override,
+        carrier_code=profile['carrier_code'],
+        service_code=profile['service_code'],
+        package_code=profile['package_code'],
+        weight_oz=profile['weight_oz'],
+        dim_length=profile['length'],
+        dim_width=profile['width'],
+        dim_height=profile['height'],
+        bill_to_party=profile['bill_to_party'],
+        bill_to_account=profile['bill_to_account'],
+        bill_to_postal_code=profile.get('bill_to_postal_code'),
+        bill_to_country_code=profile.get('bill_to_country_code'),
+    )
+    if not result.get('success'):
+        return {
+            'success': False,
+            'updated': False,
+            'mismatched': mismatched,
+            'previous_cf1': current_cf1,
+            'error': result.get('error'),
+        }
+
+    if not lot_override:
+        order.setdefault('advancedOptions', {})['customField1'] = expected_cf1
+
+    if profile.get('package_id'):
+        v2_result = update_order_package_v2(
+            order_id,
+            profile['package_id'],
+            profile['weight_oz'],
+            profile['length'],
+            profile['width'],
+            profile['height'],
+            num_packages=num_packages,
+        )
+        if not v2_result.get('success'):
+            server_logger.error(
+                f"V2 package update failed for order {order_number} "
+                f"(SS ID: {order_id}): {v2_result.get('error')}",
+                source="Lot Tagger",
+            )
+
+    return {
+        'success': True,
+        'updated': True,
+        'mismatched': mismatched,
+        'previous_cf1': current_cf1,
+    }
+
+
+def _mark_order_backordered(order: dict, sku: str, num_packages: int, conn,
+                            lot_override: bool, reason: str) -> None:
+    """Persist retry work while using the normal enrichment path for backorders."""
+    order_number = order.get('orderNumber', '').strip()
+    order_id = order.get('orderId')
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO lot_tagging_failures (order_number, shipstation_order_id, sku, detected_at)
+        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+        ON CONFLICT (shipstation_order_id) DO UPDATE
+            SET detected_at = CURRENT_TIMESTAMP,
+                sku = EXCLUDED.sku
+        WHERE lot_tagging_failures.resolved_at IS NULL
+    """, (order_number, str(order_id), sku))
+    conn.commit()
+
+    profile = resolve_shipping_profile(order, sku)
+    # A manual lot override only protects an operator-selected *lot* stamp.
+    # It must not hide the backorder state when no valid inventory exists.
+    outcome = _apply_shipping_enrichment(
+        order, BACKORDER_CF1, profile, num_packages, False
+    )
+    if not outcome['success']:
+        server_logger.error(
+            f"Failed to mark/enrich backordered order {order_number} "
+            f"(SS ID: {order_id}): {outcome.get('error')}",
+            source="Lot Tagger",
+        )
+        return
+
+    server_logger.info(
+        f"Backordered order {order_number} (SS ID: {order_id}) for SKU {sku}: "
+        f"{reason}. CF1={BACKORDER_CF1!r}; shipping profile and packages retained.",
+        source="Lot Tagger",
+    )
+
+
 def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str], lot_statuses: Dict,
                     conn, lot_candidates: Dict[str, list] = None,
                     promo_map: dict = None, variant_map: dict = None) -> None:
@@ -430,7 +565,8 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     if lot_override:
         server_logger.info(
             f"[Lot Tagger] Lot Override tag present on order {order_number} (SS ID: {order_id})"
-            f" — skipping CF1 update.",
+            f" — preserving the operator-selected lot when available; "
+            f"a backorder marker still takes precedence when inventory is unavailable.",
             source="Lot Tagger"
         )
 
@@ -851,6 +987,10 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 source="Lot Tagger"
             )
             _write_admin_alert(conn, _alert_msg)
+            _mark_order_backordered(
+                order, sku, num_packages, conn, lot_override,
+                reason='no eligible active lot with positive balance',
+            )
             return
 
         reservation = lot_reservation.reserve_lot_for_order(
@@ -878,6 +1018,10 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
                 source="Lot Tagger"
             )
             _write_admin_alert(conn, _alert_msg)
+            _mark_order_backordered(
+                order, sku, num_packages, conn, lot_override,
+                reason='no active lot has enough available balance',
+            )
             return
         lot_number = reservation['lot_number']
         newly_reserved = True
@@ -885,66 +1029,25 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
     expected_value = f"{sku} - {lot_number}"
     profile        = resolve_shipping_profile(order, sku)
 
-    mismatched = _get_mismatched_fields(order, expected_value, profile)
-    if lot_override:
-        mismatched = [f for f in mismatched if f != 'customField1']
-    if not mismatched:
-        logger.debug(f"Order {order_number} already correct — skipped.")
-        v2_result = ensure_v2_package(order_id, order_number, profile,
-                                      num_packages=num_packages)
-        if v2_result['action'] == 'updated':
-            server_logger.info(
-                f"V2 package swept to {profile['package_id']} ×{num_packages} "
-                f"for order {order_number} (SS ID: {order_id})",
-                source="Lot Tagger"
-            )
-        elif v2_result['action'] == 'error':
-            server_logger.error(
-                f"V2 package sweep failed for order {order_number} "
-                f"(SS ID: {order_id}): {v2_result.get('error')}",
-                source="Lot Tagger"
-            )
-        return
-
-    adv         = order.get('advancedOptions') or {}
-    current_cf1 = (adv.get('customField1') or '').strip()
-    field2_value = current_cf1 if not lot_override and current_cf1 and current_cf1 != expected_value else None
-    if field2_value:
-        server_logger.warning(
-            f"Order {order_number} (SS ID: {order_id}) customField1 currently '{current_cf1}'. "
-            f"Moving to customField2 and writing correct lot.",
-            source="Lot Tagger"
-        )
-
-    result = update_order_custom_fields(
-        order_id, expected_value, field2_value,
-        skip_cf1=lot_override,
-        carrier_code=profile['carrier_code'],
-        service_code=profile['service_code'],
-        package_code=profile['package_code'],
-        weight_oz=profile['weight_oz'],
-        dim_length=profile['length'],
-        dim_width=profile['width'],
-        dim_height=profile['height'],
-        bill_to_party=profile['bill_to_party'],
-        bill_to_account=profile['bill_to_account'],
-        bill_to_postal_code=profile.get('bill_to_postal_code'),
-        bill_to_country_code=profile.get('bill_to_country_code'),
+    outcome = _apply_shipping_enrichment(
+        order, expected_value, profile, num_packages, lot_override
     )
-
-    if not result.get('success'):
+    if not outcome['success']:
         if newly_reserved:
             lot_reservation.release_reservation(
-                conn, order_id, sku, reason=f"ShipStation CF1 write failed: {result.get('error')}"
+                conn, order_id, sku,
+                reason=f"ShipStation CF1 write failed: {outcome.get('error')}",
             )
             conn.commit()
         server_logger.error(
-            f"Failed to tag order {order_number} (SS ID: {order_id}): {result.get('error')}",
+            f"Failed to tag order {order_number} (SS ID: {order_id}): {outcome.get('error')}",
             source="Lot Tagger"
         )
         return
 
-    if not current_cf1:
+    if not outcome['updated']:
+        logger.debug(f"Order {order_number} already correct — skipped.")
+    elif not outcome['previous_cf1']:
         server_logger.info(
             f"Freshly tagged order {order_number} (SS ID: {order_id}) with '{expected_value}' "
             f"[{profile['service_code']}, account={profile['bill_to_account']}]",
@@ -952,36 +1055,11 @@ def tag_order_lots(order: dict, active_lots: Dict[str, str], known_skus: Set[str
         )
     else:
         server_logger.info(
-            f"Corrected {len(mismatched)} field(s) on order {order_number} (SS ID: {order_id}) "
+            f"Corrected {len(outcome['mismatched'])} field(s) on order {order_number} (SS ID: {order_id}) "
             f"lot='{expected_value}' [{profile['service_code']}, account={profile['bill_to_account']}] "
-            f"fields={mismatched}",
+            f"fields={outcome['mismatched']}",
             source="Lot Tagger"
         )
-    if not lot_override:
-        order.setdefault('advancedOptions', {})['customField1'] = expected_value
-
-    if profile.get('package_id'):
-        v2_result = update_order_package_v2(
-            order_id,
-            profile['package_id'],
-            profile['weight_oz'],
-            profile['length'],
-            profile['width'],
-            profile['height'],
-            num_packages=num_packages,
-        )
-        if not v2_result.get('success'):
-            server_logger.error(
-                f"V2 package update failed for order {order_number} "
-                f"(SS ID: {order_id}): {v2_result.get('error')}",
-                source="Lot Tagger"
-            )
-        else:
-            server_logger.info(
-                f"V2 package set to {profile['package_id']} ×{num_packages} "
-                f"for order {order_number} (SS ID: {order_id})",
-                source="Lot Tagger"
-            )
 
     cursor.execute("""
         UPDATE lot_tagging_failures
@@ -1062,6 +1140,19 @@ def verify_tagging_results(
             if len(unique_skus) > 1:
                 continue
             sku = unique_skus[0]
+            if current_cf1 == BACKORDER_CF1:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT 1
+                    FROM lot_tagging_failures
+                    WHERE shipstation_order_id = %s
+                      AND resolved_at IS NULL
+                    LIMIT 1
+                """, (str(order_id),))
+                if cursor.fetchone():
+                    total_tracked += 1
+                    tagged_correctly += 1
+                    continue
             lot_number = active_lots.get(sku)
             if not lot_number:
                 continue

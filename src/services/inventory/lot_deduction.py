@@ -86,6 +86,42 @@ def _check_negative_balance(conn, lot_id, sku, lot_number, order_number):
         )
 
 
+def _record_shipped_backorder_exception(conn, order_number: str,
+                                        shipstation_order_id: str,
+                                        base_sku: str) -> None:
+    """
+    Make a shipment that still carries the backorder marker impossible to miss.
+
+    The shipment record remains intact; this only preserves a durable exception
+    instead of allowing the deduction caller to silently treat it as an ordinary
+    malformed CF1 value.
+    """
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO lot_tagging_failures (order_number, shipstation_order_id, sku, detected_at)
+        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+        ON CONFLICT (shipstation_order_id) DO UPDATE
+            SET detected_at = CURRENT_TIMESTAMP,
+                sku = EXCLUDED.sku,
+                resolved_at = NULL,
+                resolved_by = NULL
+    """, (order_number, str(shipstation_order_id), base_sku))
+
+    message = (
+        f"🚨 HIGH PRIORITY: Backordered order {order_number} shipped before a lot "
+        f"was assigned (SKU {base_sku}). Review inventory deduction immediately."
+    )
+    # admin_alerts has a single rolling message. Avoid endlessly appending the
+    # same exception when ShipStation replays a status update.
+    cursor.execute("SELECT message FROM admin_alerts WHERE id = 1")
+    existing_alert = cursor.fetchone()
+    if not existing_alert or order_number not in (existing_alert[0] or ''):
+        _write_admin_alert(conn, message)
+    else:
+        conn.commit()
+    logger.error(message)
+
+
 def deduct_lot_inventory(
     order_number: str,
     shipstation_order_id: str,
@@ -129,6 +165,12 @@ def deduct_lot_inventory(
     cf1 = (customField1_value or '').strip()
     if not cf1:
         logger.debug(f"Skipping deduction for order {order_number} / {base_sku}: no customField1")
+        return False
+
+    if cf1.lower() == 'backordered':
+        _record_shipped_backorder_exception(
+            conn, order_number, shipstation_order_id, base_sku
+        )
         return False
 
     if ' - ' not in cf1:

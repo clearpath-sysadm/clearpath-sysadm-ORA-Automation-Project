@@ -110,12 +110,14 @@ def enforce_api_auth():
         '/api/reports/eod',  # Operations can run EOD
         '/api/reports/eow',  # Operations can run EOW
         '/api/inventory_transactions',  # Operations can add inventory transactions (POST)
+        '/api/lot_inventory',  # Operations can receive a new lot (POST)
         '/api/sku_lots',  # Operations can add lot numbers (POST)
     }
     
     # Operations-allowed write routes with dynamic paths (POST/PUT/PATCH only - DELETE still requires admin)
     OPERATIONS_ALLOWED_PATTERNS = [
         '/api/inventory_transactions/',  # Operations can edit inventory transactions (PUT)
+        '/api/lot_inventory/',  # Operations can update/correct a lot (PUT/POST)
         '/api/sku_lots/',  # Operations can edit/activate/deactivate lot numbers (PUT)
     ]
     
@@ -249,6 +251,28 @@ def enforce_api_auth():
             }), 401
     
     return None
+
+
+def retry_backorders_after_inventory_available(sku: str) -> dict:
+    """Run the existing lot-tagger retry path only after an inventory commit."""
+    try:
+        from src.lot_tagger.retry import retry_unresolved_lot_tagging_failures
+        return retry_unresolved_lot_tagging_failures(affected_sku=sku)
+    except Exception as exc:
+        logger.error(
+            "Backorder retry failed after inventory became available for SKU %s: %s",
+            sku, exc, exc_info=True,
+        )
+        return {
+            'found': 0,
+            'retried': 0,
+            'retagged': 0,
+            'still_backordered': 0,
+            'skipped_not_awaiting_shipment': 0,
+            'errors': 1,
+            'retry_error': str(exc),
+        }
+
 
 # Configure Flask
 app.config['JSON_SORT_KEYS'] = False
@@ -2353,12 +2377,18 @@ def api_create_inventory_transaction():
         conn.close()
 
         server_logger.info(f"Inventory transaction created: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
+        backorder_retry = None
+        if transaction_type in {'Receive', 'Adjust Up'} and quantity > 0:
+            backorder_retry = retry_backorders_after_inventory_available(sku)
         
-        return jsonify({
+        response = {
             'success': True,
             'id': transaction_id,
             'message': 'Transaction created successfully'
-        })
+        }
+        if backorder_retry is not None:
+            response['backorder_retry'] = backorder_retry
+        return jsonify(response)
     except Exception as e:
         return jsonify({
             'success': False,
@@ -2484,11 +2514,17 @@ def api_update_inventory_transaction(transaction_id):
         conn.close()
         
         server_logger.info(f"Inventory transaction #{transaction_id} updated: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
+        backorder_retry = None
+        if transaction_type in {'Receive', 'Adjust Up'} and quantity > 0:
+            backorder_retry = retry_backorders_after_inventory_available(sku)
         
-        return jsonify({
+        response = {
             'success': True,
             'message': 'Transaction updated successfully'
-        })
+        }
+        if backorder_retry is not None:
+            response['backorder_retry'] = backorder_retry
+        return jsonify(response)
     except Exception as e:
         return jsonify({
             'success': False,
@@ -6528,53 +6564,16 @@ def api_retry_lot_tagging_failures():
     Useful after new lot numbers are entered or a ShipStation outage clears.
     """
     try:
-        from src.services.shipstation.api_client import fetch_order_by_id, get_shipstation_credentials
-        from src.lot_tagger.tagger import build_lot_maps, tag_order_lots
-
-        api_key, api_secret = get_shipstation_credentials()
-        if not api_key or not api_secret:
-            return jsonify({'success': False, 'error': 'Failed to get ShipStation credentials'}), 500
-
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id, order_number, shipstation_order_id, sku
-            FROM lot_tagging_failures
-            WHERE resolved_at IS NULL
-            ORDER BY detected_at ASC
-        """)
-        failures = cursor.fetchall()
-
-        if not failures:
-            conn.close()
-            return jsonify({'success': True, 'message': 'No unresolved failures', 'retried': 0})
-
-        active_lots, known_skus, lot_statuses, lot_candidates = build_lot_maps(conn)
-        retried = 0
-        errors = 0
-
-        for failure_id, order_number, ss_order_id, sku in failures:
-            try:
-                result = fetch_order_by_id(int(ss_order_id), api_key, api_secret)
-                if not result.get('success'):
-                    logger.warning(f"Retry: failed to fetch SS order {ss_order_id}: {result.get('error')}")
-                    errors += 1
-                    continue
-
-                order = result['order']
-                tag_order_lots(order, active_lots, known_skus, lot_statuses, conn, lot_candidates)
-                retried += 1
-            except Exception as exc:
-                logger.error(f"Retry error for order {order_number}: {exc}", exc_info=True)
-                errors += 1
-
-        conn.close()
-
+        from src.lot_tagger.retry import retry_unresolved_lot_tagging_failures
+        summary = retry_unresolved_lot_tagging_failures()
         return jsonify({
             'success': True,
-            'message': f'Retry complete: {retried} processed, {errors} errors',
-            'retried': retried,
-            'errors': errors
+            'message': (
+                f"Retry complete: {summary['retagged']} retagged, "
+                f"{summary['still_backordered']} still backordered, "
+                f"{summary['errors']} errors"
+            ),
+            **summary,
         })
 
     except Exception as e:
@@ -7789,11 +7788,14 @@ def api_create_lot_inventory():
         conn.commit()
         conn.close()
 
-        return jsonify({
+        response = {
             'success': True,
             'message': 'Lot created successfully',
             'id': new_lot_id
-        })
+        }
+        if initial_qty > 0 and status == 'active':
+            response['backorder_retry'] = retry_backorders_after_inventory_available(sku)
+        return jsonify(response)
     except psycopg2.IntegrityError:
         return jsonify({
             'success': False,
@@ -7822,6 +7824,17 @@ def api_update_lot_inventory(lot_id):
 
         conn = get_connection()
         cursor = conn.cursor()
+        cursor.execute("""
+            SELECT l.status, COALESCE(lb.balance, 0), s.sku_code
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
+            WHERE l.lot_id = %s
+        """, (lot_id,))
+        previous_lot = cursor.fetchone()
+        if not previous_lot:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
 
         cursor.execute("""
             UPDATE lots
@@ -7839,7 +7852,14 @@ def api_update_lot_inventory(lot_id):
         conn.commit()
         conn.close()
 
-        return jsonify({'success': True, 'message': 'Lot updated successfully'})
+        response = {'success': True, 'message': 'Lot updated successfully'}
+        if (
+            previous_lot[0] != 'active'
+            and status == 'active'
+            and float(previous_lot[1] or 0) > 0
+        ):
+            response['backorder_retry'] = retry_backorders_after_inventory_available(previous_lot[2])
+        return jsonify(response)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -7949,11 +7969,14 @@ def api_correct_lot_inventory(lot_id):
             source="Lot Inventory", user=user_name, role=user_role
         )
 
-        return jsonify({
+        response = {
             'success': True,
             'message': 'Correction recorded successfully',
             'transaction_id': tx_id
-        })
+        }
+        if correction_type == 'Adjust Up':
+            response['backorder_retry'] = retry_backorders_after_inventory_available(sku)
+        return jsonify(response)
     except psycopg2.IntegrityError:
         return jsonify({
             'success': False,

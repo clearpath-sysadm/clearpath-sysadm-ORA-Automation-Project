@@ -155,6 +155,15 @@ def run_reconciliation():
 
     ss_headers = get_shipstation_headers(api_key, api_secret)
     all_orders = _fetch_awaiting_shipment_orders(api_key, api_secret)
+    # Stable oldest-first ordering ensures a partial receipt is reserved for
+    # the oldest waiting order rather than whichever order ShipStation returns
+    # first on a page.
+    all_orders.sort(
+        key=lambda order: (
+            order.get('createDate') or order.get('orderDate') or '',
+            str(order.get('orderId') or ''),
+        )
+    )
     server_logger.info(f"Total awaiting_shipment orders retrieved: {len(all_orders)}", source="Lot Tagger")
 
     if not all_orders:
