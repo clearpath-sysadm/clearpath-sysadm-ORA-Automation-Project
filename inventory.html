@@ -859,7 +859,7 @@
 
         async function loadLots() {
             try {
-                const response = await fetch('/api/lot_inventory');
+                const response = await fetch('/api/lot_inventory', { cache: 'no-store' });
                 const data = await response.json();
                 if (data.success) {
                     lots = data.lots;
@@ -1013,6 +1013,10 @@
                 });
                 const data = await response.json();
                 if (data.success) {
+                    // Update the visible row immediately; the uncached reload below
+                    // then reconciles the table with the server's latest balances.
+                    lot.status = 'active';
+                    renderLotTable();
                     await loadLots();
                     const retry = data.backorder_retry;
                     const retryMessage = retry

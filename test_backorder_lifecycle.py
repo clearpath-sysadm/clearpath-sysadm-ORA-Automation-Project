@@ -189,6 +189,8 @@ class TestLotActivationRetry(unittest.TestCase):
             html,
         )
         self.assertIn('(!editingLotId && !receivedDate)', html)
+        self.assertIn("fetch('/api/lot_inventory', { cache: 'no-store' })", html)
+        self.assertIn("lot.status = 'active';", html)
 
     def test_create_lot_still_requires_received_date(self):
         """New lots need a FIFO date even though existing lots do not."""
