@@ -584,7 +584,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="received-date">Received Date * (FIFO Order)</label>
+                        <label class="form-label" for="received-date" id="received-date-label">Received Date * (FIFO Order)</label>
                         <input type="date" class="form-input" id="received-date" required>
                     </div>
 
@@ -928,6 +928,8 @@
             document.getElementById('lot-id').value = '';
             document.getElementById('initial-qty-group').style.display = '';
             document.getElementById('initial-qty').value = 0;
+            document.getElementById('received-date').required = true;
+            document.getElementById('received-date-label').textContent = 'Received Date * (FIFO Order)';
 
             // Set today as default received date
             document.getElementById('received-date').valueAsDate = new Date();
@@ -946,6 +948,8 @@
             document.getElementById('sku').value = lot.sku;
             document.getElementById('lot').value = lot.lot;
             document.getElementById('received-date').value = lot.received_date || '';
+            document.getElementById('received-date').required = false;
+            document.getElementById('received-date-label').textContent = 'Received Date (FIFO Order; optional for metadata-only edits)';
             document.getElementById('status').value = lot.status;
             document.getElementById('notes').value = lot.notes || '';
 
@@ -966,6 +970,8 @@
             document.getElementById('sku').disabled = false;
             document.getElementById('lot').disabled = false;
             document.getElementById('initial-qty-group').style.display = '';
+            document.getElementById('received-date').required = true;
+            document.getElementById('received-date-label').textContent = 'Received Date * (FIFO Order)';
             editingLotId = null;
         }
 
@@ -983,6 +989,9 @@
             }
 
             const lotData = { sku, lot, status, notes };
+            // An existing lot may have no lot-level received date. Omitting
+            // the field makes this a true metadata-only update and preserves
+            // the receipt transaction history.
             if (receivedDate) {
                 lotData.received_date = receivedDate;
             }

@@ -7811,7 +7811,11 @@ def api_update_lot_inventory(lot_id):
     Balance corrections must use the /correct endpoint."""
     try:
         data          = request.get_json()
-        received_date = data.get('received_date')
+        # A metadata-only edit may intentionally leave the lot-level FIFO date
+        # blank (for example, when reactivating an older depleted lot). Treat
+        # an omitted or blank value as "preserve the existing value" rather
+        # than attempting to write an empty string to the date column.
+        received_date = data.get('received_date') or None
         status        = data.get('status')
         notes         = data.get('notes') if 'notes' in data else None
 

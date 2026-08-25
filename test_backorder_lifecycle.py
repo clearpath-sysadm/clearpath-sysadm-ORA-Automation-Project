@@ -178,6 +178,51 @@ class TestShippedBackorderSafeguard(unittest.TestCase):
 
 
 class TestLotActivationRetry(unittest.TestCase):
+    def test_create_lot_still_requires_received_date(self):
+        """New lots need a FIFO date even though existing lots do not."""
+        import app as dashboard_app
+
+        with patch('app.get_connection') as get_connection:
+            with dashboard_app.app.test_request_context(
+                '/api/lot_inventory',
+                method='POST',
+                json={'sku': '17612', 'lot': 'LOT-NEW', 'initial_qty': 0},
+            ):
+                response = dashboard_app.api_create_lot_inventory()
+
+        response, status_code = response
+        self.assertEqual(status_code, 400)
+        self.assertIn('received date', response.get_json()['error'])
+        get_connection.assert_not_called()
+
+    def test_edit_without_received_date_preserves_lot_metadata_and_transactions(self):
+        """Reactivating a lot with no lot-level date must not rewrite receipts."""
+        import app as dashboard_app
+
+        conn = MagicMock()
+        cursor = MagicMock()
+        cursor.fetchone.return_value = ('depleted', 0, '17612')
+        cursor.rowcount = 1
+        conn.cursor.return_value = cursor
+
+        with patch('app.get_connection', return_value=conn):
+            with dashboard_app.app.test_request_context(
+                '/api/lot_inventory/42',
+                method='PUT',
+                json={'received_date': '', 'status': 'active', 'notes': 'reactivated'},
+            ):
+                response = dashboard_app.api_update_lot_inventory(42)
+
+        self.assertEqual(response.status_code, 200)
+        update_call = cursor.execute.call_args_list[1]
+        self.assertIn('SET received_date = COALESCE(%s, received_date)', update_call.args[0])
+        self.assertIsNone(update_call.args[1][0])
+        self.assertEqual(update_call.args[1][1:], ('active', 'reactivated', 42))
+        self.assertFalse(any(
+            'inventory_transactions' in call.args[0]
+            for call in cursor.execute.call_args_list
+        ))
+
     def test_activating_positive_balance_lot_retries_matching_backorders(self):
         """The real lot update route must use the lot balance and retry post-commit."""
         import app as dashboard_app
