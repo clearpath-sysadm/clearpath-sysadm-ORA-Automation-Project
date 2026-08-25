@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 One-time utility: create or update ShipStation product records for Home Office SKUs.
-Sets warehouseLocation = "Home Office" on each SKU.
+Ensures both the required product name and warehouseLocation = "Home Office" on each SKU.
 
-ShipStation's API has no POST /products endpoint — product records are only
-created when orders containing that SKU flow through the system.  For SKUs that
+ShipStation V1 has no POST /products endpoint — product records are only
+created when orders containing that SKU flow through the system. For SKUs that
 don't exist yet, the script creates a minimal on-hold placeholder order, which
-causes ShipStation to create the product record, then immediately updates
-warehouseLocation and deletes the placeholder order.
+causes ShipStation to create the product record, then immediately updates its
+name and warehouse location and deletes the placeholder order.
 
 Usage:
     python utils/setup_home_office_products.py           # live run
@@ -18,8 +18,10 @@ import os
 import sys
 import argparse
 import base64
+import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 
 import requests
 
@@ -65,19 +67,19 @@ PRODUCTS = [
     ("18565-50",      "Tongue Razor 50-pack"),
     ("18565-100",     "Tongue Razor 100-pack"),
     ("18680",         "Free Sample"),
-    ("18680-OC-TP",   "Free Sample - OraCare & OraPro Paste"),
-    ("18680-OC",      "Free Sample - OraCare only"),
-    ("18680-ORTH-TP", "Free Sample - Ortho Protect & OraPro Paste"),
-    ("18680-ORTH",    "Free Sample - Ortho Protect only"),
-    ("18680-TP",      "Free Sample - OraPro Paste Only"),
+    ("18680-OC-TP",   "Free Sample — OraCare & OraPro Paste"),
+    ("18680-OC",      "Free Sample — OraCare only"),
+    ("18680-ORTH-TP", "Free Sample — Ortho Protect & OraPro Paste"),
+    ("18680-ORTH",    "Free Sample — Ortho Protect only"),
+    ("18680-TP",      "Free Sample — OraPro Paste Only"),
     ("18682",         "Poster"),
-    ("18682-6",       "Poster - Value Pack of 6"),
-    ("18682-BB",      "Poster - Bad Breath"),
-    ("18682-OR",      "Poster - Oral Health Quiz"),
-    ("18682-FL",      "Poster - Flossing"),
-    ("18682-PR",      "Poster - Protected by PreRinse"),
-    ("18682-HHG",     "Poster - Happy Healthy Gums"),
-    ("18682-DM",      "Poster - Dry Mouth"),
+    ("18682-6",       "Poster — Value Pack of 6"),
+    ("18682-BB",      "Poster — Bad Breath"),
+    ("18682-OR",      "Poster — Oral Health Quiz"),
+    ("18682-FL",      "Poster — Flossing"),
+    ("18682-PR",      "Poster — Protected by PreRinse"),
+    ("18682-HHG",     "Poster — Happy Healthy Gums"),
+    ("18682-DM",      "Poster — Dry Mouth"),
 ]
 
 
@@ -104,14 +106,17 @@ def _build_headers() -> dict:
 
 def find_product_by_sku(sku: str, headers: dict) -> dict | None:
     """
-    Returns the first ShipStation product whose SKU exactly matches (case-insensitive),
-    or None if not found.
+    Returns an active matching product first, then an inactive matching product,
+    whose SKU exactly matches (case-insensitive), or None if not found.
+
+    Inactive products are included so a prior setup run remains idempotent even
+    if ShipStation later deactivated the product.
     """
     resp = _request(
         "get",
         f"{SHIPSTATION_V1_BASE}/products",
         headers=headers,
-        params={"sku": sku, "showInactive": "false", "pageSize": 25},
+        params={"sku": sku, "showInactive": "true", "pageSize": 25},
         timeout=20,
     )
     if resp.status_code != 200:
@@ -119,17 +124,25 @@ def find_product_by_sku(sku: str, headers: dict) -> dict | None:
             f"GET /products?sku={sku} returned {resp.status_code}: {resp.text[:300]}"
         )
     products = resp.json().get("products", [])
-    for p in products:
-        if (p.get("sku") or "").strip().upper() == sku.strip().upper():
-            return p
-    return None
+    matches = [
+        product for product in products
+        if (product.get("sku") or "").strip().upper() == sku.strip().upper()
+    ]
+    if not matches:
+        return None
+    return sorted(matches, key=lambda product: not bool(product.get("active", True)))[0]
 
 
-def update_product(product_id: int, existing: dict, headers: dict) -> dict:
+def update_product(product_id: int, existing: dict, name: str, headers: dict) -> dict:
     """
-    PUT /products/{productId} — sets warehouseLocation while preserving all other fields.
+    PUT /products/{productId} — sets the required name and warehouse location
+    while preserving all other fields.
     """
-    payload = {**existing, "warehouseLocation": WAREHOUSE_LOCATION}
+    payload = {
+        **existing,
+        "name": name,
+        "warehouseLocation": WAREHOUSE_LOCATION,
+    }
     resp = _request(
         "put",
         f"{SHIPSTATION_V1_BASE}/products/{product_id}",
@@ -142,6 +155,68 @@ def update_product(product_id: int, existing: dict, headers: dict) -> dict:
             f"PUT /products/{product_id} returned {resp.status_code}: {resp.text[:300]}"
         )
     return resp.json()
+
+
+def verify_product_configuration(product: dict | None, sku: str, expected_name: str) -> dict:
+    """Require a read-back product to match the required name and location."""
+    if not product:
+        raise RuntimeError("product was not found during post-update verification")
+
+    actual_name = (product.get("name") or "").strip()
+    actual_location = (product.get("warehouseLocation") or "").strip()
+    if actual_name != expected_name or actual_location != WAREHOUSE_LOCATION:
+        raise RuntimeError(
+            f"verification failed for {sku}: expected name={expected_name!r}, "
+            f"warehouseLocation={WAREHOUSE_LOCATION!r}; got "
+            f"name={actual_name!r}, warehouseLocation={actual_location!r}"
+        )
+    return product
+
+
+def _product_result(
+    sku: str,
+    action: str,
+    product: dict | None,
+    product_id: int | str | None,
+    ok: bool,
+    expected_name: str,
+    error: str | None = None,
+) -> dict:
+    """Build a report-safe result without credentials or order data."""
+    result = {
+        "sku": sku,
+        "action": action,
+        "product_id": product_id,
+        "active": product.get("active") if product else None,
+        "name": (product.get("name") or "").strip() if product else None,
+        "warehouse_location": product.get("warehouseLocation") if product else None,
+        "expected_name": expected_name,
+        "expected_warehouse_location": WAREHOUSE_LOCATION,
+        "ok": ok,
+    }
+    if error:
+        result["error"] = error
+    return result
+
+
+def _write_report(report_path: str, results: list[dict], dry_run: bool) -> None:
+    """Persist a verifiable per-SKU result for the most recent run."""
+    path = Path(report_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ok_count = sum(1 for result in results if result["ok"])
+    report = {
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "dry_run": dry_run,
+        "warehouse_location": WAREHOUSE_LOCATION,
+        "summary": {
+            "total": len(results),
+            "succeeded": ok_count,
+            "failed": len(results) - ok_count,
+        },
+        "products": results,
+    }
+    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"\nPer-SKU report written to {path}")
 
 
 def create_placeholder_order(sku: str, name: str, headers: dict) -> int:
@@ -202,7 +277,8 @@ def create_placeholder_order(sku: str, name: str, headers: dict) -> int:
 def delete_order(order_id: int, headers: dict):
     """
     DELETE /orders/{orderId} — removes the placeholder order.
-    Non-fatal if it fails; logs a warning instead.
+    Raises on failure so the caller can preserve the original error while
+    reporting any failed cleanup.
     """
     resp = _request(
         "delete",
@@ -211,7 +287,9 @@ def delete_order(order_id: int, headers: dict):
         timeout=20,
     )
     if resp.status_code not in (200, 204):
-        print(f"    (warning: could not delete placeholder order {order_id} — HTTP {resp.status_code})")
+        raise RuntimeError(
+            f"could not delete placeholder order {order_id} — HTTP {resp.status_code}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +304,11 @@ def main():
         "--dry-run",
         action="store_true",
         help="Print what would happen without making any API changes",
+    )
+    parser.add_argument(
+        "--report",
+        default="logs/home_office_products_last_run.json",
+        help="Path for the per-SKU result report (default: logs/home_office_products_last_run.json)",
     )
     args = parser.parse_args()
     dry_run: bool = args.dry_run
@@ -256,64 +339,96 @@ def main():
             if existing:
                 # ── Product already exists ──
                 product_id = existing.get("productId", "?")
-                already_correct = existing.get("warehouseLocation", "") == WAREHOUSE_LOCATION
+                current_name = (existing.get("name") or "").strip()
+                current_location = (existing.get("warehouseLocation") or "").strip()
+                already_correct = (
+                    current_name == name
+                    and current_location == WAREHOUSE_LOCATION
+                )
 
                 if already_correct:
                     # Nothing to do — skip the PUT to conserve API quota
                     print(f"{sku:<{col_sku}}{'already set':<{col_action}}{str(product_id):<{col_id}}✅ (no change needed)")
-                    results.append({"sku": sku, "action": "already-set", "id": product_id, "ok": True})
+                    results.append(_product_result(
+                        sku, "already-set", existing, product_id, True, name
+                    ))
                 else:
                     action_label = "would-update" if dry_run else "updated"
                     if not dry_run:
-                        update_product(product_id, existing, headers)
+                        update_product(product_id, existing, name, headers)
+                        existing = verify_product_configuration(
+                            find_product_by_sku(sku, headers), sku, name
+                        )
                     icon = "✅" if not dry_run else "—"
                     print(f"{sku:<{col_sku}}{action_label:<{col_action}}{str(product_id):<{col_id}}{icon}")
-                    results.append({"sku": sku, "action": action_label, "id": product_id, "ok": True})
+                    results.append(_product_result(
+                        sku, action_label, existing, product_id, True, name
+                    ))
 
             else:
                 # ── Product missing — create via placeholder order ──
                 if dry_run:
                     print(f"{sku:<{col_sku}}{'would-create':<{col_action}}{'—':<{col_id}}— (placeholder order → product)")
-                    results.append({"sku": sku, "action": "would-create", "id": None, "ok": True})
+                    results.append(_product_result(
+                        sku, "would-create", None, None, True, name
+                    ))
                     continue
 
-                # Step 1: create placeholder order (generates the product record)
-                order_id = create_placeholder_order(sku, name, headers)
-                time.sleep(2.0)  # give ShipStation a moment to ingest the order
+                order_id = None
+                try:
+                    # Step 1: create placeholder order (generates the product record)
+                    order_id = create_placeholder_order(sku, name, headers)
+                    time.sleep(2.0)  # give ShipStation a moment to ingest the order
 
-                # Step 2: find the newly-created product
-                product = find_product_by_sku(sku, headers)
-
-                if not product:
-                    # Retry once after a longer wait
-                    time.sleep(5.0)
+                    # Step 2: find the newly-created product
                     product = find_product_by_sku(sku, headers)
 
-                if not product:
-                    # Still not found — delete placeholder and surface the error
-                    delete_order(order_id, headers)
-                    raise RuntimeError("product record not found after placeholder order was created")
+                    if not product:
+                        # Retry once after a longer wait
+                        time.sleep(5.0)
+                        product = find_product_by_sku(sku, headers)
 
-                product_id = product.get("productId", "?")
+                    if not product:
+                        raise RuntimeError(
+                            "product record not found after placeholder order was created"
+                        )
 
-                # Step 3: update warehouseLocation
-                update_product(product_id, product, headers)
+                    product_id = product.get("productId", "?")
 
-                # Step 4: clean up placeholder order
-                delete_order(order_id, headers)
+                    # Step 3: update required name and warehouse location, then verify
+                    update_product(product_id, product, name, headers)
+                    product = verify_product_configuration(
+                        find_product_by_sku(sku, headers), sku, name
+                    )
+                finally:
+                    if order_id is not None:
+                        try:
+                            delete_order(order_id, headers)
+                        except Exception as cleanup_error:
+                            if sys.exc_info()[0] is None:
+                                raise
+                            print(
+                                f"    (warning: placeholder cleanup failed while preserving "
+                                f"the original error: {cleanup_error})"
+                            )
 
                 print(f"{sku:<{col_sku}}{'created':<{col_action}}{str(product_id):<{col_id}}✅")
-                results.append({"sku": sku, "action": "created", "id": product_id, "ok": True})
+                results.append(_product_result(
+                    sku, "created", product, product_id, True, name
+                ))
 
         except Exception as exc:
             print(f"{sku:<{col_sku}}{'ERROR':<{col_action}}{'—':<{col_id}}❌ {exc}")
-            results.append({"sku": sku, "action": "error", "id": None, "ok": False, "error": str(exc)})
+            results.append(_product_result(
+                sku, "error", None, None, False, name, str(exc)
+            ))
 
     print("-" * 80)
     ok_count  = sum(1 for r in results if r["ok"])
     err_count = sum(1 for r in results if not r["ok"])
     label = "DRY RUN complete" if dry_run else "Done"
     print(f"\n{label}: {ok_count} succeeded, {err_count} failed out of {len(results)} SKUs")
+    _write_report(args.report, results, dry_run)
 
     if err_count:
         sys.exit(1)
