@@ -1,3 +1,4 @@
 - [Cancellation reversal pattern](cancel-reversal-pattern.md) — 'Cancel' txn type added in migration 017; lot_balances VIEW credits it as +quantity; two sync paths (unified + status) both call reverse_lot_inventory.
+- [Publish schema alignment](publish-schema-alignment.md) — keep development aligned with production’s cancellation and line-item safeguards before publishing, or the generated diff may try to undo them.
 - [Advisory lock keys must be deterministic](advisory-lock-key-hashing.md) — never derive pg_advisory_lock keys from Python's built-in hash(); it's randomized per-process (PYTHONHASHSEED) and silently breaks cross-process locking.
 - [Benco UPS carrier code](benco-ups-carrier-code.md) — Acxiom's own UPS account = carrier code 'ups' (not 'ups_walleted'); 'ups_walleted' is ShipStation's account and can't do third-party billing.
