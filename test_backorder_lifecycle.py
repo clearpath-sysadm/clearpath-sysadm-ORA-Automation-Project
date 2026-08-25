@@ -201,7 +201,7 @@ class TestLotActivationRetry(unittest.TestCase):
             with dashboard_app.app.test_request_context(
                 '/api/lot_inventory/42',
                 method='PUT',
-                json={'status': 'active', 'notes': 'received stock'},
+                json={'status': 'active'},
             ):
                 response = dashboard_app.api_update_lot_inventory(42)
 
@@ -210,6 +210,41 @@ class TestLotActivationRetry(unittest.TestCase):
         retry.assert_called_once_with('17612')
         lookup_sql = cursor.execute.call_args_list[0].args[0]
         self.assertIn('lb.lot_id = l.lot_id', lookup_sql)
+        update_sql = next(
+            args[0] for args, _ in cursor.execute.call_args_list
+            if 'UPDATE lots' in args[0]
+        )
+        self.assertIn('notes         = COALESCE(%s, notes)', update_sql)
+        update_params = next(
+            args[1] for args, _ in cursor.execute.call_args_list
+            if 'UPDATE lots' in args[0]
+        )
+        self.assertEqual(update_params, (None, 'active', None, 42))
+
+    def test_reactivating_zero_balance_lot_is_rejected(self):
+        """Status-only reactivation must not make an empty lot eligible."""
+        import app as dashboard_app
+
+        conn = MagicMock()
+        cursor = MagicMock()
+        cursor.fetchone.return_value = ('depleted', 0, '17612')
+        conn.cursor.return_value = cursor
+
+        with patch('app.get_connection', return_value=conn), \
+             patch('app.retry_backorders_after_inventory_available') as retry:
+            with dashboard_app.app.test_request_context(
+                '/api/lot_inventory/42',
+                method='PUT',
+                json={'status': 'active'},
+            ):
+                response = dashboard_app.app.make_response(
+                    dashboard_app.api_update_lot_inventory(42)
+                )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('greater than zero', response.get_json()['error'])
+        conn.commit.assert_not_called()
+        retry.assert_not_called()
 
 
 if __name__ == '__main__':

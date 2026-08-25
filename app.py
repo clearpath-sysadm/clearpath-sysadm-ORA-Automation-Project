@@ -7813,7 +7813,7 @@ def api_update_lot_inventory(lot_id):
         data          = request.get_json()
         received_date = data.get('received_date')
         status        = data.get('status')
-        notes         = data.get('notes', '')
+        notes         = data.get('notes') if 'notes' in data else None
 
         valid_statuses = ('active', 'inactive', 'depleted', 'quarantine')
         if status and status not in valid_statuses:
@@ -7836,11 +7836,23 @@ def api_update_lot_inventory(lot_id):
             conn.close()
             return jsonify({'success': False, 'error': 'Lot not found'}), 404
 
+        previous_status, previous_balance, sku = previous_lot
+        if (
+            previous_status != 'active'
+            and status == 'active'
+            and float(previous_balance or 0) <= 0
+        ):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'A lot can only be reactivated when its balance is greater than zero'
+            }), 400
+
         cursor.execute("""
             UPDATE lots
             SET received_date = COALESCE(%s, received_date),
                 status        = COALESCE(%s, status),
-                notes         = %s,
+                notes         = COALESCE(%s, notes),
                 updated_at    = NOW()
             WHERE lot_id = %s
         """, (received_date, status, notes, lot_id))
