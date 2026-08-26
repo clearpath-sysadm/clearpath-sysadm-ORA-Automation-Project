@@ -2806,9 +2806,14 @@ def api_physical_count_adjustment():
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Read current lot balance from lot_balances VIEW (live, lot-specific)
+        # Resolve the lot's authoritative SKU and current live balance together.
+        # Never trust a client-provided SKU independently from its lot_id.
         cursor.execute("""
-            SELECT balance FROM lot_balances WHERE lot_id = %s
+            SELECT COALESCE(lb.balance, 0), s.sku_code, l.lot_number
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
+            WHERE l.lot_id = %s
         """, (lot_id,))
         result = cursor.fetchone()
 
@@ -2820,6 +2825,15 @@ def api_physical_count_adjustment():
             }), 404
 
         lot_balance = int(result[0])
+        authoritative_sku = str(result[1])
+        lot_number = result[2]
+        if str(sku) != authoritative_sku:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f'Lot {lot_number} does not belong to SKU {sku}'
+            }), 400
+
         difference = physical_count - lot_balance
 
         if difference == 0:
@@ -2868,14 +2882,20 @@ def api_physical_count_adjustment():
         conn.commit()
         conn.close()
 
-        return jsonify({
+        response = {
             'success': True,
-            'message': f'Lot {lot_id} adjusted: {lot_balance} → {physical_count} ({difference:+d} units)',
+            'message': f'Lot {lot_number} adjusted: {lot_balance} → {physical_count} ({difference:+d} units)',
             'difference': difference,
             'transaction_type': transaction_type,
             'adjusted_by': user_name,
             'timestamp': formatted_time
-        })
+        }
+        if difference > 0:
+            if schedule_backorder_retry_after_inventory_available(authoritative_sku):
+                response['backorder_retry_scheduled'] = True
+            else:
+                response['backorder_retry_already_running'] = True
+        return jsonify(response)
 
     except Exception as e:
         return jsonify({

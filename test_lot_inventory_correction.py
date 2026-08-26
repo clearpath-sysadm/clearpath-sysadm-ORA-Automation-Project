@@ -141,6 +141,100 @@ class TestLotInventoryCorrection(unittest.TestCase):
         )
         conn.commit.assert_called_once()
 
+    def test_dashboard_physical_count_validates_lot_sku_and_retries_after_commit(self):
+        import app as dashboard_app
+
+        conn = MagicMock()
+        cursor = MagicMock()
+        cursor.fetchone.return_value = (10, '17612', 'LOT-ONE')
+        conn.cursor.return_value = cursor
+        user = MagicMock()
+        user.role = 'admin'
+        user.first_name = 'Test'
+        user.last_name = 'Admin'
+        user.email = 'test@example.com'
+
+        def retry_after_commit(sku):
+            self.assertTrue(conn.commit.called)
+            self.assertEqual(sku, '17612')
+            return True
+
+        with patch('app.get_connection', return_value=conn), \
+             patch('app.current_user', user), \
+             patch(
+                 'app.schedule_backorder_retry_after_inventory_available',
+                 side_effect=retry_after_commit,
+             ) as retry:
+            with dashboard_app.app.test_request_context(
+                '/api/physical_count_adjustment',
+                method='POST',
+                json={
+                    'sku': '17612',
+                    'lot_id': 19,
+                    'physical_count': 15,
+                    'reason': 'Physical count',
+                    'user_timezone': 'America/Chicago',
+                },
+            ):
+                response = dashboard_app.api_physical_count_adjustment()
+
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertTrue(data['success'])
+        self.assertTrue(data['backorder_retry_scheduled'])
+        self.assertIn('LOT-ONE', data['message'])
+        retry.assert_called_once_with('17612')
+        insert_call = cursor.execute.call_args_list[1]
+        self.assertIn('INSERT INTO inventory_transactions', insert_call.args[0])
+        self.assertEqual(insert_call.args[1][1], '17612')
+        self.assertEqual(insert_call.args[1][5], 19)
+
+    def test_dashboard_physical_count_rejects_mismatched_lot_sku(self):
+        import app as dashboard_app
+
+        conn = MagicMock()
+        cursor = MagicMock()
+        cursor.fetchone.return_value = (10, '17612', 'LOT-ONE')
+        conn.cursor.return_value = cursor
+
+        with patch('app.get_connection', return_value=conn), \
+             patch('app.schedule_backorder_retry_after_inventory_available') as retry:
+            with dashboard_app.app.test_request_context(
+                '/api/physical_count_adjustment',
+                method='POST',
+                json={
+                    'sku': '18795',
+                    'lot_id': 19,
+                    'physical_count': 15,
+                    'reason': 'Physical count',
+                },
+            ):
+                response, status = dashboard_app.api_physical_count_adjustment()
+
+        self.assertEqual(status, 400)
+        self.assertIn('does not belong', response.get_json()['error'])
+        conn.commit.assert_not_called()
+        retry.assert_not_called()
+        self.assertEqual(len(cursor.execute.call_args_list), 1)
+
+    def test_dashboard_modal_is_lot_aware_on_desktop_and_mobile(self):
+        with open(
+            os.path.join(project_root, 'index.html'),
+            encoding='utf-8',
+        ) as dashboard:
+            html = dashboard.read()
+
+        self.assertIn('id="modal-lot"', html)
+        self.assertIn('/api/lots_by_sku/${encodeURIComponent(sku)}', html)
+        self.assertIn('function selectPhysicalCountLot()', html)
+        self.assertIn('lot_id: lotId', html)
+        self.assertIn('physicalCountLotRequestId', html)
+        self.assertGreaterEqual(
+            html.count("openPhysicalCountModal('${item.sku}'"),
+            2,
+        )
+        self.assertIn('52w Avg', html)
+
 
 if __name__ == '__main__':
     unittest.main()

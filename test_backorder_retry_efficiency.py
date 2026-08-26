@@ -12,6 +12,14 @@ if project_root not in sys.path:
 
 
 class TestBackorderRetryEfficiency(unittest.TestCase):
+    def setUp(self):
+        import app as dashboard_app
+        dashboard_app._backorder_retry_in_progress.clear()
+
+    def tearDown(self):
+        import app as dashboard_app
+        dashboard_app._backorder_retry_in_progress.clear()
+
     def test_no_unresolved_failures_does_not_load_credentials(self):
         from src.lot_tagger import retry
 

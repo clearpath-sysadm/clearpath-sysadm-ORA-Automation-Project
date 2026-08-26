@@ -838,7 +838,7 @@
                                 </span>
                             </td>
                             <td style="text-align: center;">
-                                <button class="btn-icon" onclick="openPhysicalCountModal('${item.sku}', ${item.current_quantity}, '${item.product_name}')" title="Adjust inventory from physical count">
+                                <button class="btn-icon" onclick="openPhysicalCountModal('${item.sku}', '${item.product_name || ''}')" title="Adjust inventory from physical count">
                                     ✏️ Adjust
                                 </button>
                             </td>
@@ -884,6 +884,9 @@
                                     <div class="wic-val">${palletShort}</div>
                                 </div>
                             </div>
+                            <button class="btn-icon" onclick="openPhysicalCountModal('${item.sku}', '${productName}')" title="Adjust inventory from physical count" style="margin-top:12px;width:100%;justify-content:center;">
+                                ✏️ Adjust
+                            </button>
                         </div>
                     `;
                 }).join('');
@@ -1872,26 +1875,119 @@
         }
 
         // Physical Count Adjustment Modal
-        function openPhysicalCountModal(sku, systemQuantity, productName) {
+        let physicalCountLotRequestId = 0;
+
+        async function openPhysicalCountModal(sku, productName) {
             const modal = document.getElementById('physical-count-modal');
+            const lotSelect = document.getElementById('modal-lot');
+            const lotStatus = document.getElementById('modal-lot-status');
+            const submitBtn = document.getElementById('submit-adjustment-btn');
+            const requestId = ++physicalCountLotRequestId;
+
             document.getElementById('modal-sku').textContent = sku;
             document.getElementById('modal-product-name').textContent = productName || '';
-            document.getElementById('modal-system-qty').value = systemQuantity;
+            document.getElementById('modal-system-qty').value = '';
             document.getElementById('modal-physical-count').value = '';
             document.getElementById('modal-difference').textContent = '0';
             document.getElementById('modal-difference').className = 'difference-neutral';
             document.getElementById('modal-reason').value = '';
-            document.getElementById('submit-adjustment-btn').disabled = false;
+            lotSelect.disabled = true;
+            lotSelect.innerHTML = '<option value="">Loading lots…</option>';
+            lotStatus.textContent = '';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submit Adjustment';
             
             // Store data for submission
             modal.dataset.sku = sku;
-            modal.dataset.systemQuantity = systemQuantity;
+            modal.dataset.lotId = '';
+            modal.dataset.systemQuantity = '';
             
             modal.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/api/lots_by_sku/${encodeURIComponent(sku)}`, {
+                    cache: 'no-store',
+                    credentials: 'include'
+                });
+                const lots = await response.json();
+                if (!response.ok || !Array.isArray(lots)) {
+                    throw new Error(lots.error || 'Failed to load lots');
+                }
+                if (requestId !== physicalCountLotRequestId || modal.dataset.sku !== String(sku)) {
+                    return;
+                }
+
+                if (lots.length === 0) {
+                    lotSelect.innerHTML = '<option value="">No lots available for this SKU</option>';
+                    lotStatus.textContent = 'No lot is available for adjustment.';
+                    lotStatus.style.color = 'var(--critical-red)';
+                    return;
+                }
+
+                lotSelect.innerHTML = lots.length === 1
+                    ? ''
+                    : '<option value="">Select a lot…</option>';
+                lots.forEach(lot => {
+                    const option = document.createElement('option');
+                    option.value = lot.lot_id;
+                    option.textContent = `${lot.lot_number} — ${Number(lot.balance).toLocaleString()} units (${lot.status})`;
+                    option.dataset.balance = lot.balance;
+                    option.dataset.status = lot.status;
+                    option.dataset.lotNumber = lot.lot_number;
+                    lotSelect.appendChild(option);
+                });
+                lotSelect.disabled = false;
+                if (lots.length === 1) {
+                    lotSelect.value = String(lots[0].lot_id);
+                    selectPhysicalCountLot();
+                } else {
+                    lotStatus.textContent = 'Select the lot that was physically counted.';
+                    lotStatus.style.color = 'var(--text-tertiary)';
+                }
+            } catch (error) {
+                if (requestId !== physicalCountLotRequestId) return;
+                lotSelect.innerHTML = '<option value="">Unable to load lots</option>';
+                lotStatus.textContent = error.message || 'Unable to load lots for this SKU.';
+                lotStatus.style.color = 'var(--critical-red)';
+            }
+        }
+
+        function selectPhysicalCountLot() {
+            const modal = document.getElementById('physical-count-modal');
+            const lotSelect = document.getElementById('modal-lot');
+            const selected = lotSelect.options[lotSelect.selectedIndex];
+            const lotStatus = document.getElementById('modal-lot-status');
+            const submitBtn = document.getElementById('submit-adjustment-btn');
+
+            document.getElementById('modal-physical-count').value = '';
+            document.getElementById('modal-difference').textContent = '0';
+            document.getElementById('modal-difference').className = 'difference-neutral';
+
+            if (!selected || !selected.value) {
+                modal.dataset.lotId = '';
+                modal.dataset.systemQuantity = '';
+                document.getElementById('modal-system-qty').value = '';
+                lotStatus.textContent = 'Select the lot that was physically counted.';
+                lotStatus.style.color = 'var(--text-tertiary)';
+                submitBtn.disabled = true;
+                return;
+            }
+
+            const balance = Number(selected.dataset.balance);
+            modal.dataset.lotId = selected.value;
+            modal.dataset.systemQuantity = String(balance);
+            document.getElementById('modal-system-qty').value = balance.toLocaleString();
+            lotStatus.textContent = `Lot ${selected.dataset.lotNumber} is ${selected.dataset.status}.`;
+            lotStatus.style.color = 'var(--text-secondary)';
+            submitBtn.disabled = false;
         }
 
         function closePhysicalCountModal() {
+            physicalCountLotRequestId += 1;
             document.getElementById('physical-count-modal').style.display = 'none';
+            const submitBtn = document.getElementById('submit-adjustment-btn');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Adjustment';
         }
 
         function calculateDifference() {
@@ -1920,11 +2016,18 @@
         async function submitPhysicalCountAdjustment() {
             const modal = document.getElementById('physical-count-modal');
             const sku = modal.dataset.sku;
+            const lotId = parseInt(modal.dataset.lotId, 10);
             const systemQty = parseInt(modal.dataset.systemQuantity);
             const physicalCount = parseInt(document.getElementById('modal-physical-count').value);
             const reason = document.getElementById('modal-reason').value.trim();
             const submitBtn = document.getElementById('submit-adjustment-btn');
             
+            if (!Number.isInteger(lotId)) {
+                alert('Please select the lot that was physically counted');
+                document.getElementById('modal-lot').focus();
+                return;
+            }
+
             if (isNaN(physicalCount) || physicalCount < 0) {
                 alert('Please enter a valid physical count (0 or greater)');
                 return;
@@ -1965,6 +2068,7 @@
                     credentials: 'include',
                     body: JSON.stringify({
                         sku,
+                        lot_id: lotId,
                         physical_count: physicalCount,
                         reason,
                         user_timezone: userTimezone
@@ -1975,7 +2079,7 @@
                 
                 if (!response.ok) {
                     if (result.requires_admin) {
-                        alert(`❌ ${result.error}\n\nYou are logged in as a viewer. Please ask an admin to approve this adjustment of ${result.difference > 0 ? '+' : ''}${result.difference} units.`);
+                        alert(`❌ ${result.error}\n\nPlease ask an admin to approve this adjustment of ${result.difference > 0 ? '+' : ''}${result.difference} units.`);
                     } else {
                         throw new Error(result.error || 'Failed to submit adjustment');
                     }
@@ -1984,7 +2088,14 @@
                     return;
                 }
                 
-                alert(`✅ ${result.message}\n\nAdjusted by: ${result.adjusted_by}\nTime: ${result.timestamp}`);
+                if (result.difference === 0) {
+                    alert(`✅ ${result.message}`);
+                } else {
+                    const backorderMessage = result.backorder_retry_scheduled
+                        ? '\n\nBackorder processing will continue in the background.'
+                        : '';
+                    alert(`✅ ${result.message}\n\nAdjusted by: ${result.adjusted_by}\nTime: ${result.timestamp}${backorderMessage}`);
+                }
                 closePhysicalCountModal();
                 await loadWeeklyReport();
                 
@@ -2319,6 +2430,14 @@
                             <div style="font-weight: 600;" id="modal-product-name"></div>
                         </div>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal-lot">Lot Number <span style="color: var(--critical-red);">*</span></label>
+                    <select id="modal-lot" onchange="selectPhysicalCountLot()" disabled>
+                        <option value="">Loading lots…</option>
+                    </select>
+                    <div id="modal-lot-status" style="font-size:0.813rem;color:var(--text-tertiary);margin-top:6px;"></div>
                 </div>
                 
                 <div class="form-group">
