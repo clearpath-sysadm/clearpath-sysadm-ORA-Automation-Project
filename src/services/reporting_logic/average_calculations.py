@@ -6,10 +6,12 @@ specifically focusing on rolling averages for the ORA Project reports.
 
 import logging
 import pandas as pd
-from datetime import datetime, timedelta
-from src.services.reporting_logic.week_utils import get_current_week_boundaries, is_week_complete
+from src.services.reporting_logic.week_utils import (
+    ROLLING_WEEKS,
+    get_rolling_week_boundaries,
+)
 
-def calculate_12_month_rolling_average(weekly_shipped_history_df):
+def calculate_12_month_rolling_average(weekly_shipped_history_df, as_of_date=None):
     """
     Calculates the 12-month (52-week) rolling average of shipped quantities for each SKU
     based on historical data, using the 52 most recent COMPLETE weeks only.
@@ -45,29 +47,27 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
     # Drop rows where 'Date' or 'ShippedQuantity' are NaN after conversion
     df.dropna(subset=['Date', 'ShippedQuantity'], inplace=True)
     
-    # DEFENSIVE FILTERING: Remove any incomplete weeks
-    # Get current week boundaries to determine cutoff
-    current_monday, current_sunday = get_current_week_boundaries()
-    
-    # If current week is complete (Saturday/Sunday after Friday), include it
-    # Otherwise, exclude it (only include weeks before current Monday)
-    if is_week_complete(current_sunday):
-        # Current week is complete - include it in averages
-        next_monday = current_monday + timedelta(days=7)
-        cutoff_date = next_monday
-        logging.info(f"Current week is complete. Including weeks before {cutoff_date}")
-    else:
-        # Current week is incomplete - exclude it
-        cutoff_date = current_monday
-        logging.info(f"Current week is incomplete. Including only weeks before {cutoff_date}")
-    
-    # Filter out rows from incomplete weeks
+    window_start, window_end = get_rolling_week_boundaries(
+        ROLLING_WEEKS, as_of_date
+    )
+
+    # Restrict every caller to the same exact complete-week window. Missing
+    # rows represent zero-shipment weeks and are accounted for by the fixed
+    # denominator below.
     rows_before = len(df)
-    df = df[df['Date'] < pd.Timestamp(cutoff_date)]
+    df = df[
+        (df['Date'] >= pd.Timestamp(window_start))
+        & (df['Date'] <= pd.Timestamp(window_end))
+    ]
     rows_after = len(df)
     
     if rows_before > rows_after:
-        logging.info(f"Filtered out {rows_before - rows_after} row(s) from incomplete week(s) (>= {cutoff_date})")
+        logging.info(
+            "Filtered out %s row(s) outside rolling window %s through %s",
+            rows_before - rows_after,
+            window_start,
+            window_end,
+        )
     
     if df.empty:
         logging.warning("After filtering incomplete weeks, no data remains. Cannot calculate rolling average.")
@@ -83,14 +83,14 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
     intermediate_sums = {}
     
     def get_sum_and_log(x):
-        recent_entries = x['ShippedQuantity'].head(52)
+        recent_entries = x['ShippedQuantity'].head(ROLLING_WEEKS)
         current_sum = recent_entries.sum()
         actual_count = len(recent_entries)
         
         # Debug log: Sum and actual count per SKU
         logging.debug(f"SKU {x.name}: Sum of {actual_count} recent entries = {current_sum}.")
         
-        if actual_count < 52:
+        if actual_count < ROLLING_WEEKS:
             logging.debug(f"SKU {x.name}: Warning, only {actual_count} entries found for 52-week average.") # Debug log for less than 52 entries
             
         intermediate_sums[x.name] = current_sum # Store sum for later
@@ -101,7 +101,7 @@ def calculate_12_month_rolling_average(weekly_shipped_history_df):
 
     # Calculate the average by dividing the total quantity by 52 weeks
     # This aligns with the "divide by 52" part of the desired logic
-    unrounded_rolling_average = total_shipped_by_sku_recent_52 / 52
+    unrounded_rolling_average = total_shipped_by_sku_recent_52 / ROLLING_WEEKS
     
     # Debug log: Unrounded average
     logging.debug(f"Unrounded rolling averages: {unrounded_rolling_average.to_dict()}.")

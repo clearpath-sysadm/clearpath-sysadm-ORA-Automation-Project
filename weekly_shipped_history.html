@@ -333,7 +333,7 @@
 
         function calculateSummary(data, skuFilter) {
             if (skuFilter && data.length > 0) {
-                const totalWeeks = data.length;
+                const totalWeeks = 52;
                 const totalShipped = data.reduce((sum, row) => sum + row.quantity_shipped, 0);
                 const weeklyAvg = Math.round(totalShipped / totalWeeks);
 

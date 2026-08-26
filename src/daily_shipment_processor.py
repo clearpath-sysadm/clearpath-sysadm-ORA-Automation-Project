@@ -37,11 +37,13 @@ from src.services.shipstation.api_client import (
 )
 from src.services.data_processing.sku_lot_parser import parse_cf1
 from src.services.inventory.shipped_items_service import upsert_shipped_item
+from src.services.inventory.promo_sku_utils import resolve_sku_and_quantity
 # Import week utilities for handling complete vs partial weeks
 from src.services.reporting_logic.week_utils import (
-    get_current_week_boundaries,
-    is_week_complete,
-    get_prior_complete_week_boundaries
+    ROLLING_WEEKS,
+    get_latest_complete_week_boundaries,
+    get_rolling_week_boundaries,
+    iter_rolling_weeks,
 )
 # inventory_calculations and average_calculations imports removed (Task #67):
 # lot_balances VIEW is now the live source of truth — no periodic recalculation needed.
@@ -80,6 +82,76 @@ logger.info(f"[DEBUG] SHIPSTATION_API_KEY_SECRET_ID: {_settings.SHIPSTATION_API_
 logger.info(f"[DEBUG] SHIPSTATION_API_SECRET_SECRET_ID: {_settings.SHIPSTATION_API_SECRET_SECRET_ID}")
 
 
+def _load_active_sku_resolution_maps():
+    """Load active promo/variant mappings, failing if resolution is unavailable."""
+    promo_rows = execute_query(
+        "SELECT promo_sku, base_sku FROM sku_promotions WHERE active = TRUE"
+    ) or []
+    variant_rows = execute_query(
+        """
+        SELECT variant_sku, base_sku, unit_multiplier
+        FROM sku_variants
+        WHERE active = TRUE
+        """
+    ) or []
+
+    promo_map = {str(row[0]): str(row[1]) for row in promo_rows}
+    variant_map = {
+        str(row[0]): {
+            "base_sku": str(row[1]),
+            "unit_multiplier": int(row[2]),
+        }
+        for row in variant_rows
+    }
+    return promo_map, variant_map
+
+
+def _resolve_shipped_totals(rows, promo_map, variant_map, include_week=False):
+    """
+    Resolve authoritative shipped-item rows and suppress stale duplicate writers.
+
+    Historical daily imports may have stored a raw variant in ``sku_lot`` while
+    stripping it from ``base_sku``. If a lot-stamped canonical row also exists
+    for the same order/base SKU, it wins and the stale raw/bare row is ignored.
+    """
+    resolved_rows = []
+    stamped_keys = set()
+
+    for row in rows or []:
+        if include_week:
+            week_start, order_number, stored_base_sku, sku_lot, quantity = row
+            week_start = pd.to_datetime(week_start).date()
+        else:
+            order_number, stored_base_sku, sku_lot, quantity = row
+            week_start = None
+
+        sku_lot_text = str(sku_lot or "").strip()
+        raw_sku = (
+            sku_lot_text
+            if sku_lot_text and " - " not in sku_lot_text
+            else str(stored_base_sku)
+        )
+        resolved_sku, effective_quantity = resolve_sku_and_quantity(
+            raw_sku, int(quantity), promo_map, variant_map
+        )
+        is_lot_stamped = " - " in sku_lot_text
+        dedupe_key = (week_start, str(order_number), str(resolved_sku))
+        resolved_rows.append(
+            (dedupe_key, str(resolved_sku), int(effective_quantity), is_lot_stamped)
+        )
+        if is_lot_stamped:
+            stamped_keys.add(dedupe_key)
+
+    totals = {}
+    for dedupe_key, resolved_sku, effective_quantity, is_lot_stamped in resolved_rows:
+        if dedupe_key in stamped_keys and not is_lot_stamped:
+            continue
+        week_start = dedupe_key[0]
+        key = (week_start, resolved_sku) if include_week else resolved_sku
+        totals[key] = totals.get(key, 0) + effective_quantity
+    return totals
+
+
 def update_weekly_history_incrementally(daily_items_df, existing_history_df, target_skus, shipment_data):
     """
     Updates the 52-week history with COMPLETE weeks only (excludes current/partial week).
@@ -98,70 +170,37 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
     """
     logger.info("Starting incremental update of the 52-week history (COMPLETE weeks only)...")
     
-    # Get current and prior week boundaries
-    current_monday, current_sunday = get_current_week_boundaries()
-    prior_monday, prior_sunday = get_prior_complete_week_boundaries()
+    # Use the same complete-week boundary rule as every reporting surface.
     today = datetime.date.today()
+    processed_week_start, processed_week_end = (
+        get_latest_complete_week_boundaries(today)
+    )
     
     logger.info(f"Today: {today}")
     
-    # Determine which week to process based on completeness
-    # BUSINESS RULE (as of Nov 2025): Friday is the last shipping day
-    # - If today is Friday, Saturday, or Sunday: process CURRENT week (week is complete)
-    # - If today is Monday, Tuesday, Wednesday, or Thursday: process PRIOR week (incomplete)
-    # This ensures EOW button on Friday processes THIS week's data
-    if is_week_complete(current_sunday):
-        processed_week_start = current_monday
-        processed_week_end = current_sunday
-        logger.info(f"Current week is COMPLETE (Friday has passed). Processing current week: {current_monday} to {current_sunday}")
-    else:
-        processed_week_start = prior_monday
-        processed_week_end = prior_sunday
-        logger.info(f"Current week is INCOMPLETE. Processing prior complete week: {prior_monday} to {prior_sunday}")
-    
-    # Ensure 'Ship Date' is in datetime format
-    daily_items_df['Ship Date'] = pd.to_datetime(daily_items_df['Ship Date']).dt.date
-    
-    logger.info(f"Ship dates range: {daily_items_df['Ship Date'].min()} to {daily_items_df['Ship Date'].max()}")
-    
-    # Filter for the processed week (prior complete week) only
-    processed_week_items_df = daily_items_df[
-        (daily_items_df['Ship Date'] >= processed_week_start) &
-        (daily_items_df['Ship Date'] <= processed_week_end)
-    ].copy()
-    
-    logger.info(f"Found {len(processed_week_items_df)} shipment items for processed week {processed_week_start} to {processed_week_end}")
-    
-    if processed_week_items_df.empty:
-        logger.info(f"No shipments found for the processed week ({processed_week_start} to {processed_week_end}). "
-                   "Purging any incomplete weeks and returning existing history.")
-        # Purge any incomplete weeks (>= next Monday) from existing history
-        next_monday = current_monday + datetime.timedelta(days=7)
-        existing_history_df['Start Date'] = pd.to_datetime(existing_history_df['Start Date']).dt.date
-        existing_history_df = existing_history_df[existing_history_df['Start Date'] < next_monday].reset_index(drop=True)
-        return existing_history_df
+    logger.info(
+        "Processing latest complete week: %s to %s",
+        processed_week_start,
+        processed_week_end,
+    )
     
     # Query shipped_items directly for accurate week totals.
     # shipped_items is UPSERT-based and accumulates correctly over time, unlike the raw
     # ShipStation API batch which only covers the current incremental window and would
     # overwrite the full week total with a partial day's data on each run.
     sku_placeholders = ','.join(['%s'] * len(target_skus))
-    week_rows = execute_query(
-        f"SELECT base_sku, SUM(quantity_shipped) AS qty FROM shipped_items "
-        f"WHERE ship_date::date BETWEEN %s AND %s AND base_sku IN ({sku_placeholders}) "
-        f"GROUP BY base_sku",
-        (str(processed_week_start), str(processed_week_end)) + tuple(target_skus)
+    raw_week_rows = execute_query(
+        f"""
+        SELECT order_number, base_sku, sku_lot, quantity_shipped
+        FROM shipped_items
+        WHERE ship_date::date BETWEEN %s AND %s
+        """,
+        (str(processed_week_start), str(processed_week_end))
     )
-    
-    if not week_rows:
-        logger.warning(f"No shipped_items data found for processed week ({processed_week_start} to {processed_week_end}). "
-                      "Skipping history update for this week.")
-        next_monday = current_monday + datetime.timedelta(days=7)
-        existing_history_df['Start Date'] = pd.to_datetime(existing_history_df['Start Date']).dt.date
-        existing_history_df = existing_history_df[existing_history_df['Start Date'] < next_monday].reset_index(drop=True)
-        return existing_history_df
-    
-    sku_quantities = {str(row[0]): int(row[1]) for row in week_rows}
+    promo_map, variant_map = _load_active_sku_resolution_maps()
+    sku_quantities = _resolve_shipped_totals(
+        raw_week_rows, promo_map, variant_map
+    )
     logger.info(f"Week totals from shipped_items for {processed_week_start}: {sku_quantities}")
     
     new_week_data = {'Start Date': processed_week_start, 'Stop Date': processed_week_end}
@@ -190,14 +229,23 @@ def update_weekly_history_incrementally(daily_items_df, existing_history_df, tar
             updated_history_df = updated_history_df.iloc[-52:]
         existing_history_df = updated_history_df
     
-    # PURGE any incomplete future weeks (rows with Start Date >= next Monday)
-    # This allows completed weeks (e.g., on Saturday/Sunday) to remain in history
-    next_monday = current_monday + datetime.timedelta(days=7)
+    # Purge rows outside the canonical 52-week window.
+    window_start, window_end = get_rolling_week_boundaries(
+        ROLLING_WEEKS, today
+    )
     before_purge = len(existing_history_df)
-    existing_history_df = existing_history_df[existing_history_df['Start Date'] < next_monday].reset_index(drop=True)
+    existing_history_df = existing_history_df[
+        (existing_history_df['Start Date'] >= window_start)
+        & (existing_history_df['Start Date'] <= window_end)
+    ].reset_index(drop=True)
     after_purge = len(existing_history_df)
     if before_purge > after_purge:
-        logger.info(f"Purged {before_purge - after_purge} incomplete week(s) (Start Date >= {next_monday})")
+        logger.info(
+            "Purged %s week(s) outside %s through %s",
+            before_purge - after_purge,
+            window_start,
+            window_end,
+        )
     
     # Deduplication: Ensure only one entry per week
     existing_history_df = existing_history_df.sort_values(by=["Start Date", "Stop Date"], ascending=True)
@@ -279,7 +327,9 @@ def save_shipped_orders_to_db(orders_df):
     return records_saved
 
 
-def save_shipped_items_to_db(items_df, customField1_map=None, promo_map=None):
+def save_shipped_items_to_db(
+    items_df, customField1_map=None, promo_map=None, variant_map=None
+):
     """Save shipped items to the shipped_items table via UPSERT.
 
     Schema: shipped_items(ship_date, sku_lot, base_sku, quantity_shipped, order_number, tracking_number)
@@ -314,17 +364,30 @@ def save_shipped_items_to_db(items_df, customField1_map=None, promo_map=None):
     for _, row in items_df.iterrows():
         ship_date = row.get('Ship Date')
         sku_lot = row.get('SKU - Lot', '')
-        base_sku = row.get('Base SKU')
+        stored_base_sku = row.get('Base SKU')
         quantity = row.get('Quantity Shipped')
         order_number = row.get('OrderNumber')
         tracking_number = row.get('TrackingNumber', '')
 
-        if not ship_date or not base_sku or not quantity:
+        if not ship_date or not stored_base_sku or not quantity:
             logger.warning(f"Skipping row with missing required fields: {row}")
             continue
 
         sku_lot = str(sku_lot) if sku_lot and str(sku_lot) != 'nan' else ''
         tracking_number = str(tracking_number) if tracking_number and str(tracking_number) != 'nan' else ''
+        raw_sku = (
+            sku_lot.strip()
+            if sku_lot and ' - ' not in sku_lot
+            else str(stored_base_sku)
+        )
+        base_sku, quantity = resolve_sku_and_quantity(
+            raw_sku,
+            int(quantity),
+            promo_map or {},
+            variant_map or {},
+        )
+        if ' - ' not in sku_lot:
+            sku_lot = str(base_sku)
 
         cf1 = ''
         if customField1_map and order_number:
@@ -332,8 +395,7 @@ def save_shipped_items_to_db(items_df, customField1_map=None, promo_map=None):
 
         parsed = parse_cf1(cf1)
         if parsed:
-            promo_base = (promo_map or {}).get(str(base_sku))
-            if parsed[0] == str(base_sku) or (promo_base and parsed[0] == promo_base):
+            if parsed[0] == str(base_sku):
                 sku_lot = cf1
 
         key = (str(order_number), str(base_sku), sku_lot, ship_date)
@@ -381,23 +443,20 @@ def save_weekly_history_to_db(history_df):
             # Insert/update a row for each SKU in this week
             for sku in sku_columns:
                 quantity = row.get(sku, 0)
-                # Skip if quantity is not a number or is 0
                 try:
                     quantity = int(float(quantity)) if quantity and str(quantity).strip() else 0
                 except (ValueError, TypeError):
                     quantity = 0
                 
-                if quantity > 0:
-                    cursor = conn.cursor()
-
-                    cursor.execute("""
-                        INSERT INTO weekly_shipped_history (
-                            start_date, end_date, sku, quantity_shipped
-                        ) VALUES (%s, %s, %s, %s)
-                        ON CONFLICT(start_date, end_date, sku) DO UPDATE SET
-                            quantity_shipped = excluded.quantity_shipped
-                    """, (str(start_date), str(end_date), sku, quantity))
-                    records_saved += 1
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO weekly_shipped_history (
+                        start_date, end_date, sku, quantity_shipped
+                    ) VALUES (%s, %s, %s, %s)
+                    ON CONFLICT(start_date, end_date, sku) DO UPDATE SET
+                        quantity_shipped = excluded.quantity_shipped
+                """, (str(start_date), str(end_date), sku, quantity))
+                records_saved += 1
     
     logger.info(f"Successfully saved {records_saved} weekly history records to database")
     return records_saved
@@ -453,21 +512,29 @@ def get_weekly_history_from_db(target_skus):
         return pd.DataFrame(columns=expected_columns)
 
 
-def backfill_weekly_history_from_shipped_items(target_skus=None, cutoff_date='2025-08-25'):
+def backfill_weekly_history_from_shipped_items(
+    target_skus=None, cutoff_date=None, as_of_date=None
+):
     """
-    Corrects weekly_shipped_history entries for weeks >= cutoff_date by recomputing
-    totals from shipped_items (the authoritative, UPSERT-based source).
+    Reconcile the full rolling window from authoritative shipped_items totals.
 
     This fixes the historical undercount caused by update_weekly_history_incrementally()
     overwriting full-week totals with only the most recent incremental API batch.
 
-    Weeks before cutoff_date are left untouched — they were populated by the original
-    ShipStation backfill and are accurate.
-
     Returns:
         dict: {'weeks_processed': int, 'records_updated': int}
     """
-    logger.info(f"Starting weekly history backfill from shipped_items (cutoff: {cutoff_date})...")
+    window_start, window_end = get_rolling_week_boundaries(
+        ROLLING_WEEKS, as_of_date
+    )
+    if cutoff_date:
+        requested_start = pd.to_datetime(cutoff_date).date()
+        window_start = max(window_start, requested_start)
+    logger.info(
+        "Starting weekly history backfill from shipped_items (%s through %s)...",
+        window_start,
+        window_end,
+    )
 
     if target_skus is None:
         target_skus_rows = execute_query("""
@@ -477,43 +544,36 @@ def backfill_weekly_history_from_shipped_items(target_skus=None, cutoff_date='20
         """)
         target_skus = [str(row[0]) for row in target_skus_rows] if target_skus_rows else ['17612', '17904', '17914', '18675', '18795']
 
-    sku_placeholders = ','.join(['%s'] * len(target_skus))
-
-    distinct_weeks = execute_query(
-        f"""
-        SELECT DISTINCT
+    raw_totals = execute_query(
+        """
+        SELECT
             DATE_TRUNC('week', ship_date::date)::date AS week_start,
-            (DATE_TRUNC('week', ship_date::date) + INTERVAL '6 days')::date AS week_end
+            order_number,
+            base_sku,
+            sku_lot,
+            quantity_shipped
         FROM shipped_items
-        WHERE ship_date::date >= %s
-          AND base_sku IN ({sku_placeholders})
-          AND ship_date::date < DATE_TRUNC('week', CURRENT_DATE)
-        ORDER BY week_start
+        WHERE ship_date::date BETWEEN %s AND %s
+        ORDER BY week_start, order_number, base_sku, sku_lot
         """,
-        (cutoff_date,) + tuple(target_skus)
+        (str(window_start), str(window_end))
+    ) or []
+    promo_map, variant_map = _load_active_sku_resolution_maps()
+    totals_by_week_sku = _resolve_shipped_totals(
+        raw_totals, promo_map, variant_map, include_week=True
     )
 
-    if not distinct_weeks:
-        logger.warning("No weeks found in shipped_items >= cutoff_date. Nothing to backfill.")
-        return {'weeks_processed': 0, 'records_updated': 0}
-
     records_updated = 0
+    weeks = [
+        boundaries
+        for boundaries in iter_rolling_weeks(ROLLING_WEEKS, as_of_date)
+        if boundaries[0] >= window_start
+    ]
     with transaction() as conn:
-        for week_start, week_end in distinct_weeks:
+        for week_start, week_end in weeks:
             cursor = conn.cursor()
-            cursor.execute(
-                f"""
-                SELECT base_sku, SUM(quantity_shipped) AS qty
-                FROM shipped_items
-                WHERE ship_date::date BETWEEN %s AND %s
-                  AND base_sku IN ({sku_placeholders})
-                GROUP BY base_sku
-                """,
-                (str(week_start), str(week_end)) + tuple(target_skus)
-            )
-            sku_totals = {str(row[0]): int(row[1]) for row in cursor.fetchall()}
-
-            for sku, qty in sku_totals.items():
+            for sku in target_skus:
+                qty = totals_by_week_sku.get((week_start, sku), 0)
                 cursor.execute("""
                     INSERT INTO weekly_shipped_history (start_date, end_date, sku, quantity_shipped)
                     VALUES (%s, %s, %s, %s)
@@ -522,8 +582,17 @@ def backfill_weekly_history_from_shipped_items(target_skus=None, cutoff_date='20
                 """, (str(week_start), str(week_end), sku, qty))
                 records_updated += 1
 
-    logger.info(f"Backfill complete: {len(distinct_weeks)} weeks processed, {records_updated} records updated.")
-    return {'weeks_processed': len(distinct_weeks), 'records_updated': records_updated}
+    logger.info(
+        "Backfill complete: %s weeks processed, %s records updated.",
+        len(weeks),
+        records_updated,
+    )
+    return {
+        'weeks_processed': len(weeks),
+        'records_updated': records_updated,
+        'window_start': str(window_start),
+        'window_end': str(window_end),
+    }
 
 
 def run_daily_shipment_pull(request=None, end_date=None):
@@ -650,16 +719,28 @@ def run_daily_shipment_pull(request=None, end_date=None):
         # be null in shipped_items.sku_lot — acceptable since the lot-tagger already
         # stamped them in ShipStation. Normal daily EOD (end_date=None) fetches as usual.
 
-        # Load promo map once — used both to expand the CF1 fetch filter (so promo SKU
-        # orders are included) and to fix the CF1 upgrade guard in save_shipped_items_to_db.
+        # Load SKU resolution maps once so daily ingestion stores the same canonical
+        # base SKU/effective quantity as unified sync.
         try:
             _pm_rows = execute_query(
                 "SELECT promo_sku, base_sku FROM sku_promotions WHERE active = TRUE"
             )
             promo_map = {row[0]: row[1] for row in _pm_rows} if _pm_rows else {}
+            _vm_rows = execute_query(
+                """
+                SELECT variant_sku, base_sku, unit_multiplier
+                FROM sku_variants
+                WHERE active = TRUE
+                """
+            )
+            variant_map = {
+                row[0]: {'base_sku': row[1], 'unit_multiplier': int(row[2])}
+                for row in (_vm_rows or [])
+            }
         except Exception as _pm_err:
-            logger.warning(f"Could not load promo map — promo SKU orders may miss lot stamps: {_pm_err}")
-            promo_map = {}
+            raise RuntimeError(
+                f"Could not load active promo/variant SKU maps: {_pm_err}"
+            ) from _pm_err
 
         customField1_map = {}
         if end_date is not None:
@@ -689,7 +770,12 @@ def run_daily_shipment_pull(request=None, end_date=None):
         # --- 6. Save to Database Tables ---
         # Save orders first, then items (respects foreign key constraint)
         orders_saved = save_shipped_orders_to_db(orders_df)
-        items_saved = save_shipped_items_to_db(items_df, customField1_map=customField1_map, promo_map=promo_map)
+        items_saved = save_shipped_items_to_db(
+            items_df,
+            customField1_map=customField1_map,
+            promo_map=promo_map,
+            variant_map=variant_map,
+        )
 
         # --- 6. Incrementally Update the Weekly Shipped History ---
         logger.info("Fetching existing 52-week history from database...")

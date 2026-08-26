@@ -1024,15 +1024,17 @@ def _compute_rolling_avg(skus):
     """
     if not skus:
         return {}
+    from src.services.reporting_logic.week_utils import get_rolling_week_boundaries
+    window_start, window_end = get_rolling_week_boundaries()
     placeholders = ','.join(['%s'] * len(skus))
     rows = execute_query(f"""
         SELECT sku,
                SUM(quantity_shipped)::numeric / 52.0 AS weekly_avg
         FROM weekly_shipped_history
-        WHERE start_date::date >= CURRENT_DATE - INTERVAL '52 weeks'
+        WHERE start_date::date BETWEEN %s AND %s
           AND sku IN ({placeholders})
         GROUP BY sku
-    """, tuple(skus))
+    """, (str(window_start), str(window_end)) + tuple(skus))
     return {row[0]: round(float(row[1])) if row[1] else 0 for row in rows} if rows else {}
 
 @app.route('/api/automation_status')
@@ -4083,7 +4085,9 @@ def api_weekly_shipped_history():
     try:
         # Get filter parameters
         from flask import request
+        from src.services.reporting_logic.week_utils import get_rolling_week_boundaries
         sku_filter = request.args.get('sku', None)
+        window_start, window_end = get_rolling_week_boundaries()
         
         # Build query
         if sku_filter:
@@ -4095,10 +4099,12 @@ def api_weekly_shipped_history():
                     quantity_shipped
                 FROM weekly_shipped_history
                 WHERE sku = %s
+                  AND start_date::date BETWEEN %s AND %s
                 ORDER BY start_date DESC
-                LIMIT 52
             """
-            results = execute_query(query, (sku_filter,))
+            results = execute_query(
+                query, (sku_filter, str(window_start), str(window_end))
+            )
         else:
             query = """
                 SELECT 
@@ -4107,9 +4113,10 @@ def api_weekly_shipped_history():
                     sku,
                     quantity_shipped
                 FROM weekly_shipped_history
+                WHERE start_date::date BETWEEN %s AND %s
                 ORDER BY start_date DESC, sku
             """
-            results = execute_query(query)
+            results = execute_query(query, (str(window_start), str(window_end)))
         
         history = []
         for row in results:
@@ -4123,7 +4130,10 @@ def api_weekly_shipped_history():
         return jsonify({
             'success': True,
             'data': history,
-            'count': len(history)
+            'count': len(history),
+            'window_start': str(window_start),
+            'window_end': str(window_end),
+            'week_count': 52,
         })
     except Exception as e:
         return jsonify({
