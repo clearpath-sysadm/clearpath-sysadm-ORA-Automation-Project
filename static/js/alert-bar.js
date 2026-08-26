@@ -17,7 +17,7 @@ class AdminAlertBar {
     
     async fetchAndRender() {
         try {
-            const response = await fetch('/api/admin/alert');
+            const response = await fetch('/api/admin/alert', { cache: 'no-store' });
             if (!response.ok) return;
             
             const newData = await response.json();

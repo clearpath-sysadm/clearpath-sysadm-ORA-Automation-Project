@@ -621,7 +621,7 @@ def auth_status():
 # Admin Alert API Endpoints
 @app.route('/api/admin/alert')
 def get_admin_alert():
-    """Get current admin alert for all users."""
+    """Get the current admin alert plus any live negative lot balances."""
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -631,20 +631,73 @@ def get_admin_alert():
             FROM admin_alerts
             WHERE id = 1
         """)
-        row = cursor.fetchone()
+        admin_row = cursor.fetchone()
+
+        # Read from the live balance view rather than only the durable alert
+        # table. This keeps the banner accurate for existing negative lots and
+        # lets it disappear automatically once the balance is corrected.
+        try:
+            cursor.execute("""
+                SELECT sku_code, lot_number, balance
+                FROM lot_balances
+                WHERE balance < 0
+                ORDER BY sku_code ASC, lot_number ASC
+            """)
+            negative_rows = cursor.fetchall()
+        except Exception as exc:
+            # A missing/unavailable balance view should not hide a manually
+            # managed alert from operations users.
+            logger.error("Error fetching negative lot balances: %s", exc)
+            negative_rows = []
         conn.close()
 
-        if row:
-            return jsonify({
-                'id': row[0],
-                'message': row[1] or '',
-                'is_active': bool(row[2]),
-                'updated_at': row[3].isoformat() if row[3] else None,
-                'updated_by': row[4],
-            })
-        return jsonify({'message': '', 'is_active': False})
+        negative_lots = sorted(
+            [
+                {
+                    'sku': str(row[0]),
+                    'lot': str(row[1]),
+                    'balance': int(row[2]),
+                }
+                for row in negative_rows
+            ],
+            key=lambda lot: (lot['sku'], lot['lot']),
+        )
+
+        negative_message = ''
+        if negative_lots:
+            if current_user.is_authenticated:
+                label = 'balance' if len(negative_lots) == 1 else 'balances'
+                details = '; '.join(
+                    f"SKU {lot['sku']}, lot {lot['lot']}: {lot['balance']:,} units"
+                    for lot in negative_lots
+                )
+                negative_message = f"🚨 NEGATIVE LOT {label.upper()}: {details}"
+            else:
+                negative_message = (
+                    "🚨 NEGATIVE LOT BALANCE: Sign in to review affected inventory."
+                )
+
+        manual_message = (admin_row[1] or '').strip() if admin_row else ''
+        messages = [message for message in (manual_message, negative_message) if message]
+        response = {
+            'id': admin_row[0] if admin_row else None,
+            'message': ' | '.join(messages),
+            'is_active': (
+                (bool(admin_row[2]) if admin_row else False)
+                or bool(negative_lots)
+            ),
+            'updated_at': (
+                admin_row[3].isoformat()
+                if admin_row and admin_row[3]
+                else None
+            ),
+            'updated_by': admin_row[4] if admin_row else None,
+        }
+        if current_user.is_authenticated:
+            response['negative_lots'] = negative_lots
+        return jsonify(response)
     except Exception as e:
-        server_logger.error(f"Error fetching admin alert: {str(e)}", source="Admin Alert")
+        logger.error("Error fetching admin alert: %s", e)
         return jsonify({'message': '', 'is_active': False})
 
 @app.route('/api/admin/backfill-18795', methods=['GET', 'POST'])
