@@ -8021,14 +8021,15 @@ def api_correct_lot_inventory(lot_id):
         """, (correction_date, sku, amount, correction_type, notes or None, lot_id))
         tx_id = cursor.fetchone()[0]
 
-        # Reflect in inventory_current
-        delta = amount if correction_type == 'Adjust Up' else -amount
-        cursor.execute("""
-            UPDATE inventory_current
-            SET current_quantity = current_quantity + %s,
-                last_updated = CURRENT_TIMESTAMP
-            WHERE sku = %s
-        """, (delta, sku))
+        # lot_balances is the live source of truth; the inserted transaction
+        # updates its calculated balance automatically. Do not write to the
+        # retired inventory_current table.
+        cursor.execute(
+            "SELECT balance FROM lot_balances WHERE lot_id = %s",
+            (lot_id,),
+        )
+        balance_row = cursor.fetchone()
+        resulting_balance = balance_row[0] if balance_row else None
 
         conn.commit()
         conn.close()
@@ -8041,7 +8042,8 @@ def api_correct_lot_inventory(lot_id):
         response = {
             'success': True,
             'message': 'Correction recorded successfully',
-            'transaction_id': tx_id
+            'transaction_id': tx_id,
+            'new_balance': resulting_balance,
         }
         if correction_type == 'Adjust Up':
             response['backorder_retry'] = retry_backorders_after_inventory_available(sku)
