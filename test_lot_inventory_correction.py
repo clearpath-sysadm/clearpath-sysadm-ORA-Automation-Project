@@ -80,6 +80,25 @@ class TestLotInventoryCorrection(unittest.TestCase):
         self.assertIn('Resulting balance:', html)
         self.assertIn('updateCorrectionResultingBalance()', html)
 
+    def test_zero_balance_correction_displays_empty_not_depleted(self):
+        with open(
+            os.path.join(project_root, 'inventory.html'),
+            encoding='utf-8',
+        ) as inventory_page:
+            html = inventory_page.read()
+
+        status_function = html[
+            html.index('function getLotStatusBadge'):
+            html.index('async function reactivateLot')
+        ]
+        zero_balance_check = "status === 'depleted' && numericBalance === 0"
+        self.assertIn(zero_balance_check, status_function)
+        self.assertLess(
+            status_function.index(zero_balance_check),
+            status_function.index("status === 'depleted' && numericBalance > 0"),
+        )
+        self.assertIn("status-empty\">Empty</span>", status_function)
+
 
 if __name__ == '__main__':
     unittest.main()

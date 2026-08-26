@@ -979,14 +979,21 @@
         }
 
         function getLotStatusBadge(status, balance, lotId) {
-            const canReactivate = status === 'depleted' && Number(balance) > 0;
+            const numericBalance = Number(balance) || 0;
+            // A depleted lot whose correction brings its live balance back to
+            // zero is empty, not depleted. Keep positive depleted lots
+            // intentional and explicitly reactivatable.
+            if (status === 'depleted' && numericBalance === 0) {
+                return '<span class="status-badge status-empty">Empty</span>';
+            }
+            const canReactivate = status === 'depleted' && numericBalance > 0;
             if (canReactivate) {
                 return `<button type="button" class="status-badge status-depleted status-actionable"
                     title="Reactivate this lot"
                     onclick="reactivateLot(${Number(lotId)})">Depleted</button>`;
             }
-            if (status === 'active' && balance > 0)  return `<span class="status-badge status-active">Active</span>`;
-            if (status === 'active' && balance === 0) return `<span class="status-badge status-empty">Empty</span>`;
+            if (status === 'active' && numericBalance > 0)  return `<span class="status-badge status-active">Active</span>`;
+            if (status === 'active' && numericBalance === 0) return `<span class="status-badge status-empty">Empty</span>`;
             if (status === 'depleted')                return `<span class="status-badge status-depleted">Depleted</span>`;
             if (status === 'quarantine')              return `<span class="status-badge status-quarantine">Quarantine</span>`;
             return `<span class="status-badge status-inactive">Inactive</span>`;
