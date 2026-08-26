@@ -38,10 +38,6 @@ def retry_unresolved_lot_tagging_failures(affected_sku: str | None = None) -> di
     }
     conn = None
     try:
-        api_key, api_secret = get_shipstation_credentials()
-        if not api_key or not api_secret:
-            raise RuntimeError('Failed to get ShipStation credentials')
-
         conn = get_connection()
         cursor = conn.cursor()
         if affected_sku:
@@ -63,6 +59,37 @@ def retry_unresolved_lot_tagging_failures(affected_sku: str | None = None) -> di
         summary['found'] = len(failures)
         if not failures:
             return summary
+
+        # A correction can resolve a negative balance without creating any
+        # shippable inventory (for example, -4 + 4 = 0). Avoid credentials,
+        # ShipStation calls, and map loading unless this SKU has an eligible
+        # active lot with positive live balance.
+        if affected_sku:
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM lots l
+                    JOIN skus s ON s.sku_id = l.sku_id
+                    JOIN lot_balances lb ON lb.lot_id = l.lot_id
+                    WHERE s.sku_code = %s
+                      AND l.status = 'active'
+                      AND lb.balance > 0
+                )
+            """, (affected_sku,))
+            has_eligible_inventory = cursor.fetchone()[0]
+            if not has_eligible_inventory:
+                logger.info(
+                    "Retry: unresolved backorder(s) found for SKU %s, "
+                    "but no active lot has positive balance; skipping",
+                    affected_sku,
+                )
+                return summary
+
+        # Only load credentials after the cheap database checks above show
+        # there is actual retry work to perform.
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            raise RuntimeError('Failed to get ShipStation credentials')
 
         orders = []
         for failure_id, order_number, shipstation_order_id, sku in failures:

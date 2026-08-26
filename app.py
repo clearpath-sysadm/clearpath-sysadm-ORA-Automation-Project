@@ -274,21 +274,45 @@ def retry_backorders_after_inventory_available(sku: str) -> dict:
         }
 
 
-def schedule_backorder_retry_after_inventory_available(sku: str) -> None:
-    """Run the ShipStation-backed retry without delaying the inventory response."""
-    def _run():
-        summary = retry_backorders_after_inventory_available(sku)
-        logger.info(
-            "Background backorder retry completed for SKU %s: %s",
-            sku,
-            summary,
-        )
+_backorder_retry_state_lock = threading.Lock()
+_backorder_retry_in_progress = set()
 
-    threading.Thread(
-        target=_run,
-        daemon=True,
-        name=f"backorder-retry-{sku}",
-    ).start()
+
+def schedule_backorder_retry_after_inventory_available(sku: str) -> bool:
+    """Run the ShipStation-backed retry without delaying the inventory response."""
+    with _backorder_retry_state_lock:
+        if sku in _backorder_retry_in_progress:
+            logger.info(
+                "Backorder retry already running for SKU %s; skipping duplicate",
+                sku,
+            )
+            return False
+        _backorder_retry_in_progress.add(sku)
+
+    def _run():
+        try:
+            summary = retry_backorders_after_inventory_available(sku)
+            logger.info(
+                "Background backorder retry completed for SKU %s: %s",
+                sku,
+                summary,
+            )
+        finally:
+            with _backorder_retry_state_lock:
+                _backorder_retry_in_progress.discard(sku)
+
+    try:
+        threading.Thread(
+            target=_run,
+            daemon=True,
+            name=f"backorder-retry-{sku}",
+        ).start()
+        return True
+    except Exception:
+        with _backorder_retry_state_lock:
+            _backorder_retry_in_progress.discard(sku)
+        logger.exception("Could not start background backorder retry for SKU %s", sku)
+        return False
 
 
 # Configure Flask
@@ -7944,8 +7968,10 @@ def api_update_lot_inventory(lot_id):
             and status == 'active'
             and float(previous_lot[1] or 0) > 0
         ):
-            schedule_backorder_retry_after_inventory_available(previous_lot[2])
-            response['backorder_retry_scheduled'] = True
+            if schedule_backorder_retry_after_inventory_available(previous_lot[2]):
+                response['backorder_retry_scheduled'] = True
+            else:
+                response['backorder_retry_already_running'] = True
         return jsonify(response)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -8064,8 +8090,10 @@ def api_correct_lot_inventory(lot_id):
             'new_balance': resulting_balance,
         }
         if correction_type == 'Adjust Up':
-            schedule_backorder_retry_after_inventory_available(sku)
-            response['backorder_retry_scheduled'] = True
+            if schedule_backorder_retry_after_inventory_available(sku):
+                response['backorder_retry_scheduled'] = True
+            else:
+                response['backorder_retry_already_running'] = True
         return jsonify(response)
     except psycopg2.IntegrityError:
         return jsonify({
