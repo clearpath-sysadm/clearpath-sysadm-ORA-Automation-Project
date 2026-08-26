@@ -677,7 +677,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn" onclick="closeCorrectionModal()">Cancel</button>
-                <button class="btn" onclick="saveCorrection()">Record Correction</button>
+                <button class="btn" id="correction-save-button" onclick="saveCorrection()">Record Correction</button>
             </div>
         </div>
     </div>
@@ -984,32 +984,46 @@
             // zero is empty, not depleted. Keep positive depleted lots
             // intentional and explicitly reactivatable.
             if (status === 'depleted' && numericBalance === 0) {
-                return '<span class="status-badge status-empty">Empty</span>';
+                return `<button type="button" class="status-badge status-empty status-actionable"
+                    title="Activate this lot"
+                    onclick="toggleLotStatus(${Number(lotId)})">Empty</button>`;
             }
-            const canReactivate = status === 'depleted' && numericBalance > 0;
-            if (canReactivate) {
+            if (status === 'active') {
+                const label = numericBalance > 0 ? 'Active' : 'Empty';
+                const badgeClass = numericBalance > 0 ? 'status-active' : 'status-empty';
+                return `<button type="button" class="status-badge ${badgeClass} status-actionable"
+                    title="Deactivate this lot"
+                    onclick="toggleLotStatus(${Number(lotId)})">${label}</button>`;
+            }
+            if (status === 'depleted') {
                 return `<button type="button" class="status-badge status-depleted status-actionable"
-                    title="Reactivate this lot"
-                    onclick="reactivateLot(${Number(lotId)})">Depleted</button>`;
+                    title="Activate this lot"
+                    onclick="toggleLotStatus(${Number(lotId)})">Depleted</button>`;
             }
-            if (status === 'active' && numericBalance > 0)  return `<span class="status-badge status-active">Active</span>`;
-            if (status === 'active' && numericBalance === 0) return `<span class="status-badge status-empty">Empty</span>`;
-            if (status === 'depleted')                return `<span class="status-badge status-depleted">Depleted</span>`;
-            if (status === 'quarantine')              return `<span class="status-badge status-quarantine">Quarantine</span>`;
-            return `<span class="status-badge status-inactive">Inactive</span>`;
+            if (status === 'quarantine') {
+                return `<button type="button" class="status-badge status-quarantine status-actionable"
+                    title="Activate this lot"
+                    onclick="toggleLotStatus(${Number(lotId)})">Quarantine</button>`;
+            }
+            return `<button type="button" class="status-badge status-inactive status-actionable"
+                title="Activate this lot"
+                onclick="toggleLotStatus(${Number(lotId)})">Inactive</button>`;
         }
 
-        async function reactivateLot(lotId) {
+        async function toggleLotStatus(lotId) {
             const lot = lots.find(item => item.id === lotId);
-            if (!lot || lot.status !== 'depleted') return;
+            if (!lot) return;
 
             const balance = Number(lot.balance);
-            if (!(balance > 0)) {
-                alert('❌ A depleted lot can only be reactivated when its balance is greater than zero.');
+            const activating = lot.status !== 'active';
+            if (activating && !(balance > 0)) {
+                alert('❌ A lot can only be activated when its balance is greater than zero.');
                 return;
             }
 
-            if (!confirm(`Reactivate lot ${lot.lot} for SKU ${lot.sku}? Its current balance is ${balance.toLocaleString()} units.`)) {
+            const nextStatus = activating ? 'active' : 'inactive';
+            const action = activating ? 'activate' : 'deactivate';
+            if (!confirm(`${action[0].toUpperCase() + action.slice(1)} lot ${lot.lot} for SKU ${lot.sku}? Its current balance is ${balance.toLocaleString()} units.`)) {
                 return;
             }
 
@@ -1017,27 +1031,31 @@
                 const response = await fetch(`/api/lot_inventory/${lotId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'active' })
+                    body: JSON.stringify({ status: nextStatus })
                 });
                 const data = await response.json();
                 if (data.success) {
                     // Update the visible row immediately; the uncached reload below
                     // then reconciles the table with the server's latest balances.
-                    lot.status = 'active';
+                    lot.status = nextStatus;
                     renderLotTable();
                     await loadLots();
-                    const retry = data.backorder_retry;
-                    const retryMessage = retry
-                        ? ` Backorder retry: ${retry.retagged || 0} retagged${retry.still_backordered ? `, ${retry.still_backordered} still waiting` : ''}.`
+                    const retryMessage = data.backorder_retry_scheduled
+                        ? ' Backorder processing will continue in the background.'
                         : '';
-                    alert(`✅ Lot ${lot.lot} reactivated successfully.${retryMessage}`);
+                    alert(`✅ Lot ${lot.lot} ${action}d successfully.${retryMessage}`);
                 } else {
                     alert('❌ ' + (data.error || 'Failed to reactivate lot'));
                 }
             } catch (err) {
-                console.error('Error reactivating lot:', err);
-                alert('❌ Failed to reactivate lot');
+                console.error(`Error ${action}ing lot:`, err);
+                alert(`❌ Failed to ${action} lot`);
             }
+        }
+
+        // Kept as a compatibility alias for any existing links or scripts.
+        async function reactivateLot(lotId) {
+            return toggleLotStatus(lotId);
         }
 
         // Lot add/edit modal
@@ -1147,6 +1165,12 @@
             document.getElementById('correction-modal').classList.remove('active');
             document.getElementById('correction-form').reset();
             document.getElementById('correction-resulting-balance').textContent = 'Resulting balance: —';
+            setCorrectionSaving(false);
+        }
+        function setCorrectionSaving(isSaving) {
+            const button = document.getElementById('correction-save-button');
+            button.disabled = isSaving;
+            button.textContent = isSaving ? 'Saving…' : 'Record Correction';
         }
         function updateCorrectionResultingBalance() {
             const correctionType = document.getElementById('correction-type').value;
@@ -1169,6 +1193,7 @@
             if (!lotId)                   { alert('A lot is required'); return; }
             if (!quantity || quantity <= 0) { alert('Quantity must be a positive number'); return; }
             if (!correctionDate)        { alert('Date is required'); return; }
+            setCorrectionSaving(true);
             try {
                 const response = await fetch(`/api/lot_inventory/${lotId}/correct`, {
                     method: 'POST',
@@ -1176,10 +1201,21 @@
                     body: JSON.stringify({ correction_type: correctionType, amount: quantity, date: correctionDate, notes })
                 });
                 const data = await response.json();
-                if (data.success) { closeCorrectionModal(); await loadLots(); alert('✅ Correction recorded'); }
-                else { alert('❌ ' + (data.error || 'Failed to record correction')); }
+                if (data.success) {
+                    closeCorrectionModal();
+                    const refreshPromise = loadLots();
+                    const backgroundMessage = data.backorder_retry_scheduled
+                        ? ' Backorder processing will continue in the background.'
+                        : '';
+                    alert(`✅ Correction recorded.${backgroundMessage}`);
+                    await refreshPromise;
+                } else {
+                    alert('❌ ' + (data.error || 'Failed to record correction'));
+                }
             } catch (err) {
                 alert('❌ Failed to record correction');
+            } finally {
+                setCorrectionSaving(false);
             }
         }
 

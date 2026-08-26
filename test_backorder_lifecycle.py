@@ -190,7 +190,7 @@ class TestLotActivationRetry(unittest.TestCase):
         )
         self.assertIn('(!editingLotId && !receivedDate)', html)
         self.assertIn("fetch('/api/lot_inventory', { cache: 'no-store' })", html)
-        self.assertIn("lot.status = 'active';", html)
+        self.assertIn("lot.status = nextStatus;", html)
 
     def test_create_lot_still_requires_received_date(self):
         """New lots need a FIFO date even though existing lots do not."""
@@ -246,17 +246,8 @@ class TestLotActivationRetry(unittest.TestCase):
         cursor.fetchone.return_value = ('inactive', 8, '17612')
         cursor.rowcount = 1
         conn.cursor.return_value = cursor
-        retry_summary = {
-            'found': 1,
-            'retried': 1,
-            'retagged': 1,
-            'still_backordered': 0,
-            'errors': 0,
-        }
-
         with patch('app.get_connection', return_value=conn), \
-             patch('app.retry_backorders_after_inventory_available',
-                   return_value=retry_summary) as retry:
+             patch('app.schedule_backorder_retry_after_inventory_available') as retry:
             with dashboard_app.app.test_request_context(
                 '/api/lot_inventory/42',
                 method='PUT',
@@ -265,7 +256,7 @@ class TestLotActivationRetry(unittest.TestCase):
                 response = dashboard_app.api_update_lot_inventory(42)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json()['backorder_retry'], retry_summary)
+        self.assertTrue(response.get_json()['backorder_retry_scheduled'])
         retry.assert_called_once_with('17612')
         lookup_sql = cursor.execute.call_args_list[0].args[0]
         self.assertIn('lb.lot_id = l.lot_id', lookup_sql)
@@ -290,7 +281,7 @@ class TestLotActivationRetry(unittest.TestCase):
         conn.cursor.return_value = cursor
 
         with patch('app.get_connection', return_value=conn), \
-             patch('app.retry_backorders_after_inventory_available') as retry:
+             patch('app.schedule_backorder_retry_after_inventory_available') as retry:
             with dashboard_app.app.test_request_context(
                 '/api/lot_inventory/42',
                 method='PUT',

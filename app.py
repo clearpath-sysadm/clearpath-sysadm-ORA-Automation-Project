@@ -274,6 +274,23 @@ def retry_backorders_after_inventory_available(sku: str) -> dict:
         }
 
 
+def schedule_backorder_retry_after_inventory_available(sku: str) -> None:
+    """Run the ShipStation-backed retry without delaying the inventory response."""
+    def _run():
+        summary = retry_backorders_after_inventory_available(sku)
+        logger.info(
+            "Background backorder retry completed for SKU %s: %s",
+            sku,
+            summary,
+        )
+
+    threading.Thread(
+        target=_run,
+        daemon=True,
+        name=f"backorder-retry-{sku}",
+    ).start()
+
+
 # Configure Flask
 app.config['JSON_SORT_KEYS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -7927,7 +7944,8 @@ def api_update_lot_inventory(lot_id):
             and status == 'active'
             and float(previous_lot[1] or 0) > 0
         ):
-            response['backorder_retry'] = retry_backorders_after_inventory_available(previous_lot[2])
+            schedule_backorder_retry_after_inventory_available(previous_lot[2])
+            response['backorder_retry_scheduled'] = True
         return jsonify(response)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -8046,7 +8064,8 @@ def api_correct_lot_inventory(lot_id):
             'new_balance': resulting_balance,
         }
         if correction_type == 'Adjust Up':
-            response['backorder_retry'] = retry_backorders_after_inventory_available(sku)
+            schedule_backorder_retry_after_inventory_available(sku)
+            response['backorder_retry_scheduled'] = True
         return jsonify(response)
     except psycopg2.IntegrityError:
         return jsonify({
