@@ -2473,17 +2473,19 @@ def api_create_inventory_transaction():
         conn.close()
 
         server_logger.info(f"Inventory transaction created: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
-        backorder_retry = None
+        backorder_retry_scheduled = False
         if transaction_type in {'Receive', 'Adjust Up'} and quantity > 0:
-            backorder_retry = retry_backorders_after_inventory_available(sku)
+            backorder_retry_scheduled = schedule_backorder_retry_after_inventory_available(sku)
         
         response = {
             'success': True,
             'id': transaction_id,
             'message': 'Transaction created successfully'
         }
-        if backorder_retry is not None:
-            response['backorder_retry'] = backorder_retry
+        if transaction_type in {'Receive', 'Adjust Up'} and quantity > 0:
+            response['backorder_retry_scheduled'] = backorder_retry_scheduled
+            if not backorder_retry_scheduled:
+                response['backorder_retry_already_running'] = True
         return jsonify(response)
     except Exception as e:
         return jsonify({
@@ -2610,16 +2612,18 @@ def api_update_inventory_transaction(transaction_id):
         conn.close()
         
         server_logger.info(f"Inventory transaction #{transaction_id} updated: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
-        backorder_retry = None
+        backorder_retry_scheduled = False
         if transaction_type in {'Receive', 'Adjust Up'} and quantity > 0:
-            backorder_retry = retry_backorders_after_inventory_available(sku)
+            backorder_retry_scheduled = schedule_backorder_retry_after_inventory_available(sku)
         
         response = {
             'success': True,
             'message': 'Transaction updated successfully'
         }
-        if backorder_retry is not None:
-            response['backorder_retry'] = backorder_retry
+        if transaction_type in {'Receive', 'Adjust Up'} and quantity > 0:
+            response['backorder_retry_scheduled'] = backorder_retry_scheduled
+            if not backorder_retry_scheduled:
+                response['backorder_retry_already_running'] = True
         return jsonify(response)
     except Exception as e:
         return jsonify({
@@ -7918,7 +7922,10 @@ def api_create_lot_inventory():
             'id': new_lot_id
         }
         if initial_qty > 0 and status == 'active':
-            response['backorder_retry'] = retry_backorders_after_inventory_available(sku)
+            if schedule_backorder_retry_after_inventory_available(sku):
+                response['backorder_retry_scheduled'] = True
+            else:
+                response['backorder_retry_already_running'] = True
         return jsonify(response)
     except psycopg2.IntegrityError:
         return jsonify({

@@ -72,6 +72,74 @@ class TestBackorderRetryEfficiency(unittest.TestCase):
         with patch('app.retry_backorders_after_inventory_available', return_value={'found': 0}):
             worker()
 
+    def test_create_inventory_transaction_schedules_retry_without_waiting(self):
+        import app as dashboard_app
+
+        conn = MagicMock()
+        cursor = MagicMock()
+        cursor.fetchone.return_value = (77,)
+        conn.cursor.return_value = cursor
+
+        with patch('app.get_connection', return_value=conn), \
+             patch(
+                 'app.schedule_backorder_retry_after_inventory_available',
+                 return_value=True,
+             ) as schedule_retry, \
+             patch('app.retry_backorders_after_inventory_available') as synchronous_retry:
+            with dashboard_app.app.test_request_context(
+                '/api/inventory_transactions',
+                method='POST',
+                json={
+                    'date': '2026-08-27',
+                    'sku': '17612',
+                    'quantity': 423,
+                    'transaction_type': 'Receive',
+                    'notes': '260082',
+                    'lot_id': 19,
+                },
+            ):
+                response = dashboard_app.api_create_inventory_transaction()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()['backorder_retry_scheduled'])
+        conn.commit.assert_called_once()
+        schedule_retry.assert_called_once_with('17612')
+        synchronous_retry.assert_not_called()
+
+    def test_update_inventory_transaction_schedules_retry_without_waiting(self):
+        import app as dashboard_app
+
+        conn = MagicMock()
+        cursor = MagicMock()
+        cursor.fetchone.return_value = ('17612', 400, 'Receive')
+        conn.cursor.return_value = cursor
+
+        with patch('app.get_connection', return_value=conn), \
+             patch(
+                 'app.schedule_backorder_retry_after_inventory_available',
+                 return_value=True,
+             ) as schedule_retry, \
+             patch('app.retry_backorders_after_inventory_available') as synchronous_retry:
+            with dashboard_app.app.test_request_context(
+                '/api/inventory_transactions/77',
+                method='PUT',
+                json={
+                    'date': '2026-08-27',
+                    'sku': '17612',
+                    'quantity': 423,
+                    'transaction_type': 'Receive',
+                    'notes': '260082',
+                    'lot_id': 19,
+                },
+            ):
+                response = dashboard_app.api_update_inventory_transaction(77)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()['backorder_retry_scheduled'])
+        conn.commit.assert_called_once()
+        schedule_retry.assert_called_once_with('17612')
+        synchronous_retry.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()
