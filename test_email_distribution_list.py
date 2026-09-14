@@ -101,6 +101,38 @@ class TestEmailDistributionList(unittest.TestCase):
             contacts_compose.index('const mailtoLink ='),
         )
 
+    def test_dashboard_manages_recipients_in_modal_without_navigation(self):
+        with open(os.path.join(project_root, 'index.html'), encoding='utf-8') as page:
+            dashboard = page.read()
+
+        manage_button = (
+            '<button class="btn" type="button" '
+            'onclick="openRecipientManager()" '
+            'title="Add, edit, or remove report recipients">'
+        )
+        self.assertIn(manage_button, dashboard)
+        self.assertNotIn(
+            '<a class="btn" href="/email_contacts.html" '
+            'title="Add, edit, or remove report recipients">',
+            dashboard,
+        )
+        self.assertIn('id="recipient-manager-modal"', dashboard)
+        self.assertIn('aria-modal="true"', dashboard)
+        self.assertIn('if(event.target === this) closeRecipientManager()', dashboard)
+        self.assertIn("if (e.key === 'Escape')", dashboard)
+        self.assertIn('async function openRecipientManager()', dashboard)
+        self.assertIn('async function saveRecipientContact(event)', dashboard)
+        self.assertIn('async function deleteRecipientContact(contactId)', dashboard)
+        self.assertIn('window.authManager.isAdmin()', dashboard)
+        self.assertIn('recipientOpenGeneration', dashboard)
+        self.assertIn('id="recipient-add"', dashboard)
+        self.assertIn("await loadRecipientContacts();", dashboard)
+        self.assertIn('trapRecipientModalFocus(event)', dashboard)
+        self.assertIn(
+            '<a class="btn btn-secondary" href="/email_contacts.html">Open Full Page</a>',
+            dashboard,
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

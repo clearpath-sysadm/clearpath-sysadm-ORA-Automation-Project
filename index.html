@@ -156,6 +156,50 @@
         .pulse-section-toggle { display: flex; align-items: center; justify-content: space-between; user-select: none; margin-bottom: 16px; }
         .pulse-chevron { display: none; font-size: 14px; color: var(--text-tertiary); transition: transform 0.2s; line-height: 1; }
 
+        .recipient-modal-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .recipient-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .recipient-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 12px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+        }
+        .recipient-name { font-weight: 600; color: var(--text-primary); }
+        .recipient-email { margin-top: 2px; font-size: 13px; color: var(--text-secondary); overflow-wrap: anywhere; }
+        .recipient-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .recipient-form {
+            padding: 14px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+        }
+        .recipient-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .recipient-modal-status {
+            min-height: 20px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
         @media (max-width: 640px) {
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
             .stat-card { padding: 10px 12px; }
@@ -167,6 +211,11 @@
             .pulse-chevron.collapsed { transform: rotate(-90deg); }
             #pulse-body.collapsed { display: none; }
             #inv-btn-row .btn { font-size: 11px; padding: 5px 8px; }
+            .recipient-modal-toolbar,
+            .recipient-row { align-items: stretch; flex-direction: column; }
+            .recipient-actions { width: 100%; }
+            .recipient-actions .btn { flex: 1; }
+            .recipient-form-grid { grid-template-columns: 1fr; }
         }
     </style>
     
@@ -630,9 +679,9 @@
                                 <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
                                     📧 Compose Email
                                 </button>
-                                <a class="btn" href="/email_contacts.html" title="Add, edit, or remove report recipients">
+                                <button class="btn" type="button" onclick="openRecipientManager()" title="Add, edit, or remove report recipients">
                                     Manage Recipients
-                                </a>
+                                </button>
                                 <button class="btn" onclick="runEOD()" id="btn-eod">
                                     📦 EOD
                                     <div class="btn-status" id="eod-status"></div>
@@ -1611,6 +1660,11 @@
         // Close mobile menu on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                const recipientModal = document.getElementById('recipient-manager-modal');
+                if (recipientModal && recipientModal.classList.contains('active')) {
+                    closeRecipientManager();
+                    return;
+                }
                 closeMobileMenu();
             }
         });
@@ -2331,6 +2385,246 @@
 
         // ──────────────────────────────────────────────────────────────────────────
 
+        let recipientContacts = [];
+        let recipientEditingId = null;
+        let recipientReturnFocus = null;
+        let recipientPreviousBodyOverflow = '';
+        let recipientOpenGeneration = 0;
+
+        function recipientCanWrite() {
+            return Boolean(window.authManager && window.authManager.isAdmin());
+        }
+
+        function setRecipientStatus(message, isError = false) {
+            const status = document.getElementById('recipient-modal-status');
+            status.textContent = message || '';
+            status.style.color = isError ? 'var(--critical-red)' : 'var(--text-secondary)';
+        }
+
+        async function openRecipientManager() {
+            const modal = document.getElementById('recipient-manager-modal');
+            const generation = ++recipientOpenGeneration;
+            recipientReturnFocus = document.activeElement;
+            recipientPreviousBodyOverflow = document.body.style.overflow;
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            hideRecipientForm();
+            if (window.authManager) {
+                await window.authManager.getAuthStatus();
+            }
+            if (generation !== recipientOpenGeneration || !modal.classList.contains('active')) return;
+            const addButton = document.getElementById('recipient-add');
+            addButton.disabled = !recipientCanWrite();
+            addButton.title = recipientCanWrite()
+                ? 'Add a Weekly Report recipient'
+                : 'Admin access required';
+            await loadRecipientContacts(generation);
+            if (generation !== recipientOpenGeneration || !modal.classList.contains('active')) return;
+            document.getElementById('recipient-manager-close').focus();
+        }
+
+        function closeRecipientManager() {
+            const modal = document.getElementById('recipient-manager-modal');
+            recipientOpenGeneration += 1;
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = recipientPreviousBodyOverflow;
+            hideRecipientForm();
+            if (recipientReturnFocus && typeof recipientReturnFocus.focus === 'function') {
+                recipientReturnFocus.focus();
+            }
+            recipientReturnFocus = null;
+        }
+
+        async function loadRecipientContacts(generation = recipientOpenGeneration) {
+            const list = document.getElementById('recipient-modal-list');
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Loading recipients…</div>';
+            setRecipientStatus('');
+
+            try {
+                const response = await fetch('/api/email_contacts', {
+                    credentials: 'include',
+                    cache: 'no-store'
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Unable to load recipients');
+                }
+                if (generation !== recipientOpenGeneration ||
+                    !document.getElementById('recipient-manager-modal').classList.contains('active')) {
+                    return;
+                }
+                recipientContacts = data.data || [];
+                renderRecipientContacts();
+            } catch (error) {
+                if (generation !== recipientOpenGeneration ||
+                    !document.getElementById('recipient-manager-modal').classList.contains('active')) {
+                    return;
+                }
+                recipientContacts = [];
+                list.innerHTML = '';
+                setRecipientStatus(`Unable to load recipients: ${error.message}`, true);
+            }
+        }
+
+        function renderRecipientContacts() {
+            const list = document.getElementById('recipient-modal-list');
+            const count = document.getElementById('recipient-modal-count');
+            count.textContent = recipientContacts.length === 1
+                ? '1 recipient'
+                : `${recipientContacts.length} recipients`;
+            list.innerHTML = '';
+
+            if (recipientContacts.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'padding:24px;text-align:center;color:var(--text-tertiary);border:1px dashed var(--border-color);border-radius:8px;';
+                empty.textContent = 'No report recipients yet.';
+                list.appendChild(empty);
+                return;
+            }
+
+            const canWrite = recipientCanWrite();
+            recipientContacts.forEach(contact => {
+                const row = document.createElement('div');
+                row.className = 'recipient-row';
+
+                const details = document.createElement('div');
+                const name = document.createElement('div');
+                name.className = 'recipient-name';
+                name.textContent = contact.name || 'Unnamed recipient';
+                const email = document.createElement('div');
+                email.className = 'recipient-email';
+                email.textContent = contact.email;
+                details.append(name, email);
+
+                const actions = document.createElement('div');
+                actions.className = 'recipient-actions';
+                const edit = document.createElement('button');
+                edit.type = 'button';
+                edit.className = 'btn btn-sm';
+                edit.textContent = 'Edit';
+                edit.disabled = !canWrite;
+                edit.title = canWrite ? `Edit ${contact.email}` : 'Read-only access';
+                edit.addEventListener('click', () => showRecipientForm(contact.id));
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'btn btn-sm';
+                remove.textContent = 'Delete';
+                remove.disabled = !canWrite;
+                remove.title = canWrite ? `Delete ${contact.email}` : 'Read-only access';
+                remove.addEventListener('click', () => deleteRecipientContact(contact.id));
+                actions.append(edit, remove);
+                row.append(details, actions);
+                list.appendChild(row);
+            });
+        }
+
+        function showRecipientForm(contactId = null) {
+            if (!recipientCanWrite()) {
+                setRecipientStatus('Read-only access — contact an administrator to make changes.', true);
+                return;
+            }
+            recipientEditingId = contactId;
+            const contact = contactId
+                ? recipientContacts.find(item => item.id === contactId)
+                : null;
+            document.getElementById('recipient-form-title').textContent = contact
+                ? 'Edit recipient'
+                : 'Add recipient';
+            document.getElementById('recipient-name').value = contact?.name || '';
+            document.getElementById('recipient-email').value = contact?.email || '';
+            document.getElementById('recipient-form').style.display = 'block';
+            setRecipientStatus('');
+            document.getElementById(contact ? 'recipient-name' : 'recipient-email').focus();
+        }
+
+        function hideRecipientForm() {
+            recipientEditingId = null;
+            const form = document.getElementById('recipient-form');
+            form.style.display = 'none';
+            form.reset();
+        }
+
+        async function saveRecipientContact(event) {
+            event.preventDefault();
+            const saveButton = document.getElementById('recipient-save');
+            const email = document.getElementById('recipient-email').value.trim();
+            const name = document.getElementById('recipient-name').value.trim();
+            const url = recipientEditingId
+                ? `/api/email_contacts/${recipientEditingId}`
+                : '/api/email_contacts';
+            const method = recipientEditingId ? 'PUT' : 'POST';
+
+            saveButton.disabled = true;
+            saveButton.textContent = 'Saving…';
+            setRecipientStatus('');
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({email, name})
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Unable to save recipient');
+                }
+                hideRecipientForm();
+                await loadRecipientContacts();
+                setRecipientStatus(data.message || 'Recipient saved.');
+            } catch (error) {
+                setRecipientStatus(error.message, true);
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Recipient';
+            }
+        }
+
+        async function deleteRecipientContact(contactId) {
+            const contact = recipientContacts.find(item => item.id === contactId);
+            if (!contact || !confirm(`Delete ${contact.name || contact.email} from the Weekly Report list?`)) {
+                return;
+            }
+
+            setRecipientStatus('');
+            try {
+                const response = await fetch(`/api/email_contacts/${contactId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Unable to delete recipient');
+                }
+                await loadRecipientContacts();
+                setRecipientStatus(data.message || 'Recipient deleted.');
+            } catch (error) {
+                setRecipientStatus(error.message, true);
+            }
+        }
+
+        function trapRecipientModalFocus(event) {
+            if (event.key !== 'Tab') return;
+            const modal = document.getElementById('recipient-manager-modal');
+            const focusable = Array.from(modal.querySelectorAll(
+                'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+            )).filter(element => element.offsetParent !== null);
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────────────────
+
         // Initialize
         function _pulseRelativeTime(isoStr) {
             if (!isoStr) return '—';
@@ -2436,6 +2730,73 @@
             });
         });
     </script>
+
+    <!-- Weekly Report Recipient Manager Modal -->
+    <div id="recipient-manager-modal"
+         class="modal-overlay"
+         aria-hidden="true"
+         onclick="if(event.target === this) closeRecipientManager()"
+         onkeydown="trapRecipientModalFocus(event)">
+        <div class="modal-dialog modal-lg"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="recipient-manager-title"
+             onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="recipient-manager-title">Weekly Report Recipients</h3>
+                    <div id="recipient-modal-count" style="margin-top:4px;font-size:13px;color:var(--text-secondary);">
+                        Loading recipients…
+                    </div>
+                </div>
+                <button id="recipient-manager-close"
+                        class="modal-close"
+                        type="button"
+                        aria-label="Close recipient manager"
+                        onclick="closeRecipientManager()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="recipient-modal-toolbar">
+                    <div style="color:var(--text-secondary);font-size:14px;">
+                        Everyone listed here is included when you compose the Weekly Inventory Report.
+                    </div>
+                    <button class="btn btn-primary"
+                            id="recipient-add"
+                            type="button"
+                            data-action="write"
+                            onclick="showRecipientForm()">+ Add Recipient</button>
+                </div>
+
+                <form id="recipient-form"
+                      class="recipient-form"
+                      style="display:none;"
+                      onsubmit="saveRecipientContact(event)">
+                    <div id="recipient-form-title" style="font-weight:600;margin-bottom:12px;">Add recipient</div>
+                    <div class="recipient-form-grid">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="recipient-email">Email Address <span style="color:var(--critical-red);">*</span></label>
+                            <input id="recipient-email" type="email" required placeholder="name@example.com">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="recipient-name">Name</label>
+                            <input id="recipient-name" type="text" placeholder="Recipient name">
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+                        <button class="btn btn-secondary" type="button" onclick="hideRecipientForm()">Cancel</button>
+                        <button class="btn btn-primary" type="submit" id="recipient-save">Save Recipient</button>
+                    </div>
+                </form>
+
+                <div id="recipient-modal-list" class="recipient-list"></div>
+                <div id="recipient-modal-status" class="recipient-modal-status" role="status" aria-live="polite"></div>
+            </div>
+            <div class="modal-footer">
+                <a class="btn btn-secondary" href="/email_contacts.html">Open Full Page</a>
+                <button class="btn btn-primary" type="button" onclick="closeRecipientManager()">Done</button>
+            </div>
+        </div>
+    </div>
     
     <!-- Physical Count Adjustment Modal -->
     <div id="physical-count-modal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closePhysicalCountModal()">
