@@ -17,4 +17,5 @@ def test_weekly_report_uses_cards_at_mobile_and_tablet_widths():
     assert "window.matchMedia('(max-width: 768px)').matches" in html
     assert "#weeklyReportTable { display: none !important; }" in html
     assert "#weeklyReportCards.weekly-report-ready { display: flex !important; }" in html
+    assert ".weekly-inv-card-stats .wic-sep { display: none; }" in html
     assert "window.addEventListener('resize', updateWeeklyReportLayout)" in html

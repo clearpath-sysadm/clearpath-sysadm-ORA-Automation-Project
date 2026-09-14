@@ -177,10 +177,15 @@
             .weekly-inv-card-stats {
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
+                align-items: start;
             }
+            .weekly-inv-card-stats .wic-sep { display: none; }
             .wic-stat {
                 min-width: 0;
                 padding: 0 8px;
+            }
+            .wic-stat:not(:first-child) {
+                border-left: 1px solid var(--border-color);
             }
             .wic-val {
                 overflow-wrap: anywhere;
