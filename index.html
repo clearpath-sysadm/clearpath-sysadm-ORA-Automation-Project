@@ -918,7 +918,6 @@
                                         <th style="text-align: center;">Pallet Breakdown</th>
                                         <th style="text-align: right;">52-Week Avg</th>
                                         <th style="text-align: center;">Days Left</th>
-                                        <th style="text-align: center;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="weeklyReportBody"></tbody>
@@ -1100,11 +1099,6 @@
                                     ${daysText} days
                                 </span>
                             </td>
-                            <td style="text-align: center;">
-                                <button class="btn-icon" onclick="openPhysicalCountModal('${item.sku}', '${item.product_name || ''}')" title="Adjust inventory from physical count">
-                                    ✏️ Adjust
-                                </button>
-                            </td>
                         </tr>
                     `;
                 }).join('');
@@ -1147,9 +1141,6 @@
                                     <div class="wic-val">${palletShort}</div>
                                 </div>
                             </div>
-                            <button class="btn-icon" onclick="openPhysicalCountModal('${item.sku}', '${productName}')" title="Adjust inventory from physical count" style="margin-top:12px;width:100%;justify-content:center;">
-                                ✏️ Adjust
-                            </button>
                         </div>
                     `;
                 }).join('');
