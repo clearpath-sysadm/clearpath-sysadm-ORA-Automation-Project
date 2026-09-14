@@ -201,6 +201,17 @@
                 padding: 10px 12px;
             }
 
+            .assignment-card-footer .assignment-action-deactivate,
+            .assignment-card-footer .assignment-action-activate {
+                color: var(--critical-red);
+                border-color: var(--critical-red);
+            }
+
+            .assignment-card-footer .assignment-action-edit {
+                color: var(--accent-orange);
+                border-color: var(--accent-orange);
+            }
+
             /* Info banner mobile */
             .info-banner {
                 padding: 12px;
@@ -1290,8 +1301,8 @@
                     <td>${badge}</td>
                     <td style="color:var(--text-secondary);font-size:13px;">${created}</td>
                     <td><div class="action-buttons">
-                        <button class="btn btn-sm" onclick="toggleSkuLotActive(${item.id}, ${item.active ? 1 : 0})">${item.active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm" onclick="openEditSkuLotModal(${item.id})">Edit</button>
+                        <button class="btn btn-sm ${item.active ? 'assignment-action-deactivate' : 'assignment-action-activate'}" onclick="toggleSkuLotActive(${item.id}, ${item.active ? 1 : 0})"><span aria-hidden="true">${item.active ? '×' : '✓'}</span> ${item.active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm assignment-action-edit" onclick="openEditSkuLotModal(${item.id})"><span aria-hidden="true">✎</span> Edit</button>
                     </div></td>
                 </tr>`;
             });
@@ -1317,8 +1328,8 @@
                     </div>
                     <div style="font-size:12px;color:var(--text-secondary);">Added ${created}</div>
                     <div class="assignment-card-footer">
-                        <button class="btn btn-sm" onclick="toggleSkuLotActive(${item.id}, ${item.active ? 1 : 0})">${item.active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm" onclick="openEditSkuLotModal(${item.id})">Edit</button>
+                        <button class="btn btn-sm ${item.active ? 'assignment-action-deactivate' : 'assignment-action-activate'}" onclick="toggleSkuLotActive(${item.id}, ${item.active ? 1 : 0})"><span aria-hidden="true">${item.active ? '×' : '✓'}</span> ${item.active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="btn btn-sm assignment-action-edit" onclick="openEditSkuLotModal(${item.id})"><span aria-hidden="true">✎</span> Edit</button>
                     </div>
                 </div>`;
             });
