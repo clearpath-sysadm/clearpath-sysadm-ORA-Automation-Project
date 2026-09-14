@@ -17,7 +17,6 @@ SHARED_PAGES = {
     "inventory_transactions.html": "/inventory_transactions.html",
     "logs.html": "/logs.html",
     "lot_inventory.html": "/lot_inventory.html",
-    "order-management.html": "/order-management.html",
     "settings.html": "/settings.html",
     "shipment_summary.html": "/shipment_summary.html",
     "shipped_items.html": "/shipped_items.html",
@@ -27,12 +26,10 @@ SHARED_PAGES = {
 }
 CANONICAL_LINKS = [
     ("/shipment_summary.html", "Today's Pick List"),
-    ("/xml_import.html", "New Orders"),
     ("/inventory_transactions.html", "Inventory Monitor"),
     ("/lot_inventory.html", "Lot Inventory"),
     ("/shipped_orders.html", "Shipped Orders"),
     ("/shipped_items.html", "Shipped Items"),
-    ("/order-management.html", "Order Corrections"),
     ("/charge_report.html", "Charge Report"),
     ("/weekly_shipped_history.html", "Weekly Reports"),
     ("/sku_lot.html", "SKU Lot Management"),
@@ -57,9 +54,11 @@ def links_in(nav):
         r'<a href="([^"]+)" class="nav-item(?: active)?"[^>]*>([\s\S]*?)</a>',
         nav,
     )
+    retired_hrefs = {"/xml_import.html", "/order-management.html"}
     return [
         (href, re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", body)).strip())
         for href, body in links
+        if href not in retired_hrefs
     ]
 
 
@@ -82,6 +81,10 @@ def test_each_canonical_link_has_a_distinct_inline_svg_icon():
         r'<a href="([^"]+)" class="nav-item(?: active)?"[^>]*>([\s\S]*?)</a>',
         nav,
     )
+    anchors = [
+        anchor for anchor in anchors
+        if anchor[0] not in {"/xml_import.html", "/order-management.html"}
+    ]
     assert len(anchors) == len(CANONICAL_LINKS)
     icons = []
     for href, body in anchors:
@@ -106,6 +109,14 @@ def test_retired_pages_are_not_in_route_whitelist():
     allowed = ast.literal_eval(match.group(1))
     assert "order_audit.html" not in allowed
     assert "bundle_skus.html" not in allowed
+    assert "xml_import.html" not in allowed
+    assert "order-management.html" not in allowed
+
+
+def test_retired_order_pages_are_hidden_from_navigation():
+    styles = (ROOT / "static/css/global-styles.css").read_text()
+    assert '.sidebar-nav a[href="/xml_import.html"]' in styles
+    assert '.sidebar-nav a[href="/order-management.html"]' in styles
 
 
 def test_page_specific_sidebar_controls_are_preserved():

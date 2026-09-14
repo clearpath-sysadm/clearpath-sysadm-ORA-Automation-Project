@@ -1688,7 +1688,7 @@
                 
                 return `
                     <tr>
-                        <td><a href="/order-management.html?order=${order.order_number}" style="color: var(--primary); text-decoration: none; cursor: pointer;" title="Look up order">${order.order_number}</a></td>
+                        <td>${order.order_number}</td>
                         <td>${order.company_name}</td>
                         <td>${order.base_sku}</td>
                         <td>${order.sku_lot}</td>
@@ -1731,7 +1731,7 @@
                 return `
                     <div class="order-card">
                         <div class="order-card-header">
-                            <a href="/order-management.html?order=${order.order_number}" class="order-card-number" title="Look up order">#${order.order_number}</a>
+                            <span class="order-card-number">#${order.order_number}</span>
                             <div class="order-card-quantity">${order.quantity_shipped}</div>
                         </div>
                         <div class="order-card-row">
