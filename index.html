@@ -152,6 +152,42 @@
         .wic-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
         .wic-pallet .wic-val { font-size: 12px; font-weight: 500; }
 
+        @media (max-width: 768px) {
+            #inventory-risk-section .card-header {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 12px;
+            }
+            #inv-btn-row {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                width: 100%;
+            }
+            #inv-btn-row .btn {
+                justify-content: center;
+                min-width: 0;
+                white-space: normal;
+            }
+            #weeklyReportTable { display: none !important; }
+            #weeklyReportCards.weekly-report-ready { display: flex !important; }
+            .weekly-inv-card { min-width: 0; }
+            .weekly-inv-card-header > div { min-width: 0; }
+            .weekly-inv-product,
+            .weekly-inv-sku { overflow-wrap: anywhere; }
+            .weekly-inv-card-stats {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+            .wic-stat {
+                min-width: 0;
+                padding: 0 8px;
+            }
+            .wic-val {
+                overflow-wrap: anywhere;
+                line-height: 1.35;
+            }
+        }
+
         /* ─── Operational Pulse — compact workload + activity ─── */
         .compact-pulse-section {
             padding: 22px;
@@ -421,6 +457,17 @@
             .recipient-actions { width: 100%; }
             .recipient-actions .btn { flex: 1; }
             .recipient-form-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 380px) {
+            #weeklyReportCards { padding: 8px; }
+            .weekly-inv-card { padding: 10px; }
+            .weekly-inv-card-header { gap: 8px; }
+            .weekly-inv-product { font-size: 13px; }
+            .wic-stat { padding: 0 6px; }
+            .wic-label { font-size: 9px; letter-spacing: 0.2px; }
+            .wic-val { font-size: 13px; }
+            .wic-pallet .wic-val { font-size: 11px; }
         }
     </style>
     
@@ -1158,14 +1205,26 @@
                 }
                 
                 loadingDiv.style.display = 'none';
-                const isMobile = window.innerWidth <= 640;
+                const isMobile = window.matchMedia('(max-width: 768px)').matches;
                 tableDiv.style.display = isMobile ? 'none' : 'block';
                 cardsDiv.style.display = isMobile ? 'flex' : 'none';
+                cardsDiv.classList.add('weekly-report-ready');
             } catch (error) {
                 loadingDiv.style.display = 'none';
                 errorDiv.innerHTML = `<div style="padding: 20px; background: var(--bg-tertiary); color: var(--critical-red); border-radius: 8px;">Failed to load weekly report: ${error.message}</div>`;
             }
         }
+
+        function updateWeeklyReportLayout() {
+            const tableDiv = document.getElementById('weeklyReportTable');
+            const cardsDiv = document.getElementById('weeklyReportCards');
+            if (!cardsDiv.classList.contains('weekly-report-ready')) return;
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            tableDiv.style.display = isMobile ? 'none' : 'block';
+            cardsDiv.style.display = isMobile ? 'flex' : 'none';
+        }
+
+        window.addEventListener('resize', updateWeeklyReportLayout);
 
         // Refresh weekly report
         async function refreshWeeklyReport() {
