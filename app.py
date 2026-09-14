@@ -428,11 +428,11 @@ ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'cha
 _report_locks = {'EOD': False, 'EOW': False, 'EOM': False, 'LOT_RECON': False, 'RETAG_ALL': False, 'PROMO_SWEEP': False}
 
 @app.route('/')
-@login_required
 def index():
-    """Serve the main dashboard"""
+    """Serve the public landing page or authenticated main dashboard."""
     from flask import make_response
-    response = make_response(send_from_directory(project_root, 'index.html'))
+    page = 'index.html' if current_user.is_authenticated else 'landing.html'
+    response = make_response(send_from_directory(project_root, page))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
