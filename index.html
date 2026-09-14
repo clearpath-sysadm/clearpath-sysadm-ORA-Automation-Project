@@ -152,9 +152,190 @@
         .wic-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
         .wic-pallet .wic-val { font-size: 12px; font-weight: 500; }
 
-        /* ─── Operational Pulse — mobile collapsible + 2-per-row ─── */
-        .pulse-section-toggle { display: flex; align-items: center; justify-content: space-between; user-select: none; margin-bottom: 16px; }
+        /* ─── Operational Pulse — compact workload + activity ─── */
+        .compact-pulse-section {
+            padding: 22px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+        }
+        .pulse-section-toggle {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            user-select: none;
+            margin-bottom: 22px;
+        }
+        .pulse-heading-group { min-width: 0; }
+        .pulse-eyebrow {
+            margin-bottom: 4px;
+            color: var(--text-tertiary);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+        }
+        .pulse-title {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.2px;
+        }
+        .pulse-heading-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #8dcac5;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .pulse-live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .pulse-live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success-teal);
+            box-shadow: 0 0 0 3px rgba(60, 174, 163, 0.12);
+        }
         .pulse-chevron { display: none; font-size: 14px; color: var(--text-tertiary); transition: transform 0.2s; line-height: 1; }
+        .pulse-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.85px;
+            text-transform: uppercase;
+        }
+        .pulse-group-count { color: var(--text-tertiary); font-weight: 500; }
+        .pulse-workload-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .pulse-compact-card {
+            position: relative;
+            min-width: 0;
+            overflow: hidden;
+            padding: 13px 14px 14px;
+            border: 1px solid var(--border-translucent);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            box-shadow: var(--shadow-sm);
+            color: inherit;
+            text-decoration: none;
+            animation: pulse-card-rise 0.4s ease-out both;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .pulse-compact-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(43, 125, 233, 0.55);
+        }
+        .pulse-compact-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent-blue);
+        }
+        .pulse-compact-card.accent-gold::before { background: var(--warning-gold); }
+        .pulse-compact-card.accent-teal::before { background: var(--success-teal); }
+        .pulse-card-topline {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-tertiary);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.55px;
+            text-transform: uppercase;
+        }
+        .pulse-card-index {
+            color: #536581;
+            font-variant-numeric: tabular-nums;
+        }
+        .pulse-compact-card .stat-value {
+            margin: 14px 0 0;
+            font-size: 30px;
+            line-height: 1;
+        }
+        .pulse-compact-card .stat-label {
+            margin: 9px 0 0;
+            color: #D4DDED;
+            font-size: 12px;
+            line-height: 1.25;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+        .pulse-compact-card .stat-change {
+            min-height: 16px;
+            margin-top: 8px;
+            color: #7F91AE;
+            font-size: 10px !important;
+            line-height: 1.35;
+        }
+        .pulse-activity-panel {
+            padding: 13px 14px;
+            margin-top: 18px;
+            border: 1px solid var(--border-translucent);
+            border-radius: 8px;
+            background: #152238;
+        }
+        .pulse-activity-list {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .pulse-activity-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            padding: 0 14px;
+            border-left: 1px solid var(--border-translucent);
+        }
+        .pulse-activity-item:first-child { padding-left: 0; border-left: 0; }
+        .pulse-activity-value {
+            color: var(--text-primary);
+            font-size: 17px;
+            font-weight: 600;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .pulse-activity-count { color: #72aaf0; font-size: 24px; }
+        .pulse-activity-copy { min-width: 0; }
+        .pulse-activity-label {
+            color: #8D9DB7;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.45px;
+            text-transform: uppercase;
+        }
+        .pulse-activity-detail {
+            margin-top: 3px;
+            overflow: hidden;
+            color: var(--text-tertiary);
+            font-size: 10px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pulse-skeleton-card { min-height: 132px; }
+        .pulse-skeleton-activity { min-height: 42px; }
+        @keyframes pulse-card-rise {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         .recipient-modal-toolbar {
             display: flex;
@@ -201,15 +382,39 @@
         }
 
         @media (max-width: 640px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-            .stat-card { padding: 10px 12px; }
-            .stat-value { font-size: 22px; margin-bottom: 2px; }
-            .stat-label { font-size: 12px; }
-            .stat-change { font-size: 10px; }
-            .pulse-section-toggle { cursor: pointer; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px; }
+            .compact-pulse-section { padding: 14px 12px 12px; }
+            .pulse-section-toggle {
+                align-items: flex-start;
+                cursor: pointer;
+                margin-bottom: 18px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .pulse-title { font-size: 18px; }
+            .pulse-heading-status { padding-top: 3px; font-size: 10px; }
             .pulse-chevron { display: inline-block; }
             .pulse-chevron.collapsed { transform: rotate(-90deg); }
             #pulse-body.collapsed { display: none; }
+            .pulse-workload-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .pulse-compact-card { padding: 11px 11px 12px; }
+            .pulse-card-topline { font-size: 9px; }
+            .pulse-compact-card .stat-value { margin-top: 11px; font-size: 25px; }
+            .pulse-compact-card .stat-label { font-size: 11px; }
+            .pulse-compact-card .stat-change { font-size: 9px !important; }
+            .pulse-activity-panel { padding: 11px; margin-top: 14px; }
+            .pulse-activity-list { grid-template-columns: 1fr; }
+            .pulse-activity-item,
+            .pulse-activity-item:first-child {
+                min-height: 38px;
+                padding: 7px 0;
+                border-top: 1px solid var(--border-translucent);
+                border-left: 0;
+            }
+            .pulse-activity-item:first-child { padding-top: 0; border-top: 0; }
+            .pulse-activity-value { min-width: 64px; font-size: 15px; }
+            .pulse-activity-count { font-size: 22px; }
+            .pulse-activity-label,
+            .pulse-activity-detail { font-size: 9px; }
             #inv-btn-row .btn { font-size: 11px; padding: 5px 8px; }
             .recipient-modal-toolbar,
             .recipient-row { align-items: stretch; flex-direction: column; }
@@ -463,28 +668,38 @@
                 </div>
 
                 <!-- Operational Pulse Section -->
-                <section>
+                <section class="compact-pulse-section">
                     <div class="pulse-section-toggle" onclick="togglePulseSection()">
-                        <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Operational Pulse</h2>
-                        <span class="pulse-chevron" id="pulse-chevron">▾</span>
+                        <div class="pulse-heading-group">
+                            <div class="pulse-eyebrow" id="pulse-date-label">Today</div>
+                            <h2 class="pulse-title">Operational Pulse</h2>
+                        </div>
+                        <div class="pulse-heading-status">
+                            <span class="pulse-live-indicator">
+                                <span class="pulse-live-dot"></span>
+                                <span id="pulse-live-label">Updating</span>
+                            </span>
+                            <span class="pulse-chevron" id="pulse-chevron">▾</span>
+                        </div>
                     </div>
                     <div id="pulse-body">
-                    <div class="stats-grid">
+                        <div class="pulse-group-header">
+                            <span>Workload</span>
+                            <span class="pulse-group-count">6 queues</span>
+                        </div>
+                        <div class="pulse-workload-grid">
                         <!-- Skeleton Loaders -->
-                        <div class="skeleton skeleton-card" id="stat-skeleton-1"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-2"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-3"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-4"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-5"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-6"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-7"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-8"></div>
-                        <div class="skeleton skeleton-card" id="stat-skeleton-9"></div>
+                        <div class="skeleton pulse-skeleton-card" id="stat-skeleton-1"></div>
+                        <div class="skeleton pulse-skeleton-card" id="stat-skeleton-2"></div>
+                        <div class="skeleton pulse-skeleton-card" id="stat-skeleton-3"></div>
+                        <div class="skeleton pulse-skeleton-card" id="stat-skeleton-4"></div>
+                        <div class="skeleton pulse-skeleton-card" id="stat-skeleton-5"></div>
+                        <div class="skeleton pulse-skeleton-card" id="stat-skeleton-6"></div>
 
                         <!-- Actual Stats -->
                         <!-- Shipment Summary (Units to Pick) -->
-                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;" title="Click to view full shipment summary">
-                            <div class="stat-card hidden" data-stat-card id="units-to-pick-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <a href="/shipment_summary.html" class="pulse-compact-card hidden" data-stat-card id="units-to-pick-card" title="Click to view full shipment summary">
+                                <div class="pulse-card-topline"><span>Priority queue</span><span class="pulse-card-index">01</span></div>
                                 <div class="stat-value" id="units-to-pick-value">—</div>
                                 <div class="stat-label">
                                     Units to Pick
@@ -493,11 +708,10 @@
                                     </span>
                                 </div>
                                 <div class="stat-change" id="units-to-pick-sub" style="font-size: 11px; color: var(--text-tertiary);">View pick summary →</div>
-                            </div>
                         </a>
                         <!-- On Hold Count -->
-                        <a href="/order-management.html" style="text-decoration: none; color: inherit;" title="Click to look up on-hold orders">
-                            <div class="stat-card hidden" data-stat-card id="on-hold-card" style="cursor: pointer;">
+                        <a href="/order-management.html" class="pulse-compact-card accent-gold hidden" data-stat-card id="on-hold-card" title="Click to look up on-hold orders">
+                                <div class="pulse-card-topline"><span>Awaiting shipment</span><span class="pulse-card-index">02</span></div>
                                 <div class="stat-value" id="on-hold-units">0</div>
                                 <div class="stat-label">
                                     On Hold Units
@@ -506,10 +720,9 @@
                                     </span>
                                 </div>
                                 <div class="stat-change" id="on-hold-timestamp" style="font-size: 11px; color: var(--text-tertiary);">Loading...</div>
-                            </div>
                         </a>
-                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card id="benco-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <a href="/shipment_summary.html" class="pulse-compact-card hidden" data-stat-card id="benco-orders-card">
+                                <div class="pulse-card-topline"><span>Awaiting shipment</span><span class="pulse-card-index">03</span></div>
                                 <div class="stat-value" id="benco-orders-value">0</div>
                                 <div class="stat-label">
                                     Benco Orders
@@ -518,10 +731,9 @@
                                     </span>
                                 </div>
                                 <div class="stat-change">Awaiting Shipment</div>
-                            </div>
                         </a>
-                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card id="hawaiian-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <a href="/shipment_summary.html" class="pulse-compact-card accent-teal hidden" data-stat-card id="hawaiian-orders-card">
+                                <div class="pulse-card-topline"><span>Awaiting shipment</span><span class="pulse-card-index">04</span></div>
                                 <div class="stat-value" id="hawaiian-orders-value">0</div>
                                 <div class="stat-label">
                                     Hawaiian Orders
@@ -530,53 +742,52 @@
                                     </span>
                                 </div>
                                 <div class="stat-change">Awaiting Shipment</div>
-                            </div>
                         </a>
-                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card id="canadian-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <a href="/shipment_summary.html" class="pulse-compact-card accent-teal hidden" data-stat-card id="canadian-orders-card">
+                                <div class="pulse-card-topline"><span>Awaiting shipment</span><span class="pulse-card-index">05</span></div>
                                 <div class="stat-value" id="canadian-orders-value">0</div>
                                 <div class="stat-label">Canadian Orders</div>
                                 <div class="stat-change">Awaiting Shipment</div>
-                            </div>
                         </a>
-                        <a href="/shipment_summary.html" style="text-decoration: none; color: inherit;">
-                            <div class="stat-card hidden" data-stat-card id="intl-orders-card" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <a href="/shipment_summary.html" class="pulse-compact-card accent-teal hidden" data-stat-card id="intl-orders-card">
+                                <div class="pulse-card-topline"><span>Awaiting shipment</span><span class="pulse-card-index">06</span></div>
                                 <div class="stat-value" id="intl-orders-value">0</div>
                                 <div class="stat-label">Other International</div>
                                 <div class="stat-change">Awaiting Shipment</div>
-                            </div>
                         </a>
-                        <div class="stat-card hidden" data-stat-card id="system-status-card">
-                            <div class="stat-value" id="system-status-value"><span class="status-indicator status-green"></span> Online</div>
-                            <div class="stat-label">System Status</div>
-                            <div class="stat-change" id="system-status-change">All services operational</div>
                         </div>
-                        <div class="stat-card hidden" data-stat-card id="production-health-card" style="cursor: pointer;" onclick="openHealthModal()">
-                            <div class="stat-value" id="prod-health-status">
-                                <span class="status-indicator status-gray"></span> Checking...
-                            </div>
-                            <div class="stat-label">Production Health</div>
-                            <div class="stat-change" id="prod-health-detail">Loading...</div>
-                        </div>
+                        <div class="pulse-activity-panel">
+                            <div class="pulse-group-header"><span>Recent activity</span></div>
+                            <div class="pulse-activity-list">
+                        <div class="skeleton pulse-skeleton-activity" id="stat-skeleton-7"></div>
+                        <div class="skeleton pulse-skeleton-activity" id="stat-skeleton-8"></div>
+                        <div class="skeleton pulse-skeleton-activity" id="stat-skeleton-9"></div>
                         <!-- System Activity: Orders Since Last Ship -->
-                        <div class="stat-card hidden" data-stat-card id="pulse-orders-today-card">
-                            <div class="stat-value" id="pulse-orders-today-value" style="font-size: 28px;">—</div>
-                            <div class="stat-label">New Orders Since Last Ship</div>
-                            <div class="stat-change" id="pulse-orders-today-sub" style="font-size: 11px; color: var(--text-tertiary);">—</div>
+                        <div class="pulse-activity-item hidden" data-stat-card id="pulse-orders-today-card">
+                            <div class="pulse-activity-value pulse-activity-count" id="pulse-orders-today-value">—</div>
+                            <div class="pulse-activity-copy">
+                                <div class="pulse-activity-label">New Orders Since Last Ship</div>
+                                <div class="pulse-activity-detail" id="pulse-orders-today-sub">—</div>
+                            </div>
                         </div>
                         <!-- System Activity: Last New Order -->
-                        <div class="stat-card hidden" data-stat-card id="pulse-last-order-card">
-                            <div class="stat-value" id="pulse-last-order-value" style="font-size: 18px; font-weight: 600;">—</div>
-                            <div class="stat-label">Last New Order</div>
-                            <div class="stat-change" id="pulse-last-order-sub" style="font-size: 11px; color: var(--text-tertiary);">—</div>
+                        <div class="pulse-activity-item hidden" data-stat-card id="pulse-last-order-card">
+                            <div class="pulse-activity-value" id="pulse-last-order-value">—</div>
+                            <div class="pulse-activity-copy">
+                                <div class="pulse-activity-label">Last New Order</div>
+                                <div class="pulse-activity-detail" id="pulse-last-order-sub">—</div>
+                            </div>
                         </div>
                         <!-- System Activity: Last Reconciliation Sweep -->
-                        <div class="stat-card hidden" data-stat-card id="pulse-last-sync-card">
-                            <div class="stat-value" id="pulse-last-sync-value" style="font-size: 18px; font-weight: 600;">—</div>
-                            <div class="stat-label">Last Reconciliation</div>
-                            <div class="stat-change" id="pulse-last-sync-sub" style="font-size: 11px; color: var(--text-tertiary);">ShipStation sync</div>
+                        <div class="pulse-activity-item hidden" data-stat-card id="pulse-last-sync-card">
+                            <div class="pulse-activity-value" id="pulse-last-sync-value">—</div>
+                            <div class="pulse-activity-copy">
+                                <div class="pulse-activity-label">Last Reconciliation</div>
+                                <div class="pulse-activity-detail" id="pulse-last-sync-sub">ShipStation sync</div>
+                            </div>
                         </div>
-                    </div>
+                            </div>
+                        </div>
                     </div><!-- /#pulse-body -->
                 </section>
 
@@ -1377,7 +1588,6 @@
             } finally {
                 isDashboardLoading = false;
                 hideSkeletons();
-                updateProductionHealth().catch(e => console.error('Health check failed:', e));
             }
         }
 
@@ -1394,7 +1604,8 @@
             try {
                 await Promise.all([
                     loadDashboardData(),
-                    loadWeeklyReport()
+                    loadWeeklyReport(),
+                    loadSystemPulse()
                 ]);
             } finally {
                 isRefreshing = false;
@@ -2672,10 +2883,15 @@
         }
 
         async function loadSystemPulse() {
+            const liveLabel = document.getElementById('pulse-live-label');
+            if (liveLabel) liveLabel.textContent = 'Updating';
             try {
                 const res = await fetch('/api/system_pulse');
                 const data = await res.json();
-                if (!data.success) return;
+                if (!data.success) {
+                    if (liveLabel) liveLabel.textContent = 'Update unavailable';
+                    return;
+                }
 
                 document.getElementById('pulse-orders-today-value').textContent = data.orders_since_last_ship ?? '—';
                 document.getElementById('pulse-orders-today-sub').textContent   = _pulseShipDateSubtitle(data.last_ship_date);
@@ -2699,10 +2915,23 @@
                             ? 'var(--accent-orange, #f59e0b)'
                             : 'inherit';
                 }
-            } catch (_) {}
+                if (liveLabel) liveLabel.textContent = 'Live snapshot';
+            } catch (_) {
+                if (liveLabel) liveLabel.textContent = 'Update unavailable';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const pulseDateLabel = document.getElementById('pulse-date-label');
+            if (pulseDateLabel) {
+                const today = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'America/Chicago',
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric'
+                }).format(new Date());
+                pulseDateLabel.textContent = `Today · ${today}`;
+            }
             checkAutoShipDay();
             loadDashboardData();
             loadWeeklyReport();
