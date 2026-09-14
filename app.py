@@ -5,6 +5,7 @@ Serves the dashboard UI and provides API endpoints for real-time data.
 import os
 import sys
 import uuid
+import re
 import logging
 import threading
 from flask import Flask, jsonify, render_template, send_from_directory, request, session, g
@@ -5329,6 +5330,14 @@ def api_delete_sku_lot(sku_lot_id):
         }), 500
 
 # Email Contacts Management Endpoints
+def _normalize_email_contact_address(value):
+    """Normalize and validate an email address used in the report distribution list."""
+    email = (value or '').strip().lower()
+    if not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email):
+        return None
+    return email
+
+
 @app.route('/api/email_contacts', methods=['GET'])
 def api_get_email_contacts():
     """Get all email contacts"""
@@ -5339,7 +5348,7 @@ def api_get_email_contacts():
         cursor.execute("""
             SELECT id, email, name, created_at, updated_at 
             FROM email_contacts 
-            ORDER BY email
+            ORDER BY LOWER(email)
         """)
         
         rows = cursor.fetchall()
@@ -5369,26 +5378,33 @@ def api_get_email_contacts():
 @app.route('/api/email_contacts', methods=['POST'])
 def api_create_email_contact():
     """Create a new email contact"""
+    conn = None
     try:
-        data = request.json
+        data = request.json or {}
         
-        email = data.get('email', '').strip()
+        email = _normalize_email_contact_address(data.get('email'))
         name = data.get('name', '').strip()
         
         if not email:
             return jsonify({
                 'success': False,
-                'error': 'Email is required'
-            }), 400
-        
-        if '@' not in email:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid email format'
+                'error': 'Enter a valid email address'
             }), 400
         
         conn = get_connection()
         cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT 1 FROM email_contacts WHERE LOWER(email) = %s",
+            (email,)
+        )
+        if cursor.fetchone():
+            conn.close()
+            conn = None
+            return jsonify({
+                'success': False,
+                'error': 'This email is already on the distribution list'
+            }), 400
         
         cursor.execute("""
             INSERT INTO email_contacts (email, name)
@@ -5399,6 +5415,7 @@ def api_create_email_contact():
         contact_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
+        conn = None
         
         return jsonify({
             'success': True,
@@ -5406,11 +5423,17 @@ def api_create_email_contact():
             'id': contact_id
         })
     except psycopg2.IntegrityError:
+        if conn:
+            conn.rollback()
+            conn.close()
         return jsonify({
             'success': False,
-            'error': 'This email already exists'
+            'error': 'This email is already on the distribution list'
         }), 400
     except Exception as e:
+        if conn:
+            conn.rollback()
+            conn.close()
         return jsonify({
             'success': False,
             'error': str(e)
@@ -5419,46 +5442,69 @@ def api_create_email_contact():
 @app.route('/api/email_contacts/<int:contact_id>', methods=['PUT'])
 def api_update_email_contact(contact_id):
     """Update an email contact"""
+    conn = None
     try:
-        data = request.json
+        data = request.json or {}
         
-        email = data.get('email', '').strip()
+        email = _normalize_email_contact_address(data.get('email'))
         name = data.get('name', '').strip()
         
         if not email:
             return jsonify({
                 'success': False,
-                'error': 'Email is required'
-            }), 400
-        
-        if '@' not in email:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid email format'
+                'error': 'Enter a valid email address'
             }), 400
         
         conn = get_connection()
         cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT 1 FROM email_contacts WHERE LOWER(email) = %s AND id <> %s",
+            (email, contact_id)
+        )
+        if cursor.fetchone():
+            conn.close()
+            conn = None
+            return jsonify({
+                'success': False,
+                'error': 'This email is already on the distribution list'
+            }), 400
         
         cursor.execute("""
             UPDATE email_contacts 
             SET email = %s, name = %s, updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
         """, (email, name if name else None, contact_id))
+
+        if cursor.rowcount == 0:
+            conn.rollback()
+            conn.close()
+            conn = None
+            return jsonify({
+                'success': False,
+                'error': 'Email contact not found'
+            }), 404
         
         conn.commit()
         conn.close()
+        conn = None
         
         return jsonify({
             'success': True,
             'message': 'Email contact updated successfully'
         })
     except psycopg2.IntegrityError:
+        if conn:
+            conn.rollback()
+            conn.close()
         return jsonify({
             'success': False,
-            'error': 'This email already exists'
+            'error': 'This email is already on the distribution list'
         }), 400
     except Exception as e:
+        if conn:
+            conn.rollback()
+            conn.close()
         return jsonify({
             'success': False,
             'error': str(e)

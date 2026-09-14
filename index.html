@@ -630,6 +630,9 @@
                                 <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
                                     📧 Compose Email
                                 </button>
+                                <a class="btn" href="/email_contacts.html" title="Add, edit, or remove report recipients">
+                                    Manage Recipients
+                                </a>
                                 <button class="btn" onclick="runEOD()" id="btn-eod">
                                     📦 EOD
                                     <div class="btn-status" id="eod-status"></div>
@@ -1041,6 +1044,32 @@
                     return `${productName} | ${sku} | ${current} | ${avg} | ${daysLeftPadded}`;
                 }).join('\n');
                 const plainText = `${plainHeader}\n${plainSeparator}\n${plainRows}`;
+
+                const contactsResponse = await fetch('/api/email_contacts', { credentials: 'include' });
+                const contactsData = await contactsResponse.json();
+                if (!contactsResponse.ok || !contactsData.success) {
+                    throw new Error(contactsData.error || 'Failed to load email contacts');
+                }
+                if (!contactsData.data || contactsData.data.length === 0) {
+                    alert('⚠️ No email contacts found. Please add contacts in the Email Contacts page first.');
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+
+                const recipientReview = contactsData.data
+                    .map(contact => contact.name ? `${contact.name} <${contact.email}>` : contact.email)
+                    .join('\n');
+                const confirmed = confirm(
+                    `Compose the Weekly Inventory Report to these ${contactsData.data.length} recipients?\n\n` +
+                    `${recipientReview}\n\n` +
+                    `Select OK to copy the report and open your email client.`
+                );
+                if (!confirmed) {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    return;
+                }
                 
                 // First, copy to clipboard (must complete before opening mailto)
                 try {
@@ -1066,11 +1095,8 @@
                 // Wait a moment to ensure clipboard is ready
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
-                // Fetch email contacts and compose email
+                // Compose email using the confirmed recipient list
                 try {
-                    const contactsResponse = await fetch('/api/email_contacts');
-                    const contactsData = await contactsResponse.json();
-                    
                     if (contactsData.success && contactsData.data && contactsData.data.length > 0) {
                         // Get all email addresses
                         const emailList = contactsData.data.map(c => c.email).join(',');

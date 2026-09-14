@@ -127,7 +127,7 @@
                             <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                     </button>
-                    <h1 class="page-title">📧 Email Contacts</h1>
+                    <h1 class="page-title">📧 Report Recipients</h1>
                 </div>
                 <div class="top-bar-actions">
                     <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
@@ -140,10 +140,15 @@
                     <!-- Email Contacts Card -->
                     <div class="card">
                         <div class="card-header">
-                            <h2 class="card-title">Email Contacts</h2>
+                            <div>
+                                <h2 class="card-title">Weekly Report Distribution List</h2>
+                                <div id="recipientSummary" style="margin-top: 4px; color: var(--text-secondary); font-size: 0.9rem;">
+                                    Loading recipients...
+                                </div>
+                            </div>
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn" onclick="composeEmailToAll()" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue);">📧 Compose Email to All</button>
-                                <button class="btn" id="addContactBtn" data-action="write">+ Add Contact</button>
+                                <button class="btn btn-primary" onclick="composeEmailToAll()">Preview & Compose</button>
+                                <button class="btn" id="addContactBtn" data-action="write">+ Add Recipient</button>
                             </div>
                         </div>
 
@@ -172,7 +177,7 @@
     <div class="modal-overlay" id="contactModal" style="display: none;" onclick="if(event.target === this) closeModal()">
         <div class="modal-dialog" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3 id="modalTitle">Add Email Contact</h3>
+                <h3 id="modalTitle">Add Report Recipient</h3>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -192,7 +197,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="saveContact(event)" id="saveBtn">Save Contact</button>
+                <button class="btn btn-primary" onclick="saveContact(event)" id="saveBtn">Save Recipient</button>
             </div>
         </div>
     </div>
@@ -261,6 +266,10 @@
                 if (data.success) {
                     contacts = data.data;
                     renderContacts();
+                     const summary = document.getElementById('recipientSummary');
+                     summary.textContent = contacts.length === 1
+                         ? '1 recipient will receive the Weekly Inventory Report'
+                         : `${contacts.length} recipients will receive the Weekly Inventory Report`;
                 } else {
                     console.error('Failed to load contacts:', data.error);
                 }
@@ -274,7 +283,7 @@
             const tbody = document.getElementById('contactsTableBody');
             
             if (contacts.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-tertiary);">No contacts found. Click "Add Contact" to get started.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-tertiary);">No recipients found. Click "Add Recipient" to get started.</td></tr>';
                 return;
             }
             
@@ -297,7 +306,7 @@
         // Open add contact modal
         document.getElementById('addContactBtn').addEventListener('click', () => {
             editingContactId = null;
-            document.getElementById('modalTitle').textContent = 'Add Email Contact';
+            document.getElementById('modalTitle').textContent = 'Add Report Recipient';
             document.getElementById('contactId').value = '';
             document.getElementById('contactEmail').value = '';
             document.getElementById('contactName').value = '';
@@ -366,7 +375,7 @@
                 alert('Error saving contact: ' + error.message);
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.textContent = 'Save Contact';
+                saveBtn.textContent = 'Save Recipient';
             }
         }
 
@@ -407,6 +416,16 @@
             }
 
             try {
+                 const recipientReview = contacts
+                     .map(contact => contact.name ? `${contact.name} <${contact.email}>` : contact.email)
+                     .join('\n');
+                 const confirmed = confirm(
+                     `Compose an email to these ${contacts.length} recipients?\n\n` +
+                     `${recipientReview}\n\n` +
+                     `Select OK to open your email client.`
+                 );
+                 if (!confirmed) return;
+
                 // Read clipboard contents
                 let clipboardText = '';
                 try {
