@@ -36,19 +36,6 @@ function WorkloadCard({ card, index }: { card: PulseCard; index: number }) {
   );
 }
 
-function HealthSignal({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="health-signal">
-      <span className="health-dot" aria-hidden="true" />
-      <div>
-        <div className="health-label">{label}</div>
-        <div className="health-value">{value}</div>
-      </div>
-      <span className="health-detail">{detail}</span>
-    </div>
-  );
-}
-
 function PulseSection({ mobile = false }: { mobile?: boolean }) {
   return (
     <div className={`context-shell ${mobile ? 'mobile-context' : 'desktop-context'}`}>
@@ -71,13 +58,6 @@ function PulseSection({ mobile = false }: { mobile?: boolean }) {
         </div>
 
         <div className="secondary-row">
-          <div className="health-panel">
-            <div className="panel-label">System condition</div>
-            <div className="health-signals">
-              <HealthSignal label="System Status" value="Online" detail="All services operational" />
-              <HealthSignal label="Production Health" value="Healthy" detail="Database and services healthy" />
-            </div>
-          </div>
           <div className="activity-panel">
             <div className="panel-label">Recent activity</div>
             <div className="activity-list">
@@ -123,7 +103,7 @@ export function CompactInline() {
         .compact-value { margin-top:14px; color:#E3E9F5; font-size:30px; line-height:1; font-weight:700; font-variant-numeric:tabular-nums; }
         .compact-label { margin-top:9px; color:#D4DDED; font-size:12px; font-weight:600; line-height:1.25; }
         .compact-change { margin-top:8px; min-height:16px; color:#7F91AE; font-size:10px; line-height:1.35; }
-        .secondary-row { display:grid; grid-template-columns:minmax(280px,.72fr) minmax(460px,1.28fr); gap:10px; margin-top:18px; }
+        .secondary-row { display:grid; grid-template-columns:1fr; gap:10px; margin-top:18px; }
         .health-panel, .activity-panel { padding:13px 14px; border:1px solid rgba(227,233,245,.08); border-radius:8px; background:#152238; }
         .health-signals { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
         .health-signal { display:grid; grid-template-columns:8px 1fr; column-gap:8px; align-items:start; }
