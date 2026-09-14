@@ -32,3 +32,12 @@ def test_mobile_lot_inventory_controls_do_not_force_horizontal_overflow():
 def test_lot_card_actions_stay_on_one_row_on_narrow_screens():
     assert "flex: 1 1 100%;" not in HTML
     assert "flex: 1 1 0;" in HTML
+
+
+def test_lot_card_actions_have_distinct_visual_cues():
+    assert "lot-action-correct" in HTML
+    assert "lot-action-edit" in HTML
+    assert "lot-action-delete" in HTML
+    assert '<span aria-hidden="true">↕</span> Correct' in HTML
+    assert '<span aria-hidden="true">✎</span> Edit' in HTML
+    assert '<span aria-hidden="true">×</span> Delete' in HTML

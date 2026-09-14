@@ -132,6 +132,21 @@
                 text-align: center;
                 padding: 10px 12px;
             }
+
+            .lot-card-footer .lot-action-correct {
+                color: var(--accent-blue);
+                border-color: var(--accent-blue);
+            }
+
+            .lot-card-footer .lot-action-edit {
+                color: var(--accent-orange);
+                border-color: var(--accent-orange);
+            }
+
+            .lot-card-footer .lot-action-delete {
+                color: var(--critical-red);
+                border-color: var(--critical-red);
+            }
             
             /* Priority badge mobile */
             .priority-badge {
@@ -914,9 +929,9 @@
                     html += `</div>`;
 
                     html += `<div class="lot-card-footer">`;
-                    html += `<button class="btn btn-sm" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')">Correct</button>`;
-                    html += `<button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>`;
-                    html += `<button class="btn btn-sm" onclick="deleteLot(${lot.id})">Delete</button>`;
+                    html += `<button class="btn btn-sm lot-action-correct" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')"><span aria-hidden="true">↕</span> Correct</button>`;
+                    html += `<button class="btn btn-sm lot-action-edit" onclick="editLot(${lot.id})"><span aria-hidden="true">✎</span> Edit</button>`;
+                    html += `<button class="btn btn-sm lot-action-delete" onclick="deleteLot(${lot.id})"><span aria-hidden="true">×</span> Delete</button>`;
                     html += `</div>`;
                     html += `</div>`;
                 });
