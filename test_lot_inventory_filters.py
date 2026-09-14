@@ -27,3 +27,8 @@ def test_mobile_lot_inventory_controls_do_not_force_horizontal_overflow():
     assert "flex-direction: column;" in HTML
     assert ".lot-inventory-filter {" in HTML
     assert "min-width: 0;" in HTML
+
+
+def test_lot_card_actions_stay_on_one_row_on_narrow_screens():
+    assert "flex: 1 1 100%;" not in HTML
+    assert "flex: 1 1 0;" in HTML
