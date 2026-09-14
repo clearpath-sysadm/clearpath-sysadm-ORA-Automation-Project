@@ -25,6 +25,77 @@
             #transactionsTable.desktop-view { display: none  !important; }
             #transactionsCards.mobile-view  { display: block !important; }
         }
+
+        .transaction-toolbar {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .transaction-toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+        }
+
+        .transaction-toolbar-label {
+            width: 100%;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .transaction-toolbar .btn-filter {
+            color: #fff;
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .transaction-toolbar .btn-clear {
+            color: var(--text-secondary);
+            background: transparent;
+            border-color: var(--border-color);
+        }
+
+        .transaction-toolbar .btn-add-transaction {
+            color: #fff;
+            background: var(--success-teal);
+            border-color: var(--success-teal);
+            font-weight: 600;
+        }
+
+        .transaction-toolbar .btn-view-balances {
+            color: var(--accent-orange);
+            background: transparent;
+            border-color: var(--accent-orange);
+            font-weight: 600;
+        }
+
+        @media (max-width: 700px) {
+            .transaction-toolbar,
+            .transaction-toolbar-group {
+                align-items: stretch;
+            }
+
+            .transaction-toolbar-group {
+                width: 100%;
+            }
+
+            .transaction-toolbar-group input,
+            .transaction-toolbar-group select,
+            .transaction-toolbar-group .btn {
+                flex: 1 1 140px;
+            }
+        }
     </style>
     
 </head>
@@ -138,25 +209,31 @@
 
             <div class="content-area">
 
-                <div class="controls">
-                    <input type="date" id="startDate" placeholder="Start Date">
-                    <input type="date" id="endDate" placeholder="End Date">
-                    <select id="skuFilter">
-                        <option value="">All SKUs</option>
-                    </select>
-                    <select id="typeFilter">
-                        <option value="">All Types</option>
-                        <option value="Receive">Receive</option>
-                        <option value="Ship">Ship</option>
-                        <option value="Adjust Up">Adjust Up</option>
-                        <option value="Adjust Down">Adjust Down</option>
-                        <option value="Repack">Repack</option>
-                    </select>
-                    <button class="btn" onclick="applyFilters()">🔍 Filter</button>
-                    <button class="btn" onclick="clearFilters()">✖️ Clear</button>
-                    <button class="btn" onclick="copyToClipboard(this)">📋 Copy to Clipboard</button>
-                    <button class="btn" onclick="openAddModal()">➕ Add Transaction</button>
-                    <a href="/lot_inventory.html" class="btn" style="text-decoration:none;">🏭 View Lot Balances</a>
+                <div class="controls transaction-toolbar">
+                    <div class="transaction-toolbar-group" aria-label="Transaction filters">
+                        <span class="transaction-toolbar-label">Filters</span>
+                        <input type="date" id="startDate" aria-label="Start date">
+                        <input type="date" id="endDate" aria-label="End date">
+                        <select id="skuFilter" aria-label="SKU">
+                            <option value="">All SKUs</option>
+                        </select>
+                        <select id="typeFilter" aria-label="Transaction type">
+                            <option value="">All Types</option>
+                            <option value="Receive">Receive</option>
+                            <option value="Ship">Ship</option>
+                            <option value="Adjust Up">Adjust Up</option>
+                            <option value="Adjust Down">Adjust Down</option>
+                            <option value="Repack">Repack</option>
+                        </select>
+                        <button class="btn btn-filter" onclick="applyFilters()">🔍 Apply Filters</button>
+                        <button class="btn btn-clear" onclick="clearFilters()">✕ Clear</button>
+                    </div>
+                    <div class="transaction-toolbar-group" aria-label="Transaction actions">
+                        <span class="transaction-toolbar-label">Actions</span>
+                        <button class="btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                        <button class="btn btn-add-transaction" onclick="openAddModal()">＋ Add Transaction</button>
+                        <a href="/lot_inventory.html" class="btn btn-view-balances" style="text-decoration:none;">View Lot Balances</a>
+                    </div>
                 </div>
 
                 <div class="card">
