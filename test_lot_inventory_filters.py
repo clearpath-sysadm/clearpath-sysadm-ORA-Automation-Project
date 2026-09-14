@@ -19,3 +19,11 @@ def test_lot_inventory_retains_all_requested_views():
     assert "if (lotInventoryFilter === 'all') return true;" in HTML
     assert "if (lotInventoryFilter === 'active') return status === 'active';" in HTML
     assert "if (lotInventoryFilter === 'non-depleted') return status !== 'depleted';" in HTML
+
+
+def test_mobile_lot_inventory_controls_do_not_force_horizontal_overflow():
+    assert "@media (max-width: 700px)" in HTML
+    assert ".lot-tab-bar {" in HTML
+    assert "flex-direction: column;" in HTML
+    assert ".lot-inventory-filter {" in HTML
+    assert "min-width: 0;" in HTML

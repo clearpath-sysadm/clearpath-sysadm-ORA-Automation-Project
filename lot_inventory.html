@@ -305,6 +305,71 @@
             line-height: 1.5;
         }
 
+        .lot-tab-actions .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (max-width: 700px) {
+            #lot-main-card {
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .lot-tab-bar {
+                position: static;
+                flex-direction: column;
+                align-items: stretch;
+                margin: 0 -16px;
+                padding: 0 16px;
+            }
+
+            .lot-tab-list {
+                width: 100%;
+            }
+
+            .lot-tab-btn {
+                flex: 1 1 0;
+                min-width: 0;
+                padding: 12px 6px;
+                font-size: 12px;
+            }
+
+            .lot-tab-actions {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 10px 0 12px;
+                border-top: 1px solid var(--border-color);
+            }
+
+            .lot-inventory-filter {
+                flex: 1 1 auto;
+                min-width: 0;
+                width: auto;
+            }
+
+            .lot-tab-actions .btn {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+
+            .lot-tab-pane,
+            .lot-cards-container,
+            .lot-card {
+                width: 100%;
+                min-width: 0;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+        }
+
         /* ── Inline assignment add-row ─────────────────────────────────────── */
         #inline-assignment-row td {
             vertical-align: middle;
