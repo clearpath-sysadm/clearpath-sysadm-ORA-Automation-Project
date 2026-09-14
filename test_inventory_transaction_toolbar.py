@@ -18,3 +18,9 @@ def test_primary_toolbar_actions_have_distinct_styles():
     assert 'class="btn btn-clear"' in HTML
     assert 'class="btn btn-add-transaction"' in HTML
     assert 'class="btn btn-view-balances"' in HTML
+
+
+def test_mobile_transaction_cards_use_scannable_sections():
+    assert 'class="transaction-card-details"' in HTML
+    assert HTML.count('class="transaction-card-field"') == 3
+    assert 'class="transaction-card-notes"' in HTML

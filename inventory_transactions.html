@@ -96,6 +96,75 @@
                 flex: 1 1 140px;
             }
         }
+
+        .transaction-card {
+            margin-bottom: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .transaction-card .card-content {
+            padding: 16px;
+        }
+
+        .transaction-card .card-header {
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .transaction-card-details {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .transaction-card-field {
+            min-width: 0;
+        }
+
+        .transaction-card-field .label,
+        .transaction-card-notes .label {
+            display: block;
+            margin-bottom: 3px;
+            color: var(--text-tertiary);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .transaction-card-value {
+            color: var(--text-primary);
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .transaction-card-notes {
+            margin-top: 14px;
+            padding: 10px 12px;
+            border-radius: 7px;
+            background: var(--bg-secondary);
+        }
+
+        .transaction-card-notes p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+        }
+
+        .transaction-card .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
     </style>
     
 </head>
@@ -470,21 +539,23 @@
                                 <span class="card-title"><strong>${t.sku}</strong></span>
                                 <span class="badge ${badgeClass}">${t.transaction_type}</span>
                             </div>
-                            <div class="card-row">
-                                <span class="label">Date:</span>
-                                <span>${t.date}</span>
+                            <div class="transaction-card-details">
+                                <div class="transaction-card-field">
+                                    <span class="label">Date</span>
+                                    <span class="transaction-card-value">${t.date}</span>
+                                </div>
+                                <div class="transaction-card-field">
+                                    <span class="label">Lot</span>
+                                    <span class="transaction-card-value" style="font-family:monospace;">${t.lot_number || '—'}</span>
+                                </div>
+                                <div class="transaction-card-field">
+                                    <span class="label">Quantity</span>
+                                    <span class="transaction-card-value">${t.quantity}</span>
+                                </div>
                             </div>
-                            <div class="card-row">
-                                <span class="label">Lot:</span>
-                                <span style="font-family:monospace;">${t.lot_number || '—'}</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Quantity:</span>
-                                <span><strong>${t.quantity}</strong></span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Notes:</span>
-                                <span>${t.notes || '-'}</span>
+                            <div class="transaction-card-notes">
+                                <span class="label">Notes</span>
+                                <p>${t.notes || 'No notes'}</p>
                             </div>
                             <div class="card-actions">
                                 <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
