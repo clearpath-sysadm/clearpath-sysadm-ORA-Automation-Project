@@ -290,6 +290,10 @@
             padding: 10px 0;
         }
 
+        .lot-inventory-filter {
+            min-width: 160px;
+        }
+
         .lot-tab-pane {
             padding-top: 20px;
         }
@@ -442,6 +446,15 @@
                         </div>
                         <!-- Actions swap with active tab -->
                         <div class="lot-tab-actions" id="tab-actions-inventory">
+                            <label class="sr-only" for="lot-inventory-filter">Filter lot inventory</label>
+                            <select id="lot-inventory-filter"
+                                    class="form-select lot-inventory-filter"
+                                    onchange="setLotInventoryFilter(this.value)">
+                                <option value="in-stock" selected>In Stock</option>
+                                <option value="all">All Lots</option>
+                                <option value="active">Active</option>
+                                <option value="non-depleted">Non-Depleted</option>
+                            </select>
                             <button class="btn" onclick="openAddModal()">
                                 <span>➕</span> Add Lot
                             </button>
@@ -627,6 +640,7 @@
         // Global state
         let darkMode = localStorage.getItem('darkMode') === 'true';
         let lots = [];
+        let lotInventoryFilter = 'in-stock';
         let editingLotId = null;
         let currentTab = 'inventory';
 
@@ -705,16 +719,35 @@
             }
         }
 
+        function setLotInventoryFilter(filter) {
+            lotInventoryFilter = filter;
+            renderTable();
+        }
+
+        function getFilteredLots() {
+            return lots.filter(lot => {
+                const balance = Number(lot.balance) || 0;
+                const status = String(lot.status || '').toLowerCase();
+
+                if (lotInventoryFilter === 'all') return true;
+                if (lotInventoryFilter === 'active') return status === 'active';
+                if (lotInventoryFilter === 'non-depleted') return status !== 'depleted';
+                return balance > 0;
+            });
+        }
+
         // Render table
         function renderTable() {
             const container = document.getElementById('lot-table-container');
+            const visibleLots = getFilteredLots();
             
-            if (lots.length === 0) {
+            if (visibleLots.length === 0) {
+                const isFiltered = lots.length > 0;
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📦</div>
-                        <div class="empty-state-title">No Lot Inventory</div>
-                        <div class="empty-state-text">Add your first lot to start tracking inventory by lot number</div>
+                        <div class="empty-state-title">${isFiltered ? 'No Matching Lots' : 'No Lot Inventory'}</div>
+                        <div class="empty-state-text">${isFiltered ? 'Choose another filter to view more lot records.' : 'Add your first lot to start tracking inventory by lot number'}</div>
                     </div>
                 `;
                 return;
@@ -722,11 +755,22 @@
 
             // Group lots by SKU
             const lotsBySKU = {};
-            lots.forEach(lot => {
+            visibleLots.forEach(lot => {
                 if (!lotsBySKU[lot.sku]) {
                     lotsBySKU[lot.sku] = [];
                 }
                 lotsBySKU[lot.sku].push(lot);
+            });
+
+            // Preserve FIFO priority even when earlier lots are filtered out.
+            const fifoPriorityById = new Map();
+            const allLotsBySKU = {};
+            lots.forEach(lot => {
+                if (!allLotsBySKU[lot.sku]) allLotsBySKU[lot.sku] = [];
+                allLotsBySKU[lot.sku].push(lot);
+            });
+            Object.values(allLotsBySKU).forEach(skuLots => {
+                skuLots.forEach((lot, index) => fifoPriorityById.set(lot.id, index + 1));
             });
 
             // Desktop Table View
@@ -751,7 +795,7 @@
                     html += `<td>${formatReceiptCount(lot)}</td>`;
 
                     // Priority indicator (1st = oldest)
-                    const priority = index + 1;
+                    const priority = fifoPriorityById.get(lot.id) || index + 1;
                     html += `<td><span class="priority-indicator ${priority === 1 ? 'priority-1' : ''}">#${priority}</span></td>`;
 
                     html += `<td>${getStatusBadge(lot.status, lot.balance, lot.id)}</td>`;
@@ -771,7 +815,7 @@
             Object.keys(lotsBySKU).sort().forEach(sku => {
                 const skuLots = lotsBySKU[sku];
                 skuLots.forEach((lot, index) => {
-                    const priority = index + 1;
+                    const priority = fifoPriorityById.get(lot.id) || index + 1;
 
                     html += `<div class="lot-card">`;
                     html += `<div class="lot-card-header">`;
