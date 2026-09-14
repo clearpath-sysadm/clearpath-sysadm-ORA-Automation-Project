@@ -6,18 +6,21 @@ id = "4b_JXHzPkbyK9VltEbriV"
 uri = "file://docs/IMPLEMENTATION_REPORT.md"
 type = "text"
 title = "Oracare Fulfillment — Implementation Report"
+logical_id = "60619ee9-227c-465d-80b1-8a8481164171"
 
 [[outputs]]
 id = "E-huXY8NZ_0hzqpmORKMm"
 uri = "file://april_15_promo_overshipment_report.csv"
 type = "table"
 title = "April 15 Promo Shipment Report (Corrected)"
+logical_id = "70140f63-e4e6-4463-95bc-19bf51dbcd83"
 
 [[outputs]]
 id = "WC2a3A-oE-KM4TRw9BpR6"
 uri = "file://attached_assets/may_discrepancy_report_2026.csv"
 type = "table"
 title = "May 2026 Discrepancies Only (Charge Report vs SS Pivot)"
+logical_id = "1178ffde-43e9-47ce-a045-94e53de159c8"
 
 [[outputs]]
 id = "IRK6igs0AuMhEqBs6cnsn"
@@ -25,3 +28,4 @@ uri = "file://docs/VARIANT_SKU_TEST_SCENARIOS.docx"
 type = "word_document"
 title = "Variant SKU Test Scenarios"
 description = "Oracare test order checklist covering all variant SKU combinations — single items, multi-line, promo SKU pairings, and expected failure cases."
+logical_id = "2f44b9ea-a807-4637-b5e6-7de00b8ce358"
