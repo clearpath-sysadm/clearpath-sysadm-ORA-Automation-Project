@@ -146,6 +146,14 @@
             font-size: 13px;
             color: var(--text-secondary);
         }
+        .summary-card-lot-single-line {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .summary-card-lot-single-line .summary-card-lots-label {
+            margin-bottom: 0;
+        }
         .summary-card-lot-row {
             display: flex;
             justify-content: space-between;
@@ -651,8 +659,10 @@
                                 : '';
                             lotSection = `
                                 <div class="summary-card-lots">
-                                    <div class="summary-card-lots-label">Lot</div>
-                                    <div class="summary-card-lot-single">${lotName}${eolBadge}</div>
+                                    <div class="summary-card-lot-single-line">
+                                        <span class="summary-card-lots-label">Lot</span>
+                                        <span class="summary-card-lot-single">${lotName}${eolBadge}</span>
+                                    </div>
                                 </div>`;
                         } else {
                             let lotRows = lots.map(lot => {
