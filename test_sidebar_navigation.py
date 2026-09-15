@@ -163,6 +163,30 @@ def test_retired_sku_lot_page_does_not_remove_live_assignments():
     assert "toggleSkuLotActive" in lot_inventory
 
 
+def test_weekly_inventory_report_uses_one_accessible_action_dropdown():
+    page = (ROOT / "weekly_inventory_report.html").read_text()
+
+    assert 'id="reportActionsTrigger"' in page
+    assert 'aria-haspopup="menu"' in page
+    assert 'aria-controls="reportActionsMenu"' in page
+    assert 'id="reportActionsMenu" role="menu" hidden' in page
+    for action in ("compose", "refresh", "eod", "eow", "eom"):
+        assert f'id="action-{action}"' in page
+    assert 'href="/email_contacts.html" role="menuitem"' in page
+    for retired_control in (
+        'id="copyInventoryBtn"',
+        'id="weeklyReportRefreshBtn"',
+        'id="btn-eod"',
+        'id="btn-eow"',
+        'id="btn-eom"',
+    ):
+        assert retired_control not in page
+    assert "beginReportAction(action" in page
+    assert "if (reportActionInProgress) return false" in page
+    assert "closeReportActionsMenu({restoreFocus: true})" in page
+    assert "['ArrowDown', 'ArrowUp', 'Home', 'End']" in page
+
+
 def test_weekly_inventory_report_keeps_current_inventory_workflow():
     source = (ROOT / "weekly_inventory_report.html").read_text()
     app = (ROOT / "app.py").read_text()

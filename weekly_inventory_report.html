@@ -11,19 +11,82 @@
     <link rel="stylesheet" href="/static/css/global-styles.css">
     <style>
         .report-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: stretch;
+            position: relative;
+            flex-shrink: 0;
         }
-        .report-actions .btn {
+        .report-actions-trigger {
+            min-width: 180px;
             min-height: 42px;
+            justify-content: space-between;
+            gap: 18px;
+        }
+        .report-actions-trigger[aria-expanded="true"] .report-actions-chevron {
+            transform: rotate(180deg);
+        }
+        .report-actions-chevron {
+            font-size: 11px;
+            transition: transform 0.15s ease;
+        }
+        .report-actions-menu {
+            position: absolute;
+            z-index: 50;
+            top: calc(100% + 6px);
+            right: 0;
+            width: min(310px, calc(100vw - 48px));
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-lg);
+        }
+        .report-actions-menu[hidden] {
+            display: none;
+        }
+        .report-action-item {
+            width: 100%;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-primary);
+            font: inherit;
+            font-size: 14px;
+            text-align: left;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .report-action-item:hover,
+        .report-action-item:focus-visible {
+            background: var(--bg-hover);
+            outline: none;
+        }
+        .report-action-item:disabled,
+        .report-actions-menu.is-busy .report-action-item {
+            cursor: wait;
+            opacity: 0.55;
+        }
+        .report-action-icon {
+            width: 20px;
+            flex: 0 0 20px;
+            text-align: center;
+        }
+        .report-action-label {
+            flex: 1;
+        }
+        .report-action-divider {
+            height: 1px;
+            margin: 5px 6px;
+            background: var(--border-color);
         }
         .btn-status {
             font-size: 10px;
             line-height: 1.2;
-            opacity: 0.75;
-            margin-top: 2px;
+            color: var(--text-tertiary);
+            white-space: nowrap;
         }
         .report-meta {
             color: var(--text-secondary);
@@ -86,12 +149,20 @@
             color: var(--critical-red);
         }
         @media (max-width: 768px) {
-            .report-actions,
-            .report-actions .btn {
-                width: 100%;
+            .card-header {
+                align-items: flex-start;
+                gap: 12px;
             }
-            .report-actions .btn {
-                justify-content: center;
+            .report-actions-trigger {
+                min-width: 146px;
+            }
+            .report-actions-menu {
+                position: fixed;
+                top: auto;
+                right: 24px;
+                bottom: 24px;
+                left: 24px;
+                width: auto;
             }
             .report-table-wrap {
                 display: none !important;
@@ -180,12 +251,33 @@
                             <div class="report-meta">Current stock compared with the rolling 52-week shipping average.</div>
                         </div>
                         <div class="report-actions">
-                            <button class="btn" id="copyInventoryBtn" onclick="composeWeeklyInventoryEmail()">📧 Compose Email</button>
-                            <a class="btn" href="/email_contacts.html">Manage Recipients</a>
-                            <button class="btn" id="btn-eod" onclick="runReport('EOD')">📦 EOD<div class="btn-status" id="eod-status"></div></button>
-                            <button class="btn" id="btn-eow" onclick="runReport('EOW')">📊 EOW<div class="btn-status" id="eow-status"></div></button>
-                            <button class="btn" id="btn-eom" onclick="runReport('EOM')">💰 EOM<div class="btn-status" id="eom-status"></div></button>
-                            <button class="btn" id="weeklyReportRefreshBtn" onclick="refreshWeeklyReport()">↻ Refresh</button>
+                            <button class="btn report-actions-trigger" id="reportActionsTrigger" type="button"
+                                    aria-haspopup="menu" aria-expanded="false" aria-controls="reportActionsMenu"
+                                    onclick="toggleReportActionsMenu()">
+                                <span id="reportActionsTriggerLabel">Report Actions</span>
+                                <span class="report-actions-chevron" aria-hidden="true">▼</span>
+                            </button>
+                            <div class="report-actions-menu" id="reportActionsMenu" role="menu" hidden>
+                                <button class="report-action-item" id="action-compose" type="button" role="menuitem" onclick="composeWeeklyInventoryEmail()">
+                                    <span class="report-action-icon" aria-hidden="true">📧</span><span class="report-action-label">Compose Email</span>
+                                </button>
+                                <a class="report-action-item" href="/email_contacts.html" role="menuitem">
+                                    <span class="report-action-icon" aria-hidden="true">👥</span><span class="report-action-label">Manage Recipients</span>
+                                </a>
+                                <button class="report-action-item" id="action-refresh" type="button" role="menuitem" onclick="refreshWeeklyReport()">
+                                    <span class="report-action-icon" aria-hidden="true">↻</span><span class="report-action-label">Refresh Inventory</span>
+                                </button>
+                                <div class="report-action-divider" role="separator"></div>
+                                <button class="report-action-item" id="action-eod" type="button" role="menuitem" onclick="runReport('EOD')">
+                                    <span class="report-action-icon" aria-hidden="true">📦</span><span class="report-action-label">Run EOD</span><span class="btn-status" id="eod-status">Not run</span>
+                                </button>
+                                <button class="report-action-item" id="action-eow" type="button" role="menuitem" onclick="runReport('EOW')">
+                                    <span class="report-action-icon" aria-hidden="true">📊</span><span class="report-action-label">Run EOW</span><span class="btn-status" id="eow-status">Not run</span>
+                                </button>
+                                <button class="report-action-item" id="action-eom" type="button" role="menuitem" onclick="runReport('EOM')">
+                                    <span class="report-action-icon" aria-hidden="true">💰</span><span class="report-action-label">Run EOM</span><span class="btn-status" id="eom-status">Not run</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div id="weeklyReportLoading" style="padding:28px;text-align:center;color:var(--text-tertiary);">Loading weekly inventory report…</div>
@@ -235,6 +327,68 @@
         function closeMobileMenu() {
             document.getElementById('sidebar').classList.remove('mobile-open');
             document.getElementById('mobile-overlay').classList.remove('active');
+        }
+
+        let reportActionInProgress = false;
+
+        function getReportActionItems() {
+            return [...document.querySelectorAll('#reportActionsMenu [role="menuitem"]')];
+        }
+
+        function openReportActionsMenu() {
+            if (reportActionInProgress) return;
+            const trigger = document.getElementById('reportActionsTrigger');
+            const menu = document.getElementById('reportActionsMenu');
+            menu.hidden = false;
+            trigger.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeReportActionsMenu({restoreFocus = false} = {}) {
+            const trigger = document.getElementById('reportActionsTrigger');
+            document.getElementById('reportActionsMenu').hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+            if (restoreFocus) trigger.focus();
+        }
+
+        function toggleReportActionsMenu() {
+            const menu = document.getElementById('reportActionsMenu');
+            if (menu.hidden) {
+                openReportActionsMenu();
+            } else {
+                closeReportActionsMenu();
+            }
+        }
+
+        function beginReportAction(action, label) {
+            if (reportActionInProgress) return false;
+            reportActionInProgress = true;
+            closeReportActionsMenu();
+            const trigger = document.getElementById('reportActionsTrigger');
+            const menu = document.getElementById('reportActionsMenu');
+            trigger.disabled = true;
+            trigger.setAttribute('aria-busy', 'true');
+            menu.classList.add('is-busy');
+            menu.querySelectorAll('button').forEach(item => item.disabled = true);
+            document.getElementById(`action-${action}`).setAttribute('aria-busy', 'true');
+            document.getElementById('reportActionsTriggerLabel').textContent = label;
+            return true;
+        }
+
+        function finishReportAction(action, feedbackLabel = '', delay = 0) {
+            if (feedbackLabel) {
+                document.getElementById('reportActionsTriggerLabel').textContent = feedbackLabel;
+            }
+            window.setTimeout(() => {
+                const trigger = document.getElementById('reportActionsTrigger');
+                const menu = document.getElementById('reportActionsMenu');
+                reportActionInProgress = false;
+                trigger.disabled = false;
+                trigger.removeAttribute('aria-busy');
+                menu.classList.remove('is-busy');
+                menu.querySelectorAll('button').forEach(item => item.disabled = false);
+                document.getElementById(`action-${action}`).removeAttribute('aria-busy');
+                document.getElementById('reportActionsTriggerLabel').textContent = 'Report Actions';
+            }, delay);
         }
 
         function getInventoryPresentation(item) {
@@ -301,23 +455,20 @@
                 loading.style.display = 'none';
                 table.style.display = window.matchMedia('(max-width: 768px)').matches ? 'none' : 'block';
                 cards.classList.add('weekly-report-ready');
+                return true;
             } catch (loadError) {
                 loading.style.display = 'none';
                 error.textContent = `Failed to load weekly inventory report: ${loadError.message}`;
                 error.style.display = 'block';
+                return false;
             }
         }
 
         async function refreshWeeklyReport() {
-            const button = document.getElementById('weeklyReportRefreshBtn');
-            button.disabled = true;
-            button.textContent = 'Refreshing…';
-            await loadWeeklyReport();
-            button.textContent = 'Refreshed';
-            setTimeout(() => {
-                button.disabled = false;
-                button.textContent = '↻ Refresh';
-            }, 1200);
+            if (!beginReportAction('refresh', 'Refreshing…')) return;
+            const refreshed = await loadWeeklyReport();
+            if (!refreshed) alert('Unable to refresh the weekly inventory report.');
+            finishReportAction('refresh', refreshed ? 'Refreshed' : 'Report Actions', refreshed ? 1200 : 0);
         }
 
         async function loadReportStatus() {
@@ -337,10 +488,10 @@
         }
 
         async function runReport(type) {
-            const button = document.getElementById(`btn-${type.toLowerCase()}`);
+            const action = type.toLowerCase();
+            if (!beginReportAction(action, `Running ${type}…`)) return;
             const status = document.getElementById(`${type.toLowerCase()}-status`);
             const previousStatus = status.textContent;
-            button.disabled = true;
             status.textContent = 'Running…';
             try {
                 const response = await fetch(`/api/reports/${type.toLowerCase()}`, {method: 'POST'});
@@ -353,15 +504,13 @@
                 status.textContent = previousStatus;
                 alert(`Error running ${type}: ${error.message}`);
             } finally {
-                button.disabled = false;
+                finishReportAction(action);
             }
         }
 
         async function composeWeeklyInventoryEmail() {
-            const button = document.getElementById('copyInventoryBtn');
-            const originalText = button.textContent;
-            button.disabled = true;
-            button.textContent = 'Preparing…';
+            if (!beginReportAction('compose', 'Preparing Email…')) return;
+            let copied = false;
             try {
                 const [reportResponse, contactsResponse, statusResponse] = await Promise.all([
                     fetch('/api/weekly_inventory_report'),
@@ -418,23 +567,42 @@
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
-                button.textContent = 'Copied';
+                copied = true;
             } catch (error) {
                 alert(`Unable to compose report email: ${error.message}`);
             } finally {
-                setTimeout(() => {
-                    button.disabled = false;
-                    button.textContent = originalText;
-                }, 1200);
+                finishReportAction('compose', copied ? 'Copied' : 'Report Actions', copied ? 1200 : 0);
             }
         }
 
         document.addEventListener('keydown', event => {
-            if (event.key === 'Escape') closeMobileMenu();
+            const menu = document.getElementById('reportActionsMenu');
+            if (event.key === 'Escape') {
+                closeMobileMenu();
+                if (!menu.hidden) closeReportActionsMenu({restoreFocus: true});
+            }
+            if (!menu.hidden && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+                event.preventDefault();
+                const items = getReportActionItems();
+                const currentIndex = items.indexOf(document.activeElement);
+                const nextIndex = event.key === 'Home' ? 0
+                    : event.key === 'End' ? items.length - 1
+                    : event.key === 'ArrowDown' ? (currentIndex + 1) % items.length
+                    : currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+                items[nextIndex].focus();
+            }
+            if ((event.key === 'Enter' || event.key === ' ') && event.target.id === 'reportActionsTrigger') {
+                event.preventDefault();
+                toggleReportActionsMenu();
+                if (!menu.hidden) getReportActionItems()[0].focus();
+            }
             if ((event.key === 'Enter' || event.key === ' ') && event.target.classList.contains('admin-toggle')) {
                 event.preventDefault();
                 toggleSection(event.target);
             }
+        });
+        document.addEventListener('click', event => {
+            if (!event.target.closest('.report-actions')) closeReportActionsMenu();
         });
         document.addEventListener('DOMContentLoaded', () => {
             loadWeeklyReport();
