@@ -109,6 +109,16 @@ def test_sidebar_sections_have_canonical_static_structure():
             r'<a href="([^"]+)" class="nav-item(?: active)?"',
             reports.group(0),
         ) == ["/weekly_inventory_report.html", "/charge_report.html"], filename
+        assert re.findall(
+            r'<a href="([^"]+)" class="nav-item(?: active)?"',
+            orders.group(0),
+        ) == [
+            "/weekly_shipped_history.html",
+            "/shipped_orders.html",
+            "/shipped_items.html",
+            "/order-management.html",
+            "/inventory_snapshots.html",
+        ], filename
 def test_each_canonical_link_has_a_distinct_inline_svg_icon():
     nav = nav_for("index.html")
     anchors = re.findall(
@@ -140,6 +150,7 @@ def test_orders_history_active_items_and_all_history_links_are_preserved():
         "weekly_shipped_history.html": "/weekly_shipped_history.html",
         "shipped_orders.html": "/shipped_orders.html",
         "shipped_items.html": "/shipped_items.html",
+        "inventory_snapshots.html": "/inventory_snapshots.html",
     }
     for filename, active_href in history_pages.items():
         nav = nav_for(filename)
@@ -149,6 +160,7 @@ def test_orders_history_active_items_and_all_history_links_are_preserved():
             "/weekly_shipped_history.html",
             "/shipped_orders.html",
             "/shipped_items.html",
+            "/inventory_snapshots.html",
         ):
             assert href in nav, filename
 def test_shipped_troubleshooting_links_are_admin_opt_in():
@@ -161,6 +173,7 @@ def test_shipped_troubleshooting_links_are_admin_opt_in():
         "/weekly_shipped_history.html",
         "/shipped_orders.html",
         "/shipped_items.html",
+        "/inventory_snapshots.html",
     ):
         assert href in nav_for("index.html")
         assert f"'{href.lstrip('/')}'" in app
@@ -173,7 +186,13 @@ def test_shipped_troubleshooting_links_are_admin_opt_in():
     assert "data-admin-only hidden" in settings
     assert 'id="showOrdersHistory"' in settings
     assert "localStorage.removeItem('showOrdersHistory')" in settings
-    for label in ("Orders History", "Shipping History", "Shipped Orders", "Shipped Items"):
+    for label in (
+        "Orders History",
+        "Shipping History",
+        "Shipped Orders",
+        "Shipped Items",
+        "Inventory Snapshots",
+    ):
         assert label in settings
 
 
