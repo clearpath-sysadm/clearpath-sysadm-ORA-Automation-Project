@@ -17,6 +17,16 @@
             text-decoration: underline;
         }
 
+        #fedex-alert > div {
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 640px) {
+            #fedex-complete-btn {
+                width: 100%;
+            }
+        }
+
 /* Duplicate Order Alert */
         #duplicate-alert {
             background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);

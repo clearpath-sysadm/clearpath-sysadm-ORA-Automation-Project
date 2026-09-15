@@ -7,6 +7,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 from src.services.shipstation.api_client import get_shipstation_credentials
 from src.services.database.pg_utils import get_connection
+from src.services.operational_reminders import record_fedex_threshold
 from config.settings import settings
 
 ORACARE_STORE_ID = 345611
@@ -67,6 +68,7 @@ def refresh_shipstation_metrics():
             SET metric_value = EXCLUDED.metric_value,
                 last_updated = EXCLUDED.last_updated
     """, (total_units,))
+    record_fedex_threshold(conn, total_units)
 
     conn.commit()
     conn.close()

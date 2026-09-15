@@ -1499,6 +1499,9 @@
                 ]);
                 
                 const stats = await statsRes.json();
+                if (stats.success) {
+                    renderOperationalReminders(stats.data);
+                }
                 const alerts = await alertsRes.json();
                 const automation = await automationRes.json();
                 const onHold = await onHoldRes.json();
@@ -1560,38 +1563,7 @@
                         sysChangeEl.textContent = statusMessage;
                     }
                     
-                    const fedexAlert = document.getElementById('fedex-alert');
-                    const fedexTitle = document.getElementById('fedex-alert-title');
-                    const fedexMessage = document.getElementById('fedex-alert-message');
-                    const fedexBtn = document.getElementById('fedex-complete-btn');
-                    
-                    if (stats.data.fedex_pickup_needed) {
-                        if (stats.data.fedex_pickup_completed) {
-                            // Show completion status
-                            fedexTitle.textContent = '✅ FedEx Pickup Completed';
-                            // Parse UTC timestamp and convert to local time
-                            const completedTime = new Date(stats.data.fedex_pickup_completed_at + 'Z');
-                            const localTime = formatTime(completedTime);
-                            fedexMessage.textContent = `Pickup scheduled at ${localTime}`;
-                            fedexBtn.style.display = 'none';
-                            fedexAlert.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                            fedexAlert.style.color = 'white';
-                        } else {
-                            // Show pending status
-                            fedexTitle.textContent = '🚚 FedEx Trailer Pickup Needed';
-                            fedexMessage.innerHTML = '185+ units ready for shipment. Call FedEx depot to schedule trailer pickup: <a href="tel:651-846-0590" style="color: #78350f; font-weight: 600; text-decoration: underline;">651-846-0590</a>';
-                            fedexBtn.style.display = 'block';
-                            fedexAlert.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
-                            fedexAlert.style.color = '#78350f';
-                        }
-                        fedexAlert.style.display = 'block';
-                    } else {
-                        fedexAlert.style.display = 'none';
-                    }
                 }
-                
-                // Re-check auto-ship day status (updates in real-time)
-                try { checkAutoShipDay(); } catch (e) { console.error('checkAutoShipDay failed:', e); }
                 
                 lastUpdateTime = Date.now();
                 updateTimestamp();
@@ -1901,36 +1873,57 @@
             });
         });
 
-        // Check for Auto-Ship Day
-        function checkAutoShipDay() {
-            const today = new Date();
-            const dayOfMonth = today.getDate();
-            const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
-            
-            const autoShipDays = [5, 15, 25];
-            const isAutoShipDay = autoShipDays.includes(dayOfMonth);
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            
+        function renderOperationalReminders(data) {
+            renderAutoShipReminder(data.auto_ship);
+            renderFedExReminder(data);
+        }
+
+        // Render the server-authoritative Central Time Auto Ship status.
+        function renderAutoShipReminder(autoShip) {
             const alert = document.getElementById('autoship-alert');
             const title = document.getElementById('autoship-title');
             const message = document.getElementById('autoship-message');
-            
-            if (isAutoShipDay) {
-                if (isWeekend) {
+
+            if (!alert || !title || !message) return;
+
+            if (autoShip && autoShip.is_auto_ship_day) {
+                const dayOfMonth = autoShip.day_of_month;
+                if (autoShip.is_weekend) {
                     // Weekend auto-ship day
-                    const dayName = dayOfWeek === 0 ? 'Sunday' : 'Saturday';
+                    const dayName = autoShip.day_name;
                     alert.classList.add('weekend-notice');
                     title.textContent = `Auto-Ship Day (${dayName})`;
                     message.textContent = `Today is the ${dayOfMonth}${getDaySuffix(dayOfMonth)}, a scheduled auto-ship day falling on ${dayName}. High volume orders may have been processed Friday or will process Monday.`;
                 } else {
                     // Regular auto-ship day
                     alert.classList.remove('weekend-notice');
-                    title.textContent = `🚨 Auto-Ship Day - ${getDayName(dayOfWeek)}`;
+                    title.textContent = `🚨 Auto-Ship Day - ${autoShip.day_name}`;
                     message.textContent = `Today is the ${dayOfMonth}${getDaySuffix(dayOfMonth)} - a high-volume auto-ship day. Expect increased order processing and shipment volume.`;
                 }
                 alert.style.display = 'block';
             } else {
                 alert.style.display = 'none';
+            }
+        }
+
+        function renderFedExReminder(data) {
+            const fedexAlert = document.getElementById('fedex-alert');
+            const fedexTitle = document.getElementById('fedex-alert-title');
+            const fedexMessage = document.getElementById('fedex-alert-message');
+            const fedexBtn = document.getElementById('fedex-complete-btn');
+
+            if (!fedexAlert || !fedexTitle || !fedexMessage || !fedexBtn) return;
+
+            if (data.fedex_pickup_needed && !data.fedex_pickup_completed) {
+                fedexTitle.textContent = '🚚 FedEx Trailer Pickup Needed';
+                const peakUnits = data.fedex_pickup_peak_units || 185;
+                fedexMessage.innerHTML = `${peakUnits}+ units reached today. Call FedEx depot to schedule trailer pickup: <a href="tel:651-846-0590" style="color: #78350f; font-weight: 600; text-decoration: underline;">651-846-0590</a>`;
+                fedexBtn.style.display = 'block';
+                fedexAlert.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
+                fedexAlert.style.color = '#78350f';
+                fedexAlert.style.display = 'block';
+            } else {
+                fedexAlert.style.display = 'none';
             }
         }
         
@@ -1944,11 +1937,6 @@
             }
         }
         
-        function getDayName(dayOfWeek) {
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            return days[dayOfWeek];
-        }
-
         // FedEx Pickup Completion Handler — conflict functions removed above
 
         // FedEx Pickup Completion Handler
@@ -2944,7 +2932,6 @@
                 }).format(new Date());
                 pulseDateLabel.textContent = `Today · ${today}`;
             }
-            checkAutoShipDay();
             loadDashboardData();
             loadWeeklyReport();
             loadReportStatus();

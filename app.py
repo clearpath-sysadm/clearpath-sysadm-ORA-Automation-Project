@@ -25,6 +25,13 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.services.database.pg_utils import get_connection, execute_query
+from src.services.operational_reminders import (
+    auto_ship_status,
+    central_now,
+    get_fedex_status,
+    mark_fedex_reminder_completed,
+    record_fedex_threshold,
+)
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -884,22 +891,15 @@ def api_dashboard_stats():
         result = cursor.fetchone()
         units_to_ship = result[0] if result else 0
         
-        # Check if FedEx pickup is needed (>= 185 units)
-        fedex_pickup_needed = units_to_ship >= 185
+        reminder_now = central_now()
+        auto_ship = auto_ship_status(reminder_now)
+        fedex_status = get_fedex_status(conn, units_to_ship, reminder_now)
+        # Persist a newly reached threshold before returning it to the dashboard.
+        conn.commit()
+        fedex_pickup_needed = fedex_status['needed']
         fedex_phone = '651-846-0590'
-        
-        # Check if today's FedEx pickup has been marked completed
-        today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-        cursor.execute("""
-            SELECT completed_at, units_count 
-            FROM fedex_pickup_log 
-            WHERE pickup_date = %s
-            ORDER BY completed_at DESC
-            LIMIT 1
-        """, (today,))
-        pickup_log = cursor.fetchone()
-        fedex_pickup_completed = pickup_log is not None
-        fedex_pickup_completed_at = pickup_log[0] if pickup_log else None
+        fedex_pickup_completed = fedex_status['completed']
+        fedex_pickup_completed_at = fedex_status['completed_at']
         
         # Recent shipments (last 7 days)
         week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%d')
@@ -971,9 +971,11 @@ def api_dashboard_stats():
             'success': True,
             'data': {
                 'units_to_ship': units_to_ship,
+                'auto_ship': auto_ship,
                 'fedex_pickup_needed': fedex_pickup_needed,
                 'fedex_pickup_completed': fedex_pickup_completed,
                 'fedex_pickup_completed_at': fedex_pickup_completed_at.isoformat() if fedex_pickup_completed_at else None,
+                'fedex_pickup_peak_units': fedex_status['peak_units'],
                 'fedex_phone': fedex_phone,
                 'recent_shipments': recent_shipments,
                 'benco_orders': benco_orders,
@@ -2225,7 +2227,8 @@ def api_mark_fedex_pickup_completed():
         conn = get_connection()
         cursor = conn.cursor()
         
-        today = datetime.now().strftime('%Y-%m-%d')
+        reminder_now = central_now()
+        today = reminder_now.date()
         
         # Get current units_to_ship for logging
         cursor.execute("""
@@ -2257,6 +2260,7 @@ def api_mark_fedex_pickup_completed():
         """, (today, units_count))
         
         completed_at = cursor.fetchone()[0]
+        mark_fedex_reminder_completed(conn, completed_at, reminder_now)
         conn.commit()
         conn.close()
         
@@ -5567,7 +5571,7 @@ def api_refresh_units_to_ship():
                 SET metric_value = EXCLUDED.metric_value,
                     last_updated = EXCLUDED.last_updated
         """, (total_units,))
-        
+        record_fedex_threshold(conn, total_units)
         conn.commit()
         
         # Get updated timestamp

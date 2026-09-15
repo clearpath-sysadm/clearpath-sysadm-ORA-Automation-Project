@@ -1347,6 +1347,20 @@ def _add_not_found_order_status(cursor):
     logger.info("startup_migrations: not_found order status enabled")
 
 
+def _ensure_fedex_pickup_reminder_state(cursor):
+    """Migration 022: persist daily threshold-triggered FedEx reminders."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS fedex_pickup_reminder_state (
+            operational_date date PRIMARY KEY,
+            peak_units integer NOT NULL CHECK (peak_units >= 185),
+            threshold_reached_at timestamp with time zone
+                NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            completed_at timestamp with time zone
+        )
+    """)
+    logger.info("startup_migrations: FedEx pickup reminder state ready")
+
+
 def _resolve_removed_order_862283(cursor):
     """
     Preserve the confirmed-removed ShipStation order while immediately
@@ -1400,6 +1414,7 @@ def run_all(conn):
             _ensure_sku_variants_table(cur)
             _correct_stale_variant_rows_in_order_items_inbox(cur)
             _add_not_found_order_status(cur)
+            _ensure_fedex_pickup_reminder_state(cur)
             _resolve_removed_order_862283(cur)
             _update_source_system_default(cur)
         conn.commit()

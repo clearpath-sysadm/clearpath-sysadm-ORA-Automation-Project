@@ -15,6 +15,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
 from src.services.database.pg_utils import get_connection
+from src.services.operational_reminders import record_fedex_threshold
 
 ORACARE_STORE_ID = 345611
 
@@ -73,6 +74,7 @@ def refresh_units_to_ship():
             DO UPDATE SET metric_value = EXCLUDED.metric_value,
                           last_updated = CURRENT_TIMESTAMP
         """, ('units_to_ship', total_units))
+        record_fedex_threshold(conn, total_units)
 
         conn.commit()
         conn.close()
