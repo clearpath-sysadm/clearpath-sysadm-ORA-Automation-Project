@@ -10,7 +10,11 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, Set
 
-from src.services.shipstation.api_client import update_order_custom_fields, update_order_package_v2
+from src.services.shipstation.api_client import (
+    assign_user_to_order,
+    update_order_custom_fields,
+    update_order_package_v2,
+)
 from src.services.inventory import lot_reservation
 from src.utils.server_logger import get_logger
 from utils.api_utils import make_api_request
@@ -74,6 +78,137 @@ SKU_SHIPPING_PROFILES = {
     '18760': {'package_code': 'package', 'package_id': 'se-135809', 'length':  2.0, 'width':  2.0, 'height':  3.0, 'weight_oz':  32},
     '18565': {'package_code': 'package', 'package_id': 'se-135808', 'length':  9.0, 'width':  6.0, 'height':  4.0, 'weight_oz':  48},
 }
+
+
+def reconcile_promo_order_assignees(
+    orders: list,
+    promo_map: dict,
+    variant_map: dict,
+) -> dict:
+    """
+    Copy an assigned base split order's ShipStation user to its promo sibling.
+
+    Orders are correlated only by ShipStation's shared orderKey. A promo order
+    is updated only when it is awaiting shipment, currently unassigned, and
+    every assigned base-SKU sibling agrees on one userId.
+    """
+    from src.services.inventory.promo_sku_utils import resolve_sku_and_quantity
+
+    summary = {
+        'promo_unassigned': 0,
+        'assigned': 0,
+        'already_assigned': 0,
+        'missing_match': 0,
+        'ambiguous_match': 0,
+        'errors': 0,
+    }
+    if not promo_map:
+        return summary
+
+    groups = {}
+    for order in orders:
+        if order.get('orderStatus') != 'awaiting_shipment':
+            continue
+        order_key = str(order.get('orderKey') or '').strip()
+        if order_key:
+            groups.setdefault(order_key, []).append(order)
+
+    for order in orders:
+        if order.get('orderStatus') != 'awaiting_shipment':
+            continue
+
+        raw_skus = {
+            str(item.get('sku') or '').strip()
+            for item in (order.get('items') or [])
+        }
+        promo_skus = raw_skus.intersection(promo_map)
+        if not promo_skus:
+            continue
+        if order.get('userId') not in (None, ''):
+            summary['already_assigned'] += 1
+            continue
+
+        summary['promo_unassigned'] += 1
+        order_id = order.get('orderId')
+        order_key = str(order.get('orderKey') or '').strip()
+        base_skus = {promo_map[sku] for sku in promo_skus}
+        if not order_id or not order_key or len(base_skus) != 1:
+            summary['missing_match'] += 1
+            server_logger.warning(
+                f"Promo assignee skipped for order {order.get('orderNumber')} "
+                f"(SS ID: {order_id}): missing stable order identity or unique base SKU.",
+                source="Lot Tagger",
+            )
+            continue
+
+        base_sku = next(iter(base_skus))
+        assigned_users = set()
+        for sibling in groups.get(order_key, []):
+            if sibling is order or sibling.get('userId') in (None, ''):
+                continue
+            sibling_raw_skus = {
+                str(item.get('sku') or '').strip()
+                for item in (sibling.get('items') or [])
+            }
+            if sibling_raw_skus.intersection(promo_map):
+                continue
+            sibling_bases = {
+                resolve_sku_and_quantity(
+                    sku, 1, promo_map, variant_map
+                )[0]
+                for sku in sibling_raw_skus
+            }
+            if base_sku in sibling_bases:
+                assigned_users.add(sibling.get('userId'))
+
+        if not assigned_users:
+            summary['missing_match'] += 1
+            server_logger.warning(
+                f"Promo assignee skipped for order {order.get('orderNumber')} "
+                f"(SS ID: {order_id}): no assigned {base_sku} sibling for "
+                f"orderKey {order_key!r}.",
+                source="Lot Tagger",
+            )
+            continue
+        if len(assigned_users) != 1:
+            summary['ambiguous_match'] += 1
+            server_logger.warning(
+                f"Promo assignee skipped for order {order.get('orderNumber')} "
+                f"(SS ID: {order_id}): base siblings have conflicting assignees.",
+                source="Lot Tagger",
+            )
+            continue
+
+        user_id = next(iter(assigned_users))
+        result = assign_user_to_order(order_id, user_id)
+        if result.get('success') and result.get('assigned', True):
+            order['userId'] = user_id
+            summary['assigned'] += 1
+            server_logger.info(
+                f"Assigned promo order {order.get('orderNumber')} "
+                f"(SS ID: {order_id}) from matching {base_sku} sibling.",
+                source="Lot Tagger",
+            )
+        elif result.get('success'):
+            summary['already_assigned'] += 1
+            latest_user = result.get('user_id')
+            if latest_user not in (None, ''):
+                order['userId'] = latest_user
+            server_logger.info(
+                f"Promo assignee skipped for order {order.get('orderNumber')} "
+                f"(SS ID: {order_id}): target changed before assignment "
+                f"({result.get('reason')}).",
+                source="Lot Tagger",
+            )
+        else:
+            summary['errors'] += 1
+            server_logger.error(
+                f"Promo assignee update failed for order {order.get('orderNumber')} "
+                f"(SS ID: {order_id}): {result.get('error')}",
+                source="Lot Tagger",
+            )
+
+    return summary
 
 
 def build_lot_maps(conn):

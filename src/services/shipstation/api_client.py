@@ -116,6 +116,70 @@ def fetch_awaiting_shipment_orders(api_key: str, api_secret: str) -> list:
     return orders
 
 
+def assign_user_to_order(order_id: int, user_id) -> dict:
+    """
+    Assign one ShipStation order without rewriting any other order fields.
+
+    ShipStation exposes assignment as a dedicated endpoint, so this avoids the
+    full createorder update payload used for lot and shipping enrichment.
+    """
+    try:
+        api_key, api_secret = get_shipstation_credentials()
+        if not api_key or not api_secret:
+            return {'success': False, 'error': 'ShipStation credentials not found'}
+
+        latest = fetch_order_by_id(order_id, api_key, api_secret)
+        if not latest.get('success') or not latest.get('order'):
+            return {
+                'success': False,
+                'error': latest.get('error', 'Could not recheck order before assignment'),
+            }
+
+        latest_order = latest['order']
+        if latest_order.get('orderStatus') != 'awaiting_shipment':
+            return {
+                'success': True,
+                'assigned': False,
+                'reason': 'not_awaiting_shipment',
+            }
+        if latest_order.get('userId') not in (None, ''):
+            return {
+                'success': True,
+                'assigned': False,
+                'reason': 'already_assigned',
+                'user_id': latest_order.get('userId'),
+            }
+
+        headers = get_shipstation_headers(api_key, api_secret)
+        headers['Content-Type'] = 'application/json'
+        # Do not use make_api_request here: it retries POST requests after
+        # timeouts, when the first assignment may actually have succeeded.
+        # A later reconciliation can safely recheck and retry.
+        response = requests.post(
+            'https://ssapi.shipstation.com/orders/assignuser',
+            json={'orderIds': [int(order_id)], 'userId': user_id},
+            headers=headers,
+            timeout=30,
+        )
+        if response.status_code in (200, 204):
+            logger.info("Assigned ShipStation order %s to user %s", order_id, user_id)
+            return {'success': True, 'assigned': True}
+
+        status = response.status_code
+        body = response.text[:200]
+        error = f"ShipStation assignment failed for order {order_id}: HTTP {status} {body}".strip()
+        logger.error(error)
+        return {'success': False, 'error': error}
+    except Exception as exc:
+        logger.error(
+            "Error assigning ShipStation order %s: %s",
+            order_id,
+            exc,
+            exc_info=True,
+        )
+        return {'success': False, 'error': str(exc)}
+
+
 def fetch_shipstation_shipments(
     api_key: str,
     api_secret: str,

@@ -30,7 +30,12 @@ from src.services.database.pg_utils import (
 from src.services.shipstation.api_client import (
     get_shipstation_credentials, get_shipstation_headers, register_order_notify_webhook
 )
-from src.lot_tagger.tagger import build_lot_maps, tag_order_lots, verify_tagging_results
+from src.lot_tagger.tagger import (
+    build_lot_maps,
+    reconcile_promo_order_assignees,
+    tag_order_lots,
+    verify_tagging_results,
+)
 from src.services.inventory.lot_reservation import release_stale_reservations
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
@@ -198,6 +203,21 @@ def run_reconciliation():
         server_logger.info(
             f"Remap maps loaded: {len(promo_map)} promo SKU(s), {len(variant_map)} variant SKU(s) — remapping active.",
             source="Lot Tagger"
+        )
+
+        assignee_summary = reconcile_promo_order_assignees(
+            all_orders,
+            promo_map,
+            variant_map,
+        )
+        server_logger.info(
+            "Promo assignee reconciliation: "
+            f"{assignee_summary['assigned']} assigned, "
+            f"{assignee_summary['already_assigned']} already assigned, "
+            f"{assignee_summary['missing_match']} missing matches, "
+            f"{assignee_summary['ambiguous_match']} ambiguous matches, "
+            f"{assignee_summary['errors']} errors.",
+            source="Lot Tagger",
         )
 
         # Task #136: release any reservation stranded by a crash/interruption

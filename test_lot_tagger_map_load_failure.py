@@ -201,6 +201,61 @@ class TestMapLoadSuccessPassesMaps(unittest.TestCase):
         self.assertIs(call_kwargs.get('variant_map'), variant,
                       "variant_map not passed to tag_order_lots")
 
+    def test_promo_assignee_reconciliation_runs_before_skip_cache(self):
+        from src.scheduled_lot_tagger import run_reconciliation
+
+        cached_order = _make_order()
+        promo = {'17613': '17612'}
+        variant = {}
+        assignee_summary = {
+            'promo_unassigned': 0,
+            'assigned': 0,
+            'already_assigned': 0,
+            'missing_match': 0,
+            'ambiguous_match': 0,
+            'errors': 0,
+        }
+
+        with patch('src.scheduled_lot_tagger.get_shipstation_credentials',
+                   return_value=('key', 'secret')), \
+             patch('src.scheduled_lot_tagger.get_shipstation_headers',
+                   return_value={}), \
+             patch('src.scheduled_lot_tagger._fetch_awaiting_shipment_orders',
+                   return_value=[cached_order]), \
+             patch('src.scheduled_lot_tagger.transaction_with_retry') as mock_txn, \
+             patch('src.scheduled_lot_tagger.build_lot_maps',
+                   return_value=({'17612': 'LOT1'}, {'17612'}, {}, {})), \
+             patch('src.services.inventory.promo_sku_utils.load_promo_map',
+                   return_value=promo), \
+             patch('src.services.inventory.promo_sku_utils.load_variant_map',
+                   return_value=variant), \
+             patch('src.scheduled_lot_tagger.reconcile_promo_order_assignees',
+                   return_value=assignee_summary) as reconcile, \
+             patch('src.scheduled_lot_tagger.release_stale_reservations',
+                   return_value=0), \
+             patch('src.scheduled_lot_tagger.update_workflow_last_run'), \
+             patch('src.scheduled_lot_tagger.heartbeat', MagicMock()), \
+             patch('src.scheduled_lot_tagger.tag_order_lots') as tag, \
+             patch('src.scheduled_lot_tagger.verify_tagging_results',
+                   return_value={'total_tracked': 0, 'tagged_correctly': 0,
+                                 'untagged_or_wrong': 0, 'total_checked': 0}):
+
+            mock_conn = MagicMock()
+            first_cursor = MagicMock()
+            first_cursor.fetchall.return_value = []
+            cache_cursor = MagicMock()
+            cache_cursor.fetchall.return_value = [
+                (cached_order['orderId'], cached_order['modifyDate'])
+            ]
+            mock_conn.cursor.side_effect = [first_cursor, cache_cursor]
+            mock_txn.return_value.__enter__ = MagicMock(return_value=mock_conn)
+            mock_txn.return_value.__exit__ = MagicMock(return_value=False)
+
+            run_reconciliation()
+
+        reconcile.assert_called_once_with([cached_order], promo, variant)
+        tag.assert_not_called()
+
 
 class TestTagOrderLotsNoneFallback(unittest.TestCase):
     """
