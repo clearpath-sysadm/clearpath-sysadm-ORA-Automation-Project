@@ -4,6 +4,8 @@
  * 
  * Usage: Add <script src="/static/js/auth.js"></script> to each HTML page
  */
+const SHIPPED_TROUBLESHOOTING_STORAGE_KEY = 'showShippedTroubleshootingPages';
+
 class AuthManager {
     constructor() {
         this.user = null;
@@ -122,6 +124,12 @@ class AuthManager {
     }
     
     setupRoleBasedUI() {
+        this.applyNavigationPreferences();
+
+        document.querySelectorAll('[data-admin-only]').forEach(section => {
+            section.hidden = !this.isAdmin();
+        });
+
         if (this.user.role === 'viewer') {
             document.querySelectorAll('[data-action="write"]').forEach(btn => {
                 btn.disabled = true;
@@ -140,6 +148,15 @@ class AuthManager {
                 }
             });
         }
+    }
+
+    applyNavigationPreferences() {
+        const showShippedTroubleshooting = this.isAdmin()
+            && localStorage.getItem(SHIPPED_TROUBLESHOOTING_STORAGE_KEY) === 'true';
+        document.body.classList.toggle(
+            'show-shipped-troubleshooting',
+            showShippedTroubleshooting
+        );
     }
     
     isAdmin() {
@@ -172,3 +189,4 @@ document.addEventListener('DOMContentLoaded', () => authManager.init());
 
 window.authManager = authManager;
 window.auth = authManager;
+window.SHIPPED_TROUBLESHOOTING_STORAGE_KEY = SHIPPED_TROUBLESHOOTING_STORAGE_KEY;

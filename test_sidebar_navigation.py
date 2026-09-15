@@ -102,6 +102,26 @@ def test_sidebar_active_item_matches_each_page():
         assert active == ([active_href] if active_href else []), filename
 
 
+def test_shipped_troubleshooting_links_are_admin_opt_in():
+    css = (ROOT / "static/css/global-styles.css").read_text()
+    auth = (ROOT / "static/js/auth.js").read_text()
+    settings = (ROOT / "settings.html").read_text()
+    app = (ROOT / "app.py").read_text()
+
+    for href in ("/shipped_orders.html", "/shipped_items.html"):
+        assert f'.sidebar-nav a[href="{href}"]' in css
+        assert f"'{href.lstrip('/')}'" in app
+
+    assert "body.show-shipped-troubleshooting" in css
+    assert "showShippedTroubleshootingPages" in auth
+    assert "this.isAdmin()" in auth
+    assert "applyNavigationPreferences()" in auth
+    assert 'id="troubleshootingNavigationSettings"' in settings
+    assert "data-admin-only hidden" in settings
+    assert 'id="showShippedTroubleshootingPages"' in settings
+    assert "localStorage.removeItem('showShippedTroubleshootingPages')" in settings
+
+
 def test_retired_pages_are_not_in_route_whitelist():
     source = (ROOT / "app.py").read_text()
     match = re.search(r"^ALLOWED_PAGES\s*=\s*(\[.*\])$", source, re.MULTILINE)

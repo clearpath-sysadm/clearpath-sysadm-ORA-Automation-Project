@@ -9,6 +9,21 @@
     display: none;
 }
 
+/* Admin troubleshooting pages are opt-in per browser from Settings. */
+.sidebar-nav a[href="/shipped_orders.html"],
+.sidebar-nav a[href="/shipped_items.html"] {
+    display: none;
+}
+
+body.show-shipped-troubleshooting .sidebar-nav a[href="/shipped_orders.html"],
+body.show-shipped-troubleshooting .sidebar-nav a[href="/shipped_items.html"] {
+    display: flex;
+}
+
+[data-admin-only][hidden] {
+    display: none !important;
+}
+
 /* ========================================
    1. CSS VARIABLES & DESIGN TOKENS
    ======================================== */

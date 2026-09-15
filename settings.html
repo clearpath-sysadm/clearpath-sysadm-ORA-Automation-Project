@@ -134,6 +134,27 @@
                         Settings saved successfully!
                     </div>
 
+                    <div class="card" id="troubleshootingNavigationSettings" data-admin-only hidden>
+                        <h2 class="card-title">Admin Troubleshooting</h2>
+                        <p class="card-description">
+                            Keep backend troubleshooting pages out of normal navigation unless you need them.
+                        </p>
+
+                        <div class="form-group">
+                            <label for="showShippedTroubleshootingPages" class="form-label">
+                                <input type="checkbox" id="showShippedTroubleshootingPages">
+                                Show Shipped Orders and Shipped Items in the sidebar
+                            </label>
+                            <p class="form-help">
+                                This changes navigation only in this browser. It does not remove either page or its data.
+                            </p>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn" onclick="saveSettings()">Save Settings</button>
+                        </div>
+                    </div>
+
                     <div class="card">
                         <h2 class="card-title">Timezone Settings</h2>
                         <p class="card-description">
@@ -253,6 +274,8 @@
         function loadSettings() {
             const savedTimezone = localStorage.getItem('userTimezone') || 'America/New_York';
             document.getElementById('timezoneSelect').value = savedTimezone;
+            document.getElementById('showShippedTroubleshootingPages').checked =
+                localStorage.getItem('showShippedTroubleshootingPages') === 'true';
             updateCurrentTime();
         }
 
@@ -277,6 +300,21 @@
         function saveSettings() {
             const timezone = document.getElementById('timezoneSelect').value;
             localStorage.setItem('userTimezone', timezone);
+
+            const troubleshootingToggle =
+                document.getElementById('showShippedTroubleshootingPages');
+            if (window.authManager && window.authManager.isAdmin()) {
+                localStorage.setItem(
+                    'showShippedTroubleshootingPages',
+                    troubleshootingToggle.checked ? 'true' : 'false'
+                );
+            } else {
+                localStorage.removeItem('showShippedTroubleshootingPages');
+                troubleshootingToggle.checked = false;
+            }
+            if (window.authManager) {
+                window.authManager.applyNavigationPreferences();
+            }
             
             const successMsg = document.getElementById('successMessage');
             successMsg.classList.add('show');
@@ -288,7 +326,9 @@
         // Reset to default
         function resetSettings() {
             localStorage.removeItem('userTimezone');
+            localStorage.removeItem('showShippedTroubleshootingPages');
             document.getElementById('timezoneSelect').value = 'America/New_York';
+            document.getElementById('showShippedTroubleshootingPages').checked = false;
             updateCurrentTime();
             saveSettings();
         }
