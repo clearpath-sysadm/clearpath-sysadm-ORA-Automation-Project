@@ -177,6 +177,57 @@
             .dashboard-report-links { grid-template-columns: 1fr; }
             .dashboard-report-link { min-height: 76px; padding: 14px; }
         }
+        @media (max-width: 600px) {
+            .top-bar {
+                height: auto;
+                min-height: var(--header-height);
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 4px 10px;
+                padding-top: 8px;
+                padding-bottom: 8px;
+            }
+            .top-bar-left {
+                min-width: 0;
+                gap: 8px;
+            }
+            .top-bar-actions {
+                display: grid;
+                grid-template-columns: auto 44px;
+                align-items: center;
+                gap: 4px 8px;
+            }
+            .top-bar-actions .last-updated {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                justify-self: end;
+                white-space: nowrap;
+                line-height: 1.2;
+            }
+            .top-bar-actions .dark-mode-toggle {
+                width: 44px;
+                min-width: 44px;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+        @media (max-width: 380px) {
+            #refresh-btn {
+                width: 44px;
+                min-width: 44px;
+                padding-left: 0;
+                padding-right: 0;
+                overflow: hidden;
+                color: transparent;
+                font-size: 0;
+                gap: 0;
+            }
+            #refresh-btn svg {
+                color: var(--text-primary);
+            }
+        }
 
         /* ─── Operational Pulse — compact workload + activity ─── */
         .compact-pulse-section {
@@ -602,7 +653,7 @@
                         </svg>
                         Refresh
                     </button>
-                    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
                 </div>
             </div>
 
