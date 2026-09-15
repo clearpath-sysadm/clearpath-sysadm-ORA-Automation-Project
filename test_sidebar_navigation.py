@@ -34,7 +34,6 @@ CANONICAL_LINKS = [
     ("/charge_report.html", "Charge Report"),
     ("/weekly_inventory_report.html", "Weekly Inventory Report"),
     ("/weekly_shipped_history.html", "Shipping History"),
-    ("/sku_lot.html", "SKU Lot Management"),
     ("/inventory_snapshots.html", "Inventory Snapshots"),
     ("/email_contacts.html", "Email Contacts"),
     ("/workflow_controls.html", "Workflow Controls"),
@@ -133,12 +132,35 @@ def test_retired_pages_are_not_in_route_whitelist():
     assert "bundle_skus.html" not in allowed
     assert "xml_import.html" not in allowed
     assert "order-management.html" not in allowed
+    assert "sku_lot.html" not in allowed
 
 
 def test_retired_order_pages_are_hidden_from_navigation():
     styles = (ROOT / "static/css/global-styles.css").read_text()
     assert '.sidebar-nav a[href="/xml_import.html"]' in styles
     assert '.sidebar-nav a[href="/order-management.html"]' in styles
+
+
+def test_retired_sku_lot_page_does_not_remove_live_assignments():
+    app = (ROOT / "app.py").read_text()
+    lot_inventory = (ROOT / "lot_inventory.html").read_text()
+    retired_page = ROOT / "sku_lot.html"
+
+    assert retired_page.exists()
+    for nav_file in SHARED_PAGES:
+        assert "/sku_lot.html" not in nav_for(nav_file), nav_file
+    for route in (
+        "@app.route('/api/sku_lots', methods=['GET'])",
+        "@app.route('/api/sku_lots', methods=['POST'])",
+        "@app.route('/api/sku_lots/<int:sku_lot_id>', methods=['PUT'])",
+        "@app.route('/api/sku_lots/<int:sku_lot_id>', methods=['DELETE'])",
+    ):
+        assert route in app
+    assert 'id="pane-assignments"' in lot_inventory
+    assert "loadSkuLots()" in lot_inventory
+    assert "saveInlineAssignment()" in lot_inventory
+    assert "saveSkuLot()" in lot_inventory
+    assert "toggleSkuLotActive" in lot_inventory
 
 
 def test_weekly_inventory_report_keeps_current_inventory_workflow():
