@@ -37,6 +37,12 @@ class AdminAlertBar {
     startPolling() {
         this.pollInterval = setInterval(() => this.fetchAndRender(), 30000);
     }
+
+    isRoutineLotPromotion(message) {
+        const normalizedMessage = message.toLowerCase();
+        return normalizedMessage.includes('depleted')
+            && normalizedMessage.includes('automatically activated next lot');
+    }
     
     render() {
         const existingBar = document.getElementById('admin-alert-bar');
@@ -52,9 +58,21 @@ class AdminAlertBar {
         const isActive = this.alertData.is_active;
         const alertKey = `${this.alertData.message}_${isActive}`;
         
-        if (!isActive && this.dismissedVersion === alertKey) {
+        if (this.dismissedVersion === alertKey) {
             return;
         }
+
+        const messages = this.alertData.message
+            .split(/\s*\|\s*/)
+            .map(message => message.trim())
+            .filter(Boolean);
+        const allMessagesAreRoutinePromotions = messages.length > 0
+            && messages.every(message => this.isRoutineLotPromotion(message));
+        const barColors = allMessagesAreRoutinePromotions
+            ? 'background: linear-gradient(135deg, #b45309, #92400e); color: white;'
+            : isActive
+                ? 'background: linear-gradient(135deg, #dc3545, #c82333); color: white;'
+                : 'background: linear-gradient(135deg, #28a745, #218838); color: white;';
         
         const bar = document.createElement('div');
         bar.id = 'admin-alert-bar';
@@ -72,67 +90,63 @@ class AdminAlertBar {
             font-size: 15px;
             line-height: 1.5;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: center;
             gap: 16px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            ${isActive ? 
-                'background: linear-gradient(135deg, #dc3545, #c82333); color: white;' : 
-                'background: linear-gradient(135deg, #28a745, #218838); color: white;'}
+            ${barColors}
         `;
         
         const messageContainer = document.createElement('div');
         messageContainer.style.cssText = `
-            flex: 0 1 1000px;
+            flex: 1 1 700px;
+            max-width: 1000px;
             min-width: 0;
             text-align: left;
             overflow-wrap: anywhere;
         `;
 
-        const messages = this.alertData.message
-            .split(/\s*\|\s*/)
-            .map(message => message.trim())
-            .filter(Boolean);
-
         messages.forEach((message, index) => {
             const messageRow = document.createElement('div');
+            const isRoutinePromotion = this.isRoutineLotPromotion(message);
             messageRow.textContent = message;
             messageRow.style.cssText = `
                 padding: ${messages.length > 1 ? '7px 0' : '0'};
                 ${index > 0 ? 'border-top: 1px solid rgba(255,255,255,0.28);' : ''}
+                ${isRoutinePromotion && !allMessagesAreRoutinePromotions
+                    ? 'background: rgba(180,83,9,0.9); border-radius: 6px; padding: 9px 12px;'
+                    : ''}
             `;
             messageContainer.appendChild(messageRow);
         });
 
         bar.appendChild(messageContainer);
         
-        if (!isActive) {
-            const closeBtn = document.createElement('button');
-            closeBtn.type = 'button';
-            closeBtn.innerHTML = '&times;';
-            closeBtn.setAttribute('aria-label', 'Dismiss alert');
-            closeBtn.title = 'Dismiss alert';
-            closeBtn.style.cssText = `
-                background: rgba(255,255,255,0.2);
-                border: none;
-                color: white;
-                font-size: 20px;
-                width: 44px;
-                height: 44px;
-                flex: 0 0 44px;
-                border-radius: 50%;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                line-height: 1;
-                transition: background 0.2s;
-            `;
-            closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,255,255,0.3)';
-            closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.2)';
-            closeBtn.onclick = () => this.dismiss(alertKey);
-            bar.appendChild(closeBtn);
-        }
+        const readBtn = document.createElement('button');
+        readBtn.type = 'button';
+        readBtn.textContent = 'Mark as read';
+        readBtn.setAttribute('aria-label', 'Mark alert as read');
+        readBtn.title = 'Hide this message until it changes';
+        readBtn.style.cssText = `
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.55);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            min-height: 44px;
+            flex: 0 0 auto;
+            border-radius: 6px;
+            padding: 9px 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            line-height: 1.2;
+            transition: background 0.2s;
+        `;
+        readBtn.onmouseover = () => readBtn.style.background = 'rgba(255,255,255,0.28)';
+        readBtn.onmouseout = () => readBtn.style.background = 'rgba(255,255,255,0.18)';
+        readBtn.onclick = () => this.dismiss(alertKey);
+        bar.appendChild(readBtn);
         
         document.body.insertBefore(bar, document.body.firstChild);
         
