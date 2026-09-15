@@ -67,29 +67,44 @@ class AdminAlertBar {
             left: 0;
             right: 0;
             z-index: 10000;
-            padding: 12px 16px;
-            font-weight: 500;
-            font-size: 14px;
-            line-height: 1.45;
+            padding: 14px 18px;
+            font-weight: 600;
+            font-size: 15px;
+            line-height: 1.5;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 16px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             ${isActive ? 
                 'background: linear-gradient(135deg, #dc3545, #c82333); color: white;' : 
                 'background: linear-gradient(135deg, #28a745, #218838); color: white;'}
         `;
         
-        const messageSpan = document.createElement('span');
-        messageSpan.textContent = this.alertData.message;
-        messageSpan.style.cssText = `
-            flex: 0 1 1200px;
+        const messageContainer = document.createElement('div');
+        messageContainer.style.cssText = `
+            flex: 0 1 1000px;
             min-width: 0;
             text-align: left;
             overflow-wrap: anywhere;
         `;
-        bar.appendChild(messageSpan);
+
+        const messages = this.alertData.message
+            .split(/\s*\|\s*/)
+            .map(message => message.trim())
+            .filter(Boolean);
+
+        messages.forEach((message, index) => {
+            const messageRow = document.createElement('div');
+            messageRow.textContent = message;
+            messageRow.style.cssText = `
+                padding: ${messages.length > 1 ? '7px 0' : '0'};
+                ${index > 0 ? 'border-top: 1px solid rgba(255,255,255,0.28);' : ''}
+            `;
+            messageContainer.appendChild(messageRow);
+        });
+
+        bar.appendChild(messageContainer);
         
         if (!isActive) {
             const closeBtn = document.createElement('button');
