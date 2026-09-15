@@ -214,6 +214,17 @@ def test_retired_order_pages_are_hidden_from_navigation():
     assert '.sidebar-nav a[href="/order-management.html"]' in styles
 
 
+def test_outdated_help_page_is_hidden_from_navigation_but_remains_available():
+    styles = (ROOT / "static/css/global-styles.css").read_text()
+    app = (ROOT / "app.py").read_text()
+    match = re.search(r"^ALLOWED_PAGES\s*=\s*(\[.*\])$", app, re.MULTILINE)
+
+    assert '.sidebar-nav a[href="/help.html"]' in styles
+    assert match
+    assert "help.html" in ast.literal_eval(match.group(1))
+    assert (ROOT / "help.html").exists()
+
+
 def test_retired_sku_lot_page_does_not_remove_live_assignments():
     app = (ROOT / "app.py").read_text()
     lot_inventory = (ROOT / "lot_inventory.html").read_text()

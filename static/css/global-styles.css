@@ -3,9 +3,10 @@
  * This stylesheet provides consistent styling across all pages
  */
 
-/* Retired pages remain in source control but are not shown in navigation. */
+/* Retired or temporarily unavailable pages remain in source control but are not shown in navigation. */
 .sidebar-nav a[href="/xml_import.html"],
-.sidebar-nav a[href="/order-management.html"] {
+.sidebar-nav a[href="/order-management.html"],
+.sidebar-nav a[href="/help.html"] {
     display: none;
 }
 
