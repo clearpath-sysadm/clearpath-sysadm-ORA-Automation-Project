@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Weekly Inventory Report - Oracare Fulfillment</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/global-styles.css">
+    <style>
+        .report-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
+        .report-actions .btn {
+            min-height: 42px;
+        }
+        .btn-status {
+            font-size: 10px;
+            line-height: 1.2;
+            opacity: 0.75;
+            margin-top: 2px;
+        }
+        .report-meta {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+        .report-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .report-table-wrap table {
+            min-width: 720px;
+        }
+        .weekly-report-cards {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .weekly-inv-card {
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-primary);
+        }
+        .weekly-inv-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .weekly-inv-product {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .weekly-inv-sku,
+        .wic-label {
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+        }
+        .weekly-inv-card-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .wic-stat {
+            min-width: 0;
+        }
+        .wic-val {
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+        .report-error {
+            display: none;
+            padding: 16px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            color: var(--critical-red);
+        }
+        @media (max-width: 768px) {
+            .report-actions,
+            .report-actions .btn {
+                width: 100%;
+            }
+            .report-actions .btn {
+                justify-content: center;
+            }
+            .report-table-wrap {
+                display: none !important;
+            }
+            .weekly-report-cards.weekly-report-ready {
+                display: flex !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><img src="/static/images/oracare-logo.png" alt="Oracare" style="width:100%;height:100%;object-fit:contain;"></div>
+                <div class="sidebar-title">Oracare Fulfillment</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Fulfillment</div>
+                    <a href="/shipment_summary.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg></span>Today's Pick List</a>
+                    <a href="/xml_import.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg></span>New Orders</a>
+                    <a href="/inventory_transactions.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/></svg></span>Inventory Monitor</a>
+                    <a href="/lot_inventory.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg></span>Lot Inventory</a>
+                </div>
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" role="button" tabindex="0" aria-expanded="false" onclick="toggleSection(this)">
+                        <span>Orders History</span><span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="admin-items">
+                        <a href="/shipped_orders.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M7 7h10v10H7z"/></svg></span>Shipped Orders</a>
+                        <a href="/shipped_items.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 8h8v8H8z"/></svg></span>Shipped Items</a>
+                        <a href="/order-management.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 9h6v6H9z"/></svg></span>Order Corrections</a>
+                    </div>
+                </div>
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle expanded" role="button" tabindex="0" aria-expanded="true" onclick="toggleSection(this)">
+                        <span>Reports</span><span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items expanded" id="reports-items">
+                        <a href="/charge_report.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg></span>Charge Report</a>
+                        <a href="/weekly_inventory_report.html" class="nav-item active"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span>Weekly Inventory Report</a>
+                        <a href="/weekly_shipped_history.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></svg></span>Shipping History</a>
+                    </div>
+                </div>
+                <div class="nav-section admin-section">
+                    <div class="admin-toggle" role="button" tabindex="0" aria-expanded="false" onclick="toggleSection(this)">
+                        <span>Catalog &amp; Config</span><span class="admin-toggle-icon">▶</span>
+                    </div>
+                    <div class="admin-items" id="catalog-config-items">
+                        <a href="/sku_lot.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg></span>SKU Lot Management</a>
+                        <a href="/inventory_snapshots.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></svg></span>Inventory Snapshots</a>
+                        <a href="/email_contacts.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg></span>Email Contacts</a>
+                        <a href="/workflow_controls.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg></span>Workflow Controls</a>
+                        <a href="/logs.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/></svg></span>Server Logs</a>
+                    </div>
+                </div>
+                <div class="nav-section" style="margin-top:auto;border-top:1px solid var(--border-color);padding-top:calc(var(--spacing-unit) * 2);">
+                    <a href="/help.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M2 2h20v20H2z"/></svg></span>Help & Training</a>
+                    <a href="/settings.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M10 10h4v4h-4z"/></svg></span>Settings</a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="page-title">Weekly Inventory Report</h1>
+                        <div class="report-meta" id="inventoryAsOfDate">Loading inventory date…</div>
+                    </div>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Current Inventory and Pallet Levels</div>
+                            <div class="report-meta">Current stock compared with the rolling 52-week shipping average.</div>
+                        </div>
+                        <div class="report-actions">
+                            <button class="btn" id="copyInventoryBtn" onclick="composeWeeklyInventoryEmail()">📧 Compose Email</button>
+                            <a class="btn" href="/email_contacts.html">Manage Recipients</a>
+                            <button class="btn" id="btn-eod" onclick="runReport('EOD')">📦 EOD<div class="btn-status" id="eod-status"></div></button>
+                            <button class="btn" id="btn-eow" onclick="runReport('EOW')">📊 EOW<div class="btn-status" id="eow-status"></div></button>
+                            <button class="btn" id="btn-eom" onclick="runReport('EOM')">💰 EOM<div class="btn-status" id="eom-status"></div></button>
+                            <button class="btn" id="weeklyReportRefreshBtn" onclick="refreshWeeklyReport()">↻ Refresh</button>
+                        </div>
+                    </div>
+                    <div id="weeklyReportLoading" style="padding:28px;text-align:center;color:var(--text-tertiary);">Loading weekly inventory report…</div>
+                    <div id="weeklyReportError" class="report-error"></div>
+                    <div id="weeklyReportTable" class="report-table-wrap" style="display:none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th style="text-align:right;">Current Qty</th>
+                                    <th style="text-align:center;">Pallet Breakdown</th>
+                                    <th style="text-align:right;">52-Week Avg</th>
+                                    <th style="text-align:center;">Days Left</th>
+                                </tr>
+                            </thead>
+                            <tbody id="weeklyReportBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="weeklyReportCards" class="weekly-report-cards"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/dark-mode.js"></script>
+    <script src="/static/timezone-utils.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script>
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value == null ? '' : String(value);
+            return element.innerHTML;
+        }
+
+        function toggleSection(toggle) {
+            const items = toggle.nextElementSibling;
+            const expanded = toggle.classList.toggle('expanded');
+            items.classList.toggle('expanded', expanded);
+            toggle.setAttribute('aria-expanded', String(expanded));
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+            document.getElementById('mobile-overlay').classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('sidebar').classList.remove('mobile-open');
+            document.getElementById('mobile-overlay').classList.remove('active');
+        }
+
+        function getInventoryPresentation(item) {
+            const daysLeft = Number(item.days_left) || 0;
+            return {
+                statusClass: daysLeft < 14 ? 'critical' : daysLeft < 30 ? 'warning' : 'success',
+                statusIndicator: daysLeft < 14 ? 'red' : daysLeft < 30 ? 'yellow' : 'green',
+                daysText: daysLeft >= 999 ? '∞' : String(daysLeft),
+                palletBreakdown: Number(item.partial_units) > 0
+                    ? `${item.full_pallets} full + ${item.partial_units} units`
+                    : `${item.full_pallets} full`
+            };
+        }
+
+        async function loadWeeklyReport() {
+            const loading = document.getElementById('weeklyReportLoading');
+            const error = document.getElementById('weeklyReportError');
+            const table = document.getElementById('weeklyReportTable');
+            const cards = document.getElementById('weeklyReportCards');
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            table.style.display = 'none';
+            cards.classList.remove('weekly-report-ready');
+
+            try {
+                const response = await fetch('/api/weekly_inventory_report');
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.error || 'Failed to load weekly inventory report');
+
+                document.getElementById('weeklyReportBody').innerHTML = result.data.map(item => {
+                    const display = getInventoryPresentation(item);
+                    return `<tr>
+                        <td><strong>${escapeHtml(item.product_name || item.sku)}</strong><div class="weekly-inv-sku">SKU: ${escapeHtml(item.sku)}</div></td>
+                        <td style="text-align:right;"><strong>${escapeHtml(item.current_quantity)}</strong></td>
+                        <td style="text-align:center;font-family:monospace;color:var(--text-secondary);">📦 ${escapeHtml(display.palletBreakdown)}</td>
+                        <td style="text-align:right;">${Math.round(Number(item.rolling_avg_52_weeks) || 0)}</td>
+                        <td style="text-align:center;"><span class="badge badge-${display.statusClass}"><span class="status-indicator status-${display.statusIndicator}"></span>${display.daysText} days</span></td>
+                    </tr>`;
+                }).join('');
+
+                cards.innerHTML = result.data.map(item => {
+                    const display = getInventoryPresentation(item);
+                    return `<div class="weekly-inv-card">
+                        <div class="weekly-inv-card-header">
+                            <div><div class="weekly-inv-product">${escapeHtml(item.product_name || item.sku)}</div><div class="weekly-inv-sku">SKU ${escapeHtml(item.sku)}</div></div>
+                            <span class="badge badge-${display.statusClass}"><span class="status-indicator status-${display.statusIndicator}"></span>${display.daysText === '∞' ? '∞' : display.daysText + 'd'}</span>
+                        </div>
+                        <div class="weekly-inv-card-stats">
+                            <div class="wic-stat"><div class="wic-label">Current Qty</div><div class="wic-val">${escapeHtml(item.current_quantity)}</div></div>
+                            <div class="wic-stat"><div class="wic-label">52w Avg</div><div class="wic-val">${Math.round(Number(item.rolling_avg_52_weeks) || 0)}</div></div>
+                            <div class="wic-stat"><div class="wic-label">Pallets</div><div class="wic-val">${escapeHtml(display.palletBreakdown)}</div></div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                const asOf = document.getElementById('inventoryAsOfDate');
+                if (result.as_of_date) {
+                    const parts = result.as_of_date.split('-').map(Number);
+                    const date = new Date(parts[0], parts[1] - 1, parts[2]);
+                    asOf.textContent = `As of ${date.toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'})}`;
+                } else {
+                    asOf.textContent = 'Inventory date not available';
+                }
+                loading.style.display = 'none';
+                table.style.display = window.matchMedia('(max-width: 768px)').matches ? 'none' : 'block';
+                cards.classList.add('weekly-report-ready');
+            } catch (loadError) {
+                loading.style.display = 'none';
+                error.textContent = `Failed to load weekly inventory report: ${loadError.message}`;
+                error.style.display = 'block';
+            }
+        }
+
+        async function refreshWeeklyReport() {
+            const button = document.getElementById('weeklyReportRefreshBtn');
+            button.disabled = true;
+            button.textContent = 'Refreshing…';
+            await loadWeeklyReport();
+            button.textContent = 'Refreshed';
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = '↻ Refresh';
+            }, 1200);
+        }
+
+        async function loadReportStatus() {
+            try {
+                const response = await fetch('/api/reports/status');
+                const result = await response.json();
+                if (!result.success || !result.data) return;
+                ['EOD', 'EOW', 'EOM'].forEach(type => {
+                    if (!result.data[type]) return;
+                    const date = new Date(result.data[type].run_date);
+                    document.getElementById(`${type.toLowerCase()}-status`).textContent =
+                        date.toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+                });
+            } catch (error) {
+                console.error('Unable to load report status:', error);
+            }
+        }
+
+        async function runReport(type) {
+            const button = document.getElementById(`btn-${type.toLowerCase()}`);
+            const status = document.getElementById(`${type.toLowerCase()}-status`);
+            const previousStatus = status.textContent;
+            button.disabled = true;
+            status.textContent = 'Running…';
+            try {
+                const response = await fetch(`/api/reports/${type.toLowerCase()}`, {method: 'POST'});
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.error || `${type} failed`);
+                if (type !== 'EOM') await loadWeeklyReport();
+                alert(result.message);
+                await loadReportStatus();
+            } catch (error) {
+                status.textContent = previousStatus;
+                alert(`Error running ${type}: ${error.message}`);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function composeWeeklyInventoryEmail() {
+            const button = document.getElementById('copyInventoryBtn');
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Preparing…';
+            try {
+                const [reportResponse, contactsResponse, statusResponse] = await Promise.all([
+                    fetch('/api/weekly_inventory_report'),
+                    fetch('/api/email_contacts', {credentials: 'include'}),
+                    fetch('/api/reports/status')
+                ]);
+                const report = await reportResponse.json();
+                const contacts = await contactsResponse.json();
+                const status = await statusResponse.json();
+                if (!reportResponse.ok || !report.success) throw new Error(report.error || 'Unable to load report');
+                if (!contactsResponse.ok || !contacts.success) throw new Error(contacts.error || 'Unable to load recipients');
+                if (!contacts.data.length) {
+                    alert('No report recipients are configured. Use Manage Recipients first.');
+                    return;
+                }
+
+                if (statusResponse.ok && status.success && status.data) {
+                    const centralDate = date => new Intl.DateTimeFormat('en-CA', {
+                        timeZone: 'America/Chicago',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    }).format(date);
+                    const today = centralDate(new Date());
+                    const missing = ['EOD', 'EOW'].filter(type => {
+                        const runDate = status.data[type] && status.data[type].run_date;
+                        return !runDate || centralDate(new Date(runDate)) !== today;
+                    });
+                    if (missing.length && !confirm(
+                        `${missing.join(' and ')} ${missing.length === 1 ? 'has' : 'have'} not run today. ` +
+                        'The weekly inventory data may be outdated. Compose the email anyway?'
+                    )) return;
+                }
+
+                const recipientReview = contacts.data
+                    .map(contact => contact.name ? `${contact.name} <${contact.email}>` : contact.email)
+                    .join('\n');
+                if (!confirm(
+                    `Compose the Weekly Inventory Report to these ${contacts.data.length} recipients?\n\n${recipientReview}`
+                )) return;
+
+                const header = 'Product | SKU | Current Qty | Pallet Breakdown | 52-Week Avg | Days Left';
+                const rows = report.data.map(item => {
+                    const display = getInventoryPresentation(item);
+                    return `${item.product_name || item.sku} | ${item.sku} | ${item.current_quantity} | ${display.palletBreakdown} | ${Math.round(Number(item.rolling_avg_52_weeks) || 0)} | ${display.daysText}`;
+                });
+                const text = `${header}\n${'-'.repeat(92)}\n${rows.join('\n')}`;
+                await navigator.clipboard.writeText(text);
+
+                const recipients = contacts.data.map(contact => contact.email).join(',');
+                const link = document.createElement('a');
+                link.href = `mailto:${recipients}?subject=${encodeURIComponent('Weekly Inventory Report')}`;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                button.textContent = 'Copied';
+            } catch (error) {
+                alert(`Unable to compose report email: ${error.message}`);
+            } finally {
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }, 1200);
+            }
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closeMobileMenu();
+            if ((event.key === 'Enter' || event.key === ' ') && event.target.classList.contains('admin-toggle')) {
+                event.preventDefault();
+                toggleSection(event.target);
+            }
+        });
+        document.addEventListener('DOMContentLoaded', () => {
+            loadWeeklyReport();
+            loadReportStatus();
+        });
+    </script>
+</body>
+</html>

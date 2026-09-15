@@ -21,6 +21,7 @@ SHARED_PAGES = {
     "shipment_summary.html": "/shipment_summary.html",
     "shipped_items.html": "/shipped_items.html",
     "shipped_orders.html": "/shipped_orders.html",
+    "weekly_inventory_report.html": "/weekly_inventory_report.html",
     "weekly_shipped_history.html": "/weekly_shipped_history.html",
     "workflow_controls.html": "/workflow_controls.html",
 }
@@ -31,7 +32,8 @@ CANONICAL_LINKS = [
     ("/shipped_orders.html", "Shipped Orders"),
     ("/shipped_items.html", "Shipped Items"),
     ("/charge_report.html", "Charge Report"),
-    ("/weekly_shipped_history.html", "Weekly Reports"),
+    ("/weekly_inventory_report.html", "Weekly Inventory Report"),
+    ("/weekly_shipped_history.html", "Shipping History"),
     ("/sku_lot.html", "SKU Lot Management"),
     ("/inventory_snapshots.html", "Inventory Snapshots"),
     ("/email_contacts.html", "Email Contacts"),
@@ -137,6 +139,22 @@ def test_retired_order_pages_are_hidden_from_navigation():
     styles = (ROOT / "static/css/global-styles.css").read_text()
     assert '.sidebar-nav a[href="/xml_import.html"]' in styles
     assert '.sidebar-nav a[href="/order-management.html"]' in styles
+
+
+def test_weekly_inventory_report_keeps_current_inventory_workflow():
+    source = (ROOT / "weekly_inventory_report.html").read_text()
+    app = (ROOT / "app.py").read_text()
+
+    assert "weekly_inventory_report.html" in app
+    assert "/api/weekly_inventory_report" in source
+    assert "/api/reports/status" in source
+    for report_type in ("EOD", "EOW", "EOM"):
+        assert f"runReport('{report_type}')" in source
+    for heading in ("Current Qty", "Pallet Breakdown", "52-Week Avg", "Days Left"):
+        assert heading in source
+    assert 'id="weeklyReportCards"' in source
+    assert "weekly-inv-card" in source
+    assert 'href="/email_contacts.html"' in source
 
 
 def test_page_specific_sidebar_controls_are_preserved():
