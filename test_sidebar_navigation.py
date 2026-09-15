@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SHARED_PAGES = {
-    "index.html": None,
+    "index.html": "/",
     "charge_report.html": "/charge_report.html",
     "email_contacts.html": "/email_contacts.html",
     "help.html": "/help.html",
@@ -26,6 +26,7 @@ SHARED_PAGES = {
     "workflow_controls.html": "/workflow_controls.html",
 }
 CANONICAL_LINKS = [
+    ("/", "Dashboard"),
     ("/shipment_summary.html", "Today's Pick List"),
     ("/inventory_transactions.html", "Inventory Monitor"),
     ("/lot_inventory.html", "Lot Inventory"),
