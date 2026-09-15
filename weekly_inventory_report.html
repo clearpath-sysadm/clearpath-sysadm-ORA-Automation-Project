@@ -554,7 +554,44 @@
                     return `${item.product_name || item.sku} | ${item.sku} | ${item.current_quantity} | ${display.palletBreakdown} | ${Math.round(Number(item.rolling_avg_52_weeks) || 0)} | ${display.daysText}`;
                 });
                 const text = `${header}\n${'-'.repeat(92)}\n${rows.join('\n')}`;
-                await navigator.clipboard.writeText(text);
+                const htmlRows = report.data.map(item => {
+                    const display = getInventoryPresentation(item);
+                    const product = escapeHtml(item.product_name || item.sku);
+                    const sku = escapeHtml(item.sku);
+                    const quantity = escapeHtml(item.current_quantity);
+                    const palletBreakdown = escapeHtml(display.palletBreakdown);
+                    const average = Math.round(Number(item.rolling_avg_52_weeks) || 0);
+                    const daysLeft = escapeHtml(display.daysText);
+                    return `<tr>
+                        <td style="padding:10px;border:1px solid #9ca3af;"><strong>${product}</strong><br><span style="font-size:12px;color:#4b5563;">SKU: ${sku}</span></td>
+                        <td style="padding:10px;border:1px solid #9ca3af;text-align:right;">${quantity}</td>
+                        <td style="padding:10px;border:1px solid #9ca3af;">${palletBreakdown}</td>
+                        <td style="padding:10px;border:1px solid #9ca3af;text-align:right;">${average}</td>
+                        <td style="padding:10px;border:1px solid #9ca3af;text-align:center;">${daysLeft === '∞' ? '∞' : `${daysLeft} days`}</td>
+                    </tr>`;
+                }).join('');
+                const html = `<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;color:#111827;background:#ffffff;">
+                    <thead>
+                        <tr style="background:#374151;color:#ffffff;">
+                            <th style="padding:10px;border:1px solid #9ca3af;text-align:left;">Product</th>
+                            <th style="padding:10px;border:1px solid #9ca3af;text-align:right;">Current Qty</th>
+                            <th style="padding:10px;border:1px solid #9ca3af;text-align:left;">Pallet Breakdown</th>
+                            <th style="padding:10px;border:1px solid #9ca3af;text-align:right;">52-Week Avg</th>
+                            <th style="padding:10px;border:1px solid #9ca3af;text-align:center;">Days Left</th>
+                        </tr>
+                    </thead>
+                    <tbody>${htmlRows}</tbody>
+                </table>`;
+                if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({
+                            'text/html': new Blob([html], {type: 'text/html'}),
+                            'text/plain': new Blob([text], {type: 'text/plain'})
+                        })
+                    ]);
+                } else {
+                    await navigator.clipboard.writeText(text);
+                }
 
                 const recipients = contacts.data.map(contact => contact.email).join(',');
                 const link = document.createElement('a');
