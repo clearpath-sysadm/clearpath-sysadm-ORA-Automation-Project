@@ -4,7 +4,7 @@
  * 
  * Usage: Add <script src="/static/js/auth.js"></script> to each HTML page
  */
-const SHIPPED_TROUBLESHOOTING_STORAGE_KEY = 'showShippedTroubleshootingPages';
+const ORDERS_HISTORY_STORAGE_KEY = 'showOrdersHistory';
 
 class AuthManager {
     constructor() {
@@ -151,14 +151,14 @@ class AuthManager {
     }
 
     applyNavigationPreferences() {
-        const showShippedTroubleshooting = this.isAdmin()
-            && localStorage.getItem(SHIPPED_TROUBLESHOOTING_STORAGE_KEY) === 'true';
+        const showOrdersHistory = this.isAdmin()
+            && localStorage.getItem(ORDERS_HISTORY_STORAGE_KEY) === 'true';
         document.body.classList.toggle(
-            'show-shipped-troubleshooting',
-            showShippedTroubleshooting
+            'show-orders-history',
+            showOrdersHistory
         );
     }
-    
+
     isAdmin() {
         return this.isAuthenticated && this.user && this.user.role === 'admin';
     }
@@ -189,4 +189,4 @@ document.addEventListener('DOMContentLoaded', () => authManager.init());
 
 window.authManager = authManager;
 window.auth = authManager;
-window.SHIPPED_TROUBLESHOOTING_STORAGE_KEY = SHIPPED_TROUBLESHOOTING_STORAGE_KEY;
+window.ORDERS_HISTORY_STORAGE_KEY = ORDERS_HISTORY_STORAGE_KEY;

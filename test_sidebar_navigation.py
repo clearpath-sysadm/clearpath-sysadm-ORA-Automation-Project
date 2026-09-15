@@ -29,11 +29,11 @@ CANONICAL_LINKS = [
     ("/shipment_summary.html", "Today's Pick List"),
     ("/inventory_transactions.html", "Inventory Monitor"),
     ("/lot_inventory.html", "Lot Inventory"),
+    ("/weekly_inventory_report.html", "Weekly Inventory Report"),
+    ("/charge_report.html", "Monthly Charge Report"),
+    ("/weekly_shipped_history.html", "Shipping History"),
     ("/shipped_orders.html", "Shipped Orders"),
     ("/shipped_items.html", "Shipped Items"),
-    ("/charge_report.html", "Charge Report"),
-    ("/weekly_inventory_report.html", "Weekly Inventory Report"),
-    ("/weekly_shipped_history.html", "Shipping History"),
     ("/inventory_snapshots.html", "Inventory Snapshots"),
     ("/email_contacts.html", "Email Contacts"),
     ("/workflow_controls.html", "Workflow Controls"),
@@ -71,11 +71,44 @@ def test_canonical_sidebar_is_identical_on_all_shared_pages():
             assert heading in nav
         assert "Catalog & Config" in nav or "Catalog &amp; Config" in nav
         assert 'class="admin-items"' in nav
+        assert 'id="orders-history-section"' in nav
+        assert "/weekly_shipped_history.html" in nav
         assert "order_audit.html" not in nav
         assert "bundle_skus.html" not in nav
         assert "Report Issue" not in nav
 
-
+def test_sidebar_sections_have_canonical_static_structure():
+    for filename in SHARED_PAGES:
+        nav = nav_for(filename)
+        fulfillment = re.search(
+            r'<div class="nav-section">\s*'
+            r'<div class="nav-section-title">Fulfillment</div>',
+            nav,
+        )
+        reports = re.search(
+            r'<div class="nav-section">\s*'
+            r'<div class="nav-section-title">Reports</div>'
+            r'([\s\S]*?)</div>',
+            nav,
+        )
+        orders = re.search(
+            r'<div class="nav-section admin-section orders-history-section" '
+            r'id="orders-history-section">([\s\S]*?)</div>\s*</div>',
+            nav,
+        )
+        assert fulfillment and reports and orders, filename
+        assert (
+            nav.index(fulfillment.group(0))
+            < nav.index(reports.group(0))
+            < nav.index(orders.group(0))
+        ), filename
+        assert '<div class="admin-toggle"' not in reports.group(0), filename
+        assert 'class="admin-items"' not in reports.group(0), filename
+        assert "data-monthly-charge-label" not in reports.group(0), filename
+        assert re.findall(
+            r'<a href="([^"]+)" class="nav-item(?: active)?"',
+            reports.group(0),
+        ) == ["/weekly_inventory_report.html", "/charge_report.html"], filename
 def test_each_canonical_link_has_a_distinct_inline_svg_icon():
     nav = nav_for("index.html")
     anchors = re.findall(
@@ -102,25 +135,46 @@ def test_sidebar_active_item_matches_each_page():
         )
         assert active == ([active_href] if active_href else []), filename
 
-
+def test_orders_history_active_items_and_all_history_links_are_preserved():
+    history_pages = {
+        "weekly_shipped_history.html": "/weekly_shipped_history.html",
+        "shipped_orders.html": "/shipped_orders.html",
+        "shipped_items.html": "/shipped_items.html",
+    }
+    for filename, active_href in history_pages.items():
+        nav = nav_for(filename)
+        assert active_href in dict(links_in(nav)), filename
+        assert f'href="{active_href}" class="nav-item active"' in nav, filename
+        for href in (
+            "/weekly_shipped_history.html",
+            "/shipped_orders.html",
+            "/shipped_items.html",
+        ):
+            assert href in nav, filename
 def test_shipped_troubleshooting_links_are_admin_opt_in():
     css = (ROOT / "static/css/global-styles.css").read_text()
     auth = (ROOT / "static/js/auth.js").read_text()
     settings = (ROOT / "settings.html").read_text()
     app = (ROOT / "app.py").read_text()
 
-    for href in ("/shipped_orders.html", "/shipped_items.html"):
-        assert f'.sidebar-nav a[href="{href}"]' in css
+    for href in (
+        "/weekly_shipped_history.html",
+        "/shipped_orders.html",
+        "/shipped_items.html",
+    ):
+        assert href in nav_for("index.html")
         assert f"'{href.lstrip('/')}'" in app
 
-    assert "body.show-shipped-troubleshooting" in css
-    assert "showShippedTroubleshootingPages" in auth
+    assert "body.show-orders-history" in css
+    assert "showOrdersHistory" in auth
     assert "this.isAdmin()" in auth
     assert "applyNavigationPreferences()" in auth
     assert 'id="troubleshootingNavigationSettings"' in settings
     assert "data-admin-only hidden" in settings
-    assert 'id="showShippedTroubleshootingPages"' in settings
-    assert "localStorage.removeItem('showShippedTroubleshootingPages')" in settings
+    assert 'id="showOrdersHistory"' in settings
+    assert "localStorage.removeItem('showOrdersHistory')" in settings
+    for label in ("Orders History", "Shipping History", "Shipped Orders", "Shipped Items"):
+        assert label in settings
 
 
 def test_retired_pages_are_not_in_route_whitelist():

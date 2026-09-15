@@ -9,15 +9,13 @@
     display: none;
 }
 
-/* Admin troubleshooting pages are opt-in per browser from Settings. */
-.sidebar-nav a[href="/shipped_orders.html"],
-.sidebar-nav a[href="/shipped_items.html"] {
+/* Orders History is opt-in per browser from Settings for administrators. */
+.sidebar-nav .orders-history-section {
     display: none;
 }
 
-body.show-shipped-troubleshooting .sidebar-nav a[href="/shipped_orders.html"],
-body.show-shipped-troubleshooting .sidebar-nav a[href="/shipped_items.html"] {
-    display: flex;
+body.show-orders-history .sidebar-nav .orders-history-section {
+    display: block;
 }
 
 [data-admin-only][hidden] {

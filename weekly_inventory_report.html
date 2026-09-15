@@ -184,42 +184,42 @@
                     <a href="/inventory_transactions.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/></svg></span>Inventory Monitor</a>
                     <a href="/lot_inventory.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg></span>Lot Inventory</a>
                 </div>
-                <div class="nav-section admin-section">
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Reports</div>
+                    <a href="/weekly_inventory_report.html" class="nav-item active"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span>Weekly Inventory Report</a>
+                    <a href="/charge_report.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg></span>Monthly Charge Report</a>
+                </div>
+
+                <div class="nav-section admin-section orders-history-section" id="orders-history-section">
                     <div class="admin-toggle" role="button" tabindex="0" aria-expanded="false" onclick="toggleSection(this)">
                         <span>Orders History</span><span class="admin-toggle-icon">▶</span>
-                    </div>
+                </div>
                     <div class="admin-items" id="admin-items">
-                        <a href="/shipped_orders.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M7 7h10v10H7z"/></svg></span>Shipped Orders</a>
-                        <a href="/shipped_items.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 8h8v8H8z"/></svg></span>Shipped Items</a>
-                        <a href="/order-management.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 9h6v6H9z"/></svg></span>Order Corrections</a>
-                    </div>
+                    <a href="/weekly_shipped_history.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></svg></span>Shipping History</a>
+                    <a href="/shipped_orders.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M7 7h10v10H7z"/></svg></span>Shipped Orders</a>
+                    <a href="/shipped_items.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 8h8v8H8z"/></svg></span>Shipped Items</a>
+                    <a href="/order-management.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 9h6v6H9z"/></svg></span>Order Corrections</a>
                 </div>
-                <div class="nav-section admin-section">
-                    <div class="admin-toggle expanded" role="button" tabindex="0" aria-expanded="true" onclick="toggleSection(this)">
-                        <span>Reports</span><span class="admin-toggle-icon">▶</span>
-                    </div>
-                    <div class="admin-items expanded" id="reports-items">
-                        <a href="/charge_report.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg></span>Charge Report</a>
-                        <a href="/weekly_inventory_report.html" class="nav-item active"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span>Weekly Inventory Report</a>
-                        <a href="/weekly_shipped_history.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></svg></span>Shipping History</a>
-                    </div>
                 </div>
+
                 <div class="nav-section admin-section">
                     <div class="admin-toggle" role="button" tabindex="0" aria-expanded="false" onclick="toggleSection(this)">
                         <span>Catalog &amp; Config</span><span class="admin-toggle-icon">▶</span>
-                    </div>
-                    <div class="admin-items" id="catalog-config-items">
-                        <a href="/inventory_snapshots.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></svg></span>Inventory Snapshots</a>
-                        <a href="/email_contacts.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg></span>Email Contacts</a>
-                        <a href="/workflow_controls.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg></span>Workflow Controls</a>
-                        <a href="/logs.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/></svg></span>Server Logs</a>
-                    </div>
                 </div>
+                    <div class="admin-items" id="catalog-config-items">
+                    <a href="/inventory_snapshots.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></svg></span>Inventory Snapshots</a>
+                    <a href="/email_contacts.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg></span>Email Contacts</a>
+                    <a href="/workflow_controls.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg></span>Workflow Controls</a>
+                    <a href="/logs.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/></svg></span>Server Logs</a>
+                </div>
+                </div>
+
                 <div class="nav-section" style="margin-top:auto;border-top:1px solid var(--border-color);padding-top:calc(var(--spacing-unit) * 2);">
                     <a href="/help.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M2 2h20v20H2z"/></svg></span>Help & Training</a>
                     <a href="/settings.html" class="nav-item"><span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M10 10h4v4h-4z"/></svg></span>Settings</a>
                 </div>
-            </nav>
+                    </nav>
         </aside>
 
         <main class="main-content">
