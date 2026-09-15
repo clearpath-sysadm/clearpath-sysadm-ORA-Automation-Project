@@ -38,12 +38,6 @@ class AdminAlertBar {
         this.pollInterval = setInterval(() => this.fetchAndRender(), 30000);
     }
     
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
     render() {
         const existingBar = document.getElementById('admin-alert-bar');
         if (existingBar) {
@@ -62,55 +56,55 @@ class AdminAlertBar {
             return;
         }
         
-        if (!document.getElementById('admin-alert-pulse-style')) {
-            const style = document.createElement('style');
-            style.id = 'admin-alert-pulse-style';
-            style.textContent = `
-                @keyframes alertPulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.6; }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
         const bar = document.createElement('div');
         bar.id = 'admin-alert-bar';
+        bar.setAttribute('role', 'status');
+        bar.setAttribute('aria-live', 'polite');
+        bar.setAttribute('aria-atomic', 'true');
         bar.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 10000;
-            padding: 12px 20px;
-            text-align: center;
+            padding: 12px 16px;
             font-weight: 500;
             font-size: 14px;
+            line-height: 1.45;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            animation: alertPulse 2s ease-in-out infinite;
             ${isActive ? 
                 'background: linear-gradient(135deg, #dc3545, #c82333); color: white;' : 
                 'background: linear-gradient(135deg, #28a745, #218838); color: white;'}
         `;
         
         const messageSpan = document.createElement('span');
-        messageSpan.innerHTML = this.escapeHtml(this.alertData.message);
+        messageSpan.textContent = this.alertData.message;
+        messageSpan.style.cssText = `
+            flex: 0 1 1200px;
+            min-width: 0;
+            text-align: left;
+            overflow-wrap: anywhere;
+        `;
         bar.appendChild(messageSpan);
         
         if (!isActive) {
             const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
             closeBtn.innerHTML = '&times;';
+            closeBtn.setAttribute('aria-label', 'Dismiss alert');
+            closeBtn.title = 'Dismiss alert';
             closeBtn.style.cssText = `
                 background: rgba(255,255,255,0.2);
                 border: none;
                 color: white;
                 font-size: 20px;
-                width: 28px;
-                height: 28px;
+                width: 44px;
+                height: 44px;
+                flex: 0 0 44px;
                 border-radius: 50%;
                 cursor: pointer;
                 display: flex;
