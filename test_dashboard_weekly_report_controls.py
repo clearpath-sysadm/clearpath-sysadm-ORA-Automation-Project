@@ -1,21 +1,37 @@
 from pathlib import Path
 
 
-def test_weekly_report_does_not_render_adjust_buttons():
-    html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
-    report_start = html.index("async function loadWeeklyReport()")
-    report_end = html.index("// Copy weekly inventory to clipboard", report_start)
-    report_loader = html[report_start:report_end]
-
-    assert "openPhysicalCountModal(" not in report_loader
-    assert "Adjust inventory from physical count" not in report_loader
-
-
-def test_weekly_report_uses_cards_at_mobile_and_tablet_widths():
+def test_dashboard_links_to_dedicated_operations_reports():
     html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
 
-    assert "window.matchMedia('(max-width: 768px)').matches" in html
-    assert "#weeklyReportTable { display: none !important; }" in html
-    assert "#weeklyReportCards.weekly-report-ready { display: flex !important; }" in html
-    assert ".weekly-inv-card-stats .wic-sep { display: none; }" in html
-    assert "window.addEventListener('resize', updateWeeklyReportLayout)" in html
+    for href, label in (
+        ("/shipment_summary.html", "Today's Pick List"),
+        ("/weekly_inventory_report.html", "Weekly Inventory Report"),
+        ("/charge_report.html", "Monthly Charge Report"),
+    ):
+        assert f'href="{href}"' in html
+        assert label in html
+
+
+def test_dashboard_does_not_embed_weekly_inventory_report():
+    html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
+
+    assert 'id="weeklyReportTable"' not in html
+    assert 'id="weeklyReportCards"' not in html
+    assert 'id="weeklyReportLoading"' not in html
+    assert 'id="inventory-risk-section"' not in html
+    assert "loadWeeklyReport();" not in html
+
+
+def test_time_log_is_last_dashboard_section():
+    html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
+    assert html.index('id="report-navigation-section"') < html.index('id="time-log-section"')
+    assert 'id="time-log-section" style="margin-bottom: 0;"' in html
+    assert 'id="time-log-toggle" type="button"' in html
+    assert 'aria-expanded="false" aria-controls="tl-body"' in html
+    assert "toggle.setAttribute('aria-expanded', String(!isOpen));" in html
+
+
+def test_removed_weekly_report_resize_handler_is_gone():
+    html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
+    assert "window.addEventListener('resize', updateWeeklyReportLayout);" not in html

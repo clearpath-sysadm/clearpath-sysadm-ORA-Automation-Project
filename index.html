@@ -121,76 +121,61 @@
             transform: scale(0.95);
         }
 
-        /* ─── Weekly inventory — mobile cards ─── */
-        #weeklyReportCards { padding: 12px; flex-direction: column; gap: 8px; }
-        .weekly-inv-card {
+        /* ─── Dashboard report navigation ─── */
+        .dashboard-report-links {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .dashboard-report-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-height: 96px;
+            padding: 18px;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px 14px;
+            border-radius: 10px;
             background: var(--bg-primary);
+            color: var(--text-primary);
+            text-decoration: none;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
         }
-        .weekly-inv-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 10px;
+        .dashboard-report-link:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+            background: var(--bg-secondary);
         }
-        .weekly-inv-product { font-weight: 600; font-size: 14px; line-height: 1.3; }
-        .weekly-inv-sku { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
-        .weekly-inv-card-stats {
-            display: flex;
-            align-items: stretch;
-            border-top: 1px solid var(--border-color);
-            padding-top: 8px;
+        .dashboard-report-link:focus-visible {
+            outline: 3px solid rgba(43, 125, 233, 0.35);
+            outline-offset: 2px;
+            border-color: var(--accent-blue);
         }
-        .wic-stat { flex: 1; padding: 0 10px; }
-        .wic-stat:first-child { padding-left: 0; }
-        .wic-stat:last-child { padding-right: 0; }
-        .wic-sep { width: 1px; background: var(--border-color); flex-shrink: 0; }
-        .wic-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); margin-bottom: 3px; }
-        .wic-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-        .wic-pallet .wic-val { font-size: 12px; font-weight: 500; }
-
+        .dashboard-report-link-icon {
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            flex: 0 0 38px;
+            border-radius: 9px;
+            color: var(--accent-blue);
+            background: rgba(43, 125, 233, 0.11);
+        }
+        .dashboard-report-link:nth-child(2) .dashboard-report-link-icon {
+            color: var(--success-teal);
+            background: rgba(60, 174, 163, 0.11);
+        }
+        .dashboard-report-link:nth-child(3) .dashboard-report-link-icon {
+            color: var(--accent-orange);
+            background: rgba(242, 153, 74, 0.13);
+        }
+        .dashboard-report-link-copy { min-width: 0; flex: 1; }
+        .dashboard-report-link-title { font-size: 14px; font-weight: 600; line-height: 1.3; }
+        .dashboard-report-link-detail { margin-top: 5px; color: var(--text-tertiary); font-size: 12px; line-height: 1.35; }
+        .dashboard-report-link-arrow { color: var(--text-tertiary); font-size: 18px; }
         @media (max-width: 768px) {
-            #inventory-risk-section .card-header {
-                align-items: stretch;
-                flex-direction: column;
-                gap: 12px;
-            }
-            #inv-btn-row {
-                display: grid !important;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                width: 100%;
-            }
-            #inv-btn-row .btn {
-                justify-content: center;
-                min-width: 0;
-                white-space: normal;
-            }
-            #weeklyReportTable { display: none !important; }
-            #weeklyReportCards.weekly-report-ready { display: flex !important; }
-            .weekly-inv-card { min-width: 0; }
-            .weekly-inv-card-header > div { min-width: 0; }
-            .weekly-inv-product,
-            .weekly-inv-sku { overflow-wrap: anywhere; }
-            .weekly-inv-card-stats {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                align-items: start;
-            }
-            .weekly-inv-card-stats .wic-sep { display: none; }
-            .wic-stat {
-                min-width: 0;
-                padding: 0 8px;
-            }
-            .wic-stat:not(:first-child) {
-                border-left: 1px solid var(--border-color);
-            }
-            .wic-val {
-                overflow-wrap: anywhere;
-                line-height: 1.35;
-            }
+            .dashboard-report-links { grid-template-columns: 1fr; }
+            .dashboard-report-link { min-height: 76px; padding: 14px; }
         }
 
         /* ─── Operational Pulse — compact workload + activity ─── */
@@ -456,7 +441,6 @@
             .pulse-activity-count { font-size: 22px; }
             .pulse-activity-label,
             .pulse-activity-detail { font-size: 9px; }
-            #inv-btn-row .btn { font-size: 11px; padding: 5px 8px; }
             .recipient-modal-toolbar,
             .recipient-row { align-items: stretch; flex-direction: column; }
             .recipient-actions { width: 100%; }
@@ -464,16 +448,6 @@
             .recipient-form-grid { grid-template-columns: 1fr; }
         }
 
-        @media (max-width: 380px) {
-            #weeklyReportCards { padding: 8px; }
-            .weekly-inv-card { padding: 10px; }
-            .weekly-inv-card-header { gap: 8px; }
-            .weekly-inv-product { font-size: 13px; }
-            .wic-stat { padding: 0 6px; }
-            .wic-label { font-size: 9px; letter-spacing: 0.2px; }
-            .wic-val { font-size: 13px; }
-            .wic-pallet .wic-val { font-size: 11px; }
-        }
     </style>
     
 </head>
@@ -648,9 +622,9 @@
                         <div class="quick-action-icon">🏭</div>
                         <div>Inventory</div>
                     </a>
-                    <a href="#inventory-risk-section" class="quick-action-btn" onclick="document.getElementById('inventory-risk-section').scrollIntoView({behavior:'smooth'}); return false;">
-                        <div class="quick-action-icon">📊</div>
-                        <div>Weekly<br>Report</div>
+                    <a href="/weekly_inventory_report.html" class="quick-action-btn">
+                        <div class="quick-action-icon">Report</div>
+                        <div>Weekly<br>Inventory</div>
                     </a>
                     <a href="/" class="quick-action-btn" onclick="refreshDashboard(); return false;">
                         <div class="quick-action-icon">🔄</div>
@@ -801,7 +775,35 @@
                     </div><!-- /#pulse-body -->
                 </section>
 
-                <!-- Time Log Section (collapsible) -->
+                <!-- Report Navigation -->
+                <section id="report-navigation-section" aria-labelledby="report-navigation-title">
+                    <h2 id="report-navigation-title" style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Reports &amp; work queues</h2>
+                    <div class="dashboard-report-links">
+                        <a class="dashboard-report-link" href="/shipment_summary.html">
+                            <span class="dashboard-report-link-icon" aria-hidden="true">
+                                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16v-2"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                            </span>
+                            <span class="dashboard-report-link-copy"><span class="dashboard-report-link-title">Today's Pick List</span><span class="dashboard-report-link-detail">Review and work today's shipments.</span></span>
+                            <span class="dashboard-report-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                        <a class="dashboard-report-link" href="/weekly_inventory_report.html">
+                            <span class="dashboard-report-link-icon" aria-hidden="true">
+                                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>
+                            </span>
+                            <span class="dashboard-report-link-copy"><span class="dashboard-report-link-title">Weekly Inventory Report</span><span class="dashboard-report-link-detail">Check stock coverage and pallet detail.</span></span>
+                            <span class="dashboard-report-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                        <a class="dashboard-report-link" href="/charge_report.html">
+                            <span class="dashboard-report-link-icon" aria-hidden="true">
+                                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            </span>
+                            <span class="dashboard-report-link-copy"><span class="dashboard-report-link-title">Monthly Charge Report</span><span class="dashboard-report-link-detail">Review monthly fulfillment charges.</span></span>
+                            <span class="dashboard-report-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Time Log Section (collapsible; last in the dashboard flow) -->
                 <section id="time-log-section" style="margin-bottom: 0;">
                     <!-- Edit Modal — fixed-position, unaffected by collapse state -->
                     <div id="time-log-edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
@@ -829,10 +831,10 @@
                     </div>
 
                     <!-- Collapsible header -->
-                    <div onclick="toggleTimeLog()" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:14px 0 14px; user-select:none; border-top:1px solid var(--border-color);">
+                    <button id="time-log-toggle" type="button" onclick="toggleTimeLog()" aria-expanded="false" aria-controls="tl-body" style="cursor:pointer; width:100%; display:flex; align-items:center; justify-content:space-between; padding:14px 0; user-select:none; border:0; border-top:1px solid var(--border-color); background:transparent; color:inherit; font:inherit; text-align:left;">
                         <h2 style="font-size:14px; font-weight:600; color:var(--text-tertiary); margin:0; text-transform:uppercase; letter-spacing:0.5px;">Time Log</h2>
                         <span id="tl-chevron" style="color:var(--text-tertiary); font-size:12px; transition:transform 0.2s; display:inline-block;">▼</span>
-                    </div>
+                    </button>
 
                     <!-- Collapsible body — hidden by default -->
                     <div id="tl-body" style="display:none; padding-bottom:20px;">
@@ -879,61 +881,6 @@
 
                             </div>
                         </div>
-                    </div>
-                </section>
-
-                <!-- Inventory Risk Section -->
-                <section id="inventory-risk-section">
-                    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Inventory Risk</h2>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <div>
-                                <div class="card-title">
-                                    <span>📊</span> Weekly Inventory Report
-                                </div>
-                                <div id="inventoryAsOfDate" style="font-size: 0.85em; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">
-                                    <!-- As Of date will be injected here -->
-                                </div>
-                            </div>
-                            <div id="inv-btn-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button class="btn" onclick="copyWeeklyInventoryToClipboard()" id="copyInventoryBtn">
-                                    📧 Compose Email
-                                </button>
-                                <button class="btn" type="button" onclick="openRecipientManager()" title="Add, edit, or remove report recipients">
-                                    Manage Recipients
-                                </button>
-                                <button class="btn" onclick="runEOD()" id="btn-eod">
-                                    📦 EOD
-                                    <div class="btn-status" id="eod-status"></div>
-                                </button>
-                                <button class="btn" onclick="runEOW()" id="btn-eow">
-                                    📊 EOW
-                                    <div class="btn-status" id="eow-status"></div>
-                                </button>
-                                <button class="btn" onclick="runEOM()" id="btn-eom">
-                                    💰 EOM
-                                    <div class="btn-status" id="eom-status"></div>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="weeklyReportLoading" style="padding: 20px; text-align: center; color: var(--text-tertiary);">Loading weekly report...</div>
-                        <div id="weeklyReportError"></div>
-                        <div id="weeklyReportTable" style="display: none; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Product</th>
-                                        <th style="text-align: right;">Current Qty</th>
-                                        <th style="text-align: center;">Pallet Breakdown</th>
-                                        <th style="text-align: right;">52-Week Avg</th>
-                                        <th style="text-align: center;">Days Left</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="weeklyReportBody"></tbody>
-                            </table>
-                        </div>
-                        <div id="weeklyReportCards" style="display: none;"></div>
                     </div>
                 </section>
 
@@ -1187,8 +1134,6 @@
             cardsDiv.style.display = isMobile ? 'flex' : 'none';
         }
 
-        window.addEventListener('resize', updateWeeklyReportLayout);
-
         // Refresh weekly report
         async function refreshWeeklyReport() {
             const btn = document.getElementById('weeklyReportRefreshBtn');
@@ -1196,7 +1141,6 @@
             btn.textContent = '⏳ Refreshing...';
             
             try {
-                await loadWeeklyReport();
                 btn.textContent = '✅ Refreshed!';
                 setTimeout(() => {
                     btn.textContent = '🔄 Refresh';
@@ -1589,7 +1533,6 @@
             try {
                 await Promise.all([
                     loadDashboardData(),
-                    loadWeeklyReport(),
                     loadSystemPulse()
                 ]);
             } finally {
@@ -1984,9 +1927,6 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Refresh weekly inventory report on dashboard
-                    await loadWeeklyReport();
-
                     let msg = '✅ ' + result.message;
                     const discrepancies = result.discrepancies || [];
                     if (discrepancies.length > 0) {
@@ -2028,9 +1968,6 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Refresh weekly inventory report on dashboard
-                    await loadWeeklyReport();
-                    
                     alert('✅ ' + result.message);
                     await loadReportStatus();
                 } else {
@@ -2389,7 +2326,6 @@
                     alert(`✅ ${result.message}\n\nAdjusted by: ${result.adjusted_by}\nTime: ${result.timestamp}${backorderMessage}`);
                 }
                 closePhysicalCountModal();
-                await loadWeeklyReport();
                 
             } catch (error) {
                 console.error('Error submitting adjustment:', error);
@@ -2412,9 +2348,11 @@
         function toggleTimeLog() {
             const body = document.getElementById('tl-body');
             const chevron = document.getElementById('tl-chevron');
+            const toggle = document.getElementById('time-log-toggle');
             const isOpen = body.style.display !== 'none';
             body.style.display = isOpen ? 'none' : 'block';
             chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+            toggle.setAttribute('aria-expanded', String(!isOpen));
         }
 
         // Build hours dropdown options (0.25 → 24.00 in 0.25 increments)
@@ -2934,7 +2872,6 @@
                 pulseDateLabel.textContent = `Today · ${today}`;
             }
             loadDashboardData();
-            loadWeeklyReport();
             loadReportStatus();
             populateUserWidget();
             loadSystemPulse();
