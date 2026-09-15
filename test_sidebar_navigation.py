@@ -187,6 +187,27 @@ def test_weekly_inventory_report_uses_one_accessible_action_dropdown():
     assert "['ArrowDown', 'ArrowUp', 'Home', 'End']" in page
 
 
+def test_weekly_inventory_report_action_menu_stays_anchored_on_mobile():
+    page = (ROOT / "weekly_inventory_report.html").read_text()
+    base_menu_rule = re.search(
+        r"\.report-actions-menu\s*\{([^}]*)\}",
+        page,
+    )
+    mobile_rules = re.search(
+        r"@media \(max-width: 768px\)\s*\{([\s\S]*?)\n\s*\}\n\s*</style>",
+        page,
+    )
+
+    assert base_menu_rule
+    assert "position: absolute" in base_menu_rule.group(1)
+    assert "top: calc(100% + 6px)" in base_menu_rule.group(1)
+    assert "right: 0" in base_menu_rule.group(1)
+    assert "width: min(310px, calc(100vw - 48px))" in base_menu_rule.group(1)
+    assert mobile_rules
+    assert "position: fixed" not in mobile_rules.group(1)
+    assert "bottom:" not in mobile_rules.group(1)
+
+
 def test_weekly_inventory_report_keeps_current_inventory_workflow():
     source = (ROOT / "weekly_inventory_report.html").read_text()
     app = (ROOT / "app.py").read_text()
