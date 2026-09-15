@@ -325,7 +325,9 @@
             document.getElementById('mobile-overlay').classList.remove('active');
         }
 
+        const WEEKLY_REPORT_AUTO_REFRESH_MS = 60 * 1000;
         let reportActionInProgress = false;
+        let reportLoadPromise = null;
 
         function getReportActionItems() {
             return [...document.querySelectorAll('#reportActionsMenu [role="menuitem"]')];
@@ -399,17 +401,39 @@
             };
         }
 
-        async function loadWeeklyReport() {
+        function updateInventoryTimestamp(asOfDate) {
+            const asOf = document.getElementById('inventoryAsOfDate');
+            let label = 'Inventory date not available';
+            if (asOfDate) {
+                const parts = asOfDate.split('-').map(Number);
+                const date = new Date(parts[0], parts[1] - 1, parts[2]);
+                label = `As of ${date.toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'})}`;
+            }
+            const updatedTime = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Chicago',
+                hour: 'numeric',
+                minute: '2-digit'
+            }).format(new Date());
+            asOf.textContent = `${label} · Updated ${updatedTime} CT`;
+        }
+
+        function loadWeeklyReport({background = false} = {}) {
+            if (background && reportActionInProgress) return Promise.resolve(false);
+            if (reportLoadPromise) return reportLoadPromise;
+
             const loading = document.getElementById('weeklyReportLoading');
             const error = document.getElementById('weeklyReportError');
             const table = document.getElementById('weeklyReportTable');
             const cards = document.getElementById('weeklyReportCards');
-            loading.style.display = 'block';
-            error.style.display = 'none';
-            table.style.display = 'none';
-            cards.classList.remove('weekly-report-ready');
+            if (!background) {
+                loading.style.display = 'block';
+                error.style.display = 'none';
+                table.style.display = 'none';
+                cards.classList.remove('weekly-report-ready');
+            }
 
-            try {
+            reportLoadPromise = (async () => {
+              try {
                 const response = await fetch('/api/weekly_inventory_report');
                 const result = await response.json();
                 if (!response.ok || !result.success) throw new Error(result.error || 'Failed to load weekly inventory report');
@@ -440,24 +464,31 @@
                     </div>`;
                 }).join('');
 
-                const asOf = document.getElementById('inventoryAsOfDate');
-                if (result.as_of_date) {
-                    const parts = result.as_of_date.split('-').map(Number);
-                    const date = new Date(parts[0], parts[1] - 1, parts[2]);
-                    asOf.textContent = `As of ${date.toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'})}`;
-                } else {
-                    asOf.textContent = 'Inventory date not available';
-                }
+                updateInventoryTimestamp(result.as_of_date);
                 loading.style.display = 'none';
+                error.style.display = 'none';
                 table.style.display = window.matchMedia('(max-width: 768px)').matches ? 'none' : 'block';
                 cards.classList.add('weekly-report-ready');
                 return true;
-            } catch (loadError) {
-                loading.style.display = 'none';
-                error.textContent = `Failed to load weekly inventory report: ${loadError.message}`;
-                error.style.display = 'block';
-                return false;
-            }
+              } catch (loadError) {
+                  loading.style.display = 'none';
+                  if (!background) {
+                      error.textContent = `Failed to load weekly inventory report: ${loadError.message}`;
+                      error.style.display = 'block';
+                  } else {
+                      console.error('Unable to auto-refresh weekly inventory report:', loadError);
+                  }
+                  return false;
+              } finally {
+                  reportLoadPromise = null;
+              }
+            })();
+            return reportLoadPromise;
+        }
+
+        function autoRefreshWeeklyReport() {
+            if (document.hidden || reportActionInProgress) return;
+            loadWeeklyReport({background: true});
         }
 
         async function refreshWeeklyReport() {
@@ -548,36 +579,33 @@
                     `Compose the Weekly Inventory Report to these ${contacts.data.length} recipients?\n\n${recipientReview}`
                 )) return;
 
-                const header = 'Product | SKU | Current Qty | Pallet Breakdown | 52-Week Avg | Days Left';
+                const header = 'Product | Current Qty | 52-Week Avg | Days Left';
                 const rows = report.data.map(item => {
                     const display = getInventoryPresentation(item);
-                    return `${item.product_name || item.sku} | ${item.sku} | ${item.current_quantity} | ${display.palletBreakdown} | ${Math.round(Number(item.rolling_avg_52_weeks) || 0)} | ${display.daysText}`;
+                    return `${item.product_name || item.sku} (SKU: ${item.sku}) | ${item.current_quantity} | ${Math.round(Number(item.rolling_avg_52_weeks) || 0)} | ${display.daysText}`;
                 });
-                const text = `${header}\n${'-'.repeat(92)}\n${rows.join('\n')}`;
+                const text = `${header}\n${'-'.repeat(68)}\n${rows.join('\n')}`;
                 const htmlRows = report.data.map(item => {
                     const display = getInventoryPresentation(item);
                     const product = escapeHtml(item.product_name || item.sku);
                     const sku = escapeHtml(item.sku);
                     const quantity = escapeHtml(item.current_quantity);
-                    const palletBreakdown = escapeHtml(display.palletBreakdown);
                     const average = Math.round(Number(item.rolling_avg_52_weeks) || 0);
                     const daysLeft = escapeHtml(display.daysText);
                     return `<tr>
-                        <td style="padding:10px;border:1px solid #9ca3af;"><strong>${product}</strong><br><span style="font-size:12px;color:#4b5563;">SKU: ${sku}</span></td>
-                        <td style="padding:10px;border:1px solid #9ca3af;text-align:right;">${quantity}</td>
-                        <td style="padding:10px;border:1px solid #9ca3af;">${palletBreakdown}</td>
-                        <td style="padding:10px;border:1px solid #9ca3af;text-align:right;">${average}</td>
-                        <td style="padding:10px;border:1px solid #9ca3af;text-align:center;">${daysLeft === '∞' ? '∞' : `${daysLeft} days`}</td>
+                        <td style="padding:8px;border:1px solid #ddd;"><strong>${product}</strong><br><span style="font-size:0.85em;color:#666;">SKU: ${sku}</span></td>
+                        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${quantity}</td>
+                        <td style="padding:8px;border:1px solid #ddd;text-align:right;">${average}</td>
+                        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${daysLeft}</td>
                     </tr>`;
                 }).join('');
-                const html = `<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;color:#111827;background:#ffffff;">
+                const html = `<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:14px;">
                     <thead>
-                        <tr style="background:#374151;color:#ffffff;">
-                            <th style="padding:10px;border:1px solid #9ca3af;text-align:left;">Product</th>
-                            <th style="padding:10px;border:1px solid #9ca3af;text-align:right;">Current Qty</th>
-                            <th style="padding:10px;border:1px solid #9ca3af;text-align:left;">Pallet Breakdown</th>
-                            <th style="padding:10px;border:1px solid #9ca3af;text-align:right;">52-Week Avg</th>
-                            <th style="padding:10px;border:1px solid #9ca3af;text-align:center;">Days Left</th>
+                        <tr style="background-color:#f3f4f6;">
+                            <th style="padding:8px;border:1px solid #ddd;text-align:left;">Product</th>
+                            <th style="padding:8px;border:1px solid #ddd;text-align:center;">Current Qty</th>
+                            <th style="padding:8px;border:1px solid #ddd;text-align:right;">52-Week Avg</th>
+                            <th style="padding:8px;border:1px solid #ddd;text-align:center;">Days Left</th>
                         </tr>
                     </thead>
                     <tbody>${htmlRows}</tbody>
@@ -640,6 +668,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadWeeklyReport();
             loadReportStatus();
+            window.setInterval(autoRefreshWeeklyReport, WEEKLY_REPORT_AUTO_REFRESH_MS);
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) autoRefreshWeeklyReport();
         });
     </script>
 </body>
