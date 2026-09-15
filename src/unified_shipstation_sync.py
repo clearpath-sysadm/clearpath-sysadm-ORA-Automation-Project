@@ -60,6 +60,8 @@ logger = logging.getLogger(__name__)
 # Configuration
 KEY_PRODUCT_SKUS = ['17612', '17904', '17914', '18675', '18795']
 WORKFLOW_NAME = 'unified-shipstation-sync'
+STALE_ORDER_RECONCILIATION_HOURS = 24
+STALE_ORDER_RECONCILIATION_LIMIT = 25
 
 # Fixed daily run times in CDT/CST (America/Chicago).
 # ZoneInfo handles CDT↔CST transitions automatically.
@@ -1577,6 +1579,37 @@ def run_unified_sync():
         if not api_key or not api_secret:
             logger.critical("❌ Failed to get ShipStation credentials")
             return
+
+        # The watermark feed only returns recently modified orders. Recheck a
+        # bounded set of the stalest local non-terminal rows so closed orders
+        # cannot remain on the pick list indefinitely when a status event was
+        # missed. This is authoritative status reconciliation, not an age-based
+        # report filter: confirmed open orders remain eligible.
+        try:
+            from src.services.order_reconciliation import reconcile_orphaned_orders
+
+            with transaction_with_retry() as conn:
+                stale_summary = reconcile_orphaned_orders(
+                    conn,
+                    stale_before_hours=STALE_ORDER_RECONCILIATION_HOURS,
+                    max_orders=STALE_ORDER_RECONCILIATION_LIMIT,
+                )
+            logger.info(
+                "Stale-order reconciliation: checked=%s, shipped=%s, "
+                "cancelled=%s, not_found=%s, other=%s, errors=%s",
+                stale_summary['total_checked'],
+                stale_summary['updated_to_shipped'],
+                stale_summary['updated_to_cancelled'],
+                stale_summary['updated_to_not_found'],
+                stale_summary['updated_other'],
+                stale_summary['errors'],
+            )
+        except Exception as recon_error:
+            logger.warning(
+                "⚠️ Stale-order reconciliation failed (non-fatal): %s",
+                recon_error,
+                exc_info=True,
+            )
         
         # Get last sync watermark
         last_sync = get_last_sync_timestamp()

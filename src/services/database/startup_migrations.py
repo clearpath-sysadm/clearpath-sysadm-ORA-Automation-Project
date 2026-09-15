@@ -1310,6 +1310,67 @@ def _update_source_system_default(cursor):
     logger.info("startup_migrations: orders_inbox.source_system default updated to 'ShipStation'")
 
 
+def _add_not_found_order_status(cursor):
+    """
+    Migration 021: Allow reconciliation to preserve ShipStation orders that
+    return a definitive 404 while excluding them from active-order reports.
+    """
+    cursor.execute("""
+        SELECT pg_get_constraintdef(c.oid)
+        FROM pg_constraint c
+        JOIN pg_class t ON t.oid = c.conrelid
+        WHERE t.relname = 'orders_inbox'
+          AND c.conname = 'orders_inbox_status_check'
+    """)
+    row = cursor.fetchone()
+    if row and "'not_found'::text" in row[0]:
+        logger.info("startup_migrations: orders_inbox already allows not_found")
+        return
+
+    cursor.execute("""
+        ALTER TABLE orders_inbox
+        DROP CONSTRAINT IF EXISTS orders_inbox_status_check
+    """)
+    cursor.execute("""
+        ALTER TABLE orders_inbox
+        ADD CONSTRAINT orders_inbox_status_check
+        CHECK (status IN (
+            'pending', 'uploaded', 'awaiting_shipment', 'failed',
+            'synced_manual', 'shipped', 'cancelled', 'on_hold',
+            'awaiting_payment', 'not_found'
+        )) NOT VALID
+    """)
+    cursor.execute("""
+        ALTER TABLE orders_inbox
+        VALIDATE CONSTRAINT orders_inbox_status_check
+    """)
+    logger.info("startup_migrations: not_found order status enabled")
+
+
+def _resolve_removed_order_862283(cursor):
+    """
+    Preserve the confirmed-removed ShipStation order while immediately
+    excluding it from active pick-list totals.
+    """
+    cursor.execute("""
+        UPDATE orders_inbox
+        SET status = 'not_found',
+            failure_reason = 'Order no longer exists in ShipStation',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE order_number = '862283'
+          AND shipstation_order_id = '278284894'
+          AND status IN ('pending', 'awaiting_shipment')
+    """)
+    if cursor.rowcount:
+        logger.info(
+            "startup_migrations: order 862283 marked not_found after confirmed ShipStation 404"
+        )
+    else:
+        logger.info(
+            "startup_migrations: order 862283 already excluded from active pick-list status"
+        )
+
+
 def run_all(conn):
     """
     Run every startup migration inside a single transaction.
@@ -1338,6 +1399,8 @@ def run_all(conn):
             _backfill_promo_sku_deductions(cur)
             _ensure_sku_variants_table(cur)
             _correct_stale_variant_rows_in_order_items_inbox(cur)
+            _add_not_found_order_status(cur)
+            _resolve_removed_order_862283(cur)
             _update_source_system_default(cur)
         conn.commit()
         logger.info("startup_migrations: all migrations completed successfully")

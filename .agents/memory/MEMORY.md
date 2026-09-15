@@ -2,3 +2,4 @@
 - [Publish schema alignment](publish-schema-alignment.md) — keep development aligned with production’s cancellation and line-item safeguards before publishing, or the generated diff may try to undo them.
 - [Advisory lock keys must be deterministic](advisory-lock-key-hashing.md) — never derive pg_advisory_lock keys from Python's built-in hash(); it's randomized per-process (PYTHONHASHSEED) and silently breaks cross-process locking.
 - [Benco UPS carrier code](benco-ups-carrier-code.md) — Acxiom's own UPS account = carrier code 'ups' (not 'ups_walleted'); 'ups_walleted' is ShipStation's account and can't do third-party billing.
+- [ShipStation missing-order lifecycle](shipstation-missing-order-lifecycle.md) — definitive 404s need a preserved non-pickable status; watermark sync alone can leave stale active rows indefinitely.
