@@ -83,6 +83,39 @@ def get_shipstation_credentials():
         logger.error(f"Error retrieving ShipStation credentials: {e}", exc_info=True)
         return None, None
 
+
+def fetch_awaiting_shipment_orders(api_key: str, api_secret: str) -> list:
+    """Fetch every ShipStation order currently awaiting shipment."""
+    if not api_key or not api_secret:
+        raise RuntimeError("ShipStation credentials are not configured")
+
+    headers = get_shipstation_headers(api_key, api_secret)
+    orders = []
+    page = 1
+
+    while True:
+        response = make_api_request(
+            url="https://ssapi.shipstation.com/orders",
+            method="GET",
+            headers=headers,
+            params={
+                "orderStatus": "awaiting_shipment",
+                "pageSize": 500,
+                "page": page,
+            },
+            timeout=30,
+        )
+        data = response.json()
+        orders.extend(data.get("orders", []))
+        total_pages = int(data.get("pages") or 1)
+        if page >= total_pages:
+            break
+        page += 1
+        time.sleep(0.5)
+
+    return orders
+
+
 def fetch_shipstation_shipments(
     api_key: str,
     api_secret: str,

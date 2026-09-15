@@ -3960,143 +3960,45 @@ def api_reconciliation_log():
 @app.route('/api/reports/shipment_summary', methods=['GET'])
 @login_required
 def api_shipment_summary():
-    """Return aggregated shipment summary grouped by base SKU and lot.
-
-    Queries order_items_inbox (which already stores resolved base SKUs and
-    effective quantities written by the sync worker) joined to orders_inbox,
-    filtered to awaiting_shipment/pending statuses.  Groups by (sku, sku_lot)
-    so callers can render per-lot sub-rows without re-fetching.
-    """
+    """Return a live ShipStation summary grouped by resolved base SKU and lot."""
     try:
+        from src.services.inventory.promo_sku_utils import (
+            load_promo_map,
+            load_variant_map,
+        )
+        from src.services.reporting_logic.shipment_summary_service import (
+            build_live_shipment_summary,
+        )
+        from src.services.shipstation.api_client import (
+            fetch_awaiting_shipment_orders,
+            get_shipstation_credentials,
+        )
+
         conn = get_connection()
         cursor = conn.cursor()
-
-        # ── 1. Sync watermark timestamp ─────────────────────────────────────
         cursor.execute("""
-            SELECT last_sync_timestamp
-            FROM sync_watermark
-            WHERE workflow_name = 'unified-shipstation-sync'
+            SELECT sku, parameter_name
+            FROM configuration_params
+            WHERE category = 'Key Products' AND sku IS NOT NULL
         """)
-        wm_row = cursor.fetchone()
-        sync_ts = None
-        sync_ts_display = None
-        if wm_row and wm_row[0]:
-            wm_dt = wm_row[0]
-            if isinstance(wm_dt, str):
-                wm_dt = datetime.fromisoformat(wm_dt.replace('Z', '+00:00'))
-            if wm_dt.tzinfo is None:
-                wm_dt = pytz.UTC.localize(wm_dt)
-            central = pytz.timezone('US/Central')
-            wm_ct = wm_dt.astimezone(central)
-            sync_ts = wm_dt.isoformat()
-            sync_ts_display = wm_ct.strftime('%-I:%M %p CT')
-
-        # ── 2. Main aggregation: (sku, sku_lot) → units + product name ──────
-        # order_items_inbox.sku already stores the resolved base SKU (written
-        # by the sync worker via resolve_sku_and_quantity).  No variant join needed.
-        # COALESCE(oi.sku_lot, o.lot_stamp) is the belt-and-suspenders fallback:
-        # the sync now populates sku_lot from CF1 for awaiting-shipment orders,
-        # but lot_stamp (from orders_inbox) covers any order already in the DB
-        # before that fix was deployed.
-        cursor.execute("""
-            SELECT
-                oi.sku,
-                COALESCE(oi.sku_lot, o.lot_stamp) AS sku_lot,
-                cp.parameter_name  AS product_name,
-                SUM(oi.quantity)   AS total_units
-            FROM order_items_inbox oi
-            JOIN orders_inbox o ON oi.order_inbox_id = o.id
-            LEFT JOIN configuration_params cp
-                   ON cp.sku = oi.sku AND cp.category = 'Key Products'
-            WHERE o.status IN ('awaiting_shipment', 'pending')
-              AND oi.quantity > 0
-            GROUP BY oi.sku, COALESCE(oi.sku_lot, o.lot_stamp), cp.parameter_name
-            ORDER BY oi.sku ASC, COALESCE(oi.sku_lot, o.lot_stamp) NULLS FIRST
-        """)
-        item_rows = cursor.fetchall()
-
-        # ── 3. Benco subtotal (overlapping subset — separate query) ─────────
-        cursor.execute("""
-            SELECT COALESCE(SUM(oi.quantity), 0)
-            FROM order_items_inbox oi
-            JOIN orders_inbox o ON oi.order_inbox_id = o.id
-            WHERE o.status IN ('awaiting_shipment', 'pending')
-              AND oi.quantity > 0
-              AND o.ship_company ILIKE '%%BENCO%%'
-        """)
-        benco_units = int(cursor.fetchone()[0] or 0)
-
-        # ── 4. Expedited subtotal (overlapping subset — separate query) ──────
-        cursor.execute("""
-            SELECT COALESCE(SUM(oi.quantity), 0)
-            FROM order_items_inbox oi
-            JOIN orders_inbox o ON oi.order_inbox_id = o.id
-            WHERE o.status IN ('awaiting_shipment', 'pending')
-              AND oi.quantity > 0
-              AND o.shipping_service_code IN (
-                  'fedex_2day', 'fedex_standard_overnight', 'ups_2nd_day_air'
-              )
-        """)
-        expedited_units = int(cursor.fetchone()[0] or 0)
-
+        product_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+        promo_map = load_promo_map(conn)
+        variant_map = load_variant_map(conn)
         cursor.close()
         conn.close()
 
-        # ── 5. Build per-SKU structure with lot sub-rows ─────────────────────
-        sku_data = {}          # {sku: {base_sku, product_name, lots, total_units}}
-        grand_total  = 0
-        unresolved_skus = []   # SKUs with no product name in configuration_params
-
-        for sku, sku_lot, product_name, total_units in item_rows:
-            total_units = int(total_units or 0)
-            grand_total += total_units
-
-            if sku not in sku_data:
-                resolved_name = product_name or None
-                sku_data[sku] = {
-                    'base_sku':     sku,
-                    'product_name': resolved_name or sku,   # fall back to SKU string
-                    'lots':         [],
-                    'total_units':  0,
-                }
-                if resolved_name is None:
-                    unresolved_skus.append(sku)
-
-            sku_data[sku]['total_units'] += total_units
-            # Extract just the lot number for display (e.g. "260169" from "17612 - 260169").
-            # sku_lot is the full compound string written by the lot tagger; the SKU
-            # portion is redundant in the table since it's already in the SKU column.
-            lot_number = None
-            if sku_lot and ' - ' in sku_lot:
-                lot_number = sku_lot.split(' - ', 1)[1].strip()
-            elif sku_lot:
-                lot_number = sku_lot  # unexpected format — show as-is
-            sku_data[sku]['lots'].append({
-                'sku_lot':    sku_lot,     # full compound string (kept for internal use)
-                'lot_number': lot_number,  # display value: "260169" or None
-                'units':      total_units,
-            })
-
-        # Mark the first lot as end-of-lot when a SKU has more than one active lot.
-        # The SQL sorts lots ascending (lowest lot_number first), so lots[0] is always
-        # the oldest lot being drawn down.  The frontend uses this flag to render a
-        # muted "End of Lot" badge without having to re-derive the condition itself.
-        for entry in sku_data.values():
-            multi = len(entry['lots']) > 1
-            for i, lot in enumerate(entry['lots']):
-                lot['is_end_of_lot'] = (multi and i == 0)
-
-        summary_rows = sorted(sku_data.values(), key=lambda x: x['base_sku'])
-
+        api_key, api_secret = get_shipstation_credentials()
+        orders = fetch_awaiting_shipment_orders(api_key, api_secret)
+        summary = build_live_shipment_summary(
+            orders, promo_map, variant_map, product_names
+        )
+        fetched_at = datetime.now(timezone.utc)
+        fetched_ct = fetched_at.astimezone(ZoneInfo("America/Chicago"))
         return jsonify({
-            'success':              True,
-            'rows':                 summary_rows,
-            'grand_total':          grand_total,
-            'benco_units':          benco_units,
-            'expedited_units':      expedited_units,
-            'sync_timestamp':       sync_ts,
-            'sync_timestamp_display': sync_ts_display,
-            'unresolved_skus':      unresolved_skus,
+            'success': True,
+            **summary,
+            'sync_timestamp': fetched_at.isoformat(),
+            'sync_timestamp_display': fetched_ct.strftime('%-I:%M %p CT'),
         })
 
     except Exception as e:
