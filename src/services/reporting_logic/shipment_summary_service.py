@@ -26,7 +26,7 @@ def _order_lot_stamp(order):
 
 
 def build_live_shipment_summary(orders, promo_map, variant_map, product_names):
-    """Resolve variants/promos and aggregate current units by base SKU and lot."""
+    """Aggregate approved products after resolving configured variants and promos."""
     grouped = defaultdict(int)
     benco_units = 0
     expedited_units = 0
@@ -48,6 +48,9 @@ def build_live_shipment_summary(orders, promo_map, variant_map, product_names):
             base_sku, effective_quantity = resolve_sku_and_quantity(
                 raw_base, quantity, promo_map, variant_map
             )
+            if base_sku not in product_names:
+                continue
+
             if item_lot and " - " in item_lot:
                 lot_number = item_lot.split(" - ", 1)[1].strip()
                 item_lot = f"{base_sku} - {lot_number}"
@@ -65,7 +68,6 @@ def build_live_shipment_summary(orders, promo_map, variant_map, product_names):
                 expedited_units += effective_quantity
 
     by_sku = {}
-    unresolved_skus = set()
     grand_total = 0
 
     for (sku, sku_lot), units in sorted(
@@ -73,12 +75,9 @@ def build_live_shipment_summary(orders, promo_map, variant_map, product_names):
     ):
         grand_total += units
         if sku not in by_sku:
-            product_name = product_names.get(sku)
-            if not product_name:
-                unresolved_skus.add(sku)
             by_sku[sku] = {
                 "base_sku": sku,
-                "product_name": product_name or sku,
+                "product_name": product_names[sku],
                 "lots": [],
                 "total_units": 0,
             }
@@ -109,5 +108,4 @@ def build_live_shipment_summary(orders, promo_map, variant_map, product_names):
         "grand_total": grand_total,
         "benco_units": benco_units,
         "expedited_units": expedited_units,
-        "unresolved_skus": sorted(unresolved_skus),
     }

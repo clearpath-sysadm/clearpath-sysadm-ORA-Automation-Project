@@ -92,3 +92,40 @@ def test_subtotals_use_effective_units_not_raw_line_quantities():
 
     assert summary["benco_units"] == 30
     assert summary["expedited_units"] == 18
+
+
+def test_excludes_unapproved_base_variant_and_promo_like_skus_from_all_totals():
+    orders = [
+        order(
+            ("17612", 2),
+            ("17811-EN-100", 10),
+            ("18565-25", 20),
+            ("18684", 30),
+            company="BENCO Dental",
+            service_code="fedex_2day",
+        ),
+    ]
+
+    summary = build_live_shipment_summary(orders, PROMOS, VARIANTS, NAMES)
+
+    assert totals(summary) == {"17612": 2}
+    assert summary["grand_total"] == 2
+    assert summary["benco_units"] == 2
+    assert summary["expedited_units"] == 2
+    assert "unresolved_skus" not in summary
+
+
+def test_excludes_configured_mapping_when_resolved_base_is_not_approved():
+    promos = {**PROMOS, "99998": "99999"}
+    variants = {
+        **VARIANTS,
+        "88888-6": {"base_sku": "88888", "unit_multiplier": 6},
+    }
+    orders = [order(("99998", 4), ("88888-6", 3))]
+
+    summary = build_live_shipment_summary(orders, promos, variants, NAMES)
+
+    assert summary["rows"] == []
+    assert summary["grand_total"] == 0
+    assert summary["benco_units"] == 0
+    assert summary["expedited_units"] == 0
