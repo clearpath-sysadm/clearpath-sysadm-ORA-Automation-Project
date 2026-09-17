@@ -99,3 +99,17 @@ mtime_ms = 1789653533263
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/e05a5258-4dca-4c33-be57-ee85c443fde2/bf4e36af-869e-407d-bb4b-41f5b936a732"
 storage_version_token = "1789653575832075"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "-OZM8JTxCTLDRKA5ha0BK"
+uri = "file://deliverables/app-sop-templates/06_Order_Corrections_and_Cancellations_SOP.docx"
+type = "word_document"
+title = "Order Corrections and Cancellations SOP"
+description = "Editable controlled Word SOP covering exact-order lookup, ShipStation sync, cancellation, duplicate resolution, restricted recreation, and downstream verification."
+logical_id = "7fd0fa59-2592-4df4-90ee-9a5ee854b7fc"
+content_hash = "sha256:37b7b112843cd85e0957238e337a34201ed5659c84be76eb8b5860393f39ae0f"
+size = 41896
+mtime_ms = 1789654012442
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/7fd0fa59-2592-4df4-90ee-9a5ee854b7fc/e4df2d30-f4d1-4a95-9708-d1fc923cf915"
+storage_version_token = "1789654091728599"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
