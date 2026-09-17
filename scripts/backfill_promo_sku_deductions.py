@@ -196,6 +196,7 @@ def run_backfill():
         FROM inventory_transactions it
         JOIN sku_promotions sp ON sp.base_sku = it.sku AND sp.active = TRUE
         WHERE it.transaction_type = 'Ship'
+          AND it.archived_at IS NULL
           AND it.shipstation_order_id IN (
             SELECT oi.shipstation_order_id
             FROM orders_inbox oi

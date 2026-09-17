@@ -545,6 +545,7 @@
                                 <option value="all">All Lots</option>
                                 <option value="active">Active</option>
                                 <option value="non-depleted">Non-Depleted</option>
+                                <option value="archived">Archived history</option>
                             </select>
                             <button class="btn" onclick="openAddModal()">
                                 <span>➕</span> Add Lot
@@ -572,7 +573,7 @@
                             Lot assignments used by the lot tagger to determine which lot number to stamp
                             on new orders per SKU. Only <strong>Active</strong> assignments are used by
                             the tagger. To retire an assignment, <strong>Deactivate</strong> it — do not
-                            delete the underlying lot record. Assignments do <strong>not</strong> receive
+                            archive the underlying lot record. Assignments do <strong>not</strong> receive
                             stock or release backorders; use <strong>Lot Inventory</strong> to record a receipt.
                         </p>
                         <div id="sku-lot-table-container">
@@ -791,10 +792,12 @@
             loadSkuLots();
         });
 
+        let includeArchivedLots = false;
+
         // Load lots from API
         async function loadLots() {
             try {
-                const response = await fetch('/api/lot_inventory');
+                const response = await fetch(`/api/lot_inventory${includeArchivedLots ? '?include_archived=true' : ''}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -812,6 +815,8 @@
 
         function setLotInventoryFilter(filter) {
             lotInventoryFilter = filter;
+            includeArchivedLots = filter === 'archived';
+            loadLots();
             renderTable();
         }
 
@@ -820,6 +825,8 @@
                 const balance = Number(lot.balance) || 0;
                 const status = String(lot.status || '').toLowerCase();
 
+                if (lotInventoryFilter === 'archived') return Boolean(lot.archived_at);
+                if (lot.archived_at) return false;
                 if (lotInventoryFilter === 'all') return true;
                 if (lotInventoryFilter === 'active') return status === 'active';
                 if (lotInventoryFilter === 'non-depleted') return status !== 'depleted';
@@ -889,11 +896,13 @@
                     const priority = fifoPriorityById.get(lot.id) || index + 1;
                     html += `<td><span class="priority-indicator ${priority === 1 ? 'priority-1' : ''}">#${priority}</span></td>`;
 
-                    html += `<td>${getStatusBadge(lot.status, lot.balance, lot.id)}</td>`;
+                    html += `<td>${lot.archived_at ? '<span class="status-badge" style="color:var(--text-secondary);">Archived</span>' : getStatusBadge(lot.status, lot.balance, lot.id)}</td>`;
                     html += `<td><div class="action-buttons">
-                        <button class="btn btn-sm" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')">Correct</button>
-                        <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>
-                        <button class="btn btn-sm" onclick="deleteLot(${lot.id})">Delete</button>
+                        ${lot.archived_at
+                            ? `<span style="font-size:12px;color:var(--text-secondary);" title="${(lot.archive_reason || '').replace(/"/g, '&quot;')}">Archived${lot.archived_by ? ` by ${lot.archived_by}` : ''}</span><button class="btn btn-sm" data-admin-only onclick="restoreLot(${lot.id})">Restore</button>`
+                            : `<button class="btn btn-sm" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')">Correct</button>
+                               <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>
+                               <button class="btn btn-sm" data-admin-only onclick="archiveLot(${lot.id})">Archive</button>`}
                     </div></td>`;
                     html += '</tr>';
                 });
@@ -931,14 +940,16 @@
                     html += `</div>`;
                     html += `</div>`;
 
-                    html += `<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">`;
-                    html += getStatusBadge(lot.status, lot.balance, lot.id);
+                     html += `<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">`;
+                     html += lot.archived_at ? '<span class="status-badge" style="color:var(--text-secondary);">Archived</span>' : getStatusBadge(lot.status, lot.balance, lot.id);
                     html += `</div>`;
 
                     html += `<div class="lot-card-footer">`;
-                    html += `<button class="btn btn-sm lot-action-correct" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')"><span aria-hidden="true">↕</span> Correct</button>`;
-                    html += `<button class="btn btn-sm lot-action-edit" onclick="editLot(${lot.id})"><span aria-hidden="true">✎</span> Edit</button>`;
-                    html += `<button class="btn btn-sm lot-action-delete" onclick="deleteLot(${lot.id})"><span aria-hidden="true">×</span> Delete</button>`;
+                    html += lot.archived_at
+                        ? `<button class="btn btn-sm" data-admin-only onclick="restoreLot(${lot.id})">Restore</button>`
+                        : `<button class="btn btn-sm lot-action-correct" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')"><span aria-hidden="true">↕</span> Correct</button>
+                           <button class="btn btn-sm lot-action-edit" onclick="editLot(${lot.id})"><span aria-hidden="true">✎</span> Edit</button>
+                           <button class="btn btn-sm lot-action-delete" data-admin-only onclick="archiveLot(${lot.id})"><span aria-hidden="true">▣</span> Archive</button>`;
                     html += `</div>`;
                     html += `</div>`;
                 });
@@ -946,6 +957,15 @@
             html += '</div>';
             
             container.innerHTML = html;
+            // Auth initialization is asynchronous; apply the admin gate after
+            // dynamically-rendered archive/restore controls are in the DOM.
+            if (window.authManager) {
+                window.authManager.getAuthStatus().then(() => {
+                    container.querySelectorAll('[data-admin-only]').forEach(el => {
+                        el.hidden = !window.authManager.isAdmin();
+                    });
+                });
+            }
         }
 
         // Format date
@@ -1190,28 +1210,55 @@
             }
         }
 
-        // Delete lot
-        async function deleteLot(id) {
-            if (!confirm('Are you sure you want to delete this lot? This action cannot be undone.')) {
-                return;
-            }
-
+        // Archive lot (identity, transactions, and historical order references remain intact).
+        async function archiveLot(id) {
             try {
-                const response = await fetch(`/api/lot_inventory/${id}`, {
-                    method: 'DELETE'
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    loadLots();
-                    showSuccess('Lot deleted successfully');
-                } else {
-                    showError(data.error || 'Failed to delete lot');
+                const impactResponse = await fetch(`/api/lot_inventory/${id}/archive-impact`);
+                const impact = await impactResponse.json();
+                if (!impactResponse.ok || impact.error) throw new Error(impact.error || 'Unable to preview archive impact');
+                const summary = `Archive this lot? Nothing will be removed; history remains available.\n\n` +
+                    `Transactions: ${impact.transaction_count ?? impact.transactions ?? 0}\n` +
+                    `Order-line references preserved: ${impact.order_line_count ?? impact.order_lines ?? 0}\n` +
+                    `Open reservations: ${impact.open_reservation_count ?? impact.reservations ?? 0}`;
+                if (!confirm(summary)) return;
+                const reason = prompt('Enter a meaningful reason for archiving this lot:');
+                if (!reason || reason.trim().length < 5) {
+                    showError('A meaningful archive reason (at least 5 characters) is required.');
+                    return;
                 }
+                const response = await fetch(`/api/lot_inventory/${id}`, {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({reason: reason.trim()})
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'Failed to archive lot');
+                loadLots();
+                showSuccess('Lot archived. Historical references were preserved.');
             } catch (error) {
                 console.error('Error:', error);
-                showError('Failed to delete lot');
+                showError(error.message || 'Failed to archive lot');
+            }
+        }
+
+        async function restoreLot(id) {
+            const reason = prompt('Enter a meaningful reason for restoring this lot:');
+            if (!reason || reason.trim().length < 5) {
+                showError('A meaningful restore reason (at least 5 characters) is required.');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/lot_inventory/${id}/restore`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({reason: reason.trim()})
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'Failed to restore lot');
+                loadLots();
+                showSuccess('Lot restored successfully.');
+            } catch (error) {
+                showError(error.message || 'Failed to restore lot');
             }
         }
 

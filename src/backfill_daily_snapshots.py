@@ -43,6 +43,7 @@ def get_transactions_by_date(conn):
     cursor.execute("""
         SELECT date, sku, transaction_type, SUM(quantity) as total_qty
         FROM inventory_transactions
+        WHERE archived_at IS NULL
         GROUP BY date, sku, transaction_type
         ORDER BY date, sku
     """)

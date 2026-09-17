@@ -128,6 +128,7 @@ def get_inventory_transactions_from_db():
             SELECT date, sku, quantity, transaction_type, notes
             FROM inventory_transactions
             WHERE NOT (transaction_type = 'Ship' AND shipstation_order_id IS NOT NULL)
+              AND archived_at IS NULL
             ORDER BY date DESC
         """)
         

@@ -48,6 +48,7 @@ CANDIDATE_LOTS_QUERY = """
     JOIN lot_balances lb ON lb.lot_id = l.lot_id
     WHERE lb.balance > 0
       AND l.status = 'active'
+      AND l.archived_at IS NULL
     ORDER BY
         s.sku_code,
         (l.lot_number ~ '^[0-9]+$') DESC,

@@ -103,6 +103,7 @@ def get_active_sku_lot(base_sku: str) -> str:
         FROM lots l
         JOIN skus s ON s.sku_id = l.sku_id
         WHERE s.sku_code = %s AND l.status = 'active'
+          AND l.archived_at IS NULL
         ORDER BY l.lot_id DESC LIMIT 1
     """, (base_sku,))
     return rows[0][0] if rows else None

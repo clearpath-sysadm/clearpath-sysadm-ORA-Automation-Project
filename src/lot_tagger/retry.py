@@ -73,6 +73,7 @@ def retry_unresolved_lot_tagging_failures(affected_sku: str | None = None) -> di
                     JOIN lot_balances lb ON lb.lot_id = l.lot_id
                     WHERE s.sku_code = %s
                       AND l.status = 'active'
+                      AND l.archived_at IS NULL
                       AND lb.balance > 0
                 )
             """, (affected_sku,))

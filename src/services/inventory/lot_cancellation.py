@@ -57,12 +57,15 @@ def reverse_lot_inventory(
         else str(cancel_date)[:10]
     )
 
-    # Find all Ship rows for this shipstation_order_id
+    # Only live Ship effects can be reversed. An archived Ship is already
+    # excluded from lot_balances, so crediting it with a live Cancel row would
+    # double-return the same inventory.
     cursor.execute("""
         SELECT id, lot_id, sku, quantity
         FROM inventory_transactions
         WHERE shipstation_order_id = %s
           AND transaction_type = 'Ship'
+          AND archived_at IS NULL
         ORDER BY id
     """, (ss_id,))
     ship_rows = cursor.fetchall()
@@ -77,7 +80,9 @@ def reverse_lot_inventory(
     reversals_inserted = 0
 
     for _ship_id, lot_id, sku, quantity in ship_rows:
-        # Idempotency: check for an existing Cancel row for this lot/order.
+        # Idempotency: any existing Cancel row, including an intentionally
+        # archived one, means this shipment has already had a reversal record.
+        # Do not silently recreate an administrator-archived correction.
         # NULL lot_id requires IS NULL comparison (= NULL is always false in SQL).
         if lot_id is not None:
             cursor.execute("""

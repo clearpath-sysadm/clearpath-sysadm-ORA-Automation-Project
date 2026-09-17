@@ -90,6 +90,7 @@ def run(write: bool = False):
               WHERE it.sku = %s
                 AND it.shipstation_order_id = si.shipstation_order_id
                 AND it.transaction_type = 'Ship'
+                AND it.archived_at IS NULL
           )
         ORDER BY si.ship_date, si.order_number
     """, (SKU, SKU))

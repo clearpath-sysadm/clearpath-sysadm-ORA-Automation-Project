@@ -141,3 +141,17 @@ mtime_ms = 1789655307347
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/b533916c-2353-44ff-9d0f-c5a3c5758344/044455de-f6d2-4716-816a-dbdb95ac6e4e"
 storage_version_token = "1789655336555383"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "B5nAQ4ND9GMb5ljjx-gfF"
+uri = "file://docs/Inventory_and_Lot_Control_SOP_Rev_02.docx"
+type = "word_document"
+title = "Inventory and Lot Control SOP — Rev 02"
+description = "Updated controlled SOP covering archive/restore, status distinctions, safeguards, filters, and preserved audit history."
+logical_id = "21844940-2b08-4f91-a8ee-5fd2780f9e5f"
+content_hash = "sha256:729ac6d47d5663380b18956f35ecdccc942c69b3ff15ee5881d4237a041f1ef4"
+size = 30173
+mtime_ms = 1789659644238
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/21844940-2b08-4f91-a8ee-5fd2780f9e5f/cacd07e4-df22-4616-b7b7-10bbc9e6efd6"
+storage_version_token = "1789660092961370"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

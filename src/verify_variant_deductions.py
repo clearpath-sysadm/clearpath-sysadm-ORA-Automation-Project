@@ -59,6 +59,7 @@ def check_order(cursor, order_number, ss_order_id, base_sku, expected_qty, note)
          WHERE shipstation_order_id = %s
            AND sku = %s
            AND transaction_type = 'deduction'
+              AND archived_at IS NULL
         """,
         (ss_order_id, base_sku),
     )

@@ -62,6 +62,7 @@ def find_orders_needing_deduction(limit=None):
               FROM inventory_transactions it
               WHERE it.shipstation_order_id = oi.shipstation_order_id
                 AND it.transaction_type = 'Ship'
+                AND it.archived_at IS NULL
           )
         ORDER BY oi.order_number
     """

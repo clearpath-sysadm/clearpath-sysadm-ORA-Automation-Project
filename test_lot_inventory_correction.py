@@ -18,9 +18,9 @@ class TestLotInventoryCorrection(unittest.TestCase):
         conn = MagicMock()
         cursor = MagicMock()
         cursor.fetchone.side_effect = [
-            ('17612',),  # SKU for the lot
-            (42,),        # inserted transaction ID
-            (0,),         # live balance after the correction
+            ('17612', None),  # SKU and archive state for the lot
+            (42,),             # inserted transaction ID
+            (0,),              # live balance after the correction
         ]
         conn.cursor.return_value = cursor
 

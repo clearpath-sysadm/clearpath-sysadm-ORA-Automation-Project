@@ -36,6 +36,47 @@ from src.services.operational_reminders import (
 # Initialize logger
 logger = logging.getLogger(__name__)
 
+
+def _archive_actor():
+    """Return a stable audit actor for archive/restore lifecycle events."""
+    if current_user and getattr(current_user, "is_authenticated", False):
+        return getattr(current_user, "email", None) or getattr(current_user, "first_name", None) or str(getattr(current_user, "id", "unknown"))
+    return "unknown"
+
+
+def _require_archive_admin():
+    if not current_user or not getattr(current_user, "is_authenticated", False):
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    if getattr(current_user, "role", None) != "admin":
+        return jsonify({"success": False, "error": "Admin role required for archive and restore"}), 403
+    return None
+
+
+def _archive_reason():
+    data = request.get_json(silent=True) or {}
+    reason = str(data.get("reason", "")).strip()
+    if len(reason) < 5:
+        return None, jsonify({
+            "success": False,
+            "error": "A meaningful reason of at least 5 characters is required"
+        }), 400
+    return reason, None, None
+
+
+def _lifecycle_event(cursor, entity_type, entity_id, action, reason, details=None):
+    cursor.execute("""
+        INSERT INTO inventory_lifecycle_events
+            (entity_type, entity_id, action, actor, reason, details)
+        VALUES (%s, %s, %s, %s, %s, %s::jsonb)
+    """, (entity_type, entity_id, action, _archive_actor(), reason,
+          __import__("json").dumps(details or {})))
+
+
+def _lock_inventory_sku(cursor, sku):
+    """Serialize archive decisions with lot reservation creation for this SKU."""
+    from src.services.inventory.lot_reservation import _sku_lock_key
+    cursor.execute("SELECT pg_advisory_xact_lock(%s)", (_sku_lock_key(sku),))
+
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # Session and auth configuration
@@ -782,6 +823,7 @@ def backfill_18795():
                   SELECT 1 FROM inventory_transactions it
                   WHERE it.sku=%s
                     AND it.transaction_type='Ship'
+                    AND it.archived_at IS NULL
                     AND (it.notes = si.order_number
                          OR it.notes LIKE si.order_number || ' |%%')
               )
@@ -1341,6 +1383,7 @@ def api_charge_report():
             SELECT date, sku, transaction_type, quantity
             FROM inventory_transactions
             WHERE date >= %s AND date <= %s
+              AND archived_at IS NULL
         """
         transactions = execute_query(transactions_query, (str(start_date), str(end_date)))
         
@@ -1536,6 +1579,7 @@ def api_charge_report_receipts():
             SELECT date, sku, quantity, notes, created_at
             FROM inventory_transactions
             WHERE transaction_type = 'Receive'
+              AND archived_at IS NULL
               AND date >= %s AND date <= %s
             ORDER BY date ASC, created_at ASC
         """, (first_day, last_day))
@@ -1761,6 +1805,7 @@ def api_charge_report_self_check():
             SELECT sku, SUM(quantity) as total
             FROM inventory_transactions
             WHERE date <= %s
+              AND archived_at IS NULL
             GROUP BY sku
             HAVING SUM(quantity) < 0
         """
@@ -1857,6 +1902,7 @@ def api_charge_report_self_check():
                 SELECT sku, SUM(quantity) as total
                 FROM inventory_transactions
                 WHERE date <= %s
+                  AND archived_at IS NULL
                 GROUP BY sku
                 ORDER BY sku
             """
@@ -1911,6 +1957,7 @@ def api_charge_report_self_check():
                     SUM(quantity) as eod_inventory
                 FROM inventory_transactions
                 WHERE date <= %s
+                  AND archived_at IS NULL
                 GROUP BY sku
             """
             actual_inv = execute_query(actual_space_query, (str(sample_date),))
@@ -2287,15 +2334,19 @@ def api_get_inventory_transactions():
         end_date = request.args.get('end_date')
         sku = request.args.get('sku')
         transaction_type = request.args.get('transaction_type')
+        include_archived = request.args.get('include_archived', '').lower() == 'true'
+        if include_archived and getattr(current_user, "role", None) != "admin":
+            return jsonify({'success': False, 'error': 'Admin role required to view archived records'}), 403
         
         query = """
             SELECT it.id, it.date, it.sku, it.quantity, it.transaction_type,
-                   it.notes, it.created_at, it.lot_id, l.lot_number
+                   it.notes, it.created_at, it.lot_id, l.lot_number,
+                   it.archived_at, it.archived_by, it.archive_reason
             FROM inventory_transactions it
             LEFT JOIN lots l ON l.lot_id = it.lot_id
-            WHERE 1=1
+            WHERE (%s OR it.archived_at IS NULL)
         """
-        params = []
+        params = [include_archived]
         
         if start_date:
             query += " AND it.date >= %s"
@@ -2329,7 +2380,10 @@ def api_get_inventory_transactions():
                 'notes': row[5] or '',
                 'created_at': row[6],
                 'lot_id': row[7],
-                'lot_number': row[8] or ''
+                'lot_number': row[8] or '',
+                'archived_at': row[9],
+                'archived_by': row[10],
+                'archive_reason': row[11] or ''
             })
         
         return jsonify(transactions)
@@ -2355,6 +2409,7 @@ def api_lots_by_sku(sku):
             JOIN skus s ON s.sku_id = l.sku_id
             LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
             WHERE s.sku_code = %s
+              AND l.archived_at IS NULL
               AND NOT (l.status = 'inactive' AND COALESCE(lb.balance, 0) = 0)
             ORDER BY l.received_date ASC NULLS LAST, l.lot_id ASC
         """, (sku,))
@@ -2463,6 +2518,18 @@ def api_create_inventory_transaction():
 
         conn = get_connection()
         cursor = conn.cursor()
+        if lot_id is not None:
+            cursor.execute(
+                "SELECT archived_at FROM lots WHERE lot_id = %s FOR UPDATE",
+                (lot_id,),
+            )
+            lot_state = cursor.fetchone()
+            if not lot_state:
+                conn.close()
+                return jsonify({'success': False, 'error': 'Lot not found'}), 404
+            if lot_state[0] is not None:
+                conn.close()
+                return jsonify({'success': False, 'error': 'Archived lots cannot receive new transactions'}), 409
 
         # Insert transaction — lot_balances VIEW recalculates automatically from
         # inventory_transactions, so no secondary UPDATE to inventory_current is needed.
@@ -2590,7 +2657,7 @@ def api_update_inventory_transaction(transaction_id):
 
         # Get old transaction (needed to check it exists)
         cursor.execute("""
-            SELECT sku, quantity, transaction_type 
+            SELECT sku, quantity, transaction_type, archived_at
             FROM inventory_transactions 
             WHERE id = %s
         """, (transaction_id,))
@@ -2603,7 +2670,22 @@ def api_update_inventory_transaction(transaction_id):
                 'error': 'Transaction not found'
             }), 404
         
-        old_sku, old_quantity, old_type = old_transaction
+        old_sku, old_quantity, old_type, old_archived_at = old_transaction
+        if old_archived_at is not None:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Archived transactions cannot be edited; restore it first'}), 409
+        if lot_id is not None:
+            cursor.execute(
+                "SELECT archived_at FROM lots WHERE lot_id = %s FOR UPDATE",
+                (lot_id,),
+            )
+            lot_state = cursor.fetchone()
+            if not lot_state:
+                conn.close()
+                return jsonify({'success': False, 'error': 'Lot not found'}), 404
+            if lot_state[0] is not None:
+                conn.close()
+                return jsonify({'success': False, 'error': 'Archived lots cannot receive transactions'}), 409
 
         # Update the transaction — lot_balances VIEW recalculates automatically.
         # No secondary UPDATE to inventory_current is needed.
@@ -2638,7 +2720,7 @@ def api_update_inventory_transaction(transaction_id):
 
 @app.route('/api/inventory_transactions/<int:transaction_id>', methods=['DELETE'])
 def api_delete_inventory_transaction(transaction_id):
-    """Delete inventory transaction"""
+    """Archive an inventory transaction without destroying its audit history."""
     from src.utils.server_logger import get_logger
     server_logger = get_logger()
     
@@ -2655,14 +2737,30 @@ def api_delete_inventory_transaction(transaction_id):
         pass
     
     try:
+        denied = _require_archive_admin()
+        if denied:
+            return denied
+        reason, error_response, error_status = _archive_reason()
+        if error_response:
+            return error_response, error_status
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Get transaction to reverse its effect before deleting
+        cursor.execute(
+            "SELECT sku FROM inventory_transactions WHERE id = %s",
+            (transaction_id,),
+        )
+        sku_row = cursor.fetchone()
+        if not sku_row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Transaction not found'}), 404
+        _lock_inventory_sku(cursor, sku_row[0])
+
+        # Lock the transaction so archive and restore cannot race.
         cursor.execute("""
-            SELECT sku, quantity, transaction_type 
+            SELECT sku, quantity, transaction_type, lot_id, archived_at
             FROM inventory_transactions 
             WHERE id = %s
+            FOR UPDATE
         """, (transaction_id,))
         transaction = cursor.fetchone()
         
@@ -2673,25 +2771,118 @@ def api_delete_inventory_transaction(transaction_id):
                 'error': 'Transaction not found'
             }), 404
         
-        sku, quantity, transaction_type = transaction
+        sku, quantity, transaction_type, lot_id, archived_at = transaction
+        if archived_at is not None:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Transaction is already archived'}), 409
+        projected_balance = None
+        reserved_quantity = 0
+        if lot_id is not None:
+            cursor.execute(
+                "SELECT archived_at FROM lots WHERE lot_id = %s FOR UPDATE",
+                (lot_id,),
+            )
+            lot_state = cursor.fetchone()
+            if lot_state and lot_state[0] is not None:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': 'Restore the archived lot before changing its transaction history'
+                }), 409
+            cursor.execute(
+                "SELECT COALESCE(balance, 0) FROM lot_balances WHERE lot_id = %s",
+                (lot_id,),
+            )
+            balance_row = cursor.fetchone()
+            current_balance = balance_row[0] if balance_row else 0
+            cursor.execute("""
+                SELECT COALESCE(SUM(reserved_qty), 0)
+                FROM lot_staging_reservations
+                WHERE lot_id = %s AND state = 'reserved'
+            """, (lot_id,))
+            reserved_quantity = cursor.fetchone()[0]
+            sign = 1 if transaction_type in ('Receive', 'Adjust Up', 'Repack', 'Cancel') else -1
+            projected_balance = current_balance - (sign * quantity)
+            if projected_balance < reserved_quantity:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': 'Archiving this transaction would underfund active lot reservations',
+                    'projected_balance': projected_balance,
+                    'reserved_quantity': reserved_quantity,
+                }), 409
 
-        # Delete the transaction — lot_balances VIEW recalculates automatically.
-        # No reversal UPDATE to inventory_current is needed.
-        cursor.execute("DELETE FROM inventory_transactions WHERE id = %s", (transaction_id,))
+        cursor.execute("""
+            UPDATE inventory_transactions
+            SET archived_at = NOW(), archived_by = %s, archive_reason = %s
+            WHERE id = %s
+        """, (_archive_actor(), reason, transaction_id))
+        _lifecycle_event(cursor, "transaction", transaction_id, "archive", reason, {
+            "sku": sku, "quantity": quantity, "transaction_type": transaction_type, "lot_id": lot_id
+        })
         conn.commit()
         conn.close()
         
-        server_logger.info(f"Inventory transaction #{transaction_id} deleted: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
+        server_logger.info(f"Inventory transaction #{transaction_id} archived: {transaction_type} {quantity} units of {sku}", source="Inventory", user=user_name, role=user_role)
         
         return jsonify({
             'success': True,
-            'message': 'Transaction deleted successfully'
+            'message': 'Transaction archived successfully',
+            'archived': True,
+            'projected_balance': projected_balance,
+            'reserved_quantity': reserved_quantity,
         })
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
+
+@app.route('/api/inventory_transactions/<int:transaction_id>/archive-impact', methods=['GET'])
+def api_inventory_transaction_archive_impact(transaction_id):
+    """Preview the balance effect and references before archiving a transaction."""
+    denied = _require_archive_admin()
+    if denied:
+        return denied
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT it.sku, it.quantity, it.transaction_type, it.lot_id,
+                   l.lot_number, it.archived_at, COALESCE(lb.balance, 0),
+                   COALESCE((
+                       SELECT SUM(r.reserved_qty)
+                       FROM lot_staging_reservations r
+                       WHERE r.lot_id = it.lot_id AND r.state = 'reserved'
+                   ), 0)
+            FROM inventory_transactions it
+            LEFT JOIN lots l ON l.lot_id = it.lot_id
+            LEFT JOIN lot_balances lb ON lb.lot_id = it.lot_id
+            WHERE it.id = %s
+        """, (transaction_id,))
+        row = cursor.fetchone()
+        conn.close()
+        if not row:
+            return jsonify({'success': False, 'error': 'Transaction not found'}), 404
+        sign = 1 if row[2] in ('Receive', 'Adjust Up', 'Repack', 'Cancel') else -1
+        projected_balance = row[6] - (sign * row[1]) if row[3] is not None else None
+        return jsonify({
+            'success': True,
+            'transaction_id': transaction_id,
+            'sku': row[0],
+            'quantity': row[1],
+            'transaction_type': row[2],
+            'lot_id': row[3],
+            'lot_number': row[4],
+            'archived': row[5] is not None,
+            'current_balance': row[6] if row[3] is not None else None,
+            'projected_balance': projected_balance,
+            'reserved_quantity': row[7],
+            'safe_to_archive': projected_balance is None or projected_balance >= row[7],
+        })
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
 
 @app.route('/api/inventory_transactions/skus', methods=['GET'])
 def api_get_skus():
@@ -2818,7 +3009,8 @@ def api_physical_count_adjustment():
         # Resolve the lot's authoritative SKU and current live balance together.
         # Never trust a client-provided SKU independently from its lot_id.
         cursor.execute("""
-            SELECT COALESCE(lb.balance, 0), s.sku_code, l.lot_number
+            SELECT COALESCE(lb.balance, 0), s.sku_code, l.lot_number,
+                   l.archived_at
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
@@ -2836,6 +3028,13 @@ def api_physical_count_adjustment():
         lot_balance = int(result[0])
         authoritative_sku = str(result[1])
         lot_number = result[2]
+        archived_at = result[3] if len(result) > 3 else None
+        if archived_at is not None:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Archived lots cannot receive physical-count adjustments; restore it first'
+            }), 409
         if str(sku) != authoritative_sku:
             conn.close()
             return jsonify({
@@ -2928,6 +3127,7 @@ def api_weekly_inventory_report():
             SELECT sku, MAX(created_at)
             FROM inventory_transactions
             WHERE sku IN ('17612', '17904', '17914', '18675', '18795')
+              AND archived_at IS NULL
             GROUP BY sku
         """) or []
         last_updated = {str(r[0]): str(r[1]) if r[1] else None for r in last_updated_rows}
@@ -3441,6 +3641,7 @@ def api_run_eom():
             SELECT date, sku, transaction_type, quantity
             FROM inventory_transactions
             WHERE date >= %s AND date <= %s
+              AND archived_at IS NULL
         """
         transactions = execute_query(transactions_query, (str(month_start), str(month_end)))
         
@@ -5000,17 +5201,22 @@ def api_get_sku_lots():
         conn = get_connection()
         cursor = conn.cursor()
 
+        include_archived = request.args.get('include_archived', '').lower() == 'true'
+        if include_archived and getattr(current_user, "role", None) != "admin":
+            return jsonify({'success': False, 'error': 'Admin role required to view archived records'}), 403
         cursor.execute("""
             SELECT l.lot_id,
                    s.sku_code,
                    l.lot_number,
                    l.status,
                    l.created_at,
-                   l.updated_at
+                   l.updated_at,
+                   l.archived_at
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
-            ORDER BY s.sku_code, l.lot_number
-        """)
+             WHERE (%s OR l.archived_at IS NULL)
+             ORDER BY s.sku_code, l.lot_number
+        """, (include_archived,))
 
         rows = cursor.fetchall()
         conn.close()
@@ -5023,7 +5229,8 @@ def api_get_sku_lots():
                 'lot':        row[2],
                 'active':     1 if row[3] == 'active' else 0,
                 'created_at': row[4],
-                'updated_at': row[5]
+                'updated_at': row[5],
+                'archived': row[6] is not None
             })
 
         return jsonify({
@@ -5138,6 +5345,17 @@ def api_update_sku_lot(sku_lot_id):
 
         conn = get_connection()
         cursor = conn.cursor()
+        cursor.execute("SELECT archived_at FROM lots WHERE lot_id = %s", (sku_lot_id,))
+        lot_state = cursor.fetchone()
+        if not lot_state:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        if lot_state[0] is not None:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Archived lots cannot be edited; restore the lot first'
+            }), 409
 
         # Ensure the SKU exists (create if new)
         cursor.execute("""
@@ -5179,7 +5397,7 @@ def api_update_sku_lot(sku_lot_id):
 
 @app.route('/api/sku_lots/<int:sku_lot_id>', methods=['DELETE'])
 def api_delete_sku_lot(sku_lot_id):
-    """Delete a SKU-Lot entry from the lots table"""
+    """Archive a SKU-Lot entry; never delete dependent history."""
     from src.utils.server_logger import get_logger
     server_logger = get_logger()
 
@@ -5195,6 +5413,12 @@ def api_delete_sku_lot(sku_lot_id):
         pass
 
     try:
+        denied = _require_archive_admin()
+        if denied:
+            return denied
+        reason, error_response, error_status = _archive_reason()
+        if error_response:
+            return error_response, error_status
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -5203,31 +5427,49 @@ def api_delete_sku_lot(sku_lot_id):
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             WHERE l.lot_id = %s
+            FOR UPDATE
         """, (sku_lot_id,))
         row = cursor.fetchone()
-        sku_info = f"SKU {row[0]} → Lot {row[1]}" if row else f"ID {sku_lot_id}"
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        sku_info = f"SKU {row[0]} → Lot {row[1]}"
+        _lock_inventory_sku(cursor, row[0])
 
-        # Clear FK references before deleting the lot
-        cursor.execute(
-            "DELETE FROM inventory_transactions WHERE lot_id = %s", (sku_lot_id,)
-        )
-        cursor.execute(
-            "UPDATE shipstation_order_line_items SET lot_id = NULL WHERE lot_id = %s",
-            (sku_lot_id,)
-        )
-        cursor.execute("DELETE FROM lots WHERE lot_id = %s", (sku_lot_id,))
+        cursor.execute("""
+            SELECT COUNT(*) FROM lot_staging_reservations
+            WHERE lot_id = %s AND state = 'reserved'
+        """, (sku_lot_id,))
+        active_reservations = cursor.fetchone()[0]
+        if active_reservations:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot has active reservations and cannot be archived',
+                            'active_reservations': active_reservations}), 409
+        cursor.execute("""
+            UPDATE lots
+            SET archived_at = NOW(), archived_by = %s, archive_reason = %s,
+                pre_archive_status = status, status = 'inactive', updated_at = NOW()
+            WHERE lot_id = %s AND archived_at IS NULL
+        """, (_archive_actor(), reason, sku_lot_id))
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot is already archived'}), 409
+        _lifecycle_event(cursor, "lot", sku_lot_id, "archive", reason, {
+            "sku_lot": sku_info
+        })
 
         conn.commit()
         conn.close()
 
         server_logger.info(
-            f"SKU-Lot deleted: {sku_info}", source="SKU-Lot",
+            f"SKU-Lot archived: {sku_info}", source="SKU-Lot",
             user=user_name, role=user_role
         )
         
         return jsonify({
             'success': True,
-            'message': 'SKU-Lot deleted successfully'
+            'message': 'SKU-Lot archived successfully',
+            'archived': True
         })
     except Exception as e:
         return jsonify({
@@ -5701,6 +5943,7 @@ def api_db_diagnostics():
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             WHERE l.status = 'active'
+              AND l.archived_at IS NULL
             ORDER BY s.sku_code
         """)
         active_lots = cursor.fetchall()
@@ -6906,6 +7149,7 @@ def api_recreate_manual_order(conflict_id):
                         FROM lots l
                         JOIN skus s ON s.sku_id = l.sku_id
                         WHERE s.sku_code = %s AND l.status = 'active'
+                          AND l.archived_at IS NULL
                         LIMIT 1
                     """, (base_sku,))
 
@@ -7045,6 +7289,7 @@ def api_bulk_recreate_manual_orders():
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             WHERE l.status = 'active'
+              AND l.archived_at IS NULL
         """)
         active_lots = {row[0]: row[1] for row in cursor.fetchall()}
 
@@ -7763,6 +8008,9 @@ def api_get_lot_inventory():
         conn = get_connection()
         cursor = conn.cursor()
 
+        include_archived = request.args.get('include_archived', '').lower() == 'true'
+        if include_archived and getattr(current_user, "role", None) != "admin":
+            return jsonify({'success': False, 'error': 'Admin role required to view archived records'}), 403
         cursor.execute("""
             SELECT
                 lb.lot_id,
@@ -7774,15 +8022,23 @@ def api_get_lot_inventory():
                 lb.notes,
                 lb.created_at,
                 lb.updated_at,
-                COUNT(CASE WHEN it.transaction_type = 'Receive' THEN 1 END) AS receive_count,
+                l.archived_at,
+                l.archived_by,
+                l.archive_reason,
+                COUNT(CASE WHEN it.transaction_type = 'Receive'
+                                AND it.archived_at IS NULL THEN 1 END) AS receive_count,
                 ARRAY_AGG(it.date ORDER BY it.date ASC)
-                    FILTER (WHERE it.transaction_type = 'Receive') AS receive_dates
+                    FILTER (WHERE it.transaction_type = 'Receive'
+                                  AND it.archived_at IS NULL) AS receive_dates
             FROM lot_balances lb
+            JOIN lots l ON l.lot_id = lb.lot_id
             LEFT JOIN inventory_transactions it ON it.lot_id = lb.lot_id
             GROUP BY lb.lot_id, lb.sku_code, lb.lot_number, lb.balance,
-                     lb.received_date, lb.status, lb.notes, lb.created_at, lb.updated_at
+                     lb.received_date, lb.status, lb.notes, lb.created_at,
+                     lb.updated_at, l.archived_at, l.archived_by, l.archive_reason
+            HAVING (%s OR MAX(l.archived_at) IS NULL)
             ORDER BY lb.sku_code ASC, lb.received_date ASC NULLS LAST
-        """)
+        """, (include_archived,))
 
         rows = cursor.fetchall()
         conn.close()
@@ -7799,8 +8055,12 @@ def api_get_lot_inventory():
                 'notes':         row[6] or '',
                 'created_at':    row[7],
                 'updated_at':    row[8],
-                'receive_count': int(row[9]) if row[9] else 0,
-                'receive_dates': list(row[10]) if row[10] else []
+                'archived_at':   row[9],
+                'archived':      row[9] is not None,
+                'archived_by':   row[10],
+                'archive_reason': row[11] or '',
+                'receive_count': int(row[12]) if row[12] else 0,
+                'receive_dates': list(row[13]) if row[13] else []
             })
 
         return jsonify({'success': True, 'lots': lots, 'count': len(lots)})
@@ -7912,18 +8172,23 @@ def api_update_lot_inventory(lot_id):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT l.status, COALESCE(lb.balance, 0), s.sku_code
+            SELECT l.status, COALESCE(lb.balance, 0), s.sku_code, l.archived_at
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
             WHERE l.lot_id = %s
+            FOR UPDATE
         """, (lot_id,))
         previous_lot = cursor.fetchone()
         if not previous_lot:
             conn.close()
             return jsonify({'success': False, 'error': 'Lot not found'}), 404
 
-        previous_status, previous_balance, sku = previous_lot
+        previous_status, previous_balance, sku = previous_lot[:3]
+        archived_at = previous_lot[3] if len(previous_lot) > 3 else None
+        if archived_at is not None:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Archived lots cannot be edited; restore it first'}), 409
         if (
             previous_status != 'active'
             and status == 'active'
@@ -7968,31 +8233,225 @@ def api_update_lot_inventory(lot_id):
 
 @app.route('/api/lot_inventory/<int:lot_id>', methods=['DELETE'])
 def api_delete_lot_inventory(lot_id):
-    """Delete a lot and all of its inventory transactions."""
+    """Archive a lot without deleting transactions or historical references."""
     try:
+        denied = _require_archive_admin()
+        if denied:
+            return denied
+        reason, error_response, error_status = _archive_reason()
+        if error_response:
+            return error_response, error_status
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Clear FK references before deleting the lot
-        cursor.execute(
-            "DELETE FROM inventory_transactions WHERE lot_id = %s", (lot_id,)
-        )
-        cursor.execute(
-            "UPDATE shipstation_order_line_items SET lot_id = NULL WHERE lot_id = %s",
-            (lot_id,)
-        )
-        cursor.execute("DELETE FROM lots WHERE lot_id = %s", (lot_id,))
-
-        if cursor.rowcount == 0:
+        cursor.execute("""
+            SELECT l.status, s.sku_code
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.lot_id = %s
+        """, (lot_id,))
+        lot_row = cursor.fetchone()
+        if not lot_row:
             conn.close()
             return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        _lock_inventory_sku(cursor, lot_row[1])
+        cursor.execute("SELECT status FROM lots WHERE lot_id = %s FOR UPDATE", (lot_id,))
+        cursor.fetchone()
+        cursor.execute("""
+            SELECT COUNT(*) FROM lot_staging_reservations
+            WHERE lot_id = %s AND state = 'reserved'
+        """, (lot_id,))
+        active_reservations = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM inventory_transactions WHERE lot_id = %s", (lot_id,))
+        transaction_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM shipstation_order_line_items WHERE lot_id = %s", (lot_id,))
+        line_reference_count = cursor.fetchone()[0]
+        if active_reservations:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot has active reservations and cannot be archived',
+                            'active_reservations': active_reservations}), 409
+        cursor.execute("""
+            UPDATE lots SET archived_at = NOW(), archived_by = %s, archive_reason = %s,
+                pre_archive_status = status, status = 'inactive', updated_at = NOW()
+            WHERE lot_id = %s AND archived_at IS NULL
+        """, (_archive_actor(), reason, lot_id))
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot is already archived'}), 409
+        cursor.execute("SELECT COALESCE(balance, 0) FROM lot_balances WHERE lot_id = %s", (lot_id,))
+        balance_row = cursor.fetchone()
+        _lifecycle_event(cursor, "lot", lot_id, "archive", reason, {
+            "balance": balance_row[0] if balance_row else 0,
+            "active_reservations": active_reservations,
+            "transaction_count": transaction_count,
+            "historical_line_references": line_reference_count,
+        })
 
         conn.commit()
         conn.close()
 
-        return jsonify({'success': True, 'message': 'Lot deleted successfully'})
+        return jsonify({'success': True, 'message': 'Lot archived successfully', 'archived': True,
+                        'historical_line_references': line_reference_count})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/lot_inventory/<int:lot_id>/impact', methods=['GET'])
+@app.route('/api/lot_inventory/<int:lot_id>/archive-impact', methods=['GET'])
+def api_lot_archive_impact(lot_id):
+    """Preview dependencies before an administrative lot archive."""
+    denied = _require_archive_admin()
+    if denied:
+        return denied
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT COALESCE(lb.balance, 0),
+                   (SELECT COUNT(*) FROM lot_staging_reservations
+                    WHERE lot_id = %s AND state = 'reserved'),
+                   (SELECT COUNT(*) FROM inventory_transactions WHERE lot_id = %s),
+                   (SELECT COUNT(*) FROM shipstation_order_line_items WHERE lot_id = %s),
+                   l.archived_at
+            FROM lots l LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
+            WHERE l.lot_id = %s
+        """, (lot_id, lot_id, lot_id, lot_id))
+        row = cur.fetchone()
+        conn.close()
+        if not row:
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        return jsonify({'success': True, 'lot_id': lot_id, 'balance': row[0],
+                        'active_reservations': row[1],
+                        'open_reservation_count': row[1],
+                        'transaction_count': row[2],
+                        'historical_line_references': row[3],
+                        'order_line_count': row[3],
+                        'archived': row[4] is not None})
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
+
+@app.route('/api/lot_inventory/<int:lot_id>/restore', methods=['POST'])
+def api_restore_lot_inventory(lot_id):
+    denied = _require_archive_admin()
+    if denied:
+        return denied
+    reason, error_response, error_status = _archive_reason()
+    if error_response:
+        return error_response, error_status
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT pre_archive_status, archived_at FROM lots
+            WHERE lot_id = %s FOR UPDATE
+        """, (lot_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        if row[1] is None:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot is not archived'}), 409
+        status = row[0] or 'inactive'
+        cur.execute("""
+            UPDATE lots SET status = %s, archived_at = NULL, archived_by = NULL,
+                archive_reason = NULL, pre_archive_status = NULL, updated_at = NOW()
+            WHERE lot_id = %s
+        """, (status, lot_id))
+        _lifecycle_event(cur, "lot", lot_id, "restore", reason, {"restored_status": status})
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Lot restored successfully', 'restored_status': status})
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
+
+@app.route('/api/inventory_transactions/<int:transaction_id>/restore', methods=['POST'])
+def api_restore_inventory_transaction(transaction_id):
+    denied = _require_archive_admin()
+    if denied:
+        return denied
+    reason, error_response, error_status = _archive_reason()
+    if error_response:
+        return error_response, error_status
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT sku FROM inventory_transactions WHERE id = %s",
+            (transaction_id,),
+        )
+        sku_row = cur.fetchone()
+        if not sku_row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Transaction not found'}), 404
+        _lock_inventory_sku(cur, sku_row[0])
+        cur.execute("""
+            SELECT lot_id, archived_at, sku, quantity, transaction_type
+            FROM inventory_transactions
+            WHERE id = %s FOR UPDATE
+        """, (transaction_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Transaction not found'}), 404
+        if row[1] is None:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Transaction is not archived'}), 409
+        projected_balance = None
+        reserved_quantity = 0
+        if row[0] is not None:
+            cur.execute(
+                "SELECT archived_at FROM lots WHERE lot_id = %s FOR UPDATE",
+                (row[0],),
+            )
+            lot = cur.fetchone()
+            if lot and lot[0] is not None:
+                conn.close()
+                return jsonify({'success': False, 'error': 'Restore the archived lot before restoring its transaction'}), 409
+            cur.execute(
+                "SELECT COALESCE(balance, 0) FROM lot_balances WHERE lot_id = %s",
+                (row[0],),
+            )
+            balance_row = cur.fetchone()
+            current_balance = balance_row[0] if balance_row else 0
+            cur.execute("""
+                SELECT COALESCE(SUM(reserved_qty), 0)
+                FROM lot_staging_reservations
+                WHERE lot_id = %s AND state = 'reserved'
+            """, (row[0],))
+            reserved_quantity = cur.fetchone()[0]
+            sign = 1 if row[4] in ('Receive', 'Adjust Up', 'Repack', 'Cancel') else -1
+            projected_balance = current_balance + (sign * row[3])
+            if projected_balance < reserved_quantity:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': 'Restoring this transaction would underfund active lot reservations',
+                    'projected_balance': projected_balance,
+                    'reserved_quantity': reserved_quantity,
+                }), 409
+        cur.execute("""
+            UPDATE inventory_transactions
+            SET archived_at = NULL, archived_by = NULL, archive_reason = NULL
+            WHERE id = %s
+        """, (transaction_id,))
+        _lifecycle_event(cur, "transaction", transaction_id, "restore", reason, {
+            "lot_id": row[0],
+            "projected_balance": projected_balance,
+            "reserved_quantity": reserved_quantity,
+        })
+        conn.commit()
+        conn.close()
+        return jsonify({
+            'success': True,
+            'message': 'Transaction restored successfully',
+            'projected_balance': projected_balance,
+            'reserved_quantity': reserved_quantity,
+        })
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
 
 
 @app.route('/api/lot_inventory/<int:lot_id>/correct', methods=['POST'])
@@ -8034,7 +8493,7 @@ def api_correct_lot_inventory(lot_id):
 
         # Resolve SKU for the lot
         cursor.execute("""
-            SELECT s.sku_code
+            SELECT s.sku_code, l.archived_at
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             WHERE l.lot_id = %s
@@ -8043,7 +8502,10 @@ def api_correct_lot_inventory(lot_id):
         if not row:
             conn.close()
             return jsonify({'success': False, 'error': 'Lot not found'}), 404
-        sku = row[0]
+        sku, archived_at = row
+        if archived_at is not None:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Archived lots cannot receive corrections; restore it first'}), 409
 
         # Positive quantity stored; sign is derived from correction_type
         cursor.execute("""
@@ -10055,6 +10517,7 @@ def backfill_inventory_snapshots():
         cursor.execute("""
             SELECT date, sku, transaction_type, SUM(quantity) as total_qty
             FROM inventory_transactions
+            WHERE archived_at IS NULL
             GROUP BY date, sku, transaction_type
             ORDER BY date, sku
         """)

@@ -149,6 +149,17 @@ def reserve_lot_for_order(
     release_reservation(conn, shipstation_order_id, sku, reason=f'retag ({source})')
 
     for lot_id, lot_number, _snapshot_balance in candidate_lots:
+        # Candidate lists are snapshots built before the advisory lock. Recheck
+        # eligibility under the lock so an archive/deactivation that won the
+        # race cannot receive a new reservation.
+        cursor.execute("""
+            SELECT status, archived_at
+            FROM lots
+            WHERE lot_id = %s
+        """, (lot_id,))
+        lot_state = cursor.fetchone()
+        if not lot_state or lot_state[0] != 'active' or lot_state[1] is not None:
+            continue
         available = get_available_balance(conn, lot_id)
         if available >= needed_qty:
             cursor.execute("""

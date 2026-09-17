@@ -290,6 +290,10 @@
                             <option value="Adjust Down">Adjust Down</option>
                             <option value="Repack">Repack</option>
                         </select>
+                        <label data-admin-only style="display:flex;align-items:center;gap:5px;font-size:12px;">
+                            <input type="checkbox" id="includeArchivedTransactions" onchange="fetchTransactions()">
+                            Archived history
+                        </label>
                         <button class="btn btn-filter" onclick="applyFilters()">🔍 Apply Filters</button>
                         <button class="btn btn-clear" onclick="clearFilters()">✕ Clear</button>
                     </div>
@@ -463,6 +467,7 @@
                 if (endDate) url += `end_date=${endDate}&`;
                 if (sku) url += `sku=${sku}&`;
                 if (type) url += `transaction_type=${type}&`;
+                if (document.getElementById('includeArchivedTransactions')?.checked) url += 'include_archived=true&';
                 
                 const response = await fetch(url);
                 const data = await response.json();
@@ -507,6 +512,9 @@
                 const lotDisplay = t.lot_number
                     ? `<span style="font-family:monospace;font-size:13px;">${t.lot_number}</span>`
                     : `<span style="color:var(--text-tertiary);">—</span>`;
+                const archivedMeta = t.archived_at
+                    ? `<div style="font-size:11px;color:var(--text-secondary);">Archived${t.archived_by ? ` by ${t.archived_by}` : ''}${t.archive_reason ? ` — ${t.archive_reason}` : ''}</div>`
+                    : '';
                 return `
                     <tr data-transaction-id="${t.id}" style="white-space:nowrap;">
                         <td>${t.date}</td>
@@ -514,11 +522,12 @@
                         <td>${lotDisplay}</td>
                         <td>${t.quantity}</td>
                         <td><span class="badge ${badgeClass}">${t.transaction_type}</span></td>
-                        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;" title="${(t.notes || '').replace(/"/g, '&quot;')}">${t.notes || '-'}</td>
+                        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;" title="${(t.notes || '').replace(/"/g, '&quot;')}">${t.notes || '-'}${archivedMeta}</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
-                                <button class="btn btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
+                                ${t.archived_at
+                                    ? `<span style="font-size:12px;color:var(--text-secondary);">Archived</span><button class="btn btn-icon" data-admin-only onclick="restoreTransaction(${t.id})">Restore</button>`
+                                    : `<button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button><button class="btn btn-icon" data-admin-only onclick="archiveTransaction(${t.id})">▣ Archive</button>`}
                             </div>
                         </td>
                     </tr>
@@ -554,8 +563,9 @@
                                 <p>${t.notes || 'No notes'}</p>
                             </div>
                             <div class="card-actions">
-                                <button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button>
-                                <button class="btn btn-icon" onclick="deleteTransaction(${t.id})">🗑️ Delete</button>
+                                ${t.archived_at
+                                    ? `<span style="font-size:12px;color:var(--text-secondary);">Archived</span><button class="btn btn-icon" data-admin-only onclick="restoreTransaction(${t.id})">Restore</button>`
+                                    : `<button class="btn btn-icon" onclick="editTransaction(${t.id})">✏️ Edit</button><button class="btn btn-icon" data-admin-only onclick="archiveTransaction(${t.id})">▣ Archive</button>`}
                             </div>
                         </div>
                     </div>
@@ -565,6 +575,13 @@
             loading.style.display = 'none';
             table.style.display = '';
             cardsContainer.style.display = '';
+            if (window.authManager) {
+                window.authManager.getAuthStatus().then(() => {
+                    document.querySelectorAll('[data-admin-only]').forEach(el => {
+                        el.hidden = !window.authManager.isAdmin();
+                    });
+                });
+            }
         }
         
         
@@ -709,25 +726,62 @@
             document.getElementById('transactionLot').innerHTML = '<option value="">— Select SKU first —</option>';
         }
         
-        async function deleteTransaction(id) {
-            if (!confirm('Are you sure you want to delete this transaction? This cannot be undone.')) {
-                return;
-            }
-            
+        async function archiveTransaction(id, reasonOverride) {
             try {
+                const impactResponse = await fetch(`/api/inventory_transactions/${id}/archive-impact`);
+                const impact = await impactResponse.json();
+                if (!impactResponse.ok || impact.error) throw new Error(impact.error || 'Unable to preview archive impact');
+                if (!reasonOverride) {
+                    const summary = `Archive this transaction? Nothing will be removed; history remains available.\n\n` +
+                        `SKU: ${impact.sku || '—'}\n` +
+                        `Quantity: ${impact.quantity ?? '—'}\n` +
+                        `Current lot balance: ${impact.current_balance ?? '—'}\n` +
+                        `Projected balance: ${impact.projected_balance ?? '—'}\n` +
+                        `Open reserved quantity: ${impact.reserved_quantity ?? 0}\n` +
+                        `Lot/order references remain preserved.`;
+                    if (!confirm(summary)) return;
+                }
+                const reason = reasonOverride || prompt('Enter a meaningful reason for archiving this transaction:');
+                if (!reason || reason.trim().length < 5) {
+                    alert('A meaningful archive reason (at least 5 characters) is required.');
+                    return;
+                }
                 const response = await fetch(`/api/inventory_transactions/${id}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({reason: reason.trim()})
                 });
                 const result = await response.json();
                 
-                if (result.success) {
-                    alert('Transaction deleted successfully!');
+                if (response.ok && result.success) {
+                    if (!reasonOverride) alert('Transaction archived. Audit history was preserved.');
                     fetchTransactions();
                 } else {
-                    alert('Failed to delete transaction: ' + result.error);
+                    alert('Failed to archive transaction: ' + result.error);
                 }
             } catch (error) {
-                alert('Failed to delete transaction: ' + error.message);
+                alert('Failed to archive transaction: ' + error.message);
+            }
+        }
+
+        async function restoreTransaction(id) {
+            const reason = prompt('Enter a meaningful reason for restoring this transaction:');
+            if (!reason || reason.trim().length < 5) {
+                alert('A meaningful restore reason (at least 5 characters) is required.');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/inventory_transactions/${id}/restore`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({reason: reason.trim()})
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.error || 'Failed to restore transaction');
+                alert('Transaction restored successfully.');
+                fetchTransactions();
+            } catch (error) {
+                alert(error.message || 'Failed to restore transaction');
             }
         }
         
@@ -810,10 +864,7 @@
                         `${adjustmentType}: ${sku} ${quantity > 0 ? '+' : ''}${quantity} units`,
                         async () => {
                             try {
-                                await fetch(`/api/inventory_transactions/${result.id}`, {
-                                    method: 'DELETE'
-                                });
-                                fetchTransactions();
+                                await archiveTransaction(result.id, 'Undo quick adjustment — accidental adjustment reversal');
                             } catch (error) {
                                 console.error('Failed to undo:', error);
                                 alert('Failed to undo adjustment');

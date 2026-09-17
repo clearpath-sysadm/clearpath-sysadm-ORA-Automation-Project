@@ -5,3 +5,4 @@
 - [ShipStation missing-order lifecycle](shipstation-missing-order-lifecycle.md) — definitive 404s need a preserved non-pickable status; watermark sync alone can leave stale active rows indefinitely.
 - [ShipStation assignee updates](shipstation-assignee-updates.md) — use the assignment-only endpoint with a fresh state check and no automatic POST retries.
 - [Operational reminder dates](operational-reminder-dates.md) — reminders use Central Time server dates; threshold alerts latch daily instead of tracking only the current metric.
+- [Prefer reversible removal](reversible-removal.md) — inventory and other business records should use auditable archive/restore rather than hard deletion unless exceptional purge is explicitly required.

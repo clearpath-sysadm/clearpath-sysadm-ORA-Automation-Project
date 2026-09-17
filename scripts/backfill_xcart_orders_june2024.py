@@ -38,7 +38,8 @@ def get_lot_balance(conn, sku: str) -> int:
                              WHEN transaction_type = 'Adjust'  THEN quantity
                              ELSE 0 END)
              FROM inventory_transactions
-             WHERE sku = %s),
+             WHERE sku = %s
+               AND archived_at IS NULL),
             0
         )
     """, (sku,))

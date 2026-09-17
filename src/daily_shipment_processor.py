@@ -826,6 +826,7 @@ def run_daily_shipment_pull(request=None, end_date=None):
                             FROM inventory_transactions
                             WHERE transaction_type = 'Ship'
                               AND date = %s
+                              AND archived_at IS NULL
                             GROUP BY sku
                         """, (ship_date_str,))
                         lt_by_sku = {str(r[0]): int(r[1]) for r in recon_cursor.fetchall()}

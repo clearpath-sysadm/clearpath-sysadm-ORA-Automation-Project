@@ -38,6 +38,7 @@ def _auto_promote_next_lot(conn, sku_code: str, depleted_lot_number: str) -> Non
             JOIN skus s ON s.sku_id = l.sku_id
             WHERE s.sku_code = %s
               AND l.status = 'inactive'
+              AND l.archived_at IS NULL
             ORDER BY
                 l.received_date ASC NULLS LAST,
                 l.lot_id ASC
@@ -48,7 +49,7 @@ def _auto_promote_next_lot(conn, sku_code: str, depleted_lot_number: str) -> Non
             next_lot_id, next_lot_number = row
             cursor.execute("""
                 UPDATE lots SET status = 'active', updated_at = CURRENT_TIMESTAMP
-                WHERE lot_id = %s
+                WHERE lot_id = %s AND archived_at IS NULL
             """, (next_lot_id,))
             msg = (
                 f"\u2705 Lot {depleted_lot_number} ({sku_code}) depleted \u2014 "
@@ -209,6 +210,7 @@ def deduct_lot_inventory(
                     FROM lots l
                     JOIN skus s ON l.sku_id = s.sku_id
                     WHERE s.sku_code = %s AND l.status = 'active'
+                      AND l.archived_at IS NULL
                     LIMIT 1
                 """, (base_sku,))
                 secondary_lot_row = cursor.fetchone()
@@ -233,6 +235,7 @@ def deduct_lot_inventory(
                       AND lot_id IS NULL
                       AND shipstation_order_id = %s
                       AND transaction_type = 'Ship'
+                      AND archived_at IS NULL
                     LIMIT 1
                 """, (base_sku, str(shipstation_order_id)))
             else:
@@ -242,6 +245,7 @@ def deduct_lot_inventory(
                     WHERE lot_id = %s
                       AND shipstation_order_id = %s
                       AND transaction_type = 'Ship'
+                      AND archived_at IS NULL
                     LIMIT 1
                 """, (secondary_lot_id, str(shipstation_order_id)))
 
@@ -312,6 +316,7 @@ def deduct_lot_inventory(
             FROM lots l
             JOIN skus s ON l.sku_id = s.sku_id
             WHERE l.lot_number = %s AND s.sku_code = %s
+              AND l.archived_at IS NULL
             LIMIT 1
         """, (lot_number, cf1_sku))
         row = cursor.fetchone()
@@ -358,6 +363,7 @@ def deduct_lot_inventory(
             WHERE lot_id = %s
               AND shipstation_order_id = %s
               AND transaction_type = 'Ship'
+              AND archived_at IS NULL
             LIMIT 1
         """, (lot_id, str(shipstation_order_id)))
         if cursor.fetchone():

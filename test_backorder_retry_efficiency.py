@@ -77,7 +77,10 @@ class TestBackorderRetryEfficiency(unittest.TestCase):
 
         conn = MagicMock()
         cursor = MagicMock()
-        cursor.fetchone.return_value = (77,)
+        cursor.fetchone.side_effect = [
+            (None,),  # selected lot is not archived
+            (77,),    # inserted transaction ID
+        ]
         conn.cursor.return_value = cursor
 
         with patch('app.get_connection', return_value=conn), \
@@ -111,7 +114,10 @@ class TestBackorderRetryEfficiency(unittest.TestCase):
 
         conn = MagicMock()
         cursor = MagicMock()
-        cursor.fetchone.return_value = ('17612', 400, 'Receive')
+        cursor.fetchone.side_effect = [
+            ('17612', 400, 'Receive', None),  # existing transaction
+            (None,),                           # selected lot is not archived
+        ]
         conn.cursor.return_value = cursor
 
         with patch('app.get_connection', return_value=conn), \

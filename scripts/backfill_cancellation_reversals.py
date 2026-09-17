@@ -70,12 +70,14 @@ def find_orders_needing_reversal(order_number_filter=None):
               FROM inventory_transactions it
               WHERE it.shipstation_order_id = oi.shipstation_order_id
                 AND it.transaction_type = 'Ship'
+                AND it.archived_at IS NULL
           )
           AND NOT EXISTS (
               SELECT 1
               FROM inventory_transactions it
               WHERE it.shipstation_order_id = oi.shipstation_order_id
                 AND it.transaction_type = 'Cancel'
+                AND it.archived_at IS NULL
           )
     """
 
@@ -98,6 +100,7 @@ def dry_run_report(order_number, shipstation_order_id):
         FROM inventory_transactions
         WHERE shipstation_order_id = %s
           AND transaction_type = 'Ship'
+          AND archived_at IS NULL
         ORDER BY id
     """, [str(shipstation_order_id)])
 

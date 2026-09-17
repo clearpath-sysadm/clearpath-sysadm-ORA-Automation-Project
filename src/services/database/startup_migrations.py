@@ -1361,6 +1361,114 @@ def _ensure_fedex_pickup_reminder_state(cursor):
     logger.info("startup_migrations: FedEx pickup reminder state ready")
 
 
+def _ensure_inventory_archive_objects(cursor):
+    """Task #274: preserve lots/transactions while removing them operationally."""
+    for table in ("lots", "inventory_transactions"):
+        cursor.execute(
+            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ"
+        )
+        cursor.execute(
+            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS archived_by TEXT"
+        )
+        cursor.execute(
+            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS archive_reason TEXT"
+        )
+    cursor.execute("ALTER TABLE lots ADD COLUMN IF NOT EXISTS pre_archive_status TEXT")
+    cursor.execute("""
+        CREATE OR REPLACE FUNCTION prevent_archived_lot_transaction_write()
+        RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+            IF NEW.lot_id IS NOT NULL AND EXISTS (
+                SELECT 1 FROM lots
+                WHERE lot_id = NEW.lot_id AND archived_at IS NOT NULL
+            ) THEN
+                RAISE EXCEPTION 'archived lots cannot receive inventory transactions';
+            END IF;
+            RETURN NEW;
+        END $$;
+    """)
+    cursor.execute("""
+        DROP TRIGGER IF EXISTS inventory_transactions_reject_archived_lot
+        ON inventory_transactions
+    """)
+    cursor.execute("""
+        CREATE TRIGGER inventory_transactions_reject_archived_lot
+        BEFORE INSERT OR UPDATE ON inventory_transactions
+        FOR EACH ROW EXECUTE FUNCTION prevent_archived_lot_transaction_write()
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS inventory_lifecycle_events (
+            id BIGSERIAL PRIMARY KEY,
+            entity_type TEXT NOT NULL CHECK (entity_type IN ('lot','transaction')),
+            entity_id BIGINT NOT NULL,
+            action TEXT NOT NULL CHECK (action IN ('archive','restore')),
+            actor TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            details JSONB NOT NULL DEFAULT '{}'::jsonb,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    cursor.execute("""
+        CREATE OR REPLACE FUNCTION prevent_inventory_lifecycle_mutation()
+        RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+            RAISE EXCEPTION 'inventory_lifecycle_events is append-only';
+        END $$;
+    """)
+    cursor.execute("""
+        DROP TRIGGER IF EXISTS inventory_lifecycle_events_append_only
+        ON inventory_lifecycle_events
+    """)
+    cursor.execute("""
+        CREATE TRIGGER inventory_lifecycle_events_append_only
+        BEFORE UPDATE OR DELETE ON inventory_lifecycle_events
+        FOR EACH ROW EXECUTE FUNCTION prevent_inventory_lifecycle_mutation()
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS inventory_lifecycle_events_entity_idx
+        ON inventory_lifecycle_events (entity_type, entity_id, created_at)
+    """)
+    # Preserve dependent views, grants, and comments. The final lot_balances
+    # shape is unchanged. Clean up the short-lived pre-release shape if it was
+    # applied in a development database before this migration was finalized.
+    cursor.execute("""
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = 'lot_balances' AND column_name = 'archived_at'
+        )
+    """)
+    if cursor.fetchone()[0]:
+        cursor.execute("DROP VIEW IF EXISTS inventory_summary")
+        cursor.execute("DROP VIEW IF EXISTS lot_balances")
+    cursor.execute("""
+        CREATE OR REPLACE VIEW lot_balances AS
+        SELECT l.lot_id, s.sku_code, l.lot_number, l.status, l.received_date,
+               l.notes, l.created_at, l.updated_at,
+               COALESCE(SUM(CASE
+                   WHEN it.transaction_type IN ('Receive','Adjust Up','Repack','Cancel')
+                     THEN it.quantity
+                   WHEN it.transaction_type IN ('Ship','Adjust Down')
+                     THEN -it.quantity
+                   ELSE 0 END), 0) AS balance
+        FROM lots l
+        JOIN skus s ON s.sku_id = l.sku_id
+        LEFT JOIN inventory_transactions it
+          ON it.lot_id = l.lot_id AND it.archived_at IS NULL
+        GROUP BY l.lot_id, s.sku_code, l.lot_number, l.status, l.received_date,
+                 l.notes, l.created_at, l.updated_at
+    """)
+    cursor.execute("""
+        CREATE OR REPLACE VIEW inventory_summary AS
+        SELECT lb.sku_code AS sku, SUM(lb.balance) AS current_quantity
+        FROM lot_balances lb
+        JOIN lots l ON l.lot_id = lb.lot_id
+        WHERE lb.status != 'quarantine' AND l.archived_at IS NULL
+        GROUP BY lb.sku_code
+    """)
+    logger.info("startup_migrations: inventory archive objects ready")
+
+
 def _resolve_removed_order_862283(cursor):
     """
     Preserve the confirmed-removed ShipStation order while immediately
@@ -1415,6 +1523,7 @@ def run_all(conn):
             _correct_stale_variant_rows_in_order_items_inbox(cur)
             _add_not_found_order_status(cur)
             _ensure_fedex_pickup_reminder_state(cur)
+            _ensure_inventory_archive_objects(cur)
             _resolve_removed_order_862283(cur)
             _update_source_system_default(cur)
         conn.commit()

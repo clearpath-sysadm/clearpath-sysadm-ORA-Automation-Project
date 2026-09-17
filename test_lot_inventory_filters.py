@@ -40,7 +40,8 @@ def test_lot_card_actions_have_distinct_visual_cues():
     assert "lot-action-delete" in HTML
     assert '<span aria-hidden="true">↕</span> Correct' in HTML
     assert '<span aria-hidden="true">✎</span> Edit' in HTML
-    assert '<span aria-hidden="true">×</span> Delete' in HTML
+    assert '<span aria-hidden="true">▣</span> Archive' in HTML
+    assert 'data-admin-only onclick="archiveLot(' in HTML
 
 
 def test_assignment_actions_have_distinct_visual_cues():

@@ -503,6 +503,7 @@ def run_prefix_record_scan(conn) -> int:
         SELECT it.sku, it.shipstation_order_id, it.quantity, it.transaction_type, it.date
           FROM inventory_transactions it
          WHERE it.sku = ANY(%s)
+              AND it.archived_at IS NULL
          ORDER BY it.date, it.shipstation_order_id
         """,
         (variant_skus,),
