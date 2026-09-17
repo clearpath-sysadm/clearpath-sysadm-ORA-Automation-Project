@@ -71,3 +71,17 @@ mtime_ms = 1789652447946
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/680fbb5b-f505-4bb7-9cd5-fde4d0a64764/b90ea156-178f-4b05-baa0-bb67c76d1f1b"
 storage_version_token = "1789652522124726"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "yPsgXy3BkN-W3giuJAixW"
+uri = "file://deliverables/app-sop-templates/04_App_Workflow_Documentation_Plan.docx"
+type = "word_document"
+title = "OraCare App Workflow Documentation Plan"
+description = "Quality-approved classification of controlled SOPs, quick guides, excluded workflows, and the recommended authoring order."
+logical_id = "bc6c587e-172d-4031-a271-81a88aef7952"
+content_hash = "sha256:6c996eeae4f7b88232e3c319c61c193c483cc3def4b09f8e3552bee6336f6211"
+size = 39548
+mtime_ms = 1789652699671
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/bc6c587e-172d-4031-a271-81a88aef7952/d9c94a2a-ddfb-4d58-8e91-88ad4e8315cb"
+storage_version_token = "1789652764601820"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
