@@ -5174,7 +5174,7 @@ def api_get_sku_lots():
                 'lot':        row[2],
                 'active':     1 if row[3] == 'active' else 0,
                 'created_at': row[4],
-                'updated_at': row[5],
+                'updated_at': str(row[5]),
                 'archived': row[6] is not None
             })
 
@@ -5261,7 +5261,7 @@ def api_create_sku_lot():
 
 @app.route('/api/sku_lots/<int:sku_lot_id>', methods=['PUT'])
 def api_update_sku_lot(sku_lot_id):
-    """Update a SKU-Lot entry in the lots table"""
+    """Update only the operational status of a canonical lot identity."""
     from src.utils.server_logger import get_logger
     server_logger = get_logger()
 
@@ -5276,68 +5276,334 @@ def api_update_sku_lot(sku_lot_id):
     except:
         pass
 
+    conn = None
     try:
-        data = request.json
-
-        if not data.get('sku') or not data.get('lot'):
+        data = request.get_json(silent=True) or {}
+        incoming_active = data.get('active', 1)
+        if incoming_active not in (0, 1, False, True):
+            return jsonify({'success': False, 'error': 'Active must be true or false'}), 400
+        new_status = 'active' if incoming_active else 'inactive'
+        expected_updated_at = str(data.get('expected_updated_at') or '').strip()
+        if not expected_updated_at:
             return jsonify({
                 'success': False,
-                'error': 'SKU and Lot are required'
+                'error': 'Refresh the lot before changing its status'
             }), 400
-
-        incoming_active = data.get('active', 1)
-        new_status = 'active' if incoming_active else 'inactive'
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT archived_at FROM lots WHERE lot_id = %s", (sku_lot_id,))
-        lot_state = cursor.fetchone()
-        if not lot_state:
+        cursor.execute("""
+            SELECT s.sku_code
+            FROM lots l JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.lot_id = %s
+        """, (sku_lot_id,))
+        identity = cursor.fetchone()
+        if not identity:
             conn.close()
             return jsonify({'success': False, 'error': 'Lot not found'}), 404
-        if lot_state[0] is not None:
+        _lock_inventory_sku(cursor, identity[0])
+        cursor.execute("""
+            SELECT s.sku_code, l.lot_number, l.status, l.updated_at,
+                   l.archived_at, COALESCE(lb.balance, 0)
+            FROM lots l
+            JOIN skus s ON s.sku_id = l.sku_id
+            LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
+            WHERE l.lot_id = %s
+            FOR UPDATE OF l
+        """, (sku_lot_id,))
+        lot = cursor.fetchone()
+        if not lot:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        sku, lot_number, previous_status, updated_at, archived_at, balance = lot
+        if archived_at is not None:
             conn.close()
             return jsonify({
                 'success': False,
                 'error': 'Archived lots cannot be edited; restore the lot first'
             }), 409
 
-        # Ensure the SKU exists (create if new)
-        cursor.execute("""
-            INSERT INTO skus (sku_code)
-            VALUES (%s)
-            ON CONFLICT (sku_code) DO NOTHING
-        """, (data['sku'],))
-        cursor.execute(
-            "SELECT sku_id FROM skus WHERE sku_code = %s", (data['sku'],)
-        )
-        sku_id = cursor.fetchone()[0]
+        if (
+            ('sku' in data and str(data['sku']).strip() != sku)
+            or ('lot' in data and str(data['lot']).strip() != lot_number)
+        ):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': (
+                    'Normal Lot Assignment edits cannot change SKU or lot number. '
+                    'Use the admin identity-correction flow.'
+                )
+            }), 409
+
+        if expected_updated_at != str(updated_at):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'This lot changed since it was loaded. Refresh and try again.'
+            }), 409
+
+        if previous_status != 'active' and new_status == 'active' and float(balance or 0) <= 0:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'A lot can only be activated when its balance is greater than zero'
+            }), 400
+
+        if previous_status == 'active' and new_status != 'active':
+            cursor.execute("""
+                SELECT COUNT(*) FROM lot_staging_reservations
+                WHERE lot_id = %s AND state = 'reserved'
+            """, (sku_lot_id,))
+            active_reservations = cursor.fetchone()[0]
+            if active_reservations:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': 'Reserved inventory cannot be made inactive',
+                    'active_reservations': active_reservations,
+                }), 409
+
+        if previous_status == new_status:
+            conn.close()
+            return jsonify({
+                'success': True,
+                'message': 'Lot status is already up to date',
+                'status': new_status,
+            })
 
         cursor.execute("""
             UPDATE lots
-            SET sku_id     = %s,
-                lot_number = %s,
-                status     = %s,
-                updated_at = NOW()
+            SET status = %s, updated_at = NOW()
             WHERE lot_id = %s
-        """, (sku_id, data['lot'], new_status, sku_lot_id))
+        """, (new_status, sku_lot_id))
+
+        if previous_status != new_status:
+            _lifecycle_event(
+                cursor, "lot", sku_lot_id, "status_change",
+                "Lot Assignments status change",
+                {
+                    "request_id": request.headers.get("X-Request-ID") or uuid.uuid4().hex,
+                    "sku": sku,
+                    "lot": lot_number,
+                    "previous_status": previous_status,
+                    "new_status": new_status,
+                },
+            )
 
         conn.commit()
         conn.close()
 
         server_logger.info(
-            f"SKU-Lot #{sku_lot_id} updated: SKU {data['sku']} → Lot {data['lot']} ({new_status})",
+            f"SKU-Lot #{sku_lot_id} status updated: SKU {sku} → Lot {lot_number} ({new_status})",
             source="SKU-Lot", user=user_name, role=user_role
         )
 
-        return jsonify({'success': True, 'message': 'SKU-Lot updated successfully'})
+        return jsonify({
+            'success': True,
+            'message': 'Lot status updated successfully',
+            'status': new_status,
+        })
+    except Exception as e:
+        if conn:
+            conn.rollback()
+            conn.close()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _lot_identity_impact(cursor, lot_id):
+    cursor.execute("""
+        SELECT s.sku_code, l.lot_number, l.status, l.updated_at, l.archived_at,
+               COALESCE(lb.balance, 0),
+               (SELECT COUNT(*) FROM inventory_transactions WHERE lot_id = l.lot_id),
+               (SELECT COUNT(*) FROM shipstation_order_line_items WHERE lot_id = l.lot_id),
+               (SELECT COUNT(*) FROM lot_staging_reservations WHERE lot_id = l.lot_id),
+               (SELECT COUNT(*) FROM lot_staging_reservations
+                WHERE lot_id = l.lot_id AND state = 'reserved'),
+               (SELECT COUNT(*) FROM lot_balance_alerts WHERE lot_id = l.lot_id),
+               (SELECT COUNT(*) FROM inventory_lifecycle_events
+                WHERE entity_type = 'lot' AND entity_id = l.lot_id)
+        FROM lots l
+        JOIN skus s ON s.sku_id = l.sku_id
+        LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
+        WHERE l.lot_id = %s
+    """, (lot_id,))
+    row = cursor.fetchone()
+    if not row:
+        return None
+    return {
+        'sku': row[0],
+        'lot': row[1],
+        'status': row[2],
+        'updated_at': str(row[3]),
+        'archived': row[4] is not None,
+        'balance': row[5],
+        'transaction_count': row[6],
+        'order_line_count': row[7],
+        'reservation_count': row[8],
+        'active_reservations': row[9],
+        'alert_count': row[10],
+        'lifecycle_event_count': row[11],
+    }
+
+
+@app.route('/api/sku_lots/<int:sku_lot_id>/identity-impact', methods=['GET'])
+def api_sku_lot_identity_impact(sku_lot_id):
+    denied = _require_archive_admin()
+    if denied:
+        return denied
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        impact = _lot_identity_impact(cursor, sku_lot_id)
+        conn.close()
+        if not impact:
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        return jsonify({'success': True, 'lot_id': sku_lot_id, **impact})
+    except Exception as exc:
+        if conn:
+            conn.close()
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
+
+@app.route('/api/sku_lots/<int:sku_lot_id>/correct-identity', methods=['POST'])
+def api_correct_sku_lot_identity(sku_lot_id):
+    denied = _require_archive_admin()
+    if denied:
+        return denied
+    data = request.get_json(silent=True) or {}
+    new_sku = str(data.get('sku') or '').strip()
+    new_lot = str(data.get('lot') or '').strip()
+    reason = str(data.get('reason') or '').strip()
+    expected_updated_at = str(data.get('expected_updated_at') or '').strip()
+    if not new_sku or not new_lot:
+        return jsonify({'success': False, 'error': 'SKU and lot number are required'}), 400
+    if len(reason) < 5:
+        return jsonify({
+            'success': False,
+            'error': 'A meaningful correction reason of at least 5 characters is required'
+        }), 400
+    if not expected_updated_at:
+        return jsonify({'success': False, 'error': 'Refresh the lot before correcting its identity'}), 400
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT s.sku_code, l.lot_number
+            FROM lots l JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.lot_id = %s
+        """, (sku_lot_id,))
+        identity = cursor.fetchone()
+        if not identity:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        old_sku, old_lot = identity
+
+        for sku_code in sorted({old_sku, new_sku}):
+            _lock_inventory_sku(cursor, sku_code)
+
+        cursor.execute("""
+            SELECT s.sku_code, l.lot_number, l.updated_at, l.archived_at
+            FROM lots l JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.lot_id = %s FOR UPDATE OF l
+        """, (sku_lot_id,))
+        locked = cursor.fetchone()
+        if not locked:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        old_sku, old_lot, updated_at, archived_at = locked
+        if archived_at is not None:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Archived lots cannot be corrected'}), 409
+        if expected_updated_at != str(updated_at):
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'This lot changed since it was loaded. Refresh and try again.'
+            }), 409
+        if old_sku == new_sku and old_lot == new_lot:
+            conn.close()
+            return jsonify({'success': False, 'error': 'The corrected identity is unchanged'}), 400
+
+        cursor.execute("""
+            LOCK TABLE inventory_transactions, shipstation_order_line_items,
+                       lot_staging_reservations, lot_balance_alerts
+            IN SHARE MODE
+        """)
+        impact = _lot_identity_impact(cursor, sku_lot_id)
+        dependencies = {
+            key: impact[key]
+            for key in (
+                'balance', 'transaction_count', 'order_line_count',
+                'reservation_count', 'alert_count', 'lifecycle_event_count'
+            )
+            if impact[key]
+        }
+        if dependencies:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': (
+                    'This lot has inventory or history. Create a new lot and '
+                    'archive or inactivate the old one instead.'
+                ),
+                'dependencies': dependencies,
+            }), 409
+
+        cursor.execute("SELECT sku_id FROM skus WHERE sku_code = %s", (new_sku,))
+        sku_row = cursor.fetchone()
+        if not sku_row:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Select an existing approved SKU; corrections cannot create SKUs'
+            }), 400
+
+        cursor.execute("""
+            SELECT 1 FROM lots
+            WHERE sku_id = %s AND lot_number = %s AND lot_id <> %s
+        """, (sku_row[0], new_lot, sku_lot_id))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'This SKU-Lot combination already exists'
+            }), 409
+
+        cursor.execute("""
+            UPDATE lots
+            SET sku_id = %s, lot_number = %s, updated_at = NOW()
+            WHERE lot_id = %s
+        """, (sku_row[0], new_lot, sku_lot_id))
+        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+        _lifecycle_event(cursor, "lot", sku_lot_id, "identity_correct", reason, {
+            "request_id": request_id,
+            "previous_identity": {"sku": old_sku, "lot": old_lot},
+            "new_identity": {"sku": new_sku, "lot": new_lot},
+        })
+        conn.commit()
+        conn.close()
+        return jsonify({
+            'success': True,
+            'message': 'Lot identity corrected successfully',
+            'request_id': request_id,
+        })
     except psycopg2.IntegrityError:
+        if conn:
+            conn.rollback()
+            conn.close()
         return jsonify({
             'success': False,
             'error': 'This SKU-Lot combination already exists'
-        }), 400
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        }), 409
+    except Exception as exc:
+        if conn:
+            conn.rollback()
+            conn.close()
+        return jsonify({'success': False, 'error': str(exc)}), 500
 
 
 @app.route('/api/sku_lots/<int:sku_lot_id>', methods=['DELETE'])
@@ -5368,18 +5634,33 @@ def api_delete_sku_lot(sku_lot_id):
         cursor = conn.cursor()
 
         cursor.execute("""
+            SELECT s.sku_code
+            FROM lots l JOIN skus s ON s.sku_id = l.sku_id
+            WHERE l.lot_id = %s
+        """, (sku_lot_id,))
+        identity = cursor.fetchone()
+        if not identity:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        _lock_inventory_sku(cursor, identity[0])
+        cursor.execute("""
             SELECT s.sku_code, l.lot_number
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             WHERE l.lot_id = %s
-            FOR UPDATE
+            FOR UPDATE OF l
         """, (sku_lot_id,))
         row = cursor.fetchone()
         if not row:
             conn.close()
             return jsonify({'success': False, 'error': 'Lot not found'}), 404
+        if row[0] != identity[0]:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'This lot changed since it was loaded. Refresh and try again.'
+            }), 409
         sku_info = f"SKU {row[0]} → Lot {row[1]}"
-        _lock_inventory_sku(cursor, row[0])
 
         cursor.execute("""
             SELECT COUNT(*) FROM lot_staging_reservations

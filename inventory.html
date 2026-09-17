@@ -451,10 +451,9 @@
                     <!-- ── Pane 2: Lot Assignments ──────────────────────── -->
                     <div class="lot-tab-pane" id="pane-lot-assignments" style="display:none;">
                         <p class="lot-tab-pane-desc">
-                            Lot assignments used by the lot tagger to determine which lot number to stamp
-                            on new orders per SKU. Only <strong>Active</strong> assignments are used by
-                            the tagger. To retire an assignment, <strong>Deactivate</strong> it — do not
-                            delete the underlying lot record.
+                            These are canonical SKU–lot records used by inventory history and the lot tagger.
+                            <strong>Normal edits change status only.</strong> SKU or lot-number corrections
+                            must use the audited admin flow on <a href="/lot_inventory.html">Lot Inventory</a>.
                         </p>
                         <div id="sku-lot-table-container">
                             <div class="empty-state">Loading…</div>
@@ -548,6 +547,7 @@
                     <label for="sku-lot-active" class="form-label" style="margin:0;">Active</label>
                 </div>
                 <input type="hidden" id="sku-lot-id">
+                <input type="hidden" id="sku-lot-updated-at">
             </div>
             <div class="modal-footer">
                 <button class="btn" onclick="closeSkuLotModal()">Cancel</button>
@@ -1237,7 +1237,7 @@
                     <td style="color:var(--text-secondary);font-size:13px;">${created}</td>
                     <td><div class="action-buttons">
                         <button class="btn btn-sm" onclick="toggleSkuLotActive(${item.id},${item.active ? 1 : 0})">${item.active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm" onclick="openEditSkuLotModal(${item.id})">Edit</button>
+                        <button class="btn btn-sm" onclick="openEditSkuLotModal(${item.id})">Status</button>
                     </div></td>
                 </tr>`;
             });
@@ -1261,7 +1261,7 @@
                     <div style="font-size:12px;color:var(--text-secondary);">Added ${created}</div>
                     <div class="assignment-card-footer">
                         <button class="btn btn-sm" onclick="toggleSkuLotActive(${item.id},${item.active ? 1 : 0})">${item.active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm" onclick="openEditSkuLotModal(${item.id})">Edit</button>
+                        <button class="btn btn-sm" onclick="openEditSkuLotModal(${item.id})">Status</button>
                     </div>
                 </div>`;
             });
@@ -1346,7 +1346,9 @@
             document.getElementById('sku-lot-sku').value  = '';
             document.getElementById('sku-lot-lot').value  = '';
             document.getElementById('sku-lot-active').checked = true;
+            document.getElementById('sku-lot-updated-at').value = '';
             document.getElementById('sku-lot-sku').disabled = false;
+            document.getElementById('sku-lot-lot').disabled = false;
             document.getElementById('sku-lot-modal-error').style.display = 'none';
             document.getElementById('sku-lot-modal').classList.add('active');
         }
@@ -1354,11 +1356,14 @@
         function openEditSkuLotModal(id) {
             const item = skuLots.find(r => r.id === id);
             if (!item) return;
-            document.getElementById('sku-lot-modal-title').textContent = 'Edit Lot Assignment';
+            document.getElementById('sku-lot-modal-title').textContent = 'Change Lot Status';
             document.getElementById('sku-lot-id').value   = item.id;
+            document.getElementById('sku-lot-updated-at').value = item.updated_at || '';
             document.getElementById('sku-lot-sku').value  = item.sku;
             document.getElementById('sku-lot-lot').value  = item.lot;
             document.getElementById('sku-lot-active').checked = item.active;
+            document.getElementById('sku-lot-sku').disabled = true;
+            document.getElementById('sku-lot-lot').disabled = true;
             document.getElementById('sku-lot-modal-error').style.display = 'none';
             document.getElementById('sku-lot-modal').classList.add('active');
         }
@@ -1372,6 +1377,7 @@
             const sku    = document.getElementById('sku-lot-sku').value;
             const lot    = document.getElementById('sku-lot-lot').value.trim();
             const active = document.getElementById('sku-lot-active').checked ? 1 : 0;
+            const expectedUpdatedAt = document.getElementById('sku-lot-updated-at').value;
             if (!sku || !lot) { showSkuLotError('SKU and Lot are required.'); return; }
             try {
                 const url    = id ? `/api/sku_lots/${id}` : '/api/sku_lots';
@@ -1379,7 +1385,9 @@
                 const response = await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sku, lot, active })
+                    body: JSON.stringify(id
+                        ? { active, expected_updated_at: expectedUpdatedAt }
+                        : { sku, lot, active })
                 });
                 const result = await response.json();
                 if (result.success) { closeSkuLotModal(); loadSkuLots(); }
@@ -1397,7 +1405,10 @@
                 const response = await fetch(`/api/sku_lots/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sku: item.sku, lot: item.lot, active: newActive })
+                    body: JSON.stringify({
+                        active: newActive,
+                        expected_updated_at: item.updated_at || ''
+                    })
                 });
                 const result = await response.json();
                 if (result.success) loadSkuLots();

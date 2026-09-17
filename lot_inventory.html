@@ -570,11 +570,10 @@
                     <!-- Lot Assignments pane -->
                     <div class="lot-tab-pane" id="pane-assignments" style="display:none;">
                         <p class="lot-tab-pane-desc">
-                            Lot assignments used by the lot tagger to determine which lot number to stamp
-                            on new orders per SKU. Only <strong>Active</strong> assignments are used by
-                            the tagger. To retire an assignment, <strong>Deactivate</strong> it — do not
-                            archive the underlying lot record. Assignments do <strong>not</strong> receive
-                            stock or release backorders; use <strong>Lot Inventory</strong> to record a receipt.
+                            This tab manages the underlying SKU–lot records used by inventory, FIFO history,
+                            and the lot tagger. <strong>SKU and lot number are the lot's identity, not routing
+                            preferences.</strong> Normal edits change status only. Admins may correct an
+                            unused lot's identity after the app verifies that it has no inventory or history.
                         </p>
                         <div id="sku-lot-table-container">
                             <div class="empty-state">Loading…</div>
@@ -597,6 +596,7 @@
             </div>
             <div class="modal-body">
                 <div id="sku-lot-modal-error" style="display:none;color:var(--error-red);margin-bottom:12px;padding:8px;background:rgba(220,38,38,0.08);border-radius:6px;font-size:13px;"></div>
+                <div id="sku-lot-identity-warning" style="display:none;margin-bottom:12px;padding:10px;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.35);border-radius:6px;font-size:13px;"></div>
                 <div class="form-group">
                     <label class="form-label" for="sku-lot-sku">SKU *</label>
                     <select id="sku-lot-sku" class="form-select" required>
@@ -612,11 +612,17 @@
                     <label class="form-label" for="sku-lot-lot">Lot Number *</label>
                     <input type="text" class="form-input" id="sku-lot-lot" placeholder="e.g., 260047" required>
                 </div>
-                <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                <div class="form-group" id="sku-lot-active-group" style="display:flex;align-items:center;gap:8px;">
                     <input type="checkbox" id="sku-lot-active" checked>
                     <label for="sku-lot-active" class="form-label" style="margin:0;">Active</label>
                 </div>
+                <div class="form-group" id="sku-lot-reason-group" style="display:none;">
+                    <label class="form-label" for="sku-lot-reason">Correction Reason *</label>
+                    <textarea class="form-textarea" id="sku-lot-reason" placeholder="Explain the data-entry mistake being corrected"></textarea>
+                </div>
                 <input type="hidden" id="sku-lot-id">
+                <input type="hidden" id="sku-lot-mode" value="add">
+                <input type="hidden" id="sku-lot-updated-at">
             </div>
             <div class="modal-footer">
                 <button class="btn" onclick="closeSkuLotModal()">Cancel</button>
@@ -1338,6 +1344,9 @@
             html += '</tr></thead><tbody>';
 
             filtered.forEach(item => {
+                const correctionButton = window.authManager && window.authManager.isAdmin()
+                    ? `<button class="btn btn-sm assignment-action-edit" onclick="openCorrectSkuLotModal(${item.id})"><span aria-hidden="true">⚠</span> Correct Identity</button>`
+                    : '';
                 const badge = item.active
                     ? '<span class="status-badge status-active">Active</span>'
                     : '<span class="status-badge status-depleted">Inactive</span>';
@@ -1351,7 +1360,8 @@
                     <td style="color:var(--text-secondary);font-size:13px;">${created}</td>
                     <td><div class="action-buttons">
                         <button class="btn btn-sm ${item.active ? 'assignment-action-deactivate' : 'assignment-action-activate'}" onclick="toggleSkuLotActive(${item.id}, ${item.active ? 1 : 0})"><span aria-hidden="true">${item.active ? '×' : '✓'}</span> ${item.active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm assignment-action-edit" onclick="openEditSkuLotModal(${item.id})"><span aria-hidden="true">✎</span> Edit</button>
+                        <button class="btn btn-sm assignment-action-edit" onclick="openEditSkuLotModal(${item.id})"><span aria-hidden="true">✎</span> Status</button>
+                        ${correctionButton}
                     </div></td>
                 </tr>`;
             });
@@ -1361,6 +1371,9 @@
             // Mobile card view
             html += '<div class="assignment-cards-container">';
             filtered.forEach(item => {
+                const correctionButton = window.authManager && window.authManager.isAdmin()
+                    ? `<button class="btn btn-sm assignment-action-edit" onclick="openCorrectSkuLotModal(${item.id})"><span aria-hidden="true">⚠</span> Correct Identity</button>`
+                    : '';
                 const badge = item.active
                     ? '<span class="status-badge status-active">Active</span>'
                     : '<span class="status-badge status-depleted">Inactive</span>';
@@ -1378,7 +1391,8 @@
                     <div style="font-size:12px;color:var(--text-secondary);">Added ${created}</div>
                     <div class="assignment-card-footer">
                         <button class="btn btn-sm ${item.active ? 'assignment-action-deactivate' : 'assignment-action-activate'}" onclick="toggleSkuLotActive(${item.id}, ${item.active ? 1 : 0})"><span aria-hidden="true">${item.active ? '×' : '✓'}</span> ${item.active ? 'Deactivate' : 'Activate'}</button>
-                        <button class="btn btn-sm assignment-action-edit" onclick="openEditSkuLotModal(${item.id})"><span aria-hidden="true">✎</span> Edit</button>
+                        <button class="btn btn-sm assignment-action-edit" onclick="openEditSkuLotModal(${item.id})"><span aria-hidden="true">✎</span> Status</button>
+                        ${correctionButton}
                     </div>
                 </div>`;
             });
@@ -1497,8 +1511,14 @@
             document.getElementById('sku-lot-sku').value  = '';
             document.getElementById('sku-lot-lot').value  = '';
             document.getElementById('sku-lot-active').checked = true;
+            document.getElementById('sku-lot-mode').value = 'add';
+            document.getElementById('sku-lot-updated-at').value = '';
             document.getElementById('sku-lot-sku').disabled = false;
             document.getElementById('sku-lot-lot').disabled = false;
+            document.getElementById('sku-lot-active-group').style.display = 'flex';
+            document.getElementById('sku-lot-reason-group').style.display = 'none';
+            document.getElementById('sku-lot-reason').value = '';
+            document.getElementById('sku-lot-identity-warning').style.display = 'none';
             document.getElementById('sku-lot-modal-error').style.display = 'none';
             document.getElementById('sku-lot-modal').classList.add('active');
         }
@@ -1506,13 +1526,62 @@
         function openEditSkuLotModal(id) {
             const item = skuLots.find(r => r.id === id);
             if (!item) return;
-            document.getElementById('sku-lot-modal-title').textContent = 'Edit Lot Assignment';
+            document.getElementById('sku-lot-modal-title').textContent = 'Change Lot Status';
             document.getElementById('sku-lot-id').value   = item.id;
+            document.getElementById('sku-lot-mode').value = 'status';
+            document.getElementById('sku-lot-updated-at').value = item.updated_at || '';
             document.getElementById('sku-lot-sku').value  = item.sku;
             document.getElementById('sku-lot-lot').value  = item.lot;
             document.getElementById('sku-lot-active').checked = item.active;
+            document.getElementById('sku-lot-sku').disabled = true;
+            document.getElementById('sku-lot-lot').disabled = true;
+            document.getElementById('sku-lot-active-group').style.display = 'flex';
+            document.getElementById('sku-lot-reason-group').style.display = 'none';
+            document.getElementById('sku-lot-identity-warning').style.display = 'none';
             document.getElementById('sku-lot-modal-error').style.display = 'none';
             document.getElementById('sku-lot-modal').classList.add('active');
+        }
+
+        async function openCorrectSkuLotModal(id) {
+            if (!window.authManager || !window.authManager.isAdmin()) {
+                alert('Admin role required for identity correction');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/sku_lots/${id}/identity-impact`, { cache: 'no-store' });
+                const impact = await response.json();
+                if (!response.ok || !impact.success) {
+                    alert(impact.error || 'Unable to inspect lot history');
+                    return;
+                }
+                const blocked = Number(impact.balance) !== 0
+                    || impact.transaction_count
+                    || impact.order_line_count
+                    || impact.reservation_count
+                    || impact.alert_count
+                    || impact.lifecycle_event_count;
+                const warning = document.getElementById('sku-lot-identity-warning');
+                warning.innerHTML = blocked
+                    ? `<strong>Identity correction is blocked.</strong> Balance: ${impact.balance}; transactions: ${impact.transaction_count}; order lines: ${impact.order_line_count}; reservations: ${impact.reservation_count}; alerts: ${impact.alert_count}; lifecycle events: ${impact.lifecycle_event_count}. Create a new lot and archive or inactivate this one instead.`
+                    : '<strong>Canonical identity correction.</strong> This unused lot has no inventory or history. The correction will be audited.';
+                warning.style.display = 'block';
+
+                document.getElementById('sku-lot-modal-title').textContent = 'Correct Lot Identity';
+                document.getElementById('sku-lot-id').value = id;
+                document.getElementById('sku-lot-mode').value = 'identity';
+                document.getElementById('sku-lot-updated-at').value = impact.updated_at;
+                document.getElementById('sku-lot-sku').value = impact.sku;
+                document.getElementById('sku-lot-lot').value = impact.lot;
+                document.getElementById('sku-lot-sku').disabled = blocked;
+                document.getElementById('sku-lot-lot').disabled = blocked;
+                document.getElementById('sku-lot-active-group').style.display = 'none';
+                document.getElementById('sku-lot-reason-group').style.display = blocked ? 'none' : 'block';
+                document.getElementById('sku-lot-reason').value = '';
+                document.getElementById('sku-lot-modal-error').style.display = 'none';
+                document.getElementById('sku-lot-modal').classList.add('active');
+            } catch (err) {
+                alert('Error checking lot history');
+            }
         }
 
         function closeSkuLotModal() {
@@ -1521,9 +1590,12 @@
 
         async function saveSkuLot() {
             const id     = document.getElementById('sku-lot-id').value;
+            const mode   = document.getElementById('sku-lot-mode').value;
             const sku    = document.getElementById('sku-lot-sku').value;
             const lot    = document.getElementById('sku-lot-lot').value.trim();
             const active = document.getElementById('sku-lot-active').checked ? 1 : 0;
+            const expectedUpdatedAt = document.getElementById('sku-lot-updated-at').value;
+            const reason = document.getElementById('sku-lot-reason').value.trim();
 
             if (!sku || !lot) {
                 showSkuLotError('SKU and Lot are required.');
@@ -1531,12 +1603,23 @@
             }
 
             try {
-                const url    = id ? `/api/sku_lots/${id}` : '/api/sku_lots';
-                const method = id ? 'PUT' : 'POST';
+                if (mode === 'identity' && reason.length < 5) {
+                    showSkuLotError('Enter a meaningful correction reason.');
+                    return;
+                }
+                const url = mode === 'identity'
+                    ? `/api/sku_lots/${id}/correct-identity`
+                    : (id ? `/api/sku_lots/${id}` : '/api/sku_lots');
+                const method = mode === 'identity' ? 'POST' : (id ? 'PUT' : 'POST');
+                const body = mode === 'identity'
+                    ? { sku, lot, reason, expected_updated_at: expectedUpdatedAt }
+                    : (id
+                        ? { active, expected_updated_at: expectedUpdatedAt }
+                        : { sku, lot, active });
                 const response = await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sku, lot, active })
+                    body: JSON.stringify(body)
                 });
                 const result = await response.json();
                 if (result.success) {
@@ -1558,7 +1641,10 @@
                 const response = await fetch(`/api/sku_lots/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sku: item.sku, lot: item.lot, active: newActive })
+                    body: JSON.stringify({
+                        active: newActive,
+                        expected_updated_at: item.updated_at || ''
+                    })
                 });
                 const result = await response.json();
                 if (result.success) { loadSkuLots(); }

@@ -1401,12 +1401,21 @@ def _ensure_inventory_archive_objects(cursor):
             id BIGSERIAL PRIMARY KEY,
             entity_type TEXT NOT NULL CHECK (entity_type IN ('lot','transaction')),
             entity_id BIGINT NOT NULL,
-            action TEXT NOT NULL CHECK (action IN ('archive','restore')),
+            action TEXT NOT NULL,
             actor TEXT NOT NULL,
             reason TEXT NOT NULL,
             details JSONB NOT NULL DEFAULT '{}'::jsonb,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
+    """)
+    cursor.execute("""
+        ALTER TABLE inventory_lifecycle_events
+        DROP CONSTRAINT IF EXISTS inventory_lifecycle_events_action_check
+    """)
+    cursor.execute("""
+        ALTER TABLE inventory_lifecycle_events
+        ADD CONSTRAINT inventory_lifecycle_events_action_check
+        CHECK (action IN ('archive','restore','identity_correct','status_change'))
     """)
     cursor.execute("""
         CREATE OR REPLACE FUNCTION prevent_inventory_lifecycle_mutation()
