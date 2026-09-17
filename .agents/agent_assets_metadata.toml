@@ -127,3 +127,17 @@ mtime_ms = 1789654497154
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/3670683f-ee98-4376-bc1d-739162328448/ffd132b5-46c4-420f-90de-353f20a69f48"
 storage_version_token = "1789654506690108"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "an34fs4IBy4vZ2ZPPSVne"
+uri = "file://deliverables/app-sop-templates/08_Period_End_Reporting_SOP.docx"
+type = "word_document"
+title = "Period-End Reporting SOP"
+description = "Final Quality-approved editable Word SOP for EOD, EOW, EOM, Weekly Inventory review, Monthly Charge review, discrepancy escalation, and close evidence."
+logical_id = "b533916c-2353-44ff-9d0f-c5a3c5758344"
+content_hash = "sha256:011a8b50493d151d4254379207bb5ca7eab9d52f1a205cf66c4a43a0b783ed88"
+size = 42188
+mtime_ms = 1789655307347
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/b533916c-2353-44ff-9d0f-c5a3c5758344/044455de-f6d2-4716-816a-dbdb95ac6e4e"
+storage_version_token = "1789655336555383"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
