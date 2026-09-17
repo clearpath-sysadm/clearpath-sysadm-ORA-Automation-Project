@@ -113,3 +113,17 @@ mtime_ms = 1789654012442
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/7fd0fa59-2592-4df4-90ee-9a5ee854b7fc/e4df2d30-f4d1-4a95-9708-d1fc923cf915"
 storage_version_token = "1789654091728599"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "211UTJAYpiM7RzuwNJT1r"
+uri = "file://deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx"
+type = "word_document"
+title = "Daily Fulfillment and Pick List SOP"
+description = "Editable controlled Word SOP for reviewing Today’s Pick List, verifying products, quantities, lots, Benco and expedited work, handling exceptions, shipping in ShipStation, and confirming daily completion."
+logical_id = "3670683f-ee98-4376-bc1d-739162328448"
+content_hash = "sha256:96235ee9f262688ed5346e12774b306413a5365084aea57b30c332d8ed71a6c7"
+size = 41347
+mtime_ms = 1789654497154
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/3670683f-ee98-4376-bc1d-739162328448/ffd132b5-46c4-420f-90de-353f20a69f48"
+storage_version_token = "1789654506690108"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
