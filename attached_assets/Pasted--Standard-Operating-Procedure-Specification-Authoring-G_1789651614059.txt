@@ -1,0 +1,104 @@
+**Standard Operating Procedure Specification & Authoring Guidelines**
+
+---
+
+**1. Purpose**
+This document establishes the official standards for drafting, formatting, reviewing, and managing Standard Operating Procedures (SOPs) across all departments and contract customer projects. The goal is to ensure visual uniformity, procedural clarity, and consistent document control practices while avoiding unnecessarily dense or verbose documentation.
+
+---
+
+**2. Scope**
+This specification applies to all personnel generating, updating, or managing SOPs, work instructions, and quality management system (QMS) documentation. It governs all internal operations as well as contract customer workflows (e.g., Dentist Select/OraCare).
+
+---
+
+**3. Document Control & Metadata Header**
+
+Every official SOP must include a standard Header block at the top of the first page (or cover sheet) containing the following mandatory metadata fields:
+
+* **Document Title:** Concise description of the process or workflow.
+
+
+* **Document Number / ID:** Standardized numbering code based on category or client prefix (e.g., `DDS L.2.01` for Dentist Select procedures).
+
+
+* **Revision Status:** Sequential revision designator starting at `Rev 01` for initial release.
+
+
+* **Author / Authoring Date:** Name of the primary author/editor and creation date.
+
+
+* **Page Numbering:** `Page X of Y` formatting.
+
+---
+
+**4. Standard Document Architecture (Required Sections)**
+
+SOPs must follow a standardized decimal outline structure (`1.0`, `2.0`, `3.0`, etc.). Top-level headings should remain consistent; however, sub-sections may be designated as `N/A` or tailored depending on whether the document is for lightweight operational processes or strict compliance/regulatory requirements.
+
+**1.0 Scope**
+
+Defines the boundary of the procedure—specifying exactly what processes, personnel, and facilities are included (or explicitly excluded).
+
+**2.0 Acronyms, Abbreviations, and Definitions**
+
+A list of all specialized terms, acronyms, and technical jargon used in the document to ensure immediate clarity for readers.
+
+**3.0 Required Documents & References**
+
+Links or references to dependent documents, including parent Quality Manual procedures, Master Batch Records, labor sheets, work instructions, or forms.
+
+**4.0 Responsibility**
+
+Identifies the roles or job functions (e.g., *Production Representative*, *Administration*, *Quality Assurance*) authorized and required to perform, verify, or approve the steps.
+
+**5.0 Precautions & Safety**
+
+Covers required Personal Protective Equipment (PPE), biohazard/chemical hazards, contamination prevention protocols, and equipment safety procedures. *(If no safety hazards exist, note "N/A".)*
+
+**6.0 Equipment, Reagents, and Materials**
+
+Itemized lists specifying equipment model numbers, required reagents/consumables, vendor source part numbers, and cleanroom/workstation setup items.
+
+**7.0 Procedure**
+
+The core sequential action items required to execute the process.
+
+* **Action-Oriented Verbs:** Steps must start with clear imperative verbs (e.g., *Inspect*, *Mix*, *Record*, *Transfer*).
+
+
+* **Scaffolding:** Use numbered steps for mandatory sequential sequences and bulleted lists for non-sequential options or specifications.
+
+
+* **Directness:** Avoid dense explanatory prose; present instructions as clear, step-by-step directives.
+
+
+
+**8.0 Troubleshooting**
+
+Action steps and contingency protocols for handling common errors, edge cases, system discrepancies, or out-of-spec conditions.
+
+**9.0 Quality Records & Document Generation**
+
+Specifies what records must be generated upon completion (e.g., completed Batch Records, labor sheets, inventory tracking updates, or SharePoint CoA entries) and where they must be archived.
+
+---
+
+**5. Authoring & Tooling Workflow**
+
+* **Drafting Engine:** Initial process steps and technical workflows may be drafted using AI transcription generators (e.g., Replit/AI summary tooling) from recorded walk-throughs or transcripts.
+
+
+* **Editing Phase:** AI-generated outputs must undergo manual editing to prune fluff, verify nuances, and ensure the instructions are direct and human-readable.
+
+
+* **File Formats:**
+* All documentation is authored and edited in **Microsoft Word** (`.docx`), replacing legacy FrameMaker files.
+
+
+* Approved release versions must be exported and distributed as read-only **PDF** files.
+
+
+
+
+* **Storage Location:** Final documents and working masters must be saved in OneDrive under the appropriate Quality directory (e.g., `Quality Manual > SOP Contract Customers`).
