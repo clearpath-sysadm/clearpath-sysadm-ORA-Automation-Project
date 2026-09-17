@@ -205,3 +205,75 @@ def test_postgres_archive_trigger_and_operational_history_split():
     finally:
         conn.rollback()
         conn.close()
+
+
+def test_negative_opening_quantity_is_rejected_before_database_access():
+    import app as dashboard_app
+
+    with patch('app.get_connection') as get_connection:
+        with dashboard_app.app.test_request_context(
+            '/api/lot_inventory',
+            method='POST',
+            json={
+                'sku': '17612',
+                'lot': 'LOT-NEGATIVE',
+                'initial_qty': -1,
+                'received_date': '2026-09-17',
+                'status': 'inactive',
+            },
+        ):
+            response, status = dashboard_app.api_create_lot_inventory()
+
+    assert status == 400
+    assert response.get_json() == {
+        'success': False,
+        'error': 'Initial quantity must be zero or a positive whole number',
+    }
+    get_connection.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ('initial_qty', 'expects_opening_receive'),
+    [(0, False), (25, True)],
+)
+def test_nonnegative_opening_quantity_creates_expected_records(
+    initial_qty, expects_opening_receive
+):
+    import app as dashboard_app
+
+    conn = MagicMock()
+    cursor = MagicMock()
+    cursor.fetchone.side_effect = [(1,), (99,)]
+    conn.cursor.return_value = cursor
+
+    with patch('app.get_connection', return_value=conn), \
+         patch('app.schedule_backorder_retry_after_inventory_available'):
+        with dashboard_app.app.test_request_context(
+            '/api/lot_inventory',
+            method='POST',
+            json={
+                'sku': '17612',
+                'lot': f'LOT-{initial_qty}',
+                'initial_qty': initial_qty,
+                'received_date': '2026-09-17',
+                'status': 'inactive',
+            },
+        ):
+            response = dashboard_app.api_create_lot_inventory()
+
+    assert response.status_code == 200
+    assert response.get_json()['id'] == 99
+    conn.commit.assert_called_once()
+    statements = [call.args[0] for call in cursor.execute.call_args_list]
+    has_opening_receive = any(
+        'INSERT INTO inventory_transactions' in statement
+        for statement in statements
+    )
+    assert has_opening_receive is expects_opening_receive
+
+
+def test_lot_form_blocks_negative_and_fractional_opening_quantities():
+    html = (ROOT / 'lot_inventory.html').read_text()
+    assert 'id="initial-qty" min="0" step="1"' in html
+    assert '!Number.isInteger(initialQty) || initialQty < 0' in html
+    assert 'Initial Quantity must be zero or a positive whole number' in html

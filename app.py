@@ -8075,7 +8075,27 @@ def api_create_lot_inventory():
         data = request.get_json()
         sku           = data.get('sku', '').strip()
         lot_number    = data.get('lot', '').strip()
-        initial_qty   = int(data.get('initial_qty', 0))
+        raw_initial_qty = data.get('initial_qty', 0)
+        if isinstance(raw_initial_qty, bool):
+            return jsonify({
+                'success': False,
+                'error': 'Initial quantity must be zero or a positive whole number'
+            }), 400
+        try:
+            initial_qty = int(raw_initial_qty)
+        except (TypeError, ValueError):
+            return jsonify({
+                'success': False,
+                'error': 'Initial quantity must be zero or a positive whole number'
+            }), 400
+        if (
+            initial_qty < 0
+            or isinstance(raw_initial_qty, float) and not raw_initial_qty.is_integer()
+        ):
+            return jsonify({
+                'success': False,
+                'error': 'Initial quantity must be zero or a positive whole number'
+            }), 400
         received_date = data.get('received_date', '').strip()
         status        = data.get('status', 'active')
         notes         = data.get('notes', '').strip()
