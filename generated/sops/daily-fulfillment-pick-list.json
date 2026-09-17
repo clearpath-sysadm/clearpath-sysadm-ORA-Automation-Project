@@ -1,0 +1,335 @@
+{
+  "slug": "daily-fulfillment-pick-list",
+  "title": "Daily Fulfillment and Pick List",
+  "sop_id": "ORA-APP-SOP-003",
+  "revision": "Rev 01",
+  "status": "DRAFT FOR APPROVAL",
+  "effective_date": "Upon approval",
+  "approval_status": "Quality approval pending",
+  "document_status": "Editable master — approval copy not yet released",
+  "source": "deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "Daily Fulfillment and Pick List"
+    },
+    {
+      "type": "paragraph",
+      "text": "CONTROLLED SOP — DRAFT FOR APPROVAL"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "SOP ID",
+          "Revision",
+          "Effective date",
+          "Process owner"
+        ],
+        [
+          "ORA-APP-SOP-003",
+          "Rev 01",
+          "Upon approval",
+          "Operations"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approved by",
+          "Approval date",
+          "Document status"
+        ],
+        [
+          "Quality",
+          "Pending",
+          "Editable master — approval copy not yet released"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approval statement: Approval confirms this procedure was tested against the current OraCare app before release."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "1. Purpose and scope",
+      "anchor": "1-purpose-and-scope"
+    },
+    {
+      "type": "paragraph",
+      "text": "Use this procedure to review Today’s Pick List, pick the correct product, quantity, and lot, verify Benco and expedited shipments, handle visible exceptions, and confirm that daily fulfillment is complete."
+    },
+    {
+      "type": "paragraph",
+      "text": "This procedure applies to routine warehouse fulfillment using the OraCare app and ShipStation. The app pick list is a read-only summary; orders are packed and marked shipped in ShipStation."
+    },
+    {
+      "type": "paragraph",
+      "text": "This procedure does not cover automated order ingestion, automated lot tagging, retired XML import, order correction, or period-end report instructions."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "2. Who performs this",
+      "anchor": "2-who-performs-this"
+    },
+    {
+      "type": "paragraph",
+      "text": "Performed by: Trained warehouse or Operations staff with OraCare app and ShipStation access."
+    },
+    {
+      "type": "paragraph",
+      "text": "Escalate problems to: Operations or an authorized Admin. Escalate unresolved data, lot, or shipping-rule issues to the app owner and Quality."
+    },
+    {
+      "type": "warning",
+      "text": "Stop: Do not pick, pack, or ship from a guess. Hold the affected order whenever the product, quantity, lot, company, or shipping service does not match."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "3. Before you begin",
+      "anchor": "3-before-you-begin"
+    },
+    {
+      "type": "bullet",
+      "text": "Sign in to the OraCare Fulfillment app and ShipStation."
+    },
+    {
+      "type": "bullet",
+      "text": "Confirm the physical picking area and approved lot stock are available."
+    },
+    {
+      "type": "bullet",
+      "text": "Review the Dashboard for visible shipping-configuration or inventory warnings. Hold affected orders until the warning is understood and corrected."
+    },
+    {
+      "type": "bullet",
+      "text": "Open Fulfillment → Today’s Pick List. Do not use New Orders or an XML import for daily fulfillment."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "4. Procedure",
+      "anchor": "4-procedure"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.1 Review Today’s Pick List",
+      "anchor": "4-1-review-today-s-pick-list"
+    },
+    {
+      "type": "ordered",
+      "text": "Select Refresh. Wait for the list to load without an error and confirm the “Inbox refreshed” time is current enough for the work being started."
+    },
+    {
+      "type": "ordered",
+      "text": "Review the total units to pick. Treat the Benco and Expedited values as unit totals, not order counts."
+    },
+    {
+      "type": "ordered",
+      "text": "Review every SKU row before picking. Match the SKU to the product name and confirm the total units shown."
+    },
+    {
+      "type": "ordered",
+      "text": "Review the lot for each SKU. If a row shows multiple lots, use the quantity shown for each lot separately. A muted End of Lot label identifies the first listed assigned lot; do not infer or substitute a different lot."
+    },
+    {
+      "type": "ordered",
+      "text": "Stop if a lot is Untagged, blank, unexpected, or unavailable, or if an expected ShipStation item is missing from the list. Hold the affected order and escalate; do not choose a lot from memory or change an order to make the totals fit."
+    },
+    {
+      "type": "ordered",
+      "text": "Identify Benco and expedited work before picking. Because the pick-list callouts are aggregate totals, verify the company and shipping service on each applicable order in ShipStation before packing or shipping."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.2 Pick and stage the units",
+      "anchor": "4-2-pick-and-stage-the-units"
+    },
+    {
+      "type": "ordered",
+      "text": "Pick the exact SKU, product, lot, and quantity shown. Keep quantities from different lots separated and identifiable."
+    },
+    {
+      "type": "ordered",
+      "text": "Count the physical units and compare them with the pick list before leaving the picking area. Recount any mismatch."
+    },
+    {
+      "type": "ordered",
+      "text": "Stage Benco and expedited orders so their company and service requirements remain visible during packing."
+    },
+    {
+      "type": "ordered",
+      "text": "If stock is short, damaged, or from a different lot, stop the affected order. Do not substitute product or lot, reduce the ShipStation quantity, or clear an alert without authorization."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.3 Pack and ship in ShipStation",
+      "anchor": "4-3-pack-and-ship-in-shipstation"
+    },
+    {
+      "type": "ordered",
+      "text": "Open the exact ShipStation order. Match the order number, customer or company, SKU, product, quantity, and assigned lot to the staged units."
+    },
+    {
+      "type": "ordered",
+      "text": "For Benco orders, confirm the company is Benco and verify the approved Benco shipping configuration shown for the order. For expedited orders, confirm the requested service before buying the label or marking the order shipped. The app does not automatically hold a mismatched order; staff must stop it."
+    },
+    {
+      "type": "ordered",
+      "text": "Review any Shipping Configuration Alert for the order. Correct and verify the order in ShipStation before shipment. Dismissing or marking an alert resolved does not correct the order."
+    },
+    {
+      "type": "ordered",
+      "text": "Pack, label, and mark the order shipped using the approved ShipStation process. Do not use Today’s Pick List to change or complete an order; it has no shipment-completion control."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.4 Confirm daily completion",
+      "anchor": "4-4-confirm-daily-completion"
+    },
+    {
+      "type": "ordered",
+      "text": "Return to Today’s Pick List and select Refresh after the day’s shipments have been completed in ShipStation."
+    },
+    {
+      "type": "ordered",
+      "text": "Review any remaining units. A remaining row means ShipStation still returned awaiting-shipment units; confirm whether the order is intentionally pending, on hold, newly received, or not completed. Do not force it off the list."
+    },
+    {
+      "type": "ordered",
+      "text": "If all awaiting-shipment work is complete, confirm the page shows “No orders awaiting shipment.” If work is expected but the page is empty, verify ShipStation directly and escalate the mismatch."
+    },
+    {
+      "type": "ordered",
+      "text": "Open Shipped Orders and Shipped Items and use their read-only Refresh or search/filter controls to confirm the day’s order numbers, quantities, SKUs, and lots are present. Do not reship an order because a history page is delayed or inconsistent."
+    },
+    {
+      "type": "ordered",
+      "text": "Record and escalate any missing, duplicate, or incorrect shipped result. An authorized Operations or Admin user completes the daily EOD process under the Period-End Reporting SOP; do not use undocumented recovery controls."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.5 Printing and mobile use",
+      "anchor": "4-5-printing-and-mobile-use"
+    },
+    {
+      "type": "ordered",
+      "text": "Print only after a successful current refresh. The printed list shows the desktop SKU/lot table and print date; handwritten changes do not update the app or ShipStation."
+    },
+    {
+      "type": "ordered",
+      "text": "If using a printed list, write the refresh time on it and, as an operational control, destroy or clearly mark it obsolete after the run so it is not reused. The app does not track printed copies."
+    },
+    {
+      "type": "ordered",
+      "text": "On a phone, review the SKU cards. Each card shows product, total units, and lot quantities; open the menu to move between pages. Use ShipStation to verify order-level Benco and expedited details."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "5. Problems and exceptions",
+      "anchor": "5-problems-and-exceptions"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Problem or stop condition",
+          "Required action / escalation"
+        ],
+        [
+          "Loading error, failed refresh, or stale refresh time",
+          "Refresh once. If the problem remains, stop using the list and notify Operations or Admin. Verify affected orders directly in ShipStation; do not pick from an old printout."
+        ],
+        [
+          "Untagged, blank, unexpected, or unavailable lot",
+          "Hold the affected order. Record the order number, SKU, displayed lot, expected lot, and quantity; escalate to Operations or Admin."
+        ],
+        [
+          "Pick-list quantity or product does not match ShipStation or physical stock",
+          "Stop and recount. Do not adjust the order or substitute product. Record the mismatch and escalate."
+        ],
+        [
+          "Benco or expedited indicator conflicts with the ShipStation order",
+          "Hold the order. Verify company and service in ShipStation and correct through the authorized process before shipment."
+        ],
+        [
+          "Shipping Configuration Alert is visible",
+          "Hold the affected shipment until the expected and actual settings are verified and corrected. Resolve the alert only after the issue is handled."
+        ],
+        [
+          "Expected awaiting-shipment order or SKU is missing from the pick list",
+          "Do not add it manually or rely on a retired import. Verify ShipStation status and item details, then escalate the missing data."
+        ],
+        [
+          "Order remains on the pick list after being marked shipped",
+          "Verify the exact order status in ShipStation, allow the normal update, and refresh. If it remains, record the order number and ShipStation ID and escalate."
+        ],
+        [
+          "Shipped Orders or Shipped Items is missing, duplicated, or incorrect",
+          "Do not ship again or edit records from guesswork. Record the order number, ShipStation ID, SKU, lot, quantity, and ship date; escalate for controlled correction."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "6. Records and completion",
+      "anchor": "6-records-and-completion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Record created or updated: ShipStation shipment, label, and tracking record; app shipped-order, shipped-item, lot, and inventory records after supported processing."
+    },
+    {
+      "type": "paragraph",
+      "text": "Completion confirmed when: Every planned order is either shipped or documented as intentionally pending or held; Today’s Pick List has been refreshed and remaining units are explained; Benco and expedited requirements were verified; visible alerts are handled or escalated; and the day’s shipped quantities and lots are present in the supported history views or formally escalated."
+    },
+    {
+      "type": "paragraph",
+      "text": "Save or distribute: Retain any approved pick record, exception note, and shipping evidence according to the existing Quality record-retention process. Keep the editable SOP master and approved read-only copy in the designated Quality location."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Revision history",
+      "anchor": "revision-history"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Revision",
+          "Date",
+          "Change summary",
+          "Approver"
+        ],
+        [
+          "Rev 01",
+          "Pending",
+          "Initial release",
+          "Pending Quality approval"
+        ]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "END OF CONTROLLED SOP"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "inventory-lot-control",
+    "title": "Inventory and Lot Control",
+    "sop_id": "ORA-APP-SOP-001",
+    "revision": "Rev 02",
+    "status": "DRAFT FOR APPROVAL",
+    "effective_date": "Upon approval",
+    "approval_status": "Quality approval pending",
+    "document_status": "Editable master — approval copy not yet released"
+  },
+  {
+    "slug": "order-corrections-cancellations",
+    "title": "Order Corrections and Cancellations",
+    "sop_id": "ORA-APP-SOP-002",
+    "revision": "Rev 01",
+    "status": "DRAFT FOR APPROVAL",
+    "effective_date": "Upon approval",
+    "approval_status": "Quality approval pending",
+    "document_status": "Editable master — approval copy not yet released"
+  },
+  {
+    "slug": "daily-fulfillment-pick-list",
+    "title": "Daily Fulfillment and Pick List",
+    "sop_id": "ORA-APP-SOP-003",
+    "revision": "Rev 01",
+    "status": "DRAFT FOR APPROVAL",
+    "effective_date": "Upon approval",
+    "approval_status": "Quality approval pending",
+    "document_status": "Editable master — approval copy not yet released"
+  },
+  {
+    "slug": "period-end-reporting",
+    "title": "Period-End Reporting: EOD, EOW, and EOM",
+    "sop_id": "ORA-APP-SOP-004",
+    "revision": "Rev 01",
+    "status": "DRAFT FOR APPROVAL",
+    "effective_date": "Upon approval",
+    "approval_status": "Quality approval pending",
+    "document_status": "Editable master — approval copy not yet released"
+  }
+]

@@ -77,8 +77,8 @@
                         </svg>
                     </button>
                     <div>
-                        <h1 class="page-title">📚 Help & Training</h1>
-                        <p class="page-subtitle" style="font-size: 14px; color: var(--text-tertiary); margin: 0;">Learn how to use the Oracare Fulfillment System</p>
+                        <h1 class="page-title">Help &amp; Training</h1>
+                        <p class="page-subtitle" style="font-size: 14px; color: var(--text-tertiary); margin: 0;">Current controlled SOP drafts</p>
                     </div>
                 </div>
                 <div class="top-bar-actions">
@@ -87,6 +87,13 @@
             </div>
 
             <div class="content-area">
+                <div class="sop-notice" role="status">
+                    <strong>Controlled drafts — not approved releases.</strong>
+                    Effective date is upon approval. Quality approval is pending for every document below.
+                </div>
+                <div id="sop-library" class="sop-library" aria-live="polite">
+                    <p>Loading SOP library…</p>
+                </div>
                 <!-- Tab Navigation -->
                 <div class="help-tabs">
                     <button class="help-tab active" onclick="switchTab('quick-start')">🚀 Quick Start</button>
@@ -364,6 +371,7 @@
     <script src="/static/dark-mode.js"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/alert-bar.js"></script>
+    <link rel="stylesheet" href="/static/css/sop-library.css">
     <style>
         /* Help Tab Navigation */
         .help-tabs {
@@ -504,6 +512,7 @@
             window.location.href = '/weekly_shipped_history.html';
         }
     </script>
+    <script src="/static/js/sop-library.js"></script>
 
     <style>
         .help-task {

@@ -8,7 +8,7 @@ import uuid
 import re
 import logging
 import threading
-from flask import Flask, jsonify, render_template, send_from_directory, request, session, g
+from flask import Flask, jsonify, render_template, send_from_directory, request, session, g, abort
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import pytz
@@ -470,6 +470,14 @@ def record_shipstation_order_deletion(shipstation_order_id, order_number=None, d
 # List of allowed HTML files to serve (security: prevent directory traversal)
 ALLOWED_PAGES = ['index.html', 'shipped_orders.html', 'shipped_items.html', 'charge_report.html', 'inventory_transactions.html', 'weekly_inventory_report.html', 'weekly_shipped_history.html', 'settings.html', 'lot_inventory.html', 'workflow_controls.html', 'incidents.html', 'help.html', 'landing.html', 'email_contacts.html', 'inventory_snapshots.html', 'logs.html', 'shipment_summary.html', 'inventory.html']
 
+SOP_DOCUMENTS = {
+    'inventory-lot-control': 'inventory-lot-control',
+    'order-corrections-cancellations': 'order-corrections-cancellations',
+    'daily-fulfillment-pick-list': 'daily-fulfillment-pick-list',
+    'period-end-reporting': 'period-end-reporting',
+}
+SOP_OUTPUT_DIR = os.path.join(project_root, 'generated', 'sops')
+
 # Concurrency locks for report endpoints (prevents duplicate processing)
 # NOTE: In-memory locks only protect a single Flask process. If multiple workers are deployed,
 # upgrade to database advisory locks (pg_advisory_lock) for system-wide concurrency protection.
@@ -506,6 +514,57 @@ def email_contacts_redirect():
     """Redirect /email_contacts to /email_contacts.html for convenience"""
     from flask import redirect
     return redirect('/email_contacts.html')
+
+@app.route('/help/<document_id>')
+@login_required
+def sop_direct_link(document_id):
+    """Serve the Help shell for a fixed SOP identifier."""
+    if document_id not in SOP_DOCUMENTS:
+        abort(404)
+    from flask import make_response
+    response = make_response(send_from_directory(project_root, 'help.html'))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
+
+@app.route('/api/sops')
+@login_required
+def sop_catalog():
+    """Return the generated four-document catalog."""
+    path = os.path.join(SOP_OUTPUT_DIR, 'catalog.json')
+    if not os.path.isfile(path):
+        return jsonify({'error': 'SOP catalog has not been generated'}), 503
+    return send_from_directory(SOP_OUTPUT_DIR, 'catalog.json', mimetype='application/json')
+
+@app.route('/api/sops/<document_id>')
+@login_required
+def sop_content(document_id):
+    """Return generated semantic content through a fixed ID allowlist."""
+    basename = SOP_DOCUMENTS.get(document_id)
+    if not basename:
+        abort(404)
+    filename = f'{basename}.json'
+    if not os.path.isfile(os.path.join(SOP_OUTPUT_DIR, filename)):
+        return jsonify({'error': f'SOP artifact is missing for {document_id}'}), 503
+    return send_from_directory(SOP_OUTPUT_DIR, filename, mimetype='application/json')
+
+@app.route('/sops/<document_id>/download')
+@login_required
+def download_sop(document_id):
+    """Download a generated PDF through a fixed document-ID allowlist."""
+    basename = SOP_DOCUMENTS.get(document_id)
+    if not basename:
+        abort(404)
+    filename = f'{basename}.pdf'
+    if not os.path.isfile(os.path.join(SOP_OUTPUT_DIR, filename)):
+        return jsonify({'error': f'SOP PDF is missing for {document_id}'}), 503
+    return send_from_directory(
+        SOP_OUTPUT_DIR,
+        filename,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'Oracare_{basename}.pdf',
+        max_age=0,
+    )
 
 @app.route('/<path:filename>')
 def serve_page(filename):

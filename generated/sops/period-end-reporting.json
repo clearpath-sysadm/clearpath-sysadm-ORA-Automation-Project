@@ -1,0 +1,382 @@
+{
+  "slug": "period-end-reporting",
+  "title": "Period-End Reporting: EOD, EOW, and EOM",
+  "sop_id": "ORA-APP-SOP-004",
+  "revision": "Rev 01",
+  "status": "DRAFT FOR APPROVAL",
+  "effective_date": "Upon approval",
+  "approval_status": "Quality approval pending",
+  "document_status": "Editable master — approval copy not yet released",
+  "source": "deliverables/app-sop-templates/08_Period_End_Reporting_SOP.docx",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "Controlled procedure for running inventory and billing period-end actions and verifying the Weekly Inventory and Monthly Charge reports."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "SOP ID",
+          "Revision",
+          "Effective date",
+          "Process owner"
+        ],
+        [
+          "ORA-APP-SOP-004",
+          "Rev 01",
+          "Upon approval",
+          "Operations"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approved by",
+          "Approval date",
+          "Document status"
+        ],
+        [
+          "Quality",
+          "Pending",
+          "Editable master — approval copy not yet released"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approval statement: Approval confirms this procedure was tested against the current OraCare app before release."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "1. Purpose and scope",
+      "anchor": "1-purpose-and-scope"
+    },
+    {
+      "type": "paragraph",
+      "text": "Use this procedure to run the normal End of Day (EOD), End of Week (EOW), and End of Month (EOM) actions and to verify the Weekly Inventory and Monthly Charge reports. These actions affect inventory history, operational reporting, and customer billing decisions."
+    },
+    {
+      "type": "paragraph",
+      "text": "This procedure covers normal scheduled processing only. It does not cover historical corrections, backfills, general recovery, report-calculation changes, or manual inventory/order corrections."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "2. Who performs this",
+      "anchor": "2-who-performs-this"
+    },
+    {
+      "type": "paragraph",
+      "text": "Performed by: Operations or Admin may run EOD and EOW. Only Admin may run EOM. Any signed-in user may view and refresh the Weekly Inventory and Monthly Charge reports."
+    },
+    {
+      "type": "paragraph",
+      "text": "Escalate problems to: Admin and Quality. Include the report type, intended period, time, visible message, affected products/orders, and supporting screenshot or export."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Action",
+          "Authorized role",
+          "Normal timing",
+          "Important consequence"
+        ],
+        [
+          "View or refresh reports",
+          "Any signed-in user",
+          "As needed",
+          "Read-only; does not run EOD, EOW, or EOM."
+        ],
+        [
+          "Run EOD",
+          "Operations or Admin",
+          "End of each ordinary workday",
+          "Processes shipped activity, updates inventory-related records, and attempts a daily inventory snapshot."
+        ],
+        [
+          "Run EOW",
+          "Operations or Admin",
+          "Week-end, normally Friday",
+          "Runs the daily shipment processor as a prerequisite, then updates weekly/52-week reporting. It does not perform the full Run EOD reconciliation, discrepancy query, or daily snapshot steps."
+        ],
+        [
+          "Run EOM",
+          "Admin only",
+          "Approved month-end time",
+          "Calculates and logs the current calendar month charge summary; does not replace review of the selected Monthly Charge Report."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "3. Before you begin",
+      "anchor": "3-before-you-begin"
+    },
+    {
+      "type": "bullet",
+      "text": "Sign in with the role required for the action. Do not ask another user to run an action under the wrong role."
+    },
+    {
+      "type": "bullet",
+      "text": "Confirm the intended business date, week, or month in Central Time and confirm the scheduled work for that period is complete."
+    },
+    {
+      "type": "bullet",
+      "text": "Confirm expected shipped activity and inventory inputs are current enough for close. Resolve or document known missing, duplicated, mismatched, or pending records before proceeding."
+    },
+    {
+      "type": "bullet",
+      "text": "Open Weekly Inventory Report > Report Actions and read the EOD, EOW, and EOM status timestamps. A timestamp shows the latest recorded attempt, including a failed attempt; it does not show the outcome or prove that the intended period and source data are correct."
+    },
+    {
+      "type": "bullet",
+      "text": "Make sure another report action is not already running. Do not open a second browser or ask another user to start the same action."
+    },
+    {
+      "type": "warning",
+      "text": "STOP: Never rerun a period-end action only because a screen appears stale. Refresh the status first. If completion is uncertain, stop and escalate before retrying; duplicate processing is not prevented across all app instances."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "4. Procedure",
+      "anchor": "4-procedure"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.1 Choose the correct action",
+      "anchor": "4-1-choose-the-correct-action"
+    },
+    {
+      "type": "ordered",
+      "text": "On an ordinary workday, use Run EOD after the day’s fulfillment activity is complete."
+    },
+    {
+      "type": "ordered",
+      "text": "At week-end, use Run EOW once. Do not run a separate EOD immediately before it unless the approved schedule requires the full EOD reconciliation, discrepancy review, and snapshot steps. EOW runs the daily shipment processor, but not those additional EOD controls."
+    },
+    {
+      "type": "ordered",
+      "text": "At month-end, have an Admin run EOM only for the current calendar month. Separately select the intended month on Monthly Charge Report; the EOM action and the report filter are not the same control."
+    },
+    {
+      "type": "ordered",
+      "text": "If week-end and month-end coincide, follow the approved close schedule. Run EOW and confirm it; complete any separately required full EOD controls; then have Admin run EOM on the approved final calendar day."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.2 Run and confirm EOD",
+      "anchor": "4-2-run-and-confirm-eod"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Weekly Inventory Report, review the As of date and visible quantities, and note any obvious missing or unexpected product values before running EOD."
+    },
+    {
+      "type": "ordered",
+      "text": "Open Report Actions and select Run EOD once. Leave the page open while the action shows Running."
+    },
+    {
+      "type": "ordered",
+      "text": "Read the completion alert. Expected success states that daily inventory was updated and shipped items were synced; it may also report completed reconciliation or a saved snapshot. The page does not expose every reconciliation, discrepancy, or snapshot result, so do not infer that omitted checks passed."
+    },
+    {
+      "type": "ordered",
+      "text": "Use the updated EOD timestamp only to confirm that an attempt was recorded. The success alert is the visible action result. Refresh the Weekly Inventory report and confirm the As of date and key product quantities are reasonable for the completed day."
+    },
+    {
+      "type": "ordered",
+      "text": "Stop and escalate any error, timeout, unexpected reconciliation message, or unexplained quantity. A missing reconciliation or snapshot message does not prove failure or success because the page does not expose all backend results; rely on the visible report review and escalate when formal close evidence is required."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.3 Run and confirm EOW",
+      "anchor": "4-3-run-and-confirm-eow"
+    },
+    {
+      "type": "ordered",
+      "text": "At week-end, confirm all planned daily fulfillment activity is complete and no EOD or EOW action is running."
+    },
+    {
+      "type": "ordered",
+      "text": "Open Report Actions and select Run EOW once. EOW runs the daily shipment processor before generating the weekly result. It does not run the full EOD reconciliation, discrepancy query, or daily snapshot steps."
+    },
+    {
+      "type": "ordered",
+      "text": "Read the completion alert. Expected success states that the weekly report was generated and 52-week averages were calculated."
+    },
+    {
+      "type": "ordered",
+      "text": "Use the EOD and EOW timestamps only to confirm that attempts were recorded; they do not display outcome. The EOW date represents the intended week and is stored as that week’s Monday, even when run later. Then refresh the Weekly Inventory report."
+    },
+    {
+      "type": "ordered",
+      "text": "Review Product, Current Qty, Pallet Breakdown, 52-Week Avg, and Days Left. On a phone, cards show the main product, quantity, average, pallet, and days-left information in a condensed layout."
+    },
+    {
+      "type": "ordered",
+      "text": "If distributing the weekly report, select Compose Email only after review. Confirm the recipient list. The app copies the report and opens the device email program; it does not send the email automatically."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.4 Run and confirm EOM",
+      "anchor": "4-4-run-and-confirm-eom"
+    },
+    {
+      "type": "ordered",
+      "text": "Have an Admin confirm that the intended close is the current calendar month, today is the approved final calendar day for close, and EOW or required daily processing has completed. If the intended period is prior or the month is not ready to close, stop. Run EOM does not let the user select a prior month and calculates through the current month’s last day."
+    },
+    {
+      "type": "ordered",
+      "text": "From Weekly Inventory Report > Report Actions, select Run EOM once and leave the page open while it runs."
+    },
+    {
+      "type": "ordered",
+      "text": "Read the completion alert and confirm it reports success and a plausible total. Use the updated EOM timestamp only to confirm that an attempt was recorded; it does not display outcome or month."
+    },
+    {
+      "type": "ordered",
+      "text": "Open Monthly Charge Report. Select the intended Month and Year, then select Refresh. Confirm the displayed reporting period before reviewing any totals or exporting."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Self-Check. Review every result. Continue only when there are no errors and every warning has a documented explanation approved for billing review."
+    },
+    {
+      "type": "ordered",
+      "text": "Review daily rows and the TOTAL row for order count, product quantities, order charges, package charges, pallet/space charges, and grand total. Compare unexpected spikes, zeros, gaps, or duplicates with supporting shipped and inventory records."
+    },
+    {
+      "type": "ordered",
+      "text": "Export PDF or CSV only after review. Exports reflect the currently loaded report and do not prove that the underlying data or selected period are correct."
+    },
+    {
+      "type": "ordered",
+      "text": "Record the reviewer, selected month/year, self-check result, explained warnings, final total, and export or approval evidence according to the existing Quality record-retention process."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.5 Routine report viewing",
+      "anchor": "4-5-routine-report-viewing"
+    },
+    {
+      "type": "paragraph",
+      "text": "Refresh may be used to reload the current view. The Weekly Inventory header shows its inventory As of date plus the screen refresh time in Central Time. Monthly Charge filters select a calendar month. Viewing, filtering, refreshing, composing, or exporting does not itself run EOD, EOW, or EOM."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "5. Problems and exceptions",
+      "anchor": "5-problems-and-exceptions"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Problem or stop condition",
+          "Required action / escalation"
+        ],
+        [
+          "Wrong role or EOM is unavailable",
+          "Stop. EOD/EOW require Operations or Admin; EOM requires Admin. Do not share accounts or bypass the role control."
+        ],
+        [
+          "Action already running, status uncertain, or duplicate attempt suspected",
+          "Do not retry. Refresh status and report data. The timestamp is the latest attempt, not proof of success. Escalate with report type, start time, user, alert, and affected output."
+        ],
+        [
+          "EOD error, timeout, unexpected reconciliation message, or unexplained report quantity",
+          "Stop close. Preserve the visible alert and affected report details. Escalate to Admin and Quality; do not make guessed corrections. The page does not expose every backend reconciliation, discrepancy, or snapshot result."
+        ],
+        [
+          "EOW daily prerequisite or weekly generation fails",
+          "Do not compose or distribute the weekly report. Record the message and status timestamps and escalate."
+        ],
+        [
+          "EOM month or close day does not match the intended billing period",
+          "Stop. Run EOM only for the current month on the approved final calendar day. Use the report filter for review, and escalate any prior-month or early-close need."
+        ],
+        [
+          "Self-Check reports an error",
+          "Stop billing review and export. Record the failed check and details; escalate before approval."
+        ],
+        [
+          "Self-Check reports a warning",
+          "Investigate and document the cause. Continue only after the warning is explained and accepted by the authorized billing reviewer."
+        ],
+        [
+          "Charge total, daily quantity, order count, or pallet/space charge is unexpected",
+          "Do not correct historical data from this SOP. Save evidence, identify the selected period and affected rows, and escalate for controlled review."
+        ],
+        [
+          "Weekly report is blank, stale, or implausible",
+          "Refresh once and verify the As of date. If still wrong, stop distribution and escalate; do not infer missing values."
+        ],
+        [
+          "No email recipients or email program does not open",
+          "Use Manage Recipients or approved communication support. Confirm recipients manually; Compose Email does not send automatically."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "6. Records and completion",
+      "anchor": "6-records-and-completion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Record created or updated: EOD report-run entry, shipped/inventory processing results, reconciliation activity when completed, and daily inventory snapshot when saved; EOW report-run entry and weekly averages; EOM report-run entry and current-month charge summary. The Report Actions timestamps do not display run outcome. Reviewed exports, discrepancy notes, and approval evidence are retained operational records."
+    },
+    {
+      "type": "paragraph",
+      "text": "Completion confirmed when: The visible action alert reports success; the correct day, week, or month is independently confirmed; the Weekly Inventory or Monthly Charge output is refreshed and reviewed; all visible errors are resolved; warnings and discrepancies are explained and approved; and required evidence is saved or distributed to the correct recipients. A Report Actions timestamp alone cannot confirm success."
+    },
+    {
+      "type": "paragraph",
+      "text": "Save or distribute: Keep the selected-period export, self-check evidence, discrepancy explanations, and reviewer approval according to the existing Quality record-retention process. Keep the editable SOP master and approved read-only copy in the designated Quality location."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Revision history",
+      "anchor": "revision-history"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Revision",
+          "Date",
+          "Change summary",
+          "Approver"
+        ],
+        [
+          "Rev 01",
+          "Pending",
+          "Initial release",
+          "Pending Quality approval"
+        ]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "END OF CONTROLLED SOP"
+    }
+  ]
+}

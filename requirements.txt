@@ -30,6 +30,8 @@ oauthlib==3.2.2
 PyJWT==2.8.0
 pytz
 werkzeug
+python-docx
+reportlab
 cryptography
 defusedxml
 flask

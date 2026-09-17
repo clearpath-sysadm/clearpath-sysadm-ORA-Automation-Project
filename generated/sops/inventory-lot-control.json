@@ -1,0 +1,506 @@
+{
+  "slug": "inventory-lot-control",
+  "title": "Inventory and Lot Control",
+  "sop_id": "ORA-APP-SOP-001",
+  "revision": "Rev 02",
+  "status": "DRAFT FOR APPROVAL",
+  "effective_date": "Upon approval",
+  "approval_status": "Quality approval pending",
+  "document_status": "Editable master — approval copy not yet released",
+  "source": "docs/Inventory_and_Lot_Control_SOP_Rev_02.docx",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "CONTROLLED SOP — DRAFT FOR APPROVAL"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "SOP ID",
+          "Revision",
+          "Effective date",
+          "Process owner"
+        ],
+        [
+          "ORA-APP-SOP-001",
+          "Rev 02",
+          "Upon approval",
+          "Operations"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approved by",
+          "Approval date",
+          "Document status"
+        ],
+        [
+          "Quality",
+          "Pending",
+          "Editable master — approval copy not yet released"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approval statement: Approval confirms this procedure was tested against the current OraCare app before release."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "1. Purpose and scope",
+      "anchor": "1-purpose-and-scope"
+    },
+    {
+      "type": "paragraph",
+      "text": "Use this procedure to receive inventory, correct lot balances, correct transaction records, update lot status, maintain active SKU–lot assignments, and archive or restore inventory records in the OraCare Fulfillment app."
+    },
+    {
+      "type": "paragraph",
+      "text": "This procedure applies to the Inventory Monitor and Lot Inventory pages. It does not cover automated lot tagging, automatic shipment deductions, or retired import workflows."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "2. Who performs this",
+      "anchor": "2-who-performs-this"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Action",
+          "Authorized role"
+        ],
+        [
+          "View transactions, lots, balances, and assignments",
+          "Any signed-in user"
+        ],
+        [
+          "Add or edit transactions; add or correct lots; update lot status; maintain assignments",
+          "Operations or Admin"
+        ],
+        [
+          "Archive or restore a transaction or lot",
+          "Admin only, with a required reason and documented approval"
+        ]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Escalate errors, uncertain quantities, duplicate records, or access problems to an Admin. Escalate suspected inventory or lot-traceability discrepancies according to the Quality process before changing records."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "3. Before you begin",
+      "anchor": "3-before-you-begin"
+    },
+    {
+      "type": "bullet",
+      "text": "Confirm you are working in the correct app environment and are signed in with the required role."
+    },
+    {
+      "type": "bullet",
+      "text": "Have the SKU, supplier lot number, quantity, effective date, and source record available."
+    },
+    {
+      "type": "bullet",
+      "text": "Confirm whether the action is a physical receipt, a correction to a lot balance, a correction to an existing transaction, or a lot-assignment change."
+    },
+    {
+      "type": "bullet",
+      "text": "Do not estimate. Stop if the source information is incomplete or conflicts with the app."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Important: Saving a receipt or positive correction can immediately start a background retry of waiting backorders for that SKU. Verify the SKU, lot, and quantity before saving."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "4. Procedure",
+      "anchor": "4-procedure"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.1 Review inventory before making a change",
+      "anchor": "4-1-review-inventory-before-making-a-change"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Inventory Monitor to review the transaction history, or open Lot Inventory to review live lot balances."
+    },
+    {
+      "type": "ordered",
+      "text": "Filter Inventory Monitor by date, SKU, or transaction type when locating a record. Use Clear to remove filters. Admins may select Archived history to review archived transactions. Searches return at most 1,000 transactions, so narrow the date and SKU filters if a record is not shown."
+    },
+    {
+      "type": "ordered",
+      "text": "On Lot Inventory, use In Stock, All Lots, Active, Non-Depleted, or Archived to locate the lot. Archived is available to Admins. Confirm the SKU, lot number, balance, FIFO priority, and status."
+    },
+    {
+      "type": "ordered",
+      "text": "Stop if the expected record is missing, duplicated, or does not match the source information."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.2 Receive inventory into a new lot",
+      "anchor": "4-2-receive-inventory-into-a-new-lot"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Lot Inventory and select Add Lot."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the SKU and the supplier Lot Number exactly as shown on the source record."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the Initial Quantity as 0 or a positive whole number. Do not enter a negative value. Use 0 only when adding a historical lot with no stock to receive. If the app accepts a negative value, stop and escalate."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the actual Received Date. This date controls FIFO order."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Active for usable stock. Select Quarantine, Inactive, or Depleted only when that status is supported by the source record or an approved decision."
+    },
+    {
+      "type": "ordered",
+      "text": "Add a short note when it helps identify the receipt or status decision."
+    },
+    {
+      "type": "ordered",
+      "text": "Recheck the SKU, lot number, quantity, received date, and status; then select Save Lot."
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm “Lot created successfully” appears and verify the new lot balance and FIFO position."
+    },
+    {
+      "type": "warning",
+      "text": "Stop: Do not create a second record for the same SKU and lot. If the app reports that the combination already exists, locate the existing lot and follow section 4.3 or 4.4."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.3 Receive additional inventory into an existing lot",
+      "anchor": "4-3-receive-additional-inventory-into-an-existing-lot"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Inventory Monitor and select Add Transaction."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the receipt Date and select the SKU."
+    },
+    {
+      "type": "ordered",
+      "text": "Select the existing lot from the Lot Number list."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the received Quantity as a positive whole number and select Receive."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the actual supplier lot number in Notes for receipts of 200 units or more. The app rejects blank Notes and certain administrative phrases, but you remain responsible for verifying the lot number against the source record."
+    },
+    {
+      "type": "ordered",
+      "text": "Recheck all fields and select Save."
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm “Transaction created successfully” appears, then open Lot Inventory and verify the lot balance increased by the expected amount."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.4 Correct a lot balance",
+      "anchor": "4-4-correct-a-lot-balance"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Lot Inventory and locate the correct SKU and lot."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Correct."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Adjust Up to increase the balance or Adjust Down to decrease it."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the Amount as a positive whole number. The selected correction type controls the direction."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the correction Date and a brief reason in Notes."
+    },
+    {
+      "type": "ordered",
+      "text": "Calculate the expected resulting balance before saving. The app may permit a negative result; stop and escalate instead of saving any unexplained negative balance."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Record Correction."
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm “Correction recorded successfully” appears and verify the displayed balance equals the expected result."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Control: Use Correct for a new adjustment. Edit an existing transaction only when that original transaction record itself is wrong."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.5 Correct an existing transaction record",
+      "anchor": "4-5-correct-an-existing-transaction-record"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Inventory Monitor and locate the transaction using the filters."
+    },
+    {
+      "type": "ordered",
+      "text": "Compare the date, SKU, lot, quantity, type, and notes with the source record."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Edit and correct only the inaccurate fields."
+    },
+    {
+      "type": "ordered",
+      "text": "Use a positive whole-number quantity. Select the transaction type that determines the direction: Receive, Adjust Up, and Repack add to the lot; Ship and Adjust Down reduce it."
+    },
+    {
+      "type": "ordered",
+      "text": "Ensure a lot is selected for Receive, Adjust Up, Adjust Down, or Repack."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Save and confirm “Transaction updated successfully” appears."
+    },
+    {
+      "type": "ordered",
+      "text": "Open Lot Inventory and verify the affected lot balance is correct."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.6 Update lot details or status",
+      "anchor": "4-6-update-lot-details-or-status"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Lot Inventory, locate the lot, and select Edit."
+    },
+    {
+      "type": "ordered",
+      "text": "Update only the Received Date, Status, or Notes. The SKU, lot number, and balance cannot be changed in this screen."
+    },
+    {
+      "type": "ordered",
+      "text": "Use Quarantine or Inactive when stock must not be treated as active. Use Depleted only when the lot is no longer available for use."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Save Lot and confirm “Lot updated successfully” appears."
+    },
+    {
+      "type": "ordered",
+      "text": "To reactivate a depleted lot with a positive balance, select its Depleted status, review the confirmation showing SKU, lot, and balance, and confirm. A zero-balance lot cannot be reactivated."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.7 Maintain active lot assignments",
+      "anchor": "4-7-maintain-active-lot-assignments"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Lot Inventory and select the Lot Assignments tab."
+    },
+    {
+      "type": "ordered",
+      "text": "Use Active Only or Show All to review assignments for the SKU."
+    },
+    {
+      "type": "ordered",
+      "text": "To add an assignment, select Add Assignment, choose the SKU, enter the lot number, keep Active selected only if new orders should use it, and save."
+    },
+    {
+      "type": "ordered",
+      "text": "To change an assignment, select Edit, correct the SKU, lot number, or Active setting, and save. This changes the underlying lot record, not a separate routing-only record; verify inventory and transaction history before changing the SKU or lot number."
+    },
+    {
+      "type": "ordered",
+      "text": "To retire an assignment, select Deactivate. Use Activate only after verifying that the lot is the approved assignment for new orders."
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm the assignment appears with the intended Active or Inactive status."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Important: Assignments guide automatic lot tagging and manage the underlying lot record. Deactivate an assignment to retire it from tagging. Use Archive only when the entire lot record must leave operational use while its history remains preserved."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.8 Archive and restore records — Admin only",
+      "anchor": "4-8-archive-and-restore-records-admin-only"
+    },
+    {
+      "type": "ordered",
+      "text": "Obtain documented approval identifying the exact transaction or lot and enter a meaningful reason in the app. Archive is different from Inactive, Quarantine, and Depleted: those statuses describe operational availability; Archive removes a record from normal operational use while preserving its identity and history."
+    },
+    {
+      "type": "ordered",
+      "text": "For a transaction, select Archive in Inventory Monitor, review the impact preview, confirm the exact record, and enter the reason. The transaction remains in Archived history but no longer contributes to the live lot balance."
+    },
+    {
+      "type": "ordered",
+      "text": "For a lot, select Archive in Lot Inventory, review its balance, transaction count, preserved shipped-order references, and open reservations, then enter the reason. A lot with an open reservation cannot be archived. Archiving never deletes its transactions or clears historical order-line lot references."
+    },
+    {
+      "type": "ordered",
+      "text": "To reverse an accidental archive, open Archived history, select Restore, enter the reason, and verify the original record ID, history, lot status, and balance. Restore the lot before restoring one of its archived transactions."
+    },
+    {
+      "type": "ordered",
+      "text": "Record the approval and post-action verification in the designated Quality location. Permanent purge is not available in the normal app workflow."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Control: Archive and restore are auditable and reversible. They preserve original IDs, transactions, and historical order-line lot references. Inactive, Quarantine, and Depleted are operational statuses and must not be used as substitutes for Archive."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "5. Problems and exceptions",
+      "anchor": "5-problems-and-exceptions"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Problem or stop condition",
+          "Required action / escalation"
+        ],
+        [
+          "SKU, lot, quantity, date, or source record is missing or conflicting",
+          "Do not save. Resolve the discrepancy or escalate to an Admin/Quality."
+        ],
+        [
+          "Receipt of 200+ units is rejected for missing or invalid notes",
+          "Enter the actual supplier lot number in Notes. Do not use “opening balance,” “recount,” or another administrative phrase as the lot reference."
+        ],
+        [
+          "Duplicate SKU–lot error",
+          "Do not create another lot. Locate the existing lot and receive or correct against it."
+        ],
+        [
+          "Correction would create an unexplained negative balance",
+          "Do not save. Recount and escalate the discrepancy."
+        ],
+        [
+          "Lot or assignment is uncertain, quarantined, or not approved for use",
+          "Do not activate it or assign it to new orders. Escalate to Operations/Admin and Quality."
+        ],
+        [
+          "App returns an error, 401, or 403",
+          "Do not retry by changing data. Capture the message and escalate to the authorized role."
+        ],
+        [
+          "Success message appears but the balance or status is wrong",
+          "Stop further changes. Record what was entered and escalate immediately."
+        ],
+        [
+          "Lot archive is rejected because open reservations exist",
+          "Do not bypass the safeguard. Resolve or release the active order reservations through the normal order workflow, verify the preview again, and then archive only with approval."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "6. Records and completion",
+      "anchor": "6-records-and-completion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Record created or updated: Inventory transaction, lot record, SKU–lot assignment, archive/restore metadata, and append-only archive/restore event in the OraCare Fulfillment app."
+    },
+    {
+      "type": "paragraph",
+      "text": "Completion confirmed when: Confirm the displayed success message and verify transaction history, live lot balance, archive state, lot status, or FIFO position against the source record and expected result. For assignment changes, verify the resulting row shows the intended SKU, lot, and Active or Inactive status."
+    },
+    {
+      "type": "paragraph",
+      "text": "Save or distribute: Keep source receipt, count, correction approval, or archive/restore approval according to the existing Quality record-retention process. Keep the editable SOP master and approved read-only copy in the designated Quality location."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Revision history",
+      "anchor": "revision-history"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Revision",
+          "Date",
+          "Change summary",
+          "Approver"
+        ],
+        [
+          "Rev 02",
+          "2026-09-17",
+          "Replace permanent deletion instructions with auditable archive/restore; clarify status differences, safeguards, filters, and validation limitations",
+          "Pending Quality approval"
+        ]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "END OF CONTROLLED SOP"
+    }
+  ]
+}

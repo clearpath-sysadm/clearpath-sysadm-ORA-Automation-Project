@@ -1,0 +1,450 @@
+{
+  "slug": "order-corrections-cancellations",
+  "title": "Order Corrections and Cancellations",
+  "sop_id": "ORA-APP-SOP-002",
+  "revision": "Rev 01",
+  "status": "DRAFT FOR APPROVAL",
+  "effective_date": "Upon approval",
+  "approval_status": "Quality approval pending",
+  "document_status": "Editable master — approval copy not yet released",
+  "source": "deliverables/app-sop-templates/06_Order_Corrections_and_Cancellations_SOP.docx",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "CONTROLLED SOP — DRAFT FOR APPROVAL"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "SOP ID",
+          "Revision",
+          "Effective date",
+          "Process owner"
+        ],
+        [
+          "ORA-APP-SOP-002",
+          "Rev 01",
+          "Upon approval",
+          "Operations"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approved by",
+          "Approval date",
+          "Document status"
+        ],
+        [
+          "Quality",
+          "Pending",
+          "Editable master — approval copy not yet released"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approval statement: Approval confirms this procedure was tested against the current OraCare app before release."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "1. Purpose and scope",
+      "anchor": "1-purpose-and-scope"
+    },
+    {
+      "type": "paragraph",
+      "text": "Use this procedure to identify an exact order, refresh the local app from ShipStation, cancel an unwanted ShipStation order, resolve duplicate orders, or recreate an order with a corrected order number."
+    },
+    {
+      "type": "paragraph",
+      "text": "This procedure applies to Order Corrections and the Recreate Order Tool in Workflow Controls. It does not cover changing live order contents, hidden or direct database resets, bulk recovery controls, retired import workflows, or general reconciliation not tied to one order."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "2. Who performs this",
+      "anchor": "2-who-performs-this"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Action",
+          "Authorized role"
+        ],
+        [
+          "Look up and compare an order",
+          "Admin"
+        ],
+        [
+          "Sync local records from ShipStation",
+          "Admin, after verifying ShipStation is correct"
+        ],
+        [
+          "Cancel an order or resolve a duplicate",
+          "Admin, with documented approval"
+        ],
+        [
+          "Recreate an order number",
+          "Designated Admin, with documented approval"
+        ],
+        [
+          "Reset an order to pending",
+          "No supported user procedure — escalate"
+        ]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Escalate uncertain identity, shipped-order issues, failed actions, or downstream discrepancies to the app owner and Quality before making another change."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "3. Before you begin",
+      "anchor": "3-before-you-begin"
+    },
+    {
+      "type": "bullet",
+      "text": "Confirm you are in the correct app environment and signed in as an Admin."
+    },
+    {
+      "type": "bullet",
+      "text": "Have the source request or approval and the expected final order number and status."
+    },
+    {
+      "type": "bullet",
+      "text": "Record the exact order number, ShipStation ID, customer or company, items and unit quantities, and current status."
+    },
+    {
+      "type": "bullet",
+      "text": "If more than one ShipStation order has the same order number, treat each ShipStation ID as a separate order."
+    },
+    {
+      "type": "bullet",
+      "text": "Stop if the source record is incomplete or conflicts with ShipStation or the local app."
+    },
+    {
+      "type": "warning",
+      "text": "Stop: Never cancel, sync, or recreate an order by order number alone when more than one ShipStation ID is present."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "4. Procedure",
+      "anchor": "4-procedure"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.1 Identify the exact order",
+      "anchor": "4-1-identify-the-exact-order"
+    },
+    {
+      "type": "ordered",
+      "text": "Open Orders History > Order Corrections."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the order number and select Search Orders."
+    },
+    {
+      "type": "ordered",
+      "text": "Compare every ShipStation and Local DB row. Check source, order number, ShipStation ID, customer or company, status, items, unit quantities, and created date."
+    },
+    {
+      "type": "ordered",
+      "text": "If more than one result appears, identify the exact ShipStation ID supported by the source request. Do not continue until the intended order is unambiguous."
+    },
+    {
+      "type": "ordered",
+      "text": "Choose the action below that matches the problem. Do not use cancellation to correct local data, and do not use Sync from SS unless ShipStation is correct."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.2 Refresh local records from ShipStation",
+      "anchor": "4-2-refresh-local-records-from-shipstation"
+    },
+    {
+      "type": "ordered",
+      "text": "Use this action only when the exact ShipStation order is correct and the Local DB row is stale but already linked to the intended ShipStation ID."
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm the Local DB row is linked to the intended ShipStation ID. If it shows Not Linked, or if duplicate ShipStation results exist, stop and resolve the identity first."
+    },
+    {
+      "type": "ordered",
+      "text": "On the exact Local DB row, select Sync from SS."
+    },
+    {
+      "type": "ordered",
+      "text": "Review the warning that ShipStation is the source of truth and the local refresh cannot be undone; then confirm."
+    },
+    {
+      "type": "ordered",
+      "text": "Wait for the success message, search the order again, and confirm the Local DB row now matches ShipStation."
+    },
+    {
+      "type": "ordered",
+      "text": "For a shipped order, verify Shipped Orders and Shipped Items show the correct ShipStation ID, ship date, SKU or lot, and quantities. For an unshipped order, confirm it appears in the expected fulfillment state."
+    },
+    {
+      "type": "ordered",
+      "text": "If a downstream record remains wrong, stop and escalate. Do not run unrelated Workflow Controls."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Control: When a Local DB row has no ShipStation ID, Sync from SS may use the first ShipStation match. Do not sync an unlinked row when duplicates exist."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.3 Cancel one unwanted ShipStation order — restricted",
+      "anchor": "4-3-cancel-one-unwanted-shipstation-order-restricted"
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm documented approval identifies the exact unwanted ShipStation ID and that the order is eligible and has not shipped."
+    },
+    {
+      "type": "ordered",
+      "text": "On the exact ShipStation row, select Delete. In this screen, Delete cancels the ShipStation order; it does not erase the audit history."
+    },
+    {
+      "type": "ordered",
+      "text": "In the confirmation, recheck the order number, customer, and ShipStation ID. Select Cancel if any value is wrong."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Delete Order only after the exact identity is confirmed."
+    },
+    {
+      "type": "ordered",
+      "text": "Wait for the cancellation success message. Search again and confirm that exact ShipStation ID is cancelled or no longer active."
+    },
+    {
+      "type": "ordered",
+      "text": "If its Local DB row still shows an active status, use section 4.2 to sync that exact linked row from ShipStation."
+    },
+    {
+      "type": "ordered",
+      "text": "Verify the order no longer appears as active in the applicable pick or duplicate view and record the approval and result."
+    },
+    {
+      "type": "warning",
+      "text": "Warning: Cancellation cannot be undone from this screen. Never cancel a shipped order to correct a reporting problem."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.4 Resolve duplicate orders",
+      "anchor": "4-4-resolve-duplicate-orders"
+    },
+    {
+      "type": "ordered",
+      "text": "In Order Corrections, select Refresh under Duplicate Orders and wait for the scan to finish."
+    },
+    {
+      "type": "ordered",
+      "text": "Open the duplicate group and compare each ShipStation ID, status, customer or company, destination, items, unit quantities, and created time."
+    },
+    {
+      "type": "ordered",
+      "text": "Keep every shipped copy. Never cancel a shipped copy because the page suggests another row for deletion."
+    },
+    {
+      "type": "ordered",
+      "text": "For each verified unwanted unshipped copy, follow section 4.3 using its exact ShipStation ID."
+    },
+    {
+      "type": "ordered",
+      "text": "Do not act on an Error row; the page does not allow deletion for that row. Capture the group details and escalate."
+    },
+    {
+      "type": "ordered",
+      "text": "Refresh again and confirm the unwanted ID is gone from the duplicate group while the intended order remains."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Important: A “Suggest Delete” label is a review aid, not approval. Verify the exact order before acting."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.5 Recreate an order with a corrected number — restricted",
+      "anchor": "4-5-recreate-an-order-with-a-corrected-number-restricted"
+    },
+    {
+      "type": "ordered",
+      "text": "Use this only for an approved order-number correction. Do not use it for item, quantity, customer, address, status, lot, or reporting changes."
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm the old order has not shipped. For shipped, cancelled, on-hold, or otherwise uncertain orders, stop and escalate."
+    },
+    {
+      "type": "ordered",
+      "text": "Open Catalog & Config > Workflow Controls > Recreate Order Tool."
+    },
+    {
+      "type": "ordered",
+      "text": "Enter the old order number or exact ShipStation ID and the approved new order number. Select Fetch Order."
+    },
+    {
+      "type": "ordered",
+      "text": "If multiple orders are listed, select the exact ShipStation ID. Verify the old order number, ShipStation ID, status, date, customer, ship-to details, items, and total units."
+    },
+    {
+      "type": "ordered",
+      "text": "Select Create New Order with Correct Number. Do not remove the old order first."
+    },
+    {
+      "type": "ordered",
+      "text": "Compare the old and new order numbers, ShipStation IDs, and total units in the app. In ShipStation, also compare the customer, address, items and quantities, status, service, notes, and custom fields."
+    },
+    {
+      "type": "ordered",
+      "text": "If anything differs beyond the approved order number, stop. Keep both orders in place, record both ShipStation IDs, and escalate. Do not select Create New again."
+    },
+    {
+      "type": "ordered",
+      "text": "Only after the new order is confirmed correct, select Delete Old Order and accept the final confirmation. This cancels the old ShipStation order and removes its matching local inbox records."
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm the success message. Search both order numbers: the new order must be active with its new ShipStation ID, and the old ID must be cancelled and no longer active locally."
+    },
+    {
+      "type": "ordered",
+      "text": "Allow the normal ShipStation sync to create or refresh the new Local DB row. Verify the new row and applicable pick view match ShipStation. If they do not, stop and escalate."
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Control: Required sequence: Fetch and verify old order → Create New → compare old and new → cancel old. Never cancel the old order first."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.6 Reset to pending",
+      "anchor": "4-6-reset-to-pending"
+    },
+    {
+      "type": "paragraph",
+      "text": "There is no supported user control for reset to pending. Do not call a hidden endpoint, edit the database, or clear a ShipStation ID as a routine correction. Record the order number, ShipStation ID, current status, expected status, and reason; then escalate to the app owner and Quality."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "5. Problems and exceptions",
+      "anchor": "5-problems-and-exceptions"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Problem or stop condition",
+          "Required action / escalation"
+        ],
+        [
+          "More than one ShipStation ID or an unlinked Local DB row",
+          "Do not act by order number alone. Identify the exact ShipStation ID before continuing."
+        ],
+        [
+          "ShipStation data is wrong",
+          "Do not use Sync from SS. Correct through the authorized source process or escalate."
+        ],
+        [
+          "Order is shipped, cancelled, on hold, or status is uncertain",
+          "Do not cancel or recreate it. Escalate to the app owner and Quality."
+        ],
+        [
+          "New recreation does not match the old order",
+          "Do not cancel the old order or create another copy. Record both IDs and escalate."
+        ],
+        [
+          "Cancellation or old-order removal fails after a new order was created",
+          "Leave both records in place. Record both IDs and the error; escalate immediately."
+        ],
+        [
+          "Error row appears in Duplicate Orders",
+          "Do not attempt deletion outside the page. Capture the details and escalate."
+        ],
+        [
+          "App returns an error, 401, or 403",
+          "Do not retry by changing identifiers or data. Capture the message and escalate."
+        ],
+        [
+          "Success appears but local, pick, shipped, inventory, or charge records remain wrong",
+          "Stop further changes. Record the before/after state and escalate for controlled recovery."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "6. Records and completion",
+      "anchor": "6-records-and-completion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Record created or updated: ShipStation order and audit record; local order and shipped records when a sync is performed."
+    },
+    {
+      "type": "paragraph",
+      "text": "Completion confirmed when: The exact ShipStation ID has the approved final state; the intended order remains active; any unwanted order is cancelled; and the Local DB plus applicable pick, shipped-order, shipped-item, inventory, and charge views are consistent or the discrepancy is formally escalated."
+    },
+    {
+      "type": "paragraph",
+      "text": "Save or distribute: Keep the source request, approval, exact old and new identifiers, before-and-after status, verification result, and any error according to the existing Quality record-retention process. Keep the editable SOP master and approved read-only copy in the designated Quality location."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Revision history",
+      "anchor": "revision-history"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Revision",
+          "Date",
+          "Change summary",
+          "Approver"
+        ],
+        [
+          "Rev 01",
+          "Pending",
+          "Initial release",
+          "Pending Quality approval"
+        ]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "END OF CONTROLLED SOP"
+    }
+  ]
+}
