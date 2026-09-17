@@ -85,3 +85,17 @@ mtime_ms = 1789652699671
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/bc6c587e-172d-4031-a271-81a88aef7952/d9c94a2a-ddfb-4d58-8e91-88ad4e8315cb"
 storage_version_token = "1789652764601820"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "cs5CcSlSkOYyiuF4d4Wer"
+uri = "file://deliverables/app-sop-templates/05_Inventory_and_Lot_Control_SOP.docx"
+type = "word_document"
+title = "Inventory and Lot Control SOP"
+description = "Editable controlled SOP, Rev 01 draft for human Quality approval. Independently checked against the current app and approved for accuracy and simplicity."
+logical_id = "e05a5258-4dca-4c33-be57-ee85c443fde2"
+content_hash = "sha256:9100bade39194471a2d5b7f4f252609d6ae50ad342f65304a4d97cff41074495"
+size = 41793
+mtime_ms = 1789653533263
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/e05a5258-4dca-4c33-be57-ee85c443fde2/bf4e36af-869e-407d-bb4b-41f5b936a732"
+storage_version_token = "1789653575832075"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
