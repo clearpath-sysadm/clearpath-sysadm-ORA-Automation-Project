@@ -2475,34 +2475,6 @@ def api_create_inventory_transaction():
                 'error': f'Invalid transaction type. Must be one of: {", ".join(valid_types)}'
             }), 400
 
-        # Guard: Receive transactions of 200+ units must include a lot number in notes.
-        # This prevents phantom "opening balance" or "seed restore" entries from silently
-        # inflating inventory. All legitimate large receives have a real lot number.
-        LOT_NUMBER_REQUIRED_QTY = 200
-        SUSPICIOUS_PHRASES = ['seed restore', 'opening balance', 'recount', 'initial balance', 'migration']
-        if transaction_type == 'Receive' and quantity >= LOT_NUMBER_REQUIRED_QTY:
-            notes_clean = (notes or '').strip()
-            if not notes_clean:
-                return jsonify({
-                    'success': False,
-                    'error': (
-                        f'Lot number required: Receive transactions of {LOT_NUMBER_REQUIRED_QTY}+ units '
-                        f'must include a lot number in the notes field (e.g. "260082"). '
-                        f'All physical receipts of this size should reference a supplier lot.'
-                    )
-                }), 400
-            notes_lower = notes_clean.lower()
-            if any(phrase in notes_lower for phrase in SUSPICIOUS_PHRASES):
-                return jsonify({
-                    'success': False,
-                    'error': (
-                        f'Invalid lot reference: The notes field contains an administrative phrase '
-                        f'("{notes_clean}") rather than a lot number. '
-                        f'Use an Adjust Up with admin approval for non-receipt inventory corrections, '
-                        f'or provide the actual supplier lot number for a physical receive.'
-                    )
-                }), 400
-
         # Step 9: lot_id required for all manual lot-affecting types.
         # lot_balances VIEW only counts rows where lot_id IS NOT NULL, so a transaction
         # entered without a lot has no effect on the live balance — confusing to operators.
@@ -2613,33 +2585,6 @@ def api_update_inventory_transaction(transaction_id):
                 'success': False,
                 'error': f'Invalid transaction type. Must be one of: {", ".join(valid_types)}'
             }), 400
-
-        # Guard: same lot-number requirement as the create path —
-        # prevents bypassing the control by editing an existing transaction.
-        LOT_NUMBER_REQUIRED_QTY = 200
-        SUSPICIOUS_PHRASES = ['seed restore', 'opening balance', 'recount', 'initial balance', 'migration']
-        if transaction_type == 'Receive' and quantity >= LOT_NUMBER_REQUIRED_QTY:
-            notes_clean = (notes or '').strip()
-            if not notes_clean:
-                return jsonify({
-                    'success': False,
-                    'error': (
-                        f'Lot number required: Receive transactions of {LOT_NUMBER_REQUIRED_QTY}+ units '
-                        f'must include a lot number in the notes field (e.g. "260082"). '
-                        f'All physical receipts of this size should reference a supplier lot.'
-                    )
-                }), 400
-            notes_lower = notes_clean.lower()
-            if any(phrase in notes_lower for phrase in SUSPICIOUS_PHRASES):
-                return jsonify({
-                    'success': False,
-                    'error': (
-                        f'Invalid lot reference: The notes field contains an administrative phrase '
-                        f'("{notes_clean}") rather than a lot number. '
-                        f'Use an Adjust Up with admin approval for non-receipt inventory corrections, '
-                        f'or provide the actual supplier lot number for a physical receive.'
-                    )
-                }), 400
 
         # Step 9: lot_id required for manual lot-affecting types (same guard as create path).
         LOT_REQUIRED_TYPES = ['Receive', 'Adjust Up', 'Adjust Down', 'Repack']

@@ -277,3 +277,41 @@ def test_lot_form_blocks_negative_and_fractional_opening_quantities():
     assert 'id="initial-qty" min="0" step="1"' in html
     assert '!Number.isInteger(initialQty) || initialQty < 0' in html
     assert 'Initial Quantity must be zero or a positive whole number' in html
+
+
+def test_large_receive_does_not_require_notes():
+    import app as dashboard_app
+
+    conn = MagicMock()
+    cursor = MagicMock()
+    cursor.fetchone.side_effect = [(None,), (77,)]
+    conn.cursor.return_value = cursor
+
+    with patch('app.get_connection', return_value=conn), \
+         patch(
+             'app.schedule_backorder_retry_after_inventory_available',
+             return_value=True,
+         ):
+        with dashboard_app.app.test_request_context(
+            '/api/inventory_transactions',
+            method='POST',
+            json={
+                'date': '2026-09-17',
+                'sku': '17612',
+                'quantity': 200,
+                'transaction_type': 'Receive',
+                'notes': '',
+                'lot_id': 19,
+            },
+        ):
+            response = dashboard_app.api_create_inventory_transaction()
+
+    assert response.status_code == 200
+    assert response.get_json()['success'] is True
+    conn.commit.assert_called_once()
+
+
+def test_supplier_lot_note_validation_is_removed_from_create_and_update():
+    assert 'LOT_NUMBER_REQUIRED_QTY' not in APP
+    assert 'Lot number required: Receive transactions' not in APP
+    assert 'Invalid lot reference:' not in APP
