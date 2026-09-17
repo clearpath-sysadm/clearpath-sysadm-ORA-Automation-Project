@@ -29,3 +29,45 @@ type = "word_document"
 title = "Variant SKU Test Scenarios"
 description = "Oracare test order checklist covering all variant SKU combinations — single items, multi-line, promo SKU pairings, and expected failure cases."
 logical_id = "2f44b9ea-a807-4637-b5e6-7de00b8ce358"
+
+[[outputs]]
+id = "eKIT7L8U4iZMZRoPXHSak"
+uri = "file://deliverables/app-sop-templates/01_OraCare_App_SOP_Standard.docx"
+type = "word_document"
+title = "OraCare App SOP Standard"
+description = "One-page minimal standard defining controlled SOPs, quick guides, and essential document controls."
+logical_id = "7c4ac546-2eb6-4707-b301-6db794dc26cd"
+content_hash = "sha256:7c64b47e6743fa790a66edb229a617b6895b6efa294774cdcbdeda8ec54e6342"
+size = 38102
+mtime_ms = 1789652447842
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/7c4ac546-2eb6-4707-b301-6db794dc26cd/59cf5db3-39be-4bb7-b693-00accdaffe46"
+storage_version_token = "1789652521007653"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "HBtc_4aFWyl0VoWAnJ2Zh"
+uri = "file://deliverables/app-sop-templates/02_Controlled_App_SOP_Template.docx"
+type = "word_document"
+title = "Controlled App SOP Template"
+description = "Editable Word template for workflows affecting inventory, shipping, billing, or customer records."
+logical_id = "db1baee3-283b-458e-9dc0-5f9500147606"
+content_hash = "sha256:99ff09c3cf844088678ae9355b4cda953e32dac8ea81f1072869e1a0854b5bf0"
+size = 37796
+mtime_ms = 1789652447902
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/db1baee3-283b-458e-9dc0-5f9500147606/cf416ef2-503b-4979-afa2-30800b47b345"
+storage_version_token = "1789652521575902"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "6Yst48rPk0rq1deeR2xS5"
+uri = "file://deliverables/app-sop-templates/03_App_Quick_Guide_Template.docx"
+type = "word_document"
+title = "App Quick Guide Template"
+description = "Editable lightweight Word template for navigation, reporting, filtering, printing, and similar low-risk tasks."
+logical_id = "680fbb5b-f505-4bb7-9cd5-fde4d0a64764"
+content_hash = "sha256:a33ba98b545f237769b64ec09dba0d43ab3cd32bdbc2a8328f9ae5ce4f6f6a22"
+size = 37428
+mtime_ms = 1789652447946
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:ad8ee9f4-1793-4d7b-bd5a-25820ad5c257/680fbb5b-f505-4bb7-9cd5-fde4d0a64764/b90ea156-178f-4b05-baa0-bb67c76d1f1b"
+storage_version_token = "1789652522124726"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
