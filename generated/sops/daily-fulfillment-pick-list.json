@@ -137,10 +137,6 @@
     },
     {
       "type": "ordered",
-      "text": "Review every SKU row before picking. Match the SKU to the product name and confirm the total units shown."
-    },
-    {
-      "type": "ordered",
       "text": "When a SKU uses multiple lots, each lot and its quantity are listed separately. Follow the displayed lot assignments and quantities."
     },
     {
