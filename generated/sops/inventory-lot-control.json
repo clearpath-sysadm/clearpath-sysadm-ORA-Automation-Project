@@ -2,12 +2,12 @@
   "slug": "inventory-lot-control",
   "title": "Inventory and Lot Control",
   "sop_id": "ORA-APP-SOP-001",
-  "revision": "Rev 02",
+  "revision": "Rev 03",
   "status": "DRAFT FOR APPROVAL",
   "effective_date": "Upon approval",
   "approval_status": "Quality approval pending",
   "document_status": "Editable master — approval copy not yet released",
-  "source": "docs/Inventory_and_Lot_Control_SOP_Rev_02.docx",
+  "source": "docs/Inventory_and_Lot_Control_SOP_Rev_03.docx",
   "blocks": [
     {
       "type": "paragraph",
@@ -24,7 +24,7 @@
         ],
         [
           "ORA-APP-SOP-001",
-          "Rev 02",
+          "Rev 03",
           "Upon approval",
           "Operations"
         ]
@@ -61,7 +61,7 @@
     },
     {
       "type": "paragraph",
-      "text": "Use this procedure to receive inventory, correct lot balances, correct transaction records, update lot status, maintain active SKU–lot assignments, and archive or restore inventory records in the OraCare Fulfillment app."
+      "text": "Use this procedure to choose and complete the correct inventory action: receive stock, correct a physical balance, fix an incorrect transaction, update lot status or assignments, or complete an approved Admin archive or restore."
     },
     {
       "type": "paragraph",
@@ -110,23 +110,15 @@
     },
     {
       "type": "bullet",
-      "text": "Have the SKU, supplier lot number, quantity, effective date, and source record available."
+      "text": "Have the SKU, supplier lot number, quantity, received or correction date, and source record available."
     },
     {
       "type": "bullet",
-      "text": "Confirm whether the action is a physical receipt, a correction to a lot balance, a correction to an existing transaction, or a lot-assignment change."
+      "text": "Use the task guide in Section 4.1 before changing a record."
     },
     {
       "type": "bullet",
       "text": "Do not estimate. Stop if the source information is incomplete or conflicts with the app."
-    },
-    {
-      "type": "table",
-      "rows": [
-        [
-          "Important: Saving a receipt or positive correction can immediately start a background retry of waiting backorders for that SKU. Verify the SKU, lot, and quantity before saving."
-        ]
-      ]
     },
     {
       "type": "heading",
@@ -137,278 +129,179 @@
     {
       "type": "heading",
       "level": 2,
-      "text": "4.1 Review inventory before making a change",
-      "anchor": "4-1-review-inventory-before-making-a-change"
+      "text": "4.1 Choose the correct task",
+      "anchor": "4-1-choose-the-correct-task"
     },
     {
-      "type": "ordered",
-      "text": "Open Inventory Monitor to review the transaction history, or open Lot Inventory to review live lot balances."
+      "type": "table",
+      "rows": [
+        [
+          "What you need to do",
+          "Use this section"
+        ],
+        [
+          "Receive stock for a supplier lot that is not in Lot Inventory",
+          "4.2 — Search first, then create the new lot"
+        ],
+        [
+          "Receive more stock for a supplier lot already in Lot Inventory",
+          "4.2 — Search first, then add a receipt transaction"
+        ],
+        [
+          "Record a new adjustment after a physical count or reconciliation",
+          "4.3 — Correct a lot balance"
+        ],
+        [
+          "Fix a transaction that was originally entered incorrectly",
+          "4.4 — Correct an existing transaction"
+        ],
+        [
+          "Change lot status, reactivate a lot, or maintain a lot assignment",
+          "4.5 — Special situations"
+        ],
+        [
+          "Archive or restore a transaction or lot",
+          "4.5.3 — Admin only; documented approval required"
+        ]
+      ]
     },
     {
-      "type": "ordered",
-      "text": "Filter Inventory Monitor by date, SKU, or transaction type when locating a record. Use Clear to remove filters. Admins may select Archived history to review archived transactions. Searches return at most 1,000 transactions, so narrow the date and SKU filters if a record is not shown."
-    },
-    {
-      "type": "ordered",
-      "text": "On Lot Inventory, use In Stock, All Lots, Active, Non-Depleted, or Archived to locate the lot. Archived is available to Admins. Confirm the SKU, lot number, balance, FIFO priority, and status."
-    },
-    {
-      "type": "ordered",
-      "text": "Stop if the expected record is missing, duplicated, or does not match the source information."
+      "type": "paragraph",
+      "text": "Do not use Correct to repair an incorrectly entered transaction, and do not use Edit Transaction to record a new physical adjustment."
     },
     {
       "type": "heading",
       "level": 2,
-      "text": "4.2 Receive inventory into a new lot",
-      "anchor": "4-2-receive-inventory-into-a-new-lot"
+      "text": "4.2 Receive inventory",
+      "anchor": "4-2-receive-inventory"
     },
     {
       "type": "ordered",
-      "text": "Open Lot Inventory and select Add Lot."
+      "text": "Open Lot Inventory and search for the exact SKU and supplier lot number shown on the source record. Stop if the source information is incomplete, duplicated, or conflicts with the app."
     },
     {
       "type": "ordered",
-      "text": "Enter the SKU and the supplier Lot Number exactly as shown on the source record."
+      "text": "If the SKU–lot combination exists, do not create another lot. Continue with the existing-lot receipt in Step 4. If it does not exist, select Add Lot and continue with Step 3."
     },
     {
       "type": "ordered",
-      "text": "Enter the Initial Quantity as 0 or a positive whole number. Do not enter a negative value. Use 0 only when adding a historical lot with no stock to receive. If the app accepts a negative value, stop and escalate."
+      "text": "For a new lot, enter the exact SKU and supplier lot number, the received quantity as 0 or a positive whole number, the actual Received Date, and the supported status. Use 0 only for a historical lot with no stock to receive; use Active for usable stock. Recheck the fields, save, and then continue with Step 5."
     },
     {
       "type": "ordered",
-      "text": "Enter the actual Received Date. This date controls FIFO order."
+      "text": "For an existing lot, open Inventory Monitor and select Add Transaction. Enter the actual receipt Date, SKU, existing Lot Number, positive whole-number Quantity, and Receive. For receipts of 200 units or more, enter the actual supplier lot number in Notes. Recheck the fields and save."
     },
     {
       "type": "ordered",
-      "text": "Select Active for usable stock. Select Quarantine, Inactive, or Depleted only when that status is supported by the source record or an approved decision."
-    },
-    {
-      "type": "ordered",
-      "text": "Add a short note when it helps identify the receipt or status decision."
-    },
-    {
-      "type": "ordered",
-      "text": "Recheck the SKU, lot number, quantity, received date, and status; then select Save Lot."
-    },
-    {
-      "type": "ordered",
-      "text": "Confirm “Lot created successfully” appears and verify the new lot balance and FIFO position."
+      "text": "Return to Lot Inventory and verify the displayed balance increased by the received quantity. For a new lot, also verify its FIFO position reflects the actual Received Date."
     },
     {
       "type": "warning",
-      "text": "Stop: Do not create a second record for the same SKU and lot. If the app reports that the combination already exists, locate the existing lot and follow section 4.3 or 4.4."
+      "text": "Warning: Saving a receipt can immediately retry waiting backorders for that SKU. Verify the SKU, lot, quantity, and received date before saving."
     },
     {
       "type": "heading",
       "level": 2,
-      "text": "4.3 Receive additional inventory into an existing lot",
-      "anchor": "4-3-receive-additional-inventory-into-an-existing-lot"
+      "text": "4.3 Correct a lot balance",
+      "anchor": "4-3-correct-a-lot-balance"
     },
     {
       "type": "ordered",
-      "text": "Open Inventory Monitor and select Add Transaction."
+      "text": "Use Correct only to record a new adjustment supported by a physical count or reconciliation. If an earlier transaction was entered incorrectly, use Section 4.4 instead."
     },
     {
       "type": "ordered",
-      "text": "Enter the receipt Date and select the SKU."
+      "text": "In Lot Inventory, locate the exact SKU and lot, select Correct, and choose Adjust Up or Adjust Down. Enter the adjustment Amount as a positive whole number, the correction Date, and a brief reason in Notes."
     },
     {
       "type": "ordered",
-      "text": "Select the existing lot from the Lot Number list."
+      "text": "Calculate the expected resulting balance before saving. Stop and escalate instead of saving an unexplained negative balance."
     },
     {
       "type": "ordered",
-      "text": "Enter the received Quantity as a positive whole number and select Receive."
-    },
-    {
-      "type": "ordered",
-      "text": "Enter the actual supplier lot number in Notes for receipts of 200 units or more. The app rejects blank Notes and certain administrative phrases, but you remain responsible for verifying the lot number against the source record."
-    },
-    {
-      "type": "ordered",
-      "text": "Recheck all fields and select Save."
-    },
-    {
-      "type": "ordered",
-      "text": "Confirm “Transaction created successfully” appears, then open Lot Inventory and verify the lot balance increased by the expected amount."
+      "text": "Select Record Correction, then verify the displayed lot balance equals the expected result. A positive correction can retry waiting backorders, so recheck the SKU, lot, and amount first."
     },
     {
       "type": "heading",
       "level": 2,
-      "text": "4.4 Correct a lot balance",
-      "anchor": "4-4-correct-a-lot-balance"
+      "text": "4.4 Correct an existing transaction",
+      "anchor": "4-4-correct-an-existing-transaction"
     },
     {
       "type": "ordered",
-      "text": "Open Lot Inventory and locate the correct SKU and lot."
+      "text": "Use Edit Transaction only when the original transaction record is wrong. In Inventory Monitor, locate the transaction and compare its date, SKU, lot, quantity, type, and notes with the source record."
     },
     {
       "type": "ordered",
-      "text": "Select Correct."
+      "text": "Select Edit and correct only the inaccurate fields. Enter quantity as a positive whole number; the transaction type controls direction. Receive, Adjust Up, and Repack add inventory, while Ship and Adjust Down reduce it. Select a lot whenever the transaction type requires one."
     },
     {
       "type": "ordered",
-      "text": "Select Adjust Up to increase the balance or Adjust Down to decrease it."
-    },
-    {
-      "type": "ordered",
-      "text": "Enter the Amount as a positive whole number. The selected correction type controls the direction."
-    },
-    {
-      "type": "ordered",
-      "text": "Enter the correction Date and a brief reason in Notes."
-    },
-    {
-      "type": "ordered",
-      "text": "Calculate the expected resulting balance before saving. The app may permit a negative result; stop and escalate instead of saving any unexplained negative balance."
-    },
-    {
-      "type": "ordered",
-      "text": "Select Record Correction."
-    },
-    {
-      "type": "ordered",
-      "text": "Confirm “Correction recorded successfully” appears and verify the displayed balance equals the expected result."
-    },
-    {
-      "type": "table",
-      "rows": [
-        [
-          "Control: Use Correct for a new adjustment. Edit an existing transaction only when that original transaction record itself is wrong."
-        ]
-      ]
+      "text": "Save the transaction, then open Lot Inventory and verify the affected lot balance matches the corrected record and expected result."
     },
     {
       "type": "heading",
       "level": 2,
-      "text": "4.5 Correct an existing transaction record",
-      "anchor": "4-5-correct-an-existing-transaction-record"
-    },
-    {
-      "type": "ordered",
-      "text": "Open Inventory Monitor and locate the transaction using the filters."
-    },
-    {
-      "type": "ordered",
-      "text": "Compare the date, SKU, lot, quantity, type, and notes with the source record."
-    },
-    {
-      "type": "ordered",
-      "text": "Select Edit and correct only the inaccurate fields."
-    },
-    {
-      "type": "ordered",
-      "text": "Use a positive whole-number quantity. Select the transaction type that determines the direction: Receive, Adjust Up, and Repack add to the lot; Ship and Adjust Down reduce it."
-    },
-    {
-      "type": "ordered",
-      "text": "Ensure a lot is selected for Receive, Adjust Up, Adjust Down, or Repack."
-    },
-    {
-      "type": "ordered",
-      "text": "Select Save and confirm “Transaction updated successfully” appears."
-    },
-    {
-      "type": "ordered",
-      "text": "Open Lot Inventory and verify the affected lot balance is correct."
+      "text": "4.5 Special situations",
+      "anchor": "4-5-special-situations"
     },
     {
       "type": "heading",
-      "level": 2,
-      "text": "4.6 Update lot details or status",
-      "anchor": "4-6-update-lot-details-or-status"
+      "level": 3,
+      "text": "4.5.1 Change lot details or status",
+      "anchor": "4-5-1-change-lot-details-or-status"
     },
     {
       "type": "ordered",
-      "text": "Open Lot Inventory, locate the lot, and select Edit."
+      "text": "In Lot Inventory, locate the lot and select Edit. Update only the Received Date, Status, or Notes; this screen does not change the SKU, lot number, or balance."
     },
     {
       "type": "ordered",
-      "text": "Update only the Received Date, Status, or Notes. The SKU, lot number, and balance cannot be changed in this screen."
+      "text": "Use Quarantine or Inactive when stock must not be active, and Depleted only when the lot is no longer available. Save and verify the displayed status."
     },
     {
       "type": "ordered",
-      "text": "Use Quarantine or Inactive when stock must not be treated as active. Use Depleted only when the lot is no longer available for use."
-    },
-    {
-      "type": "ordered",
-      "text": "Select Save Lot and confirm “Lot updated successfully” appears."
-    },
-    {
-      "type": "ordered",
-      "text": "To reactivate a depleted lot with a positive balance, select its Depleted status, review the confirmation showing SKU, lot, and balance, and confirm. A zero-balance lot cannot be reactivated."
+      "text": "To reactivate a depleted lot, select its Depleted status and confirm the displayed SKU, lot, and positive balance. A zero-balance lot cannot be reactivated."
     },
     {
       "type": "heading",
-      "level": 2,
-      "text": "4.7 Maintain active lot assignments",
-      "anchor": "4-7-maintain-active-lot-assignments"
+      "level": 3,
+      "text": "4.5.2 Maintain active lot assignments",
+      "anchor": "4-5-2-maintain-active-lot-assignments"
     },
     {
       "type": "ordered",
-      "text": "Open Lot Inventory and select the Lot Assignments tab."
+      "text": "Open Lot Inventory → Lot Assignments and locate the SKU. Add an assignment only when the lot is approved for new orders."
     },
     {
       "type": "ordered",
-      "text": "Use Active Only or Show All to review assignments for the SKU."
+      "text": "Use Add Assignment or Edit to set the SKU, lot number, and Active status. Because this updates the underlying lot record, verify inventory and transaction history before changing SKU or lot identity."
     },
     {
       "type": "ordered",
-      "text": "To add an assignment, select Add Assignment, choose the SKU, enter the lot number, keep Active selected only if new orders should use it, and save."
-    },
-    {
-      "type": "ordered",
-      "text": "To change an assignment, select Edit, correct the SKU, lot number, or Active setting, and save. This changes the underlying lot record, not a separate routing-only record; verify inventory and transaction history before changing the SKU or lot number."
-    },
-    {
-      "type": "ordered",
-      "text": "To retire an assignment, select Deactivate. Use Activate only after verifying that the lot is the approved assignment for new orders."
-    },
-    {
-      "type": "ordered",
-      "text": "Confirm the assignment appears with the intended Active or Inactive status."
-    },
-    {
-      "type": "table",
-      "rows": [
-        [
-          "Important: Assignments guide automatic lot tagging and manage the underlying lot record. Deactivate an assignment to retire it from tagging. Use Archive only when the entire lot record must leave operational use while its history remains preserved."
-        ]
-      ]
+      "text": "Use Deactivate to retire an assignment from automatic lot tagging. Use Activate only after verifying the lot is approved, then confirm the intended Active or Inactive status appears."
     },
     {
       "type": "heading",
-      "level": 2,
-      "text": "4.8 Archive and restore records — Admin only",
-      "anchor": "4-8-archive-and-restore-records-admin-only"
+      "level": 3,
+      "text": "4.5.3 Archive and restore records — Admin only",
+      "anchor": "4-5-3-archive-and-restore-records-admin-only"
     },
     {
       "type": "ordered",
-      "text": "Obtain documented approval identifying the exact transaction or lot and enter a meaningful reason in the app. Archive is different from Inactive, Quarantine, and Depleted: those statuses describe operational availability; Archive removes a record from normal operational use while preserving its identity and history."
+      "text": "Obtain documented approval for the exact transaction or lot and enter a meaningful reason. Archive removes a record from normal operational use while preserving identity and history; it is not a substitute for Inactive, Quarantine, or Depleted status."
     },
     {
       "type": "ordered",
-      "text": "For a transaction, select Archive in Inventory Monitor, review the impact preview, confirm the exact record, and enter the reason. The transaction remains in Archived history but no longer contributes to the live lot balance."
+      "text": "To archive a transaction or lot, select Archive, review the impact preview, and confirm the exact record. Do not bypass an open-reservation safeguard. Archived transactions no longer affect live balances, while history and shipped-order lot references remain preserved."
     },
     {
       "type": "ordered",
-      "text": "For a lot, select Archive in Lot Inventory, review its balance, transaction count, preserved shipped-order references, and open reservations, then enter the reason. A lot with an open reservation cannot be archived. Archiving never deletes its transactions or clears historical order-line lot references."
-    },
-    {
-      "type": "ordered",
-      "text": "To reverse an accidental archive, open Archived history, select Restore, enter the reason, and verify the original record ID, history, lot status, and balance. Restore the lot before restoring one of its archived transactions."
+      "text": "To reverse an accidental archive, open Archived history, select Restore, enter the reason, and verify the original ID, history, status, and balance. Restore a lot before restoring one of its archived transactions."
     },
     {
       "type": "ordered",
       "text": "Record the approval and post-action verification in the designated Quality location. Permanent purge is not available in the normal app workflow."
-    },
-    {
-      "type": "table",
-      "rows": [
-        [
-          "Control: Archive and restore are auditable and reversible. They preserve original IDs, transactions, and historical order-line lot references. Inactive, Quarantine, and Depleted are operational statuses and must not be used as substitutes for Archive."
-        ]
-      ]
     },
     {
       "type": "heading",
@@ -433,7 +326,7 @@
         ],
         [
           "Duplicate SKU–lot error",
-          "Do not create another lot. Locate the existing lot and receive or correct against it."
+          "Do not create another lot. Locate the existing SKU–lot record and follow the existing-lot receipt path in Section 4.2."
         ],
         [
           "Correction would create an unexplained negative balance",
@@ -449,7 +342,7 @@
         ],
         [
           "Success message appears but the balance or status is wrong",
-          "Stop further changes. Record what was entered and escalate immediately."
+          "Stop further changes. Record the action and displayed result, then escalate immediately."
         ],
         [
           "Lot archive is rejected because open reservations exist",
@@ -469,7 +362,7 @@
     },
     {
       "type": "paragraph",
-      "text": "Completion confirmed when: Confirm the displayed success message and verify transaction history, live lot balance, archive state, lot status, or FIFO position against the source record and expected result. For assignment changes, verify the resulting row shows the intended SKU, lot, and Active or Inactive status."
+      "text": "Completion confirmed when: The chosen action matches the source record and the displayed lot balance, FIFO position, transaction history, status, assignment state, or archive state matches the expected result. Every receipt or correction requires a post-save balance check."
     },
     {
       "type": "paragraph",
@@ -494,6 +387,12 @@
           "Rev 02",
           "2026-09-17",
           "Replace permanent deletion instructions with auditable archive/restore; clarify status differences, safeguards, filters, and validation limitations",
+          "Pending Quality approval"
+        ],
+        [
+          "Rev 03",
+          "Pending",
+          "Simplified the procedure around task selection and routine receiving; separated balance and transaction corrections; moved uncommon status, assignment, and Admin actions into special situations.",
           "Pending Quality approval"
         ]
       ]

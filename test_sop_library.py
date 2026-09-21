@@ -14,7 +14,7 @@ from scripts.publish_sops import validate_control_metadata, validate_core_metada
 ROOT = Path(__file__).resolve().parent
 OUTPUT = ROOT / "generated" / "sops"
 EXPECTED = {
-    "inventory-lot-control": ("ORA-APP-SOP-001", "Rev 02"),
+    "inventory-lot-control": ("ORA-APP-SOP-001", "Rev 03"),
     "order-corrections-cancellations": ("ORA-APP-SOP-002", "Rev 01"),
     "daily-fulfillment-pick-list": ("ORA-APP-SOP-003", "Rev 03"),
     "period-end-reporting": ("ORA-APP-SOP-004", "Rev 01"),
@@ -140,8 +140,27 @@ def test_selected_sources_and_reconciled_workflow_wording():
         for sop in (inventory, corrections)
         for block in sop["blocks"]
     )
-    assert inventory["source"] == "docs/Inventory_and_Lot_Control_SOP_Rev_02.docx"
+    assert inventory["source"] == "docs/Inventory_and_Lot_Control_SOP_Rev_03.docx"
     assert "05_Inventory_and_Lot_Control_SOP.docx" not in inventory["source"]
+    inventory_text = " ".join(
+        block.get("text", "") + " " + " ".join(
+            cell for row in block.get("rows", []) for cell in row
+        )
+        for block in inventory["blocks"]
+    )
+    assert "4.1 Choose the correct task" in inventory_text
+    assert "Receive stock for a supplier lot that is not in Lot Inventory" in inventory_text
+    assert "If the SKU–lot combination exists, do not create another lot" in inventory_text
+    assert "For receipts of 200 units or more" in inventory_text
+    assert "actual Received Date" in inventory_text
+    assert "FIFO position" in inventory_text
+    assert "can immediately retry waiting backorders" in inventory_text
+    assert "Use Correct only to record a new adjustment" in inventory_text
+    assert "Use Edit Transaction only when the original transaction record is wrong" in inventory_text
+    assert "4.5 Special situations" in inventory_text
+    assert "4.5.3 Archive and restore records — Admin only" in inventory_text
+    assert "Searches return at most 1,000 transactions" not in inventory_text
+    assert "Confirm “Lot created successfully” appears" not in inventory_text
     assert "retired import workflows" in all_text
     daily = json.loads((OUTPUT / "daily-fulfillment-pick-list.json").read_text())
     daily_text = " ".join(block.get("text", "") for block in daily["blocks"])

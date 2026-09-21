@@ -2,12 +2,12 @@
 
 The Help & Training library is generated from four fixed controlled DOCX sources:
 
-- `docs/Inventory_and_Lot_Control_SOP_Rev_02.docx` — ORA-APP-SOP-001, Rev 02
+- `docs/Inventory_and_Lot_Control_SOP_Rev_03.docx` — ORA-APP-SOP-001, Rev 03
 - `deliverables/app-sop-templates/06_Order_Corrections_and_Cancellations_SOP.docx` — ORA-APP-SOP-002, Rev 01
 - `deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx` — ORA-APP-SOP-003, Rev 03
 - `deliverables/app-sop-templates/08_Period_End_Reporting_SOP.docx` — ORA-APP-SOP-004, Rev 01
 
-The packaged Inventory Rev 01 file is superseded and is intentionally not an input.
+The earlier Inventory revisions are superseded and are intentionally not publisher inputs.
 
 The Period-End Reporting Rev 01 source does not contain the front-page draft banner found in the other three files. Its control tables still explicitly say `Upon approval`, `Quality`, `Pending`, and `approval copy not yet released`. The publisher requires that complete combination and rejects any conflicting banner before deriving the common `DRAFT FOR APPROVAL` library status.
 
