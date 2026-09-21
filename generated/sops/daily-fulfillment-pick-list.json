@@ -148,10 +148,6 @@
       "text": "Stop if a lot is Untagged, blank, unexpected, or unavailable, or if an expected ShipStation item is missing from the list. Hold the affected order and escalate; do not choose a lot from memory or change an order to make the totals fit."
     },
     {
-      "type": "ordered",
-      "text": "Identify Benco and expedited work before picking. Because the pick-list callouts are aggregate totals, verify the company and shipping service on each applicable order in ShipStation before packing or shipping."
-    },
-    {
       "type": "heading",
       "level": 2,
       "text": "4.2 Pick and stage the units",
