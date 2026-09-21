@@ -59,6 +59,11 @@ body.show-orders-history .sidebar-nav .orders-history-section {
     --shadow-sm: 0 1px 3px rgba(9, 23, 42, 0.08);
     --shadow-md: 0 4px 12px rgba(9, 23, 42, 0.10);
     --shadow-lg: 0 8px 24px rgba(9, 23, 42, 0.12);
+
+    /* Modal separation */
+    --modal-backdrop: rgba(9, 23, 42, 0.58);
+    --modal-border: rgba(27, 42, 74, 0.20);
+    --modal-shadow: 0 24px 64px rgba(9, 23, 42, 0.30), 0 8px 24px rgba(9, 23, 42, 0.18);
     
     /* Layout */
     --sidebar-width: 260px;
@@ -90,6 +95,9 @@ body.dark-mode {
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --modal-backdrop: rgba(3, 7, 18, 0.80);
+    --modal-border: rgba(227, 233, 245, 0.18);
+    --modal-shadow: 0 28px 72px rgba(0, 0, 0, 0.72), 0 10px 28px rgba(0, 0, 0, 0.48);
 }
 
 /* ========================================
@@ -749,8 +757,9 @@ textarea::placeholder {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    background-color: var(--modal-backdrop);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
     animation: fadeIn 0.2s ease;
 }
 
@@ -758,6 +767,12 @@ textarea::placeholder {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.modal > .modal-content {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--modal-border);
+    box-shadow: var(--modal-shadow);
 }
 
 .modal-header {
@@ -1791,7 +1806,9 @@ body.dark-mode .order-card-expand-btn:hover {
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: var(--modal-backdrop);
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
             z-index: 2000;
             align-items: center;
             justify-content: center;
@@ -1803,13 +1820,14 @@ body.dark-mode .order-card-expand-btn:hover {
 
         .violations-modal-content {
             background-color: var(--bg-primary);
+            border: 1px solid var(--modal-border);
             border-radius: 12px;
             padding: 24px;
             max-width: 800px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--modal-shadow);
         }
 
         .violations-modal-header {
@@ -1947,8 +1965,9 @@ body.dark-mode .order-card-expand-btn:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(9, 23, 42, 0.7);
-    backdrop-filter: blur(4px);
+    background-color: var(--modal-backdrop);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
     align-items: center;
     justify-content: center;
     z-index: 10000;
@@ -1961,8 +1980,9 @@ body.dark-mode .order-card-expand-btn:hover {
 
 .modal-dialog {
     background-color: var(--bg-primary);
+    border: 1px solid var(--modal-border);
     border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--modal-shadow);
     width: 100%;
     max-width: 500px;
     max-height: 90vh;
