@@ -4,7 +4,7 @@ The Help & Training library is generated from four fixed controlled DOCX sources
 
 - `docs/Inventory_and_Lot_Control_SOP_Rev_02.docx` — ORA-APP-SOP-001, Rev 02
 - `deliverables/app-sop-templates/06_Order_Corrections_and_Cancellations_SOP.docx` — ORA-APP-SOP-002, Rev 01
-- `deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx` — ORA-APP-SOP-003, Rev 02
+- `deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx` — ORA-APP-SOP-003, Rev 03
 - `deliverables/app-sop-templates/08_Period_End_Reporting_SOP.docx` — ORA-APP-SOP-004, Rev 01
 
 The packaged Inventory Rev 01 file is superseded and is intentionally not an input.

@@ -16,7 +16,7 @@ OUTPUT = ROOT / "generated" / "sops"
 EXPECTED = {
     "inventory-lot-control": ("ORA-APP-SOP-001", "Rev 02"),
     "order-corrections-cancellations": ("ORA-APP-SOP-002", "Rev 01"),
-    "daily-fulfillment-pick-list": ("ORA-APP-SOP-003", "Rev 02"),
+    "daily-fulfillment-pick-list": ("ORA-APP-SOP-003", "Rev 03"),
     "period-end-reporting": ("ORA-APP-SOP-004", "Rev 01"),
 }
 
@@ -148,11 +148,18 @@ def test_selected_sources_and_reconciled_workflow_wording():
     assert "Do not use New Orders or an XML import for daily fulfillment." in daily_text
     assert "click the first checkbox to select every order in the batch" in daily_text
     assert "dropdown arrow on the Process Shipments split button" in daily_text
-    assert "Variant SKUs appear as individual products in ShipStation" in daily_text
-    assert "ShipStation inventory availability is not a shipment requirement" in daily_text
-    assert "there is no documented dollar-per-unit threshold" in daily_text
+    assert "Variant SKUs can appear as individual ShipStation products" in daily_text
+    assert "ShipStation inventory availability is not required" in daily_text
+    assert "there is no dollar-per-unit threshold" in daily_text
     assert "Benco FedEx carrier account" in daily_text
-    assert "Confirm every expected label was generated successfully" in daily_text
+    assert "Keep the printed labels grouped in their printed SKU order" in daily_text
+    assert "Count the labels for each SKU" in daily_text
+    assert "Place an empty pallet beside the pallet containing the correct product and lot" in daily_text
+    assert "one layer at a time" in daily_text
+    assert "Apply one shipping label to each box as the box is moved" in daily_text
+    assert "no unused labels and no transferred unlabeled boxes" in daily_text
+    assert "Pick and stage the units" not in daily_text
+    assert "Stage Benco and expedited orders" not in daily_text
     assert "Arizona warning" not in daily_text
     assert "It does not cover changing live order contents, hidden or direct database resets, bulk recovery controls" in all_text
     assert "archive" in all_text.lower()
@@ -344,7 +351,7 @@ def test_sop_api_prefers_override_and_catalog_uses_its_metadata():
         if item["slug"] == "daily-fulfillment-pick-list"
     )
     assert catalog_entry["title"] == "Live Updated Pick List"
-    assert catalog_entry["revision"] == "Rev 02"
+    assert catalog_entry["revision"] == "Rev 03"
     assert catalog_entry["live_json_override"] is True
 
 

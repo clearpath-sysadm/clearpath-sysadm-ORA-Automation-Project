@@ -27,7 +27,7 @@ OUTPUT = ROOT / "generated" / "sops"
 SOURCES = (
     ("inventory-lot-control", ROOT / "docs/Inventory_and_Lot_Control_SOP_Rev_02.docx", "ORA-APP-SOP-001", "Rev 02"),
     ("order-corrections-cancellations", ROOT / "deliverables/app-sop-templates/06_Order_Corrections_and_Cancellations_SOP.docx", "ORA-APP-SOP-002", "Rev 01"),
-    ("daily-fulfillment-pick-list", ROOT / "deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx", "ORA-APP-SOP-003", "Rev 02"),
+    ("daily-fulfillment-pick-list", ROOT / "deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx", "ORA-APP-SOP-003", "Rev 03"),
     ("period-end-reporting", ROOT / "deliverables/app-sop-templates/08_Period_End_Reporting_SOP.docx", "ORA-APP-SOP-004", "Rev 01"),
 )
 REQUIRED_HEADINGS = {
