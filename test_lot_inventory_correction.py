@@ -18,7 +18,7 @@ class TestLotInventoryCorrection(unittest.TestCase):
         conn = MagicMock()
         cursor = MagicMock()
         cursor.fetchone.side_effect = [
-            ('17612', None),  # SKU and archive state for the lot
+            ('17612', None, 'active'),  # SKU, archive state, and status
             (42,),             # inserted transaction ID
             (0,),              # live balance after the correction
         ]
@@ -43,7 +43,7 @@ class TestLotInventoryCorrection(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertTrue(data['success'])
-        self.assertEqual(data['message'], 'Correction recorded successfully')
+        self.assertEqual(data['message'], 'Quantity adjustment recorded successfully')
         self.assertEqual(data['transaction_id'], 42)
         self.assertEqual(data['new_balance'], 0)
         self.assertTrue(data['backorder_retry_scheduled'])
@@ -52,6 +52,92 @@ class TestLotInventoryCorrection(unittest.TestCase):
         sql_statements = [call.args[0] for call in cursor.execute.call_args_list]
         self.assertFalse(any('inventory_current' in sql for sql in sql_statements))
         self.assertTrue(any('lot_balances' in sql for sql in sql_statements))
+
+    def test_correction_synchronizes_active_and_depleted_status(self):
+        import app as dashboard_app
+
+        cases = [
+            ('Adjust Up', 'depleted', 5, 'active'),
+            ('Adjust Down', 'active', 0, 'depleted'),
+        ]
+        for correction_type, starting_status, balance, expected_status in cases:
+            with self.subTest(
+                correction_type=correction_type,
+                starting_status=starting_status,
+            ):
+                conn = MagicMock()
+                cursor = MagicMock()
+                cursor.fetchone.side_effect = [
+                    ('17612', None, starting_status),
+                    (42,),
+                    (balance,),
+                ]
+                conn.cursor.return_value = cursor
+
+                with patch('app.get_connection', return_value=conn), patch(
+                    'app.schedule_backorder_retry_after_inventory_available',
+                    return_value=True,
+                ):
+                    with dashboard_app.app.test_request_context(
+                        '/api/lot_inventory/19/correct',
+                        method='POST',
+                        json={
+                            'correction_type': correction_type,
+                            'amount': 5,
+                            'date': '2026-09-21',
+                            'notes': 'Count correction',
+                        },
+                    ):
+                        response = dashboard_app.api_correct_lot_inventory(19)
+
+                self.assertEqual(response.status_code, 200)
+                status_updates = [
+                    call for call in cursor.execute.call_args_list
+                    if 'UPDATE lots' in call.args[0]
+                ]
+                self.assertEqual(len(status_updates), 1)
+                self.assertEqual(
+                    status_updates[0].args[1],
+                    (expected_status, 19, starting_status),
+                )
+                conn.commit.assert_called_once()
+
+    def test_correction_preserves_inactive_and_quarantine_status(self):
+        import app as dashboard_app
+
+        for starting_status in ('inactive', 'quarantine'):
+            with self.subTest(starting_status=starting_status):
+                conn = MagicMock()
+                cursor = MagicMock()
+                cursor.fetchone.side_effect = [
+                    ('17612', None, starting_status),
+                    (42,),
+                    (5,),
+                ]
+                conn.cursor.return_value = cursor
+
+                with patch('app.get_connection', return_value=conn), patch(
+                    'app.schedule_backorder_retry_after_inventory_available',
+                    return_value=True,
+                ):
+                    with dashboard_app.app.test_request_context(
+                        '/api/lot_inventory/19/correct',
+                        method='POST',
+                        json={
+                            'correction_type': 'Adjust Up',
+                            'amount': 5,
+                            'date': '2026-09-21',
+                            'notes': 'Count correction',
+                        },
+                    ):
+                        response = dashboard_app.api_correct_lot_inventory(19)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertFalse(any(
+                    'UPDATE lots' in call.args[0]
+                    for call in cursor.execute.call_args_list
+                ))
+                conn.commit.assert_called_once()
 
     def test_primary_inventory_modal_preserves_lot_and_previews_balance(self):
         with open(

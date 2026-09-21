@@ -9163,18 +9163,20 @@ def api_correct_lot_inventory(lot_id):
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Resolve SKU for the lot
+        # Resolve SKU and lock the lot so its status can be synchronized with
+        # the resulting balance in the same transaction.
         cursor.execute("""
-            SELECT s.sku_code, l.archived_at
+            SELECT s.sku_code, l.archived_at, l.status
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             WHERE l.lot_id = %s
+            FOR UPDATE OF l
         """, (lot_id,))
         row = cursor.fetchone()
         if not row:
             conn.close()
             return jsonify({'success': False, 'error': 'Lot not found'}), 404
-        sku, archived_at = row
+        sku, archived_at, current_status = row
         if archived_at is not None:
             conn.close()
             return jsonify({'success': False, 'error': 'Archived lots cannot receive corrections; restore it first'}), 409
@@ -9198,6 +9200,20 @@ def api_correct_lot_inventory(lot_id):
         balance_row = cursor.fetchone()
         resulting_balance = balance_row[0] if balance_row else None
 
+        next_status = None
+        if resulting_balance is not None:
+            if current_status == 'depleted' and resulting_balance > 0:
+                next_status = 'active'
+            elif current_status == 'active' and resulting_balance <= 0:
+                next_status = 'depleted'
+
+        if next_status is not None:
+            cursor.execute("""
+                UPDATE lots
+                SET status = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE lot_id = %s AND status = %s
+            """, (next_status, lot_id, current_status))
+
         conn.commit()
         conn.close()
 
@@ -9208,7 +9224,7 @@ def api_correct_lot_inventory(lot_id):
 
         response = {
             'success': True,
-            'message': 'Correction recorded successfully',
+            'message': 'Quantity adjustment recorded successfully',
             'transaction_id': tx_id,
             'new_balance': resulting_balance,
         }

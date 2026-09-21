@@ -638,6 +638,9 @@
                 <h3 class="modal-title" id="modal-title">Add Lot</h3>
             </div>
             <div class="modal-body">
+                <p id="lot-modal-description" style="margin-bottom:16px;color:var(--text-secondary);font-size:13px;line-height:1.5;">
+                    Add a lot and its opening inventory. Existing lot quantities are changed separately with Adjust Quantity.
+                </p>
                 <form id="lot-form">
                     <input type="hidden" id="lot-id">
 
@@ -685,19 +688,22 @@
         </div>
     </div>
 
-    <!-- Record Correction Modal -->
+    <!-- Adjust Quantity Modal -->
     <div class="modal-overlay" id="correction-modal">
         <div class="modal-dialog">
             <div class="modal-header">
-                <h3 class="modal-title">Record Inventory Correction</h3>
+                <h3 class="modal-title">Adjust Lot Quantity</h3>
             </div>
             <div class="modal-body">
                 <form id="correction-form">
                     <input type="hidden" id="correction-lot-id">
                     <p id="correction-lot-info" style="margin-bottom: 16px; color: var(--text-secondary); font-size: 14px;"></p>
+                    <p style="margin-bottom:16px;color:var(--text-secondary);font-size:13px;line-height:1.5;">
+                        This records an auditable inventory transaction. Use Edit Lot Details for received date, FIFO order, status, or notes.
+                    </p>
 
                     <div class="form-group">
-                        <label class="form-label" for="correction-type">Correction Type *</label>
+                        <label class="form-label" for="correction-type">Adjustment Type *</label>
                         <select class="form-select" id="correction-type" required>
                             <option value="Adjust Up">Adjust Up (increase balance)</option>
                             <option value="Adjust Down">Adjust Down (decrease balance)</option>
@@ -723,7 +729,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn" onclick="closeCorrectionModal()">Cancel</button>
-                <button class="btn" onclick="saveCorrection()">Record Correction</button>
+                <button class="btn" onclick="saveCorrection()">Record Adjustment</button>
             </div>
         </div>
     </div>
@@ -906,8 +912,8 @@
                     html += `<td><div class="action-buttons">
                         ${lot.archived_at
                             ? `<span style="font-size:12px;color:var(--text-secondary);" title="${(lot.archive_reason || '').replace(/"/g, '&quot;')}">Archived${lot.archived_by ? ` by ${lot.archived_by}` : ''}</span><button class="btn btn-sm" data-admin-only onclick="restoreLot(${lot.id})">Restore</button>`
-                            : `<button class="btn btn-sm" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')">Correct</button>
-                               <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit</button>
+                            : `<button class="btn btn-sm" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')">Adjust Quantity</button>
+                               <button class="btn btn-sm" onclick="editLot(${lot.id})">Edit Lot Details</button>
                                <button class="btn btn-sm" data-admin-only onclick="archiveLot(${lot.id})">Archive</button>`}
                     </div></td>`;
                     html += '</tr>';
@@ -953,8 +959,8 @@
                     html += `<div class="lot-card-footer">`;
                     html += lot.archived_at
                         ? `<button class="btn btn-sm" data-admin-only onclick="restoreLot(${lot.id})">Restore</button>`
-                        : `<button class="btn btn-sm lot-action-correct" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')"><span aria-hidden="true">↕</span> Correct</button>
-                           <button class="btn btn-sm lot-action-edit" onclick="editLot(${lot.id})"><span aria-hidden="true">✎</span> Edit</button>
+                        : `<button class="btn btn-sm lot-action-correct" onclick="openCorrectionModal(${lot.id}, '${lot.sku}', '${lot.lot}')"><span aria-hidden="true">↕</span> Adjust Quantity</button>
+                           <button class="btn btn-sm lot-action-edit" onclick="editLot(${lot.id})"><span aria-hidden="true">✎</span> Edit Lot Details</button>
                            <button class="btn btn-sm lot-action-delete" data-admin-only onclick="archiveLot(${lot.id})"><span aria-hidden="true">▣</span> Archive</button>`;
                     html += `</div>`;
                     html += `</div>`;
@@ -1048,6 +1054,8 @@
         function openAddModal() {
             editingLotId = null;
             document.getElementById('modal-title').textContent = 'Add Lot';
+            document.getElementById('lot-modal-description').textContent =
+                'Add a lot and its opening inventory. Existing lot quantities are changed separately with Adjust Quantity.';
             document.getElementById('lot-form').reset();
             document.getElementById('lot-id').value = '';
             document.getElementById('initial-qty-group').style.display = '';
@@ -1067,7 +1075,9 @@
             if (!lot) return;
 
             editingLotId = id;
-            document.getElementById('modal-title').textContent = 'Edit Lot';
+            document.getElementById('modal-title').textContent = 'Edit Lot Details';
+            document.getElementById('lot-modal-description').textContent =
+                'Edit the received date/FIFO order, status, or notes. To change the balance, use Adjust Quantity.';
             document.getElementById('lot-id').value = lot.id;
             document.getElementById('sku').value = lot.sku;
             document.getElementById('lot').value = lot.lot;

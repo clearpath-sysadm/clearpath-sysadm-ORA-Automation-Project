@@ -27,3 +27,11 @@ def test_add_lot_and_related_dialogs_keep_open_close_hooks():
 
     assert "document.getElementById('sku-lot-modal').classList.add('active')" in HTML
     assert "document.getElementById('sku-lot-modal').classList.remove('active')" in HTML
+
+
+def test_quantity_and_details_modals_explain_their_distinct_purposes():
+    assert "Adjust Lot Quantity" in HTML
+    assert "This records an auditable inventory transaction." in HTML
+    assert "Edit Lot Details" in HTML
+    assert "Edit the received date/FIFO order, status, or notes." in HTML
+    assert "To change the balance, use Adjust Quantity." in HTML
