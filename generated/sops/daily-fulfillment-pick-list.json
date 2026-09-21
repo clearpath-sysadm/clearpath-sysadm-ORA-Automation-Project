@@ -2,7 +2,7 @@
   "slug": "daily-fulfillment-pick-list",
   "title": "Daily Fulfillment and Pick List",
   "sop_id": "ORA-APP-SOP-003",
-  "revision": "Rev 01",
+  "revision": "Rev 02",
   "status": "DRAFT FOR APPROVAL",
   "effective_date": "Upon approval",
   "approval_status": "Quality approval pending",
@@ -28,7 +28,7 @@
         ],
         [
           "ORA-APP-SOP-003",
-          "Rev 01",
+          "Rev 02",
           "Upon approval",
           "Operations"
         ]
@@ -137,11 +137,19 @@
     },
     {
       "type": "ordered",
-      "text": "When a SKU uses multiple lots, each lot and its quantity are listed separately. Follow the displayed lot assignments and quantities."
+      "text": "Review every SKU row before picking. Match the SKU to the product name and confirm the total units shown."
+    },
+    {
+      "type": "ordered",
+      "text": "Review the lot for each SKU. If a row shows multiple lots, use the quantity shown for each lot separately. A muted End of Lot label identifies the first listed assigned lot; do not infer or substitute a different lot."
     },
     {
       "type": "ordered",
       "text": "Stop if a lot is Untagged, blank, unexpected, or unavailable, or if an expected ShipStation item is missing from the list. Hold the affected order and escalate; do not choose a lot from memory or change an order to make the totals fit."
+    },
+    {
+      "type": "ordered",
+      "text": "Identify Benco and expedited work before picking. Because the pick-list callouts are aggregate totals, verify the company and shipping service on each applicable order in ShipStation before packing or shipping."
     },
     {
       "type": "heading",
@@ -173,19 +181,35 @@
     },
     {
       "type": "ordered",
-      "text": "Open the exact ShipStation order. Match the order number, customer or company, SKU, product, quantity, and assigned lot to the staged units."
+      "text": "Open the current open batch in ShipStation that contains all orders to be shipped."
     },
     {
       "type": "ordered",
-      "text": "For Benco orders, confirm the company is Benco and verify the approved Benco shipping configuration shown for the order. For expedited orders, confirm the requested service before buying the label or marking the order shipped. The app does not automatically hold a mismatched order; staff must stop it."
+      "text": "In the order-list header, click the first checkbox to select every order in the batch. Clicking the checkbox again deselects all orders; confirm all orders are selected before continuing."
     },
     {
       "type": "ordered",
-      "text": "Review any Shipping Configuration Alert for the order. Correct and verify the order in ShipStation before shipment. Dismissing or marking an alert resolved does not correct the order."
+      "text": "Do not compare the OraCare pick-list display with the ShipStation product list line by line. Variant SKUs appear as individual products in ShipStation, so the two views are not expected to match directly. Complete the OraCare product, quantity, lot, and physical-stock checks in Sections 4.1 and 4.2 before continuing. ShipStation inventory availability is not a shipment requirement because inventory is managed outside ShipStation."
     },
     {
       "type": "ordered",
-      "text": "Pack, label, and mark the order shipped using the approved ShipStation process. Do not use Today’s Pick List to change or complete an order; it has no shipment-completion control."
+      "text": "Click the dropdown arrow on the Process Shipments split button—not the main part of the button. From the dropdown menu, select Process + Print Shipments."
+    },
+    {
+      "type": "ordered",
+      "text": "Review the displayed total charge for reasonableness in relation to the approximate shipment volume. This is a quick judgment check, not an exact invoice reconciliation, and there is no documented dollar-per-unit threshold. For example, if roughly 200 units are being shipped and the displayed charge is only $500 or $1,000, pause and review the batch because the amount may be obviously too low."
+    },
+    {
+      "type": "ordered",
+      "text": "Review the carrier breakout before continuing. For every Benco order, confirm the Benco FedEx carrier account is selected. For expedited orders, confirm the requested service. Hold and escalate any carrier or service mismatch."
+    },
+    {
+      "type": "ordered",
+      "text": "Click Continue to process the selected orders and purchase or generate the shipping labels."
+    },
+    {
+      "type": "ordered",
+      "text": "Confirm every expected label was generated successfully and each processed order moved to the expected ShipStation status, such as Printed or Shipped. If a label is missing, processing fails, or a status is unexpected, do not repeat the process from guesswork; record the affected orders and escalate to Operations or an authorized Admin."
     },
     {
       "type": "heading",
@@ -253,7 +277,7 @@
           "Hold the affected order. Record the order number, SKU, displayed lot, expected lot, and quantity; escalate to Operations or Admin."
         ],
         [
-          "Pick-list quantity or product does not match ShipStation or physical stock",
+          "Physical staged product or quantity does not match the OraCare pick list",
           "Stop and recount. Do not adjust the order or substitute product. Record the mismatch and escalate."
         ],
         [
@@ -275,6 +299,22 @@
         [
           "Shipped Orders or Shipped Items is missing, duplicated, or incorrect",
           "Do not ship again or edit records from guesswork. Record the order number, ShipStation ID, SKU, lot, quantity, and ship date; escalate for controlled correction."
+        ],
+        [
+          "ShipStation reports unavailable or insufficient inventory",
+          "This is not a stop condition by itself. OraCare inventory is managed outside ShipStation, and ShipStation inventory availability is not required to ship. Continue only if the OraCare product, quantity, lot, and physical-stock checks are complete."
+        ],
+        [
+          "Displayed total charge appears obviously too low for the approximate shipment volume",
+          "Pause and review the batch before continuing. Use reasonable judgment; there is no documented dollar-per-unit formula or approval threshold. Escalate if the amount remains implausible."
+        ],
+        [
+          "Process + Print Shipments fails or an expected label is missing",
+          "Do not repeat processing from guesswork. Record the affected order numbers and the displayed error, then notify Operations or an authorized Admin."
+        ],
+        [
+          "Processed order does not move to the expected Printed or Shipped status",
+          "Verify the order and label result in ShipStation. Do not process the order again unless an authorized user confirms that action is required; record and escalate the unexpected status."
         ]
       ]
     },
@@ -315,6 +355,12 @@
           "Rev 01",
           "Pending",
           "Initial release",
+          "Pending Quality approval"
+        ],
+        [
+          "Rev 02",
+          "Pending",
+          "Added the ShipStation batch-selection, process-and-print, charge reasonableness, carrier verification, label confirmation, and exception steps.",
           "Pending Quality approval"
         ]
       ]

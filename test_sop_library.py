@@ -4,10 +4,11 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from contextlib import contextmanager
+from types import SimpleNamespace
 
 import app as app_module
 import src.auth.middleware as auth_middleware
-from scripts.publish_sops import validate_control_metadata
+from scripts.publish_sops import validate_control_metadata, validate_core_metadata
 
 
 ROOT = Path(__file__).resolve().parent
@@ -15,7 +16,7 @@ OUTPUT = ROOT / "generated" / "sops"
 EXPECTED = {
     "inventory-lot-control": ("ORA-APP-SOP-001", "Rev 02"),
     "order-corrections-cancellations": ("ORA-APP-SOP-002", "Rev 01"),
-    "daily-fulfillment-pick-list": ("ORA-APP-SOP-003", "Rev 01"),
+    "daily-fulfillment-pick-list": ("ORA-APP-SOP-003", "Rev 02"),
     "period-end-reporting": ("ORA-APP-SOP-004", "Rev 01"),
 }
 
@@ -98,6 +99,25 @@ def test_publisher_rejects_changed_draft_control_metadata():
         raise AssertionError("publisher accepted a missing required draft banner")
 
 
+def test_publisher_rejects_stale_docx_core_revision_metadata():
+    valid = SimpleNamespace(
+        revision=2,
+        title="Daily Fulfillment and Pick List SOP Rev 02",
+    )
+    validate_core_metadata("daily.docx", valid, "Rev 02")
+
+    for changed in (
+        SimpleNamespace(revision=1, title=valid.title),
+        SimpleNamespace(revision=2, title="Daily Fulfillment and Pick List SOP"),
+    ):
+        try:
+            validate_core_metadata("daily.docx", changed, "Rev 02")
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError("publisher accepted stale DOCX core revision metadata")
+
+
 def test_generated_web_and_pdf_metadata_are_consistent():
     for slug, (sop_id, revision) in EXPECTED.items():
         web = json.loads((OUTPUT / f"{slug}.json").read_text())
@@ -126,6 +146,14 @@ def test_selected_sources_and_reconciled_workflow_wording():
     daily = json.loads((OUTPUT / "daily-fulfillment-pick-list.json").read_text())
     daily_text = " ".join(block.get("text", "") for block in daily["blocks"])
     assert "Do not use New Orders or an XML import for daily fulfillment." in daily_text
+    assert "click the first checkbox to select every order in the batch" in daily_text
+    assert "dropdown arrow on the Process Shipments split button" in daily_text
+    assert "Variant SKUs appear as individual products in ShipStation" in daily_text
+    assert "ShipStation inventory availability is not a shipment requirement" in daily_text
+    assert "there is no documented dollar-per-unit threshold" in daily_text
+    assert "Benco FedEx carrier account" in daily_text
+    assert "Confirm every expected label was generated successfully" in daily_text
+    assert "Arizona warning" not in daily_text
     assert "It does not cover changing live order contents, hidden or direct database resets, bulk recovery controls" in all_text
     assert "archive" in all_text.lower()
     assert "Admin only" in all_text
@@ -316,7 +344,7 @@ def test_sop_api_prefers_override_and_catalog_uses_its_metadata():
         if item["slug"] == "daily-fulfillment-pick-list"
     )
     assert catalog_entry["title"] == "Live Updated Pick List"
-    assert catalog_entry["revision"] == "Rev 01"
+    assert catalog_entry["revision"] == "Rev 02"
     assert catalog_entry["live_json_override"] is True
 
 

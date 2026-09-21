@@ -27,7 +27,7 @@ OUTPUT = ROOT / "generated" / "sops"
 SOURCES = (
     ("inventory-lot-control", ROOT / "docs/Inventory_and_Lot_Control_SOP_Rev_02.docx", "ORA-APP-SOP-001", "Rev 02"),
     ("order-corrections-cancellations", ROOT / "deliverables/app-sop-templates/06_Order_Corrections_and_Cancellations_SOP.docx", "ORA-APP-SOP-002", "Rev 01"),
-    ("daily-fulfillment-pick-list", ROOT / "deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx", "ORA-APP-SOP-003", "Rev 01"),
+    ("daily-fulfillment-pick-list", ROOT / "deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx", "ORA-APP-SOP-003", "Rev 02"),
     ("period-end-reporting", ROOT / "deliverables/app-sop-templates/08_Period_End_Reporting_SOP.docx", "ORA-APP-SOP-004", "Rev 01"),
 )
 REQUIRED_HEADINGS = {
@@ -74,10 +74,24 @@ def validate_control_metadata(
     return "DRAFT FOR APPROVAL"
 
 
+def validate_core_metadata(path, core_properties, expected_revision):
+    revision_number = int(expected_revision.removeprefix("Rev ").strip())
+    if core_properties.revision != revision_number:
+        raise SystemExit(
+            f"{path}: expected DOCX core revision {revision_number}, "
+            f"found {core_properties.revision!r}"
+        )
+    if revision_number > 1 and expected_revision not in (core_properties.title or ""):
+        raise SystemExit(
+            f"{path}: DOCX core title must identify {expected_revision}"
+        )
+
+
 def parse_source(slug, path, expected_id, expected_revision):
     if not path.is_file():
         raise SystemExit(f"Missing SOP source: {path.relative_to(ROOT)}")
     document = Document(path)
+    validate_core_metadata(path, document.core_properties, expected_revision)
     title = clean(next((p.text for p in document.paragraphs if p.style.name == "Title"), ""))
     if not title:
         title = clean(next((
