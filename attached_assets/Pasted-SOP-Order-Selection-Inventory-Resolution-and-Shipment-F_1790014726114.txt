@@ -1,0 +1,45 @@
+SOP: Order Selection, Inventory Resolution, and Shipment Finalization
+
+1. Objective and Scope
+
+Purpose
+The purpose of this Standard Operating Procedure (SOP) is to ensure the efficient selection of orders, the systematic resolution of inventory discrepancies, and the accurate finalization of shipping labels within the order management system.
+
+Scope
+This procedure covers the end-to-end fulfillment workflow, beginning with the initial order selection in the grid and concluding with the final generation and purchase of shipment labels.
+
+2. Order Selection and Initial Processing
+
+Follow these steps to initiate the order selection process from the fulfillment grid:
+
+1. Navigate to the order grid and click the check all box located in the upper left-hand corner of the grid. This will select all applicable orders currently visible in the filtered view.
+2. Locate and click the Process Shipments dropdown menu.
+3. Select the specific action Process plus print shipments to move the orders into the validation phase.
+
+3. Inventory Conflict Resolution
+
+If the system identifies fulfillment issues, the Arizona warning section will appear. This window must be managed carefully to ensure only shippable orders proceed.
+
+1. Monitor the Arizona warning section for any notifications stating "this order has insufficient inventory."
+2. Click the link button corresponding to the flagged order to open the order detail window.
+3. Identify the specific inventory error; for example, confirm if the system is flagging SKU 17904 as out of stock.
+4. If the item is confirmed to be out of stock and cannot be fulfilled, close the order detail window to return to the main grid.
+5. Deselect the specific order row to remove it from the current print list.
+6. Once all conflicts are resolved and the warning list is clear, click the Continue button located at the bottom right-hand corner of the Errors and Warnings window.
+
+4. Financial and Carrier Verification
+
+Before final processing, the specialist must validate the financial and routing data for the batch.
+
+* Total Amount Verification: Confirm that the final dollar amount displayed matches the calculated sum of the selected orders' invoices.
+* Carrier Split Verification:
+
+IMPORTANT: For all Benco orders, you must verify the carrier breakout. Ensure that the shipment is correctly routed to either FedEx or Care in FedEx Benco before proceeding.
+
+5. Final Shipment Processing
+
+After verifying the financial totals and carrier assignments, complete the shipment workflow:
+
+1. Click the Continue button to initiate the final processing phase.
+2. The system will process the selected orders and purchase/generate the required shipping labels.
+3. Confirm that the labels have been successfully generated and that the order statuses have updated to "Printed" or "Shipped" within the system to conclude the workflow.
