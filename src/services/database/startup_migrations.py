@@ -1499,6 +1499,30 @@ def _ensure_sop_json_overrides(cursor):
     logger.info("startup_migrations: SOP JSON override storage ready")
 
 
+def _ensure_shipstation_batch_runs(cursor):
+    """Create durable state for tracing and reconciling automated batches."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS shipstation_batch_runs (
+            ship_date DATE PRIMARY KEY,
+            external_batch_id TEXT NOT NULL UNIQUE,
+            source_batch_id TEXT,
+            replacement_batch_id TEXT,
+            shipment_ids JSONB NOT NULL,
+            status TEXT NOT NULL DEFAULT 'created',
+            verified_at TIMESTAMPTZ,
+            last_observed_at TIMESTAMPTZ,
+            reconciled_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    """)
+    cursor.execute("""
+        ALTER TABLE shipstation_batch_runs
+        ALTER COLUMN source_batch_id DROP NOT NULL
+    """)
+    logger.info("startup_migrations: ShipStation batch reconciliation storage ready")
+
+
 def _resolve_removed_order_862283(cursor):
     """
     Preserve the confirmed-removed ShipStation order while immediately
@@ -1555,6 +1579,7 @@ def run_all(conn):
             _ensure_fedex_pickup_reminder_state(cur)
             _ensure_inventory_archive_objects(cur)
             _ensure_sop_json_overrides(cur)
+            _ensure_shipstation_batch_runs(cur)
             _resolve_removed_order_862283(cur)
             _update_source_system_default(cur)
         conn.commit()

@@ -11,6 +11,7 @@ import time
 import json
 import os
 import sys
+from urllib.parse import quote
 from datetime import datetime, timezone
 
 # Add the project root to the Python path to enable imports from a parent directory
@@ -1316,7 +1317,18 @@ def v2_get_pending_axiom_shipments() -> dict:
         return {'success': False, 'error': str(e)}
 
 
-def v2_create_batch(shipment_ids: list) -> dict:
+def _v2_headers() -> dict:
+    api_key = os.getenv('PRODUCTION_KEY')
+    if not api_key:
+        raise RuntimeError('PRODUCTION_KEY environment variable not set')
+    return {'API-Key': api_key, 'Content-Type': 'application/json'}
+
+
+def v2_create_batch(
+    shipment_ids: list,
+    external_batch_id: str = None,
+    batch_notes: str = None,
+) -> dict:
     """
     Create a ShipStation V2 batch from a list of shipment IDs.
 
@@ -1327,30 +1339,37 @@ def v2_create_batch(shipment_ids: list) -> dict:
     """
     from config.settings import settings
     try:
-        api_key = os.getenv('PRODUCTION_KEY')
-        if not api_key:
-            return {'success': False, 'error': 'PRODUCTION_KEY environment variable not set'}
-
-        headers = {
-            'API-Key': api_key,
-            'Content-Type': 'application/json',
-        }
+        if not shipment_ids:
+            return {'success': False, 'error': 'At least one shipment ID is required'}
 
         payload = {
             'shipment_ids': shipment_ids,
         }
+        if external_batch_id:
+            payload['external_batch_id'] = external_batch_id
+        if batch_notes:
+            payload['batch_notes'] = batch_notes
 
-        response = make_api_request(
-            url='https://api.shipstation.com/v2/batches',
-            method='POST',
-            headers=headers,
-            data=payload,
+        # Batch creation is intentionally single-attempt. The generic request
+        # helper retries network failures, which is unsafe for a non-idempotent
+        # POST because ShipStation may have accepted the first request.
+        response = requests.post(
+            'https://api.shipstation.com/v2/batches',
+            json=payload,
+            headers=_v2_headers(),
             timeout=30,
         )
+        response.raise_for_status()
 
         data = response.json()
         batch_id = data.get('batch_id') or data.get('id')
         shipment_count = data.get('count', 0)
+        if not batch_id:
+            return {
+                'success': False,
+                'error': 'ShipStation did not return a batch ID',
+                'ambiguous': True,
+            }
         logger.info(f"V2 batch created: {batch_id} ({shipment_count} shipments confirmed by API, {len(shipment_ids)} requested)")
         return {'success': True, 'batch_id': batch_id, 'shipment_count': shipment_count, 'response': data}
 
@@ -1359,11 +1378,12 @@ def v2_create_batch(shipment_ids: list) -> dict:
         body = e.response.text[:300]
         error_msg = f"V2 POST /batches failed {status_code}: {body}"
         logger.error(error_msg)
-        return {'success': False, 'error': error_msg}
+        ambiguous = status_code >= 500 or status_code in {408, 409, 425, 429}
+        return {'success': False, 'error': error_msg, 'ambiguous': ambiguous}
 
     except Exception as e:
         logger.error(f"Error creating V2 batch: {e}", exc_info=True)
-        return {'success': False, 'error': str(e)}
+        return {'success': False, 'error': str(e), 'ambiguous': True}
 
 
 def v2_get_batch(batch_id: str) -> dict:
@@ -1382,19 +1402,10 @@ def v2_get_batch(batch_id: str) -> dict:
         'error_type'     — 'not_found' (HTTP 404) or 'api_error' (anything else)
     """
     try:
-        api_key = os.getenv('PRODUCTION_KEY')
-        if not api_key:
-            return {'success': False, 'error_type': 'api_error', 'error': 'PRODUCTION_KEY environment variable not set'}
-
-        headers = {
-            'API-Key': api_key,
-            'Content-Type': 'application/json',
-        }
-
         response = make_api_request(
             url=f'https://api.shipstation.com/v2/batches/{batch_id}',
             method='GET',
-            headers=headers,
+            headers=_v2_headers(),
             timeout=30,
         )
 
@@ -1408,6 +1419,8 @@ def v2_get_batch(batch_id: str) -> dict:
             'batch_id': fetched_id,
             'shipment_count': shipment_count,
             'status': status,
+            'external_batch_id': data.get('external_batch_id'),
+            'created_at': data.get('created_at'),
         }
 
     except requests.exceptions.HTTPError as e:
@@ -1423,6 +1436,96 @@ def v2_get_batch(batch_id: str) -> dict:
     except Exception as e:
         logger.error(f"Error fetching V2 batch {batch_id}: {e}", exc_info=True)
         return {'success': False, 'error_type': 'api_error', 'error': str(e)}
+
+
+def v2_get_batch_by_external_id(external_batch_id: str) -> dict:
+    """Find a batch created with a stable external identifier."""
+    try:
+        encoded = quote(external_batch_id, safe='')
+        response = make_api_request(
+            url=f'https://api.shipstation.com/v2/batches/external_batch_id/{encoded}',
+            method='GET',
+            headers=_v2_headers(),
+            timeout=30,
+        )
+        data = response.json()
+        return {
+            'success': True,
+            'batch_id': data.get('batch_id') or data.get('id'),
+            'shipment_count': data.get('count', data.get('shipment_count', 0)),
+            'status': data.get('batch_status') or data.get('status', 'unknown'),
+            'external_batch_id': data.get('external_batch_id'),
+        }
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 404:
+            return {'success': False, 'error_type': 'not_found', 'error': 'Batch not found'}
+        return {'success': False, 'error_type': 'api_error', 'error': str(e)}
+    except Exception as e:
+        return {'success': False, 'error_type': 'api_error', 'error': str(e)}
+
+
+def v2_get_shipment_batch_assignments(shipment_ids: list) -> dict:
+    """Return current batch IDs for each shipment without modifying ShipStation."""
+    assignments = {}
+    try:
+        headers = _v2_headers()
+        for shipment_id in shipment_ids:
+            response = make_api_request(
+                url=f'https://api.shipstation.com/v2/shipments/{shipment_id}',
+                method='GET',
+                headers=headers,
+                timeout=30,
+            )
+            data = response.json()
+            assignments[shipment_id] = list(data.get('batch_ids') or [])
+        return {'success': True, 'assignments': assignments}
+    except Exception as e:
+        logger.error(f"Could not read shipment batch assignments: {e}", exc_info=True)
+        return {'success': False, 'error': str(e), 'assignments': assignments}
+
+
+def v2_get_batch_shipment_ids(batch_id: str) -> dict:
+    """List all shipment IDs currently assigned to a batch."""
+    shipment_ids = []
+    try:
+        headers = _v2_headers()
+        page = 1
+        while True:
+            response = make_api_request(
+                url='https://api.shipstation.com/v2/shipments',
+                method='GET',
+                headers=headers,
+                params={'batch_id': batch_id, 'page_size': 500, 'page': page},
+                timeout=30,
+            )
+            data = response.json()
+            shipment_ids.extend(
+                shipment['shipment_id']
+                for shipment in data.get('shipments', [])
+                if shipment.get('shipment_id')
+            )
+            if page >= data.get('pages', 1):
+                break
+            page += 1
+        return {'success': True, 'shipment_ids': shipment_ids}
+    except Exception as e:
+        logger.error(f"Could not list shipments for batch {batch_id}: {e}", exc_info=True)
+        return {'success': False, 'error': str(e), 'shipment_ids': shipment_ids}
+
+
+def v2_delete_batch(batch_id: str) -> dict:
+    """Delete an already-verified empty batch."""
+    try:
+        make_api_request(
+            url=f'https://api.shipstation.com/v2/batches/{batch_id}',
+            method='DELETE',
+            headers=_v2_headers(),
+            timeout=30,
+        )
+        return {'success': True}
+    except Exception as e:
+        logger.error(f"Could not delete empty batch {batch_id}: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
 
 
 def v2_process_batch_labels(batch_id: str, ship_date: str) -> dict:

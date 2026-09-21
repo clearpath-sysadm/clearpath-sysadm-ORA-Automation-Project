@@ -121,6 +121,23 @@ curl -i -X POST \
 | `GET` | `/v2/batches/{batch_id}/errors` | Get batch errors |
 | `GET` | `/v2/batches/external_batch_id/{id}` | Look up batch by external ID |
 
+### Oracare automated batch safety
+
+The noon batch processor assigns `external_batch_id=oracare-axiom-YYYY-MM-DD`
+and records the original shipment IDs before issuing the create request. Batch
+creation is single-attempt and protected by a PostgreSQL advisory lock.
+
+Fifteen minutes after verification, the worker performs one bounded lifecycle
+check. If ShipStation has moved every original shipment to one replacement
+batch and left the identified automated source open and empty, the default
+behavior is observation-only: the replacement is recorded and an operational
+warning is emitted, but ShipStation is not changed.
+
+Deletion code is guarded by
+`SHIPSTATION_EMPTY_BATCH_CLEANUP_ENABLED=true`. Do not enable it until
+observation records have been reviewed across multiple production runs.
+Historical batches without the automated external ID are never modified.
+
 ---
 
 ## 3. Adding Orders/Shipments to a Batch

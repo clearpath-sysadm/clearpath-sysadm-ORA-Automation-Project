@@ -7,3 +7,4 @@
 - [Operational reminder dates](operational-reminder-dates.md) — reminders use Central Time server dates; threshold alerts latch daily instead of tracking only the current metric.
 - [Prefer reversible removal](reversible-removal.md) — inventory and other business records should use auditable archive/restore rather than hard deletion unless exceptional purge is explicitly required.
 - [Canonical lot identity](canonical-lot-identity.md) — SKU and lot number define historical identity; normal edits change status only, and identity correction is restricted to unused lots.
+- [ShipStation batch creation safety](shipstation-batch-creation-safety.md) — non-idempotent creates use a durable pre-claim and no automatic POST retry; empty-batch cleanup starts observation-only.

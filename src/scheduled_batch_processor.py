@@ -16,6 +16,7 @@ import sys
 import time
 import logging
 import datetime
+import json
 from pathlib import Path
 
 import pytz
@@ -28,6 +29,10 @@ from src.services.shipstation.api_client import (
     v2_get_pending_axiom_shipments,
     v2_create_batch,
     v2_get_batch,
+    v2_get_batch_by_external_id,
+    v2_get_shipment_batch_assignments,
+    v2_get_batch_shipment_ids,
+    v2_delete_batch,
 )
 from src.utils.server_logger import get_logger
 from src.workflow_heartbeat import heartbeat, HeartbeatPhase
@@ -47,6 +52,11 @@ BATCH_WINDOW_MINUTES = 5
 RECOVERY_START_TIME = datetime.time(12, 10)
 RECOVERY_END_TIME = datetime.time(12, 30)
 RECOVERY_LOOKBACK_MINUTES = 15
+BATCH_LOCK_KEY = 0x4F524142  # Stable "ORAB" key; never use Python's randomized hash().
+RECONCILE_DELAY_SECONDS = 15 * 60
+EMPTY_BATCH_CLEANUP_ENABLED = (
+    os.getenv('SHIPSTATION_EMPTY_BATCH_CLEANUP_ENABLED', '').lower() == 'true'
+)
 
 
 def _is_batch_time() -> bool:
@@ -148,7 +158,12 @@ def _already_batched_today(today_str: str) -> bool:
         return False
 
 
-def _record_batch_run(today_str: str, batch_id: str) -> bool:
+def _record_batch_run(
+    today_str: str,
+    batch_id: str,
+    external_batch_id: str,
+    shipment_ids: list,
+) -> bool:
     """Persist today's batch date to configuration_params so restarts skip re-firing.
     Returns True on success, False on failure. Callers should treat False as an error
     to prevent silent duplicate-batch risk on future restarts."""
@@ -164,6 +179,23 @@ def _record_batch_run(today_str: str, batch_id: str) -> bool:
             """,
             (today_str, f"batch_id={batch_id}"),
         )
+        cursor.execute(
+            """
+            INSERT INTO shipstation_batch_runs
+                (ship_date, external_batch_id, source_batch_id, shipment_ids, status, updated_at)
+            VALUES (%s, %s, %s, %s::jsonb, 'created', NOW())
+            ON CONFLICT (ship_date) DO UPDATE SET
+                external_batch_id = EXCLUDED.external_batch_id,
+                source_batch_id = EXCLUDED.source_batch_id,
+                shipment_ids = EXCLUDED.shipment_ids,
+                replacement_batch_id = NULL,
+                status = 'created',
+                verified_at = NULL,
+                reconciled_at = NULL,
+                updated_at = NOW()
+            """,
+            (today_str, external_batch_id, batch_id, json.dumps(shipment_ids)),
+        )
         conn.commit()
         conn.close()
         logger.info(f"Recorded batch run: date={today_str}, batch_id={batch_id}")
@@ -174,22 +206,330 @@ def _record_batch_run(today_str: str, batch_id: str) -> bool:
         return False
 
 
-def _clear_batch_record(today_str: str) -> None:
-    """Clear today's batch guard from configuration_params so a retry can proceed.
-    Used only when verification confirms the batch definitively does not exist (404)."""
+def _ensure_batch_run_storage() -> bool:
+    """Ensure the independent worker can start safely before the web app."""
     try:
         conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE configuration_params SET value = '', notes = 'cleared_for_retry', last_updated = NOW()::text "
-            "WHERE category = 'BatchProcessor' AND parameter_name = 'last_batch_date' AND sku = '' AND value = %s",
-            (today_str,),
-        )
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS shipstation_batch_runs (
+                    ship_date DATE PRIMARY KEY,
+                    external_batch_id TEXT NOT NULL UNIQUE,
+                    source_batch_id TEXT,
+                    replacement_batch_id TEXT,
+                    shipment_ids JSONB NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'created',
+                    verified_at TIMESTAMPTZ,
+                    last_observed_at TIMESTAMPTZ,
+                    reconciled_at TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+            cursor.execute(
+                "ALTER TABLE shipstation_batch_runs ALTER COLUMN source_batch_id DROP NOT NULL"
+            )
         conn.commit()
         conn.close()
-        logger.info(f"Cleared last_batch_date guard for {today_str} — retry is now unblocked")
+        return True
     except Exception as e:
-        logger.error(f"Could not clear last_batch_date guard: {e}")
+        logger.error(f"Batch safety storage is unavailable; refusing to create: {e}")
+        return False
+
+
+def _claim_batch_run(today_str: str, external_batch_id: str, shipment_ids: list) -> bool:
+    """Atomically claim the date before the non-idempotent ShipStation POST."""
+    try:
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO shipstation_batch_runs
+                    (ship_date, external_batch_id, shipment_ids, status)
+                VALUES (%s, %s, %s::jsonb, 'creating')
+                ON CONFLICT (ship_date) DO NOTHING
+                """,
+                (today_str, external_batch_id, json.dumps(shipment_ids)),
+            )
+            if cursor.rowcount != 1:
+                conn.rollback()
+                conn.close()
+                return False
+            cursor.execute(
+                """
+                INSERT INTO configuration_params
+                    (category, parameter_name, sku, value, notes, last_updated)
+                VALUES ('BatchProcessor', 'last_batch_date', '', %s, %s, NOW()::text)
+                ON CONFLICT (category, parameter_name, sku)
+                DO UPDATE SET value = EXCLUDED.value,
+                              notes = EXCLUDED.notes,
+                              last_updated = NOW()::text
+                """,
+                (today_str, f"creating_external_id={external_batch_id}"),
+            )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Could not claim daily batch creation: {e}", exc_info=True)
+        return False
+
+
+def _clear_definite_failed_claim(today_str: str, external_batch_id: str) -> None:
+    """Release a claim only after a definite HTTP rejection (never ambiguity)."""
+    try:
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                DELETE FROM shipstation_batch_runs
+                WHERE ship_date = %s AND external_batch_id = %s
+                  AND status = 'creating' AND source_batch_id IS NULL
+                """,
+                (today_str, external_batch_id),
+            )
+            if cursor.rowcount:
+                cursor.execute(
+                    """
+                    UPDATE configuration_params
+                    SET value = '', notes = 'definite_create_failure', last_updated = NOW()::text
+                    WHERE category = 'BatchProcessor'
+                      AND parameter_name = 'last_batch_date' AND sku = ''
+                      AND value = %s
+                    """,
+                    (today_str,),
+                )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Could not clear definite failed batch claim: {e}", exc_info=True)
+
+
+def _get_claimed_shipment_ids(today_str: str) -> list:
+    try:
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT shipment_ids FROM shipstation_batch_runs WHERE ship_date = %s",
+                (today_str,),
+            )
+            row = cursor.fetchone()
+        conn.close()
+        return list(row[0]) if row else []
+    except Exception as e:
+        logger.error(f"Could not read claimed batch membership: {e}", exc_info=True)
+        return []
+
+
+def _get_batch_run_status(today_str: str):
+    try:
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT status FROM shipstation_batch_runs WHERE ship_date = %s",
+                (today_str,),
+            )
+            row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else None
+    except Exception as e:
+        logger.error(f"Could not read batch run status: {e}", exc_info=True)
+        return None
+
+
+def _mark_batch_verified(today_str: str) -> None:
+    try:
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE shipstation_batch_runs
+                SET status = 'verified', verified_at = NOW(), updated_at = NOW()
+                WHERE ship_date = %s
+                """,
+                (today_str,),
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Could not record verified batch state: {e}", exc_info=True)
+
+
+def _acquire_batch_lock():
+    """Acquire the cross-process creation lock; fail closed on DB errors."""
+    try:
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT pg_try_advisory_lock(%s)", (BATCH_LOCK_KEY,))
+            acquired = bool(cursor.fetchone()[0])
+        if acquired:
+            return conn
+        conn.close()
+        return None
+    except Exception as e:
+        logger.error(f"Could not acquire batch creation lock; refusing to create: {e}")
+        return None
+
+
+def _release_batch_lock(conn) -> None:
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_unlock(%s)", (BATCH_LOCK_KEY,))
+    finally:
+        conn.close()
+
+
+def _set_reconciliation_state(
+    ship_date,
+    status,
+    replacement_batch_id=None,
+    update_daily_record=False,
+):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE shipstation_batch_runs
+                SET status = %s,
+                    replacement_batch_id = COALESCE(%s, replacement_batch_id),
+                    last_observed_at = NOW(),
+                    reconciled_at = CASE WHEN %s IN ('observed_empty','retired') THEN NOW() ELSE reconciled_at END,
+                    updated_at = NOW()
+                WHERE ship_date = %s
+                """,
+                (status, replacement_batch_id, status, ship_date),
+            )
+            if update_daily_record and replacement_batch_id:
+                cursor.execute(
+                    """
+                    UPDATE configuration_params
+                    SET notes = %s, last_updated = NOW()::text
+                    WHERE category = 'BatchProcessor'
+                      AND parameter_name = 'last_batch_date' AND sku = ''
+                      AND value = %s
+                    """,
+                    (
+                        f"batch_id={replacement_batch_id}; replaced_empty_source=true",
+                        str(ship_date),
+                    ),
+                )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _reconcile_recent_batches() -> None:
+    """Observe verified batches after creation; never block daily batch creation."""
+    try:
+        statuses = ('verified', 'observed_empty') if EMPTY_BATCH_CLEANUP_ENABLED else ('verified',)
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT ship_date, external_batch_id, source_batch_id, shipment_ids
+                FROM shipstation_batch_runs
+                WHERE status = ANY(%s)
+                  AND verified_at <= NOW() - (%s * INTERVAL '1 second')
+                ORDER BY verified_at
+                LIMIT 1
+                """,
+                (list(statuses), RECONCILE_DELAY_SECONDS),
+            )
+            rows = cursor.fetchall()
+        conn.close()
+
+        for ship_date, external_id, source_batch_id, shipment_ids in rows:
+            source = v2_get_batch(source_batch_id)
+            if not source.get('success'):
+                logger.warning(f"Batch reconciliation could not read source {source_batch_id}")
+                continue
+            if source.get('shipment_count', 0) > 0:
+                _set_reconciliation_state(ship_date, 'stable')
+                continue
+            if source.get('status') != 'open':
+                logger.error(
+                    f"Refusing cleanup analysis for empty batch {source_batch_id}: "
+                    f"status is {source.get('status')!r}, not 'open'"
+                )
+                _set_reconciliation_state(ship_date, 'uncertain')
+                continue
+            if source.get('external_batch_id') != external_id:
+                logger.error(
+                    f"Refusing empty-batch reconciliation for {source_batch_id}: "
+                    "external identity does not match"
+                )
+                _set_reconciliation_state(ship_date, 'uncertain')
+                continue
+
+            original_ids = list(shipment_ids)
+            if not original_ids:
+                _set_reconciliation_state(ship_date, 'uncertain')
+                continue
+            assignments = v2_get_shipment_batch_assignments([original_ids[0]])
+            if not assignments.get('success'):
+                logger.warning(f"Could not reconcile shipment assignments for {source_batch_id}")
+                continue
+            candidate_ids = {
+                batch_id
+                for batch_id in assignments['assignments'].get(original_ids[0], [])
+                if batch_id != source_batch_id
+            }
+            if len(candidate_ids) != 1:
+                logger.error(
+                    f"Empty batch {source_batch_id} has incomplete or split replacement assignments; "
+                    "leaving it unchanged"
+                )
+                server_logger.error(
+                    f"Batch processor found empty batch {source_batch_id}, but could not prove all "
+                    "shipments moved to one replacement. Manual review required.",
+                    source="Batch Processor",
+                )
+                _set_reconciliation_state(ship_date, 'uncertain')
+                continue
+
+            replacement_id = candidate_ids.pop()
+            replacement = v2_get_batch(replacement_id)
+            replacement_shipments = v2_get_batch_shipment_ids(replacement_id)
+            if (
+                not replacement.get('success')
+                or not replacement_shipments.get('success')
+                or not set(original_ids).issubset(set(replacement_shipments['shipment_ids']))
+            ):
+                logger.error(
+                    f"Replacement batch {replacement_id} could not be verified for {source_batch_id}"
+                )
+                _set_reconciliation_state(ship_date, 'uncertain')
+                continue
+
+            if not EMPTY_BATCH_CLEANUP_ENABLED:
+                logger.warning(
+                    f"OBSERVATION ONLY: automated batch {source_batch_id} became empty; "
+                    f"all {len(original_ids)} shipments moved to {replacement_id}. "
+                    "Cleanup remains disabled."
+                )
+                server_logger.warning(
+                    f"Batch processor observation: {source_batch_id} became empty after its "
+                    f"shipments moved to {replacement_id}. No ShipStation changes were made.",
+                    source="Batch Processor",
+                )
+                _set_reconciliation_state(
+                    ship_date, 'observed_empty', replacement_id, update_daily_record=True
+                )
+                continue
+
+            deleted = v2_delete_batch(source_batch_id)
+            if deleted.get('success'):
+                logger.info(f"Retired proven-empty automated batch {source_batch_id}")
+                _set_reconciliation_state(
+                    ship_date, 'retired', replacement_id, update_daily_record=True
+                )
+            else:
+                logger.error(f"Failed to retire proven-empty batch {source_batch_id}")
+    except Exception as e:
+        logger.error(f"Non-blocking batch reconciliation failed: {e}", exc_info=True)
 
 
 VERIFY_WAIT_SECONDS = 3
@@ -227,7 +567,10 @@ def _verify_batch(batch_id: str, requested_count: int) -> str:
     error_type = result.get('error_type', 'api_error')
     error_msg = result.get('error', 'unknown')
     if error_type == 'not_found':
-        logger.warning(f"Batch {batch_id} NOT FOUND on ShipStation after creation — will retry once")
+        logger.warning(
+            f"Batch {batch_id} NOT FOUND after creation; retaining the daily claim "
+            "and refusing an automatic retry"
+        )
         return 'not_found'
     else:
         logger.error(f"Batch {batch_id} verification failed with uncertain state: {error_msg}")
@@ -235,6 +578,20 @@ def _verify_batch(batch_id: str, requested_count: int) -> str:
 
 
 def run_batch_job() -> str:
+    """Serialize the existing daily creation flow across all worker processes."""
+    if not _ensure_batch_run_storage():
+        return 'error'
+    lock_conn = _acquire_batch_lock()
+    if not lock_conn:
+        logger.warning("Another batch processor instance holds the creation lock; skipping.")
+        return 'skipped_locked'
+    try:
+        return _run_batch_job_locked()
+    finally:
+        _release_batch_lock(lock_conn)
+
+
+def _run_batch_job_locked() -> str:
     """
     Fetch all pending Axiom shipments, create a V2 batch, and trigger label processing.
     Logs results to the server logger for visibility in the dashboard.
@@ -264,7 +621,48 @@ def run_batch_job() -> str:
         )
         return 'blocked'
 
-    if _already_batched_today(ship_date):
+    external_batch_id = f"oracare-axiom-{ship_date}"
+    already_recorded = _already_batched_today(ship_date)
+    local_status = _get_batch_run_status(ship_date)
+    if already_recorded and local_status not in ('creating', 'created'):
+        logger.info(f"Batch already created today ({ship_date}) — skipping to prevent duplicates.")
+        server_logger.info(
+            f"Batch processor: already ran today ({ship_date}). Skipping duplicate run.",
+            source="Batch Processor"
+        )
+        return 'skipped_duplicate'
+
+    existing = v2_get_batch_by_external_id(external_batch_id)
+    if existing.get('success'):
+        existing_batch_id = existing.get('batch_id')
+        listed = v2_get_batch_shipment_ids(existing_batch_id)
+        if not listed.get('success'):
+            return 'error'
+        shipment_ids = listed['shipment_ids'] or _get_claimed_shipment_ids(ship_date)
+        if not shipment_ids:
+            server_logger.error(
+                f"Recovered automated batch {existing_batch_id}, but its original shipment "
+                "membership is unavailable. Manual review required.",
+                source="Batch Processor",
+            )
+            return 'error'
+        logger.warning(
+            f"Recovered existing automated batch {existing_batch_id} by external ID; "
+            "will not create a duplicate"
+        )
+        if not _record_batch_run(
+            ship_date, existing_batch_id, external_batch_id, shipment_ids
+        ):
+            return 'error'
+        _mark_batch_verified(ship_date)
+        return 'completed'
+    if existing.get('error_type') != 'not_found':
+        logger.error(
+            "Could not safely check for an existing automated batch; refusing to create a duplicate"
+        )
+        return 'error'
+
+    if already_recorded:
         logger.info(f"Batch already created today ({ship_date}) — skipping to prevent duplicates.")
         server_logger.info(
             f"Batch processor: already ran today ({ship_date}). Skipping duplicate run.",
@@ -295,7 +693,15 @@ def run_batch_job() -> str:
 
     logger.info(f"Found {len(shipment_ids)} pending Axiom shipment(s) — creating batch...")
 
-    batch_result = v2_create_batch(shipment_ids)
+    if not _claim_batch_run(ship_date, external_batch_id, shipment_ids):
+        logger.warning("The daily batch date was claimed by another run; skipping.")
+        return 'skipped_locked'
+
+    batch_result = v2_create_batch(
+        shipment_ids,
+        external_batch_id=external_batch_id,
+        batch_notes=f"Oracare automated Axiom batch {ship_date}",
+    )
     if not batch_result.get('success'):
         error = batch_result.get('error', 'unknown error')
         logger.error(f"Failed to create batch: {error}")
@@ -303,11 +709,21 @@ def run_batch_job() -> str:
             f"Batch processor failed to create batch ({len(shipment_ids)} shipments): {error}",
             source="Batch Processor"
         )
+        if not batch_result.get('ambiguous'):
+            _clear_definite_failed_claim(ship_date, external_batch_id)
+        else:
+            server_logger.error(
+                "Batch creation result is uncertain. The daily claim was retained to prevent "
+                "an automatic duplicate; the next run will recover by external ID.",
+                source="Batch Processor",
+            )
         return 'error'
 
     batch_id = batch_result['batch_id']
 
-    if not _record_batch_run(ship_date, batch_id):
+    if not _record_batch_run(
+        ship_date, batch_id, external_batch_id, shipment_ids
+    ):
         server_logger.error(
             f"Batch {batch_id} created but could not persist run date to DB. "
             f"Restarting within the noon window may create a duplicate batch.",
@@ -318,6 +734,7 @@ def run_batch_job() -> str:
     verify_status = _verify_batch(batch_id, len(shipment_ids))
 
     if verify_status == 'ok':
+        _mark_batch_verified(ship_date)
         update_workflow_last_run(WORKFLOW_NAME)
         summary = (
             f"Batch processor complete: batch {batch_id} created and verified with "
@@ -328,71 +745,6 @@ def run_batch_job() -> str:
         logger.info("=" * 70)
         server_logger.info(summary, source="Batch Processor")
         return 'completed'
-
-    elif verify_status == 'not_found':
-        logger.warning(
-            f"Batch {batch_id} not found on ShipStation — clearing guard and retrying once from scratch"
-        )
-        server_logger.warning(
-            f"Batch {batch_id} not found after creation (404). Clearing guard and retrying once.",
-            source="Batch Processor"
-        )
-        _clear_batch_record(ship_date)
-
-        retry_result = v2_get_pending_axiom_shipments()
-        if not retry_result.get('success'):
-            server_logger.error(
-                f"Batch retry failed: could not re-fetch pending shipments — {retry_result.get('error')}",
-                source="Batch Processor"
-            )
-            return 'error'
-
-        retry_ids = retry_result['shipment_ids']
-        if not retry_ids:
-            server_logger.warning(
-                "Batch retry: no pending shipments found on re-fetch — nothing to batch.",
-                source="Batch Processor"
-            )
-            update_workflow_last_run(WORKFLOW_NAME)
-            return 'skipped'
-
-        logger.info(f"Retry: creating batch with {len(retry_ids)} shipment(s)...")
-        retry_batch_result = v2_create_batch(retry_ids)
-        if not retry_batch_result.get('success'):
-            server_logger.error(
-                f"Batch retry failed to create batch: {retry_batch_result.get('error')}",
-                source="Batch Processor"
-            )
-            return 'error'
-
-        retry_batch_id = retry_batch_result['batch_id']
-
-        if not _record_batch_run(ship_date, retry_batch_id):
-            server_logger.error(
-                f"Retry batch {retry_batch_id} created but could not persist run date to DB.",
-                source="Batch Processor"
-            )
-            return 'error'
-
-        retry_verify = _verify_batch(retry_batch_id, len(retry_ids))
-        if retry_verify == 'ok':
-            update_workflow_last_run(WORKFLOW_NAME)
-            summary = (
-                f"Batch processor complete (after retry): batch {retry_batch_id} created and verified with "
-                f"{len(retry_ids)} shipment(s). Labels not created — print from ShipStation."
-            )
-            logger.info("=" * 70)
-            logger.info(f"BATCH PROCESSOR COMPLETE (RETRY) — {len(retry_ids)} shipments, batch {retry_batch_id} ✓ verified")
-            logger.info("=" * 70)
-            server_logger.info(summary, source="Batch Processor")
-            return 'completed'
-        else:
-            server_logger.error(
-                f"Batch retry also failed verification (status={retry_verify}) for batch {retry_batch_id}. "
-                f"Manual intervention required.",
-                source="Batch Processor"
-            )
-            return 'error'
 
     elif verify_status == 'mismatch':
         server_logger.error(
@@ -464,6 +816,13 @@ def main():
                     _run_with_heartbeat(label='recovery')
             else:
                 logger.debug(f"Not batch time ({now_minute} CT) — sleeping 60s")
+
+            # Reconciliation runs only after schedule decisions and at most
+            # once every five minutes. It cannot consume the primary batch
+            # window, and each pass handles one terminal observation.
+            if not _is_batch_time() and now_ct.minute % 5 == 0:
+                if _ensure_batch_run_storage():
+                    _reconcile_recent_batches()
 
             time.sleep(60)
 
