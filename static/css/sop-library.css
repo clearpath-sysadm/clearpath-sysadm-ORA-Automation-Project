@@ -1,4 +1,12 @@
 .sop-notice { border: 1px solid #d49a20; background: #fff7df; color: #5f4300; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; }
+.sop-publish-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 20px; align-items: center; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }
+.sop-publish-panel[hidden] { display: none; }
+.sop-publish-panel h2 { font-size: 18px; margin: 0 0 4px; }
+.sop-publish-panel p { margin: 0; color: var(--text-secondary); }
+.sop-publish-panel .btn { min-height: 44px; }
+.sop-publish-status { grid-column: 1 / -1; min-height: 20px; font-size: 14px; }
+.sop-publish-status.success { color: var(--success-color, #1f7a45); }
+.sop-publish-status.error { color: var(--error-color, #b42318); }
 .sop-library ~ .help-tabs,
 .sop-library ~ .help-section { display: none !important; }
 .sop-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
@@ -27,6 +35,8 @@
 .sop-back { display: inline-block; margin-bottom: 14px; }
 @media (max-width: 768px) {
   .sop-grid, .sop-reader { grid-template-columns: 1fr; }
+  .sop-publish-panel { grid-template-columns: 1fr; }
+  .sop-publish-panel .btn { width: 100%; }
   .sop-toc { position: static; max-height: none; }
   .sop-metadata { grid-template-columns: 1fr; }
   .sop-document { padding: 16px; }

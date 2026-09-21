@@ -19,4 +19,6 @@ python scripts/publish_sops.py
 
 The command writes matching web JSON and PDF files to `generated/sops/`. It exits with an error if a source is missing, its ID/revision or draft metadata changes unexpectedly, or required headings, numbered procedures, or warning content are missing. The generated files are committed so a missing artifact is an explicit server error rather than an automatic runtime fallback.
 
+Admins can run the same publisher from the workspace app by opening **Help & Training** and selecting **Regenerate SOP Library**. This control is intentionally unavailable in a published deployment. After a successful workspace regeneration, publish the app again to release the changed generated files.
+
 Before publishing a changed source, reconcile its instructions against current page labels, role enforcement, action timing, side effects, correction/archive behavior, and retired routes. Drafts must remain labeled `DRAFT FOR APPROVAL`, effective `Upon approval`, with Quality approval pending until approval evidence exists.

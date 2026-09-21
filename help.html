@@ -91,6 +91,14 @@
                     <strong>Controlled drafts — not approved releases.</strong>
                     Effective date is upon approval. Quality approval is pending for every document below.
                 </div>
+                <section class="sop-publish-panel" data-admin-only hidden aria-labelledby="sop-publish-title">
+                    <div>
+                        <h2 id="sop-publish-title">Update the SOP library</h2>
+                        <p>After replacing a controlled DOCX source in this workspace, regenerate the in-app pages and PDF downloads. Publish the app afterward to release the changes.</p>
+                    </div>
+                    <button id="publish-sops-button" class="btn" type="button">Regenerate SOP Library</button>
+                    <p id="sop-publish-status" class="sop-publish-status" role="status" aria-live="polite"></p>
+                </section>
                 <div id="sop-library" class="sop-library" aria-live="polite">
                     <p>Loading SOP library…</p>
                 </div>

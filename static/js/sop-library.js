@@ -1,6 +1,8 @@
 (function () {
   const root = document.getElementById('sop-library');
   if (!root) return;
+  const publishButton = document.getElementById('publish-sops-button');
+  const publishStatus = document.getElementById('sop-publish-status');
   const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const meta = (label, value) => `<div class="sop-meta"><strong>${label}</strong>${escapeHtml(value)}</div>`;
   const metadata = sop => `<div class="sop-metadata">${meta('SOP ID', sop.sop_id)}${meta('Revision', sop.revision)}${meta('Status', sop.status)}${meta('Effective date', sop.effective_date)}${meta('Approval status', sop.approval_status)}${meta('Document status', sop.document_status)}</div>`;
@@ -10,6 +12,39 @@
     if (!response.ok) throw new Error(response.status === 503 ? 'The SOP library has not been generated.' : 'Unable to load the SOP library.');
     return response.json();
   }
+
+  async function publishSops() {
+    if (!publishButton || !publishStatus) return;
+    publishButton.disabled = true;
+    publishButton.textContent = 'Regenerating…';
+    publishStatus.className = 'sop-publish-status';
+    publishStatus.textContent = 'Validating the source documents and rebuilding the library…';
+    try {
+      const response = await fetch('/api/sops/publish', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Accept': 'application/json'}
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'SOP regeneration failed.');
+
+      publishStatus.classList.add('success');
+      publishStatus.textContent = `${result.message} Publish the app to release these changes.`;
+      const match = window.location.pathname.match(/^\/help\/([a-z0-9-]+)$/);
+      const refreshed = match
+        ? await getJson(`/api/sops/${match[1]}`)
+        : await getJson('/api/sops');
+      match ? renderDocument(refreshed) : renderCatalog(refreshed);
+    } catch (error) {
+      publishStatus.classList.add('error');
+      publishStatus.textContent = error.message;
+    } finally {
+      publishButton.disabled = false;
+      publishButton.textContent = 'Regenerate SOP Library';
+    }
+  }
+
+  if (publishButton) publishButton.addEventListener('click', publishSops);
 
   function renderCatalog(catalog) {
     root.innerHTML = `<div class="sop-grid">${catalog.map(sop => `<article class="sop-card">

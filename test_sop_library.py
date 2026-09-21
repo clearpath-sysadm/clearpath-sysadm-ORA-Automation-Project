@@ -161,11 +161,97 @@ def test_signed_out_and_invalid_document_ids_are_rejected():
             assert client.get(path).status_code == 404
 
 
+def test_sop_publish_endpoint_is_admin_only_and_runs_fixed_script():
+    client = app_module.app.test_client()
+    with signed_in_as(user(authenticated=False)):
+        assert client.post("/api/sops/publish").status_code == 401
+    with signed_in_as(user(role="viewer")):
+        assert client.post("/api/sops/publish").status_code == 403
+    with signed_in_as(user(role="operations")):
+        assert client.post("/api/sops/publish").status_code == 403
+
+    completed = MagicMock(returncode=0, stdout="Published 4 SOP drafts", stderr="")
+    with signed_in_as(user(role="admin")), patch.object(
+        app_module.subprocess, "run", return_value=completed
+    ) as run:
+        response = client.post("/api/sops/publish")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "success": True,
+        "message": "Published 4 SOP drafts",
+    }
+    assert run.call_args.args[0] == [
+        app_module.sys.executable,
+        str(ROOT / "scripts" / "publish_sops.py"),
+    ]
+    assert run.call_args.kwargs["cwd"] == str(ROOT)
+    assert run.call_args.kwargs["timeout"] == 120
+    assert "shell" not in run.call_args.kwargs
+
+
+def test_sop_publish_endpoint_returns_bounded_validation_error():
+    client = app_module.app.test_client()
+    failed = MagicMock(
+        returncode=1,
+        stdout="",
+        stderr="Traceback details that should not be returned\nsource.docx: missing required sections",
+    )
+    with signed_in_as(user(role="admin")), patch.object(
+        app_module.subprocess, "run", return_value=failed
+    ):
+        response = client.post("/api/sops/publish")
+
+    assert response.status_code == 422
+    assert response.get_json() == {
+        "success": False,
+        "error": "source.docx: missing required sections",
+    }
+
+
+def test_sop_publish_endpoint_handles_timeout_and_concurrent_run():
+    client = app_module.app.test_client()
+    with signed_in_as(user(role="admin")), patch.object(
+        app_module.subprocess,
+        "run",
+        side_effect=app_module.subprocess.TimeoutExpired("publish_sops.py", 120),
+    ):
+        response = client.post("/api/sops/publish")
+    assert response.status_code == 504
+    assert "timed out" in response.get_json()["error"]
+
+    busy_lock = MagicMock()
+    busy_lock.acquire.return_value = False
+    with signed_in_as(user(role="admin")), patch.object(
+        app_module, "_sop_publish_lock", busy_lock
+    ):
+        response = client.post("/api/sops/publish")
+    assert response.status_code == 409
+    assert response.get_json()["error"] == "SOP regeneration is already running."
+    busy_lock.release.assert_not_called()
+
+
+def test_sop_publish_endpoint_is_unavailable_in_deployment():
+    client = app_module.app.test_client()
+    with signed_in_as(user(role="admin")), patch.dict(
+        app_module.os.environ, {"REPLIT_DEPLOYMENT": "1"}
+    ), patch.object(app_module.subprocess, "run") as run:
+        response = client.post("/api/sops/publish")
+
+    assert response.status_code == 409
+    assert "workspace only" in response.get_json()["error"]
+    run.assert_not_called()
+
+
 def test_help_reader_has_stable_links_toc_and_mobile_layout():
     page = (ROOT / "help.html").read_text()
     script = (ROOT / "static/js/sop-library.js").read_text()
     styles = (ROOT / "static/css/sop-library.css").read_text()
     assert 'id="sop-library"' in page
+    assert 'id="publish-sops-button"' in page
+    assert "data-admin-only" in page
+    assert "fetch('/api/sops/publish'" in script
+    assert "Publish the app to release these changes." in script
     assert "Controlled drafts — not approved releases." in page
     assert 'href="/help/${encodeURIComponent(sop.slug)}"' in script
     assert 'class="sop-toc"' in script
