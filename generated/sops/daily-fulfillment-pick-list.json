@@ -141,7 +141,7 @@
     },
     {
       "type": "ordered",
-      "text": "Review the lot for each SKU. If a row shows multiple lots, use the quantity shown for each lot separately. A muted End of Lot label identifies the first listed assigned lot; do not infer or substitute a different lot."
+      "text": "When a SKU uses multiple lots, each lot and its quantity are listed separately. Follow the displayed lot assignments and quantities."
     },
     {
       "type": "ordered",
