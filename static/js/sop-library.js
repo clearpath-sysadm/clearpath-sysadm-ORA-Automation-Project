@@ -2,6 +2,8 @@
   const root = document.getElementById('sop-library');
   if (!root) return;
   const publishButton = document.getElementById('publish-sops-button');
+  const uploadForm = document.getElementById('sop-upload-form');
+  const uploadButton = document.getElementById('upload-sop-button');
   const publishStatus = document.getElementById('sop-publish-status');
   const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const meta = (label, value) => `<div class="sop-meta"><strong>${label}</strong>${escapeHtml(value)}</div>`;
@@ -46,12 +48,48 @@
 
   if (publishButton) publishButton.addEventListener('click', publishSops);
 
+  async function uploadSop(event) {
+    event.preventDefault();
+    if (!uploadForm || !uploadButton || !publishStatus) return;
+    uploadButton.disabled = true;
+    uploadButton.textContent = 'Uploading…';
+    publishStatus.className = 'sop-publish-status';
+    publishStatus.textContent = 'Validating and saving the in-app SOP…';
+    try {
+      const response = await fetch('/api/sops/upload', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Accept': 'application/json'},
+        body: new FormData(uploadForm)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'The SOP JSON could not be uploaded.');
+      publishStatus.classList.add('success');
+      publishStatus.textContent = result.message;
+      const match = window.location.pathname.match(/^\/help\/([a-z0-9-]+)$/);
+      const refreshed = match
+        ? await getJson(`/api/sops/${match[1]}`)
+        : await getJson('/api/sops');
+      match ? renderDocument(refreshed) : renderCatalog(refreshed);
+      uploadForm.reset();
+    } catch (error) {
+      publishStatus.classList.add('error');
+      publishStatus.textContent = error.message;
+    } finally {
+      uploadButton.disabled = false;
+      uploadButton.textContent = 'Upload JSON';
+    }
+  }
+
+  if (uploadForm) uploadForm.addEventListener('submit', uploadSop);
+
   function renderCatalog(catalog) {
     root.innerHTML = `<div class="sop-grid">${catalog.map(sop => `<article class="sop-card">
       <h2>${escapeHtml(sop.title)}</h2>${metadata(sop)}
+      ${sop.live_json_override ? '<div class="sop-live-override" role="note">Live JSON text is active. The PDF remains the separately published file.</div>' : ''}
       <div class="sop-actions">
         <a class="sop-open" href="/help/${encodeURIComponent(sop.slug)}">Read in app</a>
-        <a class="sop-download" href="/sops/${encodeURIComponent(sop.slug)}/download">Download PDF</a>
+        <a class="sop-download" href="/sops/${encodeURIComponent(sop.slug)}/download">${sop.live_json_override ? 'Download published PDF' : 'Download PDF'}</a>
       </div>
     </article>`).join('')}</div>`;
   }
@@ -81,7 +119,8 @@
     root.innerHTML = `<a class="sop-back" href="/help.html">← All SOPs</a><div class="sop-reader">
       <nav class="sop-toc" aria-label="Table of contents"><strong>Contents</strong>${headings.map(h => `<a href="#${escapeHtml(h.anchor)}">${escapeHtml(h.text)}</a>`).join('')}</nav>
       <article class="sop-document"><h1>${escapeHtml(sop.title)}</h1>${metadata(sop)}
-        <div class="sop-actions"><a class="sop-download" href="/sops/${encodeURIComponent(sop.slug)}/download">Download this revision as PDF</a></div>
+        ${sop.live_json_override ? '<div class="sop-live-override" role="note">The in-app text has a live JSON update. The PDF remains the separately published file and may contain different text.</div>' : ''}
+        <div class="sop-actions"><a class="sop-download" href="/sops/${encodeURIComponent(sop.slug)}/download">${sop.live_json_override ? 'Download published PDF' : 'Download this revision as PDF'}</a></div>
         ${renderBlocks(sop.blocks)}
       </article></div>`;
   }

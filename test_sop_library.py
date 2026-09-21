@@ -1,4 +1,5 @@
 """Focused regression coverage for the controlled SOP training library."""
+from io import BytesIO
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -161,6 +162,201 @@ def test_signed_out_and_invalid_document_ids_are_rejected():
             assert client.get(path).status_code == 404
 
 
+def valid_sop(slug="daily-fulfillment-pick-list"):
+    return json.loads((OUTPUT / f"{slug}.json").read_text())
+
+
+def test_sop_json_upload_is_admin_only():
+    client = app_module.app.test_client()
+    payload = json.dumps(valid_sop()).encode()
+    for mock_user, expected_status in (
+        (user(authenticated=False), 401),
+        (user(role="viewer"), 403),
+        (user(role="operations"), 403),
+    ):
+        with signed_in_as(mock_user), patch.object(app_module, "get_connection") as connect:
+            response = client.post(
+                "/api/sops/upload",
+                data={
+                    "document_id": "daily-fulfillment-pick-list",
+                    "file": (BytesIO(payload), "daily-fulfillment-pick-list.json"),
+                },
+                content_type="multipart/form-data",
+            )
+        assert response.status_code == expected_status
+        connect.assert_not_called()
+
+
+def test_admin_can_upload_valid_sop_json_and_actor_is_audited():
+    client = app_module.app.test_client()
+    connection = MagicMock()
+    cursor = connection.cursor.return_value.__enter__.return_value
+    payload = valid_sop()
+    payload["blocks"][0]["text"] = "Updated Daily Pick List"
+
+    with signed_in_as(user(role="admin")), patch.object(
+        app_module, "get_connection", return_value=connection
+    ):
+        response = client.post(
+            "/api/sops/upload",
+            data={
+                "document_id": payload["slug"],
+                "file": (BytesIO(json.dumps(payload).encode()), f'{payload["slug"]}.json'),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    assert response.get_json()["document_id"] == payload["slug"]
+    assert "PDF was not changed" in response.get_json()["message"]
+    connection.commit.assert_called_once()
+    connection.rollback.assert_not_called()
+    connection.close.assert_called_once()
+    query_args = cursor.execute.call_args.args[1]
+    assert query_args[0] == payload["slug"]
+    assert query_args[2] == "test@example.com"
+    assert query_args[1].adapted == payload
+
+
+def test_invalid_sop_uploads_do_not_replace_live_content():
+    changed_control = valid_sop()
+    changed_control["status"] = "APPROVED"
+    changed_revision = valid_sop()
+    changed_revision["revision"] = "Rev 99"
+    client = app_module.app.test_client()
+    cases = [
+        (
+            {"document_id": "daily-fulfillment-pick-list",
+             "file": (BytesIO(b"{bad json"), "daily.json")},
+            400,
+            "valid UTF-8 JSON",
+        ),
+        (
+            {"document_id": "inventory-lot-control",
+             "file": (BytesIO(json.dumps(valid_sop()).encode()), "daily.json")},
+            422,
+            "does not match",
+        ),
+        (
+            {"document_id": "daily-fulfillment-pick-list",
+             "file": (BytesIO(json.dumps({"slug": "daily-fulfillment-pick-list"}).encode()), "daily.json")},
+            422,
+            "Missing required fields",
+        ),
+        (
+            {"document_id": "daily-fulfillment-pick-list",
+             "file": (BytesIO(b"{}"), "daily.txt")},
+            400,
+            "Only JSON",
+        ),
+        (
+            {"document_id": "daily-fulfillment-pick-list",
+             "file": (BytesIO(json.dumps(changed_control).encode()), "daily.json")},
+            422,
+            "Controlled metadata must match",
+        ),
+        (
+            {"document_id": "daily-fulfillment-pick-list",
+             "file": (BytesIO(json.dumps(changed_revision).encode()), "daily.json")},
+            422,
+            "revision",
+        ),
+    ]
+    for data, status, message in cases:
+        with signed_in_as(user(role="admin")), patch.object(
+            app_module, "get_connection"
+        ) as connect:
+            response = client.post(
+                "/api/sops/upload", data=data, content_type="multipart/form-data"
+            )
+        assert response.status_code == status
+        assert message in response.get_json()["error"]
+        connect.assert_not_called()
+
+    with signed_in_as(user(role="admin")), patch.object(
+        app_module, "get_connection"
+    ) as connect:
+        response = client.post(
+            "/api/sops/upload",
+            data={
+                "document_id": "daily-fulfillment-pick-list",
+                "file": (
+                    BytesIO(b" " * (app_module.SOP_JSON_UPLOAD_LIMIT + 1)),
+                    "daily.json",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+    assert response.status_code == 413
+    connect.assert_not_called()
+
+
+def test_sop_api_prefers_override_and_catalog_uses_its_metadata():
+    client = app_module.app.test_client()
+    override = valid_sop()
+    override["title"] = "Live Updated Pick List"
+
+    with signed_in_as(user()), patch.object(
+        app_module, "_sop_override", return_value=dict(override)
+    ):
+        response = client.get("/api/sops/daily-fulfillment-pick-list")
+    assert response.status_code == 200
+    assert response.get_json()["title"] == "Live Updated Pick List"
+    assert response.get_json()["live_json_override"] is True
+    assert response.headers["Cache-Control"].startswith("no-store")
+
+    with signed_in_as(user()), patch.object(
+        app_module,
+        "_sop_overrides",
+        return_value={"daily-fulfillment-pick-list": override},
+    ):
+        response = client.get("/api/sops")
+    catalog_entry = next(
+        item for item in response.get_json()
+        if item["slug"] == "daily-fulfillment-pick-list"
+    )
+    assert catalog_entry["title"] == "Live Updated Pick List"
+    assert catalog_entry["revision"] == "Rev 01"
+    assert catalog_entry["live_json_override"] is True
+
+
+def test_sop_api_falls_back_to_generated_json_without_override():
+    client = app_module.app.test_client()
+    with signed_in_as(user()), patch.object(
+        app_module, "_sop_override", return_value=None
+    ):
+        response = client.get("/api/sops/inventory-lot-control")
+    assert response.status_code == 200
+    assert response.get_json()["slug"] == "inventory-lot-control"
+    assert "live_json_override" not in response.get_json()
+
+
+def test_sop_upload_rolls_back_when_database_write_fails():
+    client = app_module.app.test_client()
+    connection = MagicMock()
+    cursor = connection.cursor.return_value.__enter__.return_value
+    cursor.execute.side_effect = RuntimeError("database unavailable")
+    with signed_in_as(user(role="admin")), patch.object(
+        app_module, "get_connection", return_value=connection
+    ):
+        response = client.post(
+            "/api/sops/upload",
+            data={
+                "document_id": "daily-fulfillment-pick-list",
+                "file": (
+                    BytesIO(json.dumps(valid_sop()).encode()),
+                    "daily-fulfillment-pick-list.json",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+    assert response.status_code == 500
+    assert response.get_json()["error"] == "The SOP update could not be saved."
+    connection.rollback.assert_called_once()
+    connection.commit.assert_not_called()
+    connection.close.assert_called_once()
+
+
 def test_sop_publish_endpoint_is_admin_only_and_runs_fixed_script():
     client = app_module.app.test_client()
     with signed_in_as(user(authenticated=False)):
@@ -251,6 +447,12 @@ def test_help_reader_has_stable_links_toc_and_mobile_layout():
     assert 'id="publish-sops-button"' in page
     assert "data-admin-only" in page
     assert "fetch('/api/sops/publish'" in script
+    assert 'id="sop-upload-form"' in page
+    assert 'accept=".json,application/json"' in page
+    assert "fetch('/api/sops/upload'" in script
+    assert "This does not change the downloadable PDF." in page
+    assert "live_json_override" in script
+    assert "Download published PDF" in script
     assert "Publish the app to release these changes." in script
     assert "Controlled drafts — not approved releases." in page
     assert 'href="/help/${encodeURIComponent(sop.slug)}"' in script

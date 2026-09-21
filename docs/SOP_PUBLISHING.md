@@ -21,4 +21,6 @@ The command writes matching web JSON and PDF files to `generated/sops/`. It exit
 
 Admins can run the same publisher from the workspace app by opening **Help & Training** and selecting **Regenerate SOP Library**. This control is intentionally unavailable in a published deployment. After a successful workspace regeneration, publish the app again to release the changed generated files.
 
+For text-only changes that must appear without republishing, an admin may upload one of the generated JSON files through **Help & Training** in the published app. The validated JSON is stored as the active in-app override and appears on refresh. It does not replace the downloadable PDF. A later JSON upload replaces the active override; regenerating workspace files does not remove it.
+
 Before publishing a changed source, reconcile its instructions against current page labels, role enforcement, action timing, side effects, correction/archive behavior, and retired routes. Drafts must remain labeled `DRAFT FOR APPROVAL`, effective `Upon approval`, with Quality approval pending until approval evidence exists.

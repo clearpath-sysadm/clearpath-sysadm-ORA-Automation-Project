@@ -94,9 +94,26 @@
                 <section class="sop-publish-panel" data-admin-only hidden aria-labelledby="sop-publish-title">
                     <div>
                         <h2 id="sop-publish-title">Update the SOP library</h2>
-                        <p>After replacing a controlled DOCX source in this workspace, regenerate the in-app pages and PDF downloads. Publish the app afterward to release the changes.</p>
+                        <p>Upload a generated SOP JSON file to update the in-app document immediately. This does not change the downloadable PDF.</p>
                     </div>
-                    <button id="publish-sops-button" class="btn" type="button">Regenerate SOP Library</button>
+                    <form id="sop-upload-form" class="sop-upload-form">
+                        <label for="sop-upload-document">SOP document</label>
+                        <select id="sop-upload-document" name="document_id" required>
+                            <option value="">Select a document</option>
+                            <option value="inventory-lot-control">Inventory and Lot Control</option>
+                            <option value="order-corrections-cancellations">Order Corrections and Cancellations</option>
+                            <option value="daily-fulfillment-pick-list">Daily Fulfillment and Pick List</option>
+                            <option value="period-end-reporting">Period-End Reporting</option>
+                        </select>
+                        <label for="sop-upload-file">Generated JSON file</label>
+                        <input id="sop-upload-file" name="file" type="file" accept=".json,application/json" required>
+                        <button id="upload-sop-button" class="btn" type="submit">Upload JSON</button>
+                    </form>
+                    <details class="sop-workspace-publisher">
+                        <summary>Workspace DOCX and PDF tools</summary>
+                        <p>After replacing a controlled DOCX source in the workspace, regenerate the JSON and PDF files, then publish the app to release both formats.</p>
+                        <button id="publish-sops-button" class="btn" type="button">Regenerate SOP Library</button>
+                    </details>
                     <p id="sop-publish-status" class="sop-publish-status" role="status" aria-live="polite"></p>
                 </section>
                 <div id="sop-library" class="sop-library" aria-live="polite">

@@ -6,6 +6,7 @@ import os
 import sys
 import uuid
 import re
+import json
 import logging
 import threading
 import subprocess
@@ -16,6 +17,7 @@ import pytz
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 import psycopg2
+import psycopg2.extras
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import current_user
@@ -478,6 +480,11 @@ SOP_DOCUMENTS = {
     'period-end-reporting': 'period-end-reporting',
 }
 SOP_OUTPUT_DIR = os.path.join(project_root, 'generated', 'sops')
+SOP_JSON_UPLOAD_LIMIT = 512 * 1024
+SOP_REQUIRED_FIELDS = {
+    'slug', 'title', 'sop_id', 'revision', 'status', 'effective_date',
+    'approval_status', 'document_status', 'source', 'blocks',
+}
 _sop_publish_lock = threading.Lock()
 
 # Concurrency locks for report endpoints (prevents duplicate processing)
@@ -531,23 +538,212 @@ def sop_direct_link(document_id):
 @app.route('/api/sops')
 @login_required
 def sop_catalog():
-    """Return the generated four-document catalog."""
+    """Return the catalog with persistent JSON overrides applied."""
     path = os.path.join(SOP_OUTPUT_DIR, 'catalog.json')
     if not os.path.isfile(path):
         return jsonify({'error': 'SOP catalog has not been generated'}), 503
-    return send_from_directory(SOP_OUTPUT_DIR, 'catalog.json', mimetype='application/json')
+    with open(path, encoding='utf-8') as catalog_file:
+        catalog = json.load(catalog_file)
+    overrides = _sop_overrides()
+    metadata_fields = (
+        'slug', 'title', 'sop_id', 'revision', 'status', 'effective_date',
+        'approval_status', 'document_status', 'source',
+    )
+    for entry in catalog:
+        override = overrides.get(entry.get('slug'))
+        if override:
+            entry.update({field: override[field] for field in metadata_fields})
+            entry['live_json_override'] = True
+    return _sop_json_response(catalog)
 
 @app.route('/api/sops/<document_id>')
 @login_required
 def sop_content(document_id):
-    """Return generated semantic content through a fixed ID allowlist."""
+    """Return a persistent override or the generated file for a fixed SOP."""
     basename = SOP_DOCUMENTS.get(document_id)
     if not basename:
         abort(404)
+    override = _sop_override(document_id)
+    if override:
+        override['live_json_override'] = True
+        return _sop_json_response(override)
     filename = f'{basename}.json'
     if not os.path.isfile(os.path.join(SOP_OUTPUT_DIR, filename)):
         return jsonify({'error': f'SOP artifact is missing for {document_id}'}), 503
-    return send_from_directory(SOP_OUTPUT_DIR, filename, mimetype='application/json')
+    with open(os.path.join(SOP_OUTPUT_DIR, filename), encoding='utf-8') as sop_file:
+        return _sop_json_response(json.load(sop_file))
+
+
+def _sop_json_response(payload, status=200):
+    response = jsonify(payload)
+    response.status_code = status
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    return response
+
+
+def _sop_override(document_id):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            try:
+                cursor.execute(
+                    "SELECT content FROM sop_json_overrides WHERE document_id = %s",
+                    (document_id,),
+                )
+                row = cursor.fetchone()
+            except psycopg2.errors.UndefinedTable:
+                conn.rollback()
+                logger.warning("SOP override table is not available; using generated files")
+                return None
+        return row[0] if row else None
+    finally:
+        conn.close()
+
+
+def _sop_overrides():
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            try:
+                cursor.execute("SELECT document_id, content FROM sop_json_overrides")
+                return {row[0]: row[1] for row in cursor.fetchall()}
+            except psycopg2.errors.UndefinedTable:
+                conn.rollback()
+                logger.warning("SOP override table is not available; using generated catalog")
+                return {}
+    finally:
+        conn.close()
+
+
+def _validate_sop_upload(payload, selected_document_id):
+    if not isinstance(payload, dict):
+        return "The uploaded JSON must contain one SOP object."
+    missing = sorted(SOP_REQUIRED_FIELDS - payload.keys())
+    if missing:
+        return f"Missing required fields: {', '.join(missing)}."
+    slug = payload.get('slug')
+    if slug not in SOP_DOCUMENTS:
+        return "The JSON contains an unsupported SOP slug."
+    if selected_document_id != slug:
+        return "The selected SOP does not match the slug in the JSON file."
+    for field in SOP_REQUIRED_FIELDS - {'blocks'}:
+        if not isinstance(payload.get(field), str) or not payload[field].strip():
+            return f"The {field} field must be a non-empty string."
+    blocks = payload.get('blocks')
+    if not isinstance(blocks, list) or not blocks:
+        return "The blocks field must be a non-empty list."
+    allowed_types = {'paragraph', 'heading', 'warning', 'ordered', 'bullet', 'table'}
+    for index, block in enumerate(blocks, start=1):
+        if not isinstance(block, dict) or block.get('type') not in allowed_types:
+            return f"Block {index} has an unsupported or missing type."
+        if block['type'] == 'table':
+            rows = block.get('rows')
+            if not isinstance(rows, list) or not rows or any(
+                not isinstance(row, list) or not row or
+                any(not isinstance(cell, str) for cell in row)
+                for row in rows
+            ):
+                return f"Block {index} must contain a non-empty table of text cells."
+        elif not isinstance(block.get('text'), str) or not block['text'].strip():
+            return f"Block {index} must contain non-empty text."
+        if block['type'] == 'heading':
+            if not isinstance(block.get('level'), int) or block['level'] not in (1, 2, 3, 4, 5):
+                return f"Block {index} has an invalid heading level."
+            if not isinstance(block.get('anchor'), str) or not block['anchor'].strip():
+                return f"Block {index} must contain a heading anchor."
+    generated = _generated_sop(selected_document_id)
+    controlled_fields = (
+        'sop_id', 'revision', 'status', 'effective_date', 'approval_status',
+        'document_status', 'source',
+    )
+    changed_fields = [
+        field for field in controlled_fields
+        if payload.get(field) != generated.get(field)
+    ]
+    if changed_fields:
+        return (
+            "Controlled metadata must match the generated SOP. "
+            f"Restore these fields before uploading: {', '.join(changed_fields)}."
+        )
+    return None
+
+
+def _generated_sop(document_id):
+    filename = os.path.join(SOP_OUTPUT_DIR, f"{SOP_DOCUMENTS[document_id]}.json")
+    with open(filename, encoding='utf-8') as sop_file:
+        return json.load(sop_file)
+
+
+@app.route('/api/sops/upload', methods=['POST'])
+def upload_sop_json():
+    """Validate and persist one live SOP JSON override."""
+    selected_document_id = str(request.form.get('document_id', '')).strip()
+    if selected_document_id not in SOP_DOCUMENTS:
+        return _sop_json_response(
+            {'success': False, 'error': 'Select a supported SOP document.'}, 400
+        )
+    upload = request.files.get('file')
+    if not upload or not upload.filename:
+        return _sop_json_response(
+            {'success': False, 'error': 'Choose a JSON file to upload.'}, 400
+        )
+    if not upload.filename.lower().endswith('.json'):
+        return _sop_json_response(
+            {'success': False, 'error': 'Only JSON files are accepted.'}, 400
+        )
+    raw = upload.stream.read(SOP_JSON_UPLOAD_LIMIT + 1)
+    if len(raw) > SOP_JSON_UPLOAD_LIMIT:
+        return _sop_json_response(
+            {'success': False, 'error': 'The JSON file must be 512 KB or smaller.'}, 413
+        )
+    try:
+        payload = json.loads(raw.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return _sop_json_response(
+            {'success': False, 'error': 'The selected file is not valid UTF-8 JSON.'}, 400
+        )
+    validation_error = _validate_sop_upload(payload, selected_document_id)
+    if validation_error:
+        return _sop_json_response(
+            {'success': False, 'error': validation_error}, 422
+        )
+
+    actor = (
+        getattr(current_user, 'email', None)
+        or str(getattr(current_user, 'id', 'unknown'))
+    )
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO sop_json_overrides
+                    (document_id, content, updated_by, updated_at)
+                VALUES (%s, %s, %s, NOW())
+                ON CONFLICT (document_id) DO UPDATE SET
+                    content = EXCLUDED.content,
+                    updated_by = EXCLUDED.updated_by,
+                    updated_at = NOW()
+            """, (
+                selected_document_id,
+                psycopg2.extras.Json(payload),
+                actor,
+            ))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        logger.exception("Could not store SOP JSON override for %s", selected_document_id)
+        return _sop_json_response(
+            {'success': False, 'error': 'The SOP update could not be saved.'}, 500
+        )
+    finally:
+        conn.close()
+    logger.info("SOP JSON override updated for %s by %s", selected_document_id, actor)
+    return _sop_json_response({
+        'success': True,
+        'document_id': selected_document_id,
+        'message': 'The live in-app SOP was updated. The downloadable PDF was not changed.',
+    })
 
 @app.route('/sops/<document_id>/download')
 @login_required

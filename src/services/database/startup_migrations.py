@@ -1478,6 +1478,27 @@ def _ensure_inventory_archive_objects(cursor):
     logger.info("startup_migrations: inventory archive objects ready")
 
 
+def _ensure_sop_json_overrides(cursor):
+    """Create persistent storage for admin-uploaded live SOP JSON."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sop_json_overrides (
+            document_id TEXT PRIMARY KEY,
+            content JSONB NOT NULL,
+            updated_by TEXT NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT sop_json_overrides_document_id_check CHECK (
+                document_id IN (
+                    'inventory-lot-control',
+                    'order-corrections-cancellations',
+                    'daily-fulfillment-pick-list',
+                    'period-end-reporting'
+                )
+            )
+        )
+    """)
+    logger.info("startup_migrations: SOP JSON override storage ready")
+
+
 def _resolve_removed_order_862283(cursor):
     """
     Preserve the confirmed-removed ShipStation order while immediately
@@ -1533,6 +1554,7 @@ def run_all(conn):
             _add_not_found_order_status(cur)
             _ensure_fedex_pickup_reminder_state(cur)
             _ensure_inventory_archive_objects(cur)
+            _ensure_sop_json_overrides(cur)
             _resolve_removed_order_862283(cur)
             _update_source_system_default(cur)
         conn.commit()
