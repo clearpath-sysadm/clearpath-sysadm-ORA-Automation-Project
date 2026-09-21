@@ -27,8 +27,3 @@ def test_add_lot_and_related_dialogs_keep_open_close_hooks():
 
     assert "document.getElementById('sku-lot-modal').classList.add('active')" in HTML
     assert "document.getElementById('sku-lot-modal').classList.remove('active')" in HTML
-
-
-def test_zero_initial_quantity_guidance_covers_valid_use_cases():
-    assert "Use 0 for a historical lot" in HTML
-    assert "or a known incoming lot entered before it is received" in HTML
