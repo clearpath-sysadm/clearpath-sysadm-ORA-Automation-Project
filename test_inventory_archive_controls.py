@@ -284,7 +284,11 @@ def test_large_receive_does_not_require_notes():
 
     conn = MagicMock()
     cursor = MagicMock()
-    cursor.fetchone.side_effect = [(None,), (77,)]
+    cursor.fetchone.side_effect = [
+        (None, 'active', 0, '17612'),
+        (77,),
+        (200,),
+    ]
     conn.cursor.return_value = cursor
 
     with patch('app.get_connection', return_value=conn), \

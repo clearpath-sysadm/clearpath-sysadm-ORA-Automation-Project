@@ -2726,35 +2726,123 @@ def api_get_inventory_transactions():
         }), 500
 
 
+TRANSACTION_LOT_REQUIRED_TYPES = {'Receive', 'Adjust Up', 'Adjust Down', 'Repack'}
+TRANSACTION_LOT_TYPES = TRANSACTION_LOT_REQUIRED_TYPES | {'Ship', 'Cancel'}
+INVENTORY_INCREASING_TRANSACTION_TYPES = {'Receive', 'Adjust Up', 'Repack', 'Cancel'}
+
+
+def _lot_is_eligible_for_transaction(transaction_type, status, balance):
+    """Return whether a non-archived lot may be newly selected for a transaction."""
+    if transaction_type == 'Receive':
+        return status in {'active', 'depleted'}
+    if transaction_type == 'Ship':
+        return status == 'active' and balance > 0
+    if transaction_type in {'Adjust Up', 'Adjust Down', 'Repack', 'Cancel'}:
+        return True
+    return False
+
+
+def _validate_transaction_lot(cursor, sku, lot_id, transaction_type, historical_lot_id=None):
+    """Validate lot ownership and new-selection eligibility under a row lock."""
+    cursor.execute("""
+        SELECT l.archived_at, l.status, COALESCE(lb.balance, 0), s.sku_code
+        FROM lots l
+        JOIN skus s ON s.sku_id = l.sku_id
+        LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
+        WHERE l.lot_id = %s
+        FOR UPDATE OF l
+    """, (lot_id,))
+    lot_state = cursor.fetchone()
+    if not lot_state:
+        return 'Lot not found', 404
+
+    archived_at, status, balance, lot_sku = lot_state
+    if lot_sku != sku:
+        return f'Lot does not belong to SKU {sku}', 400
+
+    is_saved_historical_lot = historical_lot_id is not None and lot_id == historical_lot_id
+    if archived_at is not None and not is_saved_historical_lot:
+        return 'Archived lots cannot receive new transactions', 409
+    if (
+        not is_saved_historical_lot
+        and not _lot_is_eligible_for_transaction(transaction_type, status, int(balance))
+    ):
+        return f'This lot is not eligible for a {transaction_type} transaction', 409
+    return None
+
+
+def _reactivate_depleted_lot_with_positive_balance(cursor, lot_id):
+    """Keep lot status consistent after a transaction restores inventory."""
+    cursor.execute(
+        "SELECT balance FROM lot_balances WHERE lot_id = %s",
+        (lot_id,),
+    )
+    balance_row = cursor.fetchone()
+    if balance_row is not None and int(balance_row[0]) > 0:
+        cursor.execute("""
+            UPDATE lots
+            SET status = 'active', updated_at = CURRENT_TIMESTAMP
+            WHERE lot_id = %s AND status = 'depleted'
+        """, (lot_id,))
+
+
 @app.route('/api/lots_by_sku/<sku>', methods=['GET'])
 def api_lots_by_sku(sku):
-    """Return all lots for a given SKU with current balance, ordered FIFO.
+    """Return transaction-eligible lots for a SKU, ordered FIFO.
     Balance comes from lot_balances VIEW (LEFT JOIN so lots with no transactions show 0).
     """
     try:
+        transaction_type = request.args.get('transaction_type', '').strip()
+        include_lot_id = request.args.get('include_lot_id', type=int)
+        if transaction_type and transaction_type not in TRANSACTION_LOT_TYPES:
+            return jsonify({'error': 'Invalid transaction type'}), 400
+
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT l.lot_id, l.lot_number, l.status, l.received_date,
-                   COALESCE(lb.balance, 0) AS balance
+                   COALESCE(lb.balance, 0) AS balance, l.archived_at
             FROM lots l
             JOIN skus s ON s.sku_id = l.sku_id
             LEFT JOIN lot_balances lb ON lb.lot_id = l.lot_id
             WHERE s.sku_code = %s
-              AND l.archived_at IS NULL
-              AND NOT (l.status = 'inactive' AND COALESCE(lb.balance, 0) = 0)
             ORDER BY l.received_date ASC NULLS LAST, l.lot_id ASC
         """, (sku,))
         rows = cursor.fetchall()
         conn.close()
-        return jsonify([
-            {
-                'lot_id': r[0], 'lot_number': r[1], 'status': r[2],
-                'received_date': str(r[3]) if r[3] else '',
-                'balance': int(r[4])
-            }
-            for r in rows
-        ])
+
+        lots = []
+        for row in rows:
+            lot_id, lot_number, status, received_date, balance, archived_at = row
+            historical_selection = include_lot_id == lot_id
+            if transaction_type:
+                if (
+                    not historical_selection
+                    and (
+                        archived_at is not None
+                        or not _lot_is_eligible_for_transaction(
+                            transaction_type, status, int(balance)
+                        )
+                    )
+                ):
+                    continue
+            elif (
+                archived_at is not None
+                or (status == 'inactive' and int(balance) == 0)
+            ):
+                # Preserve the legacy response for callers that do not request
+                # transaction-specific filtering.
+                continue
+            lots.append({
+                'lot_id': lot_id,
+                'lot_number': lot_number,
+                'status': status,
+                'received_date': str(received_date) if received_date else '',
+                'balance': int(balance),
+                'historical_selection': historical_selection,
+            })
+
+        return jsonify(lots)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -2810,8 +2898,7 @@ def api_create_inventory_transaction():
         # Step 9: lot_id required for all manual lot-affecting types.
         # lot_balances VIEW only counts rows where lot_id IS NOT NULL, so a transaction
         # entered without a lot has no effect on the live balance — confusing to operators.
-        LOT_REQUIRED_TYPES = ['Receive', 'Adjust Up', 'Adjust Down', 'Repack']
-        if transaction_type in LOT_REQUIRED_TYPES and lot_id is None:
+        if transaction_type in TRANSACTION_LOT_REQUIRED_TYPES and lot_id is None:
             return jsonify({
                 'success': False,
                 'error': (
@@ -2823,17 +2910,13 @@ def api_create_inventory_transaction():
         conn = get_connection()
         cursor = conn.cursor()
         if lot_id is not None:
-            cursor.execute(
-                "SELECT archived_at FROM lots WHERE lot_id = %s FOR UPDATE",
-                (lot_id,),
+            lot_error = _validate_transaction_lot(
+                cursor, sku, lot_id, transaction_type
             )
-            lot_state = cursor.fetchone()
-            if not lot_state:
+            if lot_error:
                 conn.close()
-                return jsonify({'success': False, 'error': 'Lot not found'}), 404
-            if lot_state[0] is not None:
-                conn.close()
-                return jsonify({'success': False, 'error': 'Archived lots cannot receive new transactions'}), 409
+                error, status_code = lot_error
+                return jsonify({'success': False, 'error': error}), status_code
 
         # Insert transaction — lot_balances VIEW recalculates automatically from
         # inventory_transactions, so no secondary UPDATE to inventory_current is needed.
@@ -2844,6 +2927,12 @@ def api_create_inventory_transaction():
             RETURNING id
         """, (date, sku, quantity, transaction_type, notes, lot_id))
         transaction_id = cursor.fetchone()[0]
+
+        if (
+            lot_id is not None
+            and transaction_type in INVENTORY_INCREASING_TRANSACTION_TYPES
+        ):
+            _reactivate_depleted_lot_with_positive_balance(cursor, lot_id)
 
         conn.commit()
         conn.close()
@@ -2919,8 +3008,7 @@ def api_update_inventory_transaction(transaction_id):
             }), 400
 
         # Step 9: lot_id required for manual lot-affecting types (same guard as create path).
-        LOT_REQUIRED_TYPES = ['Receive', 'Adjust Up', 'Adjust Down', 'Repack']
-        if transaction_type in LOT_REQUIRED_TYPES and lot_id is None:
+        if transaction_type in TRANSACTION_LOT_REQUIRED_TYPES and lot_id is None:
             return jsonify({
                 'success': False,
                 'error': (
@@ -2934,7 +3022,7 @@ def api_update_inventory_transaction(transaction_id):
 
         # Get old transaction (needed to check it exists)
         cursor.execute("""
-            SELECT sku, quantity, transaction_type, archived_at
+            SELECT sku, quantity, transaction_type, archived_at, lot_id
             FROM inventory_transactions 
             WHERE id = %s
         """, (transaction_id,))
@@ -2947,22 +3035,22 @@ def api_update_inventory_transaction(transaction_id):
                 'error': 'Transaction not found'
             }), 404
         
-        old_sku, old_quantity, old_type, old_archived_at = old_transaction
+        old_sku, old_quantity, old_type, old_archived_at, old_lot_id = old_transaction
         if old_archived_at is not None:
             conn.close()
             return jsonify({'success': False, 'error': 'Archived transactions cannot be edited; restore it first'}), 409
         if lot_id is not None:
-            cursor.execute(
-                "SELECT archived_at FROM lots WHERE lot_id = %s FOR UPDATE",
-                (lot_id,),
+            lot_error = _validate_transaction_lot(
+                cursor,
+                sku,
+                lot_id,
+                transaction_type,
+                historical_lot_id=old_lot_id,
             )
-            lot_state = cursor.fetchone()
-            if not lot_state:
+            if lot_error:
                 conn.close()
-                return jsonify({'success': False, 'error': 'Lot not found'}), 404
-            if lot_state[0] is not None:
-                conn.close()
-                return jsonify({'success': False, 'error': 'Archived lots cannot receive transactions'}), 409
+                error, status_code = lot_error
+                return jsonify({'success': False, 'error': error}), status_code
 
         # Update the transaction — lot_balances VIEW recalculates automatically.
         # No secondary UPDATE to inventory_current is needed.
@@ -2971,6 +3059,12 @@ def api_update_inventory_transaction(transaction_id):
             SET date = %s, sku = %s, quantity = %s, transaction_type = %s, notes = %s, lot_id = %s
             WHERE id = %s
         """, (date, sku, quantity, transaction_type, notes, lot_id, transaction_id))
+
+        if (
+            lot_id is not None
+            and transaction_type in INVENTORY_INCREASING_TRANSACTION_TYPES
+        ):
+            _reactivate_depleted_lot_with_positive_balance(cursor, lot_id)
 
         conn.commit()
         conn.close()

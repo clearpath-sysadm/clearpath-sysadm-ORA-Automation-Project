@@ -361,26 +361,27 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="transactionLot">Lot Number</label>
-                    <select id="transactionLot">
-                        <option value="">— Select SKU first —</option>
-                    </select>
-                    <small style="color: var(--text-tertiary); font-size: 12px;">Required for Receive and adjustment transactions so the lot balance updates correctly.</small>
-                </div>
-                <div class="form-group">
-                    <label for="transactionQuantity">Quantity *</label>
-                    <input type="number" id="transactionQuantity" required placeholder="Must be non-zero">
-                </div>
-                <div class="form-group">
                     <label for="transactionType">Type *</label>
-                    <select id="transactionType" required>
+                    <select id="transactionType" required onchange="loadLotsForSku(document.getElementById('transactionSku').value)">
                         <option value="">Select Type</option>
                         <option value="Receive">Receive</option>
                         <option value="Ship">Ship</option>
                         <option value="Adjust Up">Adjust Up</option>
                         <option value="Adjust Down">Adjust Down</option>
                         <option value="Repack">Repack</option>
+                        <option value="Cancel">Cancel</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="transactionLot">Lot Number</label>
+                    <select id="transactionLot">
+                        <option value="">— Select type and SKU first —</option>
+                    </select>
+                    <small id="transactionLotHelp" style="color: var(--text-tertiary); font-size: 12px;">Choose a type and SKU to see eligible lots.</small>
+                </div>
+                <div class="form-group">
+                    <label for="transactionQuantity">Quantity *</label>
+                    <input type="number" id="transactionQuantity" required placeholder="Must be non-zero">
                 </div>
                 <div class="form-group">
                     <label for="transactionNotes">Notes</label>
@@ -434,24 +435,93 @@
         let allSkus = []; // populated once from first unfiltered load; avoids a second API call
 
         // ── Lot dropdown for form ─────────────────────────────────────
-        async function loadLotsForSku(sku) {
+        function lotOptionLabel(lot) {
+            const parts = [
+                lot.lot_number,
+                lot.status,
+                `${Number(lot.balance).toLocaleString()} available`
+            ];
+            if (lot.received_date) parts.push(`received ${lot.received_date}`);
+            if (lot.historical_selection) parts.push('saved transaction lot');
+            return parts.join(' — ');
+        }
+
+        function appendLotGroup(select, label, lots) {
+            if (!lots.length) return;
+            const group = document.createElement('optgroup');
+            group.label = label;
+            lots.forEach(lot => {
+                const option = document.createElement('option');
+                option.value = lot.lot_id;
+                option.textContent = lotOptionLabel(lot);
+                group.appendChild(option);
+            });
+            select.appendChild(group);
+        }
+
+        async function loadLotsForSku(sku, selectedLotId = null) {
             const select = document.getElementById('transactionLot');
-            if (!sku) {
-                select.innerHTML = '<option value="">— Select SKU first —</option>';
+            const help = document.getElementById('transactionLotHelp');
+            const transactionType = document.getElementById('transactionType').value;
+            if (!transactionType) {
+                select.innerHTML = '<option value="">— Select transaction type first —</option>';
+                help.textContent = 'The transaction type determines which lots are eligible.';
                 return;
             }
-            select.innerHTML = '<option value="">Loading...</option>';
+            if (!sku) {
+                select.innerHTML = '<option value="">— Select SKU first —</option>';
+                help.textContent = 'Choose an SKU to see eligible lots.';
+                return;
+            }
+            select.innerHTML = '<option value="">Loading eligible lots...</option>';
             try {
-                const res = await fetch(`/api/lots_by_sku/${encodeURIComponent(sku)}`);
+                const params = new URLSearchParams({ transaction_type: transactionType });
+                if (selectedLotId) params.set('include_lot_id', selectedLotId);
+                const res = await fetch(`/api/lots_by_sku/${encodeURIComponent(sku)}?${params}`);
                 const lots = await res.json();
                 if (lots.error) throw new Error(lots.error);
-                select.innerHTML = '<option value="">— No lot (untracked) —</option>' +
-                    lots.map(l => {
-                        const label = `${l.lot_number} (${l.status}${l.received_date ? ', rcvd ' + l.received_date : ''})`;
-                        return `<option value="${l.lot_id}">${label}</option>`;
-                    }).join('');
+                select.innerHTML = '';
+
+                if (['Ship', 'Cancel'].includes(transactionType)) {
+                    const untracked = document.createElement('option');
+                    untracked.value = '';
+                    untracked.textContent = '— Untracked (does not update a lot balance) —';
+                    select.appendChild(untracked);
+                } else {
+                    const prompt = document.createElement('option');
+                    prompt.value = '';
+                    prompt.textContent = lots.length
+                        ? '— Select a lot —'
+                        : '— No eligible lots for this transaction —';
+                    prompt.disabled = true;
+                    prompt.selected = !selectedLotId;
+                    select.appendChild(prompt);
+                }
+
+                const historical = lots.filter(l => l.historical_selection);
+                const available = lots.filter(
+                    l => !l.historical_selection && l.status === 'active' && Number(l.balance) > 0
+                );
+                const depleted = lots.filter(
+                    l => !l.historical_selection
+                        && (l.status === 'depleted' || (l.status === 'active' && Number(l.balance) <= 0))
+                );
+                const restricted = lots.filter(
+                    l => !l.historical_selection && !available.includes(l) && !depleted.includes(l)
+                );
+
+                appendLotGroup(select, 'Saved transaction lot', historical);
+                appendLotGroup(select, 'Available lots', available);
+                appendLotGroup(select, 'Depleted / zero-balance lots', depleted);
+                appendLotGroup(select, 'Restricted lots', restricted);
+
+                if (selectedLotId) select.value = String(selectedLotId);
+                help.textContent = lots.length
+                    ? 'Options show status, current balance, and received date in FIFO order.'
+                    : `No ${transactionType.toLowerCase()}-eligible lots are available for this SKU.`;
             } catch (err) {
-                select.innerHTML = '<option value="">Failed to load lots</option>';
+                select.innerHTML = '<option value="">Failed to load eligible lots</option>';
+                help.textContent = err.message || 'Unable to load lots. Please try again.';
             }
         }
 
@@ -697,6 +767,8 @@
             document.getElementById('transactionForm').reset();
             document.getElementById('transactionId').value = '';
             document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('transactionLot').innerHTML = '<option value="">— Select transaction type first —</option>';
+            document.getElementById('transactionLotHelp').textContent = 'The transaction type determines which lots are eligible.';
             document.getElementById('transactionModal').classList.add('active');
         }
         
@@ -712,10 +784,7 @@
             document.getElementById('transactionType').value = transaction.transaction_type;
             document.getElementById('transactionNotes').value = transaction.notes || '';
 
-            await loadLotsForSku(transaction.sku);
-            if (transaction.lot_id) {
-                document.getElementById('transactionLot').value = transaction.lot_id;
-            }
+            await loadLotsForSku(transaction.sku, transaction.lot_id);
 
             document.getElementById('transactionModal').classList.add('active');
         }
@@ -723,7 +792,8 @@
         function closeModal() {
             document.getElementById('transactionModal').classList.remove('active');
             document.getElementById('transactionForm').reset();
-            document.getElementById('transactionLot').innerHTML = '<option value="">— Select SKU first —</option>';
+            document.getElementById('transactionLot').innerHTML = '<option value="">— Select transaction type and SKU first —</option>';
+            document.getElementById('transactionLotHelp').textContent = 'Choose a type and SKU to see eligible lots.';
         }
         
         async function archiveTransaction(id, reasonOverride) {
