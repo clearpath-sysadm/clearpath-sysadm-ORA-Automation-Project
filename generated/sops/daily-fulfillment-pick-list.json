@@ -361,3 +361,366 @@
     }
   ]
 }
+{
+  "slug": "daily-fulfillment-pick-list",
+  "title": "Daily Fulfillment and Pick List",
+  "sop_id": "ORA-APP-SOP-003",
+  "revision": "Rev 03",
+  "status": "DRAFT FOR APPROVAL",
+  "effective_date": "Upon approval",
+  "approval_status": "Quality approval pending",
+  "document_status": "Editable master — approval copy not yet released",
+  "source": "deliverables/app-sop-templates/07_Daily_Fulfillment_and_Pick_List_SOP.docx",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "Daily Fulfillment and Pick List"
+    },
+    {
+      "type": "paragraph",
+      "text": "CONTROLLED SOP — DRAFT FOR APPROVAL"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "SOP ID",
+          "Revision",
+          "Effective date",
+          "Process owner"
+        ],
+        [
+          "ORA-APP-SOP-003",
+          "Rev 03",
+          "Upon approval",
+          "Operations"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approved by",
+          "Approval date",
+          "Document status"
+        ],
+        [
+          "Quality",
+          "Pending",
+          "Editable master — approval copy not yet released"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Approval statement: Approval confirms this procedure was tested against the current OraCare app before release."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "1. Purpose and scope",
+      "anchor": "1-purpose-and-scope"
+    },
+    {
+      "type": "paragraph",
+      "text": "Use this procedure to review OraCare units and assigned lots by SKU, print and verify shipping labels, label the correct boxes during pallet-to-pallet transfer, handle visible exceptions, and confirm daily fulfillment is complete."
+    },
+    {
+      "type": "paragraph",
+      "text": "This procedure applies to routine fulfillment using the OraCare app and ShipStation. OraCare provides the units-to-ship and lot information by SKU; ShipStation generates the shipping labels."
+    },
+    {
+      "type": "paragraph",
+      "text": "This procedure does not cover automated order ingestion, automated lot tagging, retired XML import, order correction, or period-end report instructions."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "2. Who performs this",
+      "anchor": "2-who-performs-this"
+    },
+    {
+      "type": "paragraph",
+      "text": "Performed by: Trained warehouse or Operations staff with OraCare app and ShipStation access."
+    },
+    {
+      "type": "paragraph",
+      "text": "Escalate problems to: Operations or an authorized Admin. Escalate unresolved data, lot, or shipping-rule issues to the app owner and Quality."
+    },
+    {
+      "type": "warning",
+      "text": "Stop: Do not pick, pack, or ship from a guess. Hold the affected order whenever the product, quantity, lot, company, or shipping service does not match."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "3. Before you begin",
+      "anchor": "3-before-you-begin"
+    },
+    {
+      "type": "bullet",
+      "text": "Sign in to the OraCare Fulfillment app and ShipStation."
+    },
+    {
+      "type": "bullet",
+      "text": "Confirm the warehouse work area, an empty receiving pallet, and the approved lot stock are available."
+    },
+    {
+      "type": "bullet",
+      "text": "Review the Dashboard for visible shipping-configuration or inventory warnings. Hold affected orders until the warning is understood and corrected."
+    },
+    {
+      "type": "bullet",
+      "text": "Open Fulfillment → Today’s Pick List. Do not use New Orders or an XML import for daily fulfillment."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "4. Procedure",
+      "anchor": "4-procedure"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.1 Confirm OraCare quantities and lots",
+      "anchor": "4-1-confirm-oracare-quantities-and-lots"
+    },
+    {
+      "type": "ordered",
+      "text": "Select Refresh on Today’s Pick List. Wait for the list to load without an error and confirm the “Inbox refreshed” time is current enough for the work being started."
+    },
+    {
+      "type": "ordered",
+      "text": "Review each SKU row. Confirm the product name, total units to ship, and assigned lot information. Treat the Benco and Expedited values as unit totals, not order counts."
+    },
+    {
+      "type": "ordered",
+      "text": "If a SKU is split across multiple lots, follow the quantity shown for each lot. Stop and escalate if a lot is Untagged, blank, unexpected, or unavailable; do not choose a different lot from memory."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.2 Print the ShipStation labels",
+      "anchor": "4-2-print-the-shipstation-labels"
+    },
+    {
+      "type": "ordered",
+      "text": "Open the current open batch in ShipStation that contains all orders to be shipped."
+    },
+    {
+      "type": "ordered",
+      "text": "In the order-list header, click the first checkbox to select every order in the batch. Clicking the checkbox again deselects all orders; confirm all orders are selected before continuing."
+    },
+    {
+      "type": "ordered",
+      "text": "Click the dropdown arrow on the Process Shipments split button—not the main part of the button—and select Process + Print Shipments."
+    },
+    {
+      "type": "ordered",
+      "text": "Review the displayed total charge for reasonableness based on the approximate shipment volume. This is a quick judgment check, not exact invoice reconciliation, and there is no dollar-per-unit threshold. Pause and review a total that is obviously too low."
+    },
+    {
+      "type": "ordered",
+      "text": "Review the carrier breakout. Confirm the Benco FedEx carrier account for every Benco order and the requested service for expedited orders. Hold and escalate a carrier or service mismatch."
+    },
+    {
+      "type": "ordered",
+      "text": "Click Continue. Confirm the labels are generated successfully and the processed orders move to the expected ShipStation status, such as Printed or Shipped. ShipStation inventory availability is not required because inventory is managed outside ShipStation."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.3 Verify the labels by SKU",
+      "anchor": "4-3-verify-the-labels-by-sku"
+    },
+    {
+      "type": "ordered",
+      "text": "Keep the printed labels grouped in their printed SKU order."
+    },
+    {
+      "type": "ordered",
+      "text": "Count the labels for each SKU and compare that count with the total units to ship for the same SKU on Today’s Pick List."
+    },
+    {
+      "type": "ordered",
+      "text": "Do not compare the OraCare pick-list lines with the ShipStation product list line by line. Variant SKUs can appear as individual ShipStation products; the required check is the printed-label count for each SKU against OraCare’s units-to-ship total for that SKU."
+    },
+    {
+      "type": "ordered",
+      "text": "Stop before going to the warehouse if a label is missing, extra, unreadable, or assigned to the wrong SKU, or if the count does not match. Recount and escalate the unresolved difference; do not guess or begin labeling boxes."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.4 Label boxes in the warehouse",
+      "anchor": "4-4-label-boxes-in-the-warehouse"
+    },
+    {
+      "type": "ordered",
+      "text": "Take one verified SKU group of labels to the warehouse. Confirm the product SKU and assigned lot on Today’s Pick List match the product pallet before moving or labeling any box."
+    },
+    {
+      "type": "ordered",
+      "text": "Place an empty pallet beside the pallet containing the correct product and lot."
+    },
+    {
+      "type": "ordered",
+      "text": "Transfer boxes from the product pallet to the empty pallet one layer at a time. Apply one shipping label to each box as the box is moved."
+    },
+    {
+      "type": "ordered",
+      "text": "Finish each layer before adding the next layer. Stop if a box is damaged, the SKU or lot is wrong, or there are not enough acceptable boxes; do not substitute product or lot."
+    },
+    {
+      "type": "ordered",
+      "text": "Complete the SKU only when the printed-label count, labeled-box count, and OraCare units-to-ship total agree, with no unused labels and no transferred unlabeled boxes."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "4.5 Repeat and finish",
+      "anchor": "4-5-repeat-and-finish"
+    },
+    {
+      "type": "ordered",
+      "text": "Repeat Sections 4.3 and 4.4 for each remaining SKU group."
+    },
+    {
+      "type": "ordered",
+      "text": "After the day’s shipments are complete, return to Today’s Pick List and select Refresh. Review any remaining units and confirm they are intentionally pending, held, newly received, or otherwise explained; do not force them off the list."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "5. Problems and exceptions",
+      "anchor": "5-problems-and-exceptions"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Problem or stop condition",
+          "Required action / escalation"
+        ],
+        [
+          "Loading error, failed refresh, or stale refresh time",
+          "Refresh once. If the problem remains, stop using the list and notify Operations or Admin. Verify affected orders directly in ShipStation; do not pick from an old printout."
+        ],
+        [
+          "Untagged, blank, unexpected, or unavailable lot",
+          "Hold the affected order. Record the order number, SKU, displayed lot, expected lot, and quantity; escalate to Operations or Admin."
+        ],
+        [
+          "Printed-label count for a SKU does not match OraCare’s units-to-ship total",
+          "Stop before warehouse labeling. Recount the labels and verify the OraCare total. Record and escalate any unresolved missing, extra, unreadable, or wrong-SKU label."
+        ],
+        [
+          "Benco or expedited indicator conflicts with the ShipStation order",
+          "Hold the order. Verify company and service in ShipStation and correct through the authorized process before shipment."
+        ],
+        [
+          "Shipping Configuration Alert is visible",
+          "Hold the affected shipment until the expected and actual settings are verified and corrected. Resolve the alert only after the issue is handled."
+        ],
+        [
+          "Expected awaiting-shipment order or SKU is missing from the pick list",
+          "Do not add it manually or rely on a retired import. Verify ShipStation status and item details, then escalate the missing data."
+        ],
+        [
+          "Order remains on the pick list after being marked shipped",
+          "Verify the exact order status in ShipStation, allow the normal update, and refresh. If it remains, record the order number and ShipStation ID and escalate."
+        ],
+        [
+          "Shipped Orders or Shipped Items is missing, duplicated, or incorrect",
+          "Do not ship again or edit records from guesswork. Record the order number, ShipStation ID, SKU, lot, quantity, and ship date; escalate for controlled correction."
+        ],
+        [
+          "ShipStation reports unavailable or insufficient inventory",
+          "This is not a stop condition by itself. OraCare inventory is managed outside ShipStation, and ShipStation inventory availability is not required to ship. Continue only if the OraCare SKU and lot checks, printed-label count, and physical-product checks are complete."
+        ],
+        [
+          "Displayed total charge appears obviously too low for the approximate shipment volume",
+          "Pause and review the batch before continuing. Use reasonable judgment; there is no documented dollar-per-unit formula or approval threshold. Escalate if the amount remains implausible."
+        ],
+        [
+          "Process + Print Shipments fails or an expected label is missing",
+          "Do not repeat processing from guesswork. Record the affected order numbers and the displayed error, then notify Operations or an authorized Admin."
+        ],
+        [
+          "Processed order does not move to the expected Printed or Shipped status",
+          "Verify the order and label result in ShipStation. Do not process the order again unless an authorized user confirms that action is required; record and escalate the unexpected status."
+        ],
+        [
+          "Wrong SKU or lot, damaged box, or insufficient acceptable product during pallet transfer",
+          "Stop work for that SKU. Do not label or substitute the wrong or damaged product. Keep the verified labels controlled and escalate the discrepancy."
+        ],
+        [
+          "Unused label or transferred box without a label",
+          "Stop before completing the SKU. Reconcile the printed labels, labeled boxes, and OraCare units-to-ship total. Do not discard a label or move an unlabeled box forward to make the counts appear correct."
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "6. Records and completion",
+      "anchor": "6-records-and-completion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Record created or updated: ShipStation shipment, label, and tracking record; app shipped-order, shipped-item, lot, and inventory records after supported processing."
+    },
+    {
+      "type": "paragraph",
+      "text": "Completion confirmed when: For every SKU, the printed-label count, labeled-box count, and OraCare units-to-ship total agree; the correct product and assigned lot were used; no labels remain unused; no transferred boxes remain unlabeled; Benco and expedited requirements were verified; and any remaining Today’s Pick List units or visible exceptions are explained or escalated."
+    },
+    {
+      "type": "paragraph",
+      "text": "Save or distribute: Retain any approved pick record, exception note, and shipping evidence according to the existing Quality record-retention process. Keep the editable SOP master and approved read-only copy in the designated Quality location."
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Revision history",
+      "anchor": "revision-history"
+    },
+    {
+      "type": "table",
+      "rows": [
+        [
+          "Revision",
+          "Date",
+          "Change summary",
+          "Approver"
+        ],
+        [
+          "Rev 01",
+          "Pending",
+          "Initial release",
+          "Pending Quality approval"
+        ],
+        [
+          "Rev 02",
+          "Pending",
+          "Added the ShipStation batch-selection, process-and-print, charge reasonableness, carrier verification, label confirmation, and exception steps.",
+          "Pending Quality approval"
+        ],
+        [
+          "Rev 03",
+          "Pending",
+          "Reordered fulfillment around label-first processing, SKU label-count verification, and layer-by-layer pallet transfer and labeling; removed the staging workflow.",
+          "Pending Quality approval"
+        ]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "END OF CONTROLLED SOP"
+    }
+  ]
+}
