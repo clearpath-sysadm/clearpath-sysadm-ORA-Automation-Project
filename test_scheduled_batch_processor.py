@@ -71,6 +71,178 @@ def test_batch_read_rejects_missing_shipment_count():
     assert result["error_type"] == "invalid_response"
 
 
+def _api_response(data, status_code=200):
+    response = MagicMock(status_code=status_code, text="")
+    response.json.return_value = data
+    return response
+
+
+def test_pending_axiom_shipments_require_axiom_ship_from_and_assignee():
+    users = _api_response(
+        {
+            "users": [
+                {"user_id": "axiom-user", "name": "Axiom Team"},
+                {"user_id": "oracare-user", "name": "Oracare Team"},
+            ],
+            "pages": 1,
+        }
+    )
+    shipments = _api_response(
+        {
+            "shipments": [
+                {
+                    "shipment_id": "eligible",
+                    "shipment_status": "pending",
+                    "warehouse_id": "se-299625",
+                    "assigned_user": "axiom-user",
+                },
+                {
+                    "shipment_id": "home-office",
+                    "shipment_status": "pending",
+                    "warehouse_id": "se-566121",
+                    "assigned_user": "axiom-user",
+                },
+                {
+                    "shipment_id": "oracare",
+                    "shipment_status": "pending",
+                    "warehouse_id": "se-299625",
+                    "assigned_user": "oracare-user",
+                },
+                {
+                    "shipment_id": "unassigned",
+                    "shipment_status": "pending",
+                    "warehouse_id": "se-299625",
+                    "assigned_user": None,
+                },
+                {
+                    "shipment_id": "already-shipped",
+                    "shipment_status": "shipped",
+                    "warehouse_id": "se-299625",
+                    "assigned_user": "axiom-user",
+                },
+                {
+                    "shipment_id": "missing-status",
+                    "warehouse_id": "se-299625",
+                    "assigned_user": "axiom-user",
+                },
+            ],
+            "pages": 1,
+        }
+    )
+    with patch.dict("os.environ", {"PRODUCTION_KEY": "test-key"}), patch.object(
+        api_client, "make_api_request", side_effect=[users, shipments]
+    ):
+        result = api_client.v2_get_pending_axiom_shipments()
+
+    assert result == {
+        "success": True,
+        "shipment_ids": ["eligible"],
+        "excluded_counts": {
+            "non_pending_status": 2,
+            "non_axiom_ship_from": 1,
+            "non_axiom_assignee": 1,
+            "missing_assignee": 1,
+        },
+    }
+
+
+def test_pending_axiom_shipments_fail_closed_without_unique_axiom_team():
+    users = _api_response(
+        {
+            "users": [{"user_id": "oracare-user", "name": "Oracare Team"}],
+            "pages": 1,
+        }
+    )
+    with patch.dict("os.environ", {"PRODUCTION_KEY": "test-key"}), patch.object(
+        api_client, "make_api_request", return_value=users
+    ):
+        result = api_client.v2_get_pending_axiom_shipments()
+
+    assert result["success"] is False
+    assert "exactly one" in result["error"]
+
+
+def test_pending_axiom_shipments_preserve_shipment_pagination():
+    users = _api_response(
+        {
+            "users": [{"user_id": "axiom-user", "name": "Axiom Team"}],
+            "pages": 1,
+        }
+    )
+    page_one = _api_response(
+        {
+            "shipments": [
+                {
+                    "shipment_id": "s1",
+                    "shipment_status": "pending",
+                    "warehouse_id": "se-299625",
+                    "assigned_user": "axiom-user",
+                }
+            ],
+            "pages": 2,
+        }
+    )
+    page_two = _api_response(
+        {
+            "shipments": [
+                {
+                    "shipment_id": "s2",
+                    "shipment_status": "pending",
+                    "warehouse_id": "se-299625",
+                    "assigned_user": "axiom-user",
+                }
+            ],
+            "pages": 2,
+        }
+    )
+    with patch.dict("os.environ", {"PRODUCTION_KEY": "test-key"}), patch.object(
+        api_client,
+        "make_api_request",
+        side_effect=[users, page_one, page_two],
+    ):
+        result = api_client.v2_get_pending_axiom_shipments()
+
+    assert result["success"] is True
+    assert result["shipment_ids"] == ["s1", "s2"]
+
+
+def test_pending_axiom_shipments_preserve_user_pagination():
+    users_page_one = _api_response(
+        {
+            "users": [{"user_id": "oracare-user", "name": "Oracare Team"}],
+            "pages": 2,
+        }
+    )
+    users_page_two = _api_response(
+        {
+            "users": [{"user_id": "axiom-user", "name": "Axiom Team"}],
+            "pages": 2,
+        }
+    )
+    shipments = _api_response(
+        {
+            "shipments": [
+                {
+                    "shipment_id": "s1",
+                    "shipment_status": "pending",
+                    "warehouse_id": "se-299625",
+                    "assigned_user": "axiom-user",
+                }
+            ],
+            "pages": 1,
+        }
+    )
+    with patch.dict("os.environ", {"PRODUCTION_KEY": "test-key"}), patch.object(
+        api_client,
+        "make_api_request",
+        side_effect=[users_page_one, users_page_two, shipments],
+    ):
+        result = api_client.v2_get_pending_axiom_shipments()
+
+    assert result["success"] is True
+    assert result["shipment_ids"] == ["s1"]
+
+
 def test_empty_pending_queue_does_not_create_batch():
     with patch.object(
         processor,

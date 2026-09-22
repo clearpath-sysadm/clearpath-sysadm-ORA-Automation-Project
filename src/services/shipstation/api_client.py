@@ -1229,14 +1229,63 @@ def create_replacement_order(original_order: dict, promo_sku: str, base_sku: str
         return {'success': False, 'error': str(e)}
 
 
+def _v2_get_unique_user_id_by_name(headers: dict, user_name: str) -> dict:
+    """Resolve one ShipStation V2 user/team name to a stable ID."""
+    matches = []
+    page = 1
+    try:
+        while True:
+            response = make_api_request(
+                url='https://api.shipstation.com/v2/users',
+                method='GET',
+                headers=headers,
+                params={'page_size': 100, 'page': page},
+                timeout=30,
+            )
+            if not response or response.status_code != 200:
+                status = response.status_code if response else 'no response'
+                body = response.text[:200] if response else ''
+                return {
+                    'success': False,
+                    'error': f"V2 GET /users failed {status}: {body}",
+                }
+
+            data = response.json()
+            matches.extend(
+                user.get('user_id')
+                for user in data.get('users', [])
+                if user.get('user_id')
+                and str(user.get('name') or '').strip().casefold()
+                == user_name.strip().casefold()
+            )
+            if page >= data.get('pages', 1):
+                break
+            page += 1
+    except Exception as e:
+        logger.error(f"Error resolving ShipStation user {user_name!r}: {e}", exc_info=True)
+        return {'success': False, 'error': str(e)}
+
+    unique_ids = set(matches)
+    if len(unique_ids) != 1:
+        return {
+            'success': False,
+            'error': (
+                f"Expected exactly one ShipStation user named {user_name!r}; "
+                f"found {len(unique_ids)}"
+            ),
+        }
+    return {'success': True, 'user_id': unique_ids.pop()}
+
+
 def v2_get_pending_axiom_shipments() -> dict:
     """
-    Fetch all pending shipments for the Axiom warehouse from ShipStation V2.
+    Fetch pending shipments explicitly routed from Axiom to Axiom Team.
 
     Paginates automatically if the result set exceeds 500 entries.
     Auth: PRODUCTION_KEY as 'API-Key' header (V2-specific credential).
 
-    Returns dict with 'success' bool, 'shipment_ids' list, and 'error' on failure.
+    Returns dict with 'success' bool, 'shipment_ids' list, exclusion counts,
+    and 'error' on failure.
     """
     from config.settings import settings
     try:
@@ -1249,8 +1298,24 @@ def v2_get_pending_axiom_shipments() -> dict:
             'Content-Type': 'application/json',
         }
 
+        assignee = _v2_get_unique_user_id_by_name(headers, settings.AXIOM_TEAM_NAME)
+        if not assignee.get('success'):
+            return {
+                'success': False,
+                'error': (
+                    f"Could not verify Axiom batch assignee: "
+                    f"{assignee.get('error', 'unknown error')}"
+                ),
+            }
+        axiom_user_id = assignee['user_id']
+
         shipment_ids = []
-        skipped = 0
+        excluded_counts = {
+            'non_pending_status': 0,
+            'non_axiom_ship_from': 0,
+            'non_axiom_assignee': 0,
+            'missing_assignee': 0,
+        }
         page = 1
         first_included_logged = False
 
@@ -1277,21 +1342,45 @@ def v2_get_pending_axiom_shipments() -> dict:
             page_axiom = 0
             for shipment in batch:
                 sid = shipment.get('shipment_id')
+                shipment_status = shipment.get('shipment_status')
                 wh = shipment.get('warehouse_id')
+                assigned_user = shipment.get('assigned_user')
                 if not sid:
                     continue
-                # Client-side filter: only include shipments from the Axiom warehouse.
-                # The warehouse_id query param is not reliably honored by the V2 API.
+                if shipment_status != 'pending':
+                    excluded_counts['non_pending_status'] += 1
+                    logger.warning(
+                        f"Excluding shipment {sid} from Axiom batch: "
+                        f"status {shipment_status!r} is not pending"
+                    )
+                    continue
                 if wh != settings.AXIOM_WAREHOUSE_ID:
-                    skipped += 1
-                    logger.debug(f"Skipping shipment {sid} — warehouse {wh} is not Axiom")
+                    excluded_counts['non_axiom_ship_from'] += 1
+                    logger.info(
+                        f"Excluding shipment {sid} from Axiom batch: "
+                        f"Ship From warehouse {wh!r} is not Axiom"
+                    )
+                    continue
+                if not assigned_user:
+                    excluded_counts['missing_assignee'] += 1
+                    logger.warning(
+                        f"Excluding shipment {sid} from Axiom batch: "
+                        "Assigned To is missing"
+                    )
+                    continue
+                if assigned_user != axiom_user_id:
+                    excluded_counts['non_axiom_assignee'] += 1
+                    logger.info(
+                        f"Excluding shipment {sid} from Axiom batch: "
+                        "Assigned To is not Axiom Team"
+                    )
                     continue
                 shipment_ids.append(sid)
                 if not first_included_logged:
                     logger.info(
                         f"V2 warehouse filter check: first included shipment {sid} "
                         f"has warehouse_id={wh!r} "
-                        f"(configured AXIOM_WAREHOUSE_ID={settings.AXIOM_WAREHOUSE_ID!r})"
+                        f"and assigned_user={assigned_user!r}"
                     )
                     first_included_logged = True
                 page_axiom += 1
@@ -1299,18 +1388,23 @@ def v2_get_pending_axiom_shipments() -> dict:
             total_pages = data.get('pages', 1)
             logger.info(
                 f"V2 shipments page {page}/{total_pages}: "
-                f"{page_axiom} Axiom, {len(batch) - page_axiom} non-Axiom (skipped)"
+                f"{page_axiom} eligible, {len(batch) - page_axiom} excluded"
             )
 
             if page >= total_pages:
                 break
             page += 1
 
+        excluded_total = sum(excluded_counts.values())
         logger.info(
             f"V2 pending Axiom shipments: {len(shipment_ids)} included, "
-            f"{skipped} non-Axiom skipped"
+            f"{excluded_total} excluded ({excluded_counts})"
         )
-        return {'success': True, 'shipment_ids': shipment_ids}
+        return {
+            'success': True,
+            'shipment_ids': shipment_ids,
+            'excluded_counts': excluded_counts,
+        }
 
     except Exception as e:
         logger.error(f"Error fetching V2 pending Axiom shipments: {e}", exc_info=True)

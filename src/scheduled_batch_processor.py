@@ -760,6 +760,18 @@ def _run_batch_job_locked() -> str:
         return 'error'
 
     shipment_ids = result['shipment_ids']
+    excluded_counts = result.get('excluded_counts') or {}
+    excluded_total = sum(excluded_counts.values())
+    if excluded_total:
+        exclusion_summary = (
+            f"Batch processor excluded {excluded_total} shipment(s) by eligibility: "
+            f"{excluded_counts.get('non_pending_status', 0)} not pending, "
+            f"{excluded_counts.get('non_axiom_ship_from', 0)} not Ship From Axiom, "
+            f"{excluded_counts.get('non_axiom_assignee', 0)} not assigned to Axiom Team, "
+            f"{excluded_counts.get('missing_assignee', 0)} missing Assigned To."
+        )
+        logger.warning(exclusion_summary)
+        server_logger.warning(exclusion_summary, source="Batch Processor")
 
     if not shipment_ids:
         logger.info("No pending Axiom shipments — nothing to batch.")
