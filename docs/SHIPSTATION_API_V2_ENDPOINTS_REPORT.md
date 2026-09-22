@@ -129,14 +129,16 @@ creation is single-attempt and protected by a PostgreSQL advisory lock.
 
 Fifteen minutes after verification, the worker performs one bounded lifecycle
 check. If ShipStation has moved every original shipment to one replacement
-batch and left the identified automated source open and empty, the default
-behavior is observation-only: the replacement is recorded and an operational
+batch and left the identified automated source open and empty, the first pass
+is always observation-only: the replacement is recorded and an operational
 warning is emitted, but ShipStation is not changed.
 
-Deletion code is guarded by
-`SHIPSTATION_EMPTY_BATCH_CLEANUP_ENABLED=true`. Do not enable it until
-observation records have been reviewed across multiple production runs.
-Historical batches without the automated external ID are never modified.
+Deletion is enabled in production with
+`SHIPSTATION_EMPTY_BATCH_CLEANUP_ENABLED=true`. Even when enabled, the worker
+waits another reconciliation interval and repeats every ownership, status,
+membership, and replacement check before deleting the empty source. Failed or
+ambiguous deletes remain eligible for a later recheck. Historical batches
+without the automated external ID are never modified.
 
 ---
 

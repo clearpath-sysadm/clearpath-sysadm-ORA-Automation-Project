@@ -1411,7 +1411,33 @@ def v2_get_batch(batch_id: str) -> dict:
 
         data = response.json()
         fetched_id = data.get('batch_id') or data.get('id') or batch_id
-        shipment_count = data.get('count', data.get('shipment_count', 0))
+        if 'count' in data:
+            shipment_count = data['count']
+        elif 'shipment_count' in data:
+            shipment_count = data['shipment_count']
+        else:
+            error = f"V2 GET /batches/{batch_id} omitted shipment count"
+            logger.error(error)
+            return {
+                'success': False,
+                'error_type': 'invalid_response',
+                'error': error,
+            }
+        if (
+            not isinstance(shipment_count, int)
+            or isinstance(shipment_count, bool)
+            or shipment_count < 0
+        ):
+            error = (
+                f"V2 GET /batches/{batch_id} returned invalid shipment count "
+                f"{shipment_count!r}"
+            )
+            logger.error(error)
+            return {
+                'success': False,
+                'error_type': 'invalid_response',
+                'error': error,
+            }
         status = data.get('batch_status') or data.get('status', 'unknown')
         logger.info(f"V2 GET /batches/{batch_id}: status={status}, shipment_count={shipment_count}")
         return {
@@ -1514,18 +1540,23 @@ def v2_get_batch_shipment_ids(batch_id: str) -> dict:
 
 
 def v2_delete_batch(batch_id: str) -> dict:
-    """Delete an already-verified empty batch."""
+    """Delete an already-verified empty batch with one HTTP attempt.
+
+    Never use make_api_request here: an automatic retry after an ambiguous
+    timeout could delete a batch whose state changed after the first attempt.
+    The batch processor re-verifies the candidate on a later reconciliation.
+    """
     try:
-        make_api_request(
-            url=f'https://api.shipstation.com/v2/batches/{batch_id}',
-            method='DELETE',
+        response = requests.delete(
+            f'https://api.shipstation.com/v2/batches/{batch_id}',
             headers=_v2_headers(),
             timeout=30,
         )
+        response.raise_for_status()
         return {'success': True}
     except Exception as e:
         logger.error(f"Could not delete empty batch {batch_id}: {e}", exc_info=True)
-        return {'success': False, 'error': str(e)}
+        return {'success': False, 'error': str(e), 'ambiguous': True}
 
 
 def v2_process_batch_labels(batch_id: str, ship_date: str) -> dict:

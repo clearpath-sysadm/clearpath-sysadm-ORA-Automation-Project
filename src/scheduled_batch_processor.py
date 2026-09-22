@@ -429,24 +429,70 @@ def _reconcile_recent_batches() -> None:
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT ship_date, external_batch_id, source_batch_id, shipment_ids
+                SELECT ship_date, external_batch_id, source_batch_id, shipment_ids,
+                       status, replacement_batch_id
                 FROM shipstation_batch_runs
                 WHERE status = ANY(%s)
-                  AND verified_at <= NOW() - (%s * INTERVAL '1 second')
+                  AND (
+                      (status = 'verified'
+                       AND verified_at <= NOW() - (%s * INTERVAL '1 second'))
+                      OR
+                      (status = 'observed_empty'
+                       AND last_observed_at <= NOW() - (%s * INTERVAL '1 second'))
+                  )
                 ORDER BY verified_at
                 LIMIT 1
                 """,
-                (list(statuses), RECONCILE_DELAY_SECONDS),
+                (
+                    list(statuses),
+                    RECONCILE_DELAY_SECONDS,
+                    RECONCILE_DELAY_SECONDS,
+                ),
             )
             rows = cursor.fetchall()
         conn.close()
 
-        for ship_date, external_id, source_batch_id, shipment_ids in rows:
+        for (
+            ship_date,
+            external_id,
+            source_batch_id,
+            shipment_ids,
+            reconciliation_status,
+            recorded_replacement_id,
+        ) in rows:
             source = v2_get_batch(source_batch_id)
             if not source.get('success'):
+                if (
+                    reconciliation_status == 'observed_empty'
+                    and source.get('error_type') == 'not_found'
+                    and recorded_replacement_id
+                ):
+                    logger.info(
+                        f"Previously observed empty batch {source_batch_id} is already gone; "
+                        "recording it as retired"
+                    )
+                    _set_reconciliation_state(
+                        ship_date,
+                        'retired',
+                        recorded_replacement_id,
+                        update_daily_record=True,
+                    )
+                    continue
                 logger.warning(f"Batch reconciliation could not read source {source_batch_id}")
                 continue
-            if source.get('shipment_count', 0) > 0:
+            source_count = source.get('shipment_count')
+            if (
+                not isinstance(source_count, int)
+                or isinstance(source_count, bool)
+                or source_count < 0
+            ):
+                logger.error(
+                    f"Refusing cleanup analysis for batch {source_batch_id}: "
+                    "shipment count is missing or invalid"
+                )
+                _set_reconciliation_state(ship_date, 'uncertain')
+                continue
+            if source_count > 0:
                 _set_reconciliation_state(ship_date, 'stable')
                 continue
             if source.get('status') != 'open':
@@ -468,16 +514,18 @@ def _reconcile_recent_batches() -> None:
             if not original_ids:
                 _set_reconciliation_state(ship_date, 'uncertain')
                 continue
-            assignments = v2_get_shipment_batch_assignments([original_ids[0]])
+            assignments = v2_get_shipment_batch_assignments(original_ids)
             if not assignments.get('success'):
                 logger.warning(f"Could not reconcile shipment assignments for {source_batch_id}")
                 continue
-            candidate_ids = {
-                batch_id
-                for batch_id in assignments['assignments'].get(original_ids[0], [])
-                if batch_id != source_batch_id
-            }
-            if len(candidate_ids) != 1:
+            replacement_sets = [
+                set(assignments['assignments'].get(shipment_id, []))
+                for shipment_id in original_ids
+            ]
+            if (
+                any(len(batch_ids) != 1 for batch_ids in replacement_sets)
+                or len({next(iter(batch_ids)) for batch_ids in replacement_sets}) != 1
+            ):
                 logger.error(
                     f"Empty batch {source_batch_id} has incomplete or split replacement assignments; "
                     "leaving it unchanged"
@@ -490,7 +538,14 @@ def _reconcile_recent_batches() -> None:
                 _set_reconciliation_state(ship_date, 'uncertain')
                 continue
 
-            replacement_id = candidate_ids.pop()
+            replacement_id = next(iter(replacement_sets[0]))
+            if replacement_id == source_batch_id:
+                logger.error(
+                    f"Empty batch {source_batch_id} is still listed as the shipment "
+                    "assignment; refusing to treat it as its own replacement"
+                )
+                _set_reconciliation_state(ship_date, 'uncertain')
+                continue
             replacement = v2_get_batch(replacement_id)
             replacement_shipments = v2_get_batch_shipment_ids(replacement_id)
             if (
@@ -504,16 +559,29 @@ def _reconcile_recent_batches() -> None:
                 _set_reconciliation_state(ship_date, 'uncertain')
                 continue
 
-            if not EMPTY_BATCH_CLEANUP_ENABLED:
+            # Enabling cleanup never skips observation. A verified source must
+            # first be persisted as observed_empty, then survive the delay and
+            # every safety check again before a later run may delete it.
+            if reconciliation_status != 'observed_empty':
                 logger.warning(
                     f"OBSERVATION ONLY: automated batch {source_batch_id} became empty; "
                     f"all {len(original_ids)} shipments moved to {replacement_id}. "
-                    "Cleanup remains disabled."
+                    "A later reconciliation may retire it if cleanup is enabled."
                 )
                 server_logger.warning(
                     f"Batch processor observation: {source_batch_id} became empty after its "
                     f"shipments moved to {replacement_id}. No ShipStation changes were made.",
                     source="Batch Processor",
+                )
+                _set_reconciliation_state(
+                    ship_date, 'observed_empty', replacement_id, update_daily_record=True
+                )
+                continue
+
+            if recorded_replacement_id != replacement_id:
+                logger.warning(
+                    f"Replacement for empty batch {source_batch_id} changed from "
+                    f"{recorded_replacement_id} to {replacement_id}; restarting observation delay"
                 )
                 _set_reconciliation_state(
                     ship_date, 'observed_empty', replacement_id, update_daily_record=True
@@ -528,6 +596,17 @@ def _reconcile_recent_batches() -> None:
                 )
             else:
                 logger.error(f"Failed to retire proven-empty batch {source_batch_id}")
+                server_logger.error(
+                    f"Batch processor could not retire proven-empty batch {source_batch_id}; "
+                    "it will re-verify and retry later.",
+                    source="Batch Processor",
+                )
+                _set_reconciliation_state(
+                    ship_date,
+                    'observed_empty',
+                    replacement_id,
+                    update_daily_record=True,
+                )
     except Exception as e:
         logger.error(f"Non-blocking batch reconciliation failed: {e}", exc_info=True)
 

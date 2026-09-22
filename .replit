@@ -122,6 +122,9 @@ ORACARE_FEDEX_ACCOUNT_ID = "556346"
 BENCO_UPS_COUNTRY_CODE = "US"
 BENCO_UPS_POSTAL_CODE = "18640"
 
+[userenv.production]
+SHIPSTATION_EMPTY_BATCH_CLEANUP_ENABLED = "true"
+
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 60000

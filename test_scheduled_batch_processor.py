@@ -44,6 +44,33 @@ def test_api_treats_server_error_as_ambiguous():
     assert result["ambiguous"] is True
 
 
+def test_batch_delete_timeout_is_not_retried_inside_api_helper():
+    with patch.object(
+        api_client.requests,
+        "delete",
+        side_effect=requests.exceptions.Timeout("timed out"),
+    ) as request:
+        result = api_client.v2_delete_batch("source")
+
+    assert result["success"] is False
+    assert result["ambiguous"] is True
+    request.assert_called_once()
+
+
+def test_batch_read_rejects_missing_shipment_count():
+    response = MagicMock()
+    response.json.return_value = {
+        "batch_id": "source",
+        "batch_status": "open",
+        "external_batch_id": "oracare-axiom-2026-09-21",
+    }
+    with patch.object(api_client, "make_api_request", return_value=response):
+        result = api_client.v2_get_batch("source")
+
+    assert result["success"] is False
+    assert result["error_type"] == "invalid_response"
+
+
 def test_empty_pending_queue_does_not_create_batch():
     with patch.object(
         processor,
@@ -130,7 +157,14 @@ def test_creation_lock_blocks_competing_instance():
 
 
 def test_reconciliation_observes_proven_replacement_without_deleting():
-    row = ("2026-09-21", "oracare-axiom-2026-09-21", "source", ["s1", "s2"])
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1", "s2"],
+        "verified",
+        None,
+    )
     connection = _connection_with_rows([row])
     with patch.object(processor, "get_connection", return_value=connection), patch.object(
         processor,
@@ -149,7 +183,7 @@ def test_reconciliation_observes_proven_replacement_without_deleting():
         "v2_get_shipment_batch_assignments",
         return_value={
             "success": True,
-            "assignments": {"s1": ["replacement"]},
+            "assignments": {"s1": ["replacement"], "s2": ["replacement"]},
         },
     ), patch.object(
         processor,
@@ -169,7 +203,14 @@ def test_reconciliation_observes_proven_replacement_without_deleting():
 
 
 def test_reconciliation_refuses_partial_or_split_movement():
-    row = ("2026-09-21", "oracare-axiom-2026-09-21", "source", ["s1", "s2"])
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1", "s2"],
+        "verified",
+        None,
+    )
     connection = _connection_with_rows([row])
     with patch.object(processor, "get_connection", return_value=connection), patch.object(
         processor,
@@ -192,6 +233,148 @@ def test_reconciliation_refuses_partial_or_split_movement():
     ) as delete:
         processor._reconcile_recent_batches()
 
+    delete.assert_not_called()
+    state.assert_called_once_with(row[0], "uncertain")
+
+
+def test_reconciliation_refuses_shipments_assigned_to_multiple_replacements():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1", "s2"],
+        "verified",
+        None,
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        return_value={
+            "success": True,
+            "shipment_count": 0,
+            "external_batch_id": row[1],
+            "status": "open",
+        },
+    ), patch.object(
+        processor,
+        "v2_get_shipment_batch_assignments",
+        return_value={
+            "success": True,
+            "assignments": {
+                "s1": ["replacement", "other"],
+                "s2": ["replacement"],
+            },
+        },
+    ), patch.object(processor, "_set_reconciliation_state") as state, patch.object(
+        processor, "v2_delete_batch"
+    ) as delete:
+        processor._reconcile_recent_batches()
+
+    delete.assert_not_called()
+    state.assert_called_once_with(row[0], "uncertain")
+
+
+def test_reconciliation_refuses_assignment_still_listing_source_batch():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1"],
+        "observed_empty",
+        "replacement",
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        return_value={
+            "success": True,
+            "shipment_count": 0,
+            "external_batch_id": row[1],
+            "status": "open",
+        },
+    ), patch.object(
+        processor,
+        "v2_get_shipment_batch_assignments",
+        return_value={
+            "success": True,
+            "assignments": {"s1": ["source", "replacement"]},
+        },
+    ), patch.object(processor, "_set_reconciliation_state") as state, patch.object(
+        processor, "v2_delete_batch"
+    ) as delete, patch.object(processor, "EMPTY_BATCH_CLEANUP_ENABLED", True):
+        processor._reconcile_recent_batches()
+
+    delete.assert_not_called()
+    state.assert_called_once_with(row[0], "uncertain")
+
+
+def test_reconciliation_refuses_source_as_its_own_replacement():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1"],
+        "observed_empty",
+        "replacement",
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        return_value={
+            "success": True,
+            "shipment_count": 0,
+            "external_batch_id": row[1],
+            "status": "open",
+        },
+    ), patch.object(
+        processor,
+        "v2_get_shipment_batch_assignments",
+        return_value={"success": True, "assignments": {"s1": ["source"]}},
+    ), patch.object(
+        processor, "v2_get_batch_shipment_ids"
+    ) as list_shipments, patch.object(
+        processor, "_set_reconciliation_state"
+    ) as state, patch.object(
+        processor, "v2_delete_batch"
+    ) as delete, patch.object(
+        processor, "EMPTY_BATCH_CLEANUP_ENABLED", True
+    ):
+        processor._reconcile_recent_batches()
+
+    list_shipments.assert_not_called()
+    delete.assert_not_called()
+    state.assert_called_once_with(row[0], "uncertain")
+
+
+def test_reconciliation_refuses_missing_source_shipment_count():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1"],
+        "observed_empty",
+        "replacement",
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        return_value={
+            "success": True,
+            "external_batch_id": row[1],
+            "status": "open",
+        },
+    ), patch.object(processor, "_set_reconciliation_state") as state, patch.object(
+        processor, "v2_get_shipment_batch_assignments"
+    ) as assignments, patch.object(
+        processor, "v2_delete_batch"
+    ) as delete, patch.object(processor, "EMPTY_BATCH_CLEANUP_ENABLED", True):
+        processor._reconcile_recent_batches()
+
+    assignments.assert_not_called()
     delete.assert_not_called()
     state.assert_called_once_with(row[0], "uncertain")
 
@@ -253,7 +436,14 @@ def test_definite_create_rejection_releases_claim():
 
 
 def test_nonempty_source_becomes_terminal_stable_observation():
-    row = ("2026-09-21", "oracare-axiom-2026-09-21", "source", ["s1"])
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1"],
+        "verified",
+        None,
+    )
     connection = _connection_with_rows([row])
     with patch.object(processor, "get_connection", return_value=connection), patch.object(
         processor,
@@ -270,3 +460,205 @@ def test_nonempty_source_becomes_terminal_stable_observation():
         processor._reconcile_recent_batches()
     state.assert_called_once_with(row[0], "stable")
     assignments.assert_not_called()
+
+
+def test_enabled_cleanup_still_observes_before_deleting():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1", "s2"],
+        "verified",
+        None,
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        side_effect=[
+            {
+                "success": True,
+                "shipment_count": 0,
+                "external_batch_id": row[1],
+                "status": "open",
+            },
+            {"success": True, "shipment_count": 2},
+        ],
+    ), patch.object(
+        processor,
+        "v2_get_shipment_batch_assignments",
+        return_value={
+            "success": True,
+            "assignments": {"s1": ["replacement"], "s2": ["replacement"]},
+        },
+    ), patch.object(
+        processor,
+        "v2_get_batch_shipment_ids",
+        return_value={"success": True, "shipment_ids": ["s1", "s2"]},
+    ), patch.object(processor, "_set_reconciliation_state") as state, patch.object(
+        processor, "v2_delete_batch"
+    ) as delete, patch.object(processor, "EMPTY_BATCH_CLEANUP_ENABLED", True):
+        processor._reconcile_recent_batches()
+
+    delete.assert_not_called()
+    state.assert_called_once_with(
+        row[0], "observed_empty", "replacement", update_daily_record=True
+    )
+
+
+def test_enabled_cleanup_deletes_only_after_recorded_observation():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1", "s2"],
+        "observed_empty",
+        "replacement",
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        side_effect=[
+            {
+                "success": True,
+                "shipment_count": 0,
+                "external_batch_id": row[1],
+                "status": "open",
+            },
+            {"success": True, "shipment_count": 2},
+        ],
+    ), patch.object(
+        processor,
+        "v2_get_shipment_batch_assignments",
+        return_value={
+            "success": True,
+            "assignments": {"s1": ["replacement"], "s2": ["replacement"]},
+        },
+    ), patch.object(
+        processor,
+        "v2_get_batch_shipment_ids",
+        return_value={"success": True, "shipment_ids": ["s1", "s2"]},
+    ), patch.object(
+        processor, "v2_delete_batch", return_value={"success": True}
+    ) as delete, patch.object(
+        processor, "_set_reconciliation_state"
+    ) as state, patch.object(
+        processor, "EMPTY_BATCH_CLEANUP_ENABLED", True
+    ):
+        processor._reconcile_recent_batches()
+
+    delete.assert_called_once_with("source")
+    state.assert_called_once_with(
+        row[0], "retired", "replacement", update_daily_record=True
+    )
+
+
+def test_failed_delete_remains_observed_for_later_retry():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1"],
+        "observed_empty",
+        "replacement",
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        side_effect=[
+            {
+                "success": True,
+                "shipment_count": 0,
+                "external_batch_id": row[1],
+                "status": "open",
+            },
+            {"success": True, "shipment_count": 1},
+        ],
+    ), patch.object(
+        processor,
+        "v2_get_shipment_batch_assignments",
+        return_value={"success": True, "assignments": {"s1": ["replacement"]}},
+    ), patch.object(
+        processor,
+        "v2_get_batch_shipment_ids",
+        return_value={"success": True, "shipment_ids": ["s1"]},
+    ), patch.object(
+        processor, "v2_delete_batch", return_value={"success": False, "error": "timeout"}
+    ), patch.object(
+        processor, "_set_reconciliation_state"
+    ) as state, patch.object(
+        processor, "EMPTY_BATCH_CLEANUP_ENABLED", True
+    ):
+        processor._reconcile_recent_batches()
+
+    state.assert_called_once_with(
+        row[0], "observed_empty", "replacement", update_daily_record=True
+    )
+
+
+def test_changed_replacement_restarts_observation_delay():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1"],
+        "observed_empty",
+        "old-replacement",
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        side_effect=[
+            {
+                "success": True,
+                "shipment_count": 0,
+                "external_batch_id": row[1],
+                "status": "open",
+            },
+            {"success": True, "shipment_count": 1},
+        ],
+    ), patch.object(
+        processor,
+        "v2_get_shipment_batch_assignments",
+        return_value={"success": True, "assignments": {"s1": ["new-replacement"]}},
+    ), patch.object(
+        processor,
+        "v2_get_batch_shipment_ids",
+        return_value={"success": True, "shipment_ids": ["s1"]},
+    ), patch.object(processor, "_set_reconciliation_state") as state, patch.object(
+        processor, "v2_delete_batch"
+    ) as delete, patch.object(processor, "EMPTY_BATCH_CLEANUP_ENABLED", True):
+        processor._reconcile_recent_batches()
+
+    delete.assert_not_called()
+    state.assert_called_once_with(
+        row[0], "observed_empty", "new-replacement", update_daily_record=True
+    )
+
+
+def test_missing_previously_observed_source_is_recorded_as_retired():
+    row = (
+        "2026-09-21",
+        "oracare-axiom-2026-09-21",
+        "source",
+        ["s1"],
+        "observed_empty",
+        "replacement",
+    )
+    connection = _connection_with_rows([row])
+    with patch.object(processor, "get_connection", return_value=connection), patch.object(
+        processor,
+        "v2_get_batch",
+        return_value={"success": False, "error_type": "not_found"},
+    ), patch.object(processor, "_set_reconciliation_state") as state, patch.object(
+        processor, "v2_delete_batch"
+    ) as delete, patch.object(processor, "EMPTY_BATCH_CLEANUP_ENABLED", True):
+        processor._reconcile_recent_batches()
+
+    delete.assert_not_called()
+    state.assert_called_once_with(
+        row[0], "retired", "replacement", update_daily_record=True
+    )
